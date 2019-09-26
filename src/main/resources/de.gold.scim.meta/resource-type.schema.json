@@ -18,7 +18,7 @@
       "name": "name",
       "type": "string",
       "multiValued": false,
-      "description": "The resource type name.  When applicable, service providers MUST specify the name, e.g., 'User'.",
+      "description": "The resource type name. When applicable, service providers MUST specify the name, e.g., 'User'.",
       "required": true,
       "caseExact": false,
       "mutability": "readOnly",
@@ -67,7 +67,7 @@
     {
       "name": "schemaExtensions",
       "type": "complex",
-      "multiValued": false,
+      "multiValued": true,
       "description": "A list of URIs of the resource type's schema extensions.",
       "required": true,
       "mutability": "readOnly",
