@@ -1,0 +1,20 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+  ],
+  "id": "User",
+  "name": "User",
+  "description": "User Account",
+  "schema": "urn:ietf:params:scim:schemas:core:2.0:User",
+  "endpoint": "/Users",
+  "schemaExtensions": [
+    {
+      "schema": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+      "required": false
+    }
+  ],
+  "meta": {
+    "location": "/ResourceTypes/User",
+    "resourceType": "ResourceType"
+  }
+}
