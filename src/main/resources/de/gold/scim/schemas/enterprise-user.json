@@ -1,0 +1,129 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+  "name": "EnterpriseUser",
+  "description": "Enterprise User",
+  "attributes": [
+    {
+      "uniqueness": "none",
+      "name": "employeeNumber",
+      "description": "Numeric or alphanumeric identifier assigned to a person, typically based on order of hire or association with an organization.",
+      "canonicalValues": [],
+      "referenceTypes": [],
+      "mutability": "read_write",
+      "type": "string",
+      "multiValued": false,
+      "caseExact": false,
+      "returned": "default",
+      "required": false
+    },
+    {
+      "uniqueness": "none",
+      "name": "costCenter",
+      "description": "Identifies the name of a cost center.",
+      "canonicalValues": [],
+      "referenceTypes": [],
+      "mutability": "read_write",
+      "type": "string",
+      "multiValued": false,
+      "caseExact": false,
+      "returned": "default",
+      "required": false
+    },
+    {
+      "uniqueness": "none",
+      "name": "organization",
+      "description": "Identifies the name of an organization.",
+      "canonicalValues": [],
+      "referenceTypes": [],
+      "mutability": "read_write",
+      "type": "string",
+      "multiValued": false,
+      "caseExact": false,
+      "returned": "default",
+      "required": false
+    },
+    {
+      "uniqueness": "none",
+      "name": "division",
+      "description": "Identifies the name of a division.",
+      "canonicalValues": [],
+      "referenceTypes": [],
+      "mutability": "read_write",
+      "type": "string",
+      "multiValued": false,
+      "caseExact": false,
+      "returned": "default",
+      "required": false
+    },
+    {
+      "uniqueness": "none",
+      "name": "department",
+      "description": "Identifies the name of a department.",
+      "canonicalValues": [],
+      "referenceTypes": [],
+      "mutability": "read_write",
+      "type": "string",
+      "multiValued": false,
+      "caseExact": false,
+      "returned": "default",
+      "required": false
+    },
+    {
+      "uniqueness": "none",
+      "name": "manager",
+      "description": "The User's manager.  A complex type that optionally allows service providers to represent organizational hierarchy by referencing the 'id' attribute of another User.",
+      "canonicalValues": [],
+      "referenceTypes": [],
+      "mutability": "read_write",
+      "type": "complex",
+      "multiValued": false,
+      "caseExact": false,
+      "returned": "default",
+      "required": false,
+      "subAttributes": [
+        {
+          "uniqueness": "none",
+          "name": "value",
+          "description": "The id of the SCIM resource representing the User's manager.  REQUIRED.",
+          "canonicalValues": [],
+          "referenceTypes": [],
+          "mutability": "read_write",
+          "type": "string",
+          "multiValued": false,
+          "caseExact": false,
+          "returned": "default",
+          "required": true
+        },
+        {
+          "uniqueness": "none",
+          "name": "$ref",
+          "description": "The URI of the SCIM resource representing the User's manager.  REQUIRED.",
+          "canonicalValues": [],
+          "referenceTypes": [],
+          "mutability": "read_write",
+          "type": "reference",
+          "multiValued": false,
+          "caseExact": false,
+          "returned": "default",
+          "required": false
+        },
+        {
+          "uniqueness": "none",
+          "name": "displayName",
+          "description": "The displayName of the User's manager. OPTIONAL and READ-ONLY.",
+          "canonicalValues": [],
+          "referenceTypes": [],
+          "mutability": "read_only",
+          "type": "string",
+          "multiValued": false,
+          "caseExact": false,
+          "returned": "default",
+          "required": false
+        }
+      ]
+    }
+  ]
+}
