@@ -39,6 +39,8 @@
 
         <!-- test dependencies -->
         <version.junit.jupiter>5.5.2</version.junit.jupiter>
+        <version.hamcrest>1.3</version.hamcrest>
+        <version.reflections>0.9.11</version.reflections>
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
@@ -112,6 +114,18 @@
                 <version>${version.junit.jupiter}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-all</artifactId>
+                <version>${version.hamcrest}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${version.reflections}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
 
     </dependencyManagement>
@@ -158,6 +172,14 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-all</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
         </dependency>
     </dependencies>
 
