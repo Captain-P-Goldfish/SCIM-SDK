@@ -110,11 +110,23 @@ public final class JsonHelper
 
   /**
    * will get a string attribute with the given name from the given json node
+   *
+   * @param jsonNode the json node to get the attribute from
+   * @param name the name of the attribute
+   * @return the value as string or an empty
+   */
+  public static Optional<String> getSimpleAttribute(JsonNode jsonNode, String name)
+  {
+    return getSimpleAttribute(jsonNode, name, String.class);
+  }
+
+  /**
+   * will get a string attribute with the given name from the given json node
    * 
    * @param jsonNode the json node to get the attribute from
    * @param name the name of the attribute
    * @param type the type of the attribute to return
-   * @return the value as string or an empty
+   * @return the value of the given type or an empty
    */
   public static <T> Optional<T> getSimpleAttribute(JsonNode jsonNode, String name, Class<T> type)
   {
