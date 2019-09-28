@@ -43,6 +43,7 @@
         <!-- plugins -->
         <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.10.0</version.maven.formatter.plugin>
+        <version.maven.enforcer.plugin>3.0.0-M2</version.maven.enforcer.plugin>
     </properties>
 
     <dependencyManagement>
@@ -190,6 +191,43 @@
                         </goals>
                     </execution>
                 </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${version.maven.enforcer.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>enforce</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <rules>
+                        <requireMavenVersion>
+                            <version>[3.3,)</version>
+                        </requireMavenVersion>
+
+                        <requirePluginVersions>
+                            <message>Best Practice is to always define plugin versions!</message>
+                            <banSnapshots>true</banSnapshots>
+                            <unCheckedPluginList>org.apache.maven.plugins:maven-surefire-plugin,org.apache.maven.plugins:maven-jar-plugin,org.apache.maven.plugins:maven-clean-plugin,org.apache.maven.plugins:maven-install-plugin,org.apache.maven.plugins:maven-site-plugin,org.apache.maven.plugins:maven-resources-plugin,org.apache.maven.plugins:maven-deploy-plugin
+                            </unCheckedPluginList>
+                        </requirePluginVersions>
+
+                        <requireReleaseDeps>
+                            <message>No Snapshots Allowed on release!</message>
+                            <onlyWhenRelease>true</onlyWhenRelease>
+                        </requireReleaseDeps>
+
+                        <banDuplicatePomDependencyVersions/>
+
+                        <dependencyConvergence/>
+                    </rules>
+                </configuration>
             </plugin>
         </plugins>
     </build>
