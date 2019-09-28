@@ -14,8 +14,8 @@ public class IncompatibleAttributeException extends ScimException
 {
 
   @Builder
-  public IncompatibleAttributeException(String message, Throwable cause, String detail, int status, String scimType)
+  public IncompatibleAttributeException(String message, Throwable cause, int status, String scimType)
   {
-    super(message, cause, detail, status, scimType);
+    super(message, cause, status, scimType);
   }
 }

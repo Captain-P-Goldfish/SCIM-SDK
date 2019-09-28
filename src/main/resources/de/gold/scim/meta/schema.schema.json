@@ -4,6 +4,17 @@
   "description": "Specifies the schema that describes a SCIM schema",
   "attributes": [
     {
+      "name": "schemas",
+      "type": "string",
+      "multiValued": true,
+      "description": "The definition of the defining schema resource.",
+      "required": true,
+      "caseExact": true,
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none"
+    },
+    {
       "name": "id",
       "type": "string",
       "multiValued": false,
@@ -71,7 +82,7 @@
             "dateTime",
             "reference"
           ],
-          "caseExact": false,
+          "caseExact": true,
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none"
@@ -328,7 +339,7 @@
             {
               "name": "referenceTypes",
               "type": "string",
-              "multiValued": false,
+              "multiValued": true,
               "description": "Used only with an attribute of type 'reference'.  Specifies a SCIM resourceType that a reference attribute MAY refer to, e.g., 'User'.",
               "required": false,
               "caseExact": true,

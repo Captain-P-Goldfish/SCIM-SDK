@@ -38,5 +38,13 @@ public final class AttributeNames
   public static final String CANONICAL_VALUES = "canonicalValues";
 
   public static final String SUB_ATTRIBUTES = "subAttributes";
+
+  public static final String SCHEMAS = "schemas";
+
+  public static final String REFERENCE_TYPES = "referenceTypes";
+
+  public static final String SCHEMA = "schema";
+
+  public static final String ENDPOINT = "endpoint";
 }
 

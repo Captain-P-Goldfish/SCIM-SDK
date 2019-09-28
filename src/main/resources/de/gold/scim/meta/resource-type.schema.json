@@ -69,7 +69,7 @@
       "type": "complex",
       "multiValued": true,
       "description": "A list of URIs of the resource type's schema extensions.",
-      "required": true,
+      "required": false,
       "mutability": "readOnly",
       "returned": "default",
       "subAttributes": [

@@ -248,6 +248,22 @@
                         <banDuplicatePomDependencyVersions/>
 
                         <dependencyConvergence/>
+
+                        <requireFileChecksum>
+                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/schema.schema.json</file>
+                            <checksum>138d7dfdf2ae815c7299b95774569040</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/resource-type.schema.json</file>
+                            <checksum>ac6e34bd2f5f13cc5ff87a3ced53c105</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/service-provider.schema.json</file>
+                            <checksum>debe75ffe21e5925fc617e2eb4b9bdfd</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
                     </rules>
                 </configuration>
             </plugin>

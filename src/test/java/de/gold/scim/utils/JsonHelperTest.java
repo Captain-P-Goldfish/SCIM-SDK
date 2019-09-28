@@ -83,7 +83,7 @@ public class JsonHelperTest
     Assertions.assertEquals(SchemaUris.SCHEMA_URI, getSimpleAttribute(jsonNode, "id", String.class).get());
     JsonNode attributes = jsonNode.get("attributes");
     Assertions.assertTrue(attributes.isArray());
-    JsonNode firstAttribute = attributes.get(0);
+    JsonNode firstAttribute = attributes.get(1);
     Assertions.assertEquals("id", getSimpleAttribute(firstAttribute, "name", String.class).get());
     Assertions.assertEquals(false, getSimpleAttribute(firstAttribute, "multiValued", Boolean.class).get());
     Assertions.assertEquals(true, getSimpleAttribute(firstAttribute, "required", Boolean.class).get());

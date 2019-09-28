@@ -1,4 +1,4 @@
-package de.gold.scim.schemas.meta;
+package de.gold.scim.schemas;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -12,7 +12,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
-import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,7 +32,7 @@ public class SchemaDefinitionTest
   @AfterEach
   public void reloadDefaultSchema()
   {
-    SchemaDefinition schemaDefinition = SchemaDefinition.getInstance();
+    MetaSchema schemaDefinition = MetaSchema.getInstance();
     schemaDefinition.loadCustomSchemaDefinition(ClassPathReferences.META_SCHEMA_JSON);
   }
 
@@ -44,9 +44,9 @@ public class SchemaDefinitionTest
                           AttributeNames.ATTRIBUTES})
   public void testSchemaValidationFailsOnMissingAttribute(String attributeName)
   {
-    SchemaDefinition schemaDefinition = SchemaDefinition.getInstance();
+    MetaSchema schemaDefinition = MetaSchema.getInstance();
     ((ObjectNode)schemaDefinition.getSchemaDocument()).remove(attributeName);
-    Assertions.assertThrows(InvalidSchemaException.class, schemaDefinition::validateCustomSchema);
+    Assertions.assertThrows(DocumentValidationException.class, schemaDefinition::validateCustomSchema);
   }
 
   /**
@@ -57,13 +57,13 @@ public class SchemaDefinitionTest
   @ValueSource(strings = {AttributeNames.NAME, AttributeNames.DESCRIPTION, AttributeNames.TYPE})
   public void testSchemaValidationFailsOnMissingAttributeInAttributes(String attributeName)
   {
-    SchemaDefinition schemaDefinition = SchemaDefinition.getInstance();
+    MetaSchema schemaDefinition = MetaSchema.getInstance();
     JsonNode attributes = JsonHelper.getArrayAttribute(schemaDefinition.getSchemaDocument(), AttributeNames.ATTRIBUTES)
                                     .orElseThrow(() -> new IllegalStateException());
     MatcherAssert.assertThat(attributes.size(), Matchers.greaterThan(0));
     attributes.forEach(attribute -> {
       ((ObjectNode)attribute).remove(attributeName);
     });
-    Assertions.assertThrows(InvalidSchemaException.class, schemaDefinition::validateCustomSchema);
+    Assertions.assertThrows(DocumentValidationException.class, schemaDefinition::validateCustomSchema);
   }
 }

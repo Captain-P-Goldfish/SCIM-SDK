@@ -3,7 +3,8 @@ package de.gold.scim.exceptions;
 import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.utils.HttpStatus;
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -12,7 +13,8 @@ import lombok.Data;
  * <br>
  * the base exception of all scim errors
  */
-@Data
+@Getter
+@Setter
 public abstract class ScimException extends RuntimeException
 {
 
@@ -31,10 +33,10 @@ public abstract class ScimException extends RuntimeException
    */
   protected String scimType;
 
-  public ScimException(String message, Throwable cause, String detail, Integer status, String scimType)
+  public ScimException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause);
-    this.detail = StringUtils.isBlank(detail) ? "" : detail;
+    this.detail = message;
     this.status = status == null ? HttpStatus.SC_INTERNAL_SERVER_ERROR : status;
     this.scimType = StringUtils.isBlank(scimType) ? null : scimType;
   }

@@ -61,4 +61,5 @@ public class ScimExceptionTest
   {
     Assertions.assertTrue(Modifier.isAbstract(ScimException.class.getModifiers()));
   }
+
 }
