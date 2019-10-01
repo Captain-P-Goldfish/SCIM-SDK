@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
@@ -92,7 +93,7 @@ public class SchemaValidatorTest
   public void testSchemaValidationForUserResourceSchema(String testName, JsonNode metaSchema, JsonNode jsonDocument)
   {
     log.trace(testName);
-    SchemaValidator.validateSchema(metaSchema, jsonDocument);
+    SchemaValidator.getValidatedSchema(metaSchema, jsonDocument);
   }
 
   /**
@@ -107,7 +108,7 @@ public class SchemaValidatorTest
 
     JsonHelper.removeAttribute(userSchema, attributeName);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(metaSchema, userSchema));
+                            () -> SchemaValidator.getValidatedSchema(metaSchema, userSchema));
   }
 
   /**
@@ -125,7 +126,7 @@ public class SchemaValidatorTest
 
     JsonHelper.removeAttribute(firstAttribute, attributeName);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(metaSchema, userSchema));
+                            () -> SchemaValidator.getValidatedSchema(metaSchema, userSchema));
   }
 
   /**
@@ -143,7 +144,7 @@ public class SchemaValidatorTest
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.writeValue(firstAttribute, attributeName, "unknown_value");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(metaSchema, userSchema));
+                            () -> SchemaValidator.getValidatedSchema(metaSchema, userSchema));
   }
 
   /**
@@ -160,7 +161,7 @@ public class SchemaValidatorTest
     arrayNode.add("bla");
     JsonHelper.replaceNode(userSchema, AttributeNames.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(metaSchema, userSchema));
+                            () -> SchemaValidator.getValidatedSchema(metaSchema, userSchema));
   }
 
   /**
@@ -175,7 +176,7 @@ public class SchemaValidatorTest
     IntNode idNode = new IntNode(new Random().nextInt());
     JsonHelper.replaceNode(userSchema, AttributeNames.ID, idNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(metaSchema, userSchema));
+                            () -> SchemaValidator.getValidatedSchema(metaSchema, userSchema));
   }
 
   /**
@@ -191,7 +192,7 @@ public class SchemaValidatorTest
 
     JsonHelper.writeValue(userResourceTypeSchema, attributeName, "oh happy day");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(resourceTypeSchema, userResourceTypeSchema));
+                            () -> SchemaValidator.getValidatedSchema(resourceTypeSchema, userResourceTypeSchema));
   }
 
   /**
@@ -206,7 +207,7 @@ public class SchemaValidatorTest
 
     addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
 
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchema(resourceTypeSchema, userResourceTypeSchema));
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.getValidatedSchema(resourceTypeSchema, userResourceTypeSchema));
   }
 
   /**
@@ -254,6 +255,31 @@ public class SchemaValidatorTest
     addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
 
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchema(resourceTypeSchema, userResourceTypeSchema));
+                            () -> SchemaValidator.getValidatedSchema(resourceTypeSchema, userResourceTypeSchema));
+  }
+
+  /**
+   * this test will show that the validation will also remove attributes that are not defined by the schema
+   */
+  @Test
+  public void testRemoveUnknownAttributes()
+  {
+    JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    JsonNode userResourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+
+    final String helloWorldKey = "helloWorld";
+    JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
+    ObjectNode meta = JsonHelper.getObjectAttribute(userResourceTypeSchema, AttributeNames.META)
+                                .orElseThrow(() -> new IllegalStateException("the document does not contain a meta"
+                                                                             + " attribute"));
+    JsonHelper.addAttribute(meta, helloWorldKey, new TextNode("hello world"));
+
+    JsonNode validatedSchema = SchemaValidator.getValidatedSchema(resourceTypeSchema, userResourceTypeSchema);
+    Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());
+    ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(validatedSchema, AttributeNames.SCHEMA_EXTENSIONS)
+                                           .orElseThrow(() -> new IllegalStateException("the document does not contain "
+                                                                                        + "an endpoint  attribute"));
+    ObjectNode schemaExtensionAttribute = (ObjectNode) schemaExtensions.get(0);
+    Assertions.assertFalse(JsonHelper.getSimpleAttribute(schemaExtensionAttribute, helloWorldKey).isPresent());
   }
 }

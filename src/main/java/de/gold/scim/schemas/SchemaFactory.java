@@ -28,7 +28,7 @@ public final class SchemaFactory
   private static void registerDefaultSchemas()
   {
     JsonNode userResource = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    SchemaValidator.validateSchema(MetaSchema.getInstance().getSchemaDocument(), userResource);
+    SchemaValidator.getValidatedSchema(MetaSchema.getInstance().getSchemaDocument(), userResource);
   }
 
   public static void registerNewSchema(URI resourceType, URI resourceSchema)

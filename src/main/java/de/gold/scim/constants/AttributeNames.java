@@ -45,6 +45,10 @@ public final class AttributeNames
 
   public static final String SCHEMA = "schema";
 
+  public static final String SCHEMA_EXTENSIONS = "schemaExtensions";
+
   public static final String ENDPOINT = "endpoint";
+
+  public static final String META = "meta";
 }
 

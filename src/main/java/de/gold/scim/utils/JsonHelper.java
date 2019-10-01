@@ -97,7 +97,7 @@ public final class JsonHelper
    * @param name the name of the json array attribute
    * @return the json array attribute or an empty if the attribute is not present
    */
-  public static Optional<JsonNode> getArrayAttribute(JsonNode jsonNode, String name)
+  public static Optional<ArrayNode> getArrayAttribute(JsonNode jsonNode, String name)
   {
     JsonNode attribute = Objects.requireNonNull(jsonNode, "jsonNode must not be null").get(name);
     if (attribute == null)
@@ -106,10 +106,33 @@ public final class JsonHelper
     }
     if (attribute.isArray())
     {
-      return Optional.of(attribute);
+      return Optional.of((ArrayNode)attribute);
     }
     throw IncompatibleAttributeException.builder()
                                         .message("attribute with name '" + name + "' is not of type array")
+                                        .build();
+  }
+
+  /**
+   * tries to get an json object from the given json node
+   * 
+   * @param jsonNode the json node from which the json object should be extracted
+   * @param name the name of the json object attribute
+   * @return the json object attribute or an empty if the attribute is not present
+   */
+  public static Optional<ObjectNode> getObjectAttribute(JsonNode jsonNode, String name)
+  {
+    JsonNode attribute = Objects.requireNonNull(jsonNode, "jsonNode must not be null").get(name);
+    if (attribute == null)
+    {
+      return Optional.empty();
+    }
+    if (attribute.isObject())
+    {
+      return Optional.of((ObjectNode)attribute);
+    }
+    throw IncompatibleAttributeException.builder()
+                                        .message("attribute with name '" + name + "' is not of type object")
                                         .build();
   }
 
@@ -135,7 +158,7 @@ public final class JsonHelper
    */
   public static <T> Optional<List<T>> getSimpleAttributeArray(JsonNode jsonNode, String attributeName, Class<T> type)
   {
-    Optional<JsonNode> simpleArrayOptional = getArrayAttribute(jsonNode, attributeName);
+    Optional<ArrayNode> simpleArrayOptional = getArrayAttribute(jsonNode, attributeName);
     if (!simpleArrayOptional.isPresent())
     {
       return Optional.empty();
