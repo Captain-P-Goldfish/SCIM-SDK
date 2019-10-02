@@ -40,7 +40,7 @@ public enum Uniqueness
   @Getter
   private String value;
 
-  private Uniqueness(String value)
+  Uniqueness(String value)
   {
     this.value = value;
   }

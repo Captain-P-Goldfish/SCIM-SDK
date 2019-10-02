@@ -24,6 +24,7 @@ import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.IncompatibleAttributeException;
 import de.gold.scim.exceptions.InternalServerErrorException;
 import de.gold.scim.exceptions.InvalidDateTimeRepresentationException;
+import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.TimeUtils;
 import lombok.AccessLevel;
@@ -59,22 +60,56 @@ public final class SchemaValidator
   @Getter(AccessLevel.PRIVATE)
   private ObjectNode validatedDocument;
 
-  private SchemaValidator(JsonNode deepCopy)
+  /**
+   * tells us if the schema is validated as request or as response
+   * 
+   * @see DirectionType
+   */
+  private DirectionType directionType;
+
+  /**
+   * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
+   * POST requests but invalid on PUT requests
+   */
+  private HttpMethod httpMethod;
+
+  private SchemaValidator(JsonNode deepCopy, DirectionType directionType, HttpMethod httpMethod)
   {
     this.validatedDocument = (ObjectNode)deepCopy;
+    this.directionType = directionType;
+    this.httpMethod = httpMethod;
   }
 
   /**
-   * the main method of this class. It will build an instance of schema validator will then validate the
-   * document with the given schema and returns a new document that conforms to the json meta schema definition
+   * This method will build an instance of schema validator will then validate the document with the given
+   * schema and returns a new document that conforms to the json meta schema definition.<br>
+   * the validation direction of this method is {@link DirectionType#RESPONSE}
    * 
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
    * @return the validated document that might have been reduced of some attributes
    */
-  public static JsonNode getValidatedSchema(JsonNode metaSchema, JsonNode document)
+  public static JsonNode validateSchemaForResponse(JsonNode metaSchema, JsonNode document)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(document.deepCopy());
+    SchemaValidator schemaValidator = new SchemaValidator(document.deepCopy(), DirectionType.RESPONSE, null);
+    schemaValidator.validateSchema(metaSchema, schemaValidator.getValidatedDocument());
+    return schemaValidator.getValidatedDocument();
+  }
+
+  /**
+   * This method will build an instance of schema validator will then validate the document with the given
+   * schema and returns a new document that conforms to the json meta schema definition <br>
+   * the validation direction of this method is {@link DirectionType#REQUEST}
+   * 
+   * @param metaSchema the json meta schema definition of the document
+   * @param document the document to validate
+   * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
+   *          types that are valid on POST requests but invalid on PUT requests
+   * @return the validated document that might have been reduced of some attributes
+   */
+  public static JsonNode validateSchemaForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
+  {
+    SchemaValidator schemaValidator = new SchemaValidator(document.deepCopy(), DirectionType.REQUEST, httpMethod);
     schemaValidator.validateSchema(metaSchema, schemaValidator.getValidatedDocument());
     return schemaValidator.getValidatedDocument();
   }
@@ -98,7 +133,11 @@ public final class SchemaValidator
     }
     catch (IncompatibleAttributeException ex)
     {
-      throw DocumentValidationException.builder().message(ex.getMessage()).cause(ex).build();
+      throw DocumentValidationException.builder()
+                                       .status(directionType.getHttpStatus())
+                                       .message(ex.getMessage())
+                                       .cause(ex)
+                                       .build();
     }
   }
 
@@ -114,21 +153,17 @@ public final class SchemaValidator
     final String idAttribute = AttributeNames.ID;
     final String metaSchemaWithouidMessage = "meta schema does not have an '" + idAttribute + "'-attribute";
     String metaSchemaId = JsonHelper.getSimpleAttribute(metaSchema, idAttribute)
-                                    .orElseThrow(() -> DocumentValidationException.builder()
-                                                                                  .message(metaSchemaWithouidMessage)
-                                                                                  .build());
+                                    .orElseThrow(() -> getException(metaSchemaWithouidMessage, null));
 
     final String schemasAttribute = AttributeNames.SCHEMAS;
     final String documentNoSchemasMessage = "document does not have a '" + schemasAttribute + "'-attribute";
     List<String> documentSchemas = JsonHelper.getSimpleAttributeArray(document, schemasAttribute)
-                                             .orElseThrow(() -> DocumentValidationException.builder()
-                                                                                           .message(documentNoSchemasMessage)
-                                                                                           .build());
+                                             .orElseThrow(() -> getException(documentNoSchemasMessage, null));
     if (!documentSchemas.contains(metaSchemaId))
     {
       final String errorMessage = "document can not be validated against schema with id '" + metaSchemaId
                                   + "' for id is missing in the '" + schemasAttribute + "'-list: " + documentSchemas;
-      throw DocumentValidationException.builder().message(errorMessage).build();
+      throw getException(errorMessage, null);
     }
     log.trace("meta schema with id {} does apply to document with schemas '{}'", metaSchemaId, documentSchemas);
   }
@@ -209,7 +244,7 @@ public final class SchemaValidator
       {
         final String errorMessage = "schema does not hold required attribute '" + metaAttributeDefinition.getName()
                                     + "'";
-        throw DocumentValidationException.builder().message(errorMessage).build();
+        throw getException(errorMessage, null);
       }
     }
   }
@@ -230,6 +265,7 @@ public final class SchemaValidator
     JsonNode metaSubAttributes = JsonHelper.getArrayAttribute(metaAttribute, attributeName)
                                            .orElseThrow(() -> DocumentValidationException.builder()
                                                                                          .message(errorMessage)
+                                                                                         .status(directionType.getHttpStatus())
                                                                                          .build());
     JsonNode documentSubAttributeArray = multiValuedComplexType.get(metaAttributeDefinition.getName());
     if (null == documentSubAttributeArray)
@@ -280,6 +316,7 @@ public final class SchemaValidator
     JsonNode subAttributes = JsonHelper.getArrayAttribute(metaAttribute, attributeName)
                                        .orElseThrow(() -> DocumentValidationException.builder()
                                                                                      .message(errorMessage)
+                                                                                     .status(directionType.getHttpStatus())
                                                                                      .build());
     JsonNode complexNode = complexAttribute.get(metaAttributeDefinition.getName());
     if (complexNode == null)
@@ -340,6 +377,7 @@ public final class SchemaValidator
         throw DocumentValidationException.builder()
                                          .message("value node '" + attributeDefinition.getName()
                                                   + "' is of unknown type. " + "Expected type is: " + type.getValue())
+                                         .status(directionType.getHttpStatus())
                                          .build();
     }
     log.trace("validated attribute '{}' as '{}' type, value is: {}",
@@ -347,6 +385,8 @@ public final class SchemaValidator
               type.getValue(),
               valueNode.toString());
     checkCanonicalValues(attributeDefinition, valueNode);
+    checkReturnedValue(attributeDefinition, valueNode);
+    checkMutabilityValue(attributeDefinition, valueNode);
   }
 
   /**
@@ -368,18 +408,12 @@ public final class SchemaValidator
     {
       for ( JsonNode node : valueNode )
       {
-        if (!isOfType.apply(node))
-        {
-          throw DocumentValidationException.builder().message(errorMessage).build();
-        }
+        checkAttributeValidity(isOfType.apply(node), errorMessage);
       }
     }
     else
     {
-      if (!isOfType.apply(valueNode))
-      {
-        throw DocumentValidationException.builder().message(errorMessage).build();
-      }
+      checkAttributeValidity(isOfType.apply(valueNode), errorMessage);
     }
   }
 
@@ -453,14 +487,10 @@ public final class SchemaValidator
         break;
       }
     }
-    if (!isValidReferenceType)
-    {
-      throw DocumentValidationException.builder()
-                                       .message("given value is not a valid reference type: " + valueNode.textValue()
-                                                + ": was expected to be of one of the following types: "
-                                                + attributeDefinition.getReferenceTypes())
-                                       .build();
-    }
+    checkAttributeValidity(isValidReferenceType,
+                           "given value is not a valid reference type: " + valueNode.textValue()
+                                                 + ": was expected to be of one of the following types: "
+                                                 + attributeDefinition.getReferenceTypes());
   }
 
   /**
@@ -483,7 +513,7 @@ public final class SchemaValidator
       final String errorMessage = "attribute with name '" + attributeDefinition.getName()
                                   + "' does not have one of the " + "canonicalValues: '"
                                   + attributeDefinition.getCanonicalValues() + "' actual value is: '" + value + "'";
-      throw DocumentValidationException.builder().message(errorMessage).build();
+      throw getException(errorMessage, null);
     }
   }
 
@@ -516,6 +546,7 @@ public final class SchemaValidator
     catch (InvalidDateTimeRepresentationException ex)
     {
       throw DocumentValidationException.builder()
+                                       .status(directionType.getHttpStatus())
                                        .message("given value is not a valid dateTime: " + textValue)
                                        .cause(ex)
                                        .build();
@@ -533,14 +564,194 @@ public final class SchemaValidator
     final String attributeName = AttributeNames.ATTRIBUTES;
     final String errorMessage = "meta schema is missing attribute '" + attributeName + "'";
     return JsonHelper.getArrayAttribute(metaSchema, attributeName)
-                     .orElseThrow(() -> InternalServerErrorException.builder().message(errorMessage).build());
+                     .orElseThrow(() -> InternalServerErrorException.builder()
+                                                                    .status(directionType.getHttpStatus())
+                                                                    .message(errorMessage)
+                                                                    .build());
+  }
+
+  /**
+   * will check the returned value of the schema validation. Only the existence of the node is checked not the
+   * value behind it. The value may still be null even if the value must be present in the response
+   * 
+   * @param metaAttributeDefinition the current meta attribute definition
+   * @param valueNode the value of the node
+   */
+  private void checkReturnedValue(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  {
+    Returned returned = metaAttributeDefinition.getReturned();
+
+    // if the current validation is based on a request the returned value must not be checked
+    if (DirectionType.REQUEST.equals(this.directionType))
+    {
+      return;
+    }
+
+    switch (returned)
+    {
+      case NEVER:
+        checkAttributeValidity(valueNode != null,
+                               "attribute '" + metaAttributeDefinition.getName() + "' is not"
+                                                  + " allowed to be returned within a response. Returned value is: "
+                                                  + returned.getValue());
+        break;
+      case ALWAYS:
+        checkAttributeValidity(valueNode == null,
+                               "attribute '" + metaAttributeDefinition.getName() + "' must be"
+                                                  + " present in response. Returned value is: " + returned.getValue());
+        break;
+      default:
+        // TODO must be coupled with requiredAttributes value from request and for until then this case will never
+        // fail
+        checkAttributeValidity(true, null);
+    }
+  }
+
+  /**
+   * will check on the mutability of a given attribute and will handle the attribute accordingly to its
+   * mutability
+   * 
+   * @param metaAttributeDefinition the meta attribute definition
+   * @param valueNode the document value of the meta attribute definition
+   */
+  private void checkMutabilityValue(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  {
+    if (DirectionType.REQUEST.equals(directionType))
+    {
+      checkMutabilityForRequest(metaAttributeDefinition, valueNode);
+    }
+    else
+    {
+      checkMutabilityForResponse(metaAttributeDefinition, valueNode);
+    }
+  }
+
+  /**
+   * will validate the mutability value of the attribute for a response based validation
+   *
+   * @param metaAttributeDefinition the attribute definition
+   * @param valueNode the value node to check
+   */
+  private void checkMutabilityForResponse(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  {
+    Mutability mutability = metaAttributeDefinition.getMutability();
+    switch (mutability)
+    {
+      case WRITE_ONLY:
+        if (valueNode != null)
+        {
+          // TODO remove attribute from response
+          log.warn("the attribute '{}' has a mutability of '{}' and should not be returned by the server",
+                   metaAttributeDefinition.getName(),
+                   mutability.getValue());
+        }
+        break;
+      default:
+        log.trace("attribute '{}' has no conflicts with mutability value '{}' on {} validation",
+                  metaAttributeDefinition.getName(),
+                  mutability.getValue(),
+                  DirectionType.RESPONSE);
+    }
+  }
+
+  /**
+   * will validate the mutability value of the attribute for a request based validation
+   *
+   * @param metaAttributeDefinition the attribute definition
+   * @param valueNode the value node to check
+   */
+  private void checkMutabilityForRequest(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  {
+    Mutability mutability = metaAttributeDefinition.getMutability();
+    switch (mutability)
+    {
+      case READ_ONLY:
+        // TODO value must be ignored and should be handled as not present within the schema. So it should be
+        // removed from the validated schema
+        log.warn("TODO attribute '{}' must be removed from request since it has a mutability of '{}'",
+                 metaAttributeDefinition.getName(),
+                 mutability.getValue());
+        break;
+      case IMMUTABLE:
+        String errorMessage = "attribute '" + metaAttributeDefinition.getName() + "' is " + mutability.getValue()
+                              + " and is therefore only allowed on " + HttpMethod.POST + " requests";
+        checkAttributeValidity(!HttpMethod.POST.equals(httpMethod) && valueNode != null, errorMessage);
+        break;
+      default:
+        log.trace("attribute '{}' has no conflicts with mutability value '{}' on {} validation",
+                  metaAttributeDefinition.getName(),
+                  mutability.getValue(),
+                  DirectionType.REQUEST);
+    }
+  }
+
+  /**
+   * checks if the expression is valid and throws an exception if not
+   * 
+   * @param aBoolean the value of the expression to be checked
+   * @param errorMessage the error message to display if the expression is false
+   */
+  private void checkAttributeValidity(Boolean aBoolean, String errorMessage)
+  {
+    if (!aBoolean)
+    {
+      throw getException(errorMessage, null);
+    }
+  }
+
+  /**
+   * builds an exception
+   * 
+   * @param errorMessage the error message of the exception
+   * @param cause the cause of this exception, may be null
+   * @return a document validation exception
+   */
+  private DocumentValidationException getException(String errorMessage, Exception cause)
+  {
+    return DocumentValidationException.builder()
+                                      .status(directionType.getHttpStatus())
+                                      .cause(cause)
+                                      .message(errorMessage)
+                                      .build();
+  }
+
+  /**
+   * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
+   * POST requests but invalid on PUT requests
+   */
+  protected enum HttpMethod
+  {
+    GET, POST, PUT, DELETE, PATCH
+  }
+
+  /**
+   * the direction type is used for validation. It tells us how a schema should be validated because there are
+   * some differences. The meta-attribute for example is a required attribute for the response and therefore has
+   * a readOnly mutability. In order to validate those attribute correctly we need to know if we validate the
+   * schema as a request or as a response
+   */
+  protected enum DirectionType
+  {
+    REQUEST(HttpStatus.SC_BAD_REQUEST), RESPONSE(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+
+    /**
+     * should be internal server error if the response validation fails and a bad request if the request
+     * validation fails
+     */
+    @Getter(AccessLevel.PRIVATE)
+    private int httpStatus;
+
+    DirectionType(int httpStatus)
+    {
+      this.httpStatus = httpStatus;
+    }
   }
 
   /**
    * holds the data of an attribute definition with the known values
    */
   @Data
-  protected static class AttributeDefinition
+  protected class AttributeDefinition
   {
 
     /**
@@ -585,19 +796,15 @@ public final class SchemaValidator
       final String nameAttribute = AttributeNames.NAME;
       final String nameErrorMessage = errorMessageBuilder.apply(nameAttribute);
       this.name = JsonHelper.getSimpleAttribute(jsonNode, nameAttribute)
-                            .orElseThrow(() -> DocumentValidationException.builder().message(nameErrorMessage).build());
+                            .orElseThrow(() -> getException(nameErrorMessage, null));
       final String typeAttribute = AttributeNames.TYPE;
       final String typeErrorMessage = errorMessageBuilder.apply(typeAttribute);
       this.type = Type.getByValue(JsonHelper.getSimpleAttribute(jsonNode, typeAttribute)
-                                            .orElseThrow(() -> DocumentValidationException.builder()
-                                                                                          .message(typeErrorMessage)
-                                                                                          .build()));
+                                            .orElseThrow(() -> getException(typeErrorMessage, null)));
       final String descriptionAttribute = AttributeNames.TYPE;
       final String descriptionErrorMessage = errorMessageBuilder.apply(descriptionAttribute);
       this.description = JsonHelper.getSimpleAttribute(jsonNode, descriptionAttribute)
-                                   .orElseThrow(() -> DocumentValidationException.builder()
-                                                                                 .message(descriptionErrorMessage)
-                                                                                 .build());
+                                   .orElseThrow(() -> getException(descriptionErrorMessage, null));
       this.mutability = Mutability.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.MUTABILITY)
                                                         .orElse(null));
       this.returned = Returned.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RETURNED)

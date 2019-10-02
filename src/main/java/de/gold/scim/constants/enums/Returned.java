@@ -43,7 +43,7 @@ public enum Returned
   @Getter
   private String value;
 
-  private Returned(String value)
+  Returned(String value)
   {
     this.value = value;
   }

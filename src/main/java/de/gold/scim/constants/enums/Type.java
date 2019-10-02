@@ -32,7 +32,7 @@ public enum Type
   @Getter
   private String value;
 
-  private Type(String value)
+  Type(String value)
   {
     this.value = value;
   }

@@ -33,7 +33,7 @@ public enum ReferenceTypes
   @Getter
   private String value;
 
-  private ReferenceTypes(String value)
+  ReferenceTypes(String value)
   {
     this.value = value;
   }

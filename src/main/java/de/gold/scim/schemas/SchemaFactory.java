@@ -3,10 +3,6 @@ package de.gold.scim.schemas;
 import java.io.InputStream;
 import java.net.URI;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import de.gold.scim.constants.ClassPathReferences;
-import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -27,8 +23,7 @@ public final class SchemaFactory
    */
   private static void registerDefaultSchemas()
   {
-    JsonNode userResource = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    SchemaValidator.getValidatedSchema(MetaSchema.getInstance().getSchemaDocument(), userResource);
+
   }
 
   public static void registerNewSchema(URI resourceType, URI resourceSchema)

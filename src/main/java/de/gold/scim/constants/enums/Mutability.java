@@ -35,7 +35,7 @@ public enum Mutability
   @Getter
   private String value;
 
-  private Mutability(String value)
+  Mutability(String value)
   {
     this.value = value;
   }

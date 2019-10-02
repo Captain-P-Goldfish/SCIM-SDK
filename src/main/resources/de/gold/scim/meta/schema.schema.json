@@ -4,17 +4,6 @@
   "description": "Specifies the schema that describes a SCIM schema",
   "attributes": [
     {
-      "name": "schemas",
-      "type": "string",
-      "multiValued": true,
-      "description": "The definition of the defining schema resource.",
-      "required": true,
-      "caseExact": true,
-      "mutability": "readOnly",
-      "returned": "default",
-      "uniqueness": "none"
-    },
-    {
       "name": "id",
       "type": "string",
       "multiValued": false,
