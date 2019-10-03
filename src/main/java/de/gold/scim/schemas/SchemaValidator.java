@@ -720,7 +720,7 @@ public final class SchemaValidator
    * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
    * POST requests but invalid on PUT requests
    */
-  protected enum HttpMethod
+  public enum HttpMethod
   {
     POST, PUT, PATCH
   }

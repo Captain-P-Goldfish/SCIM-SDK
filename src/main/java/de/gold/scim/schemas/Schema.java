@@ -91,9 +91,7 @@ public class Schema
     Optional.of(name).ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(s)));
     Optional.of(description)
             .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.DESCRIPTION, new TextNode(s)));
-    List<JsonNode> attributes = this.attributes.stream()
-                                               .map(SchemaAttribute::toJsonNode)
-                                               .collect(Collectors.toList());
+    List<JsonNode> attributes = this.attributes.stream().map(SchemaAttribute::toJsonNode).collect(Collectors.toList());
     JsonHelper.addAttribute(objectNode, AttributeNames.ATTRIBUTES, new ArrayNode(JsonNodeFactory.instance, attributes));
     return objectNode;
   }

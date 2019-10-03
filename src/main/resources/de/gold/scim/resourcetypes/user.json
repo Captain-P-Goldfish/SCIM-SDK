@@ -12,9 +12,5 @@
       "schema": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
       "required": false
     }
-  ],
-  "meta": {
-    "location": "/ResourceTypes/User",
-    "resourceType": "ResourceType"
-  }
+  ]
 }
