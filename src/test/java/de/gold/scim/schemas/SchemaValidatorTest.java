@@ -1,10 +1,17 @@
 package de.gold.scim.schemas;
 
+import static de.gold.scim.schemas.SchemaValidator.HttpMethod.PATCH;
+import static de.gold.scim.schemas.SchemaValidator.HttpMethod.POST;
+import static de.gold.scim.schemas.SchemaValidator.HttpMethod.PUT;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
@@ -24,6 +31,10 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.constants.enums.Mutability;
+import de.gold.scim.constants.enums.Returned;
+import de.gold.scim.constants.enums.Type;
+import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -67,9 +78,12 @@ public class SchemaValidatorTest
   {
     return Stream.of(Arguments.of(OffsetDateTime.now().withNano(0).toString()),
                      Arguments.of(Instant.now().truncatedTo(ChronoUnit.SECONDS).toString()),
-                     Arguments.of(Instant.now().atOffset(ZoneOffset.ofHours(-10)).withNano(0).toString()),
-                     Arguments.of(LocalDateTime.now().toString()),
-                     Arguments.of(LocalDateTime.now().withNano(0).toString()),
+                     Arguments.of(Instant.now()
+                                         .atOffset(ZoneOffset.ofHours(-10))
+                                         .withNano(0)
+                                         .format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(LocalDateTime.now().withNano(0).format(DateTimeFormatter.ISO_DATE_TIME)),
                      Arguments.of("2019-09-29T24:00:00"),
                      Arguments.of("2019-09-29T24:00:00"),
                      Arguments.of("2019-09-29T24:00:00.0000000"),
@@ -82,8 +96,24 @@ public class SchemaValidatorTest
   }
 
   /**
+   * these arguments are used for a test that will verify that attributes are getting removed under specific
+   * circumstances in the request and the response
+   */
+  private static Stream<Arguments> getAttributeDefinitionArguments()
+  {
+    return Stream.of(Arguments.of(Mutability.WRITE_ONLY, Returned.DEFAULT, null, null),
+                     Arguments.of(Mutability.READ_ONLY, Returned.DEFAULT, null, null),
+                     Arguments.of(Mutability.READ_WRITE, Returned.NEVER, null, null),
+                     Arguments.of(Mutability.IMMUTABLE, Returned.DEFAULT, PUT, null),
+                     Arguments.of(Mutability.IMMUTABLE, Returned.DEFAULT, PATCH, null),
+                     Arguments.of(Mutability.READ_ONLY, Returned.DEFAULT, POST, null),
+                     Arguments.of(Mutability.READ_WRITE, Returned.DEFAULT, null, Arrays.asList("id")),
+                     Arguments.of(Mutability.READ_WRITE, Returned.REQUEST, null, Arrays.asList("id")));
+  }
+
+  /**
    * validates the schemata from the classpath
-   * 
+   *
    * @param testName the name of the test
    * @param metaSchema the meta schema that describes the given json document
    * @param jsonDocument the json document that is validated against the schema
@@ -215,7 +245,7 @@ public class SchemaValidatorTest
   /**
    * this method takes a dateTime value, a meta schema and a document and will add a timestamp definition to the
    * meta-schema, and the timestamp value to the document for validation
-   * 
+   *
    * @param dateTime the date time value that should be added to the document
    * @param metaSchema the meta schema that will need a datetime definition
    * @param document the document that must hold the datetime value
@@ -223,19 +253,14 @@ public class SchemaValidatorTest
   private void addTimestampToMetaSchemaAndDocument(String dateTime, JsonNode metaSchema, JsonNode document)
   {
     final String createdAttributeName = "created";
-    // @formatter:off
-    String dateTimeTypeString = "{" +
-                                  "   \"name\": \"" + createdAttributeName + "\",\n" +
-                                  "   \"type\": \"dateTime\",\n" +
-                                  "   \"multiValued\": false,\n" +
-                                  "   \"description\": \"created timestamp\",\n" +
-                                  "   \"required\": true,\n" +
-                                  "   \"caseExact\": false,\n" +
-                                  "   \"mutability\": \"readWrite\",\n" +
-                                  "   \"returned\": \"default\",\n" +
-                                  "   \"uniqueness\": \"none\"\n" +
-                                  "}";
-    // @formatter:on
+    String dateTimeTypeString = getAttributeString(createdAttributeName,
+                                                   Type.DATE_TIME,
+                                                   false,
+                                                   true,
+                                                   false,
+                                                   Mutability.READ_WRITE,
+                                                   Returned.DEFAULT,
+                                                   Uniqueness.NONE);
     JsonNode metaAttributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
     JsonNode createMetaAttribute = JsonHelper.readJsonDocument(dateTimeTypeString);
     JsonHelper.addAttributeToArray(metaAttributes, createMetaAttribute);
@@ -287,5 +312,74 @@ public class SchemaValidatorTest
 
     Assertions.assertFalse(JsonHelper.getObjectAttribute(validatedSchema, AttributeNames.META).isPresent(),
                            "meta attribute must be removed from validated request-document");
+  }
+
+  /**
+   * this test will show that {@link Mutability#IMMUTABLE} attributes will be removed from PUT-requests
+   */
+  @ParameterizedTest
+  @MethodSource("getAttributeDefinitionArguments")
+  public void testRemoveMutabilityIMMUTABLEAttributesFromResquest(Mutability mutability,
+                                                                  Returned returned,
+                                                                  SchemaValidator.HttpMethod httpMethod,
+                                                                  List<String> requiredAttributes)
+  {
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    JsonNode document = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+
+    final String attributeName = "newAttribute";
+    String attributeDefinition = getAttributeString(attributeName,
+                                                    Type.STRING,
+                                                    false,
+                                                    false,
+                                                    false,
+                                                    mutability,
+                                                    returned,
+                                                    Uniqueness.NONE);
+    JsonNode metaAttributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
+    JsonNode createMetaAttribute = JsonHelper.readJsonDocument(attributeDefinition);
+    JsonHelper.addAttributeToArray(metaAttributes, createMetaAttribute);
+    TextNode textNode = new TextNode("some value");
+    JsonHelper.addAttribute(document, attributeName, textNode);
+
+    JsonNode validatedNode;
+    if (httpMethod == null)
+    {
+      validatedNode = SchemaValidator.validateSchemaForResponse(metaSchema, document);
+    }
+    else
+    {
+      validatedNode = SchemaValidator.validateSchemaForRequest(metaSchema, document, httpMethod);
+    }
+    Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedNode, attributeName).isPresent(),
+                           "attribute '" + attributeName + "' must not be present in the validated document");
+    if (requiredAttributes != null)
+    {
+      Assertions.fail("TODO attribute '" + attributeName + "' must not be present if not required");
+    }
+  }
+
+  private String getAttributeString(String name,
+                                    Type type,
+                                    boolean multiValued,
+                                    boolean required,
+                                    boolean caseExact,
+                                    Mutability mutability,
+                                    Returned returned,
+                                    Uniqueness uniqueness)
+  {
+    // @formatter:off
+    return "{" +
+           "   \"name\": \"" + name + "\",\n" +
+           "   \"type\": \"" + type.getValue() + "\",\n" +
+           "   \"multiValued\": " + multiValued+ ",\n" +
+           "   \"description\": \"some description\",\n" +
+           "   \"required\": " + required + ",\n" +
+           "   \"caseExact\": " + caseExact + ",\n" +
+           "   \"mutability\": \"" + mutability.getValue() + "\",\n" +
+           "   \"returned\": \"" + returned.getValue() + "\",\n" +
+           "   \"uniqueness\": \"" + uniqueness.getValue() + "\"\n" +
+           "}";
+    // @formatter:on
   }
 }

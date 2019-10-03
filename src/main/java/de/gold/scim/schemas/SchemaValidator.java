@@ -62,7 +62,7 @@ public final class SchemaValidator
 
   /**
    * tells us if the schema is validated as request or as response
-   * 
+   *
    * @see DirectionType
    */
   private DirectionType directionType;
@@ -84,7 +84,7 @@ public final class SchemaValidator
    * This method will build an instance of schema validator will then validate the document with the given
    * schema and returns a new document that conforms to the json meta schema definition.<br>
    * the validation direction of this method is {@link DirectionType#RESPONSE}
-   * 
+   *
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
    * @return the validated document that might have been reduced of some attributes
@@ -100,7 +100,7 @@ public final class SchemaValidator
    * This method will build an instance of schema validator will then validate the document with the given
    * schema and returns a new document that conforms to the json meta schema definition <br>
    * the validation direction of this method is {@link DirectionType#REQUEST}
-   * 
+   *
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
    * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
@@ -214,7 +214,7 @@ public final class SchemaValidator
 
   /**
    * this method will remove all attributes from the given object that are not defined within the meta schema
-   * 
+   *
    * @param metaAttributeDefinitionList a list of all meta attribute names that are allowed for the document
    * @param document the document that should have unknown attributes removed
    */
@@ -573,7 +573,7 @@ public final class SchemaValidator
   /**
    * will check the returned value of the schema validation. Only the existence of the node is checked not the
    * value behind it. The value may still be null even if the value must be present in the response
-   * 
+   *
    * @param metaAttributeDefinition the current meta attribute definition
    * @param valueNode the value of the node
    */
@@ -590,10 +590,13 @@ public final class SchemaValidator
     switch (returned)
     {
       case NEVER:
-        checkAttributeValidity(valueNode != null,
-                               "attribute '" + metaAttributeDefinition.getName() + "' is not"
-                                                  + " allowed to be returned within a response. Returned value is: "
-                                                  + returned.getValue());
+        if (valueNode != null)
+        {
+          log.warn("removing attribute '{}' from response because returned value is '{}'",
+                   metaAttributeDefinition.getName(),
+                   returned);
+          // TODO remove attribute
+        }
         break;
       case ALWAYS:
         checkAttributeValidity(valueNode == null,
@@ -610,7 +613,7 @@ public final class SchemaValidator
   /**
    * will check on the mutability of a given attribute and will handle the attribute accordingly to its
    * mutability
-   * 
+   *
    * @param metaAttributeDefinition the meta attribute definition
    * @param valueNode the document value of the meta attribute definition
    */
@@ -641,7 +644,7 @@ public final class SchemaValidator
         if (valueNode != null)
         {
           // TODO remove attribute from response
-          log.warn("the attribute '{}' has a mutability of '{}' and should not be returned by the server",
+          log.warn("removing attribute '{}' because of its mutability of '{}'",
                    metaAttributeDefinition.getName(),
                    mutability.getValue());
         }
@@ -666,8 +669,6 @@ public final class SchemaValidator
     switch (mutability)
     {
       case READ_ONLY:
-        // TODO value must be ignored and should be handled as not present within the schema. So it should be
-        // removed from the validated schema
         log.warn("TODO attribute '{}' must be removed from request since it has a mutability of '{}'",
                  metaAttributeDefinition.getName(),
                  mutability.getValue());
@@ -687,7 +688,7 @@ public final class SchemaValidator
 
   /**
    * checks if the expression is valid and throws an exception if not
-   * 
+   *
    * @param aBoolean the value of the expression to be checked
    * @param errorMessage the error message to display if the expression is false
    */
@@ -701,7 +702,7 @@ public final class SchemaValidator
 
   /**
    * builds an exception
-   * 
+   *
    * @param errorMessage the error message of the exception
    * @param cause the cause of this exception, may be null
    * @return a document validation exception
@@ -721,7 +722,7 @@ public final class SchemaValidator
    */
   protected enum HttpMethod
   {
-    GET, POST, PUT, DELETE, PATCH
+    POST, PUT, PATCH
   }
 
   /**
@@ -735,7 +736,7 @@ public final class SchemaValidator
     REQUEST(HttpStatus.SC_BAD_REQUEST), RESPONSE(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
     /**
-     * should be internal server error if the response validation fails and a bad request if the request
+     * should be interna l server error if the response validation fails and a bad request if the request
      * validation fails
      */
     @Getter(AccessLevel.PRIVATE)
@@ -810,7 +811,7 @@ public final class SchemaValidator
       this.returned = Returned.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RETURNED)
                                                     .orElse(null));
       this.uniqueness = Uniqueness.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.UNIQUENESS)
-                                                        .orElse("none"));
+                                                        .orElse(Uniqueness.NONE.getValue()));
       this.multiValued = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.MULTI_VALUED, Boolean.class)
                                    .orElse(false);
       this.required = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.REQUIRED, Boolean.class).orElse(false);
