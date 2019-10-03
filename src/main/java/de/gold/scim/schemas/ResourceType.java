@@ -19,6 +19,7 @@ import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
+import lombok.AccessLevel;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -38,7 +39,11 @@ import lombok.Setter;
 public class ResourceType
 {
 
-  private static final Schema RESOURCE_META_SCHEMA = SchemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
+  /**
+   * used for unit tests in order to prevent application context pollution
+   */
+  @Setter(AccessLevel.PROTECTED) // this is explicitly for unit tests
+  private static SchemaFactory schemaFactory = SchemaFactory.getInstance();
 
   /**
    * the references to the meta schemas that describe this endpoint definition
@@ -108,7 +113,7 @@ public class ResourceType
    */
   public List<Schema> getMetaSchemata()
   {
-    return schemas.stream().map(SchemaFactory::getMetaSchema).collect(Collectors.toList());
+    return schemas.stream().map(id1 -> schemaFactory.getMetaSchema(id1)).collect(Collectors.toList());
   }
 
   /**
@@ -116,7 +121,7 @@ public class ResourceType
    */
   public Schema getResourceSchema()
   {
-    return SchemaFactory.getResourceSchema(schema);
+    return schemaFactory.getResourceSchema(schema);
   }
 
   /**
@@ -127,7 +132,7 @@ public class ResourceType
     return schemaExtensions.stream()
                            .filter(SchemaExtension::isRequired)
                            .map(SchemaExtension::getSchema)
-                           .map(SchemaFactory::getResourceSchema)
+                           .map(schemaFactory::getResourceSchema)
                            .collect(Collectors.toList());
   }
 
@@ -139,7 +144,7 @@ public class ResourceType
     return schemaExtensions.stream()
                            .filter(schemaExtension -> !schemaExtension.isRequired())
                            .map(SchemaExtension::getSchema)
-                           .map(SchemaFactory::getResourceSchema)
+                           .map(schemaFactory::getResourceSchema)
                            .collect(Collectors.toList());
   }
 

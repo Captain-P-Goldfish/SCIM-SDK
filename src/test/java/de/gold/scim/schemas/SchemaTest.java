@@ -1,12 +1,11 @@
 package de.gold.scim.schemas;
 
+import de.gold.scim.constants.ClassPathReferences;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -21,6 +20,20 @@ class SchemaTest
 {
 
   /**
+   * a unit test schema factory instance
+   */
+  private SchemaFactory schemaFactory;
+
+  /**
+   * initializes the schema factory instance for unit tests
+   */
+  @BeforeEach
+  public void initialize()
+  {
+    schemaFactory = Assertions.assertDoesNotThrow(SchemaFactory::getUnitTestInstance);
+  }
+
+  /**
    * this test will assure that the default schemata will be read correctly from the classpath
    */
   @ParameterizedTest
@@ -29,10 +42,10 @@ class SchemaTest
                           "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig"})
   public void testGetDefaultMetaSchemata(String schemaId)
   {
-    String json = SchemaFactory.getMetaSchema(schemaId).toString();
-    log.warn(json);
-    JsonNode jsonNode = JsonHelper.readJsonDocument(json);
-    Assertions.assertFalse(jsonNode.get(AttributeNames.ATTRIBUTES).isObject());
+    Schema resourceSchema = schemaFactory.getMetaSchema(schemaId);
+    Assertions.assertNotNull(resourceSchema);
+    String json = resourceSchema.toString();
+    Assertions.assertDoesNotThrow(() -> JsonHelper.readJsonDocument(json));
   }
 
   /**
@@ -42,9 +55,11 @@ class SchemaTest
   @ValueSource(strings = {"urn:ietf:params:scim:schemas:core:2.0:User", "urn:ietf:params:scim:schemas:core:2.0:Group"})
   public void testGetDefaultResourceSchemata(String schemaId)
   {
-    String json = SchemaFactory.getResourceSchema(schemaId).toString();
-    log.warn(json);
-    JsonNode jsonNode = JsonHelper.readJsonDocument(json);
-    Assertions.assertFalse(jsonNode.get(AttributeNames.ATTRIBUTES).isTextual());
+    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON));
+    Schema resourceSchema = schemaFactory.getResourceSchema(schemaId);
+    Assertions.assertNotNull(resourceSchema);
+    String json = resourceSchema.toString();
+    Assertions.assertDoesNotThrow(() -> JsonHelper.readJsonDocument(json));
   }
 }

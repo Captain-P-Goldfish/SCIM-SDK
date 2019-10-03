@@ -297,10 +297,6 @@ public class SchemaValidatorTest
 
     final String helloWorldKey = "helloWorld";
     JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
-    ObjectNode meta = JsonHelper.getObjectAttribute(userResourceTypeSchema, AttributeNames.META)
-                                .orElseThrow(() -> new IllegalStateException("the document does not contain a meta"
-                                                                             + " attribute"));
-    JsonHelper.addAttribute(meta, helloWorldKey, new TextNode("hello world"));
 
     JsonNode validatedSchema = SchemaValidator.validateSchemaForResponse(resourceTypeSchema, userResourceTypeSchema);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());

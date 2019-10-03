@@ -15,8 +15,6 @@ import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -26,22 +24,33 @@ import lombok.NoArgsConstructor;
  * this class is used to register and get resource types. With this utility class the SCIM endpoints can be
  * extended by additional resource types, resource schemata and resource extensions
  */
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceTypeFactory
 {
+
+  /**
+   * the singleton instance
+   */
+  private static final ResourceTypeFactory INSTANCE = new ResourceTypeFactory(SchemaFactory.getInstance());
 
   /**
    * the resource type registry.<br>
    * The key will be the uri to the resource schema that represents the resource type. Like this the resource
    * type can be easier found if a request comes in
    */
-  private static final Map<String, ResourceType> RESOURCE_TYPES = new HashMap<>();
+  private final Map<String, ResourceType> resourceTypes = new HashMap<>();
 
-  /*
+  /**
+   * this instance is hold in order for unit tests to be able to write tests without polluting the whole
+   * application context which might lead to unpredictable unit test errors
+   */
+  private SchemaFactory schemaFactory;
+
+  /**
    * will register the default resource types
    */
-  static
+  private ResourceTypeFactory(SchemaFactory schemaFactory)
   {
+    this.schemaFactory = schemaFactory;
     registerResourceType(JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
                          JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
                          JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
@@ -50,19 +59,33 @@ public final class ResourceTypeFactory
   }
 
   /**
+   * @return the singleton instance
+   */
+  public static ResourceTypeFactory getInstance()
+  {
+    return INSTANCE;
+  }
+
+  /**
+   * this method is explicitly for unit tests
+   */
+  static ResourceTypeFactory getUnitTestInstance()
+  {
+    return new ResourceTypeFactory(SchemaFactory.getUnitTestInstance());
+  }
+
+  /**
    * @param resourceType the resource type as json document
    * @param resourceSchema the resource schema definition as json object these object will also be registered
    * @param resourceSchemaExtensions the extensions that will be appended to the {@code resourceSchema}
    *          definition
    */
-  public static void registerResourceType(JsonNode resourceType,
-                                          JsonNode resourceSchema,
-                                          JsonNode... resourceSchemaExtensions)
+  public void registerResourceType(JsonNode resourceType, JsonNode resourceSchema, JsonNode... resourceSchemaExtensions)
   {
     addSchemaExtensions(resourceType, resourceSchemaExtensions);
-    SchemaFactory.registerResourceSchema(resourceSchema);
+    schemaFactory.registerResourceSchema(resourceSchema);
     ResourceType resourceTypeObject = new ResourceType(resourceType);
-    RESOURCE_TYPES.put(resourceTypeObject.getSchema(), resourceTypeObject);
+    resourceTypes.put(resourceTypeObject.getSchema(), resourceTypeObject);
   }
 
   /**
@@ -72,7 +95,7 @@ public final class ResourceTypeFactory
    * @param resourceType the resource type definition
    * @param resourceSchemaExtensions an array of resource extensions if extensions are present
    */
-  private static void addSchemaExtensions(JsonNode resourceType, JsonNode[] resourceSchemaExtensions)
+  private void addSchemaExtensions(JsonNode resourceType, JsonNode[] resourceSchemaExtensions)
   {
     if (resourceSchemaExtensions != null && resourceSchemaExtensions.length > 0)
     {
@@ -84,6 +107,7 @@ public final class ResourceTypeFactory
         String extensionId = JsonHelper.getSimpleAttribute(resourceSchemaExtension, AttributeNames.ID)
                                        .orElseThrow(() -> getAttributeMissingException(AttributeNames.ID));
         schemaExtensions.add(new TextNode(extensionId));
+        schemaFactory.registerResourceSchema(resourceSchemaExtension);
       }
       JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS, schemaExtensions);
     }
@@ -93,7 +117,7 @@ public final class ResourceTypeFactory
    * @param attributeName the name of the attribute that was missing
    * @return creates an invalid resource type exception
    */
-  private static InvalidResourceTypeException getAttributeMissingException(String attributeName)
+  private InvalidResourceTypeException getAttributeMissingException(String attributeName)
   {
     String errorMessage = "schema extension is missing '" + attributeName + "' attribute";
     return new InvalidResourceTypeException(errorMessage, null, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
@@ -111,13 +135,13 @@ public final class ResourceTypeFactory
    * @param resourceSchemaExtensions the extensions that will be appended to the {@code resourceSchema}
    *          definition
    */
-  public static void registerResourceType(String id,
-                                          String name,
-                                          String description,
-                                          String schema,
-                                          String endpoint,
-                                          JsonNode resourceSchema,
-                                          JsonNode... resourceSchemaExtensions)
+  public void registerResourceType(String id,
+                                   String name,
+                                   String description,
+                                   String schema,
+                                   String endpoint,
+                                   JsonNode resourceSchema,
+                                   JsonNode... resourceSchemaExtensions)
   {
     ObjectNode resourceType = new ObjectNode(JsonNodeFactory.instance);
     ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
@@ -136,8 +160,8 @@ public final class ResourceTypeFactory
    *
    * @param schemaUri the schema uri of a resource e.g. {@link de.gold.scim.constants.SchemaUris#USER_URI}
    */
-  public static ResourceType getResourceType(String schemaUri)
+  public ResourceType getResourceType(String schemaUri)
   {
-    return RESOURCE_TYPES.get(schemaUri);
+    return resourceTypes.get(schemaUri);
   }
 }

@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -26,6 +27,21 @@ public class ResourceTypeTest
 {
 
   /**
+   * a unit test schema factory instance
+   */
+  private SchemaFactory schemaFactory;
+
+  /**
+   * initializes the schema factory instance for unit tests
+   */
+  @BeforeEach
+  public void initialize()
+  {
+    schemaFactory = Assertions.assertDoesNotThrow(SchemaFactory::getUnitTestInstance);
+    ResourceType.setSchemaFactory(schemaFactory);
+  }
+
+  /**
    * this test will simply test if a resource type object will be built successfully and if the values are set
    * correctly
    */
@@ -42,14 +58,14 @@ public class ResourceTypeTest
     Assertions.assertEquals(SchemaUris.USER_URI, resourceType.getSchema());
     Assertions.assertEquals("/Users", resourceType.getEndpoint());
 
-    Assertions.assertEquals(SchemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceType.getResourceSchema());
+    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceType.getResourceSchema());
     List<Schema> metaSchemata = resourceType.getMetaSchemata();
     Assertions.assertEquals(1, metaSchemata.size());
-    Assertions.assertEquals(SchemaFactory.getResourceSchema(SchemaUris.RESOURCE_TYPE_URI), metaSchemata.get(0));
+    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.RESOURCE_TYPE_URI), metaSchemata.get(0));
 
     List<Schema> schemaExtensions = resourceType.getNotRequiredResourceSchemaExtensions();
     Assertions.assertEquals(1, schemaExtensions.size());
-    Assertions.assertEquals(SchemaFactory.getResourceSchema(SchemaUris.ENTERPRISE_USER_URI), schemaExtensions.get(0));
+    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.ENTERPRISE_USER_URI), schemaExtensions.get(0));
 
     Assertions.assertEquals(0, resourceType.getRequiredResourceSchemaExtensions().size());
   }
@@ -76,6 +92,7 @@ public class ResourceTypeTest
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonHelper.removeAttribute(userResourceType, attributeName);
-    Assertions.assertThrows(InvalidResourceTypeException.class, () -> new ResourceType(userResourceType));
+    Assertions.assertThrows(InvalidResourceTypeException.class,
+                            () -> new ResourceType(userResourceType));
   }
 }
