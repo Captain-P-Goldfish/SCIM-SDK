@@ -35,7 +35,7 @@ public final class JsonHelper
 
   /**
    * will read a json document from the classpath
-   * 
+   *
    * @param classPathLocation the location of the document
    * @return the parsed json document
    */
@@ -54,7 +54,7 @@ public final class JsonHelper
 
   /**
    * will read a json document from a file
-   * 
+   *
    * @param file the location of the document
    * @return the parsed json document
    */
@@ -73,7 +73,7 @@ public final class JsonHelper
 
   /**
    * will read a json document from the given string
-   * 
+   *
    * @param jsonDocument the direct json representation
    * @return the parsed json document
    */
@@ -92,7 +92,7 @@ public final class JsonHelper
 
   /**
    * tries to get an array from the given json node
-   * 
+   *
    * @param jsonNode the json node from which the array should be extracted
    * @param name the name of the json array attribute
    * @return the json array attribute or an empty if the attribute is not present
@@ -115,7 +115,7 @@ public final class JsonHelper
 
   /**
    * tries to get an json object from the given json node
-   * 
+   *
    * @param jsonNode the json node from which the json object should be extracted
    * @param name the name of the json object attribute
    * @return the json object attribute or an empty if the attribute is not present
@@ -138,7 +138,7 @@ public final class JsonHelper
 
   /**
    * extracts a list of simple attributes from the given json node
-   * 
+   *
    * @param jsonNode the json document containing an array with simple attributes
    * @param attributeName the name of the attribute that is an array with simple attributes
    * @return a list of attributes or an empty
@@ -150,7 +150,7 @@ public final class JsonHelper
 
   /**
    * extracts a list of simple attributes from the given json node
-   * 
+   *
    * @param jsonNode the json document containing an array with simple attributes
    * @param attributeName the name of the attribute that is an array with simple attributes
    * @param type the type of the values within the array
@@ -191,7 +191,7 @@ public final class JsonHelper
 
   /**
    * will get a string attribute with the given name from the given json node
-   * 
+   *
    * @param jsonNode the json node to get the attribute from
    * @param name the name of the attribute
    * @param type the type of the attribute to return
@@ -219,7 +219,7 @@ public final class JsonHelper
 
   /**
    * will remove an attribute from the given jsonNode
-   * 
+   *
    * @param jsonNode the json node from which the attribute should be removed
    * @param attributeName the name of the attribute to remove
    */
@@ -253,7 +253,7 @@ public final class JsonHelper
 
   /**
    * will remove an attribute from the given jsonNode
-   * 
+   *
    * @param jsonNode the json node from which the attribute should be removed
    * @param attributeName the name of the attribute to remove
    * @param value the value of the new replaced node
@@ -266,7 +266,7 @@ public final class JsonHelper
 
   /**
    * will remove an attribute from the given jsonNode
-   * 
+   *
    * @param jsonNode the json node from which the attribute should be removed
    * @param attributeName the name of the attribute to remove
    * @param replaceNode the new node that should be used as replacement
@@ -278,7 +278,7 @@ public final class JsonHelper
 
   /**
    * gets the simple attribute of the given json node
-   * 
+   *
    * @param attribute the json node that should be a simple attribute
    * @param type the type to extract
    * @return the extracted attribute or an empty

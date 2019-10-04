@@ -1,0 +1,43 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:gold:params:scim:schemas:custom:2.0:Role",
+  "name": "Role",
+  "description": "Access Role",
+  "attributes": [
+    {
+      "name": "id",
+      "type": "string",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": true
+    },
+    {
+      "name": "externalId",
+      "type": "string",
+      "description": "A String that is an identifier for the resource as defined by the provisioning client.The service provider MUST always interpret the externalId as scoped to the provisioning domain.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true
+    },
+    {
+      "name": "displayName",
+      "type": "string",
+      "description": "A human-readable name for the Role. REQUIRED.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false
+    }
+  ]
+}

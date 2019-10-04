@@ -1,0 +1,13 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Group"
+  ],
+  "externalId": "102030405060708090",
+  "displayName": "admin",
+  "members": [
+    {
+      "value": "${userId}",
+      "type": "User"
+    }
+  ]
+}

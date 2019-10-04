@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,6 +17,8 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.constants.ScimType;
+import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.HttpStatus;
@@ -24,6 +28,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -33,8 +38,9 @@ import lombok.Setter;
  * represents a resource type in SCIM. A resource type defines an endpoint definition that can be used by
  * clients.
  */
-@Getter
-@Setter
+@Slf4j
+@Getter(AccessLevel.PROTECTED)
+@Setter(AccessLevel.PROTECTED)
 @EqualsAndHashCode
 public class ResourceType
 {
@@ -87,18 +93,26 @@ public class ResourceType
 
   public ResourceType(JsonNode resourceTypeDocument)
   {
-    SchemaValidator.validateSchemaForResponse(null, resourceTypeDocument);
+    if (log.isTraceEnabled())
+    {
+      log.trace("parse resource type document: \n{}", resourceTypeDocument.toPrettyString());
+    }
+    Schema resourceMetaSchema = getMetaSchemaFromDocument(resourceTypeDocument);
+    SchemaValidator.validateSchemaForResponse(resourceMetaSchema.toJsonNode(), resourceTypeDocument);
     this.schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
                              .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI));
     this.id = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ID)
-                        .orElseThrow(() -> getException(missingAttrMessage(AttributeNames.ID)));
+                        .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ID)));
     this.name = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.NAME)
-                          .orElseThrow(() -> getException(missingAttrMessage(AttributeNames.NAME)));
+                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.NAME)));
     this.description = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.DESCRIPTION).orElse(null);
     this.endpoint = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ENDPOINT)
-                              .orElseThrow(() -> getException(missingAttrMessage(AttributeNames.ENDPOINT)));
+                              .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ENDPOINT)));
     this.schema = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.SCHEMA)
-                            .orElseThrow(() -> getException(missingAttrMessage(AttributeNames.SCHEMA)));
+                            .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA)));
+    Optional.ofNullable(schemaFactory.getResourceSchema(schema))
+            .orElseThrow(() -> getInvalidResourceException("the resource schema with the uri '" + schema
+                                                           + "' has not been registered"));
     schemaExtensions = new ArrayList<>();
     JsonHelper.getArrayAttribute(resourceTypeDocument, AttributeNames.SCHEMA_EXTENSIONS).ifPresent(jsonNodes -> {
       for ( JsonNode jsonNode : jsonNodes )
@@ -109,19 +123,26 @@ public class ResourceType
   }
 
   /**
-   * @return the list of meta schemata that do define this resource
+   * Will get the meta schema for resource types and validate that the resource type meta schema uri is present
+   * within the schemas-attribute of the given document the resource type documents are supposed to have no
+   * extensions. Therefore
+   *
+   * @param resourceTypeDocument the resource type json document to extract the meta schema from. Eventhough we
+   *          know which value must be present in the schemas attribute we will just validate that it was
+   *          entered correctly
+   * @return the meta schema for resource types
    */
-  public List<Schema> getMetaSchemata()
+  private Schema getMetaSchemaFromDocument(JsonNode resourceTypeDocument)
   {
-    return schemas.stream().map(id1 -> schemaFactory.getMetaSchema(id1)).collect(Collectors.toList());
-  }
-
-  /**
-   * @return the resource schema that represents this resource type
-   */
-  public Schema getResourceSchema()
-  {
-    return schemaFactory.getResourceSchema(schema);
+    Supplier<String> errorMessage = () -> missingAttrMessage(AttributeNames.SCHEMAS);
+    List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
+                                     .orElseThrow(() -> getInvalidResourceException(errorMessage.get()));
+    if (schemas.size() != 1 || !schemas.contains(SchemaUris.RESOURCE_TYPE_URI))
+    {
+      throw getInvalidResourceException("The resource type document must contain only a single uri in the schemas "
+                                        + "attribute: " + SchemaUris.RESOURCE_TYPE_URI);
+    }
+    return schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
   }
 
   /**
@@ -149,6 +170,30 @@ public class ResourceType
   }
 
   /**
+   * will find the meta resource schema and its extensions of this resource type that apply to the given
+   * document
+   *
+   * @param resourceDocument a document that should be validated against its schemas
+   * @return a holder object that contains the meta schemata that can be used to validate the given document
+   */
+  public ResourceSchema getResourceSchema(String resourceDocument)
+  {
+    return getResourceSchema(JsonHelper.readJsonDocument(resourceDocument));
+  }
+
+  /**
+   * will find the meta resource schema and its extensions of this resource type that apply to the given
+   * document
+   *
+   * @param resourceDocument a document that should be validated against its schemas
+   * @return a holder object that contains the meta schemata that can be used to validate the given document
+   */
+  public ResourceSchema getResourceSchema(JsonNode resourceDocument)
+  {
+    return new ResourceSchema(resourceDocument);
+  }
+
+  /**
    * builds an error message in case of a required missing attribute
    *
    * @param attributeName the name of the attribute that is missing
@@ -165,9 +210,20 @@ public class ResourceType
    * @param message the error message
    * @return the exception
    */
-  private ScimException getException(String message)
+  private ScimException getInvalidResourceException(String message)
   {
     return new InvalidResourceTypeException(message, null, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+  }
+
+  /**
+   * builds an exception for malformed requests
+   *
+   * @param message the error message
+   * @return the exception
+   */
+  private ScimException getBadRequestException(String message)
+  {
+    return new BadRequestException(message, null, null);
   }
 
   /**
@@ -229,9 +285,67 @@ public class ResourceType
     public SchemaExtension(JsonNode jsonNode)
     {
       this.schema = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.SCHEMA)
-                              .orElseThrow(() -> getException(missingAttrMessage(AttributeNames.SCHEMA)));
+                              .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA)));
       this.required = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.REQUIRED, Boolean.class)
-                                .orElseThrow(() -> getException(missingAttrMessage(AttributeNames.REQUIRED)));
+                                .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.REQUIRED)));
+    }
+  }
+
+  /**
+   * represents the schema descriptions of this resource type
+   */
+  @Data
+  public class ResourceSchema
+  {
+
+    /**
+     * this is the main schema that will describe the resource
+     */
+    private Schema metaSchema;
+
+    /**
+     * these are the schema extensions that describe the additional attributes of this resource type
+     */
+    private List<Schema> extensions;
+
+    public ResourceSchema(JsonNode resourceDocument)
+    {
+      List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.SCHEMAS)
+                                       .orElseThrow(() -> getBadRequestException(missingAttrMessage(AttributeNames.SCHEMAS)));
+      if (!schemas.contains(schema))
+      {
+        throw getBadRequestException("main resource schema '" + schema + "' is not present in resource");
+      }
+
+      Function<String, String> missingSchema = s -> "resource schema with uri '" + s + "' is not registered";
+      this.metaSchema = Optional.ofNullable(schemaFactory.getResourceSchema(schema))
+                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schema)));
+      extensions = new ArrayList<>();
+      schemas.remove(schema);
+      for ( String schemaUri : schemas )
+      {
+        extensions.add(Optional.ofNullable(schemaFactory.getResourceSchema(schemaUri))
+                               .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schemaUri))));
+      }
+      validateForRequiredExtensions(schemas);
+    }
+
+    /**
+     * this method will verify that the document contains the required extensions
+     */
+    private void validateForRequiredExtensions(List<String> schemas)
+    {
+      List<SchemaExtension> requiredExtensions = schemaExtensions.stream()
+                                                                 .filter(SchemaExtension::isRequired)
+                                                                 .collect(Collectors.toList());
+      for ( SchemaExtension requiredExtension : requiredExtensions )
+      {
+        if (!schemas.contains(requiredExtension.getSchema()))
+        {
+          throw new BadRequestException("the required extension '" + requiredExtension.getSchema() + "' is missing",
+                                        null, ScimType.MISSING_EXTENSION);
+        }
+      }
     }
   }
 }

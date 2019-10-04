@@ -1,7 +1,10 @@
 package de.gold.scim.schemas;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -75,8 +78,12 @@ public final class ResourceTypeFactory
   }
 
   /**
+   * this method will register a new resource type
+   *
    * @param resourceType the resource type as json document
-   * @param resourceSchema the resource schema definition as json object these object will also be registered
+   * @param resourceSchema the resource schema definition as json object this object will additionally be
+   *          registered within the {@link SchemaFactory}. This is the resource that is referenced under the
+   *          "schema" attribute within the {@code resourceType} document
    * @param resourceSchemaExtensions the extensions that will be appended to the {@code resourceSchema}
    *          definition
    */
@@ -89,28 +96,81 @@ public final class ResourceTypeFactory
   }
 
   /**
-   * clears the inhabited schema extensions list from the resource type that was parsed from the json and
-   * overrides it with the given resource schema extensions
+   * reads the extensions defined withing the resource type document and validates them against the given
+   * extension schemata and will register the extension schemata in the {@link SchemaFactory} if the validation
+   * succeeds
    *
    * @param resourceType the resource type definition
    * @param resourceSchemaExtensions an array of resource extensions if extensions are present
    */
   private void addSchemaExtensions(JsonNode resourceType, JsonNode[] resourceSchemaExtensions)
   {
-    if (resourceSchemaExtensions != null && resourceSchemaExtensions.length > 0)
+    ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS)
+                                           .orElse(null);
+    // if no further validation is required return from the method
+    if (validateSchemaExtensionParameter(schemaExtensions, resourceSchemaExtensions))
     {
-      ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS)
-                                             .orElse(new ArrayNode(JsonNodeFactory.instance));
-      schemaExtensions.removeAll();
-      for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
-      {
-        String extensionId = JsonHelper.getSimpleAttribute(resourceSchemaExtension, AttributeNames.ID)
-                                       .orElseThrow(() -> getAttributeMissingException(AttributeNames.ID));
-        schemaExtensions.add(new TextNode(extensionId));
-        schemaFactory.registerResourceSchema(resourceSchemaExtension);
-      }
-      JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS, schemaExtensions);
+      return;
     }
+    Set<String> resourceTypeExtensions = new HashSet<>();
+    for ( JsonNode schemaExtension : schemaExtensions )
+    {
+      String schema = JsonHelper.getSimpleAttribute(schemaExtension, AttributeNames.SCHEMA)
+                                .orElseThrow(() -> getAttributeMissingException(AttributeNames.SCHEMA));
+      resourceTypeExtensions.add(schema);
+    }
+    Set<String> extensionIds = new HashSet<>();
+    for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
+    {
+      String extensionId = JsonHelper.getSimpleAttribute(resourceSchemaExtension, AttributeNames.ID)
+                                     .orElseThrow(() -> getAttributeMissingException(AttributeNames.ID));
+      extensionIds.add(extensionId);
+    }
+    if (!resourceTypeExtensions.equals(extensionIds))
+    {
+      throw new InvalidResourceTypeException("you did not register the extensions", null, null, null);
+    }
+    for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
+    {
+      schemaFactory.registerResourceSchema(resourceSchemaExtension);
+    }
+    JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS, schemaExtensions);
+  }
+
+  /**
+   * will validate if the given extension parameters are valid and throws an exception if not
+   *
+   * @param schemaExtensions the extensions defined in the resource type json document
+   * @param resourceSchemaExtensions the extension schemata that should be registered for the resource type
+   * @return true if no further validation is needed and false if additional validation must be done
+   */
+  private boolean validateSchemaExtensionParameter(ArrayNode schemaExtensions, JsonNode[] resourceSchemaExtensions)
+  {
+    if (schemaExtensions == null && (resourceSchemaExtensions == null || resourceSchemaExtensions.length == 0))
+    {
+      // everything is fine. No extensions declared in the resource type and no extensions should be registered
+      return true;
+    }
+    else if (schemaExtensions == null)
+    {
+      throw new InvalidResourceTypeException("you tried to add extensions that are not present in the resource type "
+                                             + "json document", null, null, null);
+    }
+    else if (resourceSchemaExtensions.length < schemaExtensions.size())
+    {
+      throw new InvalidResourceTypeException("you missed to add an extension to the resource type. You added "
+                                             + Arrays.asList(resourceSchemaExtensions)
+                                             + " but the required extensions are " + schemaExtensions, null, null,
+                                             null);
+    }
+    else if (resourceSchemaExtensions.length > schemaExtensions.size())
+    {
+      throw new InvalidResourceTypeException("you added too many extensions to the resource type. You added "
+                                             + Arrays.asList(resourceSchemaExtensions)
+                                             + " but the required extensions are " + schemaExtensions, null, null,
+                                             null);
+    }
+    return false;
   }
 
   /**

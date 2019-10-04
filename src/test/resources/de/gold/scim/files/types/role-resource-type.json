@@ -1,0 +1,10 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+  ],
+  "id": "Role",
+  "name": "Role",
+  "description": "Access Role",
+  "schema": "urn:gold:params:scim:schemas:custom:2.0:Role",
+  "endpoint": "/Roles"
+}

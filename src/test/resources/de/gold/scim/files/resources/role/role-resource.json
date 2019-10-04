@@ -1,0 +1,7 @@
+{
+  "schemas": [
+    "urn:gold:params:scim:schemas:custom:2.0:Role"
+  ],
+  "externalId": "102030405060708090",
+  "displayName": "admin"
+}

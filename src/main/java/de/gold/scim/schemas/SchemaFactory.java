@@ -1,11 +1,16 @@
 package de.gold.scim.schemas;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.JsonHelper;
 
 
@@ -78,6 +83,19 @@ public final class SchemaFactory
   public void registerResourceSchema(JsonNode jsonSchema)
   {
     Schema schema = new Schema(jsonSchema);
+    List<String> schemas = schema.getSchemas();
+    if (schemas.size() != 1)
+    {
+      String errorMessage = "unexpected number of entries in '" + AttributeNames.SCHEMAS + "' attribute. Expected one"
+                            + " entry but was: '" + schemas + "'";
+      throw new InvalidSchemaException(errorMessage, null, null, null);
+    }
+
+    Supplier<String> message = () -> "meta schema with URI '" + schemas.get(0) + "' is not registered";
+    Schema metaSchema = Optional.ofNullable(getMetaSchema(schema.getSchemas().get(0)))
+                                .orElseThrow(() -> new InvalidSchemaException(message.get(), null, null, null));
+
+    SchemaValidator.validateSchemaForResponse(metaSchema.toJsonNode(), jsonSchema);
     RESOURCE_SCHEMAS.put(schema.getId(), schema);
   }
 

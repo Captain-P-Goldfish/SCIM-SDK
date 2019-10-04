@@ -6,7 +6,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -89,11 +91,28 @@ public final class SchemaValidator
    * @param document the document to validate
    * @return the validated document that might have been reduced of some attributes
    */
-  public static JsonNode validateSchemaForResponse(JsonNode metaSchema, JsonNode document)
+  protected static JsonNode validateSchemaForResponse(JsonNode metaSchema, JsonNode document)
   {
     SchemaValidator schemaValidator = new SchemaValidator(document.deepCopy(), DirectionType.RESPONSE, null);
     schemaValidator.validateSchema(metaSchema, schemaValidator.getValidatedDocument());
     return schemaValidator.getValidatedDocument();
+  }
+
+  public static JsonNode validateSchemaForRequest(ResourceType resourceType, JsonNode document, HttpMethod httpMethod)
+  {
+    ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
+    JsonNode validatedMainDocument = validateSchemaForRequest(resourceSchema.getMetaSchema().toJsonNode(),
+                                                              document,
+                                                              httpMethod);
+    for ( Schema schemaExtension : resourceSchema.getExtensions() )
+    {
+      Supplier<String> message = () -> "the extension '" + schemaExtension.getId()
+                                       + "' should not be null. This should have been verified by getting"
+                                       + " the resourceSchema instance";
+      JsonNode extension = Objects.requireNonNull(document.get(schemaExtension.getId()), message.get());
+      // TODO stopped right in the middle here...
+    }
+    return validatedMainDocument;
   }
 
   /**
@@ -107,7 +126,7 @@ public final class SchemaValidator
    *          types that are valid on POST requests but invalid on PUT requests
    * @return the validated document that might have been reduced of some attributes
    */
-  public static JsonNode validateSchemaForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
+  protected static JsonNode validateSchemaForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
   {
     SchemaValidator schemaValidator = new SchemaValidator(document.deepCopy(), DirectionType.REQUEST, httpMethod);
     schemaValidator.validateSchema(metaSchema, schemaValidator.getValidatedDocument());
@@ -238,8 +257,11 @@ public final class SchemaValidator
                                && !JsonHelper.getArrayAttribute(attribute, metaAttributeDefinition.getName())
                                              .isPresent())
                               || (!metaAttributeDefinition.isMultiValued()
+                                  && Type.COMPLEX.equals(metaAttributeDefinition.type)
                                   && !JsonHelper.getSimpleAttribute(attribute, metaAttributeDefinition.getName())
-                                                .isPresent());
+                                                .isPresent())
+                              || (!metaAttributeDefinition.isMultiValued()
+                                  && !Type.COMPLEX.equals(metaAttributeDefinition.type) && attribute == null);
       if (isValueAbsent)
       {
         final String errorMessage = "schema does not hold required attribute '" + metaAttributeDefinition.getName()
@@ -709,11 +731,7 @@ public final class SchemaValidator
    */
   private DocumentValidationException getException(String errorMessage, Exception cause)
   {
-    return DocumentValidationException.builder()
-                                      .status(directionType.getHttpStatus())
-                                      .cause(cause)
-                                      .message(errorMessage)
-                                      .build();
+    return new DocumentValidationException(errorMessage, cause, directionType.getHttpStatus(), null);
   }
 
   /**

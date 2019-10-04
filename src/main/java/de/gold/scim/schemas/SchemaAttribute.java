@@ -23,13 +23,11 @@ import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
-import lombok.Data;
 
 
 /**
  * holds the data of an attribute definition from a schema type document
  */
-@Data
 public class SchemaAttribute
 {
 
