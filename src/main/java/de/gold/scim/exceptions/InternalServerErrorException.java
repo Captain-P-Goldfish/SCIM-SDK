@@ -1,5 +1,6 @@
 package de.gold.scim.exceptions;
 
+import de.gold.scim.utils.HttpStatus;
 import lombok.Builder;
 
 
@@ -12,8 +13,8 @@ public class InternalServerErrorException extends ScimException
 {
 
   @Builder
-  public InternalServerErrorException(String message, Throwable cause, Integer status, String scimType)
+  public InternalServerErrorException(String message, Throwable cause, String scimType)
   {
-    super(message, cause, status, scimType);
+    super(message, cause, HttpStatus.SC_INTERNAL_SERVER_ERROR, scimType);
   }
 }

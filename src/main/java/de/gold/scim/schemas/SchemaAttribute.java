@@ -23,11 +23,13 @@ import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
+import lombok.Getter;
 
 
 /**
  * holds the data of an attribute definition from a schema type document
  */
+@Getter
 public class SchemaAttribute
 {
 
@@ -116,6 +118,14 @@ public class SchemaAttribute
   {
     this(jsonNode);
     this.parent = parent;
+  }
+
+  /**
+   * @return the name scim node name of this attribute e.g. "name.givenName"
+   */
+  public String getScimNodeName()
+  {
+    return getParent() == null ? getName() : getParent().getScimNodeName() + "." + getName();
   }
 
   /**

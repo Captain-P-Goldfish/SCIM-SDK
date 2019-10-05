@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -17,11 +17,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
 import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
+import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.IncompatibleAttributeException;
 import de.gold.scim.exceptions.InternalServerErrorException;
@@ -83,6 +85,32 @@ public final class SchemaValidator
   }
 
   /**
+   * will validate an outgoing document against its main schema and all its extensions
+   *
+   * @param resourceType the resource type definition of the incoming document
+   * @param document the document that should be validated
+   * @return the validated document that might have several nodes removed if they were unknown by the
+   *         resource-schema-definitions
+   */
+  public static JsonNode validateSchemaForResponse(ResourceType resourceType, JsonNode document)
+  {
+    ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
+    JsonNode validatedMainDocument = validateSchemaForResponse(resourceSchema.getMetaSchema().toJsonNode(), document);
+    for ( Schema schemaExtension : resourceSchema.getExtensions() )
+    {
+      Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
+                                       + AttributeNames.SCHEMAS + "' attribute but is "
+                                       + "not present within the document";
+      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
+                                   .orElseThrow(() -> new InternalServerErrorException(message.get(), null,
+                                                                                       ScimType.MISSING_EXTENSION));
+      JsonNode extensionNode = validateSchemaForResponse(schemaExtension.toJsonNode(), extension);
+      JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+    }
+    return validatedMainDocument;
+  }
+
+  /**
    * This method will build an instance of schema validator will then validate the document with the given
    * schema and returns a new document that conforms to the json meta schema definition.<br>
    * the validation direction of this method is {@link DirectionType#RESPONSE}
@@ -98,6 +126,15 @@ public final class SchemaValidator
     return schemaValidator.getValidatedDocument();
   }
 
+  /**
+   * will validate an incoming document against its main schema and all its extensions
+   *
+   * @param resourceType the resource type definition of the incoming document
+   * @param document the document that should be validated
+   * @param httpMethod the request http method that is used to validate the request-document
+   * @return the validated document that might have several nodes removed if they were unknown by the
+   *         resource-schema-definitions
+   */
   public static JsonNode validateSchemaForRequest(ResourceType resourceType, JsonNode document, HttpMethod httpMethod)
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
@@ -106,11 +143,14 @@ public final class SchemaValidator
                                                               httpMethod);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
-      Supplier<String> message = () -> "the extension '" + schemaExtension.getId()
-                                       + "' should not be null. This should have been verified by getting"
-                                       + " the resourceSchema instance";
-      JsonNode extension = Objects.requireNonNull(document.get(schemaExtension.getId()), message.get());
-      // TODO stopped right in the middle here...
+      Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
+                                       + AttributeNames.SCHEMAS + "' attribute but is "
+                                       + "not present within the document";
+      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
+                                   .orElseThrow(() -> new BadRequestException(message.get(), null,
+                                                                              ScimType.MISSING_EXTENSION));
+      JsonNode extensionNode = validateSchemaForRequest(schemaExtension.toJsonNode(), extension, httpMethod);
+      JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
     return validatedMainDocument;
   }
@@ -196,14 +236,18 @@ public final class SchemaValidator
   private void validateAttributes(JsonNode metaAttributes, JsonNode document)
   {
     List<String> attributeDefinitionList = new ArrayList<>();
+    List<String> attributesToRemove = new ArrayList<>();
     for ( JsonNode metaAttribute : metaAttributes )
     {
       AttributeDefinition metaAttributeDefinition = new AttributeDefinition(metaAttribute);
       attributeDefinitionList.add(metaAttributeDefinition.getName());
-      log.trace("validating attribute from meta-schema: {}", metaAttributeDefinition.toString());
+      if (log.isTraceEnabled())
+      {
+        log.trace("validating attribute from meta-schema: {}", metaAttributeDefinition.toString());
+      }
 
       checkValueIsRequired(metaAttributeDefinition, document);
-
+      boolean removeAttribute = false;
       if (Type.COMPLEX.equals(metaAttributeDefinition.getType()))
       {
         if (metaAttributeDefinition.isMultiValued())
@@ -212,7 +256,7 @@ public final class SchemaValidator
         }
         else
         {
-          validateComplexAttribute(metaAttribute, metaAttributeDefinition, document);
+          removeAttribute = validateComplexAttribute(metaAttribute, metaAttributeDefinition, document);
         }
       }
       else
@@ -220,15 +264,31 @@ public final class SchemaValidator
         JsonNode jsonValueNode = document.get(metaAttributeDefinition.getName());
         if (metaAttributeDefinition.isMultiValued())
         {
-          checkMultiValuedSimpleAttribute(metaAttributeDefinition, jsonValueNode);
+          removeAttribute = checkMultiValuedSimpleAttribute(metaAttributeDefinition, jsonValueNode);
         }
         else
         {
-          isValueTypeValid(metaAttributeDefinition, jsonValueNode);
+          removeAttribute = isValueTypeValid(metaAttributeDefinition, jsonValueNode);
         }
+      }
+      if (removeAttribute)
+      {
+        attributesToRemove.add(metaAttributeDefinition.getName());
       }
     }
     removeUnknownAttributes(attributeDefinitionList, document);
+    removeInvalidAttributes(attributesToRemove, document);
+  }
+
+  /**
+   * removes all attributes with the given names
+   *
+   * @param attributesToRemove the list of attribute names that should be removed from the document
+   * @param document the document from which attributes might be removed
+   */
+  private void removeInvalidAttributes(List<String> attributesToRemove, JsonNode document)
+  {
+    ((ObjectNode)document).remove(attributesToRemove);
   }
 
   /**
@@ -257,11 +317,8 @@ public final class SchemaValidator
                                && !JsonHelper.getArrayAttribute(attribute, metaAttributeDefinition.getName())
                                              .isPresent())
                               || (!metaAttributeDefinition.isMultiValued()
-                                  && Type.COMPLEX.equals(metaAttributeDefinition.type)
                                   && !JsonHelper.getSimpleAttribute(attribute, metaAttributeDefinition.getName())
-                                                .isPresent())
-                              || (!metaAttributeDefinition.isMultiValued()
-                                  && !Type.COMPLEX.equals(metaAttributeDefinition.type) && attribute == null);
+                                                .isPresent());
       if (isValueAbsent)
       {
         final String errorMessage = "schema does not hold required attribute '" + metaAttributeDefinition.getName()
@@ -309,17 +366,19 @@ public final class SchemaValidator
    * @param metaAttributeDefinition the attribute definition of the meta schema
    * @param jsonNode the value node that should conform to the meta schema attribute definition
    */
-  private void checkMultiValuedSimpleAttribute(AttributeDefinition metaAttributeDefinition, JsonNode jsonNode)
+  private boolean checkMultiValuedSimpleAttribute(AttributeDefinition metaAttributeDefinition, JsonNode jsonNode)
   {
     if (jsonNode == null)
     {
       // node is not present in the document so everything's fine
-      return;
+      return false;
     }
+    boolean removeAttribute = false;
     for ( JsonNode node : jsonNode )
     {
-      isValueTypeValid(metaAttributeDefinition, node);
+      removeAttribute = isValueTypeValid(metaAttributeDefinition, node) || removeAttribute;
     }
+    return removeAttribute;
   }
 
   /**
@@ -329,12 +388,12 @@ public final class SchemaValidator
    * @param metaAttributeDefinition a pre calculated attribute definition that conforms to {@code metaAttribute}
    * @param complexAttribute the complex attribute that should be validated
    */
-  private void validateComplexAttribute(JsonNode metaAttribute,
-                                        AttributeDefinition metaAttributeDefinition,
-                                        JsonNode complexAttribute)
+  private boolean validateComplexAttribute(JsonNode metaAttribute,
+                                           AttributeDefinition metaAttributeDefinition,
+                                           JsonNode complexAttribute)
   {
     final String attributeName = AttributeNames.SUB_ATTRIBUTES;
-    final String errorMessage = "multiValued complex attribute did not define attribute '" + attributeName + "'";
+    final String errorMessage = "complex attribute did not define attribute '" + attributeName + "'";
     JsonNode subAttributes = JsonHelper.getArrayAttribute(metaAttribute, attributeName)
                                        .orElseThrow(() -> DocumentValidationException.builder()
                                                                                      .message(errorMessage)
@@ -344,7 +403,7 @@ public final class SchemaValidator
     if (complexNode == null)
     {
       // node is not present in the document so everything's fine
-      return;
+      return false;
     }
     if (metaAttributeDefinition.isMultiValued())
     {
@@ -352,8 +411,11 @@ public final class SchemaValidator
     }
     else
     {
-      isValueTypeValid(metaAttributeDefinition, subAttributes.get(metaAttributeDefinition.getName()));
+      boolean removeAttribute = isValueTypeValid(metaAttributeDefinition,
+                                                 subAttributes.get(metaAttributeDefinition.getName()));
+      return removeAttribute;
     }
+    return false;
   }
 
   /**
@@ -362,7 +424,7 @@ public final class SchemaValidator
    * @param attributeDefinition the definition of the document node
    * @param valueNode the node that is described by the definition
    */
-  private void isValueTypeValid(AttributeDefinition attributeDefinition, JsonNode valueNode)
+  private boolean isValueTypeValid(AttributeDefinition attributeDefinition, JsonNode valueNode)
   {
     if (valueNode == null)
     {
@@ -370,7 +432,7 @@ public final class SchemaValidator
       log.trace("attribute {} not present in document: required = {}",
                 attributeDefinition.getName(),
                 attributeDefinition.isRequired());
-      return;
+      return false;
     }
     Type type = attributeDefinition.getType();
     switch (type)
@@ -406,9 +468,11 @@ public final class SchemaValidator
               attributeDefinition.getName(),
               type.getValue(),
               valueNode.toString());
+    boolean removeAttribute = false;
     checkCanonicalValues(attributeDefinition, valueNode);
-    checkReturnedValue(attributeDefinition, valueNode);
-    checkMutabilityValue(attributeDefinition, valueNode);
+    removeAttribute = checkReturnedValue(attributeDefinition, valueNode) || removeAttribute;
+    removeAttribute = checkMutabilityValue(attributeDefinition, valueNode) || removeAttribute;
+    return removeAttribute;
   }
 
   /**
@@ -586,10 +650,7 @@ public final class SchemaValidator
     final String attributeName = AttributeNames.ATTRIBUTES;
     final String errorMessage = "meta schema is missing attribute '" + attributeName + "'";
     return JsonHelper.getArrayAttribute(metaSchema, attributeName)
-                     .orElseThrow(() -> InternalServerErrorException.builder()
-                                                                    .status(directionType.getHttpStatus())
-                                                                    .message(errorMessage)
-                                                                    .build());
+                     .orElseThrow(() -> InternalServerErrorException.builder().message(errorMessage).build());
   }
 
   /**
@@ -599,14 +660,14 @@ public final class SchemaValidator
    * @param metaAttributeDefinition the current meta attribute definition
    * @param valueNode the value of the node
    */
-  private void checkReturnedValue(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  private boolean checkReturnedValue(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
   {
     Returned returned = metaAttributeDefinition.getReturned();
 
     // if the current validation is based on a request the returned value must not be checked
     if (DirectionType.REQUEST.equals(this.directionType))
     {
-      return;
+      return false;
     }
 
     switch (returned)
@@ -614,10 +675,11 @@ public final class SchemaValidator
       case NEVER:
         if (valueNode != null)
         {
-          log.warn("removing attribute '{}' from response because returned value is '{}'",
+          log.warn("TODO removing attribute '{}' from response because returned value is '{}'",
                    metaAttributeDefinition.getName(),
                    returned);
           // TODO remove attribute
+          return true;
         }
         break;
       case ALWAYS:
@@ -628,8 +690,10 @@ public final class SchemaValidator
       default:
         // TODO must be coupled with requiredAttributes value from request and for until then this case will never
         // fail
+        log.warn("TODO validate with required and excluded attributes: {}", metaAttributeDefinition.getName());
         checkAttributeValidity(true, null);
     }
+    return false;
   }
 
   /**
@@ -639,15 +703,15 @@ public final class SchemaValidator
    * @param metaAttributeDefinition the meta attribute definition
    * @param valueNode the document value of the meta attribute definition
    */
-  private void checkMutabilityValue(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  private boolean checkMutabilityValue(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
   {
     if (DirectionType.REQUEST.equals(directionType))
     {
-      checkMutabilityForRequest(metaAttributeDefinition, valueNode);
+      return checkMutabilityForRequest(metaAttributeDefinition, valueNode);
     }
     else
     {
-      checkMutabilityForResponse(metaAttributeDefinition, valueNode);
+      return checkMutabilityForResponse(metaAttributeDefinition, valueNode);
     }
   }
 
@@ -657,7 +721,7 @@ public final class SchemaValidator
    * @param metaAttributeDefinition the attribute definition
    * @param valueNode the value node to check
    */
-  private void checkMutabilityForResponse(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  private boolean checkMutabilityForResponse(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
   {
     Mutability mutability = metaAttributeDefinition.getMutability();
     switch (mutability)
@@ -669,6 +733,7 @@ public final class SchemaValidator
           log.warn("removing attribute '{}' because of its mutability of '{}'",
                    metaAttributeDefinition.getName(),
                    mutability.getValue());
+          return true;
         }
         break;
       default:
@@ -677,6 +742,7 @@ public final class SchemaValidator
                   mutability.getValue(),
                   DirectionType.RESPONSE);
     }
+    return false;
   }
 
   /**
@@ -685,7 +751,7 @@ public final class SchemaValidator
    * @param metaAttributeDefinition the attribute definition
    * @param valueNode the value node to check
    */
-  private void checkMutabilityForRequest(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
+  private boolean checkMutabilityForRequest(AttributeDefinition metaAttributeDefinition, JsonNode valueNode)
   {
     Mutability mutability = metaAttributeDefinition.getMutability();
     switch (mutability)
@@ -694,18 +760,25 @@ public final class SchemaValidator
         log.warn("TODO attribute '{}' must be removed from request since it has a mutability of '{}'",
                  metaAttributeDefinition.getName(),
                  mutability.getValue());
-        break;
+        return true;
       case IMMUTABLE:
-        String errorMessage = "attribute '" + metaAttributeDefinition.getName() + "' is " + mutability.getValue()
-                              + " and is therefore only allowed on " + HttpMethod.POST + " requests";
-        checkAttributeValidity(!HttpMethod.POST.equals(httpMethod) && valueNode != null, errorMessage);
-        break;
+        // @formatter:off
+        // TODO the immutable value must be checked completely different.
+        // - the resource gets created but the value is not set
+        //    - the value is allowed to be set
+        // - the resource gets created and the value is set
+        //    - the value is not allowed to be set
+        // this kind of validation can only be done by reading the existing resource before the check is only
+        // necessary for http method PUT and PATCH
+        // @formatter:on
+        return !HttpMethod.POST.equals(httpMethod) && valueNode != null && metaAttributeDefinition.isRequired();
       default:
         log.trace("attribute '{}' has no conflicts with mutability value '{}' on {} validation",
                   metaAttributeDefinition.getName(),
                   mutability.getValue(),
                   DirectionType.REQUEST);
     }
+    return false;
   }
 
   /**

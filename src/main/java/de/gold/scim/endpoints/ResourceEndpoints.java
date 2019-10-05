@@ -9,9 +9,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.response.ScimResponse;
-import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.SchemaValidator;
@@ -62,16 +62,13 @@ public final class ResourceEndpoints
   {
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
     ResourceType resourceType = findResourceType(resource);
-
-    // TODO seperate by main schema and extensions
     SchemaValidator.validateSchemaForRequest(resourceType, resource, SchemaValidator.HttpMethod.POST);
-    // TODO execute implementation
 
-    // TODO seperate by main schema and extensions
-//    for ( JsonNode schema : metaSchemata )
-//    {
-//      SchemaValidator.validateSchemaForResponse(schema, JsonHelper.readJsonDocument(resourceDocument));
-//    }
+    // TODO execute developer implementation
+
+    // TODO validate developer return type by schema validation for response
+
+    // TODO return a scim response
     return null;
   }
 

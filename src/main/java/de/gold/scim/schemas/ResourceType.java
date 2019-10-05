@@ -19,6 +19,7 @@ import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.HttpStatus;
@@ -98,7 +99,7 @@ public class ResourceType
       log.trace("parse resource type document: \n{}", resourceTypeDocument.toPrettyString());
     }
     Schema resourceMetaSchema = getMetaSchemaFromDocument(resourceTypeDocument);
-    SchemaValidator.validateSchemaForResponse(resourceMetaSchema.toJsonNode(), resourceTypeDocument);
+    validateResourceType(resourceMetaSchema, resourceTypeDocument);
     this.schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
                              .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI));
     this.id = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ID)
@@ -120,6 +121,25 @@ public class ResourceType
         schemaExtensions.add(new SchemaExtension(jsonNode));
       }
     });
+  }
+
+  /**
+   * validates the given resource type document against its meta schema definition
+   *
+   * @param resourceMetaSchema the meta schema for resource types
+   * @param resourceTypeDocument the resource type document
+   */
+  private void validateResourceType(Schema resourceMetaSchema, JsonNode resourceTypeDocument)
+  {
+    try
+    {
+      SchemaValidator.validateSchemaForResponse(resourceMetaSchema.toJsonNode(), resourceTypeDocument);
+    }
+    catch (DocumentValidationException ex)
+    {
+      throw new InvalidResourceTypeException("The given resource type is not valid: " + ex.getMessage(), ex,
+                                             ex.getStatus(), ex.getScimType());
+    }
   }
 
   /**
@@ -304,7 +324,8 @@ public class ResourceType
     private Schema metaSchema;
 
     /**
-     * these are the schema extensions that describe the additional attributes of this resource type
+     * these are the schema extensions that describe the additional attributes of this resource type. This list
+     * will only have those entries added to it that are added in the 'schemas'-attribute of the request
      */
     private List<Schema> extensions;
 
@@ -331,7 +352,8 @@ public class ResourceType
     }
 
     /**
-     * this method will verify that the document contains the required extensions
+     * this method will verify that the document contains the required extensions and therefore applies to the
+     * defined resource type
      */
     private void validateForRequiredExtensions(List<String> schemas)
     {

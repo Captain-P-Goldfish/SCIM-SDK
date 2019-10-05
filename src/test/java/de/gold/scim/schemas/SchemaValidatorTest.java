@@ -133,8 +133,8 @@ public class SchemaValidatorTest
   @ValueSource(strings = {AttributeNames.SCHEMAS, AttributeNames.ID, AttributeNames.NAME, AttributeNames.ATTRIBUTES})
   public void testValidationFailsOnMissingRequiredAttribute(String attributeName)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
 
     JsonHelper.removeAttribute(userSchema, attributeName);
     Assertions.assertThrows(DocumentValidationException.class,
@@ -153,8 +153,8 @@ public class SchemaValidatorTest
 
     JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
     JsonNode firstAttribute = attributes.get(0);
-
     JsonHelper.removeAttribute(firstAttribute, attributeName);
+
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateSchemaForResponse(metaSchema, userSchema));
   }
@@ -315,10 +315,10 @@ public class SchemaValidatorTest
    */
   @ParameterizedTest
   @MethodSource("getAttributeDefinitionArguments")
-  public void testRemoveMutabilityIMMUTABLEAttributesFromResquest(Mutability mutability,
-                                                                  Returned returned,
-                                                                  SchemaValidator.HttpMethod httpMethod,
-                                                                  List<String> requiredAttributes)
+  public void testRemoveAttributesOnValidation(Mutability mutability,
+                                               Returned returned,
+                                               SchemaValidator.HttpMethod httpMethod,
+                                               List<String> requiredAttributes)
   {
     JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
     JsonNode document = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -353,6 +353,13 @@ public class SchemaValidatorTest
     {
       Assertions.fail("TODO attribute '" + attributeName + "' must not be present if not required");
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"POST", "PUT", "PATCH"})
+  public void testValidationForImmutableValues(SchemaValidator.HttpMethod httpMethod)
+  {
+
   }
 
   private String getAttributeString(String name,
