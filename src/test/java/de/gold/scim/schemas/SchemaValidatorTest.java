@@ -1,17 +1,11 @@
 package de.gold.scim.schemas;
 
-import static de.gold.scim.schemas.SchemaValidator.HttpMethod.PATCH;
-import static de.gold.scim.schemas.SchemaValidator.HttpMethod.POST;
-import static de.gold.scim.schemas.SchemaValidator.HttpMethod.PUT;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
@@ -19,6 +13,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -36,17 +31,19 @@ import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.DocumentValidationException;
+import de.gold.scim.resources.ScimNode;
+import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * author Pascal Knueppel <br>
- * created at: 28.09.2019 - 20:14 <br>
+ * created at: 06.10.2019 - 18:09 <br>
  * <br>
  */
 @Slf4j
-public class SchemaValidatorTest
+public class SchemaValidatorTest implements FileReferences
 {
 
   /**
@@ -70,6 +67,7 @@ public class SchemaValidatorTest
                                   JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON),
                                   JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON)));
   }
+
 
   /**
    * will produce a number of timestamp arguments for testing date parsing on scim documents
@@ -96,22 +94,6 @@ public class SchemaValidatorTest
   }
 
   /**
-   * these arguments are used for a test that will verify that attributes are getting removed under specific
-   * circumstances in the request and the response
-   */
-  private static Stream<Arguments> getAttributeDefinitionArguments()
-  {
-    return Stream.of(Arguments.of(Mutability.WRITE_ONLY, Returned.DEFAULT, null, null),
-                     Arguments.of(Mutability.READ_ONLY, Returned.DEFAULT, null, null),
-                     Arguments.of(Mutability.READ_WRITE, Returned.NEVER, null, null),
-                     Arguments.of(Mutability.IMMUTABLE, Returned.DEFAULT, PUT, null),
-                     Arguments.of(Mutability.IMMUTABLE, Returned.DEFAULT, PATCH, null),
-                     Arguments.of(Mutability.READ_ONLY, Returned.DEFAULT, POST, null),
-                     Arguments.of(Mutability.READ_WRITE, Returned.DEFAULT, null, Arrays.asList("id")),
-                     Arguments.of(Mutability.READ_WRITE, Returned.REQUEST, null, Arrays.asList("id")));
-  }
-
-  /**
    * validates the schemata from the classpath
    *
    * @param testName the name of the test
@@ -123,14 +105,14 @@ public class SchemaValidatorTest
   public void testSchemaValidationForUserResourceSchema(String testName, JsonNode metaSchema, JsonNode jsonDocument)
   {
     log.trace(testName);
-    SchemaValidator.validateSchemaForResponse(metaSchema, jsonDocument);
+    SchemaValidator.validateDocumentForResponse(metaSchema, jsonDocument);
   }
 
   /**
    * checks that the validation will fail if a required attribute is missing
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.SCHEMAS, AttributeNames.ID, AttributeNames.NAME, AttributeNames.ATTRIBUTES})
+  @ValueSource(strings = {AttributeNames.SCHEMAS, AttributeNames.NAME, AttributeNames.SCHEMA, AttributeNames.ENDPOINT})
   public void testValidationFailsOnMissingRequiredAttribute(String attributeName)
   {
     JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
@@ -138,11 +120,11 @@ public class SchemaValidatorTest
 
     JsonHelper.removeAttribute(userSchema, attributeName);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
   }
 
   /**
-   * checks that the validation will fail if a required attribute is missing
+   * checks that the validation will fail if a required attribute is missing within a sub-attribute
    */
   @ParameterizedTest
   @ValueSource(strings = {AttributeNames.NAME, AttributeNames.TYPE, AttributeNames.MULTI_VALUED})
@@ -156,8 +138,9 @@ public class SchemaValidatorTest
     JsonHelper.removeAttribute(firstAttribute, attributeName);
 
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
   }
+
 
   /**
    * checks that the validation will fail if a canonical value has a typo
@@ -174,7 +157,7 @@ public class SchemaValidatorTest
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.writeValue(firstAttribute, attributeName, "unknown_value");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
   }
 
   /**
@@ -191,7 +174,7 @@ public class SchemaValidatorTest
     arrayNode.add("bla");
     JsonHelper.replaceNode(userSchema, AttributeNames.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
   }
 
   /**
@@ -206,7 +189,7 @@ public class SchemaValidatorTest
     IntNode idNode = new IntNode(new Random().nextInt());
     JsonHelper.replaceNode(userSchema, AttributeNames.ID, idNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
   }
 
   /**
@@ -222,8 +205,8 @@ public class SchemaValidatorTest
 
     JsonHelper.writeValue(userResourceTypeSchema, attributeName, "oh happy day");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(resourceTypeSchema,
-                                                                            userResourceTypeSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+                                                                              userResourceTypeSchema));
   }
 
   /**
@@ -238,8 +221,27 @@ public class SchemaValidatorTest
 
     addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
 
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaForResponse(resourceTypeSchema,
-                                                                                  userResourceTypeSchema));
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+                                                                                    userResourceTypeSchema));
+  }
+
+
+  /**
+   * this test will verify that the validation fails if timestamps are used that do not fit the xsd:datetime
+   * definition
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"hello world", "123456", "2019-12-24", "2019-12-24 13:54:28"})
+  public void testValidationFailsForInvalidTimestamps(String dateTime)
+  {
+    JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    JsonNode userResourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+
+    addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
+
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+                                                                              userResourceTypeSchema));
   }
 
   /**
@@ -268,23 +270,6 @@ public class SchemaValidatorTest
     JsonHelper.addAttribute(document, createdAttributeName, textNode);
   }
 
-  /**
-   * this test will verify that the validation fails if timestamps are used that do not fit the xsd:datetime
-   * definition
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"hello world", "123456", "2019-12-24", "2019-12-24 13:54:28"})
-  public void testValidationFailsForInvalidTimestamps(String dateTime)
-  {
-    JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
-    JsonNode userResourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-
-    addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
-
-    Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateSchemaForResponse(resourceTypeSchema,
-                                                                            userResourceTypeSchema));
-  }
 
   /**
    * this test will show that the validation will also remove attributes that are not defined by the schema
@@ -298,7 +283,7 @@ public class SchemaValidatorTest
     final String helloWorldKey = "helloWorld";
     JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
 
-    JsonNode validatedSchema = SchemaValidator.validateSchemaForResponse(resourceTypeSchema, userResourceTypeSchema);
+    JsonNode validatedSchema = SchemaValidator.validateDocumentForResponse(resourceTypeSchema, userResourceTypeSchema);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());
     ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(validatedSchema, AttributeNames.SCHEMA_EXTENSIONS)
                                            .orElseThrow(() -> new IllegalStateException("the document does not contain "
@@ -311,55 +296,38 @@ public class SchemaValidatorTest
   }
 
   /**
-   * this test will show that {@link Mutability#IMMUTABLE} attributes will be removed from PUT-requests
+   * this test will verify that the validated nodes created by the {@link SchemaValidator} are all implementing
+   * the interface {@link de.gold.scim.resources.ScimNode}
    */
   @ParameterizedTest
-  @MethodSource("getAttributeDefinitionArguments")
-  public void testRemoveAttributesOnValidation(Mutability mutability,
-                                               Returned returned,
-                                               SchemaValidator.HttpMethod httpMethod,
-                                               List<String> requiredAttributes)
+  @CsvSource({ClassPathReferences.META_SCHEMA_JSON + "," + ClassPathReferences.USER_SCHEMA_JSON,
+              ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE})
+  public void testThatAllValidatedNodesAreScimNodes(String metaSchemaLocation, String documentLocation)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
-    JsonNode document = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(metaSchemaLocation);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(documentLocation);
 
-    final String attributeName = "newAttribute";
-    String attributeDefinition = getAttributeString(attributeName,
-                                                    Type.STRING,
-                                                    false,
-                                                    false,
-                                                    false,
-                                                    mutability,
-                                                    returned,
-                                                    Uniqueness.NONE);
-    JsonNode metaAttributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
-    JsonNode createMetaAttribute = JsonHelper.readJsonDocument(attributeDefinition);
-    JsonHelper.addAttributeToArray(metaAttributes, createMetaAttribute);
-    TextNode textNode = new TextNode("some value");
-    JsonHelper.addAttribute(document, attributeName, textNode);
-
-    JsonNode validatedNode;
-    if (httpMethod == null)
-    {
-      validatedNode = SchemaValidator.validateSchemaForResponse(metaSchema, document);
-    }
-    else
-    {
-      validatedNode = SchemaValidator.validateSchemaForRequest(metaSchema, document, httpMethod);
-    }
-    Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedNode, attributeName).isPresent(),
-                           "attribute '" + attributeName + "' must not be present in the validated document");
-    if (requiredAttributes != null)
-    {
-      Assertions.fail("TODO attribute '" + attributeName + "' must not be present if not required");
-    }
+    JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+    validateJsonNodeIsScimNode(validatedDocument);
   }
 
-  @ParameterizedTest
-  @ValueSource(strings = {"POST", "PUT", "PATCH"})
-  public void testValidationForImmutableValues(SchemaValidator.HttpMethod httpMethod)
+  /**
+   * calls itself recursively to verify that all existing nodes are of type {@link ScimNode}
+   *
+   * @param validatedDocument the node to verify that it is a {@link ScimNode}
+   */
+  private void validateJsonNodeIsScimNode(JsonNode validatedDocument)
   {
-
+    Assertions.assertTrue(validatedDocument instanceof ScimNode);
+    ScimNode scimNode = (ScimNode)validatedDocument;
+    log.trace(scimNode.getScimNodeName());
+    if (validatedDocument.isArray() || validatedDocument.isObject())
+    {
+      for ( JsonNode jsonNode : validatedDocument )
+      {
+        validateJsonNodeIsScimNode(jsonNode);
+      }
+    }
   }
 
   private String getAttributeString(String name,

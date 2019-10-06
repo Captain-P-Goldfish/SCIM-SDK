@@ -62,7 +62,7 @@ public final class ResourceEndpoints
   {
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
     ResourceType resourceType = findResourceType(resource);
-    SchemaValidator.validateSchemaForRequest(resourceType, resource, SchemaValidator.HttpMethod.POST);
+    SchemaValidator.validateDocumentForRequest(resourceType, resource, SchemaValidator.HttpMethod.POST);
 
     // TODO execute developer implementation
 

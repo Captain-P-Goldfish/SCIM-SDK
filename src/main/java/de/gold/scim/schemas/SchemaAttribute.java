@@ -21,9 +21,16 @@ import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.resources.ScimArrayNode;
+import de.gold.scim.resources.ScimBooleanNode;
+import de.gold.scim.resources.ScimDoubleNode;
+import de.gold.scim.resources.ScimIntNode;
+import de.gold.scim.resources.ScimObjectNode;
+import de.gold.scim.resources.ScimTextNode;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -118,6 +125,33 @@ public class SchemaAttribute
   {
     this(jsonNode);
     this.parent = parent;
+  }
+
+  /**
+   * @return builds a {@link JsonNode} out of this definition
+   */
+  public JsonNode createJsonNode(Object value)
+  {
+    if (isMultiValued())
+    {
+      ScimArrayNode scimArrayNode = new ScimArrayNode(this);
+      // TODO add values
+      return scimArrayNode;
+    }
+    switch (getType())
+    {
+      case COMPLEX:
+        // TODO add values
+        return new ScimObjectNode(this);
+      case BOOLEAN:
+        return new ScimBooleanNode(this, (Boolean)value);
+      case INTEGER:
+        return new ScimIntNode(this, (Integer)value);
+      case DECIMAL:
+        return new ScimDoubleNode(this, (Double)value);
+      default:
+        return new ScimTextNode(this, (String)value);
+    }
   }
 
   /**

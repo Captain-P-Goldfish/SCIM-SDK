@@ -95,7 +95,7 @@ public final class SchemaFactory
     Schema metaSchema = Optional.ofNullable(getMetaSchema(schema.getSchemas().get(0)))
                                 .orElseThrow(() -> new InvalidSchemaException(message.get(), null, null, null));
 
-    SchemaValidator.validateSchemaForResponse(metaSchema.toJsonNode(), jsonSchema);
+    SchemaValidator.validateDocumentForResponse(metaSchema.toJsonNode(), jsonSchema);
     RESOURCE_SCHEMAS.put(schema.getId(), schema);
   }
 

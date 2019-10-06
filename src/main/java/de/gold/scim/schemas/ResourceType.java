@@ -133,7 +133,7 @@ public class ResourceType
   {
     try
     {
-      SchemaValidator.validateSchemaForResponse(resourceMetaSchema.toJsonNode(), resourceTypeDocument);
+      SchemaValidator.validateDocumentForResponse(resourceMetaSchema.toJsonNode(), resourceTypeDocument);
     }
     catch (DocumentValidationException ex)
     {
