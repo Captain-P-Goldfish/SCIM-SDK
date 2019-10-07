@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
@@ -301,13 +302,20 @@ public class SchemaValidatorTest implements FileReferences
    */
   @ParameterizedTest
   @CsvSource({ClassPathReferences.META_SCHEMA_JSON + "," + ClassPathReferences.USER_SCHEMA_JSON,
-              ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE})
+              ClassPathReferences.META_RESOURCE_TYPES_JSON + "," + ClassPathReferences.USER_RESOURCE_TYPE_JSON,
+              ClassPathReferences.META_RESOURCE_TYPES_JSON + "," + ClassPathReferences.GROUP_RESOURCE_TYPE_JSON,
+              ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE,
+              ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE_ENTERPRISE,
+              ClassPathReferences.GROUP_SCHEMA_JSON + "," + GROUP_RESOURCE})
   public void testThatAllValidatedNodesAreScimNodes(String metaSchemaLocation, String documentLocation)
   {
     JsonNode metaSchema = JsonHelper.loadJsonDocument(metaSchemaLocation);
     JsonNode userSchema = JsonHelper.loadJsonDocument(documentLocation);
 
-    JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+    });
+    Assertions.assertNotNull(validatedDocument);
     validateJsonNodeIsScimNode(validatedDocument);
   }
 
@@ -328,6 +336,77 @@ public class SchemaValidatorTest implements FileReferences
         validateJsonNodeIsScimNode(jsonNode);
       }
     }
+  }
+
+  /**
+   * this test will check that on response validation an exception is thrown if a required attribute is missing
+   */
+  @ParameterizedTest
+  @CsvSource({ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE_ENTERPRISE,
+              ClassPathReferences.GROUP_SCHEMA_JSON + "," + GROUP_RESOURCE})
+  public void testValidationFailsForMissingIdOnResponse(String metaSchemaLocation, String documentLocation)
+  {
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(metaSchemaLocation);
+    JsonNode resourceSchema = JsonHelper.loadJsonDocument(documentLocation);
+
+    JsonHelper.removeAttribute(resourceSchema, AttributeNames.ID);
+    Assertions.assertThrows(DocumentValidationException.class, () -> {
+      SchemaValidator.validateDocumentForResponse(metaSchema, resourceSchema);
+    });
+  }
+
+  /**
+   * this test will verify that unknown attributes are removed from the validated document
+   */
+  @Test
+  public void testRemoveEnterpriseExtensionFromValidatedDocument()
+  {
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, SchemaValidator.HttpMethod.POST);
+    });
+    // since the document was only validated against the user-schema and not the enterprise-user-extension schema
+    // the extension attribute should not be present in the result
+    Assertions.assertNull(validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI));
+  }
+
+  /**
+   * this test will verify never returned attributes are simply removed from responses
+   */
+  @Test
+  public void testRemoveNeverReturnedAttributesFromResponse()
+  {
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+    });
+    // since the document was only validated against the user-schema and not the enterprise-user-extension schema
+    // the extension attribute should not be present in the result
+    Assertions.assertNull(validatedDocument.get(AttributeNames.PASSWORD));
+  }
+
+  /**
+   * this test will verify read only attributes are simply removed from the request if they are not required
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"POST", "PUT"})
+  public void testRemoveNonRequiredReadOnlyAttributesFromRequest(SchemaValidator.HttpMethod httpMethod)
+  {
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, httpMethod);
+    });
+    // since the document was only validated against the user-schema and not the enterprise-user-extension schema
+    // the extension attribute should not be present in the result
+    Assertions.assertNull(validatedDocument.get(AttributeNames.ID));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.DISPLAY));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.GROUPS));
   }
 
   private String getAttributeString(String name,

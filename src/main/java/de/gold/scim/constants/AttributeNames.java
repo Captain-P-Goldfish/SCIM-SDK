@@ -50,5 +50,11 @@ public final class AttributeNames
   public static final String ENDPOINT = "endpoint";
 
   public static final String META = "meta";
+
+  public static final String PASSWORD = "password";
+
+  public static final String DISPLAY = "display";
+
+  public static final String GROUPS = "groups";
 }
 

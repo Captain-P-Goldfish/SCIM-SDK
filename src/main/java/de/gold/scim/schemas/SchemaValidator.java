@@ -15,7 +15,9 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
+import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
@@ -191,8 +193,15 @@ public class SchemaValidator
     for ( SchemaAttribute metaAttribute : metaAttributes )
     {
       checkMetaAttributeOnDocument(document, metaAttribute).ifPresent(childNode -> {
-        JsonHelper.addAttribute(scimNode, metaAttribute.getName(), childNode);
+        if (!(childNode.isArray() && childNode.isEmpty()))
+        {
+          JsonHelper.addAttribute(scimNode, metaAttribute.getName(), childNode);
+        }
       });
+    }
+    if (scimNode.isEmpty())
+    {
+      return null;
     }
     return scimNode;
   }
@@ -242,6 +251,10 @@ public class SchemaValidator
         JsonHelper.addAttribute(scimArrayNode, schemaAttribute.getName(), simpleNode);
       });
     }
+    if (scimArrayNode.isEmpty())
+    {
+      return Optional.empty();
+    }
     return Optional.of(scimArrayNode);
   }
 
@@ -253,6 +266,10 @@ public class SchemaValidator
       handleComplexNode(complexAttribute, schemaAttribute).ifPresent(returnedAttribute -> {
         JsonHelper.addAttributeToArray(scimArrayNode, returnedAttribute);
       });
+    }
+    if (scimArrayNode.isEmpty())
+    {
+      return Optional.empty();
     }
     return Optional.of(scimArrayNode);
   }
@@ -280,7 +297,37 @@ public class SchemaValidator
 
   private Optional<JsonNode> validateRequestBasedInformation(JsonNode jsonNode, SchemaAttribute schemaAttribute)
   {
-    // TODO validate the object based on the request type
+    if (DirectionType.REQUEST.equals(directionType))
+    {
+      return validateRequestBasedInformationForRequest(jsonNode, schemaAttribute);
+    }
+    else
+    {
+      return validateRequestBasedInformationForResponse(jsonNode, schemaAttribute);
+    }
+  }
+
+  private Optional<JsonNode> validateRequestBasedInformationForRequest(JsonNode jsonNode,
+                                                                       SchemaAttribute schemaAttribute)
+  {
+    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      return Optional.empty();
+    }
+    return Optional.of(jsonNode);
+  }
+
+  private Optional<JsonNode> validateRequestBasedInformationForResponse(JsonNode jsonNode,
+                                                                        SchemaAttribute schemaAttribute)
+  {
+    if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      return Optional.empty();
+    }
+    else if (Returned.NEVER.equals(schemaAttribute.getReturned()))
+    {
+      return Optional.empty();
+    }
     return Optional.of(jsonNode);
   }
 
@@ -292,14 +339,53 @@ public class SchemaValidator
       return Optional.empty();
     }
     List<SchemaAttribute> metaSubAttributes = schemaAttribute.getSubAttributes();
-    return Optional.of(validateAttributes(metaSubAttributes, documentComplexNode, schemaAttribute));
+    return Optional.ofNullable(validateAttributes(metaSubAttributes, documentComplexNode, schemaAttribute));
   }
 
   private void validateIsRequired(JsonNode jsonNode, SchemaAttribute schemaAttribute)
   {
-    if (schemaAttribute.isRequired() && (jsonNode == null || jsonNode.isNull()))
+    if (!schemaAttribute.isRequired())
     {
-      throw getException("required attribute '" + schemaAttribute.getScimNodeName() + "' is missing", null);
+      return;
+    }
+    if (DirectionType.REQUEST.equals(directionType))
+    {
+      validateIsRequiredForRequest(jsonNode, schemaAttribute);
+    }
+    else
+    {
+      validateIsRequiredForResponse(jsonNode, schemaAttribute);
+    }
+  }
+
+  private void validateIsRequiredForRequest(JsonNode jsonNode, SchemaAttribute schemaAttribute)
+  {
+    boolean isNodeNull = jsonNode == null || jsonNode.isNull();
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName() + "' is required on '"
+                                          + httpMethod + "' request for its mutability is '"
+                                          + schemaAttribute.getMutability() + "'!";
+    if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
+         || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+        && isNodeNull)
+    {
+      throw getException(errorMessage.get(), null);
+    }
+    else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && httpMethod.equals(HttpMethod.POST)
+             && isNodeNull)
+    {
+      throw getException(errorMessage.get(), null);
+    }
+  }
+
+  private void validateIsRequiredForResponse(JsonNode jsonNode, SchemaAttribute schemaAttribute)
+  {
+    boolean isNodeNull = jsonNode == null || jsonNode.isNull();
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName()
+                                          + "' is required on response for its mutability is '"
+                                          + schemaAttribute.getMutability() + "'!";
+    if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      throw getException(errorMessage.get(), null);
     }
   }
 

@@ -3,12 +3,14 @@
     "urn:ietf:params:scim:schemas:core:2.0:User",
     "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
   ],
+  "id": "123456",
   "userName": "chuck",
   "active": true,
   "name": {
     "familyName": "Norris",
     "givenName": "Carlos"
   },
+  "password": "bruce lee lost, he just doesn't know it",
   "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
     "employeeNumber": "701984",
     "costCenter": "4130",

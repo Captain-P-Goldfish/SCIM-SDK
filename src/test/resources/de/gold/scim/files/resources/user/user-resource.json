@@ -12,6 +12,8 @@
     "honorificPrefix": "Sir"
   },
   "userName": "chuck",
+  "display": "chuck norris",
+  "password": "bruce lee lost, he just doesn't know it",
   "phoneNumbers": [
     {
       "value": "555-555-555555",
@@ -23,6 +25,12 @@
       "value": "chuck@norris.com",
       "type": "work",
       "primary": true
+    }
+  ],
+  "groups": [
+    {
+      "value": "123456",
+      "display": "admin"
     }
   ]
 }
