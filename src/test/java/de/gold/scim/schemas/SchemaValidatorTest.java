@@ -324,7 +324,7 @@ public class SchemaValidatorTest implements FileReferences
    *
    * @param validatedDocument the node to verify that it is a {@link ScimNode}
    */
-  private void validateJsonNodeIsScimNode(JsonNode validatedDocument)
+  public static void validateJsonNodeIsScimNode(JsonNode validatedDocument)
   {
     Assertions.assertTrue(validatedDocument instanceof ScimNode);
     ScimNode scimNode = (ScimNode)validatedDocument;

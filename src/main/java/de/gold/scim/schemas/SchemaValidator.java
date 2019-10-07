@@ -48,12 +48,16 @@ public class SchemaValidator
 {
 
   /**
+   * tells us if the current validation is about an extension or the main document. In case of an extension we
+   * will not validate the "schemas"-attribute because it is not expected within an extension
+   */
+  private final boolean extensionSchema;
+  /**
    * tells us if the schema is validated as request or as response
    *
    * @see DirectionType
    */
   private DirectionType directionType;
-
   /**
    * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
    * POST requests but invalid on PUT requests
@@ -64,6 +68,14 @@ public class SchemaValidator
   {
     this.directionType = directionType;
     this.httpMethod = httpMethod;
+    this.extensionSchema = false;
+  }
+
+  private SchemaValidator(DirectionType directionType, HttpMethod httpMethod, boolean extensionSchema)
+  {
+    this.directionType = directionType;
+    this.httpMethod = httpMethod;
+    this.extensionSchema = extensionSchema;
   }
 
   /**
@@ -86,7 +98,7 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new InternalServerErrorException(message.get(), null,
                                                                                        ScimType.MISSING_EXTENSION));
-      JsonNode extensionNode = validateDocumentForResponse(schemaExtension.toJsonNode(), extension);
+      JsonNode extensionNode = validateExtensionForResponse(schemaExtension.toJsonNode(), extension);
       JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
     return validatedMainDocument;
@@ -104,6 +116,21 @@ public class SchemaValidator
   protected static JsonNode validateDocumentForResponse(JsonNode metaSchema, JsonNode document)
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null);
+    return schemaValidator.validateDocument(metaSchema, document);
+  }
+
+  /**
+   * This method will build an instance of schema validator will then validate the extension with the given
+   * schema and returns a new document that conforms to the json meta schema definition.<br>
+   * the validation direction of this method is {@link DirectionType#RESPONSE}
+   *
+   * @param metaSchema the json meta schema definition of the extension
+   * @param document the extension to validate
+   * @return the validated extension that might have been reduced of some attributes
+   */
+  protected static JsonNode validateExtensionForResponse(JsonNode metaSchema, JsonNode document)
+  {
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, true);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -130,7 +157,7 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new BadRequestException(message.get(), null,
                                                                               ScimType.MISSING_EXTENSION));
-      JsonNode extensionNode = validateDocumentForRequest(schemaExtension.toJsonNode(), extension, httpMethod);
+      JsonNode extensionNode = validateExtensionForRequest(schemaExtension.toJsonNode(), extension, httpMethod);
       JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
     return validatedMainDocument;
@@ -154,6 +181,23 @@ public class SchemaValidator
   }
 
   /**
+   * This method will build an instance of schema validator will then validate the given extension with the given
+   * schema and returns a new document that conforms to the json meta schema definition <br>
+   * the validation direction of this method is {@link DirectionType#REQUEST}
+   *
+   * @param metaSchema the json meta schema definition of the document
+   * @param document the extension to validate
+   * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
+   *          types that are valid on POST requests but invalid on PUT requests
+   * @return the validated extension that might have been reduced of some attributes
+   */
+  protected static JsonNode validateExtensionForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
+  {
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, true);
+    return schemaValidator.validateDocument(metaSchema, document);
+  }
+
+  /**
    * this method will validate the given document against the given meta schema and check if the document is
    * valid
    *
@@ -164,7 +208,10 @@ public class SchemaValidator
   private JsonNode validateDocument(JsonNode metaSchema, JsonNode document) throws DocumentValidationException
   {
     log.trace("validating metaSchema vs document");
-    checkDocumentAndMetaSchemaRelationship(metaSchema, document);
+    if (!extensionSchema)
+    {
+      checkDocumentAndMetaSchemaRelationship(metaSchema, document);
+    }
     JsonNode attributes = getAttributes(metaSchema);
     try
     {

@@ -3,7 +3,6 @@ package de.gold.scim.schemas;
 import java.util.Collections;
 import java.util.List;
 
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,6 +22,7 @@ import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -244,5 +244,45 @@ public class ResourceTypeTest implements FileReferences
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     JsonHelper.addAttribute(chuckNorris, roleUri, adminRole);
     Assertions.assertDoesNotThrow(() -> userResourceType.getResourceSchema(chuckNorris));
+  }
+
+  /**
+   * this test shall verify that the {@link SchemaValidator} works correctly if used with a {@link ResourceType}
+   * object
+   */
+  @Test
+  public void testSchemaValidationWithResourceTypeWithExtensionForResponse()
+  {
+    JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    ResourceType resourceType = new ResourceType(userResourceTypeJson);
+
+    JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(resourceType, enterpriseUserDocument);
+
+    SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
+    Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
+                                                        resourceType.getSchemaExtensions().get(0).getSchema())
+                                    .isPresent());
+  }
+
+  /**
+   * this test shall verify that the {@link SchemaValidator} works correctly if used with a {@link ResourceType}
+   * object
+   */
+  @Test
+  public void testSchemaValidationWithResourceTypeWithExtensionForRequest()
+  {
+    JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    ResourceType resourceType = new ResourceType(userResourceTypeJson);
+
+    JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(resourceType,
+                                                                            enterpriseUserDocument,
+                                                                            SchemaValidator.HttpMethod.POST);
+
+    SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
+    Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
+                                                        resourceType.getSchemaExtensions().get(0).getSchema())
+                                    .isPresent());
   }
 }
