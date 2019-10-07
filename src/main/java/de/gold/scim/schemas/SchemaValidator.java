@@ -42,6 +42,10 @@ import lombok.extern.slf4j.Slf4j;
  * author Pascal Knueppel <br>
  * created at: 06.10.2019 - 00:18 <br>
  * <br>
+ * This class will validate documents against their meta-schemata. Normally the validation should be done with
+ * the help of {@link ResourceType}-definitions that define a resource endpoint with the setup of their
+ * resources. Meaning that a {@link ResourceType} knows the meta-schemata of a resource and its extensions
+ * which is why the {@link ResourceType} is the base of validating a resource-document
  */
 @Slf4j
 public class SchemaValidator
@@ -52,12 +56,14 @@ public class SchemaValidator
    * will not validate the "schemas"-attribute because it is not expected within an extension
    */
   private final boolean extensionSchema;
+
   /**
    * tells us if the schema is validated as request or as response
    *
    * @see DirectionType
    */
   private DirectionType directionType;
+
   /**
    * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
    * POST requests but invalid on PUT requests
@@ -79,14 +85,20 @@ public class SchemaValidator
   }
 
   /**
-   * will validate an outgoing document against its main schema and all its extensions
+   * will validate an outgoing document against its main schema and all its extensions. Attributes that are
+   * unknown to the given schema or are meaningless or forbidden in responses due to their mutability or
+   * returned value will be removed from the validated document. <br>
+   * attributes that will be removed in the response validation are thos that are having a mutability of
+   * {@link Mutability#WRITE_ONLY} or a returned value of {@link Returned#NEVER}. This will prevent the server
+   * from accidentally returning passwords or equally sensitive information
    *
    * @param resourceType the resource type definition of the incoming document
    * @param document the document that should be validated
-   * @return the validated document that might have several nodes removed if they were unknown by the
-   *         resource-schema-definitions
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @throws DocumentValidationException if the schema validation failed
    */
   public static JsonNode validateDocumentForResponse(ResourceType resourceType, JsonNode document)
+    throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
     JsonNode validatedMainDocument = validateDocumentForResponse(resourceSchema.getMetaSchema().toJsonNode(), document);
@@ -105,13 +117,16 @@ public class SchemaValidator
   }
 
   /**
-   * This method will build an instance of schema validator will then validate the document with the given
-   * schema and returns a new document that conforms to the json meta schema definition.<br>
-   * the validation direction of this method is {@link DirectionType#RESPONSE}
+   * will validate an outgoing document against its main schema and all its extensions. Attributes that are
+   * unknown to the given schema or are meaningless or forbidden in responses due to their mutability or
+   * returned value will be removed from the validated document. <br>
+   * attributes that will be removed in the response validation are thos that are having a mutability of
+   * {@link Mutability#WRITE_ONLY} or a returned value of {@link Returned#NEVER}. This will prevent the server
+   * from accidentally returning passwords or equally sensitive information
    *
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
-   * @return the validated document that might have been reduced of some attributes
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
   protected static JsonNode validateDocumentForResponse(JsonNode metaSchema, JsonNode document)
   {
@@ -120,30 +135,37 @@ public class SchemaValidator
   }
 
   /**
-   * This method will build an instance of schema validator will then validate the extension with the given
-   * schema and returns a new document that conforms to the json meta schema definition.<br>
-   * the validation direction of this method is {@link DirectionType#RESPONSE}
+   * This method is explicitly for extension validation. Extensions within its main documents should not have
+   * "schemas"-attribute itself since the relation of the schema-uri can be found in the "schemas"-attribute of
+   * the main-document. So this method will trigger the schema validation but will ignore the validation of the
+   * "schemas"-attrbiute
    *
    * @param metaSchema the json meta schema definition of the extension
    * @param document the extension to validate
-   * @return the validated extension that might have been reduced of some attributes
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  protected static JsonNode validateExtensionForResponse(JsonNode metaSchema, JsonNode document)
+  private static JsonNode validateExtensionForResponse(JsonNode metaSchema, JsonNode document)
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, true);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
   /**
-   * will validate an incoming document against its main schema and all its extensions
+   * will validate an incoming document against its main schema and all its extensions. Attributes that are
+   * unknown to the given schema or are meaningless in requests due to their mutability value will be removed
+   * from the validated document. <br>
+   * attributes that will be removed in the request validation are those that are have a mutability of
+   * {@link Mutability#READ_ONLY}. The client is not able to write these attributes and therefore the server
+   * does not need to process them.
    *
    * @param resourceType the resource type definition of the incoming document
    * @param document the document that should be validated
    * @param httpMethod the request http method that is used to validate the request-document
-   * @return the validated document that might have several nodes removed if they were unknown by the
-   *         resource-schema-definitions
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @throws DocumentValidationException if the schema validation failed
    */
   public static JsonNode validateDocumentForRequest(ResourceType resourceType, JsonNode document, HttpMethod httpMethod)
+    throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
     JsonNode validatedMainDocument = validateDocumentForRequest(resourceSchema.getMetaSchema().toJsonNode(),
@@ -164,15 +186,18 @@ public class SchemaValidator
   }
 
   /**
-   * This method will build an instance of schema validator will then validate the document with the given
-   * schema and returns a new document that conforms to the json meta schema definition <br>
-   * the validation direction of this method is {@link DirectionType#REQUEST}
+   * will validate an incoming document against its main schema and all its extensions. Attributes that are
+   * unknown to the given schema or are meaningless in requests due to their mutability value will be removed
+   * from the validated document. <br>
+   * attributes that will be removed in the request validation are those that are have a mutability of
+   * {@link Mutability#READ_ONLY}. The client is not able to write these attributes and therefore the server
+   * does not need to process them.
    *
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
    * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
    *          types that are valid on POST requests but invalid on PUT requests
-   * @return the validated document that might have been reduced of some attributes
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
   protected static JsonNode validateDocumentForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
   {
@@ -181,17 +206,18 @@ public class SchemaValidator
   }
 
   /**
-   * This method will build an instance of schema validator will then validate the given extension with the given
-   * schema and returns a new document that conforms to the json meta schema definition <br>
-   * the validation direction of this method is {@link DirectionType#REQUEST}
+   * This method is explicitly for extension validation. Extensions within its main documents should not have
+   * "schemas"-attribute itself since the relation of the schema-uri can be found in the "schemas"-attribute of
+   * the main-document. So this method will trigger the schema validation but will ignore the validation of the
+   * "schemas"-attrbiute
    *
    * @param metaSchema the json meta schema definition of the document
    * @param document the extension to validate
    * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
    *          types that are valid on POST requests but invalid on PUT requests
-   * @return the validated extension that might have been reduced of some attributes
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  protected static JsonNode validateExtensionForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
+  private static JsonNode validateExtensionForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, true);
     return schemaValidator.validateDocument(metaSchema, document);
@@ -199,13 +225,14 @@ public class SchemaValidator
 
   /**
    * this method will validate the given document against the given meta schema and check if the document is
-   * valid
+   * valid. Attributes that are unknown in the metaSchema but do exist in the document will be removed from the
+   * document
    *
    * @param metaSchema the document description
    * @param document the document that should be built after the rules of the metaSchema
-   * @throws DocumentValidationException if the schema validation failed
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  private JsonNode validateDocument(JsonNode metaSchema, JsonNode document) throws DocumentValidationException
+  private JsonNode validateDocument(JsonNode metaSchema, JsonNode document)
   {
     log.trace("validating metaSchema vs document");
     if (!extensionSchema)
@@ -232,6 +259,15 @@ public class SchemaValidator
     }
   }
 
+  /**
+   * will use the given meta attributes to validate each attribute in the document
+   *
+   * @param metaAttributes list of meta attributes that may or may not be present within the document
+   * @param document the document to validate
+   * @param parentAttribute this method is getting called recursively and this is the parent document that is
+   *          given to the new {@link SchemaAttribute} object
+   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   */
   private JsonNode validateAttributes(List<SchemaAttribute> metaAttributes,
                                       JsonNode document,
                                       SchemaAttribute parentAttribute)
@@ -253,6 +289,13 @@ public class SchemaValidator
     return scimNode;
   }
 
+  /**
+   * will check a single meta-attribute on the given document
+   *
+   * @param document the document to validate
+   * @param schemaAttribute the single meta-attribute that will be validated against the given document
+   * @return the attribute if present in the document an empty else
+   */
   private Optional<JsonNode> checkMetaAttributeOnDocument(JsonNode document, SchemaAttribute schemaAttribute)
   {
     JsonNode documentNode = document.get(schemaAttribute.getName());
@@ -271,6 +314,13 @@ public class SchemaValidator
     }
   }
 
+  /**
+   * validates attributes that are marked as multiValued attributes in the meta attribute
+   *
+   * @param document the document that holds the multiValued attribute
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if present in the document or an empty else
+   */
   private Optional<JsonNode> handleMultivaluedNodes(JsonNode document, SchemaAttribute schemaAttribute)
   {
     if (Type.COMPLEX.equals(schemaAttribute.getType()))
@@ -283,6 +333,13 @@ public class SchemaValidator
     }
   }
 
+  /**
+   * handles a json array with primitive types
+   *
+   * @param document the document to validate
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if present in the document or an empty else
+   */
   private Optional<JsonNode> handleSimpleMultivaluedNode(JsonNode document, SchemaAttribute schemaAttribute)
   {
     JsonNode multiValuedAttribute = document.get(schemaAttribute.getName());
@@ -305,6 +362,13 @@ public class SchemaValidator
     return Optional.of(scimArrayNode);
   }
 
+  /**
+   * handles a json array with complex node types
+   *
+   * @param document the document that should be validated
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if present in the document or an empty else
+   */
   private Optional<JsonNode> handleMultivaluedComplexNode(JsonNode document, SchemaAttribute schemaAttribute)
   {
     ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
@@ -321,6 +385,13 @@ public class SchemaValidator
     return Optional.of(scimArrayNode);
   }
 
+  /**
+   * handles a simple json node with a primitive value
+   *
+   * @param document the document that should be validated
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if present in the document or an empty else
+   */
   private Optional<JsonNode> handleNode(JsonNode document, SchemaAttribute schemaAttribute)
   {
     Optional<JsonNode> jsonNode;
@@ -342,100 +413,34 @@ public class SchemaValidator
     }
   }
 
-  private Optional<JsonNode> validateRequestBasedInformation(JsonNode jsonNode, SchemaAttribute schemaAttribute)
+  /**
+   * handles a complex json node type. A complex node type has its own meta-attribute array and is itself a full
+   * fleshed json document so this method will initiate a recursive call to
+   * {@link #validateDocument(JsonNode, JsonNode)} to do its work
+   *
+   * @param document the document complex node to validate
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if present in the document or an empty else
+   */
+  private Optional<JsonNode> handleComplexNode(JsonNode document, SchemaAttribute schemaAttribute)
   {
-    if (DirectionType.REQUEST.equals(directionType))
-    {
-      return validateRequestBasedInformationForRequest(jsonNode, schemaAttribute);
-    }
-    else
-    {
-      return validateRequestBasedInformationForResponse(jsonNode, schemaAttribute);
-    }
-  }
-
-  private Optional<JsonNode> validateRequestBasedInformationForRequest(JsonNode jsonNode,
-                                                                       SchemaAttribute schemaAttribute)
-  {
-    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
-    {
-      return Optional.empty();
-    }
-    return Optional.of(jsonNode);
-  }
-
-  private Optional<JsonNode> validateRequestBasedInformationForResponse(JsonNode jsonNode,
-                                                                        SchemaAttribute schemaAttribute)
-  {
-    if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
-    {
-      return Optional.empty();
-    }
-    else if (Returned.NEVER.equals(schemaAttribute.getReturned()))
-    {
-      return Optional.empty();
-    }
-    return Optional.of(jsonNode);
-  }
-
-  private Optional<JsonNode> handleComplexNode(JsonNode documentComplexNode, SchemaAttribute schemaAttribute)
-  {
-    validateIsRequired(documentComplexNode, schemaAttribute);
-    if (documentComplexNode == null)
+    validateIsRequired(document, schemaAttribute);
+    if (document == null)
     {
       return Optional.empty();
     }
     List<SchemaAttribute> metaSubAttributes = schemaAttribute.getSubAttributes();
-    return Optional.ofNullable(validateAttributes(metaSubAttributes, documentComplexNode, schemaAttribute));
+    return Optional.ofNullable(validateAttributes(metaSubAttributes, document, schemaAttribute));
   }
 
-  private void validateIsRequired(JsonNode jsonNode, SchemaAttribute schemaAttribute)
-  {
-    if (!schemaAttribute.isRequired())
-    {
-      return;
-    }
-    if (DirectionType.REQUEST.equals(directionType))
-    {
-      validateIsRequiredForRequest(jsonNode, schemaAttribute);
-    }
-    else
-    {
-      validateIsRequiredForResponse(jsonNode, schemaAttribute);
-    }
-  }
-
-  private void validateIsRequiredForRequest(JsonNode jsonNode, SchemaAttribute schemaAttribute)
-  {
-    boolean isNodeNull = jsonNode == null || jsonNode.isNull();
-    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName() + "' is required on '"
-                                          + httpMethod + "' request for its mutability is '"
-                                          + schemaAttribute.getMutability() + "'!";
-    if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
-         || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
-        && isNodeNull)
-    {
-      throw getException(errorMessage.get(), null);
-    }
-    else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && httpMethod.equals(HttpMethod.POST)
-             && isNodeNull)
-    {
-      throw getException(errorMessage.get(), null);
-    }
-  }
-
-  private void validateIsRequiredForResponse(JsonNode jsonNode, SchemaAttribute schemaAttribute)
-  {
-    boolean isNodeNull = jsonNode == null || jsonNode.isNull();
-    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName()
-                                          + "' is required on response for its mutability is '"
-                                          + schemaAttribute.getMutability() + "'!";
-    if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
-    {
-      throw getException(errorMessage.get(), null);
-    }
-  }
-
+  /**
+   * the handling of a simple json node with a primitive type
+   *
+   * @param simpleDocumentNode the simple value node that should be validated
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute as a {@link JsonNode} that implements the interface
+   *         {@link de.gold.scim.resources.ScimNode} in its corresponding node type
+   */
   private Optional<JsonNode> handleSimpleNode(JsonNode simpleDocumentNode, SchemaAttribute schemaAttribute)
   {
     if (simpleDocumentNode == null)
@@ -477,6 +482,138 @@ public class SchemaValidator
                                          .status(directionType.getHttpStatus())
                                          .build();
     }
+  }
+
+  /**
+   * checks if the given json node is a required node and throws an exception if the required node is not
+   * present within the document.
+   *
+   * @param document the document that should contain the attribute
+   * @param schemaAttribute the meta information of the attribute
+   */
+  private void validateIsRequired(JsonNode document, SchemaAttribute schemaAttribute)
+  {
+    if (!schemaAttribute.isRequired())
+    {
+      return;
+    }
+    if (DirectionType.REQUEST.equals(directionType))
+    {
+      validateIsRequiredForRequest(document, schemaAttribute);
+    }
+    else
+    {
+      validateIsRequiredForResponse(document, schemaAttribute);
+    }
+  }
+
+  /**
+   * checks if the attribute is required in a request
+   *
+   * @param document the document that should contain the attribute
+   * @param schemaAttribute the meta information of the attribute
+   */
+  private void validateIsRequiredForRequest(JsonNode document, SchemaAttribute schemaAttribute)
+  {
+    boolean isNodeNull = document == null || document.isNull();
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName() + "' is required on '"
+                                          + httpMethod + "' request for its mutability is '"
+                                          + schemaAttribute.getMutability() + "'!";
+    if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
+         || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+        && isNodeNull)
+    {
+      throw getException(errorMessage.get(), null);
+    }
+    else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && httpMethod.equals(HttpMethod.POST)
+             && isNodeNull)
+    {
+      throw getException(errorMessage.get(), null);
+    }
+  }
+
+  /**
+   * checks if the attribute is required in a response
+   *
+   * @param document the document that should contain the attribute
+   * @param schemaAttribute the meta information of the attribute
+   */
+  private void validateIsRequiredForResponse(JsonNode document, SchemaAttribute schemaAttribute)
+  {
+    boolean isNodeNull = document == null || document.isNull();
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName()
+                                          + "' is required on response for its mutability is '"
+                                          + schemaAttribute.getMutability() + "'!";
+    if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      throw getException(errorMessage.get(), null);
+    }
+  }
+
+  /**
+   * validates if the given attribute should be removed from the request or response document
+   *
+   * @param documentNode the document node that is being validated
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if it should not be remove or an empty if the attribute should be removed
+   */
+  private Optional<JsonNode> validateRequestBasedInformation(JsonNode documentNode, SchemaAttribute schemaAttribute)
+  {
+    if (DirectionType.REQUEST.equals(directionType))
+    {
+      return validateRequestBasedInformationForRequest(documentNode, schemaAttribute);
+    }
+    else
+    {
+      return validateRequestBasedInformationForResponse(documentNode, schemaAttribute);
+    }
+  }
+
+  /**
+   * validates if the given attribute should be removed from the request document
+   *
+   * @param documentNode the document node that is being validated
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if it should not be remove or an empty if the attribute should be removed
+   */
+  private Optional<JsonNode> validateRequestBasedInformationForRequest(JsonNode documentNode,
+                                                                       SchemaAttribute schemaAttribute)
+  {
+    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      log.debug("removed attribute '{}' from request since it has a mutability of {}",
+                schemaAttribute.getScimNodeName(),
+                schemaAttribute.getMutability());
+      return Optional.empty();
+    }
+    return Optional.of(documentNode);
+  }
+
+  /**
+   * validates if the given attribute should be removed from the response document
+   *
+   * @param documentNode the document node that is being validated
+   * @param schemaAttribute the meta information of the attribute
+   * @return the attribute if it should not be remove or an empty if the attribute should be removed
+   */
+  private Optional<JsonNode> validateRequestBasedInformationForResponse(JsonNode documentNode,
+                                                                        SchemaAttribute schemaAttribute)
+  {
+    if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      log.warn("server tried to return the attribute '{}' that has a mutability value of: {}",
+               schemaAttribute.getScimNodeName(),
+               schemaAttribute.getMutability());
+      return Optional.empty();
+    }
+    else if (Returned.NEVER.equals(schemaAttribute.getReturned()))
+    {
+      log.warn("server tried to return the attribute '{}' that has a returned value of: {}",
+               schemaAttribute.getScimNodeName(),
+               schemaAttribute.getReturned());
+      return Optional.empty();
+    }
+    return Optional.of(documentNode);
   }
 
   /**
