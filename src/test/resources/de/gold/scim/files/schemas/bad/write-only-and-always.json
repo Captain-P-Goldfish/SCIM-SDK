@@ -1,0 +1,17 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:gold:params:scim:schemas:custom:2.0:Senseless",
+  "name": "Senseless",
+  "description": "Senseless",
+  "attributes": [
+    {
+      "name": "senseless",
+      "type": "string",
+      "description": "senseless declaration: client can only write to it but must not read it and it is always returned.",
+      "mutability": "writeOnly",
+      "returned": "always"
+    }
+  ]
+}

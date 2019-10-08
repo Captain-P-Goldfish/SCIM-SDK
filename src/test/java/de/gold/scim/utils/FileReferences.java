@@ -48,6 +48,15 @@ public interface FileReferences
 
   public static final String ROLE_RESOURCE_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/role-schema.json";
 
+  public static final String DUPLICATE_NAME_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/duplicate-name-value.json";
+
+  public static final String DUPLICATE_SUB_NAME_SCHEMA = RESOURCE_SCHEMA_BASE_PATH
+                                                         + "/bad/duplicate-sub-name-value.json";
+
+  public static final String READ_ONLY_NEVER_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/read-only-and-never.json";
+
+  public static final String WRITE_ONLY_ALWAYS_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/write-only-and-always.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

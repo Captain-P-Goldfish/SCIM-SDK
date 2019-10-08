@@ -66,7 +66,10 @@ public class SchemaValidatorTest implements FileReferences
                                   JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON)),
                      Arguments.of("check group-resourceType schema definition",
                                   JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON),
-                                  JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON)));
+                                  JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON)),
+                     Arguments.of("check enterprise-user validation",
+                                  JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
+                                  JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE)));
   }
 
 
@@ -95,6 +98,25 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * calls itself recursively to verify that all existing nodes are of type {@link ScimNode}
+   *
+   * @param validatedDocument the node to verify that it is a {@link ScimNode}
+   */
+  public static void validateJsonNodeIsScimNode(JsonNode validatedDocument)
+  {
+    Assertions.assertTrue(validatedDocument instanceof ScimNode);
+    ScimNode scimNode = (ScimNode)validatedDocument;
+    log.trace(scimNode.getScimNodeName());
+    if (validatedDocument.isArray() || validatedDocument.isObject())
+    {
+      for ( JsonNode jsonNode : validatedDocument )
+      {
+        validateJsonNodeIsScimNode(jsonNode);
+      }
+    }
+  }
+
+  /**
    * validates the schemata from the classpath
    *
    * @param testName the name of the test
@@ -106,7 +128,12 @@ public class SchemaValidatorTest implements FileReferences
   public void testSchemaValidationForUserResourceSchema(String testName, JsonNode metaSchema, JsonNode jsonDocument)
   {
     log.trace(testName);
-    SchemaValidator.validateDocumentForResponse(metaSchema, jsonDocument);
+    JsonNode jsonNode = SchemaValidator.validateDocumentForResponse(metaSchema, jsonDocument);
+    Assertions.assertTrue(JsonHelper.getArrayAttribute(jsonNode, AttributeNames.SCHEMAS).isPresent(),
+                          "the schemas attribute must not be removed from the document");
+    ArrayNode documentSchemas = JsonHelper.getArrayAttribute(jsonDocument, AttributeNames.SCHEMAS).get();
+    ArrayNode jsonNodeSchemas = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.SCHEMAS).get();
+    Assertions.assertEquals(documentSchemas, jsonNodeSchemas);
   }
 
   /**
@@ -141,7 +168,6 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
   }
-
 
   /**
    * checks that the validation will fail if a canonical value has a typo
@@ -226,7 +252,6 @@ public class SchemaValidatorTest implements FileReferences
                                                                                     userResourceTypeSchema));
   }
 
-
   /**
    * this test will verify that the validation fails if timestamps are used that do not fit the xsd:datetime
    * definition
@@ -270,7 +295,6 @@ public class SchemaValidatorTest implements FileReferences
     TextNode textNode = new TextNode(dateTime);
     JsonHelper.addAttribute(document, createdAttributeName, textNode);
   }
-
 
   /**
    * this test will show that the validation will also remove attributes that are not defined by the schema
@@ -317,25 +341,6 @@ public class SchemaValidatorTest implements FileReferences
     });
     Assertions.assertNotNull(validatedDocument);
     validateJsonNodeIsScimNode(validatedDocument);
-  }
-
-  /**
-   * calls itself recursively to verify that all existing nodes are of type {@link ScimNode}
-   *
-   * @param validatedDocument the node to verify that it is a {@link ScimNode}
-   */
-  public static void validateJsonNodeIsScimNode(JsonNode validatedDocument)
-  {
-    Assertions.assertTrue(validatedDocument instanceof ScimNode);
-    ScimNode scimNode = (ScimNode)validatedDocument;
-    log.trace(scimNode.getScimNodeName());
-    if (validatedDocument.isArray() || validatedDocument.isObject())
-    {
-      for ( JsonNode jsonNode : validatedDocument )
-      {
-        validateJsonNodeIsScimNode(jsonNode);
-      }
-    }
   }
 
   /**
@@ -407,6 +412,19 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNull(validatedDocument.get(AttributeNames.ID));
     Assertions.assertNull(validatedDocument.get(AttributeNames.DISPLAY));
     Assertions.assertNull(validatedDocument.get(AttributeNames.GROUPS));
+  }
+
+  @Test
+  public void testDuplicateSimpleAttribute()
+  {
+    Assertions.fail("This test must check that a document does not have the same attribute twice");
+  }
+
+  @Test
+  public void testDuplicateValueOnUniqueMultivaluedAttribute()
+  {
+    Assertions.fail("This test must check that a document does not have an attribute with the same value twice if the"
+                    + " unique value is set to server or global");
   }
 
   private String getAttributeString(String name,

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,7 +23,7 @@ import de.gold.scim.constants.enums.Type;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.IncompatibleAttributeException;
-import de.gold.scim.exceptions.InternalServerErrorException;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidDateTimeRepresentationException;
 import de.gold.scim.resources.ScimArrayNode;
 import de.gold.scim.resources.ScimBooleanNode;
@@ -58,23 +59,38 @@ public class SchemaValidator
   private final boolean extensionSchema;
 
   /**
+   * this marker tells us if a new schema is validated. If this field is set to true the {@link #directionType}
+   * and {@link #httpMethod} fields will be ignored during validation
+   */
+  private final boolean schemaValidation;
+
+  /**
    * tells us if the schema is validated as request or as response
    *
    * @see DirectionType
    */
-  private DirectionType directionType;
+  private final DirectionType directionType;
 
   /**
    * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
    * POST requests but invalid on PUT requests
    */
-  private HttpMethod httpMethod;
+  private final HttpMethod httpMethod;
+
+  public SchemaValidator()
+  {
+    this.extensionSchema = false;
+    this.directionType = null;
+    this.httpMethod = null;
+    this.schemaValidation = true;
+  }
 
   private SchemaValidator(DirectionType directionType, HttpMethod httpMethod)
   {
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = false;
+    this.schemaValidation = false;
   }
 
   private SchemaValidator(DirectionType directionType, HttpMethod httpMethod, boolean extensionSchema)
@@ -82,6 +98,22 @@ public class SchemaValidator
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = extensionSchema;
+    this.schemaValidation = false;
+  }
+
+  /**
+   * this method will validate a new schema declaration against a meta schema. In other validations it might
+   * happen that specific attributes will be removed from the document because they do not belong into a request
+   * or a response. This method will ignore the direction-validation and keeps these attributes
+   *
+   * @param metaSchema the meta schema that is used to validate the new schema
+   * @param schemaDocument the new schema document that should be validated
+   * @return the validated schema definition
+   */
+  static JsonNode validateSchemaDocument(JsonNode metaSchema, JsonNode schemaDocument)
+  {
+    SchemaValidator schemaValidator = new SchemaValidator();
+    return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
   /**
@@ -108,8 +140,8 @@ public class SchemaValidator
                                        + AttributeNames.SCHEMAS + "' attribute but is "
                                        + "not present within the document";
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
-                                   .orElseThrow(() -> new InternalServerErrorException(message.get(), null,
-                                                                                       ScimType.MISSING_EXTENSION));
+                                   .orElseThrow(() -> new InternalServerException(message.get(), null,
+                                                                                  ScimType.MISSING_EXTENSION));
       JsonNode extensionNode = validateExtensionForResponse(schemaExtension.toJsonNode(), extension);
       JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
@@ -234,10 +266,13 @@ public class SchemaValidator
    */
   private JsonNode validateDocument(JsonNode metaSchema, JsonNode document)
   {
+    // TODO use {@link Schema} class as metaSchema attribute here
+    log.warn("TODO use {@link Schema} class as metaSchema attribute here");
     log.trace("validating metaSchema vs document");
+    JsonNode schemasNode = null;
     if (!extensionSchema)
     {
-      checkDocumentAndMetaSchemaRelationship(metaSchema, document);
+      schemasNode = checkDocumentAndMetaSchemaRelationship(metaSchema, document);
     }
     JsonNode attributes = getAttributes(metaSchema);
     try
@@ -245,9 +280,14 @@ public class SchemaValidator
       List<SchemaAttribute> schemaAttributeList = new ArrayList<>();
       for ( JsonNode metaAttribute : attributes )
       {
-        schemaAttributeList.add(new SchemaAttribute(metaAttribute));
+        schemaAttributeList.add(new SchemaAttribute(null, metaAttribute));
       }
-      return validateAttributes(schemaAttributeList, document, null);
+      JsonNode validatedDocument = validateAttributes(schemaAttributeList, document, null);
+      if (schemasNode != null)
+      {
+        JsonHelper.addAttribute(validatedDocument, AttributeNames.SCHEMAS, schemasNode);
+      }
+      return validatedDocument;
     }
     catch (IncompatibleAttributeException ex)
     {
@@ -493,7 +533,7 @@ public class SchemaValidator
    */
   private void validateIsRequired(JsonNode document, SchemaAttribute schemaAttribute)
   {
-    if (!schemaAttribute.isRequired())
+    if (!schemaAttribute.isRequired() || schemaValidation)
     {
       return;
     }
@@ -749,7 +789,7 @@ public class SchemaValidator
    * @param metaSchema the meta schema that should be used to validate the document
    * @param document the document that should be validated
    */
-  private void checkDocumentAndMetaSchemaRelationship(JsonNode metaSchema, JsonNode document)
+  private JsonNode checkDocumentAndMetaSchemaRelationship(JsonNode metaSchema, JsonNode document)
   {
     final String idAttribute = AttributeNames.ID;
     final String metaSchemaWithouidMessage = "meta schema does not have an '" + idAttribute + "'-attribute";
@@ -767,6 +807,9 @@ public class SchemaValidator
       throw getException(errorMessage, null);
     }
     log.trace("meta schema with id {} does apply to document with schemas '{}'", metaSchemaId, documentSchemas);
+    ScimArrayNode schemasNode = new ScimArrayNode(null);
+    schemasNode.addAll(documentSchemas.stream().map(s -> new ScimTextNode(null, s)).collect(Collectors.toList()));
+    return schemasNode;
   }
 
   /**
@@ -780,7 +823,7 @@ public class SchemaValidator
     final String attributeName = AttributeNames.ATTRIBUTES;
     final String errorMessage = "meta schema is missing attribute '" + attributeName + "'";
     return JsonHelper.getArrayAttribute(metaSchema, attributeName)
-                     .orElseThrow(() -> InternalServerErrorException.builder().message(errorMessage).build());
+                     .orElseThrow(() -> InternalServerException.builder().message(errorMessage).build());
   }
 
   /**
@@ -795,7 +838,7 @@ public class SchemaValidator
     final String attributeName = AttributeNames.SUB_ATTRIBUTES;
     final String errorMessage = "meta complex attribute is missing attribute '" + attributeName + "'";
     return JsonHelper.getArrayAttribute(metaSchema, attributeName)
-                     .orElseThrow(() -> InternalServerErrorException.builder().message(errorMessage).build());
+                     .orElseThrow(() -> InternalServerException.builder().message(errorMessage).build());
   }
 
   /**

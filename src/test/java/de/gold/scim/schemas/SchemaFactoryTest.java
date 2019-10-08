@@ -2,11 +2,12 @@ package de.gold.scim.schemas;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
 
 
@@ -15,7 +16,7 @@ import de.gold.scim.utils.JsonHelper;
  * created at: 03.10.2019 - 17:06 <br>
  * <br>
  */
-class SchemaFactoryTest
+class SchemaFactoryTest implements FileReferences
 {
 
   /**
@@ -71,22 +72,12 @@ class SchemaFactoryTest
    * simply makes no sense. The client cannot write to this attribute and will never see it
    */
   // @formatter:on
-  @Test
-  public void testSenselessAttributeCombinationsInMetaSchemata()
+  @ParameterizedTest
+  @ValueSource(strings = {DUPLICATE_NAME_SCHEMA, DUPLICATE_SUB_NAME_SCHEMA, READ_ONLY_NEVER_SCHEMA,
+                          WRITE_ONLY_ALWAYS_SCHEMA})
+  public void testSenselessAttributeCombinationsInMetaSchemata(String badSchemaLocation)
   {
-    Assertions.fail("this test must verify that no schema can be used that has senseless declarations");
-    // @formatter:off
-    // senseless declarations:
-    //  {
-    //     "required": true,
-    //     "mutability": "readOnly",
-    //     "returned": "never"
-    //  }
-    //  {
-    //     "required": false,
-    //     "mutability": "writeOnly",
-    //     "returned": "always"
-    //  }
-    // @formatter:on
+    Assertions.assertThrows(InvalidSchemaException.class,
+                            () -> schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(badSchemaLocation)));
   }
 }

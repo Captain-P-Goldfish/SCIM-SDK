@@ -2,8 +2,10 @@ package de.gold.scim.schemas;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -21,16 +23,9 @@ import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidSchemaException;
-import de.gold.scim.resources.ScimArrayNode;
-import de.gold.scim.resources.ScimBooleanNode;
-import de.gold.scim.resources.ScimDoubleNode;
-import de.gold.scim.resources.ScimIntNode;
-import de.gold.scim.resources.ScimObjectNode;
-import de.gold.scim.resources.ScimTextNode;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
-import lombok.Setter;
 
 
 /**
@@ -85,7 +80,7 @@ public class SchemaAttribute
    */
   private List<SchemaAttribute> subAttributes;
 
-  public SchemaAttribute(JsonNode jsonNode)
+  public SchemaAttribute(SchemaAttribute parent, JsonNode jsonNode)
   {
     Function<String, String> errorMessageBuilder = attribute -> "could not find required attribute '" + attribute
                                                                 + "' in meta-schema";
@@ -119,39 +114,8 @@ public class SchemaAttribute
                                     .orElse(Type.REFERENCE.equals(type)
                                       ? Collections.singletonList(ReferenceTypes.EXTERNAL) : Collections.emptyList());
     this.subAttributes = resolveSubAttributes(jsonNode);
-  }
-
-  private SchemaAttribute(SchemaAttribute parent, JsonNode jsonNode)
-  {
-    this(jsonNode);
     this.parent = parent;
-  }
-
-  /**
-   * @return builds a {@link JsonNode} out of this definition
-   */
-  public JsonNode createJsonNode(Object value)
-  {
-    if (isMultiValued())
-    {
-      ScimArrayNode scimArrayNode = new ScimArrayNode(this);
-      // TODO add values
-      return scimArrayNode;
-    }
-    switch (getType())
-    {
-      case COMPLEX:
-        // TODO add values
-        return new ScimObjectNode(this);
-      case BOOLEAN:
-        return new ScimBooleanNode(this, (Boolean)value);
-      case INTEGER:
-        return new ScimIntNode(this, (Integer)value);
-      case DECIMAL:
-        return new ScimDoubleNode(this, (Double)value);
-      default:
-        return new ScimTextNode(this, (String)value);
-    }
+    validateAttribute();
   }
 
   /**
@@ -179,11 +143,81 @@ public class SchemaAttribute
     String errorMessage = "missing attribute '" + subAttributeName + "' on '" + type + "'-attribute";
     ArrayNode subAttributesArray = JsonHelper.getArrayAttribute(jsonNode, subAttributeName)
                                              .orElseThrow(() -> getException(errorMessage, null));
+    Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode subAttribute : subAttributesArray )
     {
-      schemaAttributeList.add(new SchemaAttribute(this, subAttribute));
+      SchemaAttribute schemaAttribute = new SchemaAttribute(this, subAttribute);
+      if (attributeNameSet.contains(schemaAttribute.getScimNodeName()))
+      {
+        String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getScimNodeName()
+                                      + "' was found twice within the given schema declaration";
+        throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
+      }
+      attributeNameSet.add(schemaAttribute.getScimNodeName());
+      schemaAttributeList.add(schemaAttribute);
     }
     return schemaAttributeList;
+  }
+
+  /**
+   * this method will decide if the attribute definition makes sense. Some attribute combinations are simply
+   * senseless and might cause confusable situations that would not be easily identifiable.<br>
+   * the known senseless attribute combinations are the following: <br>
+   *
+   * <pre>
+   *     {
+   *       "name": "senseless",
+   *       "type": "string",
+   *       "description": "senseless declaration: client cannot write to it and server cannot return it",
+   *       "mutability": "readOnly",
+   *       "returned": "never"
+   *     },
+   *     {
+   *       "name": "senseless",
+   *       "type": "string",
+   *       "description": "senseless declaration: writeOnly must have a returned value of 'never'.",
+   *       "mutability": "writeOnly",
+   *       "returned": "always"
+   *     }
+   * </pre>
+   *
+   * this combination shows 3 problems but the following method will only handle two of theses problems: <br>
+   * <ul>
+   * <li><b>mutability:</b> readOnly</li>
+   * <li><b>returned:</b> never</li>
+   * <li>the client can never write to this attribute and the server will never return it. The server may use
+   * this attribute but it simply makes no sense to declare it within the schema</li>
+   * <li>----------------------------</li>
+   * <li>and</li>
+   * <li>----------------------------</li>
+   * <li><b>mutability:</b> writeOnly</li>
+   * <li><b>returned:</b> something else than "never"</li>
+   * <li>This is also defined in RFC7643 chapter 7: <br>
+   * <b>writeOnly</b> The attribute MAY be updated at any time. Attribute values SHALL NOT be returned (e.g.,
+   * because the value is a stored hash). Note: An attribute with a mutability of "writeOnly" usually also has a
+   * returned setting of "never"</li>
+   * </ul>
+   * the last problem is that the an attribute attribute with the same name was declared twice. This problem
+   * will be handled in another method
+   */
+  private void validateAttribute()
+  {
+    if (Mutability.READ_ONLY.equals(mutability) && Returned.NEVER.equals(returned))
+    {
+      String errorMessage = "the attribute with the name '" + getScimNodeName() + "' has an invalid declaration. "
+                            + "mutability 'readOnly' and returned 'never' are an illegal in combination. The client is "
+                            + "not able to write to the given attribute and the server will never return it.";
+      throw getException(errorMessage, null);
+    }
+    else if (Mutability.WRITE_ONLY.equals(mutability) && !Returned.NEVER.equals(returned))
+    {
+      String errorMessage = "the attribute with the name '" + getScimNodeName() + "' has an invalid declaration. "
+                            + "mutability 'writeOnly' must have a returned value of 'never' are an illegal in "
+                            + "combination. The client should only write to this attribute but should never have it "
+                            + "returned. The mutability writeOnly makes only sense for sensitive application data "
+                            + "like passwords or other secrets.";
+      throw getException(errorMessage, null);
+    }
   }
 
   /**

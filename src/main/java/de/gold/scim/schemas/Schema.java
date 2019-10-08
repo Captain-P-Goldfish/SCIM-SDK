@@ -1,8 +1,10 @@
 package de.gold.scim.schemas;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -73,9 +75,18 @@ public class Schema
                                      .orElseThrow(() -> new InvalidSchemaException(noAttributesErrorMessage, null,
                                                                                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
                                                                                    null));
+    Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode node : attributes )
     {
-      this.attributes.add(new SchemaAttribute(node));
+      SchemaAttribute schemaAttribute = new SchemaAttribute(null, node);
+      if (attributeNameSet.contains(schemaAttribute.getName()))
+      {
+        String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getName() + "' was found "
+                                      + "twice within the given schema declaration";
+        throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
+      }
+      attributeNameSet.add(schemaAttribute.getName());
+      this.attributes.add(schemaAttribute);
     }
   }
 
