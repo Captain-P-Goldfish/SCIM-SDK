@@ -12,7 +12,7 @@
       "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
       "mutability": "readOnly",
       "returned": "always",
-      "uniqueness": "none",
+      "uniqueness": "server",
       "multiValued": false,
       "required": true,
       "caseExact": true
@@ -34,7 +34,7 @@
       "description": "A service provider's unique identifier for the user, typically\nused by the user to directly authenticate to the service provider.Each User MUST include a non-empty userName value.  This identifier\nMUST be unique across the service provider's entire set of Users.",
       "mutability": "immutable",
       "returned": "default",
-      "uniqueness": "none",
+      "uniqueness": "server",
       "multiValued": false,
       "required": true,
       "caseExact": false
@@ -749,7 +749,7 @@
       "description": "A list of certificates issued to the User.",
       "mutability": "readWrite",
       "returned": "default",
-      "uniqueness": "none",
+      "uniqueness": "server",
       "multiValued": true,
       "required": false,
       "caseExact": false,
