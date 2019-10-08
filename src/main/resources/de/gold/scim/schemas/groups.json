@@ -12,7 +12,7 @@
       "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
       "mutability": "readOnly",
       "returned": "always",
-      "uniqueness": "none",
+      "uniqueness": "server",
       "multiValued": false,
       "required": true,
       "caseExact": true
