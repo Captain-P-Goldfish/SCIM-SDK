@@ -26,7 +26,6 @@ import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
@@ -191,9 +190,7 @@ public class ResourceType
   {
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                  resourceMetaSchema,
-                                                  resourceTypeDocument);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceMetaSchema, resourceTypeDocument);
     }
     catch (DocumentValidationException ex)
     {
@@ -348,7 +345,7 @@ public class ResourceType
   /**
    * a schema extension representation
    */
-  @Data
+  @Getter
   public class SchemaExtension
   {
 
@@ -374,7 +371,7 @@ public class ResourceType
   /**
    * represents the schema descriptions of this resource type
    */
-  @Data
+  @Getter
   public class ResourceSchema
   {
 

@@ -5,7 +5,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,5 +65,18 @@ class SchemaTest
     Assertions.assertNotNull(resourceSchema);
     String json = resourceSchema.toString();
     Assertions.assertDoesNotThrow(() -> JsonHelper.readJsonDocument(json));
+  }
+
+  /**
+   * verifies that an exception is thrown if the given schema does not have one of the given attributes
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.ID, AttributeNames.ATTRIBUTES})
+  public void testParseSchemaWithMissingAttribute(String attributeName)
+  {
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonHelper.removeAttribute(userResourceSchema, attributeName);
+    Assertions.assertThrows(InvalidSchemaException.class,
+                            () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
 }

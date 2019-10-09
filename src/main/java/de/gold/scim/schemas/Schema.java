@@ -96,13 +96,13 @@ public class Schema
   public JsonNode toJsonNode()
   {
     ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
-    List<JsonNode> schemas = this.schemas.stream().map(TextNode::new).collect(Collectors.toList());
+    List<JsonNode> schemas = getSchemas().stream().map(TextNode::new).collect(Collectors.toList());
     JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMAS, new ArrayNode(JsonNodeFactory.instance, schemas));
     JsonHelper.addAttribute(objectNode, AttributeNames.ID, new TextNode(id));
-    Optional.of(name).ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(s)));
-    Optional.of(description)
+    Optional.of(getName()).ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(s)));
+    Optional.of(getDescription())
             .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.DESCRIPTION, new TextNode(s)));
-    List<JsonNode> attributes = this.attributes.stream().map(SchemaAttribute::toJsonNode).collect(Collectors.toList());
+    List<JsonNode> attributes = getAttributes().stream().map(SchemaAttribute::toJsonNode).collect(Collectors.toList());
     JsonHelper.addAttribute(objectNode, AttributeNames.ATTRIBUTES, new ArrayNode(JsonNodeFactory.instance, attributes));
     return objectNode;
   }
