@@ -23,7 +23,7 @@ public final class TimeUtils
 
   /**
    * year fragment as defined in xsd-schema specification
-   * 
+   *
    * @see <a href=
    *      "https://www.w3.org/TR/xmlschema11-2/#nt-yrFrag">https://www.w3.org/TR/xmlschema11-2/#nt-yrFrag</a>
    */
@@ -99,7 +99,7 @@ public final class TimeUtils
 
   /**
    * the fully qualified xsd-datetime definition
-   * 
+   *
    * @see <a href=
    *      "https://www.w3.org/TR/xmlschema11-2/#dateTime">https://www.w3.org/TR/xmlschema11-2/#dateTime</a>
    */
@@ -109,7 +109,7 @@ public final class TimeUtils
    * this method will try to parse the date time send in a scim resource request. Please not that the timestamp
    * format must apply to the xsd:datetime definition from W3C XML-schema definition specification as pointed in
    * RFC7643 in chapter 2.3.5
-   * 
+   *
    * @param dateTime the date time representation that should be parsed
    * @return the parsed date time in UTC
    * @throws InvalidDateTimeRepresentationException if the given string does not apply to the xsd:dateTime
@@ -126,7 +126,7 @@ public final class TimeUtils
     }
     if (!tmpDateTime.matches(XSD_DATE_TIME_FORMAT))
     {
-      throw InvalidDateTimeRepresentationException.builder().message(errorMessage).build();
+      throw new InvalidDateTimeRepresentationException(errorMessage, null, null, null);
     }
     if (tmpDateTime.matches(".*?" + END_OF_DAY_FRAGMENT + ".*"))
     {
@@ -138,7 +138,7 @@ public final class TimeUtils
     }
     catch (DateTimeParseException ex)
     {
-      throw InvalidDateTimeRepresentationException.builder().message(errorMessage).cause(ex).build();
+      throw new InvalidDateTimeRepresentationException(errorMessage, ex, null, null);
     }
   }
 }

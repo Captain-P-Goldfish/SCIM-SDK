@@ -1,7 +1,6 @@
 package de.gold.scim.exceptions;
 
 import de.gold.scim.utils.HttpStatus;
-import lombok.Builder;
 
 
 /**
@@ -12,7 +11,6 @@ import lombok.Builder;
 public class InvalidDateTimeRepresentationException extends ScimException
 {
 
-  @Builder
   public InvalidDateTimeRepresentationException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause, status == null ? HttpStatus.SC_BAD_REQUEST : status, scimType);

@@ -4,7 +4,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import de.gold.scim.constants.SchemaUris;
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.utils.JsonHelper;
 
 
 /**
@@ -27,6 +30,11 @@ public class ResourceTypeFactoryTest
   public void initialize()
   {
     resourceTypeFactory = Assertions.assertDoesNotThrow(ResourceTypeFactory::getUnitTestInstance);
+
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    resourceTypeFactory.registerResourceType(null, userResourceType, userResourceSchema, enterpriseUserExtension);
   }
 
   /**
@@ -36,7 +44,7 @@ public class ResourceTypeFactoryTest
   @Test
   public void testInitializeResourceTypeFactory()
   {
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> resourceTypeFactory.getResourceType(SchemaUris.USER_URI));
-    Assertions.assertNotNull(resourceType);
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> resourceTypeFactory.getResourceType("Users"));
+    Assertions.assertNotNull(resourceType, "this resource type must be present!");
   }
 }

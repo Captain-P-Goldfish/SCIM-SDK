@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
@@ -49,8 +50,12 @@ public class ResourceType
   /**
    * used for unit tests in order to prevent application context pollution
    */
-  @Setter(AccessLevel.PROTECTED) // this is explicitly for unit tests
-  private static SchemaFactory schemaFactory = SchemaFactory.getInstance();
+  private final SchemaFactory schemaFactory;
+
+  /**
+   * used for unit tests in order to prevent application context pollution
+   */
+  private final ResourceTypeFactory resourceTypeFactory;
 
   /**
    * the references to the meta schemas that describe this endpoint definition
@@ -87,17 +92,32 @@ public class ResourceType
    */
   private List<SchemaExtension> schemaExtensions;
 
+  /**
+   * the resource handler implementation that is able to handle this kind of resource
+   */
+  @Getter(AccessLevel.PUBLIC)
+  private ResourceHandler resourceHandlerImpl;
+
   public ResourceType(String resourceDocument)
   {
-    this(JsonHelper.readJsonDocument(resourceDocument));
+    this(null, null, JsonHelper.readJsonDocument(resourceDocument));
   }
 
-  public ResourceType(JsonNode resourceTypeDocument)
+  protected ResourceType(SchemaFactory schemaFactory, ResourceTypeFactory resourceTypeFactory, String resourceDocument)
+  {
+    this(schemaFactory, resourceTypeFactory, JsonHelper.readJsonDocument(resourceDocument));
+  }
+
+  protected ResourceType(SchemaFactory schemaFactory,
+                         ResourceTypeFactory resourceTypeFactory,
+                         JsonNode resourceTypeDocument)
   {
     if (log.isTraceEnabled())
     {
       log.trace("parse resource type document: \n{}", resourceTypeDocument.toPrettyString());
     }
+    this.schemaFactory = getSchemaFactory(schemaFactory);
+    this.resourceTypeFactory = getResourceTypeFactory(resourceTypeFactory);
     Schema resourceMetaSchema = getMetaSchemaFromDocument(resourceTypeDocument);
     validateResourceType(resourceMetaSchema, resourceTypeDocument);
     this.schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
@@ -124,6 +144,44 @@ public class ResourceType
   }
 
   /**
+   * gets the {@link SchemaFactory} that should be used. This method is only added to be able to add clean
+   * {@link SchemaFactory} instances from unit tests
+   *
+   * @param schemaFactory null or a clean factory created by an unit test
+   * @return the factory to use
+   */
+  private SchemaFactory getSchemaFactory(SchemaFactory schemaFactory)
+  {
+    if (schemaFactory == null)
+    {
+      return SchemaFactory.getInstance();
+    }
+    else
+    {
+      return schemaFactory;
+    }
+  }
+
+  /**
+   * gets the {@link ResourceTypeFactory} that should be used. This method is only added to be able to add clean
+   * {@link ResourceTypeFactory} instances from unit tests
+   *
+   * @param resourceTypeFactory null or a clean factory created by an unit test
+   * @return the factory to use
+   */
+  private ResourceTypeFactory getResourceTypeFactory(ResourceTypeFactory resourceTypeFactory)
+  {
+    if (resourceTypeFactory == null)
+    {
+      return ResourceTypeFactory.getInstance();
+    }
+    else
+    {
+      return resourceTypeFactory;
+    }
+  }
+
+  /**
    * validates the given resource type document against its meta schema definition
    *
    * @param resourceMetaSchema the meta schema for resource types
@@ -133,7 +191,9 @@ public class ResourceType
   {
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceMetaSchema.toJsonNode(), resourceTypeDocument);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                  resourceMetaSchema,
+                                                  resourceTypeDocument);
     }
     catch (DocumentValidationException ex)
     {

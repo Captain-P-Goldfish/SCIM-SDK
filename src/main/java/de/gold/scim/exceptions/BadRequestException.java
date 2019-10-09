@@ -1,6 +1,5 @@
 package de.gold.scim.exceptions;
 
-import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.HttpStatus;
 
 

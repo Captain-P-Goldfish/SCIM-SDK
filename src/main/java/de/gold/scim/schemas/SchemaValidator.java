@@ -2,9 +2,10 @@ package de.gold.scim.schemas;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -13,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ScimType;
@@ -20,9 +22,9 @@ import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
 import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
+import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
-import de.gold.scim.exceptions.IncompatibleAttributeException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidDateTimeRepresentationException;
 import de.gold.scim.resources.ScimArrayNode;
@@ -77,24 +79,35 @@ public class SchemaValidator
    */
   private final HttpMethod httpMethod;
 
-  public SchemaValidator()
+  /**
+   * used to check if a reference-type of {@link ReferenceTypes#RESOURCE} is registered or not.
+   */
+  private final ResourceTypeFactory resourceTypeFactory;
+
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory)
   {
+    this.resourceTypeFactory = resourceTypeFactory;
     this.extensionSchema = false;
     this.directionType = null;
     this.httpMethod = null;
     this.schemaValidation = true;
   }
 
-  private SchemaValidator(DirectionType directionType, HttpMethod httpMethod)
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory, DirectionType directionType, HttpMethod httpMethod)
   {
+    this.resourceTypeFactory = resourceTypeFactory;
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = false;
     this.schemaValidation = false;
   }
 
-  private SchemaValidator(DirectionType directionType, HttpMethod httpMethod, boolean extensionSchema)
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
+                          DirectionType directionType,
+                          HttpMethod httpMethod,
+                          boolean extensionSchema)
   {
+    this.resourceTypeFactory = resourceTypeFactory;
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = extensionSchema;
@@ -110,9 +123,11 @@ public class SchemaValidator
    * @param schemaDocument the new schema document that should be validated
    * @return the validated schema definition
    */
-  static JsonNode validateSchemaDocument(JsonNode metaSchema, JsonNode schemaDocument)
+  static JsonNode validateSchemaDocument(ResourceTypeFactory resourceTypeFactory,
+                                         Schema metaSchema,
+                                         JsonNode schemaDocument)
   {
-    SchemaValidator schemaValidator = new SchemaValidator();
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
@@ -129,11 +144,15 @@ public class SchemaValidator
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    * @throws DocumentValidationException if the schema validation failed
    */
-  public static JsonNode validateDocumentForResponse(ResourceType resourceType, JsonNode document)
+  public static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
+                                                     ResourceType resourceType,
+                                                     JsonNode document)
     throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
-    JsonNode validatedMainDocument = validateDocumentForResponse(resourceSchema.getMetaSchema().toJsonNode(), document);
+    JsonNode validatedMainDocument = validateDocumentForResponse(resourceTypeFactory,
+                                                                 resourceSchema.getMetaSchema(),
+                                                                 document);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
@@ -142,7 +161,7 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new InternalServerException(message.get(), null,
                                                                                   ScimType.MISSING_EXTENSION));
-      JsonNode extensionNode = validateExtensionForResponse(schemaExtension.toJsonNode(), extension);
+      JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory, schemaExtension, extension);
       JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
     return validatedMainDocument;
@@ -160,9 +179,11 @@ public class SchemaValidator
    * @param document the document to validate
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  protected static JsonNode validateDocumentForResponse(JsonNode metaSchema, JsonNode document)
+  protected static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
+                                                        Schema metaSchema,
+                                                        JsonNode document)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -176,9 +197,11 @@ public class SchemaValidator
    * @param document the extension to validate
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  private static JsonNode validateExtensionForResponse(JsonNode metaSchema, JsonNode document)
+  private static JsonNode validateExtensionForResponse(ResourceTypeFactory resourceTypeFactory,
+                                                       Schema metaSchema,
+                                                       JsonNode document)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, true);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null, true);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -196,11 +219,15 @@ public class SchemaValidator
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    * @throws DocumentValidationException if the schema validation failed
    */
-  public static JsonNode validateDocumentForRequest(ResourceType resourceType, JsonNode document, HttpMethod httpMethod)
+  public static JsonNode validateDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
+                                                    ResourceType resourceType,
+                                                    JsonNode document,
+                                                    HttpMethod httpMethod)
     throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
-    JsonNode validatedMainDocument = validateDocumentForRequest(resourceSchema.getMetaSchema().toJsonNode(),
+    JsonNode validatedMainDocument = validateDocumentForRequest(resourceTypeFactory,
+                                                                resourceSchema.getMetaSchema(),
                                                                 document,
                                                                 httpMethod);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
@@ -211,7 +238,7 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new BadRequestException(message.get(), null,
                                                                               ScimType.MISSING_EXTENSION));
-      JsonNode extensionNode = validateExtensionForRequest(schemaExtension.toJsonNode(), extension, httpMethod);
+      JsonNode extensionNode = validateExtensionForRequest(resourceTypeFactory, schemaExtension, extension, httpMethod);
       JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
     return validatedMainDocument;
@@ -231,9 +258,12 @@ public class SchemaValidator
    *          types that are valid on POST requests but invalid on PUT requests
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  protected static JsonNode validateDocumentForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
+  protected static JsonNode validateDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
+                                                       Schema metaSchema,
+                                                       JsonNode document,
+                                                       HttpMethod httpMethod)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -249,9 +279,12 @@ public class SchemaValidator
    *          types that are valid on POST requests but invalid on PUT requests
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  private static JsonNode validateExtensionForRequest(JsonNode metaSchema, JsonNode document, HttpMethod httpMethod)
+  protected static JsonNode validateExtensionForRequest(ResourceTypeFactory resourceTypeFactory,
+                                                        Schema metaSchema,
+                                                        JsonNode document,
+                                                        HttpMethod httpMethod)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, true);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, true);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -264,39 +297,24 @@ public class SchemaValidator
    * @param document the document that should be built after the rules of the metaSchema
    * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
    */
-  private JsonNode validateDocument(JsonNode metaSchema, JsonNode document)
+  private JsonNode validateDocument(Schema metaSchema, JsonNode document)
   {
-    // TODO use {@link Schema} class as metaSchema attribute here
-    log.warn("TODO use {@link Schema} class as metaSchema attribute here");
     log.trace("validating metaSchema vs document");
     JsonNode schemasNode = null;
     if (!extensionSchema)
     {
       schemasNode = checkDocumentAndMetaSchemaRelationship(metaSchema, document);
     }
-    JsonNode attributes = getAttributes(metaSchema);
-    try
+    JsonNode validatedDocument = validateAttributes(metaSchema.getAttributes(), document, null);
+    if (validatedDocument == null)
     {
-      List<SchemaAttribute> schemaAttributeList = new ArrayList<>();
-      for ( JsonNode metaAttribute : attributes )
-      {
-        schemaAttributeList.add(new SchemaAttribute(null, metaAttribute));
-      }
-      JsonNode validatedDocument = validateAttributes(schemaAttributeList, document, null);
-      if (schemasNode != null)
-      {
-        JsonHelper.addAttribute(validatedDocument, AttributeNames.SCHEMAS, schemasNode);
-      }
-      return validatedDocument;
+      throw getException("the validation returned an empty document please verify your validation parameters", null);
     }
-    catch (IncompatibleAttributeException ex)
+    if (schemasNode != null)
     {
-      throw DocumentValidationException.builder()
-                                       .status(directionType.getHttpStatus())
-                                       .message(ex.getMessage())
-                                       .cause(ex)
-                                       .build();
+      JsonHelper.addAttribute(validatedDocument, AttributeNames.SCHEMAS, schemasNode);
     }
+    return validatedDocument;
   }
 
   /**
@@ -365,41 +383,44 @@ public class SchemaValidator
   {
     if (Type.COMPLEX.equals(schemaAttribute.getType()))
     {
-      return handleMultivaluedComplexNode(document, schemaAttribute);
+      // we will throw an exception if the primary counter exceeds 1
+      AtomicInteger countPrimary = new AtomicInteger(0);
+      return handleMultivaluedNode(document, schemaAttribute, (jsonNode, scimArrayNode) -> {
+        countPrimary.set(checkForPrimary(jsonNode, schemaAttribute, countPrimary.get()));
+        handleComplexNode(jsonNode, schemaAttribute).ifPresent(returnedAttribute -> {
+          JsonHelper.addAttributeToArray(scimArrayNode, returnedAttribute);
+        });
+      });
     }
     else
     {
-      return handleSimpleMultivaluedNode(document, schemaAttribute);
+      return handleMultivaluedNode(document, schemaAttribute, (jsonNode, scimArrayNode) -> {
+        handleSimpleNode(jsonNode, schemaAttribute).ifPresent(simpleNode -> {
+          JsonHelper.addAttributeToArray(scimArrayNode, simpleNode);
+        });
+      });
     }
   }
 
   /**
-   * handles a json array with primitive types
+   * checks if the given jsonNode contains a primary value and will throw an exception if the counter exceeds
+   * more than 1 detected primary values
    *
-   * @param document the document to validate
-   * @param schemaAttribute the meta information of the attribute
-   * @return the attribute if present in the document or an empty else
+   * @param jsonNode the multi valued complex type node that might contain a primary value
+   * @param primaryCounter the current number of found primary values
+   * @return the new calculated number of primary values
    */
-  private Optional<JsonNode> handleSimpleMultivaluedNode(JsonNode document, SchemaAttribute schemaAttribute)
+  private int checkForPrimary(JsonNode jsonNode, SchemaAttribute schemaAttribute, int primaryCounter)
   {
-    JsonNode multiValuedAttribute = document.get(schemaAttribute.getName());
-    validateIsRequired(multiValuedAttribute, schemaAttribute);
-    if (multiValuedAttribute == null)
+    boolean isPrimary = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.PRIMARY).isPresent();
+    int counter = primaryCounter + (isPrimary ? 1 : 0);
+    if (counter > 1)
     {
-      return Optional.empty();
+      String errorMessage = "multiple primary values detected in attribute with name '"
+                            + schemaAttribute.getScimNodeName() + "'";
+      throw getException(errorMessage, null);
     }
-    ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
-    for ( JsonNode jsonNode : multiValuedAttribute )
-    {
-      handleSimpleNode(jsonNode, schemaAttribute).ifPresent(simpleNode -> {
-        JsonHelper.addAttribute(scimArrayNode, schemaAttribute.getName(), simpleNode);
-      });
-    }
-    if (scimArrayNode.isEmpty())
-    {
-      return Optional.empty();
-    }
-    return Optional.of(scimArrayNode);
+    return counter;
   }
 
   /**
@@ -407,16 +428,29 @@ public class SchemaValidator
    *
    * @param document the document that should be validated
    * @param schemaAttribute the meta information of the attribute
+   * @param handleMultivaluedNode a consumer that handles either a simple multivalued node or a multivalued
+   *          complex node
    * @return the attribute if present in the document or an empty else
    */
-  private Optional<JsonNode> handleMultivaluedComplexNode(JsonNode document, SchemaAttribute schemaAttribute)
+  private Optional<JsonNode> handleMultivaluedNode(JsonNode document,
+                                                   SchemaAttribute schemaAttribute,
+                                                   BiConsumer<JsonNode, ScimArrayNode> handleMultivaluedNode)
   {
-    ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
-    for ( JsonNode complexAttribute : document )
+    ArrayNode arrayNode;
+    if (document.isArray())
     {
-      handleComplexNode(complexAttribute, schemaAttribute).ifPresent(returnedAttribute -> {
-        JsonHelper.addAttributeToArray(scimArrayNode, returnedAttribute);
-      });
+      arrayNode = (ArrayNode)document;
+    }
+    else
+    {
+      arrayNode = new ArrayNode(JsonNodeFactory.instance);
+      arrayNode.add(document);
+    }
+    ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
+    for ( JsonNode jsonNode : arrayNode )
+    {
+      checkForUniqueAttribute(schemaAttribute, scimArrayNode, jsonNode);
+      handleMultivaluedNode.accept(jsonNode, scimArrayNode);
     }
     if (scimArrayNode.isEmpty())
     {
@@ -456,7 +490,7 @@ public class SchemaValidator
   /**
    * handles a complex json node type. A complex node type has its own meta-attribute array and is itself a full
    * fleshed json document so this method will initiate a recursive call to
-   * {@link #validateDocument(JsonNode, JsonNode)} to do its work
+   * {@link #validateDocument(Schema, JsonNode)} to do its work
    *
    * @param document the document complex node to validate
    * @param schemaAttribute the meta information of the attribute
@@ -465,10 +499,6 @@ public class SchemaValidator
   private Optional<JsonNode> handleComplexNode(JsonNode document, SchemaAttribute schemaAttribute)
   {
     validateIsRequired(document, schemaAttribute);
-    if (document == null)
-    {
-      return Optional.empty();
-    }
     List<SchemaAttribute> metaSubAttributes = schemaAttribute.getSubAttributes();
     return Optional.ofNullable(validateAttributes(metaSubAttributes, document, schemaAttribute));
   }
@@ -483,14 +513,6 @@ public class SchemaValidator
    */
   private Optional<JsonNode> handleSimpleNode(JsonNode simpleDocumentNode, SchemaAttribute schemaAttribute)
   {
-    if (simpleDocumentNode == null)
-    {
-      // node is not present in the document so everything's fine
-      log.trace("attribute {} not present in document: required = {}",
-                schemaAttribute.getName(),
-                schemaAttribute.isRequired());
-      return Optional.empty();
-    }
     checkCanonicalValues(schemaAttribute, simpleDocumentNode);
     Type type = schemaAttribute.getType();
     switch (type)
@@ -505,22 +527,16 @@ public class SchemaValidator
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isInt);
         return Optional.of(new ScimIntNode(schemaAttribute, simpleDocumentNode.intValue()));
       case DECIMAL:
-        isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isFloat);
+        isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isDouble);
         return Optional.of(new ScimDoubleNode(schemaAttribute, simpleDocumentNode.doubleValue()));
       case DATE_TIME:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);
         parseDateTime(simpleDocumentNode.textValue());
         return Optional.of(new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue()));
-      case REFERENCE:
+      default:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);
         validateValueNodeWithReferenceTypes(schemaAttribute, simpleDocumentNode);
         return Optional.of(new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue()));
-      default:
-        throw DocumentValidationException.builder()
-                                         .message("value node '" + schemaAttribute.getName() + "' is of unknown type. "
-                                                  + "Expected type is: " + type.getValue())
-                                         .status(directionType.getHttpStatus())
-                                         .build();
     }
   }
 
@@ -565,7 +581,7 @@ public class SchemaValidator
     {
       throw getException(errorMessage.get(), null);
     }
-    else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && httpMethod.equals(HttpMethod.POST)
+    else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && HttpMethod.POST.equals(httpMethod)
              && isNodeNull)
     {
       throw getException(errorMessage.get(), null);
@@ -587,6 +603,31 @@ public class SchemaValidator
     if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
     {
       throw getException(errorMessage.get(), null);
+    }
+  }
+
+  /**
+   * this method checks if the given array does already contain an equally jsonNode as the given one and throws
+   * an exception if the uniqueness is not set to none
+   *
+   * @param schemaAttribute the attribute definition
+   * @param scimArrayNode the scimArrayNode that should not contain any duplicate nodes
+   * @param jsonNode the node that should not have any duplicates if the uniqueness has another value than none
+   */
+  private void checkForUniqueAttribute(SchemaAttribute schemaAttribute, ScimArrayNode scimArrayNode, JsonNode jsonNode)
+  {
+    if (!Uniqueness.NONE.equals(schemaAttribute.getUniqueness()))
+    {
+      for ( JsonNode complexNode : scimArrayNode )
+      {
+        if (complexNode.equals(jsonNode))
+        {
+          String errorMessage = "the array node with name '" + schemaAttribute.getScimNodeName()
+                                + "' has a uniqueness of '" + schemaAttribute.getUniqueness() + "' but "
+                                + "has at least one duplicate value: '" + complexNode.toString() + "'";
+          throw getException(errorMessage, null);
+        }
+      }
     }
   }
 
@@ -723,11 +764,8 @@ public class SchemaValidator
     }
     catch (InvalidDateTimeRepresentationException ex)
     {
-      throw DocumentValidationException.builder()
-                                       .status(directionType.getHttpStatus())
-                                       .message("given value is not a valid dateTime: " + textValue)
-                                       .cause(ex)
-                                       .build();
+      throw new DocumentValidationException("given value is not a valid dateTime: " + textValue, null, getHttpStatus(),
+                                            null);
     }
   }
 
@@ -745,8 +783,7 @@ public class SchemaValidator
       switch (referenceType)
       {
         case RESOURCE:
-          // TODO check if the referenced resource type was already registered
-          isValidReferenceType = true;
+          isValidReferenceType = resourceTypeFactory.isResourceRegistered(valueNode.textValue());
           break;
         case URI:
           isValidReferenceType = parseUri(valueNode.textValue());
@@ -789,12 +826,9 @@ public class SchemaValidator
    * @param metaSchema the meta schema that should be used to validate the document
    * @param document the document that should be validated
    */
-  private JsonNode checkDocumentAndMetaSchemaRelationship(JsonNode metaSchema, JsonNode document)
+  private JsonNode checkDocumentAndMetaSchemaRelationship(Schema metaSchema, JsonNode document)
   {
-    final String idAttribute = AttributeNames.ID;
-    final String metaSchemaWithouidMessage = "meta schema does not have an '" + idAttribute + "'-attribute";
-    String metaSchemaId = JsonHelper.getSimpleAttribute(metaSchema, idAttribute)
-                                    .orElseThrow(() -> getException(metaSchemaWithouidMessage, null));
+    final String metaSchemaId = metaSchema.getId();
 
     final String schemasAttribute = AttributeNames.SCHEMAS;
     final String documentNoSchemasMessage = "document does not have a '" + schemasAttribute + "'-attribute";
@@ -813,35 +847,6 @@ public class SchemaValidator
   }
 
   /**
-   * any meta schema must have an attributes array that holds the field descriptions for the document
-   *
-   * @param metaSchema the meta schema that must have attributes
-   * @return the attributes node
-   */
-  private JsonNode getAttributes(JsonNode metaSchema)
-  {
-    final String attributeName = AttributeNames.ATTRIBUTES;
-    final String errorMessage = "meta schema is missing attribute '" + attributeName + "'";
-    return JsonHelper.getArrayAttribute(metaSchema, attributeName)
-                     .orElseThrow(() -> InternalServerException.builder().message(errorMessage).build());
-  }
-
-  /**
-   * any meta complex attribute must have an subAttributes array that holds the field descriptions for the
-   * complex attribute
-   *
-   * @param metaSchema the meta complex attribute that must have subAttributes
-   * @return the subAttributes node
-   */
-  private ArrayNode getSubAttributes(JsonNode metaSchema)
-  {
-    final String attributeName = AttributeNames.SUB_ATTRIBUTES;
-    final String errorMessage = "meta complex attribute is missing attribute '" + attributeName + "'";
-    return JsonHelper.getArrayAttribute(metaSchema, attributeName)
-                     .orElseThrow(() -> InternalServerException.builder().message(errorMessage).build());
-  }
-
-  /**
    * builds an exception
    *
    * @param errorMessage the error message of the exception
@@ -850,7 +855,15 @@ public class SchemaValidator
    */
   private DocumentValidationException getException(String errorMessage, Exception cause)
   {
-    return new DocumentValidationException(errorMessage, cause, directionType.getHttpStatus(), null);
+    return new DocumentValidationException(errorMessage, cause, getHttpStatus(), null);
+  }
+
+  /**
+   * @return the current http status for this validation
+   */
+  private Integer getHttpStatus()
+  {
+    return directionType == null ? HttpStatus.SC_INTERNAL_SERVER_ERROR : directionType.getHttpStatus();
   }
 
   /**

@@ -16,46 +16,43 @@ import org.apache.commons.io.IOUtils;
 public interface FileReferences
 {
 
-  public static final String RESOURCE_BASE_PATH = "/de/gold/scim/files/resources";
+  String RESOURCE_BASE_PATH = "/de/gold/scim/files/resources";
 
-  public static final String RESOURCE_TYPE_BASE_PATH = "/de/gold/scim/files/types";
+  String RESOURCE_TYPE_BASE_PATH = "/de/gold/scim/files/types";
 
-  public static final String RESOURCE_SCHEMA_BASE_PATH = "/de/gold/scim/files/schemas";
+  String RESOURCE_SCHEMA_BASE_PATH = "/de/gold/scim/files/schemas";
 
-  public static final String USER_RESOURCE = RESOURCE_BASE_PATH + "/user/user-resource.json";
+  String USER_RESOURCE = RESOURCE_BASE_PATH + "/user/user-resource.json";
 
-  public static final String USER_RESOURCE_ENTERPRISE = RESOURCE_BASE_PATH
-                                                        + "/user/user-resource-with-enterprise-user.json";
+  String USER_RESOURCE_ENTERPRISE = RESOURCE_BASE_PATH + "/user/user-resource-with-enterprise-user.json";
 
-  public static final String USER_RESOURCE_IMMUTABLE = RESOURCE_BASE_PATH + "/user/user-resource-with-immutable.json";
+  String USER_RESOURCE_IMMUTABLE = RESOURCE_BASE_PATH + "/user/user-resource-with-immutable.json";
 
-  public static final String USER_RESOURCE_X509 = RESOURCE_BASE_PATH + "/user/user-resource-x509.json";
+  String USER_RESOURCE_X509 = RESOURCE_BASE_PATH + "/user/user-resource-x509.json";
 
-  public static final String USER_CUSTOM_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/custom-user-resource-type.json";
+  String USER_CUSTOM_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/custom-user-resource-type.json";
 
-  public static final String GROUP_RESOURCE = RESOURCE_BASE_PATH + "/group/group-resource.json";
+  String GROUP_RESOURCE = RESOURCE_BASE_PATH + "/group/group-resource.json";
 
-  public static final String GROUP_RESOURCE_TWO_MEMBERS = RESOURCE_BASE_PATH + "/group/group-resource-two-members.json";
+  String GROUP_RESOURCE_TWO_MEMBERS = RESOURCE_BASE_PATH + "/group/group-resource-two-members.json";
 
-  public static final String GROUP_RESOURCE_USER_MEMBER = RESOURCE_BASE_PATH + "/group/group-resource-user-member.json";
+  String GROUP_RESOURCE_USER_MEMBER = RESOURCE_BASE_PATH + "/group/group-resource-user-member.json";
 
-  public static final String GROUP_RESOURCE_GROUP_MEMBER = RESOURCE_BASE_PATH
-                                                           + "/group/group-resource-group-member.json";
+  String GROUP_RESOURCE_GROUP_MEMBER = RESOURCE_BASE_PATH + "/group/group-resource-group-member.json";
 
-  public static final String ROLE_RESOURCE = RESOURCE_BASE_PATH + "/role/role-resource.json";
+  String ROLE_RESOURCE = RESOURCE_BASE_PATH + "/role/role-resource.json";
 
-  public static final String ROLE_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/role-resource-type.json";
+  String ROLE_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/role-resource-type.json";
 
-  public static final String ROLE_RESOURCE_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/role-schema.json";
+  String ROLE_RESOURCE_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/role-schema.json";
 
-  public static final String DUPLICATE_NAME_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/duplicate-name-value.json";
+  String DUPLICATE_NAME_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/duplicate-name-value.json";
 
-  public static final String DUPLICATE_SUB_NAME_SCHEMA = RESOURCE_SCHEMA_BASE_PATH
-                                                         + "/bad/duplicate-sub-name-value.json";
+  String DUPLICATE_SUB_NAME_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/duplicate-sub-name-value.json";
 
-  public static final String READ_ONLY_NEVER_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/read-only-and-never.json";
+  String READ_ONLY_NEVER_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/read-only-and-never.json";
 
-  public static final String WRITE_ONLY_ALWAYS_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/write-only-and-always.json";
+  String WRITE_ONLY_ALWAYS_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/write-only-and-always.json";
 
 
   /**

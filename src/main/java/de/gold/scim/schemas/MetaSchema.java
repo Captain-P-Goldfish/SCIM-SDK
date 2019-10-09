@@ -52,7 +52,7 @@ public final class MetaSchema
 
   /**
    * will load a modified custom schema definition from a classpath location.
-   * 
+   *
    * @param classPath the fully qualified classpath location path
    */
   public final void loadCustomSchemaDefinition(String classPath)
@@ -63,7 +63,7 @@ public final class MetaSchema
 
   /**
    * will load a modified custom schema definition from a file location
-   * 
+   *
    * @param file the file that holds the modified schema definition
    */
   public final void loadCustomSchemaDefinition(File file)
@@ -92,15 +92,13 @@ public final class MetaSchema
     log.trace("validating meta schema definition");
     BiFunction<String, Boolean, String> isPresent = (attributeName, blankAllowed) -> {
       String value = JsonHelper.getSimpleAttribute(schemaDocument, attributeName)
-                               .orElseThrow(() -> DocumentValidationException.builder()
-                                                                             .message("schema does not contain an '"
-                                                                                      + attributeName + "' attribute")
-                                                                             .build());
+                               .orElseThrow(() -> new DocumentValidationException("schema does not contain an '"
+                                                                                  + attributeName + "' attribute", null,
+                                                                                  null, null));
       if (!blankAllowed && StringUtils.isBlank(value))
       {
-        throw DocumentValidationException.builder()
-                                         .message("value of attribute '" + attributeName + "' must not be blank")
-                                         .build();
+        throw new DocumentValidationException("value of attribute '" + attributeName + "' must not be blank", null,
+                                              null, null);
       }
       return value;
     };
@@ -108,38 +106,32 @@ public final class MetaSchema
     String id = isPresent.apply(AttributeNames.ID, false);
     if (!StringUtils.equals(SchemaUris.SCHEMA_URI, id))
     {
-      throw DocumentValidationException.builder()
-                                       .message("schema id must match the value: " + SchemaUris.SCHEMA_URI)
-                                       .build();
+      throw new DocumentValidationException("schema id must match the value: " + SchemaUris.SCHEMA_URI, null, null,
+                                            null);
     }
     isPresent.apply(AttributeNames.NAME, false);
     isPresent.apply(AttributeNames.DESCRIPTION, false);
 
     String attributeErrorMessage = "schema does not contain an 'attributes' attribute";
     JsonNode attributes = JsonHelper.getArrayAttribute(schemaDocument, AttributeNames.ATTRIBUTES)
-                                    .orElseThrow(() -> DocumentValidationException.builder()
-                                                                                  .message(attributeErrorMessage)
-                                                                                  .build());
+                                    .orElseThrow(() -> new DocumentValidationException(attributeErrorMessage, null,
+                                                                                       null, null));
     if (attributes.size() == 0)
     {
-      throw DocumentValidationException.builder()
-                                       .message("attributes element must at least contain a single attribute: "
-                                                + SchemaUris.SCHEMA_URI)
-                                       .build();
+      throw new DocumentValidationException("attributes element must at least contain a single attribute: "
+                                            + SchemaUris.SCHEMA_URI, null, null, null);
     }
     for ( JsonNode attribute : attributes )
     {
       Consumer<String> validateAttributeExcistence = attributeName -> {
         String errorMessage = "attributes must have an element: " + attributeName;
         String attributeValue = JsonHelper.getSimpleAttribute(attribute, attributeName)
-                                          .orElseThrow(() -> DocumentValidationException.builder()
-                                                                                        .message(errorMessage)
-                                                                                        .build());
+                                          .orElseThrow(() -> new DocumentValidationException(errorMessage, null, null,
+                                                                                             null));
         if (StringUtils.isBlank(attributeValue))
         {
-          throw DocumentValidationException.builder()
-                                           .message("attribute '" + attributeName + "' must not be blank")
-                                           .build();
+          throw new DocumentValidationException("attribute '" + attributeName + "' must not be blank", null, null,
+                                                null);
         }
       };
 

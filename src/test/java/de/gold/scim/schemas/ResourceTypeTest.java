@@ -45,11 +45,15 @@ public class ResourceTypeTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    schemaFactory = Assertions.assertDoesNotThrow(SchemaFactory::getUnitTestInstance);
-    ResourceType.setSchemaFactory(schemaFactory);
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON));
+    ResourceTypeFactory resourceTypeFactory = ResourceTypeFactory.getUnitTestInstance();
+    schemaFactory = Assertions.assertDoesNotThrow(resourceTypeFactory::getSchemaFactory);
+    resourceTypeFactory.registerResourceType(null,
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
+    resourceTypeFactory.registerResourceType(null,
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON));
   }
 
   /**
@@ -60,7 +64,9 @@ public class ResourceTypeTest implements FileReferences
   public void testCreateResourceType()
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(userResourceType));
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory,
+                                                                                     schemaFactory.getResourceTypeFactory(),
+                                                                                     userResourceType));
     Assertions.assertEquals(Collections.singletonList("urn:ietf:params:scim:schemas:core:2.0:ResourceType"),
                             resourceType.getSchemas());
     Assertions.assertEquals("User", resourceType.getId());
@@ -91,7 +97,9 @@ public class ResourceTypeTest implements FileReferences
   public void testResourceTypeToJsonNode()
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(userResourceType));
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory,
+                                                                                     schemaFactory.getResourceTypeFactory(),
+                                                                                     userResourceType));
     JsonNode resourceTypeJsonNode = resourceType.toJsonNode();
     Assertions.assertEquals(userResourceType, resourceTypeJsonNode);
   }
@@ -105,7 +113,9 @@ public class ResourceTypeTest implements FileReferences
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonHelper.removeAttribute(userResourceType, attributeName);
-    Assertions.assertThrows(InvalidResourceTypeException.class, () -> new ResourceType(userResourceType));
+    Assertions.assertThrows(InvalidResourceTypeException.class,
+                            () -> new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                   userResourceType));
   }
 
   /**
@@ -115,7 +125,8 @@ public class ResourceTypeTest implements FileReferences
   @Test
   public void testGetBuildResourceSchemaWithExtension()
   {
-    ResourceType userResourceType = new ResourceType(JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
+    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     ResourceType.ResourceSchema resourceSchema = userResourceType.getResourceSchema(chuckNorris);
     Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
@@ -130,7 +141,8 @@ public class ResourceTypeTest implements FileReferences
   @Test
   public void testGetBuildResourceSchemaWithoutExtension()
   {
-    ResourceType userResourceType = new ResourceType(JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
+    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
     ResourceType.ResourceSchema resourceSchema = userResourceType.getResourceSchema(chuckNorris);
     Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
@@ -144,7 +156,8 @@ public class ResourceTypeTest implements FileReferences
   public void testLoadResourceTypeWithUnregisteredResourceSchema()
   {
     Assertions.assertThrows(InvalidResourceTypeException.class,
-                            () -> new ResourceType(JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE)));
+                            () -> new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                   JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE)));
   }
 
   /**
@@ -155,7 +168,8 @@ public class ResourceTypeTest implements FileReferences
   public void testGetUnregisteredSchema()
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    ResourceType roleResourceType = new ResourceType(JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
+    ResourceType roleResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.SCHEMAS).get();
     schemas.add(new TextNode("urn:unknown:reference"));
@@ -171,7 +185,9 @@ public class ResourceTypeTest implements FileReferences
   {
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
     JsonHelper.removeAttribute(roleResourceTypeNode, AttributeNames.SCHEMAS);
-    Assertions.assertThrows(InvalidResourceTypeException.class, () -> new ResourceType(roleResourceTypeNode));
+    Assertions.assertThrows(InvalidResourceTypeException.class,
+                            () -> new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                   roleResourceTypeNode));
   }
 
   /**
@@ -183,7 +199,8 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    ResourceType roleResourceType = new ResourceType(roleResourceTypeNode);
+    ResourceType roleResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     JsonHelper.removeAttribute(adminRole, AttributeNames.SCHEMAS);
     Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
@@ -198,7 +215,8 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    ResourceType roleResourceType = new ResourceType(roleResourceTypeNode);
+    ResourceType roleResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
     JsonHelper.replaceNode(adminRole, AttributeNames.SCHEMAS, schemasNode);
@@ -214,7 +232,8 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode customUserResourceType = JsonHelper.loadJsonDocument(USER_CUSTOM_RESOURCE_TYPE);
-    ResourceType userResourceType = new ResourceType(customUserResourceType);
+    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     customUserResourceType);
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
     try
     {
@@ -236,7 +255,8 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode customUserResourceType = JsonHelper.loadJsonDocument(USER_CUSTOM_RESOURCE_TYPE);
-    ResourceType userResourceType = new ResourceType(customUserResourceType);
+    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                     customUserResourceType);
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(chuckNorris, AttributeNames.SCHEMAS).get();
     final String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
@@ -254,10 +274,13 @@ public class ResourceTypeTest implements FileReferences
   public void testSchemaValidationWithResourceTypeWithExtensionForResponse()
   {
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = new ResourceType(userResourceTypeJson);
+    ResourceType resourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                 userResourceTypeJson);
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(resourceType, enterpriseUserDocument);
+    JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(schemaFactory.getResourceTypeFactory(),
+                                                                             resourceType,
+                                                                             enterpriseUserDocument);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
@@ -273,10 +296,12 @@ public class ResourceTypeTest implements FileReferences
   public void testSchemaValidationWithResourceTypeWithExtensionForRequest()
   {
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = new ResourceType(userResourceTypeJson);
+    ResourceType resourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+                                                 userResourceTypeJson);
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(resourceType,
+    JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(schemaFactory.getResourceTypeFactory(),
+                                                                            resourceType,
                                                                             enterpriseUserDocument,
                                                                             SchemaValidator.HttpMethod.POST);
 

@@ -19,7 +19,7 @@
     "department": "Tour Operations",
     "manager": {
       "value": "26118915-6090-4610-87e4-49d8ca9f808d",
-      "$ref": "../Users/26118915-6090-4610-87e4-49d8ca9f808d",
+      "$ref": "User",
       "displayName": "Chuck Norris"
     }
   }

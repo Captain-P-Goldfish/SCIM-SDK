@@ -8,10 +8,12 @@ import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.JsonHelper;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -38,11 +40,19 @@ public final class SchemaFactory
    */
   private final Map<String, Schema> RESOURCE_SCHEMAS = new HashMap<>();
 
+  /**
+   * used for unit tests in order to prevent application context pollution
+   */
+  @Getter(AccessLevel.PROTECTED)
+  @Setter(AccessLevel.PROTECTED)
+  private ResourceTypeFactory resourceTypeFactory;
+
   /*
    * this block will register the default schemas defined by RFC7643
    */
   private SchemaFactory()
   {
+    this.resourceTypeFactory = ResourceTypeFactory.getInstance();
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON));
@@ -59,9 +69,11 @@ public final class SchemaFactory
   /**
    * this method is explicitly for unit tests
    */
-  static SchemaFactory getUnitTestInstance()
+  static SchemaFactory getUnitTestInstance(ResourceTypeFactory resourceTypeFactory)
   {
-    return new SchemaFactory();
+    SchemaFactory schemaFactory = new SchemaFactory();
+    schemaFactory.setResourceTypeFactory(resourceTypeFactory);
+    return schemaFactory;
   }
 
   /**
@@ -84,18 +96,12 @@ public final class SchemaFactory
   {
     Schema schema = new Schema(jsonSchema);
     List<String> schemas = schema.getSchemas();
-    if (schemas.size() != 1)
-    {
-      String errorMessage = "unexpected number of entries in '" + AttributeNames.SCHEMAS + "' attribute. Expected one"
-                            + " entry but was: '" + schemas + "'";
-      throw new InvalidSchemaException(errorMessage, null, null, null);
-    }
 
     Supplier<String> message = () -> "meta schema with URI '" + schemas.get(0) + "' is not registered";
     Schema metaSchema = Optional.ofNullable(getMetaSchema(schema.getSchemas().get(0)))
                                 .orElseThrow(() -> new InvalidSchemaException(message.get(), null, null, null));
 
-    SchemaValidator.validateSchemaDocument(metaSchema.toJsonNode(), jsonSchema);
+    SchemaValidator.validateSchemaDocument(resourceTypeFactory, metaSchema, jsonSchema);
     RESOURCE_SCHEMAS.put(schema.getId(), schema);
   }
 

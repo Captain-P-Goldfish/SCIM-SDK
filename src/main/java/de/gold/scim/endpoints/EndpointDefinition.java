@@ -1,10 +1,10 @@
 package de.gold.scim.endpoints;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 
 
@@ -14,6 +14,7 @@ import lombok.Data;
  * <br>
  */
 @Data
+@AllArgsConstructor
 public class EndpointDefinition
 {
 
@@ -21,6 +22,8 @@ public class EndpointDefinition
 
   private JsonNode resourceSchema;
 
-  private List<JsonNode> resourceSchemaExtensions = new ArrayList<>();
+  private List<JsonNode> resourceSchemaExtensions;
+
+  private ResourceHandler resourceHandler;
 
 }

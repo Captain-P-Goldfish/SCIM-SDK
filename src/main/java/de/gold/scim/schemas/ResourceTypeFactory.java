@@ -13,11 +13,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
-import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -33,7 +36,7 @@ public final class ResourceTypeFactory
   /**
    * the singleton instance
    */
-  private static final ResourceTypeFactory INSTANCE = new ResourceTypeFactory(SchemaFactory.getInstance());
+  private static final ResourceTypeFactory INSTANCE = new ResourceTypeFactory();
 
   /**
    * the resource type registry.<br>
@@ -46,19 +49,16 @@ public final class ResourceTypeFactory
    * this instance is hold in order for unit tests to be able to write tests without polluting the whole
    * application context which might lead to unpredictable unit test errors
    */
+  @Getter(AccessLevel.PROTECTED)
+  @Setter(AccessLevel.PROTECTED)
   private SchemaFactory schemaFactory;
 
   /**
    * will register the default resource types
    */
-  private ResourceTypeFactory(SchemaFactory schemaFactory)
+  private ResourceTypeFactory()
   {
-    this.schemaFactory = schemaFactory;
-    registerResourceType(JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
-                         JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
-                         JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
-    registerResourceType(JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON),
-                         JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON));
+    this.schemaFactory = SchemaFactory.getInstance();
   }
 
   /**
@@ -74,7 +74,9 @@ public final class ResourceTypeFactory
    */
   static ResourceTypeFactory getUnitTestInstance()
   {
-    return new ResourceTypeFactory(SchemaFactory.getUnitTestInstance());
+    ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
+    resourceTypeFactory.setSchemaFactory(SchemaFactory.getUnitTestInstance(resourceTypeFactory));
+    return resourceTypeFactory;
   }
 
   /**
@@ -87,12 +89,16 @@ public final class ResourceTypeFactory
    * @param resourceSchemaExtensions the extensions that will be appended to the {@code resourceSchema}
    *          definition
    */
-  public void registerResourceType(JsonNode resourceType, JsonNode resourceSchema, JsonNode... resourceSchemaExtensions)
+  public void registerResourceType(ResourceHandler resourceHandler,
+                                   JsonNode resourceType,
+                                   JsonNode resourceSchema,
+                                   JsonNode... resourceSchemaExtensions)
   {
     addSchemaExtensions(resourceType, resourceSchemaExtensions);
     schemaFactory.registerResourceSchema(resourceSchema);
-    ResourceType resourceTypeObject = new ResourceType(resourceType);
-    resourceTypes.put(resourceTypeObject.getSchema(), resourceTypeObject);
+    ResourceType resourceTypeObject = new ResourceType(schemaFactory, this, resourceType);
+    resourceTypeObject.setResourceHandlerImpl(resourceHandler);
+    resourceTypes.put(resourceTypeObject.getEndpoint(), resourceTypeObject);
   }
 
   /**
@@ -184,7 +190,8 @@ public final class ResourceTypeFactory
   }
 
   /**
-   * builds a json resource type object and calls {@link #registerResourceType(JsonNode, JsonNode, JsonNode...)}
+   * builds a json resource type object and calls
+   * {@link #registerResourceType(ResourceHandler, JsonNode, JsonNode, JsonNode...)}
    *
    * @param id the id of the resource type
    * @param name the name of the resource type
@@ -195,7 +202,8 @@ public final class ResourceTypeFactory
    * @param resourceSchemaExtensions the extensions that will be appended to the {@code resourceSchema}
    *          definition
    */
-  public void registerResourceType(String id,
+  public void registerResourceType(ResourceHandler resourceHandler,
+                                   String id,
                                    String name,
                                    String description,
                                    String schema,
@@ -212,16 +220,32 @@ public final class ResourceTypeFactory
     JsonHelper.addAttribute(resourceType, AttributeNames.DESCRIPTION, new TextNode(description));
     JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMA, new TextNode(schema));
     JsonHelper.addAttribute(resourceType, AttributeNames.ENDPOINT, new TextNode(endpoint));
-    registerResourceType(resourceType, resourceSchema, resourceSchemaExtensions);
+    registerResourceType(resourceHandler, resourceType, resourceSchema, resourceSchemaExtensions);
   }
 
   /**
-   * tries to get a resource type by the schema uri of a resource
+   * tries to get a resource type by the endpoint path under which it is accessible
    *
-   * @param schemaUri the schema uri of a resource e.g. {@link de.gold.scim.constants.SchemaUris#USER_URI}
+   * @param endpoint the endpoint of the resource type
    */
-  public ResourceType getResourceType(String schemaUri)
+  public ResourceType getResourceType(String endpoint)
   {
-    return resourceTypes.get(schemaUri);
+    String path = endpoint;
+    if (!path.startsWith("/"))
+    {
+      path = "/" + path;
+    }
+    return resourceTypes.get(path);
+  }
+
+  /**
+   * checks if a resource type with the given name does exist
+   *
+   * @param resourceName the name of the resource
+   * @return true if a resource type with the given name was already registered, false else
+   */
+  protected boolean isResourceRegistered(String resourceName)
+  {
+    return resourceTypes.values().stream().map(ResourceType::getName).anyMatch(resourceName::equals);
   }
 }

@@ -1,15 +1,16 @@
 package de.gold.scim.endpoints;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.schemas.ResourceType;
@@ -45,30 +46,38 @@ public final class ResourceEndpoints
   ResourceEndpoints(ResourceTypeFactory resourceTypeFactory, EndpointDefinition... endpointDefinitions)
   {
     this.resourceTypeFactory = resourceTypeFactory;
-    if (endpointDefinitions == null)
+    if (endpointDefinitions == null || endpointDefinitions.length == 0)
     {
-      return;
+      throw new InternalServerException("At least 1 endpoint must be registered!", null, null);
     }
     for ( EndpointDefinition endpointDefinition : endpointDefinitions )
     {
-      resourceTypeFactory.registerResourceType(endpointDefinition.getResourceType(),
+      resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
+                                               endpointDefinition.getResourceType(),
                                                endpointDefinition.getResourceSchema(),
                                                endpointDefinition.getResourceSchemaExtensions()
                                                                  .toArray(new JsonNode[0]));
     }
   }
 
-  public ScimResponse createResource(String resourceDocument)
+  public ScimResponse createResource(String endpoint, String resourceDocument)
   {
+    Supplier<String> errorMessage = () -> "no resource found for endpoint '" + endpoint + "'";
+    ResourceType resourceType = Optional.ofNullable(resourceTypeFactory.getResourceType(endpoint))
+                                        .orElseThrow(() -> new BadRequestException(errorMessage.get(), null,
+                                                                                   ScimType.UNKNOWN_RESOURCE));
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
-    ResourceType resourceType = findResourceType(resource);
-    SchemaValidator.validateDocumentForRequest(resourceType, resource, SchemaValidator.HttpMethod.POST);
+    resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                          resourceType,
+                                                          resource,
+                                                          SchemaValidator.HttpMethod.POST);
+    JsonNode responseResource = resourceType.getResourceHandlerImpl().createResource(resource);
+    responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, responseResource);
+    return buildScimResponse(responseResource);
+  }
 
-    // TODO execute developer implementation
-
-    // TODO validate developer return type by schema validation for response
-
-    // TODO return a scim response
+  private ScimResponse buildScimResponse(JsonNode responseResource)
+  {
     return null;
   }
 
@@ -85,27 +94,6 @@ public final class ResourceEndpoints
   public ScimResponse deleteResource(String id)
   {
     return null;
-  }
-
-  private ResourceType findResourceType(JsonNode resource)
-  {
-    String errorMessage = getAttributeMissingMessage(AttributeNames.SCHEMAS);
-    List<String> schemas = JsonHelper.getSimpleAttributeArray(resource, AttributeNames.SCHEMAS)
-                                     .orElseThrow(() -> getBadRequestException(errorMessage, ScimType.REQUIRED));
-    List<ResourceType> resourceTypeList = new ArrayList<>();
-    for ( String schema : schemas )
-    {
-      resourceTypeList.add(resourceTypeFactory.getResourceType(schema));
-    }
-    if (resourceTypeList.size() == 0)
-    {
-      throw getBadRequestException(errorMessage, ScimType.REQUIRED);
-    }
-    if (resourceTypeList.size() == 1)
-    {
-      return resourceTypeList.get(0);
-    }
-    return resolveResourceTypeFromMultipleResourcesFound(resourceTypeList);
   }
 
   /**

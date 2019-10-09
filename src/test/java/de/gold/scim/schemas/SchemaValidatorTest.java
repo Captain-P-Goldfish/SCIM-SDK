@@ -6,10 +6,15 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -19,8 +24,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -47,6 +55,8 @@ import lombok.extern.slf4j.Slf4j;
 public class SchemaValidatorTest implements FileReferences
 {
 
+  private ResourceTypeFactory resourceTypeFactory;
+
   /**
    * defines the schema - document pairs that should be validated
    */
@@ -71,7 +81,6 @@ public class SchemaValidatorTest implements FileReferences
                                   JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
                                   JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE)));
   }
-
 
   /**
    * will produce a number of timestamp arguments for testing date parsing on scim documents
@@ -116,19 +125,26 @@ public class SchemaValidatorTest implements FileReferences
     }
   }
 
+  @BeforeEach
+  public void initialize()
+  {
+    this.resourceTypeFactory = ResourceTypeFactory.getUnitTestInstance();
+  }
+
   /**
    * validates the schemata from the classpath
    *
    * @param testName the name of the test
-   * @param metaSchema the meta schema that describes the given json document
+   * @param metaSchemaNode the meta schema that describes the given json document
    * @param jsonDocument the json document that is validated against the schema
    */
   @ParameterizedTest(name = "{0}")
   @MethodSource("getSchemaValidations")
-  public void testSchemaValidationForUserResourceSchema(String testName, JsonNode metaSchema, JsonNode jsonDocument)
+  public void testSchemaValidationForUserResourceSchema(String testName, JsonNode metaSchemaNode, JsonNode jsonDocument)
   {
     log.trace(testName);
-    JsonNode jsonNode = SchemaValidator.validateDocumentForResponse(metaSchema, jsonDocument);
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode jsonNode = SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, jsonDocument);
     Assertions.assertTrue(JsonHelper.getArrayAttribute(jsonNode, AttributeNames.SCHEMAS).isPresent(),
                           "the schemas attribute must not be removed from the document");
     ArrayNode documentSchemas = JsonHelper.getArrayAttribute(jsonDocument, AttributeNames.SCHEMAS).get();
@@ -143,12 +159,14 @@ public class SchemaValidatorTest implements FileReferences
   @ValueSource(strings = {AttributeNames.SCHEMAS, AttributeNames.NAME, AttributeNames.SCHEMA, AttributeNames.ENDPOINT})
   public void testValidationFailsOnMissingRequiredAttribute(String attributeName)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
 
     JsonHelper.removeAttribute(userSchema, attributeName);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
+                                                                              userSchema));
   }
 
   /**
@@ -158,7 +176,7 @@ public class SchemaValidatorTest implements FileReferences
   @ValueSource(strings = {AttributeNames.NAME, AttributeNames.TYPE, AttributeNames.MULTI_VALUED})
   public void testValidationFailsOnMissingRequiredSubAttribute(String attributeName)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
@@ -166,7 +184,9 @@ public class SchemaValidatorTest implements FileReferences
     JsonHelper.removeAttribute(firstAttribute, attributeName);
 
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
+                                                                              userSchema));
   }
 
   /**
@@ -177,14 +197,16 @@ public class SchemaValidatorTest implements FileReferences
                           AttributeNames.UNIQUENESS})
   public void testValidationFailsOnTypoInCanonicalValue(String attributeName)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.writeValue(firstAttribute, attributeName, "unknown_value");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
+                                                                              userSchema));
   }
 
   /**
@@ -193,7 +215,7 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testValidationFailsIfNodeIsArrayInsteadOfSimple()
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonNodeFactory factory = new JsonNodeFactory(false);
@@ -201,7 +223,9 @@ public class SchemaValidatorTest implements FileReferences
     arrayNode.add("bla");
     JsonHelper.replaceNode(userSchema, AttributeNames.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
+                                                                              userSchema));
   }
 
   /**
@@ -210,13 +234,15 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testValidationFailsIfNodeIsOfDifferentType()
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     IntNode idNode = new IntNode(new Random().nextInt());
     JsonHelper.replaceNode(userSchema, AttributeNames.ID, idNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
+                                                                              userSchema));
   }
 
   /**
@@ -227,12 +253,13 @@ public class SchemaValidatorTest implements FileReferences
   @ValueSource(strings = {AttributeNames.SCHEMA, AttributeNames.ENDPOINT})
   public void testValidationFailsIfUriReferenceIsNotAUri(String attributeName)
   {
-    JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    Schema resourceTypeSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     JsonNode userResourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
 
     JsonHelper.writeValue(userResourceTypeSchema, attributeName, "oh happy day");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              resourceTypeSchema,
                                                                               userResourceTypeSchema));
   }
 
@@ -248,7 +275,9 @@ public class SchemaValidatorTest implements FileReferences
 
     addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
 
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+    Schema metaSchema = new Schema(resourceTypeSchema);
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                                    metaSchema,
                                                                                     userResourceTypeSchema));
   }
 
@@ -265,8 +294,10 @@ public class SchemaValidatorTest implements FileReferences
 
     addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
 
+    Schema metaSchema = new Schema(resourceTypeSchema);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
                                                                               userResourceTypeSchema));
   }
 
@@ -302,13 +333,15 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testRemoveUnknownAttributes()
   {
-    JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    Schema resourceTypeSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     JsonNode userResourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
 
     final String helloWorldKey = "helloWorld";
     JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
 
-    JsonNode validatedSchema = SchemaValidator.validateDocumentForResponse(resourceTypeSchema, userResourceTypeSchema);
+    JsonNode validatedSchema = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                           resourceTypeSchema,
+                                                                           userResourceTypeSchema);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());
     ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(validatedSchema, AttributeNames.SCHEMA_EXTENSIONS)
                                            .orElseThrow(() -> new IllegalStateException("the document does not contain "
@@ -333,11 +366,11 @@ public class SchemaValidatorTest implements FileReferences
               ClassPathReferences.GROUP_SCHEMA_JSON + "," + GROUP_RESOURCE})
   public void testThatAllValidatedNodesAreScimNodes(String metaSchemaLocation, String documentLocation)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(metaSchemaLocation);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(metaSchemaLocation));
     JsonNode userSchema = JsonHelper.loadJsonDocument(documentLocation);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, userSchema);
     });
     Assertions.assertNotNull(validatedDocument);
     validateJsonNodeIsScimNode(validatedDocument);
@@ -351,12 +384,12 @@ public class SchemaValidatorTest implements FileReferences
               ClassPathReferences.GROUP_SCHEMA_JSON + "," + GROUP_RESOURCE})
   public void testValidationFailsForMissingIdOnResponse(String metaSchemaLocation, String documentLocation)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(metaSchemaLocation);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(metaSchemaLocation));
     JsonNode resourceSchema = JsonHelper.loadJsonDocument(documentLocation);
 
     JsonHelper.removeAttribute(resourceSchema, AttributeNames.ID);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      SchemaValidator.validateDocumentForResponse(metaSchema, resourceSchema);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, resourceSchema);
     });
   }
 
@@ -366,11 +399,14 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testRemoveEnterpriseExtensionFromValidatedDocument()
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, SchemaValidator.HttpMethod.POST);
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        userSchema,
+                                                        SchemaValidator.HttpMethod.POST);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
@@ -383,11 +419,11 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testRemoveNeverReturnedAttributesFromResponse()
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, userSchema);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
@@ -401,11 +437,11 @@ public class SchemaValidatorTest implements FileReferences
   @ValueSource(strings = {"POST", "PUT"})
   public void testRemoveNonRequiredReadOnlyAttributesFromRequest(SchemaValidator.HttpMethod httpMethod)
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, httpMethod);
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory, metaSchema, userSchema, httpMethod);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
@@ -414,17 +450,452 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNull(validatedDocument.get(AttributeNames.GROUPS));
   }
 
-  @Test
-  public void testDuplicateSimpleAttribute()
+  /**
+   * will test that simple arrays will also be handled successfully
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"", "value1"})
+  public void testValidationWithSimpleArrayNode(String value)
   {
-    Assertions.fail("This test must check that a document does not have the same attribute twice");
+    value = StringUtils.stripToNull(value);
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    final String attributeName = "simpleArray";
+    JsonNode uniqueArray = JsonHelper.readJsonDocument(getAttributeString(attributeName,
+                                                                          Type.STRING,
+                                                                          true,
+                                                                          true,
+                                                                          true,
+                                                                          Mutability.READ_WRITE,
+                                                                          Returned.ALWAYS,
+                                                                          Uniqueness.NONE));
+    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchemaNode, AttributeNames.ATTRIBUTES).get();
+    JsonHelper.addAttributeToArray(attributes, uniqueArray);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    Optional.ofNullable(value).ifPresent(arrayNode::add);
+    JsonHelper.addAttribute(userSchema, attributeName, arrayNode);
+    Schema metaSchema = new Schema(metaSchemaNode);
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                                   metaSchema,
+                                                                                   userSchema,
+                                                                                   SchemaValidator.HttpMethod.POST));
   }
 
-  @Test
-  public void testDuplicateValueOnUniqueMultivaluedAttribute()
+  /**
+   * this test will verify that the validation fails if an array with a uniqueness of server or global has
+   * duplicate values
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testDuplicateValueOnUniqueMultivaluedAttribute(Uniqueness uniqueness)
   {
-    Assertions.fail("This test must check that a document does not have an attribute with the same value twice if the"
-                    + " unique value is set to server or global");
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    final String attributeName = "uniqueArray";
+    JsonNode uniqueArray = JsonHelper.readJsonDocument(getAttributeString(attributeName,
+                                                                          Type.STRING,
+                                                                          true,
+                                                                          true,
+                                                                          true,
+                                                                          Mutability.READ_WRITE,
+                                                                          Returned.ALWAYS,
+                                                                          uniqueness));
+    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchemaNode, AttributeNames.ATTRIBUTES).get();
+    JsonHelper.addAttributeToArray(attributes, uniqueArray);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    // add the same value twice
+    arrayNode.add(attributeName);
+    arrayNode.add(attributeName);
+    JsonHelper.addAttribute(userSchema, attributeName, arrayNode);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+  }
+
+  /**
+   * this test will verify that the validation fails if an complex array with a uniqueness of server or global
+   * has duplicate values<br>
+   * the test will change the uniqueness of the emails-attribute and will then add a duplicate entry to the
+   * emails-attribute
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testDuplicateValueOnUniqueComplexMultivaluedAttribute(Uniqueness uniqueness)
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.EMAILS,
+                            null,
+                            null,
+                            null,
+                            uniqueness,
+                            null,
+                            null,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    // @formatter:off
+    final String email = "{" +
+                         "    \"value\": \"goldfish@germany.de\",\n" +
+                         "    \"type\": \"work\"" +
+                         "}";
+    // @formatter:on
+    JsonNode emailNode = JsonHelper.readJsonDocument(email);
+    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.EMAILS).get();
+    emailArray.add(emailNode);
+    emailArray.add(emailNode);
+    Schema metaSchema = new Schema(metaSchemaNode);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+  }
+
+  /**
+   * This test will make sure that an exception is thrown if a multivalued complex type contains several primary
+   * attributes
+   */
+  @Test
+  public void testFailOnSeveralPrimaryMultivaluedComplexTypeValues()
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    // @formatter:off
+    final String email = "{" +
+                         "    \"value\": \"goldfish@germany.de\",\n" +
+                         "    \"type\": \"work\",\n" +
+                         "    \"primary\": true" +
+                         "}";
+    // @formatter:on
+    JsonNode emailNode = JsonHelper.readJsonDocument(email);
+    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.EMAILS).get();
+    emailArray.add(emailNode);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+  }
+
+  /**
+   * will test that an attribute with returned-value never will not be returned from the server
+   */
+  @Test
+  public void testReturnValueWithReturnedValueNever()
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.EXTERNAL_ID,
+                            null,
+                            null,
+                            Returned.NEVER,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, userSchema);
+    });
+    Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.EXTERNAL_ID).isPresent());
+  }
+
+  /**
+   * will test that the validation fails if the schema reference within the schemas attribute of the document is
+   * unknown
+   */
+  @Test
+  public void testDocumentDoesNotContainMetaSchemaId()
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    ArrayNode schemas = JsonHelper.getArrayAttribute(userSchema, AttributeNames.SCHEMAS).get();
+    schemas.removeAll();
+    schemas.add("urn:some:unknown:id:reference");
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+  }
+
+  /**
+   * tests that an exception is thrown if a required immutable or a wrtiteOnly attribute is not present on a
+   * creation request
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"IMMUTABLE", "WRITE_ONLY"})
+  public void testMissingRequiredAttributesOnCreationRequest(Mutability mutability)
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.USERNAME,
+                            null,
+                            mutability,
+                            Returned.NEVER,
+                            null,
+                            null,
+                            true,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonHelper.removeAttribute(userSchema, AttributeNames.USERNAME);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+  }
+
+  /**
+   * will verify that an exception is thrown if an attribute is of another type as declared in the schema. This
+   * explicit test changes the username into an integer type but the attribute in the document will send a
+   * string-username
+   */
+  @Test
+  public void testValidationWithIncorrectAttributeType()
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.USERNAME,
+                            Type.INTEGER,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    Schema metaSchema = new Schema(metaSchemaNode);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+  }
+
+  /**
+   * will verify that the validation of an integer attribute type works successfully
+   */
+  @Test
+  public void testValidationWithIntAttribute()
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.USERNAME,
+                            Type.INTEGER,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonHelper.addAttribute(userSchema, AttributeNames.USERNAME, new IntNode(Integer.MAX_VALUE));
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        userSchema,
+                                                        SchemaValidator.HttpMethod.POST);
+    });
+    Assertions.assertEquals(Integer.MAX_VALUE,
+                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USERNAME, Integer.class)
+                                      .get());
+  }
+
+  /**
+   * will verify that the validation of a decimal (double) attribute type works successfully
+   */
+  @Test
+  public void testValidationWithDecimalAttribute()
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.USERNAME,
+                            Type.DECIMAL,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonHelper.addAttribute(userSchema, AttributeNames.USERNAME, new DoubleNode(Double.MAX_VALUE));
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        userSchema,
+                                                        SchemaValidator.HttpMethod.POST);
+    });
+    Assertions.assertEquals(Double.MAX_VALUE,
+                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USERNAME, Double.class)
+                                      .get());
+  }
+
+  /**
+   * this test will verify that a required missing attribute will cause an exception if it has been set to a
+   * jsonNull value
+   */
+  @Test
+  public void testValidationWithJsonNullValue()
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonHelper.addAttribute(userSchema, AttributeNames.USERNAME, NullNode.instance);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             metaSchema,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              metaSchema,
+                                                                              userSchema));
+  }
+
+  /**
+   * this test will verify that simple values that are sent on multivalued attributes are explicitly converted
+   * into arrays. So it is allowed to send simple single values on multivalued types
+   */
+  @Test
+  public void testUseSimpleNodeTypeOnMultiValuedAttribute()
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode, AttributeNames.USERNAME, null, null, null, null, true, null, null, null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        userSchema,
+                                                        SchemaValidator.HttpMethod.POST);
+    });
+
+    JsonNode userName = validatedDocument.get(AttributeNames.USERNAME);
+    Assertions.assertNotNull(userName);
+    Assertions.assertTrue(userName.isArray());
+    Assertions.assertEquals(1, userName.size());
+  }
+
+  /**
+   * this test will verify that a {@link de.gold.scim.constants.enums.ReferenceTypes#RESOURCE} referenceType is
+   * successfully verified if the given resourceType name is registered in the {@link ResourceTypeFactory}
+   */
+  @Test
+  public void testResourceReferenceIsUsedAndResourceWasRegistered()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    resourceTypeFactory.registerResourceType(null, userResourceType, userResourceSchema, enterpriseUserExtension);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode enterpriseUser = JsonHelper.getObjectAttribute(userSchema, SchemaUris.ENTERPRISE_USER_URI).get();
+
+    Schema enterpriseSchema = new Schema(enterpriseUserExtension);
+    Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateExtensionForRequest(resourceTypeFactory,
+                                                         enterpriseSchema,
+                                                         enterpriseUser,
+                                                         SchemaValidator.HttpMethod.POST);
+    });
+  }
+
+  /**
+   * this test will verify that an exception is thrown if a
+   * {@link de.gold.scim.constants.enums.ReferenceTypes#RESOURCE} referenceType is not registered in the
+   * {@link ResourceTypeFactory}
+   */
+  @Test
+  public void testResourceReferenceIsUsedAndResourceWasNOTRegistered()
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode enterpriseUser = JsonHelper.getObjectAttribute(userSchema, SchemaUris.ENTERPRISE_USER_URI).get();
+    Assertions.assertThrows(DocumentValidationException.class, () -> {
+      SchemaValidator.validateExtensionForRequest(ResourceTypeFactory.getUnitTestInstance(),
+                                                  metaSchema,
+                                                  enterpriseUser,
+                                                  SchemaValidator.HttpMethod.POST);
+    });
+  }
+
+  /**
+   * this method extracts the the attribute with the given name from the meta schema and modifies its attributes
+   * with the given values
+   *
+   * @param metaSchema the meta schema that must contain an attribute with the given attributeName parameter
+   * @param attributeName the name of the attribute that will should be modified. This attribute must exist
+   */
+  private void modifyAttributeMetaData(JsonNode metaSchema,
+                                       String attributeName,
+                                       Type type,
+                                       Mutability mutability,
+                                       Returned returned,
+                                       Uniqueness uniqueness,
+                                       Boolean multiValued,
+                                       Boolean required,
+                                       Boolean caseExact,
+                                       List<String> canonicalTypes)
+  {
+    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
+    JsonNode attributeDefinition = null;
+    for ( JsonNode attribute : attributes )
+    {
+      String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
+      if (name.equals(attributeName))
+      {
+        attributeDefinition = attribute;
+        break;
+      }
+    }
+    Assertions.assertNotNull(attributeDefinition);
+    JsonNode finalAttributeDefinition = attributeDefinition;
+    Optional.ofNullable(type).ifPresent(t -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.TYPE, new TextNode(t.getValue()));
+    });
+    Optional.ofNullable(mutability).ifPresent(m -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.MUTABILITY, new TextNode(m.getValue()));
+    });
+    Optional.ofNullable(returned).ifPresent(r -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RETURNED, new TextNode(r.getValue()));
+    });
+    Optional.ofNullable(uniqueness).ifPresent(u -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.UNIQUENESS, new TextNode(u.getValue()));
+    });
+    Optional.ofNullable(multiValued).ifPresent(multi -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.MULTI_VALUED, BooleanNode.valueOf(multi));
+    });
+    Optional.ofNullable(required).ifPresent(r -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.REQUIRED, BooleanNode.valueOf(r));
+    });
+    Optional.ofNullable(caseExact).ifPresent(c -> {
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.CASE_EXACT, BooleanNode.valueOf(c));
+    });
+    Optional.ofNullable(canonicalTypes).ifPresent(canonical -> {
+      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+      arrayNode.addAll(canonical.stream().map(TextNode::new).collect(Collectors.toList()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.REFERENCE_TYPES, arrayNode);
+    });
   }
 
   private String getAttributeString(String name,

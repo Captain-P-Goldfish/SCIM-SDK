@@ -56,5 +56,13 @@ public final class AttributeNames
   public static final String DISPLAY = "display";
 
   public static final String GROUPS = "groups";
+
+  public static final String USERNAME = "userName";
+
+  public static final String EMAILS = "emails";
+
+  public static final String PRIMARY = "primary";
+
+  public static final String EXTERNAL_ID = "externalId";
 }
 

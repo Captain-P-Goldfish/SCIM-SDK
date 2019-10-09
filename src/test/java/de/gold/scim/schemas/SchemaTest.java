@@ -1,11 +1,11 @@
 package de.gold.scim.schemas;
 
-import de.gold.scim.constants.ClassPathReferences;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -30,7 +30,7 @@ class SchemaTest
   @BeforeEach
   public void initialize()
   {
-    schemaFactory = Assertions.assertDoesNotThrow(SchemaFactory::getUnitTestInstance);
+    schemaFactory = Assertions.assertDoesNotThrow(() -> ResourceTypeFactory.getUnitTestInstance().getSchemaFactory());
   }
 
   /**

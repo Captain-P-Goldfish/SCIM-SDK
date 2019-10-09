@@ -32,5 +32,11 @@
       "value": "123456",
       "display": "admin"
     }
+  ],
+  "roles": [
+    {
+      "value": "123456",
+      "display": "admin"
+    }
   ]
 }

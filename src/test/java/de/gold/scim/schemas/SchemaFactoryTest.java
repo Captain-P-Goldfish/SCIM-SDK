@@ -30,7 +30,7 @@ class SchemaFactoryTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    schemaFactory = Assertions.assertDoesNotThrow(SchemaFactory::getUnitTestInstance);
+    schemaFactory = Assertions.assertDoesNotThrow(() -> ResourceTypeFactory.getUnitTestInstance().getSchemaFactory());
   }
 
   /**
