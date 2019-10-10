@@ -5,7 +5,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,10 +16,8 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.SchemaUris;
-import de.gold.scim.constants.ScimType;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.BadRequestException;
-import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.HttpStatus;
@@ -50,11 +47,6 @@ public class ResourceType
    * used for unit tests in order to prevent application context pollution
    */
   private final SchemaFactory schemaFactory;
-
-  /**
-   * used for unit tests in order to prevent application context pollution
-   */
-  private final ResourceTypeFactory resourceTypeFactory;
 
   /**
    * the references to the meta schemas that describe this endpoint definition
@@ -99,26 +91,17 @@ public class ResourceType
 
   public ResourceType(String resourceDocument)
   {
-    this(null, null, JsonHelper.readJsonDocument(resourceDocument));
+    this(null, JsonHelper.readJsonDocument(resourceDocument));
   }
 
-  protected ResourceType(SchemaFactory schemaFactory, ResourceTypeFactory resourceTypeFactory, String resourceDocument)
+  protected ResourceType(SchemaFactory schemaFactory, String resourceDocument)
   {
-    this(schemaFactory, resourceTypeFactory, JsonHelper.readJsonDocument(resourceDocument));
+    this(schemaFactory, JsonHelper.readJsonDocument(resourceDocument));
   }
 
-  protected ResourceType(SchemaFactory schemaFactory,
-                         ResourceTypeFactory resourceTypeFactory,
-                         JsonNode resourceTypeDocument)
+  protected ResourceType(SchemaFactory schemaFactory, JsonNode resourceTypeDocument)
   {
-    if (log.isTraceEnabled())
-    {
-      log.trace("parse resource type document: \n{}", resourceTypeDocument.toPrettyString());
-    }
     this.schemaFactory = getSchemaFactory(schemaFactory);
-    this.resourceTypeFactory = getResourceTypeFactory(resourceTypeFactory);
-    Schema resourceMetaSchema = getMetaSchemaFromDocument(resourceTypeDocument);
-    validateResourceType(resourceMetaSchema, resourceTypeDocument);
     this.schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
                              .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI));
     this.id = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ID)
@@ -130,9 +113,6 @@ public class ResourceType
                               .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ENDPOINT)));
     this.schema = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.SCHEMA)
                             .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA)));
-    Optional.ofNullable(schemaFactory.getResourceSchema(schema))
-            .orElseThrow(() -> getInvalidResourceException("the resource schema with the uri '" + schema
-                                                           + "' has not been registered"));
     schemaExtensions = new ArrayList<>();
     JsonHelper.getArrayAttribute(resourceTypeDocument, AttributeNames.SCHEMA_EXTENSIONS).ifPresent(jsonNodes -> {
       for ( JsonNode jsonNode : jsonNodes )
@@ -178,48 +158,6 @@ public class ResourceType
     {
       return resourceTypeFactory;
     }
-  }
-
-  /**
-   * validates the given resource type document against its meta schema definition
-   *
-   * @param resourceMetaSchema the meta schema for resource types
-   * @param resourceTypeDocument the resource type document
-   */
-  private void validateResourceType(Schema resourceMetaSchema, JsonNode resourceTypeDocument)
-  {
-    try
-    {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceMetaSchema, resourceTypeDocument);
-    }
-    catch (DocumentValidationException ex)
-    {
-      throw new InvalidResourceTypeException("The given resource type is not valid: " + ex.getMessage(), ex,
-                                             ex.getStatus(), ex.getScimType());
-    }
-  }
-
-  /**
-   * Will get the meta schema for resource types and validate that the resource type meta schema uri is present
-   * within the schemas-attribute of the given document the resource type documents are supposed to have no
-   * extensions. Therefore
-   *
-   * @param resourceTypeDocument the resource type json document to extract the meta schema from. Eventhough we
-   *          know which value must be present in the schemas attribute we will just validate that it was
-   *          entered correctly
-   * @return the meta schema for resource types
-   */
-  private Schema getMetaSchemaFromDocument(JsonNode resourceTypeDocument)
-  {
-    Supplier<String> errorMessage = () -> missingAttrMessage(AttributeNames.SCHEMAS);
-    List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
-                                     .orElseThrow(() -> getInvalidResourceException(errorMessage.get()));
-    if (schemas.size() != 1 || !schemas.contains(SchemaUris.RESOURCE_TYPE_URI))
-    {
-      throw getInvalidResourceException("The resource type document must contain only a single uri in the schemas "
-                                        + "attribute: " + SchemaUris.RESOURCE_TYPE_URI);
-    }
-    return schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
   }
 
   /**
@@ -404,26 +342,6 @@ public class ResourceType
       {
         extensions.add(Optional.ofNullable(schemaFactory.getResourceSchema(schemaUri))
                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schemaUri))));
-      }
-      validateForRequiredExtensions(schemas);
-    }
-
-    /**
-     * this method will verify that the document contains the required extensions and therefore applies to the
-     * defined resource type
-     */
-    private void validateForRequiredExtensions(List<String> schemas)
-    {
-      List<SchemaExtension> requiredExtensions = schemaExtensions.stream()
-                                                                 .filter(SchemaExtension::isRequired)
-                                                                 .collect(Collectors.toList());
-      for ( SchemaExtension requiredExtension : requiredExtensions )
-      {
-        if (!schemas.contains(requiredExtension.getSchema()))
-        {
-          throw new BadRequestException("the required extension '" + requiredExtension.getSchema() + "' is missing",
-                                        null, ScimType.MISSING_EXTENSION);
-        }
       }
     }
   }

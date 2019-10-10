@@ -1,15 +1,12 @@
 package de.gold.scim.schemas;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Supplier;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.ClassPathReferences;
-import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -33,12 +30,14 @@ public final class SchemaFactory
   /**
    * this map will hold the meta schemata that will define how other schemata must be build
    */
-  private final Map<String, Schema> META_SCHEMAS = new HashMap<>();
+  @Getter(AccessLevel.PROTECTED)
+  private final Map<String, Schema> metaSchemas = new HashMap<>();
 
   /**
    * this map will hold the resource schemata that will define how the resources itself must be build
    */
-  private final Map<String, Schema> RESOURCE_SCHEMAS = new HashMap<>();
+  @Getter(AccessLevel.PROTECTED)
+  private final Map<String, Schema> resourceSchemas = new HashMap<>();
 
   /**
    * used for unit tests in order to prevent application context pollution
@@ -84,7 +83,7 @@ public final class SchemaFactory
   private void registerMetaSchema(JsonNode jsonSchema)
   {
     Schema schema = new Schema(jsonSchema);
-    META_SCHEMAS.put(schema.getId(), schema);
+    metaSchemas.put(schema.getId(), schema);
   }
 
   /**
@@ -94,15 +93,10 @@ public final class SchemaFactory
    */
   public void registerResourceSchema(JsonNode jsonSchema)
   {
-    Schema schema = new Schema(jsonSchema);
-    List<String> schemas = schema.getSchemas();
-
-    Supplier<String> message = () -> "meta schema with URI '" + schemas.get(0) + "' is not registered";
-    Schema metaSchema = Optional.ofNullable(getMetaSchema(schema.getSchemas().get(0)))
-                                .orElseThrow(() -> new InvalidSchemaException(message.get(), null, null, null));
-
+    Schema metaSchema = getMetaSchema(SchemaUris.SCHEMA_URI);
     SchemaValidator.validateSchemaDocument(resourceTypeFactory, metaSchema, jsonSchema);
-    RESOURCE_SCHEMAS.put(schema.getId(), schema);
+    Schema schema = new Schema(jsonSchema);
+    resourceSchemas.put(schema.getId(), schema);
   }
 
   /**
@@ -114,7 +108,7 @@ public final class SchemaFactory
    */
   public Schema getMetaSchema(String id)
   {
-    return META_SCHEMAS.get(id);
+    return metaSchemas.get(id);
   }
 
   /**
@@ -125,7 +119,7 @@ public final class SchemaFactory
    */
   public Schema getResourceSchema(String id)
   {
-    return RESOURCE_SCHEMAS.get(id);
+    return resourceSchemas.get(id);
   }
 
 }

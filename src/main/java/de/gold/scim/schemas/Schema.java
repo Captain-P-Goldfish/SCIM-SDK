@@ -1,6 +1,7 @@
 package de.gold.scim.schemas;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -62,7 +63,7 @@ public class Schema
 
   public Schema(JsonNode jsonNode)
   {
-    this.schemas = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.SCHEMAS).orElse(new ArrayList<>());
+    this.schemas = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.SCHEMAS).orElse(Collections.emptyList());
     String errorMessage = "attribute '" + AttributeNames.ID + "' is missing cannot resolve schema";
     this.id = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.ID)
                         .orElseThrow(() -> new InvalidSchemaException(errorMessage, null,
@@ -99,8 +100,9 @@ public class Schema
     List<JsonNode> schemas = getSchemas().stream().map(TextNode::new).collect(Collectors.toList());
     JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMAS, new ArrayNode(JsonNodeFactory.instance, schemas));
     JsonHelper.addAttribute(objectNode, AttributeNames.ID, new TextNode(id));
-    Optional.of(getName()).ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(s)));
-    Optional.of(getDescription())
+    Optional.ofNullable(getName())
+            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(s)));
+    Optional.ofNullable(getDescription())
             .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.DESCRIPTION, new TextNode(s)));
     List<JsonNode> attributes = getAttributes().stream().map(SchemaAttribute::toJsonNode).collect(Collectors.toList());
     JsonHelper.addAttribute(objectNode, AttributeNames.ATTRIBUTES, new ArrayNode(JsonNodeFactory.instance, attributes));

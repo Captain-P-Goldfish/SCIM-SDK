@@ -2,10 +2,16 @@ package de.gold.scim.schemas;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
+import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
@@ -34,7 +40,7 @@ class SchemaFactoryTest implements FileReferences
   }
 
   /**
-   * this test will assure that the default schemata will be read correctly from the classpath
+   * this test will assure that the default meta-schemata will be read correctly from the classpath
    */
   @ParameterizedTest
   @ValueSource(strings = {"urn:ietf:params:scim:schemas:core:2.0:Schema",
@@ -79,5 +85,30 @@ class SchemaFactoryTest implements FileReferences
   {
     Assertions.assertThrows(InvalidSchemaException.class,
                             () -> schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(badSchemaLocation)));
+  }
+
+  /**
+   * will verify that schemas cannot be registered if the schemas-attribute is missing
+   */
+  @Test
+  public void testRegisterSchemasWithMissingSchemasAttribute()
+  {
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.SCHEMAS);
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> schemaFactory.registerResourceSchema(userResourceSchema));
+  }
+
+  /**
+   * will verify that schemas cannot be registered if the schemas-attribute is empty
+   */
+  @Test
+  public void testRegisterSchemasWithEmptySchemasAttribute()
+  {
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    ArrayNode schemas = JsonHelper.getArrayAttribute(userResourceSchema, AttributeNames.SCHEMAS).get();
+    schemas.removeAll();
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
 }

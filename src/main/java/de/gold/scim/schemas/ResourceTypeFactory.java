@@ -1,10 +1,12 @@
 package de.gold.scim.schemas;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -21,6 +23,7 @@ import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -30,6 +33,7 @@ import lombok.Setter;
  * this class is used to register and get resource types. With this utility class the SCIM endpoints can be
  * extended by additional resource types, resource schemata and resource extensions
  */
+@Slf4j
 public final class ResourceTypeFactory
 {
 
@@ -43,6 +47,7 @@ public final class ResourceTypeFactory
    * The key will be the uri to the resource schema that represents the resource type. Like this the resource
    * type can be easier found if a request comes in
    */
+  @Getter(AccessLevel.PROTECTED)
   private final Map<String, ResourceType> resourceTypes = new HashMap<>();
 
   /**
@@ -50,7 +55,7 @@ public final class ResourceTypeFactory
    * application context which might lead to unpredictable unit test errors
    */
   @Getter(AccessLevel.PROTECTED)
-  @Setter(AccessLevel.PROTECTED)
+  @Setter(AccessLevel.PRIVATE)
   private SchemaFactory schemaFactory;
 
   /**
@@ -89,16 +94,53 @@ public final class ResourceTypeFactory
    * @param resourceSchemaExtensions the extensions that will be appended to the {@code resourceSchema}
    *          definition
    */
-  public void registerResourceType(ResourceHandler resourceHandler,
-                                   JsonNode resourceType,
-                                   JsonNode resourceSchema,
-                                   JsonNode... resourceSchemaExtensions)
+  public ResourceType registerResourceType(ResourceHandler resourceHandler,
+                                           JsonNode resourceType,
+                                           JsonNode resourceSchema,
+                                           JsonNode... resourceSchemaExtensions)
   {
-    addSchemaExtensions(resourceType, resourceSchemaExtensions);
-    schemaFactory.registerResourceSchema(resourceSchema);
-    ResourceType resourceTypeObject = new ResourceType(schemaFactory, this, resourceType);
+    Schema resourceTypeSchema = schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
+    JsonNode validatedResourceType = SchemaValidator.validateSchemaDocument(this, resourceTypeSchema, resourceType);
+    ResourceType resourceTypeObject = new ResourceType(schemaFactory, resourceType);
+    addSchemaExtensions(validatedResourceType, resourceSchemaExtensions);
+    checkResourceSchema(resourceTypeObject, resourceSchema);
     resourceTypeObject.setResourceHandlerImpl(resourceHandler);
     resourceTypes.put(resourceTypeObject.getEndpoint(), resourceTypeObject);
+    return resourceTypeObject;
+  }
+
+  /**
+   * checks if the resource schema for the resource type is already registered.<br>
+   * if the resource schema is null it is expected, that the resource schema does already exist. If not an
+   * exception is thrown. Otherwise the given resource schema is registered and might override an existing
+   * schema with the same id
+   *
+   * @param resourceTypeObject the resource type data
+   * @param resourceSchema the representing main resource schema for the resource type
+   */
+  private void checkResourceSchema(ResourceType resourceTypeObject, JsonNode resourceSchema)
+  {
+    Schema registeredResourceSchema = schemaFactory.getResourceSchema(resourceTypeObject.getSchema());
+    if (resourceSchema == null && registeredResourceSchema == null)
+    {
+      String errorMessage = "the resource type cannot be registered since the required resource schema '"
+                            + resourceTypeObject.getSchema() + "' is not registered yet";
+      throw new InvalidResourceTypeException(errorMessage, null, null, null);
+    }
+    else
+    {
+      if (registeredResourceSchema != null && resourceSchema != null
+          && !registeredResourceSchema.toJsonNode().equals(resourceSchema))
+      {
+        log.warn("resource schema with id '{}' is already registered. The new instance that was given is not equal to"
+                 + " the old schema document which will be overridden ",
+                 resourceTypeObject.getSchema());
+      }
+      if (resourceSchema != null)
+      {
+        schemaFactory.registerResourceSchema(resourceSchema);
+      }
+    }
   }
 
   /**
@@ -113,70 +155,105 @@ public final class ResourceTypeFactory
   {
     ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS)
                                            .orElse(null);
-    // if no further validation is required return from the method
-    if (validateSchemaExtensionParameter(schemaExtensions, resourceSchemaExtensions))
+    Set<String> resourceTypeExtensionIds = getExtensionIds(schemaExtensions);
+    Set<String> extensionsToRegisterIds = getExtensionIds(resourceSchemaExtensions);
+    if (resourceTypeExtensionIds.isEmpty() && extensionsToRegisterIds.isEmpty())
     {
+      // no further validation is needed because no extensions have been added
       return;
     }
-    Set<String> resourceTypeExtensions = new HashSet<>();
-    for ( JsonNode schemaExtension : schemaExtensions )
-    {
-      String schema = JsonHelper.getSimpleAttribute(schemaExtension, AttributeNames.SCHEMA)
-                                .orElseThrow(() -> getAttributeMissingException(AttributeNames.SCHEMA));
-      resourceTypeExtensions.add(schema);
-    }
-    Set<String> extensionIds = new HashSet<>();
-    for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
-    {
-      String extensionId = JsonHelper.getSimpleAttribute(resourceSchemaExtension, AttributeNames.ID)
-                                     .orElseThrow(() -> getAttributeMissingException(AttributeNames.ID));
-      extensionIds.add(extensionId);
-    }
-    if (!resourceTypeExtensions.equals(extensionIds))
-    {
-      throw new InvalidResourceTypeException("you did not register the extensions", null, null, null);
-    }
+    validateSchemaExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
     for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
     {
       schemaFactory.registerResourceSchema(resourceSchemaExtension);
     }
-    JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS, schemaExtensions);
   }
 
   /**
-   * will validate if the given extension parameters are valid and throws an exception if not
+   * will validate if the given extension parameters are valid and throws an exception if not.
    *
-   * @param schemaExtensions the extensions defined in the resource type json document
-   * @param resourceSchemaExtensions the extension schemata that should be registered for the resource type
-   * @return true if no further validation is needed and false if additional validation must be done
+   * @param resourceTypeExtensionIds the ids of the extensions present in the resource type document
+   * @param extensionsToRegisterIds the ids of the extensions that were given to the method
+   *          {@link #registerResourceType(ResourceHandler, JsonNode, JsonNode, JsonNode...)} for registration
    */
-  private boolean validateSchemaExtensionParameter(ArrayNode schemaExtensions, JsonNode[] resourceSchemaExtensions)
+  private void validateSchemaExtensions(Set<String> resourceTypeExtensionIds, Set<String> extensionsToRegisterIds)
   {
-    if (schemaExtensions == null && (resourceSchemaExtensions == null || resourceSchemaExtensions.length == 0))
+    if (resourceTypeExtensionIds.equals(extensionsToRegisterIds))
     {
-      // everything is fine. No extensions declared in the resource type and no extensions should be registered
-      return true;
+      // everything is fine. The call added exactly the same extensions that were added to the resource type
+      return;
     }
-    else if (schemaExtensions == null)
+    validateUnreferencedExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
+    validateMissingExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
+  }
+
+  /**
+   * this method will check if missing extensions are present if these extensions have already been registered.
+   * If this is the case the registration of the resource type should proceed
+   *
+   * @param resourceTypeExtensionIds the ids of the extensions present in the resource type document
+   * @param extensionsToRegisterIds the ids of the extensions that were given to the method
+   *          {@link #registerResourceType(ResourceHandler, JsonNode, JsonNode, JsonNode...)} for registration
+   */
+  private void validateMissingExtensions(Set<String> resourceTypeExtensionIds, Set<String> extensionsToRegisterIds)
+  {
+    Set<String> resourceTypeIds = new HashSet<>(resourceTypeExtensionIds);
+    resourceTypeIds.removeAll(extensionsToRegisterIds);
+
+    for ( String extensionId : resourceTypeIds )
     {
-      throw new InvalidResourceTypeException("you tried to add extensions that are not present in the resource type "
-                                             + "json document", null, null, null);
+      if (schemaFactory.getResourceSchema(extensionId) == null)
+      {
+        String errorMessage = "You missed to add the extension with the id '" + extensionId + "' for registration";
+        throw new InvalidResourceTypeException(errorMessage, null, null, null);
+      }
     }
-    else if (resourceSchemaExtensions.length < schemaExtensions.size())
+  }
+
+  /**
+   * this method checks if extensions have been added that are not referenced by the resource type
+   *
+   * @param resourceTypeExtensionIds the ids of the extensions present in the resource type document
+   * @param extensionsToRegisterIds the ids of the extensions that were given to the method
+   *          {@link #registerResourceType(ResourceHandler, JsonNode, JsonNode, JsonNode...)} for registration
+   */
+  private void validateUnreferencedExtensions(Set<String> resourceTypeExtensionIds, Set<String> extensionsToRegisterIds)
+  {
+
+    if (!resourceTypeExtensionIds.containsAll(extensionsToRegisterIds))
     {
-      throw new InvalidResourceTypeException("you missed to add an extension to the resource type. You added "
-                                             + Arrays.asList(resourceSchemaExtensions)
-                                             + " but the required extensions are " + schemaExtensions, null, null,
-                                             null);
+      throw new InvalidResourceTypeException("The extensions " + extensionsToRegisterIds + " are not "
+                                             + "referenced in the schemaExtensions attribute within the resource "
+                                             + "type. The referenced schemas are: " + resourceTypeExtensionIds, null,
+                                             null, null);
     }
-    else if (resourceSchemaExtensions.length > schemaExtensions.size())
+  }
+
+  private Set<String> getExtensionIds(ArrayNode arrayNode)
+  {
+    if (arrayNode == null || arrayNode.isEmpty())
     {
-      throw new InvalidResourceTypeException("you added too many extensions to the resource type. You added "
-                                             + Arrays.asList(resourceSchemaExtensions)
-                                             + " but the required extensions are " + schemaExtensions, null, null,
-                                             null);
+      return Collections.emptySet();
     }
-    return false;
+    Set<String> resourceTypeExtensionIds = new HashSet<>();
+    for ( JsonNode extension : arrayNode )
+    {
+      // should never give a nullPointer since schema validation was executed before
+      resourceTypeExtensionIds.add(extension.get(AttributeNames.SCHEMA).textValue());
+    }
+    return resourceTypeExtensionIds;
+  }
+
+  private Set<String> getExtensionIds(JsonNode[] resourceSchemaExtensions)
+  {
+    if (resourceSchemaExtensions == null || resourceSchemaExtensions.length == 0)
+    {
+      return Collections.emptySet();
+    }
+    return Arrays.stream(resourceSchemaExtensions)
+                 // should never give a nullPointer since schema validation was executed before
+                 .map(jsonNode -> jsonNode.get(AttributeNames.ID).textValue())
+                 .collect(Collectors.toSet());
   }
 
   /**

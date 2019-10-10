@@ -11,7 +11,8 @@
       "type": "string",
       "description": "senseless declaration: client can only write to it but must not read it and it is always returned.",
       "mutability": "writeOnly",
-      "returned": "always"
+      "returned": "always",
+      "multiValued": false
     }
   ]
 }

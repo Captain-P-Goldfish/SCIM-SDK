@@ -10,16 +10,19 @@
       "name": "duplicateName",
       "type": "complex",
       "description": "name already exists.",
+      "multiValued": false,
       "subAttributes": [
         {
           "name": "duplicateSubName",
           "type": "string",
-          "description": "name already exists."
+          "description": "name already exists.",
+          "multiValued": false
         },
         {
           "name": "duplicateSubName",
           "type": "string",
-          "description": "name already exists."
+          "description": "name already exists.",
+          "multiValued": false
         }
       ]
     }

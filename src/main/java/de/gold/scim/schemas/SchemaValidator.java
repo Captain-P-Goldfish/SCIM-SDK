@@ -61,12 +61,6 @@ public class SchemaValidator
   private final boolean extensionSchema;
 
   /**
-   * this marker tells us if a new schema is validated. If this field is set to true the {@link #directionType}
-   * and {@link #httpMethod} fields will be ignored during validation
-   */
-  private final boolean schemaValidation;
-
-  /**
    * tells us if the schema is validated as request or as response
    *
    * @see DirectionType
@@ -90,7 +84,6 @@ public class SchemaValidator
     this.extensionSchema = false;
     this.directionType = null;
     this.httpMethod = null;
-    this.schemaValidation = true;
   }
 
   private SchemaValidator(ResourceTypeFactory resourceTypeFactory, DirectionType directionType, HttpMethod httpMethod)
@@ -99,7 +92,6 @@ public class SchemaValidator
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = false;
-    this.schemaValidation = false;
   }
 
   private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
@@ -111,7 +103,6 @@ public class SchemaValidator
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = extensionSchema;
-    this.schemaValidation = false;
   }
 
   /**
@@ -153,6 +144,7 @@ public class SchemaValidator
     JsonNode validatedMainDocument = validateDocumentForResponse(resourceTypeFactory,
                                                                  resourceSchema.getMetaSchema(),
                                                                  document);
+    validatedForMissingRequiredExtension(resourceType, document, DirectionType.RESPONSE);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
@@ -230,6 +222,7 @@ public class SchemaValidator
                                                                 resourceSchema.getMetaSchema(),
                                                                 document,
                                                                 httpMethod);
+    validatedForMissingRequiredExtension(resourceType, document, DirectionType.REQUEST);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
@@ -286,6 +279,30 @@ public class SchemaValidator
   {
     SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, true);
     return schemaValidator.validateDocument(metaSchema, document);
+  }
+
+  /**
+   * will check that extensions that are required are present within the document and will throw an exception if
+   * a required extension is missing
+   *
+   * @param resourceType the resource type definition that knows all required extensions
+   * @param document the document that must be validated
+   * @param directionType the direction of the request that will help us with the http status code if the
+   *          exception is thrown
+   */
+  private static void validatedForMissingRequiredExtension(ResourceType resourceType,
+                                                           JsonNode document,
+                                                           DirectionType directionType)
+  {
+    for ( Schema requiredExtension : resourceType.getRequiredResourceSchemaExtensions() )
+    {
+      if (!JsonHelper.getObjectAttribute(document, requiredExtension.getId()).isPresent())
+      {
+        String errorMessage = "required extension '" + requiredExtension.getId() + "' is missing in the document";
+        throw new DocumentValidationException(errorMessage, null, directionType == null
+          ? HttpStatus.SC_INTERNAL_SERVER_ERROR : directionType.getHttpStatus(), null);
+      }
+    }
   }
 
   /**
@@ -549,7 +566,7 @@ public class SchemaValidator
    */
   private void validateIsRequired(JsonNode document, SchemaAttribute schemaAttribute)
   {
-    if (!schemaAttribute.isRequired() || schemaValidation)
+    if (!schemaAttribute.isRequired())
     {
       return;
     }

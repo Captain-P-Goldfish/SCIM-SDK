@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
-import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,7 +76,7 @@ class SchemaTest
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonHelper.removeAttribute(userResourceSchema, attributeName);
-    Assertions.assertThrows(InvalidSchemaException.class,
+    Assertions.assertThrows(DocumentValidationException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
 }

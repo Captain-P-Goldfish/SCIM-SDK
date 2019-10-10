@@ -9,12 +9,14 @@
     {
       "name": "duplicateName",
       "type": "string",
-      "description": "name already exists."
+      "description": "name already exists.",
+      "multiValued": false
     },
     {
       "name": "duplicateName",
       "type": "string",
-      "description": "name already exists."
+      "description": "name already exists.",
+      "multiValued": false
     }
   ]
 }

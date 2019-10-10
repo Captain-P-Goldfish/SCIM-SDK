@@ -11,7 +11,8 @@
       "type": "string",
       "description": "senseless declaration: client cannot write to it and server cannot return it",
       "mutability": "readOnly",
-      "returned": "never"
+      "returned": "never",
+      "multiValued": false
     }
   ]
 }

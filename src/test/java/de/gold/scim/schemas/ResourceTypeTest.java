@@ -17,7 +17,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.SchemaUris;
-import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.utils.FileReferences;
@@ -64,9 +63,7 @@ public class ResourceTypeTest implements FileReferences
   public void testCreateResourceType()
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory,
-                                                                                     schemaFactory.getResourceTypeFactory(),
-                                                                                     userResourceType));
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
     Assertions.assertEquals(Collections.singletonList("urn:ietf:params:scim:schemas:core:2.0:ResourceType"),
                             resourceType.getSchemas());
     Assertions.assertEquals("User", resourceType.getId());
@@ -97,9 +94,7 @@ public class ResourceTypeTest implements FileReferences
   public void testResourceTypeToJsonNode()
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory,
-                                                                                     schemaFactory.getResourceTypeFactory(),
-                                                                                     userResourceType));
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
     JsonNode resourceTypeJsonNode = resourceType.toJsonNode();
     Assertions.assertEquals(userResourceType, resourceTypeJsonNode);
   }
@@ -114,8 +109,7 @@ public class ResourceTypeTest implements FileReferences
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonHelper.removeAttribute(userResourceType, attributeName);
     Assertions.assertThrows(InvalidResourceTypeException.class,
-                            () -> new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                   userResourceType));
+                            () -> new ResourceType(schemaFactory, userResourceType));
   }
 
   /**
@@ -125,7 +119,7 @@ public class ResourceTypeTest implements FileReferences
   @Test
   public void testGetBuildResourceSchemaWithExtension()
   {
-    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+    ResourceType userResourceType = new ResourceType(schemaFactory,
                                                      JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     ResourceType.ResourceSchema resourceSchema = userResourceType.getResourceSchema(chuckNorris);
@@ -141,23 +135,12 @@ public class ResourceTypeTest implements FileReferences
   @Test
   public void testGetBuildResourceSchemaWithoutExtension()
   {
-    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
+    ResourceType userResourceType = new ResourceType(schemaFactory,
                                                      JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
     ResourceType.ResourceSchema resourceSchema = userResourceType.getResourceSchema(chuckNorris);
     Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
     Assertions.assertEquals(0, resourceSchema.getExtensions().size());
-  }
-
-  /**
-   * if the resource of the resource type has not been registered yet an exception must be thrown
-   */
-  @Test
-  public void testLoadResourceTypeWithUnregisteredResourceSchema()
-  {
-    Assertions.assertThrows(InvalidResourceTypeException.class,
-                            () -> new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                   JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE)));
   }
 
   /**
@@ -168,8 +151,7 @@ public class ResourceTypeTest implements FileReferences
   public void testGetUnregisteredSchema()
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    ResourceType roleResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                     JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
+    ResourceType roleResourceType = new ResourceType(schemaFactory, JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.SCHEMAS).get();
     schemas.add(new TextNode("urn:unknown:reference"));
@@ -177,17 +159,19 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * if the document put into the constructor of {@link ResourceType} has an empty 'schemas'-attribute an
-   * {@link InvalidResourceTypeException} is expected
+   * if the document put into the constructor of {@link ResourceType} has an empty 'schemas'-attribute the
+   * default value of {@link SchemaUris#RESOURCE_TYPE_URI} is used
    */
   @Test
-  public void testGetResourceSchemaWithEmptySchemasAttributeOnResourceType()
+  public void testSetDefaultSchemasAttribute()
   {
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
     JsonHelper.removeAttribute(roleResourceTypeNode, AttributeNames.SCHEMAS);
-    Assertions.assertThrows(InvalidResourceTypeException.class,
-                            () -> new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                   roleResourceTypeNode));
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory,
+
+                                                                                     roleResourceTypeNode));
+    Assertions.assertEquals(1, resourceType.getSchemas().size());
+    Assertions.assertEquals(SchemaUris.RESOURCE_TYPE_URI, resourceType.getSchemas().get(0));
   }
 
   /**
@@ -199,8 +183,7 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    ResourceType roleResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                     roleResourceTypeNode);
+    ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     JsonHelper.removeAttribute(adminRole, AttributeNames.SCHEMAS);
     Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
@@ -215,35 +198,11 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    ResourceType roleResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                     roleResourceTypeNode);
+    ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
     JsonHelper.replaceNode(adminRole, AttributeNames.SCHEMAS, schemasNode);
     Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
-  }
-
-  /**
-   * if the document put into the {@link ResourceType#getResourceSchema(String)} method is missing a required
-   * extension a {@link BadRequestException} is expected
-   */
-  @Test
-  public void testMissingRequiredExtension()
-  {
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    JsonNode customUserResourceType = JsonHelper.loadJsonDocument(USER_CUSTOM_RESOURCE_TYPE);
-    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                     customUserResourceType);
-    JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    try
-    {
-      userResourceType.getResourceSchema(chuckNorris);
-      Assertions.fail("the call must throw an exception!");
-    }
-    catch (BadRequestException ex)
-    {
-      Assertions.assertEquals(ScimType.MISSING_EXTENSION, ex.getScimType());
-    }
   }
 
   /**
@@ -255,8 +214,7 @@ public class ResourceTypeTest implements FileReferences
   {
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     JsonNode customUserResourceType = JsonHelper.loadJsonDocument(USER_CUSTOM_RESOURCE_TYPE);
-    ResourceType userResourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                     customUserResourceType);
+    ResourceType userResourceType = new ResourceType(schemaFactory, customUserResourceType);
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(chuckNorris, AttributeNames.SCHEMAS).get();
     final String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
@@ -274,8 +232,7 @@ public class ResourceTypeTest implements FileReferences
   public void testSchemaValidationWithResourceTypeWithExtensionForResponse()
   {
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                 userResourceTypeJson);
+    ResourceType resourceType = new ResourceType(schemaFactory, userResourceTypeJson);
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(schemaFactory.getResourceTypeFactory(),
@@ -296,8 +253,7 @@ public class ResourceTypeTest implements FileReferences
   public void testSchemaValidationWithResourceTypeWithExtensionForRequest()
   {
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = new ResourceType(schemaFactory, schemaFactory.getResourceTypeFactory(),
-                                                 userResourceTypeJson);
+    ResourceType resourceType = new ResourceType(schemaFactory, userResourceTypeJson);
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(schemaFactory.getResourceTypeFactory(),

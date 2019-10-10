@@ -87,14 +87,42 @@ public class SchemaValidatorTest implements FileReferences
    */
   private static Stream<Arguments> getTimeStampArguments()
   {
-    return Stream.of(Arguments.of(OffsetDateTime.now().withNano(0).toString()),
+    return Stream.of(Arguments.of(OffsetDateTime.now().withNano(0).format(DateTimeFormatter.ISO_DATE_TIME)),
                      Arguments.of(Instant.now().truncatedTo(ChronoUnit.SECONDS).toString()),
+                     Arguments.of(Instant.now()
+                                         .atOffset(ZoneOffset.ofHours(14))
+                                         .withNano(0)
+                                         .format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(Instant.now()
+                                         .atOffset(ZoneOffset.ofHours(-14))
+                                         .withHour(0)
+                                         .withMinute(0)
+                                         .withSecond(0)
+                                         .withNano(0)
+                                         .format(DateTimeFormatter.ISO_DATE_TIME)),
                      Arguments.of(Instant.now()
                                          .atOffset(ZoneOffset.ofHours(-10))
                                          .withNano(0)
                                          .format(DateTimeFormatter.ISO_DATE_TIME)),
-                     Arguments.of(LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(LocalDateTime.now().toString()),
                      Arguments.of(LocalDateTime.now().withNano(0).format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(LocalDateTime.now()
+                                               .withSecond(0)
+                                               .withNano(0)
+                                               .format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(LocalDateTime.now()
+                                               .atOffset(ZoneOffset.ofHours(3))
+                                               .withHour(0)
+                                               .withMinute(0)
+                                               .withSecond(0)
+                                               .withNano(0)
+                                               .format(DateTimeFormatter.ISO_DATE_TIME)),
+                     Arguments.of(LocalDateTime.now()
+                                               .withHour(0)
+                                               .withMinute(0)
+                                               .withSecond(0)
+                                               .withNano(0)
+                                               .format(DateTimeFormatter.ISO_DATE_TIME)),
                      Arguments.of("2019-09-29T24:00:00"),
                      Arguments.of("2019-09-29T24:00:00"),
                      Arguments.of("2019-09-29T24:00:00.0000000"),
@@ -837,6 +865,34 @@ public class SchemaValidatorTest implements FileReferences
                                                   enterpriseUser,
                                                   SchemaValidator.HttpMethod.POST);
     });
+  }
+
+  /**
+   * will check that an exception is thrown if a required extension is missing
+   */
+  @Test
+  public void testBadRequestOnMissingRequiredExtension()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode schemaExtensions = JsonHelper.getArrayAttribute(userResourceType, AttributeNames.SCHEMA_EXTENSIONS).get();
+    // sets the enterprise user extension to required
+    for ( JsonNode schemaExtension : schemaExtensions )
+    {
+      JsonHelper.addAttribute(schemaExtension, AttributeNames.REQUIRED, BooleanNode.valueOf(true));
+    }
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Assertions.assertThrows(DocumentValidationException.class,
+                            () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                                             resourceType,
+                                                                             userSchema,
+                                                                             SchemaValidator.HttpMethod.POST));
   }
 
   /**
