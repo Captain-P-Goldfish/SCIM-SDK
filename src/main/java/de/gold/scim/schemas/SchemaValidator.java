@@ -853,8 +853,9 @@ public class SchemaValidator
                                              .orElseThrow(() -> getException(documentNoSchemasMessage, null));
     if (!documentSchemas.contains(metaSchemaId))
     {
-      final String errorMessage = "document can not be validated against schema with id '" + metaSchemaId
-                                  + "' for id is missing in the '" + schemasAttribute + "'-list: " + documentSchemas;
+      final String errorMessage = "document can not be validated against meta-schema with id '" + metaSchemaId
+                                  + "' for id is missing in the '" + schemasAttribute + "'-list. The given document "
+                                  + "can only be validated against the following schemas: " + documentSchemas;
       throw getException(errorMessage, null);
     }
     log.trace("meta schema with id {} does apply to document with schemas '{}'", metaSchemaId, documentSchemas);

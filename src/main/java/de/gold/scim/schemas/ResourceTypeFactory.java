@@ -18,7 +18,6 @@ import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
-import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -188,8 +187,8 @@ public final class ResourceTypeFactory
   }
 
   /**
-   * this method will check if missing extensions are present if these extensions have already been registered.
-   * If this is the case the registration of the resource type should proceed
+   * this method will check if missing extensions are present that these extensions are already registered. If
+   * this is not the case an exception is thrown
    *
    * @param resourceTypeExtensionIds the ids of the extensions present in the resource type document
    * @param extensionsToRegisterIds the ids of the extensions that were given to the method
@@ -254,16 +253,6 @@ public final class ResourceTypeFactory
                  // should never give a nullPointer since schema validation was executed before
                  .map(jsonNode -> jsonNode.get(AttributeNames.ID).textValue())
                  .collect(Collectors.toSet());
-  }
-
-  /**
-   * @param attributeName the name of the attribute that was missing
-   * @return creates an invalid resource type exception
-   */
-  private InvalidResourceTypeException getAttributeMissingException(String attributeName)
-  {
-    String errorMessage = "schema extension is missing '" + attributeName + "' attribute";
-    return new InvalidResourceTypeException(errorMessage, null, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
   }
 
   /**

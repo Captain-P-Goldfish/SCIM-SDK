@@ -142,25 +142,6 @@ public class ResourceType
   }
 
   /**
-   * gets the {@link ResourceTypeFactory} that should be used. This method is only added to be able to add clean
-   * {@link ResourceTypeFactory} instances from unit tests
-   *
-   * @param resourceTypeFactory null or a clean factory created by an unit test
-   * @return the factory to use
-   */
-  private ResourceTypeFactory getResourceTypeFactory(ResourceTypeFactory resourceTypeFactory)
-  {
-    if (resourceTypeFactory == null)
-    {
-      return ResourceTypeFactory.getInstance();
-    }
-    else
-    {
-      return resourceTypeFactory;
-    }
-  }
-
-  /**
    * @return the required resource schema extensions that represents this resource type
    */
   public List<Schema> getRequiredResourceSchemaExtensions()
@@ -168,7 +149,7 @@ public class ResourceType
     return schemaExtensions.stream()
                            .filter(SchemaExtension::isRequired)
                            .map(SchemaExtension::getSchema)
-                           .map(schemaFactory::getResourceSchema)
+                           .map(getSchemaFactory()::getResourceSchema)
                            .collect(Collectors.toList());
   }
 
@@ -180,20 +161,8 @@ public class ResourceType
     return schemaExtensions.stream()
                            .filter(schemaExtension -> !schemaExtension.isRequired())
                            .map(SchemaExtension::getSchema)
-                           .map(schemaFactory::getResourceSchema)
+                           .map(getSchemaFactory()::getResourceSchema)
                            .collect(Collectors.toList());
-  }
-
-  /**
-   * will find the meta resource schema and its extensions of this resource type that apply to the given
-   * document
-   *
-   * @param resourceDocument a document that should be validated against its schemas
-   * @return a holder object that contains the meta schemata that can be used to validate the given document
-   */
-  public ResourceSchema getResourceSchema(String resourceDocument)
-  {
-    return getResourceSchema(JsonHelper.readJsonDocument(resourceDocument));
   }
 
   /**

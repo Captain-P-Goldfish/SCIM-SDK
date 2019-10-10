@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
@@ -198,5 +199,49 @@ public class ResourceTypeFactoryTest
     });
     Schema schema = schemaFactory.getResourceSchema(resourceType.getSchema());
     Assertions.assertEquals(userResourceSchema, schema.toJsonNode());
+  }
+
+  /**
+   * this test will verify that an exception is thrown if the resource type declaration is missing the main
+   * resource schema
+   */
+  @Test
+  public void testForgotToAddResourceSchema()
+  {
+    Assertions.assertThrows(InvalidResourceTypeException.class,
+                            () -> resourceTypeFactory.registerResourceType(null,
+                                                                           userResourceType,
+                                                                           null,
+                                                                           enterpriseUserExtension));
+  }
+
+  /**
+   * this test will verify that an exception is thrown if the extension referenced in the resource type was not
+   * added to the method call and was also not registered yet
+   */
+  @Test
+  public void testForgotToAddExtension()
+  {
+    Assertions.assertThrows(InvalidResourceTypeException.class,
+                            () -> resourceTypeFactory.registerResourceType(null, userResourceType, userResourceType));
+  }
+
+  /**
+   * this test will verify that the method
+   * {@link ResourceTypeFactory#registerResourceType(ResourceHandler, String, String, String, String, String, JsonNode, JsonNode...)}
+   * does also work correctly
+   */
+  @Test
+  public void testRegisterResourceTypeAlternativeMethod()
+  {
+    Assertions.assertDoesNotThrow(() -> {
+      resourceTypeFactory.registerResourceType(null,
+                                               "User",
+                                               "User",
+                                               "user definition",
+                                               SchemaUris.USER_URI,
+                                               "/Users",
+                                               userResourceSchema);
+    });
   }
 }
