@@ -94,7 +94,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getUserName()
   {
-    return getStringAttribute(AttributeNames.USERNAME);
+    return getStringAttribute(AttributeNames.USER_NAME);
   }
 
   /**
@@ -106,7 +106,7 @@ public class User extends ResourceNode
    */
   public void setUserName(String userName)
   {
-    setAttribute(AttributeNames.USERNAME, userName);
+    setAttribute(AttributeNames.USER_NAME, userName);
   }
 
   /**

@@ -667,7 +667,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USERNAME,
+                            AttributeNames.USER_NAME,
                             null,
                             mutability,
                             Returned.NEVER,
@@ -677,7 +677,7 @@ public class SchemaValidatorTest implements FileReferences
                             null,
                             null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.removeAttribute(userSchema, AttributeNames.USERNAME);
+    JsonHelper.removeAttribute(userSchema, AttributeNames.USER_NAME);
 
     Schema metaSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class,
@@ -697,7 +697,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USERNAME,
+                            AttributeNames.USER_NAME,
                             Type.INTEGER,
                             null,
                             null,
@@ -723,7 +723,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USERNAME,
+                            AttributeNames.USER_NAME,
                             Type.INTEGER,
                             null,
                             null,
@@ -733,7 +733,7 @@ public class SchemaValidatorTest implements FileReferences
                             null,
                             null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.USERNAME, new IntNode(Integer.MAX_VALUE));
+    JsonHelper.addAttribute(userSchema, AttributeNames.USER_NAME, new IntNode(Integer.MAX_VALUE));
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
@@ -743,7 +743,7 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.POST);
     });
     Assertions.assertEquals(Integer.MAX_VALUE,
-                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USERNAME, Integer.class)
+                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USER_NAME, Integer.class)
                                       .get());
   }
 
@@ -755,7 +755,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USERNAME,
+                            AttributeNames.USER_NAME,
                             Type.DECIMAL,
                             null,
                             null,
@@ -765,7 +765,7 @@ public class SchemaValidatorTest implements FileReferences
                             null,
                             null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.USERNAME, new DoubleNode(Double.MAX_VALUE));
+    JsonHelper.addAttribute(userSchema, AttributeNames.USER_NAME, new DoubleNode(Double.MAX_VALUE));
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
@@ -774,7 +774,7 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.POST);
     });
     Assertions.assertEquals(Double.MAX_VALUE,
-                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USERNAME, Double.class)
+                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USER_NAME, Double.class)
                                       .get());
   }
 
@@ -787,7 +787,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.USERNAME, NullNode.instance);
+    JsonHelper.addAttribute(userSchema, AttributeNames.USER_NAME, NullNode.instance);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                                              metaSchema,
@@ -807,7 +807,7 @@ public class SchemaValidatorTest implements FileReferences
   public void testUseSimpleNodeTypeOnMultiValuedAttribute()
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    modifyAttributeMetaData(metaSchemaNode, AttributeNames.USERNAME, null, null, null, null, true, null, null, null);
+    modifyAttributeMetaData(metaSchemaNode, AttributeNames.USER_NAME, null, null, null, null, true, null, null, null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     Schema metaSchema = new Schema(metaSchemaNode);
@@ -818,7 +818,7 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.POST);
     });
 
-    JsonNode userName = validatedDocument.get(AttributeNames.USERNAME);
+    JsonNode userName = validatedDocument.get(AttributeNames.USER_NAME);
     Assertions.assertNotNull(userName);
     Assertions.assertTrue(userName.isArray());
     Assertions.assertEquals(1, userName.size());

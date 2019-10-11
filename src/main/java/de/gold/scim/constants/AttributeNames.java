@@ -57,7 +57,7 @@ public final class AttributeNames
 
   public static final String GROUPS = "groups";
 
-  public static final String USERNAME = "userName";
+  public static final String USER_NAME = "userName";
 
   public static final String EMAILS = "emails";
 
