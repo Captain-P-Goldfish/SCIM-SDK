@@ -1,4 +1,4 @@
-package de.gold.scim.resources;
+package de.gold.scim.resources.base;
 
 import com.fasterxml.jackson.databind.node.DoubleNode;
 

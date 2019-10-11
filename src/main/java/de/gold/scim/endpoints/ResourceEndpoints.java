@@ -1,10 +1,8 @@
 package de.gold.scim.endpoints;
 
-import java.util.List;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Supplier;
-
-import org.apache.commons.lang3.NotImplementedException;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -12,6 +10,8 @@ import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ScimException;
+import de.gold.scim.resources.ResourceNode;
+import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
@@ -71,9 +71,32 @@ public final class ResourceEndpoints
                                                           resourceType,
                                                           resource,
                                                           SchemaValidator.HttpMethod.POST);
-    JsonNode responseResource = resourceType.getResourceHandlerImpl().createResource(resource);
-    responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, responseResource);
+    ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+    ResourceNode resourceNode = (ResourceNode)resourceHandler.copyResourceToObject(resource);
+    resourceNode.setMeta(getMeta(resourceType));
+    resourceNode = (ResourceNode)resourceHandler.createResource(resourceNode);
+    JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                            resourceType,
+                                                                            resourceNode);
+
     return buildScimResponse(responseResource);
+  }
+
+  private Meta getMeta(ResourceType resourceType)
+  {
+    LocalDateTime now = LocalDateTime.now();
+    return Meta.builder()
+               .created(now)
+               .lastModified(now)
+               .location(getLocation(resourceType))
+               .resourceType(resourceType.getName())
+               .build();
+  }
+
+  private String getLocation(ResourceType resourceType)
+  {
+    // TODO get the fully qualified url
+    return resourceType.getEndpoint();
   }
 
   private ScimResponse buildScimResponse(JsonNode responseResource)
@@ -94,17 +117,6 @@ public final class ResourceEndpoints
   public ScimResponse deleteResource(String id)
   {
     return null;
-  }
-
-  /**
-   * TODO
-   *
-   * @param resourceTypeList
-   * @return
-   */
-  private ResourceType resolveResourceTypeFromMultipleResourcesFound(List<ResourceType> resourceTypeList)
-  {
-    throw new NotImplementedException("not yet implemented");
   }
 
   private String getAttributeMissingMessage(String attributeName)

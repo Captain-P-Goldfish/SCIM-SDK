@@ -61,11 +61,13 @@ public class ResourceType
   /**
    * the endpoint under which the resource can be accessed
    */
+  @Getter(AccessLevel.PUBLIC)
   private final String endpoint;
 
   /**
    * the name of the document which is normally the same as the id
    */
+  @Getter(AccessLevel.PUBLIC)
   private String name;
 
   /**

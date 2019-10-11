@@ -111,12 +111,16 @@ public final class TimeUtils
    * RFC7643 in chapter 2.3.5
    *
    * @param dateTime the date time representation that should be parsed
-   * @return the parsed date time in UTC
+   * @return the parsed date time in UTC or null if the given parameter was null
    * @throws InvalidDateTimeRepresentationException if the given string does not apply to the xsd:dateTime
    *           definition
    */
   public static Instant parseDateTime(String dateTime)
   {
+    if (dateTime == null)
+    {
+      return null;
+    }
     final String errorMessage = "value '" + dateTime + "' does not match the xsd:dateTime definition: "
                                 + XSD_DATE_TIME_FORMAT;
     String tmpDateTime = dateTime;

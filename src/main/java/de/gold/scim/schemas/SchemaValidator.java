@@ -27,12 +27,13 @@ import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidDateTimeRepresentationException;
-import de.gold.scim.resources.ScimArrayNode;
-import de.gold.scim.resources.ScimBooleanNode;
-import de.gold.scim.resources.ScimDoubleNode;
-import de.gold.scim.resources.ScimIntNode;
-import de.gold.scim.resources.ScimObjectNode;
-import de.gold.scim.resources.ScimTextNode;
+import de.gold.scim.resources.base.ScimArrayNode;
+import de.gold.scim.resources.base.ScimBooleanNode;
+import de.gold.scim.resources.base.ScimDoubleNode;
+import de.gold.scim.resources.base.ScimIntNode;
+import de.gold.scim.resources.base.ScimNode;
+import de.gold.scim.resources.base.ScimObjectNode;
+import de.gold.scim.resources.base.ScimTextNode;
 import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.TimeUtils;
@@ -132,7 +133,7 @@ public class SchemaValidator
    *
    * @param resourceType the resource type definition of the incoming document
    * @param document the document that should be validated
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    * @throws DocumentValidationException if the schema validation failed
    */
   public static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
@@ -169,7 +170,7 @@ public class SchemaValidator
    *
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    */
   protected static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
                                                         Schema metaSchema,
@@ -187,7 +188,7 @@ public class SchemaValidator
    *
    * @param metaSchema the json meta schema definition of the extension
    * @param document the extension to validate
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    */
   private static JsonNode validateExtensionForResponse(ResourceTypeFactory resourceTypeFactory,
                                                        Schema metaSchema,
@@ -208,7 +209,7 @@ public class SchemaValidator
    * @param resourceType the resource type definition of the incoming document
    * @param document the document that should be validated
    * @param httpMethod the request http method that is used to validate the request-document
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    * @throws DocumentValidationException if the schema validation failed
    */
   public static JsonNode validateDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
@@ -249,7 +250,7 @@ public class SchemaValidator
    * @param document the document to validate
    * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
    *          types that are valid on POST requests but invalid on PUT requests
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    */
   protected static JsonNode validateDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
                                                        Schema metaSchema,
@@ -270,7 +271,7 @@ public class SchemaValidator
    * @param document the extension to validate
    * @param httpMethod tells us which request type the client has used. This is e.g. necessary for immutable
    *          types that are valid on POST requests but invalid on PUT requests
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    */
   protected static JsonNode validateExtensionForRequest(ResourceTypeFactory resourceTypeFactory,
                                                         Schema metaSchema,
@@ -312,7 +313,7 @@ public class SchemaValidator
    *
    * @param metaSchema the document description
    * @param document the document that should be built after the rules of the metaSchema
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    */
   private JsonNode validateDocument(Schema metaSchema, JsonNode document)
   {
@@ -341,7 +342,7 @@ public class SchemaValidator
    * @param document the document to validate
    * @param parentAttribute this method is getting called recursively and this is the parent document that is
    *          given to the new {@link SchemaAttribute} object
-   * @return the validated document that consists of {@link de.gold.scim.resources.ScimNode}s
+   * @return the validated document that consists of {@link ScimNode}s
    */
   private JsonNode validateAttributes(List<SchemaAttribute> metaAttributes,
                                       JsonNode document,
@@ -525,8 +526,8 @@ public class SchemaValidator
    *
    * @param simpleDocumentNode the simple value node that should be validated
    * @param schemaAttribute the meta information of the attribute
-   * @return the attribute as a {@link JsonNode} that implements the interface
-   *         {@link de.gold.scim.resources.ScimNode} in its corresponding node type
+   * @return the attribute as a {@link JsonNode} that implements the interface {@link ScimNode} in its
+   *         corresponding node type
    */
   private Optional<JsonNode> handleSimpleNode(JsonNode simpleDocumentNode, SchemaAttribute schemaAttribute)
   {

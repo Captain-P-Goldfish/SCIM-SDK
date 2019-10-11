@@ -1,6 +1,6 @@
-package de.gold.scim.resources;
+package de.gold.scim.resources.base;
 
-import com.fasterxml.jackson.databind.node.TextNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 
 import de.gold.scim.schemas.SchemaAttribute;
 import lombok.Getter;
@@ -11,13 +11,13 @@ import lombok.Getter;
  * created at: 05.10.2019 - 20:19 <br>
  * <br>
  */
-public class ScimTextNode extends TextNode implements ScimNode
+public class ScimBooleanNode extends BooleanNode implements ScimNode
 {
 
   @Getter
   private SchemaAttribute schemaAttribute;
 
-  public ScimTextNode(SchemaAttribute schemaAttribute, String value)
+  public ScimBooleanNode(SchemaAttribute schemaAttribute, boolean value)
   {
     super(value);
     this.schemaAttribute = schemaAttribute;

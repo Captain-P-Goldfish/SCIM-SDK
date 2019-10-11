@@ -12,10 +12,10 @@
         <developer>
             <id>knueppel</id>
             <name>Pascal Knüppel</name>
-            <roles>
-                <role>architect</role>
-                <role>developer</role>
-            </roles>
+            <personRoles>
+                <personRole>architect</personRole>
+                <personRole>developer</personRole>
+            </personRoles>
         </developer>
     </developers>
 

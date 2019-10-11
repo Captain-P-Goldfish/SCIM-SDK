@@ -40,7 +40,7 @@ import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.DocumentValidationException;
-import de.gold.scim.resources.ScimNode;
+import de.gold.scim.resources.base.ScimNode;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -383,7 +383,7 @@ public class SchemaValidatorTest implements FileReferences
 
   /**
    * this test will verify that the validated nodes created by the {@link SchemaValidator} are all implementing
-   * the interface {@link de.gold.scim.resources.ScimNode}
+   * the interface {@link ScimNode}
    */
   @ParameterizedTest
   @CsvSource({ClassPathReferences.META_SCHEMA_JSON + "," + ClassPathReferences.USER_SCHEMA_JSON,
