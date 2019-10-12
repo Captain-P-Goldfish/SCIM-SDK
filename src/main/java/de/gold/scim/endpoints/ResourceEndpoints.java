@@ -74,34 +74,12 @@ public final class ResourceEndpoints
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
     ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
     resourceNode.setMeta(getMeta(resourceType));
-    resourceNode = (ResourceNode)resourceHandler.createResource(resourceNode);
+    resourceNode = resourceHandler.createResource(resourceNode);
     JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                             resourceType,
                                                                             resourceNode);
 
     return buildScimResponse(responseResource);
-  }
-
-  private Meta getMeta(ResourceType resourceType)
-  {
-    LocalDateTime now = LocalDateTime.now();
-    return Meta.builder()
-               .created(now)
-               .lastModified(now)
-               .location(getLocation(resourceType))
-               .resourceType(resourceType.getName())
-               .build();
-  }
-
-  private String getLocation(ResourceType resourceType)
-  {
-    // TODO get the fully qualified url
-    return resourceType.getEndpoint();
-  }
-
-  private ScimResponse buildScimResponse(JsonNode responseResource)
-  {
-    return null;
   }
 
   public ScimResponse getResource(String id)
@@ -115,6 +93,40 @@ public final class ResourceEndpoints
   }
 
   public ScimResponse deleteResource(String id)
+  {
+    return null;
+  }
+
+  /**
+   * creates the meta representation for the response
+   *
+   * @param resourceType the resource type that holds necessary data like the name of the resource
+   * @return the meta json representation
+   */
+  private Meta getMeta(ResourceType resourceType)
+  {
+    LocalDateTime now = LocalDateTime.now();
+    return Meta.builder()
+               .created(now)
+               .lastModified(now)
+               .location(getLocation(resourceType))
+               .resourceType(resourceType.getName())
+               .build();
+  }
+
+  /**
+   * builds the location attribute for the meta-object
+   *
+   * @param resourceType holds the endpoint definition
+   * @return the current location
+   */
+  private String getLocation(ResourceType resourceType)
+  {
+    // TODO get the fully qualified url
+    return resourceType.getEndpoint();
+  }
+
+  private ScimResponse buildScimResponse(JsonNode responseResource)
   {
     return null;
   }

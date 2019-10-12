@@ -1,11 +1,9 @@
 package de.gold.scim.endpoints;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import de.gold.scim.exceptions.InternalServerException;
-import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.resources.ResourceNode;
 import lombok.Getter;
 
 
@@ -14,7 +12,7 @@ import lombok.Getter;
  * created at: 07.10.2019 - 23:17 <br>
  * <br>
  */
-public abstract class ResourceHandler<T extends JsonNode>
+public abstract class ResourceHandler<T extends ResourceNode>
 {
 
   @Getter
@@ -22,8 +20,16 @@ public abstract class ResourceHandler<T extends JsonNode>
 
   public ResourceHandler()
   {
-    ParameterizedType parameterizedType = (ParameterizedType)getClass().getGenericSuperclass();
-    this.type = (Class<T>)parameterizedType.getActualTypeArguments()[0];
+    Type type = getClass().getGenericSuperclass();
+    if (type instanceof ParameterizedType)
+    {
+      ParameterizedType parameterizedType = (ParameterizedType)type;
+      this.type = (Class<T>)parameterizedType.getActualTypeArguments()[0];
+    }
+    else
+    {
+      this.type = (Class<T>)ResourceNode.class;
+    }
   }
 
   public abstract T createResource(T resource);

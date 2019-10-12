@@ -2,6 +2,7 @@ package de.gold.scim.endpoints;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -46,6 +47,6 @@ public class EndpointDefinition
     this.resourceType = resourceType;
     this.resourceSchema = resourceSchema;
     this.resourceSchemaExtensions = resourceSchemaExtensions == null ? new ArrayList<>() : resourceSchemaExtensions;
-    this.resourceHandler = resourceHandler;
+    this.resourceHandler = Objects.requireNonNull(resourceHandler, "the resource handler implementation is mandatory");
   }
 }
