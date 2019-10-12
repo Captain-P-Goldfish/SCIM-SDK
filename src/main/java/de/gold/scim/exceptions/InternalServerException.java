@@ -1,6 +1,6 @@
 package de.gold.scim.exceptions;
 
-import de.gold.scim.utils.HttpStatus;
+import de.gold.scim.constants.HttpStatus;
 import lombok.Builder;
 
 

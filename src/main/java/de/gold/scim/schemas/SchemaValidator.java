@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
@@ -34,7 +35,6 @@ import de.gold.scim.resources.base.ScimIntNode;
 import de.gold.scim.resources.base.ScimNode;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.resources.base.ScimTextNode;
-import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.TimeUtils;
 import lombok.AccessLevel;

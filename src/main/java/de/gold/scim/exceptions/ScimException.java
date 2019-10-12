@@ -2,7 +2,7 @@ package de.gold.scim.exceptions;
 
 import org.apache.commons.lang3.StringUtils;
 
-import de.gold.scim.utils.HttpStatus;
+import de.gold.scim.constants.HttpStatus;
 import lombok.Getter;
 import lombok.Setter;
 

@@ -15,8 +15,8 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.exceptions.InvalidSchemaException;
-import de.gold.scim.utils.HttpStatus;
 import de.gold.scim.utils.JsonHelper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
