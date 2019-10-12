@@ -105,7 +105,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       throw new InternalServerException("tried to extract a complex node from document with attribute " + "name '"
                                         + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
     }
-    return Optional.of(copyResourceToObject(type, jsonNode));
+    return Optional.of(JsonHelper.copyResourceToObject(jsonNode, type));
   }
 
   /**
@@ -132,7 +132,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
         throw new InternalServerException("tried to extract a complex node from document with attribute " + "name '"
                                           + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
       }
-      multiValuedComplexTypes.add(copyResourceToObject(type, node));
+      multiValuedComplexTypes.add(JsonHelper.copyResourceToObject(node, type));
     }
     return multiValuedComplexTypes;
   }
@@ -274,56 +274,4 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     JsonHelper.addAttribute(this, attributeName, arrayNode);
   }
 
-  /**
-   * creates a new instance of the given type and moves the content from the resource into the new node
-   *
-   * @param type the type from which an instance will be created with a noArgs constructor
-   * @param resource the resource that holds the content that must be moved to the new object
-   * @return a newly created instance with the content of the {@code resource}-node
-   */
-  private <T extends ObjectNode> T copyResourceToObject(Class<T> type, JsonNode resource)
-  {
-    T newInstance = getNewInstance(type);
-    resource.fields().forEachRemaining(stringJsonNodeEntry -> {
-      JsonHelper.addAttribute(newInstance, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
-    });
-    return newInstance;
-  }
-
-  /**
-   * creates a new instance of the given type and moves the content from the resource into the new node
-   *
-   * @param type the type from which an instance will be created with a noArgs constructor
-   * @param resource the resource that holds the content that must be moved to the new object
-   * @return a newly created instance with the content of the {@code resource}-node
-   */
-  private <T extends ArrayNode> T copyResourceToArray(Class<T> type, JsonNode resource)
-  {
-    T newInstance = getNewInstance(type);
-    for ( JsonNode jsonNode : resource )
-    {
-      JsonHelper.addAttributeToArray(newInstance, jsonNode);
-    }
-    return newInstance;
-  }
-
-  /**
-   * creates a new instance of the given type
-   *
-   * @param type the type from which a new instance will be created
-   * @param <T> the type must define a noArgs constructor
-   * @return the newly created instance
-   */
-  private <T extends JsonNode> T getNewInstance(Class<T> type)
-  {
-    try
-    {
-      return type.newInstance();
-    }
-    catch (InstantiationException | IllegalAccessException e)
-    {
-      throw new InternalServerException("could not create instance of type '" + getType() + "': " + e.getMessage(), e,
-                                        null);
-    }
-  }
 }

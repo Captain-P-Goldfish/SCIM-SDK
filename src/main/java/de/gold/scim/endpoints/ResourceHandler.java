@@ -36,26 +36,4 @@ public abstract class ResourceHandler<T extends JsonNode>
 
   public abstract T deleteResource(String id);
 
-  protected T copyResourceToObject(T resource)
-  {
-    T type = getNewInstance();
-    resource.fields().forEachRemaining(stringJsonNodeEntry -> {
-      JsonHelper.addAttribute(type, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
-    });
-    return type;
-  }
-
-  private T getNewInstance()
-  {
-    try
-    {
-      return getType().newInstance();
-    }
-    catch (InstantiationException | IllegalAccessException e)
-    {
-      throw new InternalServerException("could not create instance of type '" + getType() + "': " + e.getMessage(), e,
-                                        null);
-    }
-  }
-
 }

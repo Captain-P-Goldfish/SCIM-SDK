@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.exceptions.IncompatibleAttributeException;
+import de.gold.scim.exceptions.InternalServerException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +46,46 @@ public final class JsonHelper
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
       return new ObjectMapper().readTree(inputStream);
+    }
+    catch (IOException e)
+    {
+      throw de.gold.scim.exceptions.IOException.builder().message(e.getMessage()).cause(e).build();
+    }
+  }
+
+  /**
+   * will read a json document from the classpath
+   *
+   * @param classPathLocation the location of the document
+   * @return the parsed json document
+   */
+  public static <T extends ObjectNode> T loadJsonDocument(String classPathLocation, Class<T> type)
+  {
+    log.trace("trying to read classpath resource from: {}", classPathLocation);
+    try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
+    {
+      JsonNode jsonNode = new ObjectMapper().readTree(inputStream);
+      return copyResourceToObject(jsonNode, type);
+    }
+    catch (IOException e)
+    {
+      throw de.gold.scim.exceptions.IOException.builder().message(e.getMessage()).cause(e).build();
+    }
+  }
+
+  /**
+   * will read a json document from a file
+   *
+   * @param file the location of the document
+   * @return the parsed json document
+   */
+  public static <T extends ObjectNode> T loadJsonDocument(File file, Class<T> type)
+  {
+    log.trace("trying to read classpath resource from: {}", file.getAbsolutePath());
+    try (InputStream inputStream = new FileInputStream(file))
+    {
+      JsonNode jsonNode = new ObjectMapper().readTree(inputStream);
+      return copyResourceToObject(jsonNode, type);
     }
     catch (IOException e)
     {
@@ -83,6 +124,26 @@ public final class JsonHelper
     try (Reader reader = new StringReader(jsonDocument))
     {
       return new ObjectMapper().readTree(reader);
+    }
+    catch (IOException e)
+    {
+      throw de.gold.scim.exceptions.IOException.builder().message("test").cause(e).build();
+    }
+  }
+
+  /**
+   * will read a json document from the given string
+   *
+   * @param jsonDocument the direct json representation
+   * @return the parsed json document
+   */
+  public static <T extends ObjectNode> T readJsonDocument(String jsonDocument, Class<T> type)
+  {
+    log.trace("trying to read json document: {}", jsonDocument);
+    try (Reader reader = new StringReader(jsonDocument))
+    {
+      JsonNode jsonNode = new ObjectMapper().readTree(reader);
+      return copyResourceToObject(jsonNode, type);
     }
     catch (IOException e)
     {
@@ -312,6 +373,41 @@ public final class JsonHelper
     throw IncompatibleAttributeException.builder()
                                         .message("attribute '" + attribute + "' is not of type" + type.getSimpleName())
                                         .build();
+  }
+
+  /**
+   * creates a new instance of the given type and moves the content from the resource into the new node
+   *
+   * @param resource the resource that holds the content that must be moved to the new object
+   * @param type the type from which an instance will be created with a noArgs constructor
+   * @return a newly created instance with the content of the {@code resource}-node
+   */
+  public static <T extends ObjectNode> T copyResourceToObject(JsonNode resource, Class<T> type)
+  {
+    T newInstance = getNewInstance(type);
+    resource.fields().forEachRemaining(stringJsonNodeEntry -> {
+      JsonHelper.addAttribute(newInstance, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
+    });
+    return newInstance;
+  }
+
+  /**
+   * creates a new instance of the given type
+   *
+   * @param type the type from which a new instance will be created
+   * @param <T> the type must define a noArgs constructor
+   * @return the newly created instance
+   */
+  private static <T extends JsonNode> T getNewInstance(Class<T> type)
+  {
+    try
+    {
+      return type.newInstance();
+    }
+    catch (InstantiationException | IllegalAccessException e)
+    {
+      throw new InternalServerException("could not create instance of type '" + type + "': " + e.getMessage(), e, null);
+    }
   }
 
 }

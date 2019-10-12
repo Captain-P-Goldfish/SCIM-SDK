@@ -54,6 +54,8 @@ public interface FileReferences
 
   String WRITE_ONLY_ALWAYS_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/write-only-and-always.json";
 
+  String ALL_TYPES_JSON = RESOURCE_BASE_PATH + "/miscellaneous/all-types.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

@@ -1,0 +1,29 @@
+{
+  "userName": "chuck",
+  "number": 79,
+  "decimal": 50.5,
+  "single": false,
+  "birthDate": "1940-03-10T00:00:00Z",
+  "name": {
+    "formatted": "Sir Carlos Ray Norris",
+    "familyName": "Norris",
+    "givenName": "Carlos",
+    "middleName": "Ray",
+    "honorificPrefix": "Sir"
+  },
+  "phoneNumbers": [
+    {
+      "value": "111-111-111111",
+      "type": "home"
+    },
+    {
+      "value": "222-222-222222",
+      "type": "work"
+    },
+    {
+      "value": "333-333-333333",
+      "type": "mobile",
+      "primary": true
+    }
+  ]
+}

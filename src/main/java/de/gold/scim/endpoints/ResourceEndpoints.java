@@ -72,7 +72,7 @@ public final class ResourceEndpoints
                                                           resource,
                                                           SchemaValidator.HttpMethod.POST);
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-    ResourceNode resourceNode = (ResourceNode)resourceHandler.copyResourceToObject(resource);
+    ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
     resourceNode.setMeta(getMeta(resourceType));
     resourceNode = (ResourceNode)resourceHandler.createResource(resourceNode);
     JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
