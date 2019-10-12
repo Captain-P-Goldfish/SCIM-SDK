@@ -62,6 +62,7 @@ public final class ResourceEndpoints
     }
   }
 
+
   /**
    * checks if a resource type exists under the given endpoint and validates the request if it does by the
    * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
@@ -73,6 +74,34 @@ public final class ResourceEndpoints
    * @return the scim response for the client
    */
   public ScimResponse createResource(String endpoint, String resourceDocument)
+  {
+    return createResource(endpoint, resourceDocument, null, null);
+  }
+
+  /**
+   * checks if a resource type exists under the given endpoint and validates the request if it does by the
+   * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
+   * information will be given to the developer custom implementation. The returned object for the response will
+   * be validated again and then returned as a SCIM response
+   *
+   * @param endpoint the resource endpoint that was called
+   * @param resourceDocument the resource document
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
+   * @return the scim response for the client
+   */
+  public ScimResponse createResource(String endpoint,
+                                     String resourceDocument,
+                                     String attributes,
+                                     String excludedAttributes)
   {
     ResourceType resourceType = getResourceType(endpoint);
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
@@ -102,6 +131,47 @@ public final class ResourceEndpoints
    */
   public ScimResponse getResource(String endpoint, String id)
   {
+    return getResource(endpoint, id, null, null);
+  }
+
+
+  /**
+   * checks if a resource type exists under the given endpoint and validates the request if it does by the
+   * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
+   * information will be given to the developer custom implementation. The returned object for the response will
+   * be validated again and then returned as a SCIM response
+   *
+   * @param endpoint the resource endpoint that was called
+   * @param id the id of the resource that was requested
+   * @param resourceDocument the resource document
+   * @return the scim response for the client
+   */
+  public ScimResponse updateResource(String endpoint, String id, String resourceDocument)
+  {
+    return updateResource(endpoint, id, resourceDocument, null, null);
+  }
+
+  /**
+   * checks if a resource type exists under the given endpoint and will then give the id to the developers
+   * custom implementation stored under the found resource type. The returned {@link ResourceNode} will then be
+   * validated and eventually returned to the client
+   *
+   * @param endpoint the resource endpoint that was called
+   * @param id the id of the resource that was requested
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
+   * @return the scim response for the client
+   */
+  public ScimResponse getResource(String endpoint, String id, String attributes, String excludedAttributes)
+  {
     ResourceType resourceType = getResourceType(endpoint);
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
     ResourceNode resourceNode = resourceHandler.readResource(id);
@@ -127,9 +197,23 @@ public final class ResourceEndpoints
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
    * @param resourceDocument the resource document
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
    * @return the scim response for the client
    */
-  public ScimResponse updateResource(String endpoint, String id, String resourceDocument)
+  public ScimResponse updateResource(String endpoint,
+                                     String id,
+                                     String resourceDocument,
+                                     String attributes,
+                                     String excludedAttributes)
   {
     ResourceType resourceType = getResourceType(endpoint);
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
