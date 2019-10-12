@@ -38,8 +38,8 @@ public abstract class ResourceHandler<T extends ResourceNode>
 
   public abstract T listResources();
 
-  public abstract T updateResource(T resource, String id);
+  public abstract T updateResource(T resourceToUpdate);
 
-  public abstract T deleteResource(String id);
+  public abstract void deleteResource(String id);
 
 }

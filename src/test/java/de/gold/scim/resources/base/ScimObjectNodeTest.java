@@ -9,11 +9,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.resources.complex.Name;
@@ -206,8 +206,7 @@ public class ScimObjectNodeTest implements FileReferences
     final String attributeName = "attr";
     final OffsetDateTime offsetDateTime = OffsetDateTime.now().truncatedTo(ChronoUnit.SECONDS);
     scimObjectNode.setDateTimeAttribute(attributeName, offsetDateTime);
-    Assertions.assertEquals(offsetDateTime.toInstant(),
-                            scimObjectNode.getDateTimeAttribute(attributeName).get());
+    Assertions.assertEquals(offsetDateTime.toInstant(), scimObjectNode.getDateTimeAttribute(attributeName).get());
     scimObjectNode.setDateTimeAttribute(attributeName, (OffsetDateTime)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
     Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());

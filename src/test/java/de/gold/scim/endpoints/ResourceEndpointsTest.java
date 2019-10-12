@@ -2,9 +2,9 @@ package de.gold.scim.endpoints;
 
 import java.util.UUID;
 
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -28,17 +28,44 @@ public class ResourceEndpointsTest implements FileReferences
 
   private ResourceEndpoints resourceEndpoints;
 
+  private TestUserHandlerImpl userHandler;
+
   @BeforeEach
   public void initialize()
   {
-    resourceEndpoints = new ResourceEndpoints(new UserResourceType(new TestUserHandlerImpl()));
+    userHandler = Mockito.spy(new TestUserHandlerImpl());
+    resourceEndpoints = new ResourceEndpoints(new UserResourceType(userHandler));
   }
 
   @Test
   public void testCreateResource()
   {
     ScimResponse scimResponse = resourceEndpoints.createResource("/Users", readResourceFile(USER_RESOURCE));
-    Assertions.fail("validate response");
+    Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
+  }
+
+  @Test
+  public void testReadResource()
+  {
+    final String id = UUID.randomUUID().toString();
+    ScimResponse scimResponse = resourceEndpoints.getResource("/Users", id);
+    Mockito.verify(userHandler, Mockito.times(1)).readResource(id);
+  }
+
+  @Test
+  public void testUpdateResource()
+  {
+    final String id = UUID.randomUUID().toString();
+    ScimResponse scimResponse = resourceEndpoints.updateResource("/Users", id, readResourceFile(USER_RESOURCE));
+    Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any());
+  }
+
+  @Test
+  public void testDeleteResource()
+  {
+    final String id = UUID.randomUUID().toString();
+    ScimResponse scimResponse = resourceEndpoints.deleteResource("/Users", id);
+    Mockito.verify(userHandler, Mockito.times(1)).deleteResource(id);
   }
 
   private static class TestUserHandlerImpl extends ResourceHandler<User>
@@ -64,15 +91,15 @@ public class ResourceEndpointsTest implements FileReferences
     }
 
     @Override
-    public User updateResource(User resource, String id)
+    public User updateResource(User resource)
     {
       return resource;
     }
 
     @Override
-    public User deleteResource(String id)
+    public void deleteResource(String id)
     {
-      return null;
+
     }
   }
 }

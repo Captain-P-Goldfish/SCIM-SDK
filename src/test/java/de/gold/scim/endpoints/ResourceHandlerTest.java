@@ -58,15 +58,15 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public User updateResource(User resource, String id)
+    public User updateResource(User resource)
     {
       return null;
     }
 
     @Override
-    public User deleteResource(String id)
+    public void deleteResource(String id)
     {
-      return null;
+
     }
   }
 
@@ -95,15 +95,15 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public ResourceNode updateResource(ResourceNode resource, String id)
+    public ResourceNode updateResource(ResourceNode resource)
     {
       return null;
     }
 
     @Override
-    public ResourceNode deleteResource(String id)
+    public void deleteResource(String id)
     {
-      return null;
+
     }
   }
 }
