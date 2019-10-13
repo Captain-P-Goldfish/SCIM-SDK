@@ -41,6 +41,11 @@ public class SchemaAttribute
   private SchemaAttribute parent;
 
   /**
+   * the uri of the resource to which this attribute belongs
+   */
+  private String resourceUri;
+
+  /**
    * the name of the attribute
    */
   private String name;
@@ -80,8 +85,9 @@ public class SchemaAttribute
    */
   private List<SchemaAttribute> subAttributes;
 
-  public SchemaAttribute(SchemaAttribute parent, JsonNode jsonNode)
+  public SchemaAttribute(String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
   {
+    this.resourceUri = resourceUri;
     Function<String, String> errorMessageBuilder = attribute -> "could not find required attribute '" + attribute
                                                                 + "' in meta-schema";
     final String nameAttribute = AttributeNames.NAME;
@@ -146,7 +152,7 @@ public class SchemaAttribute
     Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode subAttribute : subAttributesArray )
     {
-      SchemaAttribute schemaAttribute = new SchemaAttribute(this, subAttribute);
+      SchemaAttribute schemaAttribute = new SchemaAttribute(resourceUri, this, subAttribute);
       if (attributeNameSet.contains(schemaAttribute.getScimNodeName()))
       {
         String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getScimNodeName()

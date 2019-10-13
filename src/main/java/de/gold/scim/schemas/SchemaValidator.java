@@ -36,6 +36,7 @@ import de.gold.scim.resources.base.ScimNode;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.resources.base.ScimTextNode;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.RequestUtils;
 import de.gold.scim.utils.TimeUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -79,31 +80,86 @@ public class SchemaValidator
    */
   private final ResourceTypeFactory resourceTypeFactory;
 
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory)
+  /**
+   * this member is used for attributes that have a returned value of {@link Returned#REQUEST}. Those attributes
+   * should only be returned if the attribute was modified on a POST, PUT or PATCH request or in a query request
+   * only if the attribute is present within the {@link #attributes} parameter. So the validated request tells
+   * us if the client tried to write to the attribute and if this is the case the attribute should be returned
+   * <br>
+   * <br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  private final JsonNode validatedRequest;
+
+  /**
+   * When specified, the default list of attributes SHALL be overridden, and each resource returned MUST contain
+   * the minimum set of resource attributes and any attributes or sub-attributes explicitly requested by the
+   * "attributes" parameter. The query parameter attributes value is a comma-separated list of resource
+   * attribute names in standard attribute notation (Section 3.10) form (e.g., userName, name, emails).
+   */
+  private final List<String> attributes;
+
+  /**
+   * When specified, each resource returned MUST contain the minimum set of resource attributes. Additionally,
+   * the default set of attributes minus those attributes listed in "excludedAttributes" is returned. The query
+   * parameter attributes value is a comma-separated list of resource attribute names in standard attribute
+   * notation (Section 3.10) form (e.g., userName, name, emails).
+   */
+  private final List<String> excludedAttributes;
+
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
+                          String resourceUri,
+                          String attributes,
+                          String excludedAttributes)
   {
     this.resourceTypeFactory = resourceTypeFactory;
     this.extensionSchema = false;
     this.directionType = null;
     this.httpMethod = null;
-  }
-
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory, DirectionType directionType, HttpMethod httpMethod)
-  {
-    this.resourceTypeFactory = resourceTypeFactory;
-    this.directionType = directionType;
-    this.httpMethod = httpMethod;
-    this.extensionSchema = false;
+    this.validatedRequest = null;
+    this.attributes = RequestUtils.getAttributes(attributes);
+    this.excludedAttributes = RequestUtils.getAttributes(excludedAttributes);
   }
 
   private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
                           DirectionType directionType,
                           HttpMethod httpMethod,
-                          boolean extensionSchema)
+                          JsonNode validatedRequest,
+                          String attributes,
+                          String excludedAttributes)
+  {
+    this.resourceTypeFactory = resourceTypeFactory;
+    this.directionType = directionType;
+    this.httpMethod = httpMethod;
+    this.extensionSchema = false;
+    this.validatedRequest = validatedRequest;
+    this.attributes = RequestUtils.getAttributes(attributes);
+    this.excludedAttributes = RequestUtils.getAttributes(excludedAttributes);
+  }
+
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
+                          DirectionType directionType,
+                          HttpMethod httpMethod,
+                          boolean extensionSchema,
+                          JsonNode validatedRequest,
+                          String attributes,
+                          String excludedAttributes)
   {
     this.resourceTypeFactory = resourceTypeFactory;
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = extensionSchema;
+    this.validatedRequest = validatedRequest;
+    this.attributes = RequestUtils.getAttributes(attributes);
+    this.excludedAttributes = RequestUtils.getAttributes(excludedAttributes);
   }
 
   /**
@@ -119,7 +175,7 @@ public class SchemaValidator
                                          Schema metaSchema,
                                          JsonNode schemaDocument)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, metaSchema.getId(), null, null);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
@@ -133,18 +189,39 @@ public class SchemaValidator
    *
    * @param resourceType the resource type definition of the incoming document
    * @param document the document that should be validated
+   * @param validatedRequest this parameter is used for attributes that have a returned value of
+   *          {@link Returned#REQUEST}. Those attributes * should only be returned if the attribute was modified
+   *          on a POST, PUT or PATCH request or in a query request * only if the attribute is present within
+   *          the {@link #attributes} parameter. So the validated request tells * us if the client tried to
+   *          write to the attribute and if this is the case the attribute should be returned
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
    * @return the validated document that consists of {@link ScimNode}s
    * @throws DocumentValidationException if the schema validation failed
    */
   public static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
                                                      ResourceType resourceType,
-                                                     JsonNode document)
+                                                     JsonNode document,
+                                                     JsonNode validatedRequest,
+                                                     String attributes,
+                                                     String excludedAttributes)
     throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
     JsonNode validatedMainDocument = validateDocumentForResponse(resourceTypeFactory,
                                                                  resourceSchema.getMetaSchema(),
-                                                                 document);
+                                                                 document,
+                                                                 null,
+                                                                 attributes,
+                                                                 excludedAttributes);
     validatedForMissingRequiredExtension(resourceType, document, DirectionType.RESPONSE);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
@@ -154,7 +231,12 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new InternalServerException(message.get(), null,
                                                                                   ScimType.MISSING_EXTENSION));
-      JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory, schemaExtension, extension);
+      JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory,
+                                                            schemaExtension,
+                                                            extension,
+                                                            validatedRequest,
+                                                            attributes,
+                                                            excludedAttributes);
       JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
     }
     return validatedMainDocument;
@@ -176,7 +258,46 @@ public class SchemaValidator
                                                         Schema metaSchema,
                                                         JsonNode document)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null);
+    return validateDocumentForResponse(resourceTypeFactory, metaSchema, document, null, null, null);
+  }
+
+  /**
+   * will validate an outgoing document against its main schema and all its extensions. Attributes that are
+   * unknown to the given schema or are meaningless or forbidden in responses due to their mutability or
+   * returned value will be removed from the validated document. <br>
+   * attributes that will be removed in the response validation are thos that are having a mutability of
+   * {@link Mutability#WRITE_ONLY} or a returned value of {@link Returned#NEVER}. This will prevent the server
+   * from accidentally returning passwords or equally sensitive information
+   *
+   * @param metaSchema the json meta schema definition of the document
+   * @param document the document to validate
+   * @param validatedRequest this parameter is used for attributes that have a returned value of
+   *          {@link Returned#REQUEST}. Those attributes * should only be returned if the attribute was modified
+   *          on a POST, PUT or PATCH request or in a query request * only if the attribute is present within
+   *          the {@link #attributes} parameter. So the validated request tells * us if the client tried to
+   *          write to the attribute and if this is the case the attribute should be returned write to the
+   *          attribute and if this is the case the attribute should be returned
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
+   * @return the validated document that consists of {@link ScimNode}s
+   */
+  protected static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
+                                                        Schema metaSchema,
+                                                        JsonNode document,
+                                                        JsonNode validatedRequest,
+                                                        String attributes,
+                                                        String excludedAttributes)
+  {
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null,
+                                                          validatedRequest, attributes, excludedAttributes);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -188,13 +309,22 @@ public class SchemaValidator
    *
    * @param metaSchema the json meta schema definition of the extension
    * @param document the extension to validate
+   * @param validatedRequest this parameter is used for attributes that have a returned value of
+   *          {@link Returned#REQUEST}. Those attributes * should only be returned if the attribute was modified
+   *          on a POST, PUT or PATCH request or in a query request * only if the attribute is present within
+   *          the {@link #attributes} parameter. So the validated request tells * us if the client tried to
+   *          write to the attribute and if this is the case the attribute should be returned
    * @return the validated document that consists of {@link ScimNode}s
    */
   private static JsonNode validateExtensionForResponse(ResourceTypeFactory resourceTypeFactory,
                                                        Schema metaSchema,
-                                                       JsonNode document)
+                                                       JsonNode document,
+                                                       JsonNode validatedRequest,
+                                                       String attributes,
+                                                       String excludedAttributes)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null, true);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null, true,
+                                                          validatedRequest, attributes, excludedAttributes);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -257,7 +387,8 @@ public class SchemaValidator
                                                        JsonNode document,
                                                        HttpMethod httpMethod)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, null,
+                                                          null, null);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -278,7 +409,8 @@ public class SchemaValidator
                                                         JsonNode document,
                                                         HttpMethod httpMethod)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, true);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, true,
+                                                          null, null, null);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -378,8 +510,14 @@ public class SchemaValidator
     validateIsRequired(documentNode, schemaAttribute);
     if (documentNode == null)
     {
+      validateNonPresentAttributes(schemaAttribute);
       return Optional.empty();
     }
+    else if (!validatePresentAttributes(schemaAttribute))
+    {
+      return Optional.empty();
+    }
+
     if (schemaAttribute.isMultiValued())
     {
       return handleMultivaluedNodes(documentNode, schemaAttribute);
@@ -413,9 +551,8 @@ public class SchemaValidator
     else
     {
       return handleMultivaluedNode(document, schemaAttribute, (jsonNode, scimArrayNode) -> {
-        handleSimpleNode(jsonNode, schemaAttribute).ifPresent(simpleNode -> {
-          JsonHelper.addAttributeToArray(scimArrayNode, simpleNode);
-        });
+        JsonNode attribute = handleSimpleNode(jsonNode, schemaAttribute);
+        JsonHelper.addAttributeToArray(scimArrayNode, attribute);
       });
     }
   }
@@ -472,6 +609,7 @@ public class SchemaValidator
     }
     if (scimArrayNode.isEmpty())
     {
+      validateNonPresentAttributes(schemaAttribute);
       return Optional.empty();
     }
     return Optional.of(scimArrayNode);
@@ -486,22 +624,13 @@ public class SchemaValidator
    */
   private Optional<JsonNode> handleNode(JsonNode document, SchemaAttribute schemaAttribute)
   {
-    Optional<JsonNode> jsonNode;
     if (Type.COMPLEX.equals(schemaAttribute.getType()))
     {
-      jsonNode = handleComplexNode(document, schemaAttribute);
+      return handleComplexNode(document, schemaAttribute);
     }
     else
     {
-      jsonNode = handleSimpleNode(document, schemaAttribute);
-    }
-    if (jsonNode.isPresent())
-    {
-      return validateRequestBasedInformation(jsonNode.get(), schemaAttribute);
-    }
-    else
-    {
-      return Optional.empty();
+      return Optional.of(handleSimpleNode(document, schemaAttribute));
     }
   }
 
@@ -529,7 +658,7 @@ public class SchemaValidator
    * @return the attribute as a {@link JsonNode} that implements the interface {@link ScimNode} in its
    *         corresponding node type
    */
-  private Optional<JsonNode> handleSimpleNode(JsonNode simpleDocumentNode, SchemaAttribute schemaAttribute)
+  private JsonNode handleSimpleNode(JsonNode simpleDocumentNode, SchemaAttribute schemaAttribute)
   {
     checkCanonicalValues(schemaAttribute, simpleDocumentNode);
     Type type = schemaAttribute.getType();
@@ -537,24 +666,24 @@ public class SchemaValidator
     {
       case STRING:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);
-        return Optional.of(new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue()));
+        return new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue());
       case BOOLEAN:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isBoolean);
-        return Optional.of(new ScimBooleanNode(schemaAttribute, simpleDocumentNode.booleanValue()));
+        return new ScimBooleanNode(schemaAttribute, simpleDocumentNode.booleanValue());
       case INTEGER:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isInt);
-        return Optional.of(new ScimIntNode(schemaAttribute, simpleDocumentNode.intValue()));
+        return new ScimIntNode(schemaAttribute, simpleDocumentNode.intValue());
       case DECIMAL:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isDouble);
-        return Optional.of(new ScimDoubleNode(schemaAttribute, simpleDocumentNode.doubleValue()));
+        return new ScimDoubleNode(schemaAttribute, simpleDocumentNode.doubleValue());
       case DATE_TIME:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);
         parseDateTime(simpleDocumentNode.textValue());
-        return Optional.of(new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue()));
+        return new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue());
       default:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);
         validateValueNodeWithReferenceTypes(schemaAttribute, simpleDocumentNode);
-        return Optional.of(new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue()));
+        return new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue());
     }
   }
 
@@ -650,69 +779,185 @@ public class SchemaValidator
   }
 
   /**
-   * validates if the given attribute should be removed from the request or response document
+   * validates if the missing attribute should be present or not
    *
-   * @param documentNode the document node that is being validated
-   * @param schemaAttribute the meta information of the attribute
-   * @return the attribute if it should not be remove or an empty if the attribute should be removed
+   * @param schemaAttribute the attribute definition that holds the necessary meta information
    */
-  private Optional<JsonNode> validateRequestBasedInformation(JsonNode documentNode, SchemaAttribute schemaAttribute)
+  private void validateNonPresentAttributes(SchemaAttribute schemaAttribute)
   {
-    if (DirectionType.REQUEST.equals(directionType))
+    if (DirectionType.RESPONSE.equals(directionType))
     {
-      return validateRequestBasedInformationForRequest(documentNode, schemaAttribute);
+      validateNonPresentAttributesForResponse(schemaAttribute);
     }
-    else
+    // in case of request there is nothing to validate here since the validation was already preformed by the
+    // isRequired... method
+  }
+
+  /**
+   * this method is called if the node represented by the schemaAttribute is not present in the document. The
+   * validation will simply add log messages for debugging purposes so that the developer will be able to
+   * understand what went wrong. The validation is reduced to log messages only because there might be use cases
+   * in which an exception would be fatal for the developer
+   *
+   * @param schemaAttribute the schema attribute definition of a node that is not present within the document
+   */
+  private void validateNonPresentAttributesForResponse(SchemaAttribute schemaAttribute)
+  {
+    final String scimNodeName = schemaAttribute.getScimNodeName();
+    if (Returned.ALWAYS.equals(schemaAttribute.getReturned()))
     {
-      return validateRequestBasedInformationForResponse(documentNode, schemaAttribute);
+      log.debug("the attribute '{}' has a returned value of " + "'{}' and is therefore a required attribute in the"
+                + "minimal dataset of the resource but it is missing in the response document.",
+                scimNodeName,
+                schemaAttribute.getReturned());
+    }
+    else if ((Returned.REQUEST.equals(schemaAttribute.getReturned())
+              || Returned.DEFAULT.equals(schemaAttribute.getReturned()))
+             && attributes.contains(scimNodeName))
+    {
+      log.debug("the attribute '{}' was requested by the client but it is not present within the document. "
+                + "Maybe the value has not been set on the resource?",
+                scimNodeName);
     }
   }
 
   /**
-   * validates if the given attribute should be removed from the request document
+   * checks if an attribute must be removed from the current document
    *
-   * @param documentNode the document node that is being validated
-   * @param schemaAttribute the meta information of the attribute
-   * @return the attribute if it should not be remove or an empty if the attribute should be removed
+   * @param schemaAttribute the schema meta definition that holds the necessary information
+   * @return true if the attribute should be kept in the response, false if the attribute should be removed
    */
-  private Optional<JsonNode> validateRequestBasedInformationForRequest(JsonNode documentNode,
-                                                                       SchemaAttribute schemaAttribute)
+  private boolean validatePresentAttributes(SchemaAttribute schemaAttribute)
+  {
+    if (DirectionType.RESPONSE.equals(directionType))
+    {
+      return validatePresentAttributesForResponse(schemaAttribute);
+    }
+    else if (DirectionType.REQUEST.equals(directionType))
+    {
+      return validatePresentAttributesForRequest(schemaAttribute);
+    }
+    // in case for schema validation. in this case the directionType will be null
+    return true;
+  }
+
+  private boolean validatePresentAttributesForRequest(SchemaAttribute schemaAttribute)
   {
     if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
     {
       log.debug("removed attribute '{}' from request since it has a mutability of {}",
                 schemaAttribute.getScimNodeName(),
                 schemaAttribute.getMutability());
-      return Optional.empty();
+      return false;
     }
-    return Optional.of(documentNode);
+    return true;
   }
 
   /**
-   * validates if the given attribute should be removed from the response document
+   * checks if an attribute must be removed from the response document
    *
-   * @param documentNode the document node that is being validated
-   * @param schemaAttribute the meta information of the attribute
-   * @return the attribute if it should not be remove or an empty if the attribute should be removed
+   * @param schemaAttribute the schema meta definition that holds the necessary information
+   * @return true if the attribute should be kept in the response, false if the attribute should be removed
    */
-  private Optional<JsonNode> validateRequestBasedInformationForResponse(JsonNode documentNode,
-                                                                        SchemaAttribute schemaAttribute)
+  private boolean validatePresentAttributesForResponse(SchemaAttribute schemaAttribute)
   {
-    if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+    if (Returned.ALWAYS.equals(schemaAttribute.getReturned()))
     {
-      log.warn("server tried to return the attribute '{}' that has a mutability value of: {}",
-               schemaAttribute.getScimNodeName(),
-               schemaAttribute.getMutability());
-      return Optional.empty();
+      return true;
     }
-    else if (Returned.NEVER.equals(schemaAttribute.getReturned()))
+    if (Returned.NEVER.equals(schemaAttribute.getReturned()))
     {
-      log.warn("server tried to return the attribute '{}' that has a returned value of: {}",
+      log.warn("attribute '{}' was present on the response document but has a returned value of '{}'. Attribute is "
+               + "being removed from response document",
                schemaAttribute.getScimNodeName(),
                schemaAttribute.getReturned());
-      return Optional.empty();
+      return false;
     }
-    return Optional.of(documentNode);
+    if (Returned.DEFAULT.equals(schemaAttribute.getReturned()) && !attributes.isEmpty()
+        && isAttributeMissingInAttributeParameter(schemaAttribute))
+    {
+      log.debug("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
+                + " of requested attributes: {}",
+                schemaAttribute.getScimNodeName(),
+                schemaAttribute.getReturned(),
+                attributes);
+      return false;
+    }
+    if (Returned.REQUEST.equals(schemaAttribute.getReturned())
+        && isAttributeMissingInAttributeParameter(schemaAttribute) && !isAttributePresentInRequest(schemaAttribute))
+    {
+      log.debug("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
+                + " of requested attributes: {}",
+                schemaAttribute.getScimNodeName(),
+                schemaAttribute.getReturned(),
+                attributes);
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * checks if the given attribute name is missing within the attributes parameter
+   *
+   * @param schemaAttribute the schema attribute definition of the parameter
+   * @return false if the attribute is present within the attributes parameter, true else
+   */
+  private boolean isAttributeMissingInAttributeParameter(SchemaAttribute schemaAttribute)
+  {
+    final String shortName = schemaAttribute.getScimNodeName();
+    final String fullName = schemaAttribute.getResourceUri() + ":" + shortName;
+    // this will check if the full name is matching any parameter in the attributes parameter list or
+    // if this attribute to check is a subnode of the attributes defined in the attributes parameter list
+    boolean anyFullNameMatch = attributes.stream()
+                                         .anyMatch(param -> fullName.equals(param)
+                                                            || (fullName.startsWith(param)
+                                                                && fullName.endsWith("." + schemaAttribute.getName())));
+    if (attributes.contains(shortName) || anyFullNameMatch)
+    {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * this method will check if the given attribute was present in the request document.<br>
+   * <b>NOTE:</b>:<br>
+   * this type of validation is ignored for multivalued complex types because this might lead to drastic
+   * performance issues under specific circumstances
+   *
+   * @param schemaAttribute the meta definition of the attribute
+   * @return true if the attribute was present within the response, false else
+   */
+  private boolean isAttributePresentInRequest(SchemaAttribute schemaAttribute)
+  {
+    String[] scimNodeParts = schemaAttribute.getScimNodeName().split("\\.");
+    if (validatedRequest == null)
+    {
+      return false;
+    }
+    JsonNode jsonNode = validatedRequest.get(scimNodeParts[0]);
+    if (jsonNode == null)
+    {
+      return false;
+    }
+    if (scimNodeParts.length == 1)
+    {
+      return true;
+    }
+    else
+    {
+      ScimNode subNode = (ScimNode)jsonNode.get(scimNodeParts[1]);
+      if (subNode == null)
+      {
+        return false;
+      }
+      else if (subNode.isMultiValued())
+      {
+        // this case is not validated to reduce the possibility of performance issues
+        return false;
+      }
+      return true;
+    }
   }
 
   /**

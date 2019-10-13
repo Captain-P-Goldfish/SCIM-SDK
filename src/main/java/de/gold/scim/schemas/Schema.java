@@ -79,7 +79,7 @@ public class Schema
     Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode node : attributes )
     {
-      SchemaAttribute schemaAttribute = new SchemaAttribute(null, node);
+      SchemaAttribute schemaAttribute = new SchemaAttribute(this.id, null, node);
       if (attributeNameSet.contains(schemaAttribute.getName()))
       {
         String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getName() + "' was found "

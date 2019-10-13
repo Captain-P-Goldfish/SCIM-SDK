@@ -17,6 +17,7 @@ import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.SchemaValidator;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -103,6 +104,7 @@ public final class ResourceEndpoints
                                      String attributes,
                                      String excludedAttributes)
   {
+    RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
     ResourceType resourceType = getResourceType(endpoint);
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
     resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
@@ -115,7 +117,10 @@ public final class ResourceEndpoints
     resourceNode = resourceHandler.createResource(resourceNode);
     JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                             resourceType,
-                                                                            resourceNode);
+                                                                            resourceNode,
+                                                                            resource,
+                                                                            attributes,
+                                                                            excludedAttributes);
 
     return buildScimResponse(responseResource);
   }
@@ -172,6 +177,7 @@ public final class ResourceEndpoints
    */
   public ScimResponse getResource(String endpoint, String id, String attributes, String excludedAttributes)
   {
+    RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
     ResourceType resourceType = getResourceType(endpoint);
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
     ResourceNode resourceNode = resourceHandler.readResource(id);
@@ -184,7 +190,10 @@ public final class ResourceEndpoints
     resourceNode = resourceHandler.readResource(id);
     JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                             resourceType,
-                                                                            resourceNode);
+                                                                            resourceNode,
+                                                                            null,
+                                                                            attributes,
+                                                                            excludedAttributes);
     return buildScimResponse(responseResource);
   }
 
@@ -215,6 +224,7 @@ public final class ResourceEndpoints
                                      String attributes,
                                      String excludedAttributes)
   {
+    RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
     ResourceType resourceType = getResourceType(endpoint);
     JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
     resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
@@ -233,7 +243,10 @@ public final class ResourceEndpoints
     resourceNode = resourceHandler.updateResource(resourceNode);
     JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                             resourceType,
-                                                                            resourceNode);
+                                                                            resourceNode,
+                                                                            resource,
+                                                                            attributes,
+                                                                            excludedAttributes);
 
     return buildScimResponse(responseResource);
   }

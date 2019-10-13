@@ -144,7 +144,7 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * if the document put into the {@link ResourceType#getResourceSchema(String)} method references an unknown
+   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method references an unknown
    * schema an {@link InvalidResourceTypeException} is expected
    */
   @Test
@@ -175,7 +175,7 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * if the document put into the {@link ResourceType#getResourceSchema(String)} method is missing the
+   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method is missing the
    * 'schemas'-attribute an {@link InvalidResourceTypeException} is expected
    */
   @Test
@@ -190,7 +190,7 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * if the document put into the {@link ResourceType#getResourceSchema(String)} method has an empty
+   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method has an empty
    * 'schemas'-attribute an {@link InvalidResourceTypeException} is expected
    */
   @Test
@@ -206,7 +206,7 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * if the document put into the {@link ResourceType#getResourceSchema(String)} method is NOT missing the
+   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method is NOT missing the
    * required extensions the execution should be successful
    */
   @Test
@@ -237,7 +237,9 @@ public class ResourceTypeTest implements FileReferences
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(schemaFactory.getResourceTypeFactory(),
                                                                              resourceType,
-                                                                             enterpriseUserDocument);
+                                                                             enterpriseUserDocument,
+      null, null,
+                                                                             null);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
@@ -259,7 +261,8 @@ public class ResourceTypeTest implements FileReferences
     JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(schemaFactory.getResourceTypeFactory(),
                                                                             resourceType,
                                                                             enterpriseUserDocument,
-                                                                            SchemaValidator.HttpMethod.POST);
+                                                                            SchemaValidator.HttpMethod.POST
+    );
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,

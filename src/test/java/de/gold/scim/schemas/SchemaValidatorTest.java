@@ -896,6 +896,220 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * this test will have a always returned attribute that is not present in the response because it is not a
+   * required attribute. For this reason the validation will not throw an exception but print a log message.
+   * This test is for code coverage and checking for NullPointerExceptions or similar
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ALWAYS", "REQUEST", "DEFAULT"})
+  public void testNonPresentReturnedAttribute(Returned returned)
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.NICK_NAME,
+                            null,
+                            null,
+                            returned,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         metaSchema,
+                                                         userSchema,
+                                                         null,
+                                                         AttributeNames.NICK_NAME,
+                                                         null);
+    });
+
+    JsonNode nickName = validatedDocument.get(AttributeNames.NICK_NAME);
+    Assertions.assertNull(nickName);
+    JsonNode id = validatedDocument.get(AttributeNames.ID);
+    Assertions.assertNotNull(id);
+    JsonNode userName = validatedDocument.get(AttributeNames.USER_NAME);
+    Assertions.assertNull(userName);
+    JsonNode externalId = validatedDocument.get(AttributeNames.EXTERNAL_ID);
+    Assertions.assertNull(externalId);
+    JsonNode description = validatedDocument.get(AttributeNames.DESCRIPTION);
+    Assertions.assertNull(description);
+    JsonNode display = validatedDocument.get(AttributeNames.DISPLAY);
+    Assertions.assertNull(display);
+    JsonNode phoneNumbers = validatedDocument.get(AttributeNames.PHONE_NUMBERS);
+    Assertions.assertNull(phoneNumbers);
+    JsonNode emails = validatedDocument.get(AttributeNames.EMAILS);
+    Assertions.assertNull(emails);
+    JsonNode groups = validatedDocument.get(AttributeNames.GROUPS);
+    Assertions.assertNull(groups);
+    JsonNode roles = validatedDocument.get(AttributeNames.ROLES);
+    Assertions.assertNull(roles);
+  }
+
+  /**
+   * this test will verify that attributes whos returned value is {@link Returned#REQUEST} will not be returned
+   * until they have been requested explicitly
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.NAME, AttributeNames.DISPLAY_NAME,
+                          AttributeNames.EMAILS, AttributeNames.PHONE_NUMBERS,
+                          AttributeNames.PHONE_NUMBERS + "." + AttributeNames.VALUE,
+                          AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME})
+  public void testDoNotReturnRequestAttributes(String attributeName)
+  {
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, userSchema, null, null, null);
+    });
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNull(validatedDocument.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = validatedDocument.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNull(complexAttribute.get(attributeNameParts[1]));
+    }
+  }
+
+  /**
+   * This test will verify that an attribute with a returned value of request is returned if the attribute was
+   * on the request. Meaning the attribute was set during creation or modified on a PUT or PATCH request.<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @Test
+  public void testRequestAttributeIsReturnedAfterPutPostOrPatchRequest()
+  {
+    final String attributeName = AttributeNames.USER_NAME;
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode validatedRequestDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        userSchema,
+                                                        SchemaValidator.HttpMethod.POST);
+    });
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         metaSchema,
+                                                         userSchema,
+                                                         validatedRequestDocument,
+                                                         null,
+                                                         null);
+    });
+
+    Assertions.assertNotNull(validatedDocument.get(attributeName));
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the full URI of the attribute name was used in
+   * the attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.DISPLAY_NAME, AttributeNames.EXTERNAL_ID,
+                          AttributeNames.NAME, AttributeNames.EMAILS})
+  public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName)
+  {
+    final String fullName = SchemaUris.USER_URI + ":" + attributeName;
+
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode missingAttributeUser = userSchema.deepCopy();
+    JsonHelper.removeAttribute(missingAttributeUser, attributeName);
+    JsonNode validatedRequestDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        missingAttributeUser,
+                                                        SchemaValidator.HttpMethod.PUT);
+    });
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         metaSchema,
+                                                         userSchema,
+                                                         validatedRequestDocument,
+                                                         fullName,
+                                                         null);
+    });
+
+    Assertions.assertNotNull(validatedDocument.get(attributeName));
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+  }
+
+  /**
+   * same as {@link #testRequestAttributeIsReturnedAfterPutPostOrPatchRequest} but this time the check is for a
+   * schema extension and not the main resource
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.EMPLOYEE_NUMBER, AttributeNames.COST_CENTER, AttributeNames.ORGANIZATION,
+                          AttributeNames.DIVISION, AttributeNames.DEPARTMENT, AttributeNames.MANAGER})
+  public void testRequestAttributeIsReturnedAfterPutPostOrPatchRequestForExtension(String attributeName)
+  {
+    // 1. register a resource type
+    // 2. modify the attribute in the extension schema
+    // 3. validate the document as response
+    Assertions.fail("TODO do it for an extension");
+  }
+
+  /**
+   * this test shall verify that the attributes from an extension are removed if they have a returned value of
+   * default or request and they are not defined in the attributes parameter
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.EMPLOYEE_NUMBER, AttributeNames.COST_CENTER, AttributeNames.ORGANIZATION,
+                          AttributeNames.DIVISION, AttributeNames.DEPARTMENT, AttributeNames.MANAGER})
+  public void testRemoveAttributesFromResponseOnExtension(String attributeName)
+  {
+    // 1. register a resource type
+    // 2. modify the attribute in the extension schema
+    // 3. validate the document as response
+    Assertions.fail("TODO do it for an extension");
+  }
+
+  /**
+   * TODO validate excluded attributes
+   */
+  @Test
+  public void testExcludedAttributes()
+  {
+    Assertions.fail("TODO validate excluded attributes");
+  }
+
+  /**
    * this method extracts the the attribute with the given name from the meta schema and modifies its attributes
    * with the given values
    *
@@ -913,15 +1127,29 @@ public class SchemaValidatorTest implements FileReferences
                                        Boolean caseExact,
                                        List<String> canonicalTypes)
   {
+    String[] attributeNameParts = attributeName.split("\\.");
     JsonNode attributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
     JsonNode attributeDefinition = null;
     for ( JsonNode attribute : attributes )
     {
       String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
-      if (name.equals(attributeName))
+      if (name.equals(attributeNameParts[0]))
       {
         attributeDefinition = attribute;
         break;
+      }
+    }
+    if (attributeNameParts.length == 2)
+    {
+      JsonNode subAttributes = JsonHelper.getArrayAttribute(attributeDefinition, AttributeNames.SUB_ATTRIBUTES).get();
+      for ( JsonNode attribute : subAttributes )
+      {
+        String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
+        if (name.equals(attributeNameParts[1]))
+        {
+          attributeDefinition = attribute;
+          break;
+        }
       }
     }
     Assertions.assertNotNull(attributeDefinition);
