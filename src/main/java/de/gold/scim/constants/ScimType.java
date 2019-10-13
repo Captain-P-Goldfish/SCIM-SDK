@@ -22,4 +22,9 @@ public class ScimType
    * a required extension is missing
    */
   public static final String MISSING_EXTENSION = "missingExtension";
+
+  /**
+   * some of the request parameters did not conform to the SCIM specification
+   */
+  public static final String INVALID_PARAMETERS = "invalidParameters";
 }
