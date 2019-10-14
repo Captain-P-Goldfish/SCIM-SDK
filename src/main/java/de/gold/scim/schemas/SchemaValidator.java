@@ -879,6 +879,10 @@ public class SchemaValidator
     {
       return true;
     }
+    if (!excludedAttributes.isEmpty() && isExcludedParameterPresent(schemaAttribute))
+    {
+      return false;
+    }
     if (Returned.NEVER.equals(schemaAttribute.getReturned()))
     {
       log.warn("attribute '{}' was present on the response document but has a returned value of '{}'. Attribute is "
@@ -911,6 +915,28 @@ public class SchemaValidator
   }
 
   /**
+   * will check if the given attribute is set in the excludedAttributes parameter list
+   *
+   * @param schemaAttribute the attribute to check if it is excluded
+   * @return true if the attribute should be excluded, false else
+   */
+  private boolean isExcludedParameterPresent(SchemaAttribute schemaAttribute)
+  {
+    final String shortName = schemaAttribute.getScimNodeName();
+    final String fullName = schemaAttribute.getResourceUri() + ":" + shortName;
+    // this will check if the full name is matching any parameter in the attributes parameter list or
+    // if this attribute to check is a subnode of the attributes defined in the attributes parameter list
+    boolean anyFullNameMatch = excludedAttributes.stream()
+                                                 .anyMatch(param -> fullName.equals(param) || shortName.equals(param)
+                                                                    || param.equals(schemaAttribute.getResourceUri()));
+    if (anyFullNameMatch)
+    {
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * checks if the given attribute name is missing within the attributes parameter
    *
    * @param schemaAttribute the schema attribute definition of the parameter
@@ -922,15 +948,15 @@ public class SchemaValidator
     final String fullName = schemaAttribute.getResourceUri() + ":" + shortName;
     // this will check if the full name is matching any parameter in the attributes parameter list or
     // if this attribute to check is a subnode of the attributes defined in the attributes parameter list
-    boolean anyFullNameMatch = attributes.stream()
-                                         .anyMatch(param -> fullName.equals(param)
-                                                            || (fullName.startsWith(param)
-                                                                && fullName.endsWith("." + schemaAttribute.getName()))
-                                                            || shortName.startsWith(param + ".")
-                                                            || param.startsWith(fullName + ".")
-                                                            || param.startsWith(shortName + ".")
-                                                            || param.equals(schemaAttribute.getResourceUri()));
-    if (attributes.contains(shortName) || anyFullNameMatch)
+    boolean anyNameMatch = attributes.stream()
+                                     .anyMatch(param -> fullName.equals(param) || shortName.equals(param)
+                                                        || (fullName.startsWith(param)
+                                                            && fullName.endsWith("." + schemaAttribute.getName()))
+                                                        || shortName.startsWith(param + ".")
+                                                        || param.startsWith(fullName + ".")
+                                                        || param.startsWith(shortName + ".")
+                                                        || param.equals(schemaAttribute.getResourceUri()));
+    if (anyNameMatch)
     {
       return false;
     }
@@ -958,6 +984,7 @@ public class SchemaValidator
     {
       return false;
     }
+
     if (scimNodeParts.length == 1)
     {
       return true;

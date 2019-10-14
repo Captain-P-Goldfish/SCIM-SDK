@@ -7,8 +7,11 @@
   "userName": "chuck",
   "active": true,
   "name": {
+    "formatted": "Sir Carlos Ray Norris",
     "familyName": "Norris",
-    "givenName": "Carlos"
+    "givenName": "Carlos",
+    "middleName": "Ray",
+    "honorificPrefix": "Sir"
   },
   "password": "bruce lee lost, he just doesn't know it",
   "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {

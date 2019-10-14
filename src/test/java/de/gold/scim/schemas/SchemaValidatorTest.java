@@ -1321,12 +1321,108 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * TODO validate excluded attributes
+   * Verifies that excluded attributes are removed from extensions
    */
   @Test
   public void testExcludedAttributes()
   {
-    Assertions.fail("TODO validate excluded attributes");
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    List<String> excludedList = Arrays.asList(AttributeNames.USER_NAME,
+                                              AttributeNames.DISPLAY_NAME,
+                                              AttributeNames.EXTERNAL_ID,
+                                              AttributeNames.EMAILS,
+                                              AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME,
+                                              AttributeNames.NAME + "." + AttributeNames.MIDDLE_NAME);
+    String excluded = String.join(",", excludedList);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         excluded);
+    });
+    for ( String attributeName : excludedList )
+    {
+      String[] attributeNameParts = attributeName.split("\\.");
+      if (attributeNameParts.length == 1)
+      {
+        Assertions.assertNull(validatedDocument.get(attributeName), attributeName);
+      }
+      else
+      {
+        JsonNode complexAttribute = validatedDocument.get(attributeNameParts[0]);
+        Assertions.assertNotNull(complexAttribute, attributeName);
+        Assertions.assertNull(complexAttribute.get(attributeNameParts[1]), attributeName);
+      }
+    }
+  }
+
+  /**
+   * Verifies that complex attributes are removed if mentioned on first level e.g. "name"
+   */
+  @Test
+  public void testExcludedNameAttribute()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         AttributeNames.NAME);
+    });
+    Assertions.assertNull(validatedDocument.get(AttributeNames.NAME));
+  }
+
+  /**
+   * Verifies that excluded attributes are removed from extensions
+   */
+  @Test
+  public void testExcludedAttributesOnExtension()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    String excluded = String.join(",",
+                                  AttributeNames.EMPLOYEE_NUMBER,
+                                  AttributeNames.COST_CENTER,
+                                  AttributeNames.ORGANIZATION,
+                                  AttributeNames.DIVISION,
+                                  AttributeNames.DEPARTMENT,
+                                  AttributeNames.MANAGER);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         excluded);
+    });
+    JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertNull(enterpriseUser);
+    List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.SCHEMAS).get();
+    MatcherAssert.assertThat(schemas, Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
   }
 
   /**
