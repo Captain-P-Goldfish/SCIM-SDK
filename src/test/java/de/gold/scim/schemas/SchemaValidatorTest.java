@@ -144,7 +144,8 @@ public class SchemaValidatorTest implements FileReferences
    */
   public static void validateJsonNodeIsScimNode(JsonNode validatedDocument)
   {
-    Assertions.assertTrue(validatedDocument instanceof ScimNode);
+    Assertions.assertTrue(validatedDocument instanceof ScimNode,
+                          validatedDocument.getClass() + ": " + validatedDocument.toString());
     ScimNode scimNode = (ScimNode)validatedDocument;
     log.trace(scimNode.getScimNodeName());
     if (validatedDocument.isArray() || validatedDocument.isObject())

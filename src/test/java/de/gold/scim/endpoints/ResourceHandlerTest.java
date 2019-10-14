@@ -46,7 +46,7 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public User readResource(String id)
+    public User getResource(String id)
     {
       return null;
     }
@@ -83,7 +83,7 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public ResourceNode readResource(String id)
+    public ResourceNode getResource(String id)
     {
       return null;
     }

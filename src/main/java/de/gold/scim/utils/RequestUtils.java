@@ -68,8 +68,8 @@ public final class RequestUtils
     if (StringUtils.isNotBlank(attributes) && StringUtils.isNotBlank(excludedAttributes))
     {
       final String errorMessage = "the attributes and excludedAttributes parameter must not be set at the same time:"
-                                  + "\n\tattributes: '" + attributes + "'\n\texcludedAttributes: '"
-                                  + excludedAttributes + "'";
+                                  + "\n\tattributes: '" + attributes + "'\n\texcludedAttributes: '" + excludedAttributes
+                                  + "'";
       throw new BadRequestException(errorMessage, null, ScimType.INVALID_PARAMETERS);
     }
   }

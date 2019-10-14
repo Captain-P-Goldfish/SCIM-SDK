@@ -248,6 +248,11 @@ public class SchemaValidator
         JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
       }
     }
+    JsonNode meta = document.get(AttributeNames.META);
+    if (meta != null)
+    {
+      JsonHelper.addAttribute(validatedMainDocument, AttributeNames.META, meta);
+    }
     return validatedMainDocument;
   }
 
@@ -929,11 +934,7 @@ public class SchemaValidator
     boolean anyFullNameMatch = excludedAttributes.stream()
                                                  .anyMatch(param -> fullName.equals(param) || shortName.equals(param)
                                                                     || param.equals(schemaAttribute.getResourceUri()));
-    if (anyFullNameMatch)
-    {
-      return true;
-    }
-    return false;
+    return anyFullNameMatch;
   }
 
   /**
@@ -956,11 +957,7 @@ public class SchemaValidator
                                                         || param.startsWith(fullName + ".")
                                                         || param.startsWith(shortName + ".")
                                                         || param.equals(schemaAttribute.getResourceUri()));
-    if (anyNameMatch)
-    {
-      return false;
-    }
-    return true;
+    return !anyNameMatch;
   }
 
   /**
@@ -992,16 +989,13 @@ public class SchemaValidator
     else
     {
       ScimNode subNode = (ScimNode)jsonNode.get(scimNodeParts[1]);
+      // this case is not validated to reduce the possibility of performance issues
       if (subNode == null)
       {
         return false;
       }
-      else if (subNode.isMultiValued())
-      {
-        // this case is not validated to reduce the possibility of performance issues
-        return false;
-      }
-      return true;
+      else
+        return !subNode.isMultiValued();
     }
   }
 

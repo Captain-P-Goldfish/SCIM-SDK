@@ -34,7 +34,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
 
   public abstract T createResource(T resource);
 
-  public abstract T readResource(String id);
+  public abstract T getResource(String id);
 
   public abstract T listResources();
 

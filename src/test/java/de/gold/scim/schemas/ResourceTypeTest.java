@@ -238,7 +238,8 @@ public class ResourceTypeTest implements FileReferences
     JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(schemaFactory.getResourceTypeFactory(),
                                                                              resourceType,
                                                                              enterpriseUserDocument,
-      null, null,
+                                                                             null,
+                                                                             null,
                                                                              null);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
@@ -261,8 +262,7 @@ public class ResourceTypeTest implements FileReferences
     JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(schemaFactory.getResourceTypeFactory(),
                                                                             resourceType,
                                                                             enterpriseUserDocument,
-                                                                            SchemaValidator.HttpMethod.POST
-    );
+                                                                            SchemaValidator.HttpMethod.POST);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
