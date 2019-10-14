@@ -237,7 +237,16 @@ public class SchemaValidator
                                                             validatedRequest,
                                                             attributes,
                                                             excludedAttributes);
-      JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+      if (extensionNode == null)
+      {
+        JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.SCHEMAS).ifPresent(arrayNode -> {
+          JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getId());
+        });
+      }
+      else
+      {
+        JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+      }
     }
     return validatedMainDocument;
   }
@@ -363,7 +372,16 @@ public class SchemaValidator
                                    .orElseThrow(() -> new BadRequestException(message.get(), null,
                                                                               ScimType.MISSING_EXTENSION));
       JsonNode extensionNode = validateExtensionForRequest(resourceTypeFactory, schemaExtension, extension, httpMethod);
-      JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+      if (extensionNode == null)
+      {
+        JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.SCHEMAS).ifPresent(arrayNode -> {
+          JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getId());
+        });
+      }
+      else
+      {
+        JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+      }
     }
     return validatedMainDocument;
   }
@@ -456,11 +474,7 @@ public class SchemaValidator
       schemasNode = checkDocumentAndMetaSchemaRelationship(metaSchema, document);
     }
     JsonNode validatedDocument = validateAttributes(metaSchema.getAttributes(), document, null);
-    if (validatedDocument == null)
-    {
-      throw getException("the validation returned an empty document please verify your validation parameters", null);
-    }
-    if (schemasNode != null)
+    if (validatedDocument != null && schemasNode != null)
     {
       JsonHelper.addAttribute(validatedDocument, AttributeNames.SCHEMAS, schemasNode);
     }
@@ -911,7 +925,11 @@ public class SchemaValidator
     boolean anyFullNameMatch = attributes.stream()
                                          .anyMatch(param -> fullName.equals(param)
                                                             || (fullName.startsWith(param)
-                                                                && fullName.endsWith("." + schemaAttribute.getName())));
+                                                                && fullName.endsWith("." + schemaAttribute.getName()))
+                                                            || shortName.startsWith(param + ".")
+                                                            || param.startsWith(fullName + ".")
+                                                            || param.startsWith(shortName + ".")
+                                                            || param.equals(schemaAttribute.getResourceUri()));
     if (attributes.contains(shortName) || anyFullNameMatch)
     {
       return false;

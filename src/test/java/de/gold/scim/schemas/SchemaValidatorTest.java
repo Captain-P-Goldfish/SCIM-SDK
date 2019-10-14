@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -13,6 +14,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -1038,7 +1041,9 @@ public class SchemaValidatorTest implements FileReferences
    */
   @ParameterizedTest
   @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.DISPLAY_NAME, AttributeNames.EXTERNAL_ID,
-                          AttributeNames.NAME, AttributeNames.EMAILS})
+                          AttributeNames.NAME, AttributeNames.EMAILS,
+                          AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME,
+                          AttributeNames.NAME + "." + AttributeNames.MIDDLE_NAME})
   public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName)
   {
     final String fullName = SchemaUris.USER_URI + ":" + attributeName;
@@ -1066,6 +1071,120 @@ public class SchemaValidatorTest implements FileReferences
                                                          null);
     });
 
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNotNull(validatedDocument.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = validatedDocument.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+    }
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the short name of the attribute was used in the
+   * attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.DISPLAY_NAME, AttributeNames.EXTERNAL_ID,
+                          AttributeNames.NAME, AttributeNames.EMAILS,
+                          AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME,
+                          AttributeNames.NAME + "." + AttributeNames.MIDDLE_NAME})
+  public void testAttributeIsReturnedIfShortNameIsUsedOnAttributesParameter(String attributeName)
+  {
+    final String fullName = attributeName;
+
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode missingAttributeUser = userSchema.deepCopy();
+    JsonHelper.removeAttribute(missingAttributeUser, attributeName);
+    JsonNode validatedRequestDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        missingAttributeUser,
+                                                        SchemaValidator.HttpMethod.PUT);
+    });
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         metaSchema,
+                                                         userSchema,
+                                                         validatedRequestDocument,
+                                                         fullName,
+                                                         null);
+    });
+
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNotNull(validatedDocument.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = validatedDocument.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+    }
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the URI of the resource was used in the
+   * attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @Test
+  public void testAttributeIsReturnedIfResourceUriIsUsedOnAttributesParameter()
+  {
+    final String attributeName = AttributeNames.NAME;
+
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode missingAttributeUser = userSchema.deepCopy();
+    JsonHelper.removeAttribute(missingAttributeUser, attributeName);
+    JsonNode validatedRequestDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        missingAttributeUser,
+                                                        SchemaValidator.HttpMethod.PUT);
+    });
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         metaSchema,
+                                                         userSchema,
+                                                         validatedRequestDocument,
+                                                         SchemaUris.USER_URI,
+                                                         null);
+    });
+
     Assertions.assertNotNull(validatedDocument.get(attributeName));
     Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
   }
@@ -1079,10 +1198,36 @@ public class SchemaValidatorTest implements FileReferences
                           AttributeNames.DIVISION, AttributeNames.DEPARTMENT, AttributeNames.MANAGER})
   public void testRequestAttributeIsReturnedAfterPutPostOrPatchRequestForExtension(String attributeName)
   {
-    // 1. register a resource type
-    // 2. modify the attribute in the extension schema
-    // 3. validate the document as response
-    Assertions.fail("TODO do it for an extension");
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    modifyAttributeMetaData(enterpriseUserExtension,
+                            attributeName,
+                            null,
+                            null,
+                            Returned.REQUEST,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         null);
+    });
+    JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertNotNull(enterpriseUser);
+    JsonNode attribute = enterpriseUser.get(attributeName);
+    Assertions.assertNull(attribute);
   }
 
   /**
@@ -1094,10 +1239,85 @@ public class SchemaValidatorTest implements FileReferences
                           AttributeNames.DIVISION, AttributeNames.DEPARTMENT, AttributeNames.MANAGER})
   public void testRemoveAttributesFromResponseOnExtension(String attributeName)
   {
-    // 1. register a resource type
-    // 2. modify the attribute in the extension schema
-    // 3. validate the document as response
-    Assertions.fail("TODO do it for an extension");
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    modifyAttributeMetaData(enterpriseUserExtension,
+                            attributeName,
+                            null,
+                            null,
+                            Returned.REQUEST,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         attributeName,
+                                                         null);
+    });
+    JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertNotNull(enterpriseUser);
+    JsonNode attribute = enterpriseUser.get(attributeName);
+    Assertions.assertNotNull(attribute);
+  }
+
+  /**
+   * this test will provoke that all attributes from the enterprise user extension are removed from the response
+   * which causes the extension itself to be removed. In such a case the enterprise schema uri must also be
+   * removed from the schemas-attribute of the main document
+   */
+  @Test
+  public void testRemoveAttributesFromResponseOnExtension()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    Arrays.asList(AttributeNames.EMPLOYEE_NUMBER,
+                  AttributeNames.COST_CENTER,
+                  AttributeNames.ORGANIZATION,
+                  AttributeNames.DIVISION,
+                  AttributeNames.DEPARTMENT,
+                  AttributeNames.MANAGER)
+          .forEach(attributeName -> {
+
+            modifyAttributeMetaData(enterpriseUserExtension,
+                                    attributeName,
+                                    null,
+                                    null,
+                                    Returned.REQUEST,
+                                    null,
+                                    null,
+                                    null,
+                                    null,
+                                    null);
+          });
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         null);
+    });
+    JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertNull(enterpriseUser);
+    List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.SCHEMAS).get();
+    MatcherAssert.assertThat(schemas, Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
   }
 
   /**

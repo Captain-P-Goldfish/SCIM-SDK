@@ -290,6 +290,48 @@ public final class JsonHelper
   }
 
   /**
+   * will remove a simple value from a simple array node in the given json document
+   *
+   * @param jsonNode the array from which the value should be removed
+   * @param value the value that should be removed from the document
+   */
+  public static JsonNode removeSimpleAttributeFromArray(JsonNode jsonNode, String value)
+  {
+    if (jsonNode == null)
+    {
+      return null;
+    }
+    if (!jsonNode.isArray())
+    {
+      log.error("cannot remove value '{}' from a json node that is not a simple array", value);
+      return jsonNode;
+    }
+    int index = -1;
+    for ( int i = 0 ; i < jsonNode.size() ; i++ )
+    {
+      JsonNode simpleNode = jsonNode.get(i);
+      if (simpleNode.isObject() || simpleNode.isArray())
+      {
+        break;
+      }
+      if (simpleNode.textValue().equals(value))
+      {
+        index = i;
+        break;
+      }
+    }
+    if (index > -1)
+    {
+      ((ArrayNode)jsonNode).remove(index);
+    }
+    else
+    {
+      log.error("could not remove value '{}' from json array because its sub-elements are not primitive types", value);
+    }
+    return jsonNode;
+  }
+
+  /**
    * will remove an attribute from the given jsonNode
    *
    * @param jsonNode the json node from which the attribute should be removed
