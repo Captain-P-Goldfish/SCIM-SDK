@@ -23,6 +23,8 @@ public final class ClassPathReferences
 
   public static final String GROUP_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/group.json";
 
+  public static final String ME_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/me.json";
+
   public static final String USER_SCHEMA_JSON = "/de/gold/scim/schemas/users.json";
 
   public static final String ENTERPRISE_USER_SCHEMA_JSON = "/de/gold/scim/schemas/enterprise-user.json";

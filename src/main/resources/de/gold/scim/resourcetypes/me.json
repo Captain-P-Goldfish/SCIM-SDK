@@ -1,0 +1,16 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+  ],
+  "id": "Me",
+  "name": "Me",
+  "description": "self service",
+  "schema": "urn:ietf:params:scim:schemas:core:2.0:User",
+  "endpoint": "/Me",
+  "schemaExtensions": [
+    {
+      "schema": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+      "required": false
+    }
+  ]
+}
