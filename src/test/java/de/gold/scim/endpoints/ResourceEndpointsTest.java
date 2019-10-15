@@ -115,6 +115,7 @@ public class ResourceEndpointsTest implements FileReferences
     Assertions.assertEquals(getLocation(endpoint, userId), meta.getLocation().get());
     Assertions.assertTrue(meta.getCreated().isPresent());
     Assertions.assertTrue(meta.getLastModified().isPresent());
+    // TODO check that the last modified value is correct
     return user;
   }
 
@@ -140,6 +141,7 @@ public class ResourceEndpointsTest implements FileReferences
     Assertions.assertEquals(getLocation(endpoint, userId), meta.getLocation().get());
     Assertions.assertTrue(meta.getCreated().isPresent());
     Assertions.assertTrue(meta.getLastModified().isPresent());
+    // TODO check that the last modified value is correct
     return user;
   }
 
@@ -182,6 +184,7 @@ public class ResourceEndpointsTest implements FileReferences
     Assertions.assertEquals(getLocation(endpoint, updatedUser.getId().get()), meta.getLocation().get());
     Assertions.assertTrue(meta.getCreated().isPresent());
     Assertions.assertTrue(meta.getLastModified().isPresent());
+    // TODO check that the last modified value is correct
     return updatedUser;
   }
 
