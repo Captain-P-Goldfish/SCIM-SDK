@@ -40,4 +40,5 @@ public final class SchemaUris
   public static final String BULK_RESPONSE_URI = SCIM_MESSAGES_URI + "BulkResponse";
 
 
+  public static final String META = "urn:ietf:params:scim:schemas:core:2.0:Meta";
 }

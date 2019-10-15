@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
 public final class ClassPathReferences
 {
 
-  public static final String META_SCHEMA_JSON = "/de/gold/scim/meta/schema.schema.json";
+  public static final String META_RESOURCE_SCHEMA_JSON = "/de/gold/scim/meta/schema.schema.json";
 
   public static final String META_RESOURCE_TYPES_JSON = "/de/gold/scim/meta/resource-type.schema.json";
 
@@ -30,5 +30,8 @@ public final class ClassPathReferences
   public static final String ENTERPRISE_USER_SCHEMA_JSON = "/de/gold/scim/schemas/enterprise-user.json";
 
   public static final String GROUP_SCHEMA_JSON = "/de/gold/scim/schemas/groups.json";
+
+  public static final String META_SCHEMA_JSON = "/de/gold/scim/meta/meta.schema.json";
+
 
 }

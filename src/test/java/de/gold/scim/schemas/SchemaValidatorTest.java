@@ -46,6 +46,7 @@ import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.resources.base.ScimNode;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -66,13 +67,13 @@ public class SchemaValidatorTest implements FileReferences
   private static Stream<Arguments> getSchemaValidations()
   {
     return Stream.of(Arguments.of("check user schema definition",
-                                  JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON),
+                                  JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON),
                                   JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON)),
                      Arguments.of("check enterprise user schema definition",
-                                  JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON),
+                                  JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON),
                                   JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON)),
                      Arguments.of("check group schema definition",
-                                  JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON),
+                                  JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON),
                                   JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON)),
                      Arguments.of("check user-resourceType schema definition",
                                   JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON),
@@ -208,7 +209,7 @@ public class SchemaValidatorTest implements FileReferences
   @ValueSource(strings = {AttributeNames.NAME, AttributeNames.TYPE, AttributeNames.MULTI_VALUED})
   public void testValidationFailsOnMissingRequiredSubAttribute(String attributeName)
   {
-    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
@@ -229,7 +230,7 @@ public class SchemaValidatorTest implements FileReferences
                           AttributeNames.UNIQUENESS})
   public void testValidationFailsOnTypoInCanonicalValue(String attributeName)
   {
-    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
@@ -247,7 +248,7 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testValidationFailsIfNodeIsArrayInsteadOfSimple()
   {
-    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonNodeFactory factory = new JsonNodeFactory(false);
@@ -266,7 +267,7 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testValidationFailsIfNodeIsOfDifferentType()
   {
-    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     IntNode idNode = new IntNode(new Random().nextInt());
@@ -390,7 +391,7 @@ public class SchemaValidatorTest implements FileReferences
    * the interface {@link ScimNode}
    */
   @ParameterizedTest
-  @CsvSource({ClassPathReferences.META_SCHEMA_JSON + "," + ClassPathReferences.USER_SCHEMA_JSON,
+  @CsvSource({ClassPathReferences.META_RESOURCE_SCHEMA_JSON + "," + ClassPathReferences.USER_SCHEMA_JSON,
               ClassPathReferences.META_RESOURCE_TYPES_JSON + "," + ClassPathReferences.USER_RESOURCE_TYPE_JSON,
               ClassPathReferences.META_RESOURCE_TYPES_JSON + "," + ClassPathReferences.GROUP_RESOURCE_TYPE_JSON,
               ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE,
@@ -1217,6 +1218,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          resourceType,
@@ -1258,6 +1260,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          resourceType,
@@ -1307,6 +1310,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          resourceType,
@@ -1342,6 +1346,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          resourceType,
@@ -1380,6 +1385,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          resourceType,
@@ -1412,6 +1418,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          resourceType,

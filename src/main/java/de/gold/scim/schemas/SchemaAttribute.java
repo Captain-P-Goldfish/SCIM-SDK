@@ -13,7 +13,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
@@ -24,6 +23,7 @@ import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
 
@@ -34,6 +34,11 @@ import lombok.Getter;
 @Getter
 public class SchemaAttribute
 {
+
+  /**
+   * a reference to the parent schema that holds this schema attribute
+   */
+  private Schema schema;
 
   /**
    * is used in case of subAttributes
@@ -85,8 +90,9 @@ public class SchemaAttribute
    */
   private List<SchemaAttribute> subAttributes;
 
-  public SchemaAttribute(String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
+  public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
   {
+    this.schema = schema;
     this.resourceUri = resourceUri;
     Function<String, String> errorMessageBuilder = attribute -> "could not find required attribute '" + attribute
                                                                 + "' in meta-schema";
@@ -125,6 +131,14 @@ public class SchemaAttribute
   }
 
   /**
+   * @return the full resource node name e.g. User.name.givenName or Group.member.value
+   */
+  public String getFullResourceName()
+  {
+    return getSchema() == null ? getScimNodeName() : getSchema().getName() + "." + getScimNodeName();
+  }
+
+  /**
    * @return the name scim node name of this attribute e.g. "name.givenName"
    */
   public String getScimNodeName()
@@ -152,10 +166,10 @@ public class SchemaAttribute
     Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode subAttribute : subAttributesArray )
     {
-      SchemaAttribute schemaAttribute = new SchemaAttribute(resourceUri, this, subAttribute);
+      SchemaAttribute schemaAttribute = new SchemaAttribute(null, resourceUri, this, subAttribute);
       if (attributeNameSet.contains(schemaAttribute.getScimNodeName()))
       {
-        String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getScimNodeName()
+        String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getFullResourceName()
                                       + "' was found twice within the given schema declaration";
         throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
       }
@@ -210,14 +224,14 @@ public class SchemaAttribute
   {
     if (Mutability.READ_ONLY.equals(mutability) && Returned.NEVER.equals(returned))
     {
-      String errorMessage = "the attribute with the name '" + getScimNodeName() + "' has an invalid declaration. "
+      String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
                             + "mutability 'readOnly' and returned 'never' are an illegal in combination. The client is "
                             + "not able to write to the given attribute and the server will never return it.";
       throw getException(errorMessage, null);
     }
     else if (Mutability.WRITE_ONLY.equals(mutability) && !Returned.NEVER.equals(returned))
     {
-      String errorMessage = "the attribute with the name '" + getScimNodeName() + "' has an invalid declaration. "
+      String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
                             + "mutability 'writeOnly' must have a returned value of 'never' are an illegal in "
                             + "combination. The client should only write to this attribute but should never have it "
                             + "returned. The mutability writeOnly makes only sense for sensitive application data "
@@ -243,7 +257,7 @@ public class SchemaAttribute
    */
   public JsonNode toJsonNode()
   {
-    ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
+    ScimObjectNode objectNode = new ScimObjectNode(this);
 
     JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(name));
     JsonHelper.addAttribute(objectNode, AttributeNames.TYPE, new TextNode(type.getValue()));

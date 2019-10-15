@@ -36,7 +36,7 @@ public class JsonHelperTest
   @Test
   public void testReadClassPathJsonDocument()
   {
-    JsonNode jsonNode = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    JsonNode jsonNode = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON);
     Assertions.assertNotNull(jsonNode);
     Assertions.assertNotNull(jsonNode.get("id"));
     log.trace("\"id\": \"{}\"", jsonNode.get("id").asText());
@@ -48,7 +48,7 @@ public class JsonHelperTest
   @Test
   public void testReadFileJsonDocument()
   {
-    File file = new File(getClass().getResource(ClassPathReferences.META_SCHEMA_JSON).getFile());
+    File file = new File(getClass().getResource(ClassPathReferences.META_RESOURCE_SCHEMA_JSON).getFile());
     JsonNode jsonNode = JsonHelper.loadJsonDocument(file);
     Assertions.assertNotNull(jsonNode);
     Assertions.assertNotNull(jsonNode.get("id"));
@@ -61,7 +61,7 @@ public class JsonHelperTest
   @Test
   public void testReadStringJsonDocument() throws IOException
   {
-    String jsonDocument = IOUtils.toString(getClass().getResource(ClassPathReferences.META_SCHEMA_JSON),
+    String jsonDocument = IOUtils.toString(getClass().getResource(ClassPathReferences.META_RESOURCE_SCHEMA_JSON),
                                            StandardCharsets.UTF_8);
     JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
     Assertions.assertNotNull(jsonNode);
@@ -75,7 +75,7 @@ public class JsonHelperTest
   @Test
   public void readDifferentAttributesFromJson() throws IOException
   {
-    String jsonDocument = IOUtils.toString(getClass().getResource(ClassPathReferences.META_SCHEMA_JSON),
+    String jsonDocument = IOUtils.toString(getClass().getResource(ClassPathReferences.META_RESOURCE_SCHEMA_JSON),
                                            StandardCharsets.UTF_8);
     JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
 
@@ -114,7 +114,7 @@ public class JsonHelperTest
   @Test
   public void testGetArrayAttribute()
   {
-    JsonNode jsonNode = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    JsonNode jsonNode = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON);
     Assertions.assertTrue(getArrayAttribute(jsonNode, "attributes").isPresent());
     Assertions.assertFalse(getArrayAttribute(jsonNode, "unknown").isPresent());
     Assertions.assertThrows(IncompatibleAttributeException.class, () -> getArrayAttribute(jsonNode, "id"));

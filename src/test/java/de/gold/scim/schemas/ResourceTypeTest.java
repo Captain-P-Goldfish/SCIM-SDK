@@ -21,6 +21,7 @@ import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -235,6 +236,7 @@ public class ResourceTypeTest implements FileReferences
     ResourceType resourceType = new ResourceType(schemaFactory, userResourceTypeJson);
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
+    TestHelper.addMetaToDocument(enterpriseUserDocument);
     JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(schemaFactory.getResourceTypeFactory(),
                                                                              resourceType,
                                                                              enterpriseUserDocument,

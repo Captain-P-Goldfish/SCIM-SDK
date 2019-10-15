@@ -11,12 +11,12 @@ import java.util.stream.Collectors;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.utils.JsonHelper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -79,7 +79,7 @@ public class Schema
     Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode node : attributes )
     {
-      SchemaAttribute schemaAttribute = new SchemaAttribute(this.id, null, node);
+      SchemaAttribute schemaAttribute = new SchemaAttribute(this, this.id, null, node);
       if (attributeNameSet.contains(schemaAttribute.getName()))
       {
         String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getName() + "' was found "
@@ -96,7 +96,7 @@ public class Schema
    */
   public JsonNode toJsonNode()
   {
-    ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
+    ScimObjectNode objectNode = new ScimObjectNode(null);
     List<JsonNode> schemas = getSchemas().stream().map(TextNode::new).collect(Collectors.toList());
     JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMAS, new ArrayNode(JsonNodeFactory.instance, schemas));
     JsonHelper.addAttribute(objectNode, AttributeNames.ID, new TextNode(id));

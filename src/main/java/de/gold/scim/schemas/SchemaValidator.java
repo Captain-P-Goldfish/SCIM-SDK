@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
@@ -249,10 +250,14 @@ public class SchemaValidator
       }
     }
     JsonNode meta = document.get(AttributeNames.META);
-    if (meta != null)
-    {
-      JsonHelper.addAttribute(validatedMainDocument, AttributeNames.META, meta);
-    }
+    Schema metaSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.META);
+    JsonNode validatedMeta = validateExtensionForResponse(resourceTypeFactory,
+                                                          metaSchema,
+                                                          meta,
+                                                          validatedRequest,
+                                                          attributes,
+                                                          excludedAttributes);
+    JsonHelper.addAttribute(validatedMainDocument, AttributeNames.META, validatedMeta);
     return validatedMainDocument;
   }
 
@@ -502,6 +507,11 @@ public class SchemaValidator
     JsonNode scimNode = new ScimObjectNode(parentAttribute);
     for ( SchemaAttribute metaAttribute : metaAttributes )
     {
+      if (document == null)
+      {
+        validateIsRequired(null, metaAttribute);
+        continue;
+      }
       checkMetaAttributeOnDocument(document, metaAttribute).ifPresent(childNode -> {
         if (!(childNode.isArray() && childNode.isEmpty()))
         {
@@ -591,7 +601,7 @@ public class SchemaValidator
     if (counter > 1)
     {
       String errorMessage = "multiple primary values detected in attribute with name '"
-                            + schemaAttribute.getScimNodeName() + "'";
+                            + schemaAttribute.getFullResourceName() + "'";
       throw getException(errorMessage, null);
     }
     return counter;
@@ -738,8 +748,8 @@ public class SchemaValidator
   private void validateIsRequiredForRequest(JsonNode document, SchemaAttribute schemaAttribute)
   {
     boolean isNodeNull = document == null || document.isNull();
-    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName() + "' is required on '"
-                                          + httpMethod + "' request for its mutability is '"
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getFullResourceName()
+                                          + "' is required on '" + httpMethod + "' request for its mutability is '"
                                           + schemaAttribute.getMutability() + "'!";
     if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
          || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
@@ -763,7 +773,7 @@ public class SchemaValidator
   private void validateIsRequiredForResponse(JsonNode document, SchemaAttribute schemaAttribute)
   {
     boolean isNodeNull = document == null || document.isNull();
-    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getScimNodeName()
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getFullResourceName()
                                           + "' is required on response for its mutability is '"
                                           + schemaAttribute.getMutability() + "'!";
     if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
@@ -788,7 +798,7 @@ public class SchemaValidator
       {
         if (complexNode.equals(jsonNode))
         {
-          String errorMessage = "the array node with name '" + schemaAttribute.getScimNodeName()
+          String errorMessage = "the array node with name '" + schemaAttribute.getFullResourceName()
                                 + "' has a uniqueness of '" + schemaAttribute.getUniqueness() + "' but "
                                 + "has at least one duplicate value: '" + complexNode.toString() + "'";
           throw getException(errorMessage, null);
@@ -865,7 +875,7 @@ public class SchemaValidator
     if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
     {
       log.debug("removed attribute '{}' from request since it has a mutability of {}",
-                schemaAttribute.getScimNodeName(),
+                schemaAttribute.getFullResourceName(),
                 schemaAttribute.getMutability());
       return false;
     }
@@ -892,7 +902,7 @@ public class SchemaValidator
     {
       log.warn("attribute '{}' was present on the response document but has a returned value of '{}'. Attribute is "
                + "being removed from response document",
-               schemaAttribute.getScimNodeName(),
+               schemaAttribute.getFullResourceName(),
                schemaAttribute.getReturned());
       return false;
     }
@@ -901,7 +911,7 @@ public class SchemaValidator
     {
       log.debug("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes: {}",
-                schemaAttribute.getScimNodeName(),
+                schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned(),
                 attributes);
       return false;
@@ -911,7 +921,7 @@ public class SchemaValidator
     {
       log.debug("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes: {}",
-                schemaAttribute.getScimNodeName(),
+                schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned(),
                 attributes);
       return false;

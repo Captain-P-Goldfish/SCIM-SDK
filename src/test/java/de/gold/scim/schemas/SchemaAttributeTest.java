@@ -19,6 +19,6 @@ class SchemaAttributeTest
   @Test
   public void testReadSchema()
   {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON);
+    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON);
   }
 }
