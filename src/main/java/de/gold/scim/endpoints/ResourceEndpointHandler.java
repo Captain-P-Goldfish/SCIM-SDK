@@ -4,7 +4,6 @@ import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -38,7 +37,7 @@ import lombok.extern.slf4j.Slf4j;
  * will then be used to delegate to the different resource implementations
  */
 @Slf4j
-public final class ResourceEndpoints
+public final class ResourceEndpointHandler
 {
 
   /**
@@ -46,7 +45,7 @@ public final class ResourceEndpoints
    */
   private ResourceTypeFactory resourceTypeFactory;
 
-  public ResourceEndpoints(EndpointDefinition... endpointDefinitions)
+  public ResourceEndpointHandler(EndpointDefinition... endpointDefinitions)
   {
     this(ResourceTypeFactory.getInstance(), endpointDefinitions);
   }
@@ -55,7 +54,7 @@ public final class ResourceEndpoints
    * this constructor was introduced for unit tests to add a specific resourceTypeFactory instance which will
    * prevent application context pollution within unit tests
    */
-  ResourceEndpoints(ResourceTypeFactory resourceTypeFactory, EndpointDefinition... endpointDefinitions)
+  ResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory, EndpointDefinition... endpointDefinitions)
   {
     this.resourceTypeFactory = resourceTypeFactory;
     if (endpointDefinitions == null || endpointDefinitions.length == 0)
@@ -164,7 +163,6 @@ public final class ResourceEndpoints
     }
     catch (ScimException ex)
     {
-      log.debug(ex.getMessage(), ex);
       return new ErrorResponse(ex);
     }
     catch (Exception ex)
@@ -246,14 +244,15 @@ public final class ResourceEndpoints
       ResourceNode resourceNode = resourceHandler.getResource(id);
       if (resourceNode == null)
       {
-        return new ErrorResponse(new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '"
-                                                               + id + "' does " + "not exist", null, null));
+        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                            + "not exist", null, null);
       }
       String resourceId = resourceNode.getId().orElse(null);
-      if (StringUtils.isBlank(resourceId))
+      if (StringUtils.isBlank(resourceId) || !resourceId.equals(id))
       {
-        return new ErrorResponse(new InternalServerException("the id of the returned resource does not match the "
-                                                             + "requested id", null, null));
+        throw new InternalServerException("the id of the returned resource does not match the "
+                                          + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
+                                          null, null);
       }
       final String location = getLocation(resourceType, id, baseUrlSupplier);
       resourceNode.setMeta(getMeta(resourceType, location));
@@ -359,18 +358,30 @@ public final class ResourceEndpoints
       resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                             resourceType,
                                                             resource,
-                                                            SchemaValidator.HttpMethod.POST);
+                                                            SchemaValidator.HttpMethod.PUT);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      if (resource == null)
+      {
+        throw new BadRequestException("the request body does not contain any writable parameters", null,
+                                      ScimType.UNPARSABLE_REQUEST);
+      }
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
+      resourceNode.setId(id);
+      final String location = getLocation(resourceType, id, baseUrlSupplier);
+      resourceNode.setMeta(getMeta(resourceType, location));
+      resourceNode = resourceHandler.updateResource(resourceNode);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-      resourceNode.setId(id);
-      final String location = getLocation(resourceType, id, baseUrlSupplier);
-      resourceNode.setMeta(getMeta(resourceType, location));
-      resourceNode = resourceHandler.updateResource(resourceNode);
+      String resourceId = resourceNode.getId().orElse(null);
+      if (StringUtils.isBlank(resourceId) || !resourceId.equals(id))
+      {
+        throw new InternalServerException("the id of the returned resource does not match the "
+                                          + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
+                                          null, null);
+      }
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -465,11 +476,12 @@ public final class ResourceEndpoints
    */
   private String getLocation(ResourceType resourceType, String resourceId, Supplier<String> getBaseUrlSupplier)
   {
-    String baseUrl = getBaseUrlSupplier.get();
+    String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
     if (StringUtils.isBlank(baseUrl))
     {
       // TODO get url from service provider configuration
-      throw new NotImplementedException("TODO");
+      log.warn("TODO");
+      return "";
     }
     if (!baseUrl.endsWith("/"))
     {

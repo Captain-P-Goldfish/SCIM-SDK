@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.resources.multicomplex.Member;
 
 
@@ -25,7 +26,10 @@ public class GroupTest
   public void testUseBuilderWithoutParameters()
   {
     Group instance = Assertions.assertDoesNotThrow(() -> Group.builder().build());
-    Assertions.assertTrue(instance.isEmpty());
+    Assertions.assertFalse(instance.isEmpty());
+    Assertions.assertEquals(1, instance.size());
+    Assertions.assertEquals(1, instance.getSchemas().size());
+    Assertions.assertEquals(SchemaUris.GROUP_URI, instance.getSchemas().get(0));
   }
 
   /**
@@ -34,7 +38,11 @@ public class GroupTest
   @Test
   public void testCleanObjectCreation()
   {
-    Assertions.assertTrue(new Group().isEmpty());
+    Group instance = new Group();
+    Assertions.assertFalse(instance.isEmpty());
+    Assertions.assertEquals(1, instance.size());
+    Assertions.assertEquals(1, instance.getSchemas().size());
+    Assertions.assertEquals(SchemaUris.GROUP_URI, instance.getSchemas().get(0));
   }
 
   /**

@@ -27,4 +27,9 @@ public class ScimType
    * some of the request parameters did not conform to the SCIM specification
    */
   public static final String INVALID_PARAMETERS = "invalidParameters";
+
+  /**
+   * the request was invalid and cannot be used for further processing
+   */
+  public static final String UNPARSABLE_REQUEST = "unparsableRequest";
 }

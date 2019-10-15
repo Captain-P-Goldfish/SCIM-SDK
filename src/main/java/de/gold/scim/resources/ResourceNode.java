@@ -1,5 +1,6 @@
 package de.gold.scim.resources;
 
+import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -29,6 +30,22 @@ public abstract class ResourceNode extends ScimObjectNode
   public ResourceNode()
   {
     super(null);
+  }
+
+  /**
+   * @return the list of schemas witin this resource
+   */
+  public List<String> getSchemas()
+  {
+    return getArrayAttribute(AttributeNames.SCHEMAS);
+  }
+
+  /**
+   * adds a list of schemas to this resource
+   */
+  public void setSchemas(List<String> schemas)
+  {
+    setStringAttributeList(AttributeNames.SCHEMAS, schemas);
   }
 
   /**

@@ -1,5 +1,6 @@
 package de.gold.scim.resources;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -17,7 +18,6 @@ import de.gold.scim.resources.multicomplex.PhoneNumber;
 import de.gold.scim.resources.multicomplex.Photo;
 import de.gold.scim.resources.multicomplex.ScimX509Certificate;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -27,9 +27,13 @@ import lombok.NoArgsConstructor;
  * SCIM provides a resource type for "User" resources. The core schema for "User" is identified using the
  * following schema URI: "urn:ietf:params:scim:schemas:core:2.0:User".
  */
-@NoArgsConstructor
 public class User extends ResourceNode
 {
+
+  public User()
+  {
+    setSchemas(Arrays.asList(SchemaUris.USER_URI));
+  }
 
   @Builder
   private User(String id,
@@ -58,6 +62,7 @@ public class User extends ResourceNode
                List<ScimX509Certificate> x509Certificates,
                EnterpriseUser enterpriseUser)
   {
+    this();
     setId(id);
     setExternalId(externalId);
     setMeta(meta);

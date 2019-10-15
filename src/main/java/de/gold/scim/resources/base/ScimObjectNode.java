@@ -138,6 +138,30 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
+   * extracts an object type attribute
+   */
+  protected List<String> getArrayAttribute(String attributeName)
+  {
+    JsonNode jsonNode = this.get(attributeName);
+    if (jsonNode == null)
+    {
+      return Collections.emptyList();
+    }
+    if (!(jsonNode instanceof ArrayNode))
+    {
+      throw new InternalServerException("tried to extract a multi valued complex node from document with attribute "
+                                        + "name '" + attributeName + "' but type is of: " + jsonNode.getNodeType(),
+                                        null, null);
+    }
+    List<String> multiValuedSimpleTypes = new ArrayList<>();
+    for ( JsonNode node : jsonNode )
+    {
+      multiValuedSimpleTypes.add(node.textValue());
+    }
+    return multiValuedSimpleTypes;
+  }
+
+  /**
    * adds or removes a string type attribute
    */
   protected void setAttribute(String attributeName, String attributeValue)
@@ -248,6 +272,21 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
    * adds or removes an array type attribute
    */
   protected <T extends JsonNode> void setAttribute(String attributeName, List<T> attributeValue)
+  {
+    if (attributeValue == null || attributeValue.isEmpty())
+    {
+      JsonHelper.removeAttribute(this, attributeName);
+      return;
+    }
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    attributeValue.forEach(arrayNode::add);
+    JsonHelper.addAttribute(this, attributeName, arrayNode);
+  }
+
+  /**
+   * adds or removes an array type attribute
+   */
+  protected void setStringAttributeList(String attributeName, List<String> attributeValue)
   {
     if (attributeValue == null || attributeValue.isEmpty())
     {

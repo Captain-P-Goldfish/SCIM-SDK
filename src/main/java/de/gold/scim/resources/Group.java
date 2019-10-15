@@ -1,13 +1,14 @@
 package de.gold.scim.resources;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.resources.multicomplex.Member;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 // @formatter:off
@@ -26,13 +27,18 @@ import lombok.NoArgsConstructor;
  * considered out of scope for this specification.
  */
 // @formatter:on
-@NoArgsConstructor
 public class Group extends ResourceNode
 {
+
+  public Group()
+  {
+    setSchemas(Arrays.asList(SchemaUris.GROUP_URI));
+  }
 
   @Builder
   public Group(String id, String externalId, String displayName, List<Member> members, Meta meta)
   {
+    this();
     setId(id);
     setExternalId(externalId);
     setDisplayName(displayName);

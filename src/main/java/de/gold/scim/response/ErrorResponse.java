@@ -1,8 +1,9 @@
 package de.gold.scim.response;
 
+import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.exceptions.ScimException;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -11,7 +12,7 @@ import lombok.Getter;
  * <br>
  * represents a SCIM error response
  */
-@AllArgsConstructor
+@Slf4j
 public class ErrorResponse extends ScimResponse
 {
 
@@ -20,6 +21,19 @@ public class ErrorResponse extends ScimResponse
    */
   @Getter
   private ScimException scimException;
+
+  public ErrorResponse(ScimException scimException)
+  {
+    this.scimException = scimException;
+    if (HttpStatus.SC_INTERNAL_SERVER_ERROR == getHttpStatus())
+    {
+      log.error(scimException.getMessage(), scimException);
+    }
+    else
+    {
+      log.debug(scimException.getMessage(), scimException);
+    }
+  }
 
   /**
    * {@inheritDoc}

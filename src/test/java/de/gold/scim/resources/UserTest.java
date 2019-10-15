@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.resources.complex.Address;
 import de.gold.scim.resources.complex.Manager;
 import de.gold.scim.resources.complex.Name;
@@ -38,7 +39,10 @@ public class UserTest implements FileReferences
   public void testUseBuilderWithoutParameters()
   {
     User instance = Assertions.assertDoesNotThrow(() -> User.builder().build());
-    Assertions.assertTrue(instance.isEmpty());
+    Assertions.assertFalse(instance.isEmpty());
+    Assertions.assertEquals(1, instance.size());
+    Assertions.assertEquals(1, instance.getSchemas().size());
+    Assertions.assertEquals(SchemaUris.USER_URI, instance.getSchemas().get(0));
   }
 
   /**
@@ -47,7 +51,11 @@ public class UserTest implements FileReferences
   @Test
   public void testCleanObjectCreation()
   {
-    Assertions.assertTrue(new User().isEmpty());
+    User instance = new User();
+    Assertions.assertFalse(instance.isEmpty());
+    Assertions.assertEquals(1, instance.size());
+    Assertions.assertEquals(1, instance.getSchemas().size());
+    Assertions.assertEquals(SchemaUris.USER_URI, instance.getSchemas().get(0));
   }
 
   /**
