@@ -3,8 +3,6 @@ package de.gold.scim.resources;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.resources.complex.Meta;
@@ -131,8 +129,8 @@ public abstract class ResourceNode extends ScimObjectNode
    * characteristic of "default". This attribute SHALL be ignored when provided by clients. "meta" contains the
    * following sub-attributes:
    */
-  public void setMeta(ObjectNode objectNode)
+  public void setMeta(Meta meta)
   {
-    setAttribute(AttributeNames.META, objectNode);
+    setAttribute(AttributeNames.META, meta);
   }
 }

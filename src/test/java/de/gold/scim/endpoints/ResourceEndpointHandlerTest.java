@@ -1,5 +1,6 @@
 package de.gold.scim.endpoints;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -527,6 +528,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
       }
       JsonHelper.addAttribute(resource, AttributeNames.ID, new TextNode(userId));
       inMemoryMap.put(userId, resource);
+      resource.getMeta().ifPresent(meta -> {
+        meta.setCreated(Instant.now());
+        meta.setLastModified(Instant.now());
+      });
       return resource;
     }
 
@@ -553,6 +558,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
       }
       resource.getMeta().get().setCreated(oldUser.getMeta().get().getCreated().get());
       inMemoryMap.put(userId, resource);
+      resource.getMeta().ifPresent(meta -> {
+        meta.setLastModified(Instant.now());
+      });
       return resource;
     }
 

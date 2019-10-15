@@ -774,7 +774,7 @@ public class SchemaValidator
   {
     boolean isNodeNull = document == null || document.isNull();
     Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getFullResourceName()
-                                          + "' is required on response for its mutability is '"
+                                          + "' is required on response. attribute-mutability is '"
                                           + schemaAttribute.getMutability() + "'!";
     if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
     {

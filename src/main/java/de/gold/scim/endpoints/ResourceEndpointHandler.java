@@ -1,6 +1,5 @@
 package de.gold.scim.endpoints;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -150,9 +149,16 @@ public final class ResourceEndpointHandler
                                                             SchemaValidator.HttpMethod.POST);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
+      resourceNode.setMeta(getMeta(resourceType));
       resourceNode = resourceHandler.createResource(resourceNode);
-      final String location = getLocation(resourceType, resourceNode.getId().get(), baseUrlSupplier);
-      resourceNode.setMeta(getMeta(resourceType, location));
+      Supplier<String> errorMessage = () -> "ID attribute not set on created resource";
+      String resourceId = resourceNode.getId()
+                                      .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
+      final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
+      Supplier<String> metaErrorMessage = () -> "Meta attribute not set on created resource";
+      Meta meta = resourceNode.getMeta()
+                              .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null, null));
+      meta.setLocation(location);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -254,8 +260,10 @@ public final class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
-      final String location = getLocation(resourceType, id, baseUrlSupplier);
-      resourceNode.setMeta(getMeta(resourceType, location));
+      final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
+      Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
+      meta.setLocation(location);
+      resourceNode.setMeta(meta);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -368,20 +376,25 @@ public final class ResourceEndpointHandler
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
       resourceNode.setId(id);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
-      resourceNode.setMeta(getMeta(resourceType, location));
+      resourceNode.setMeta(getMeta(resourceType));
       resourceNode = resourceHandler.updateResource(resourceNode);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-      String resourceId = resourceNode.getId().orElse(null);
-      if (StringUtils.isBlank(resourceId) || !resourceId.equals(id))
+      Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
+      String resourceId = resourceNode.getId()
+                                      .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
+      if (!resourceId.equals(id))
       {
         throw new InternalServerException("the id of the returned resource does not match the "
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
+      Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
+      meta.setLocation(location);
+      resourceNode.setMeta(meta);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -446,19 +459,11 @@ public final class ResourceEndpointHandler
    * creates the meta representation for the response
    *
    * @param resourceType the resource type that holds necessary data like the name of the resource
-   * @param location
    * @return the meta json representation
    */
-  private Meta getMeta(ResourceType resourceType, String location)
+  private Meta getMeta(ResourceType resourceType)
   {
-    LocalDateTime now = LocalDateTime.now();
-    return Meta.builder()
-               // TODO how should the setting of created attribute be enforced in request?
-               .created(now)
-               .lastModified(now)
-               .location(location)
-               .resourceType(resourceType.getName())
-               .build();
+    return Meta.builder().resourceType(resourceType.getName()).build();
   }
 
   /**

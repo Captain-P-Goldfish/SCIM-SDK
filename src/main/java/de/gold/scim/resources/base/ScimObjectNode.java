@@ -105,7 +105,13 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       throw new InternalServerException("tried to extract a complex node from document with attribute " + "name '"
                                         + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
     }
-    return Optional.of(JsonHelper.copyResourceToObject(jsonNode, type));
+    if (type.isAssignableFrom(jsonNode.getClass()))
+    {
+      return Optional.of((T)jsonNode);
+    }
+    T t = JsonHelper.copyResourceToObject(jsonNode, type);
+    this.set(attributeName, t);
+    return Optional.of(t);
   }
 
   /**
@@ -125,6 +131,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
                                         null, null);
     }
     List<T> multiValuedComplexTypes = new ArrayList<>();
+    boolean shouldBeReplaced = false;
     for ( JsonNode node : jsonNode )
     {
       if (!(node instanceof ObjectNode))
@@ -132,7 +139,20 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
         throw new InternalServerException("tried to extract a complex node from document with attribute " + "name '"
                                           + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
       }
-      multiValuedComplexTypes.add(JsonHelper.copyResourceToObject(node, type));
+      if (type.isAssignableFrom(node.getClass()))
+      {
+        multiValuedComplexTypes.add((T)node);
+      }
+      else
+      {
+        shouldBeReplaced = true;
+        T t = JsonHelper.copyResourceToObject(node, type);
+        multiValuedComplexTypes.add(t);
+      }
+    }
+    if (shouldBeReplaced)
+    {
+      setAttribute(attributeName, multiValuedComplexTypes);
     }
     return multiValuedComplexTypes;
   }
