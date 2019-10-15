@@ -755,12 +755,12 @@ public class SchemaValidator
          || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
         && isNodeNull)
     {
-      throw getException(errorMessage.get(), null);
+      throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), ScimType.REQUIRED);
     }
     else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && HttpMethod.POST.equals(httpMethod)
              && isNodeNull)
     {
-      throw getException(errorMessage.get(), null);
+      throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), ScimType.REQUIRED);
     }
   }
 
