@@ -348,6 +348,64 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
+   * are set at the same time on creation request
+   */
+  @Test
+  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnCreate()
+  {
+    ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
+                                                                       readResourceFile(USER_RESOURCE),
+                                                                       "userName",
+                                                                       "name",
+                                                                       getBaseUrlSupplier());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(ScimType.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+  }
+
+  /**
+   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
+   * are set at the same time on get request
+   */
+  @Test
+  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnGet()
+  {
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    "123456",
+                                                                    "userName",
+                                                                    "name",
+                                                                    getBaseUrlSupplier());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(ScimType.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+  }
+
+  /**
+   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
+   * are set at the same time on update request
+   */
+  @Test
+  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnUpdate()
+  {
+    ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
+                                                                       "123456",
+                                                                       readResourceFile(USER_RESOURCE),
+                                                                       "userName",
+                                                                       "name",
+                                                                       getBaseUrlSupplier());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(ScimType.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+  }
+
+  /**
    * will show that a {@link RuntimeException} is correctly handled by the
    * {@link ResourceEndpointHandler#deleteResource(String, String)} method
    */
