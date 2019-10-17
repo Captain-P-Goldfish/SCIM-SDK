@@ -146,5 +146,13 @@ public final class AttributeNames
   public static final String DEPARTMENT = "department";
 
   public static final String MANAGER = "manager";
+
+  public static final String TOTAL_RESULTS = "totalResults";
+
+  public static final String ITEMS_PER_PAGE = "itemsPerPage";
+
+  public static final String START_INDEX = "startIndex";
+
+  public static final String RESOURCES = "Resources";
 }
 

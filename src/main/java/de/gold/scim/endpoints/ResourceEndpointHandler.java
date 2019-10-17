@@ -18,6 +18,7 @@ import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.GetResponse;
+import de.gold.scim.response.ListResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceType;
@@ -282,6 +283,72 @@ public final class ResourceEndpointHandler
     }
   }
 
+  /**
+   * this endpoint can be used to query resources
+   *
+   * @param endpoint the resource endpoint that was called
+   * @param startIndex The 1-based index of the first query result. A value less than 1 SHALL be interpreted as
+   *          1.<br>
+   *          <b>DEFAULT:</b> 1
+   * @param count Non-negative integer. Specifies the desired maximum number of query results per page, e.g.,
+   *          10. A negative value SHALL be interpreted as "0". A value of "0" indicates that no resource
+   *          results are to be returned except for "totalResults". <br>
+   *          <b>DEFAULT:</b> None<br>
+   *          When specified, the service provider MUST NOT return more results than specified, although it MAY
+   *          return fewer results. If unspecified, the maximum number of results is set by the service
+   *          provider.
+   * @param filter Filtering is an OPTIONAL parameter for SCIM service providers. Clients MAY discover service
+   *          provider filter capabilities by looking at the "filter" attribute of the "ServiceProviderConfig"
+   *          endpoint. Clients MAY request a subset of resources by specifying the "filter" query parameter
+   *          containing a filter expression. When specified, only those resources matching the filter
+   *          expression SHALL be returned. The expression language that is used with the filter parameter
+   *          supports references to attributes and literals.
+   * @param sortBy The "sortBy" parameter specifies the attribute whose value SHALL be used to order the
+   *          returned responses. If the "sortBy" attribute corresponds to a singular attribute, resources are
+   *          sorted according to that attribute's value; if it's a multi-valued attribute, resources are sorted
+   *          by the value of the primary attribute (see Section 2.4 of [RFC7643]), if any, or else the first
+   *          value in the list, if any. If the attribute is complex, the attribute name must be a path to a
+   *          sub-attribute in standard attribute notation (Section 3.10), e.g., "sortBy=name.givenName". For
+   *          all attribute types, if there is no data for the specified "sortBy" value, they are sorted via the
+   *          "sortOrder" parameter, i.e., they are ordered last if ascending and first if descending.
+   * @param sortOrder The order in which the "sortBy" parameter is applied. Allowed values are "ascending" and
+   *          "descending". If a value for "sortBy" is provided and no "sortOrder" is specified, "sortOrder"
+   *          SHALL default to ascending. String type attributes are case insensitive by default, unless the
+   *          attribute type is defined as a case-exact string. "sortOrder" MUST sort according to the attribute
+   *          type; i.e., for case-insensitive attributes, sort the result using case-insensitive Unicode
+   *          alphabetic sort order with no specific locale implied, and for case-exact attribute types, sort
+   *          the result using case-sensitive Unicode alphabetic sort order.
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
+   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
+   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
+   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
+   *          If this parameter is not present the application will try to read a hardcoded URL from the service
+   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
+   *          thrown
+   * @return a
+   */
+  public ScimResponse listResources(String endpoint,
+                                    Integer startIndex,
+                                    Integer count,
+                                    String filter,
+                                    String attributes,
+                                    String sortBy,
+                                    String sortOrder,
+                                    String excludedAttributes,
+                                    Supplier<String> baseUrlSupplier)
+  {
+    ResourceType resourceType = getResourceType(endpoint);
+    return new ListResponse(null, 0, count, startIndex);
+  }
 
   /**
    * checks if a resource type exists under the given endpoint and validates the request if it does by the
