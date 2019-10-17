@@ -249,11 +249,11 @@ public class SchemaValidator
         JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
       }
     }
-    JsonNode meta = document.get(AttributeNames.META);
+    JsonNode metaNode = document.get(AttributeNames.META);
     Schema metaSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.META);
     JsonNode validatedMeta = validateExtensionForResponse(resourceTypeFactory,
                                                           metaSchema,
-                                                          meta,
+                                                          metaNode,
                                                           validatedRequest,
                                                           attributes,
                                                           excludedAttributes);
@@ -1196,6 +1196,7 @@ public class SchemaValidator
    */
   protected enum DirectionType
   {
+
     REQUEST(HttpStatus.SC_BAD_REQUEST), RESPONSE(HttpStatus.SC_INTERNAL_SERVER_ERROR);
 
     /**

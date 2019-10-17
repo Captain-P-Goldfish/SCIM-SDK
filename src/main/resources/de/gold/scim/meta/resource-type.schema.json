@@ -1,4 +1,7 @@
 {
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
   "id": "urn:ietf:params:scim:schemas:core:2.0:ResourceType",
   "name": "ResourceType",
   "description": "Specifies the schema that describes a SCIM resource type",

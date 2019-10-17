@@ -1,8 +1,5 @@
 package de.gold.scim.endpoints;
 
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -15,13 +12,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.node.TextNode;
-
-import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
 import de.gold.scim.exceptions.InternalServerException;
@@ -57,7 +52,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
    * a mockito mock to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
    * implementation
    */
-  private TestUserHandlerImpl userHandler;
+  private UserHandlerImpl userHandler;
 
   /**
    * initializes this test
@@ -65,7 +60,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    userHandler = Mockito.spy(new TestUserHandlerImpl());
+    userHandler = Mockito.spy(new UserHandlerImpl());
     resourceEndpointHandler = new ResourceEndpointHandler(new UserEndpointDefinition(userHandler));
   }
 
@@ -508,73 +503,5 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private Supplier<String> getBaseUrlSupplier()
   {
     return () -> "https://goldfish.de/scim/v2";
-  }
-
-  /**
-   * a very simple test implementation for the users endpoint
-   */
-  private static class TestUserHandlerImpl extends ResourceHandler<User>
-  {
-
-    private Map<String, User> inMemoryMap = new HashMap<>();
-
-    @Override
-    public User createResource(User resource)
-    {
-      final String userId = UUID.randomUUID().toString();
-      if (inMemoryMap.containsKey(userId))
-      {
-        throw new ConflictException("resource with id '" + userId + "' does already exist");
-      }
-      JsonHelper.addAttribute(resource, AttributeNames.ID, new TextNode(userId));
-      inMemoryMap.put(userId, resource);
-      resource.getMeta().ifPresent(meta -> {
-        meta.setCreated(Instant.now());
-        meta.setLastModified(Instant.now());
-      });
-      return resource;
-    }
-
-    @Override
-    public User getResource(String id)
-    {
-      return inMemoryMap.get(id);
-    }
-
-    @Override
-    public User listResources()
-    {
-      return null;
-    }
-
-    @Override
-    public User updateResource(User resource)
-    {
-      String userId = resource.getId().get();
-      User oldUser = getResource(userId);
-      if (oldUser == null)
-      {
-        throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
-      }
-      resource.getMeta().get().setCreated(oldUser.getMeta().get().getCreated().get());
-      inMemoryMap.put(userId, resource);
-      resource.getMeta().ifPresent(meta -> {
-        meta.setLastModified(Instant.now());
-      });
-      return resource;
-    }
-
-    @Override
-    public void deleteResource(String id)
-    {
-      if (inMemoryMap.containsKey(id))
-      {
-        inMemoryMap.remove(id);
-      }
-      else
-      {
-        throw new ResourceNotFoundException("resource with id '" + id + "' does not exist", null, null);
-      }
-    }
   }
 }

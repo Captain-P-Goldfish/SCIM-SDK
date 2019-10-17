@@ -67,7 +67,7 @@ public class ResourceTypeTest implements FileReferences
     ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
     Assertions.assertEquals(Collections.singletonList("urn:ietf:params:scim:schemas:core:2.0:ResourceType"),
                             resourceType.getSchemas());
-    Assertions.assertEquals("User", resourceType.getId());
+    Assertions.assertEquals("User", resourceType.getId().get());
     Assertions.assertEquals("User", resourceType.getName());
     Assertions.assertEquals("User Account", resourceType.getDescription());
     Assertions.assertEquals(SchemaUris.USER_URI, resourceType.getSchema());
@@ -85,19 +85,6 @@ public class ResourceTypeTest implements FileReferences
     Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.ENTERPRISE_USER_URI), schemaExtensions.get(0));
 
     Assertions.assertEquals(0, resourceType.getRequiredResourceSchemaExtensions().size());
-  }
-
-  /**
-   * will test that the method {@link ResourceType#toJsonNode()} produces the same document as the document at
-   * {@link ClassPathReferences#USER_RESOURCE_TYPE_JSON}
-   */
-  @Test
-  public void testResourceTypeToJsonNode()
-  {
-    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
-    JsonNode resourceTypeJsonNode = resourceType.toJsonNode();
-    Assertions.assertEquals(userResourceType, resourceTypeJsonNode);
   }
 
   /**

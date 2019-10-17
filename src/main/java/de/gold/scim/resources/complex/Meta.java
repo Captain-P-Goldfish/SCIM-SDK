@@ -28,7 +28,11 @@ public class Meta extends ScimObjectNode
   }
 
   @Builder
-  public Meta(String resourceType, LocalDateTime created, LocalDateTime lastModified, String location, String version)
+  public Meta(String resourceType,
+              LocalDateTime created,
+              LocalDateTime lastModified,
+              String location,
+              String version)
   {
     this();
     setResourceType(resourceType);

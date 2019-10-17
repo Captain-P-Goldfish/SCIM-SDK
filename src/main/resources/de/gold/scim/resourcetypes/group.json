@@ -6,9 +6,5 @@
   "id": "Group",
   "name": "Group",
   "description": "Group",
-  "endpoint": "/Groups",
-  "meta": {
-    "location": "/ResourceTypes/Group",
-    "resourceType": "ResourceType"
-  }
+  "endpoint": "/Groups"
 }

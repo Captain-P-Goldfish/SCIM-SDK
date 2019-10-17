@@ -1,5 +1,7 @@
 package de.gold.scim.endpoints;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -52,7 +54,13 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public User listResources()
+    public List<User> listResources(int startIndex,
+                                    int count,
+                                    String filter,
+                                    String sortBy,
+                                    String sortOrder,
+                                    String attributes,
+                                    String excludedAttriutes)
     {
       return null;
     }
@@ -89,7 +97,13 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public ResourceNode listResources()
+    public List listResources(int startIndex,
+                              int count,
+                              String filter,
+                              String sortBy,
+                              String sortOrder,
+                              String attributes,
+                              String excludedAttriutes)
     {
       return null;
     }

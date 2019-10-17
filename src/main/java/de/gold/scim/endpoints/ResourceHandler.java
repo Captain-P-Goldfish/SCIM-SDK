@@ -2,6 +2,7 @@ package de.gold.scim.endpoints;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 
 import de.gold.scim.resources.ResourceNode;
 import lombok.Getter;
@@ -36,7 +37,13 @@ public abstract class ResourceHandler<T extends ResourceNode>
 
   public abstract T getResource(String id);
 
-  public abstract T listResources();
+  public abstract List<T> listResources(int startIndex,
+                                        int count,
+                                        String filter,
+                                        String sortBy,
+                                        String sortOrder,
+                                        String attributes,
+                                        String excludedAttriutes);
 
   public abstract T updateResource(T resourceToUpdate);
 

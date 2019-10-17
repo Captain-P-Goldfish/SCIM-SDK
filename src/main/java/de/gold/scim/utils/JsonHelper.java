@@ -426,6 +426,10 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T copyResourceToObject(JsonNode resource, Class<T> type)
   {
+    if (type.isAssignableFrom(resource.getClass()))
+    {
+      return (T)resource;
+    }
     T newInstance = getNewInstance(type);
     resource.fields().forEachRemaining(stringJsonNodeEntry -> {
       JsonHelper.addAttribute(newInstance, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());

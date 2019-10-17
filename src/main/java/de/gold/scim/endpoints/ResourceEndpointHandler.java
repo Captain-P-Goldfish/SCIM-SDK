@@ -340,9 +340,9 @@ public final class ResourceEndpointHandler
                                     Integer startIndex,
                                     Integer count,
                                     String filter,
-                                    String attributes,
                                     String sortBy,
                                     String sortOrder,
+                                    String attributes,
                                     String excludedAttributes,
                                     Supplier<String> baseUrlSupplier)
   {

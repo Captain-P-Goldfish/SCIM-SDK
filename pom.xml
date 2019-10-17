@@ -325,7 +325,7 @@
                         <requireFileChecksum>
                             <file>${project.basedir}/src/main/resources/de/gold/scim/meta/resource-type.schema.json
                             </file>
-                            <checksum>ac6e34bd2f5f13cc5ff87a3ced53c105</checksum>
+                            <checksum>cd5fa936eee43254ebb6edcdd7887a02</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

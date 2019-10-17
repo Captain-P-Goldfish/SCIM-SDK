@@ -1,10 +1,12 @@
 package de.gold.scim.schemas;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -313,5 +315,24 @@ public final class ResourceTypeFactory
   protected boolean isResourceRegistered(String resourceName)
   {
     return resourceTypes.values().stream().map(ResourceType::getName).anyMatch(resourceName::equals);
+  }
+
+  /**
+   * gets a resource type by its name value
+   *
+   * @param name the name value of the given resource type
+   * @return the resource type or an empty if no resource type with the given name exists
+   */
+  public Optional<ResourceType> getResourceTypeByName(String name)
+  {
+    return resourceTypes.values().stream().filter(resourceType -> resourceType.getName().equals(name)).findAny();
+  }
+
+  /**
+   * @return returns all registered resource types
+   */
+  public Collection<ResourceType> getAllResourceTypes()
+  {
+    return resourceTypes.values();
   }
 }

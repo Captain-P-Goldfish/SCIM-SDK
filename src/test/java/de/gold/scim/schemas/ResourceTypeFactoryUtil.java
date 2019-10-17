@@ -1,5 +1,7 @@
 package de.gold.scim.schemas;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -20,6 +22,14 @@ public final class ResourceTypeFactoryUtil
   public static ResourceTypeFactory getUnitTestResourceTypeFactory()
   {
     return ResourceTypeFactory.getUnitTestInstance();
+  }
+
+  /**
+   * @return a new resource type for unit tests from the given json node
+   */
+  public static ResourceType getResourceType(ResourceTypeFactory resourceTypeFactory, JsonNode jsonNode)
+  {
+    return new ResourceType(resourceTypeFactory.getSchemaFactory(), jsonNode);
   }
 
 }

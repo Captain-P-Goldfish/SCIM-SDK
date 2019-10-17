@@ -1,29 +1,33 @@
 package de.gold.scim.schemas;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
 import de.gold.scim.exceptions.ScimException;
+import de.gold.scim.resources.ResourceNode;
+import de.gold.scim.resources.base.ScimObjectNode;
+import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
@@ -37,58 +41,20 @@ import lombok.extern.slf4j.Slf4j;
  * clients.
  */
 @Slf4j
-@Getter(AccessLevel.PROTECTED)
-@Setter(AccessLevel.PROTECTED)
-@EqualsAndHashCode
-public class ResourceType
+public class ResourceType extends ResourceNode
 {
 
   /**
    * used for unit tests in order to prevent application context pollution
    */
+  @Getter(AccessLevel.PROTECTED)
   private final SchemaFactory schemaFactory;
-
-  /**
-   * the references to the meta schemas that describe this endpoint definition
-   */
-  private final List<String> schemas;
-
-  /**
-   * the id that should point to the name of the resource itself described by this endpoint definition
-   */
-  private final String id;
-
-  /**
-   * the endpoint under which the resource can be accessed
-   */
-  @Getter(AccessLevel.PUBLIC)
-  private final String endpoint;
-
-  /**
-   * the name of the document which is normally the same as the id
-   */
-  @Getter(AccessLevel.PUBLIC)
-  private String name;
-
-  /**
-   * an optional description
-   */
-  private String description;
-
-  /**
-   * the reference to the resource schema
-   */
-  private String schema;
-
-  /**
-   * the extensions that are supported by this resource
-   */
-  private List<SchemaExtension> schemaExtensions;
 
   /**
    * the resource handler implementation that is able to handle this kind of resource
    */
   @Getter(AccessLevel.PUBLIC)
+  @Setter(AccessLevel.PROTECTED)
   private ResourceHandler resourceHandlerImpl;
 
   public ResourceType(String resourceDocument)
@@ -104,24 +70,66 @@ public class ResourceType
   protected ResourceType(SchemaFactory schemaFactory, JsonNode resourceTypeDocument)
   {
     this.schemaFactory = getSchemaFactory(schemaFactory);
-    this.schemas = JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
-                             .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI));
-    this.id = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ID)
-                        .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ID)));
-    this.name = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.NAME)
-                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.NAME)));
-    this.description = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.DESCRIPTION).orElse(null);
-    this.endpoint = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ENDPOINT)
-                              .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ENDPOINT)));
-    this.schema = JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.SCHEMA)
-                            .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA)));
-    schemaExtensions = new ArrayList<>();
+    setSchemas(JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
+                         .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI)));
+    setId(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ID)
+                    .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ID))));
+    setName(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.NAME)
+                      .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.NAME))));
+    setDescription(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.DESCRIPTION).orElse(null));
+    setEndpoint(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ENDPOINT)
+                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ENDPOINT))));
+    setSchema(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.SCHEMA)
+                        .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA))));
+    List<SchemaExtension> schemaExtensions = new ArrayList<>();
     JsonHelper.getArrayAttribute(resourceTypeDocument, AttributeNames.SCHEMA_EXTENSIONS).ifPresent(jsonNodes -> {
       for ( JsonNode jsonNode : jsonNodes )
       {
         schemaExtensions.add(new SchemaExtension(jsonNode));
       }
     });
+    setSchemaExtensions(schemaExtensions);
+    Meta meta = getMetaNode(resourceTypeDocument);
+    setMeta(meta);
+  }
+
+  /**
+   * creates or gets the meta node and will extend it by the missing attributes
+   *
+   * @param resourceTypeDocument the resource type document from which this resource type is parsed. It may be
+   *          that the developer already entered meta information within this document that should be preserved
+   * @return the meta node
+   */
+  private Meta getMetaNode(JsonNode resourceTypeDocument)
+  {
+    Optional<ObjectNode> metaNode = JsonHelper.getObjectAttribute(resourceTypeDocument, AttributeNames.META);
+    Meta meta;
+    final String resourceType = "ResourceType";
+    final String location = "/ResourceTypes/" + getName();
+    if (metaNode.isPresent())
+    {
+      meta = JsonHelper.copyResourceToObject(metaNode.get(), Meta.class);
+      meta = Meta.builder()
+                 .resourceType(meta.getResourceType().orElse(resourceType))
+                 .location(meta.getLocation().orElse(location))
+                 .created(meta.getCreated()
+                              .map(instant -> instant.atZone(ZoneId.systemDefault()).toLocalDateTime())
+                              .orElse(LocalDateTime.now()))
+                 .lastModified(meta.getLastModified()
+                                   .map(instant -> instant.atZone(ZoneId.systemDefault()).toLocalDateTime())
+                                   .orElse(LocalDateTime.now()))
+                 .build();
+    }
+    else
+    {
+      meta = Meta.builder()
+                 .resourceType(resourceType)
+                 .location(location)
+                 .created(LocalDateTime.now())
+                 .lastModified(LocalDateTime.now())
+                 .build();
+    }
+    return meta;
   }
 
   /**
@@ -148,11 +156,11 @@ public class ResourceType
    */
   public List<Schema> getRequiredResourceSchemaExtensions()
   {
-    return schemaExtensions.stream()
-                           .filter(SchemaExtension::isRequired)
-                           .map(SchemaExtension::getSchema)
-                           .map(getSchemaFactory()::getResourceSchema)
-                           .collect(Collectors.toList());
+    return getSchemaExtensions().stream()
+                                .filter(SchemaExtension::isRequired)
+                                .map(SchemaExtension::getSchema)
+                                .map(getSchemaFactory()::getResourceSchema)
+                                .collect(Collectors.toList());
   }
 
   /**
@@ -160,25 +168,25 @@ public class ResourceType
    */
   public List<Schema> getNotRequiredResourceSchemaExtensions()
   {
-    return schemaExtensions.stream()
-                           .filter(schemaExtension -> !schemaExtension.isRequired())
-                           .map(SchemaExtension::getSchema)
-                           .map(getSchemaFactory()::getResourceSchema)
-                           .collect(Collectors.toList());
+    return getSchemaExtensions().stream()
+                                .filter(schemaExtension -> !schemaExtension.isRequired())
+                                .map(SchemaExtension::getSchema)
+                                .map(getSchemaFactory()::getResourceSchema)
+                                .collect(Collectors.toList());
   }
 
   /**
    * this method will extract all {@link Schema} definitions that belong to this resource type. The first entry
-   * in the list will always be the main {@link Schema} referenced in the attribute {@link #schema}. All other
-   * {@link Schema}s in the list will be the extensions of this resource
+   * in the list will always be the main {@link Schema} referenced in the attribute {@link #getSchema()}. All
+   * other {@link Schema}s in the list will be the extensions of this resource
    *
    * @return a list of all {@link Schema} definitions that describe this resource type
    */
   public List<Schema> getAllSchemas()
   {
     List<Schema> schemaList = new ArrayList<>();
-    schemaList.add(schemaFactory.getResourceSchema(schema));
-    schemaExtensions.forEach(schemaExtension -> {
+    schemaList.add(schemaFactory.getResourceSchema(getSchema()));
+    getSchemaExtensions().forEach(schemaExtension -> {
       schemaList.add(schemaFactory.getResourceSchema(schemaExtension.getSchema()));
     });
     schemaList.add(schemaFactory.getMetaSchema(SchemaUris.META));
@@ -231,75 +239,180 @@ public class ResourceType
   }
 
   /**
-   * @see #schemaExtensions
+   * {@inheritDoc}
+   */
+  @Override
+  public void setId(String id)
+  {
+    if (getId().isPresent())
+    {
+      throw new InternalServerException("the id attribute is immutable", null, null);
+    }
+    super.setId(id);
+  }
+
+  /**
+   * The resource type's HTTP-addressable endpoint relative to the Base URL of the service provider, e.g.,
+   * "Users". REQUIRED.
+   */
+  public String getEndpoint()
+  {
+    return getStringAttribute(AttributeNames.ENDPOINT).orElseThrow(() -> {
+      return new InvalidResourceTypeException("the endpoint is a required attribute", null, null, null);
+    });
+  }
+
+  /**
+   * The resource type's HTTP-addressable endpoint relative to the Base URL of the service provider, e.g.,
+   * "Users". REQUIRED.
+   */
+  private void setEndpoint(String endpoint)
+  {
+    setAttribute(AttributeNames.ENDPOINT, Objects.requireNonNull(StringUtils.stripToNull(endpoint)));
+  }
+
+  /**
+   * The resource type name. When applicable, service providers MUST specify the name, e.g., "User" or "Group".
+   * This name is referenced by the "meta.resourceType" attribute in all resources. REQUIRED.
+   */
+  public String getName()
+  {
+    return getStringAttribute(AttributeNames.NAME).orElseThrow(() -> {
+      return new InvalidResourceTypeException("the name is a required attribute", null, null, null);
+    });
+  }
+
+  /**
+   * The resource type name. When applicable, service providers MUST specify the name, e.g., "User" or "Group".
+   * This name is referenced by the "meta.resourceType" attribute in all resources. REQUIRED.
+   */
+  private void setName(String name)
+  {
+    setAttribute(AttributeNames.NAME, name);
+  }
+
+  /**
+   * The resource type's human-readable description. When applicable, service providers MUST specify the
+   * description. OPTIONAL.
+   */
+  public String getDescription()
+  {
+    return getStringAttribute(AttributeNames.DESCRIPTION).orElse(null);
+  }
+
+  /**
+   * The resource type's human-readable description. When applicable, service providers MUST specify the
+   * description. OPTIONAL.
+   */
+  private void setDescription(String description)
+  {
+    setAttribute(AttributeNames.DESCRIPTION, description);
+  }
+
+  /**
+   * The resource type's human-readable description. When applicable, service providers MUST specify the
+   * description. OPTIONAL.
+   */
+  private void setResourceTypeDescription(String description)
+  {
+    setAttribute(AttributeNames.DESCRIPTION, description);
+  }
+
+  /**
+   * The resource type's primary/base schema URI, e.g., "urn:ietf:params:scim:schemas:core:2.0:User". This MUST
+   * be equal to the "id" attribute of the associated "Schema" resource. REQUIRED.
+   */
+  public String getSchema()
+  {
+    return getStringAttribute(AttributeNames.SCHEMA).orElseThrow(() -> {
+      return new InvalidResourceTypeException("the schema is a required attribute", null, null, null);
+    });
+  }
+
+  /**
+   * The resource type's primary/base schema URI, e.g., "urn:ietf:params:scim:schemas:core:2.0:User". This MUST
+   * be equal to the "id" attribute of the associated "Schema" resource. REQUIRED.
+   */
+  private void setSchema(String schema)
+  {
+    setAttribute(AttributeNames.SCHEMA, schema);
+  }
+
+  /**
+   * A list of URIs of the resource type's schema extensions. OPTIONAL
    */
   public List<SchemaExtension> getSchemaExtensions()
   {
-    return Collections.unmodifiableList(schemaExtensions);
+    return getArrayAttribute(AttributeNames.SCHEMA_EXTENSIONS, SchemaExtension.class);
   }
 
   /**
-   * @return this object as json document
+   * A list of URIs of the resource type's schema extensions. OPTIONAL
    */
-  public JsonNode toJsonNode()
+  private void setSchemaExtensions(List<SchemaExtension> schemaExtensions)
   {
-    ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
-    List<JsonNode> schemaNodes = schemas.stream().map(TextNode::new).collect(Collectors.toList());
-    JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMAS, new ArrayNode(JsonNodeFactory.instance, schemaNodes));
-    JsonHelper.addAttribute(objectNode, AttributeNames.ID, new TextNode(id));
-    JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(name));
-    Optional.ofNullable(description)
-            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.DESCRIPTION, new TextNode(s)));
-    JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMA, new TextNode(schema));
-    JsonHelper.addAttribute(objectNode, AttributeNames.ENDPOINT, new TextNode(endpoint));
-    if (!schemaExtensions.isEmpty())
-    {
-      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-      for ( SchemaExtension schemaExtension : schemaExtensions )
-      {
-        ObjectNode extensionNode = new ObjectNode(JsonNodeFactory.instance);
-        JsonHelper.addAttribute(extensionNode, AttributeNames.SCHEMA, new TextNode(schemaExtension.getSchema()));
-        JsonHelper.addAttribute(extensionNode,
-                                AttributeNames.REQUIRED,
-                                BooleanNode.valueOf(schemaExtension.isRequired()));
-        arrayNode.add(extensionNode);
-      }
-      JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMA_EXTENSIONS, arrayNode);
-    }
-    return objectNode;
-  }
-
-  /**
-   * @return this object as json document
-   */
-  public String toString()
-  {
-    return toJsonNode().toString();
+    setAttribute(AttributeNames.SCHEMA_EXTENSIONS, schemaExtensions);
   }
 
   /**
    * a schema extension representation
    */
   @Getter
-  public class SchemaExtension
+  public class SchemaExtension extends ScimObjectNode
   {
-
-    /**
-     * the resource schema reference
-     */
-    private String schema;
-
-    /**
-     * if the extension is a required one or not
-     */
-    private boolean required;
 
     public SchemaExtension(JsonNode jsonNode)
     {
-      this.schema = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.SCHEMA)
-                              .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA)));
-      this.required = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.REQUIRED, Boolean.class)
-                                .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.REQUIRED)));
+      super(null);
+      setSchema(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.SCHEMA)
+                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA))));
+      setRequired(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.REQUIRED, Boolean.class)
+                            .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.REQUIRED))));
+    }
+
+    /**
+     * The URI of an extended schema, e.g., "urn:edu:2.0:Staff". This MUST be equal to the "id" attribute of a
+     * "Schema" resource. REQUIRED.
+     */
+    public String getSchema()
+    {
+      return getStringAttribute(AttributeNames.SCHEMA).orElseThrow(() -> {
+        return new InvalidResourceTypeException("the schema attribute is a required attribute", null, null, null);
+      });
+    }
+
+    /**
+     * The URI of an extended schema, e.g., "urn:edu:2.0:Staff". This MUST be equal to the "id" attribute of a
+     * "Schema" resource. REQUIRED.
+     */
+    private void setSchema(String schema)
+    {
+      setAttribute(AttributeNames.SCHEMA, schema);
+    }
+
+
+    /**
+     * A Boolean value that specifies whether or not the schema extension is required for the resource type. If
+     * true, a resource of this type MUST include this schema extension and also include any attributes declared
+     * as required in this schema extension. If false, a resource of this type MAY omit this schema extension.
+     * REQUIRED.
+     */
+    public boolean isRequired()
+    {
+      return getBooleanAttribute(AttributeNames.REQUIRED).orElseThrow(() -> {
+        return new InvalidResourceTypeException("the required attribute is a required attribute", null, null, null);
+      });
+    }
+
+    /**
+     * A Boolean value that specifies whether or not the schema extension is required for the resource type. If
+     * true, a resource of this type MUST include this schema extension and also include any attributes declared
+     * as required in this schema extension. If false, a resource of this type MAY omit this schema extension.
+     * REQUIRED.
+     */
+    private void setRequired(boolean required)
+    {
+      setAttribute(AttributeNames.REQUIRED, required);
     }
   }
 
@@ -325,16 +438,16 @@ public class ResourceType
     {
       List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.SCHEMAS)
                                        .orElseThrow(() -> getBadRequestException(missingAttrMessage(AttributeNames.SCHEMAS)));
-      if (!schemas.contains(schema))
+      if (!schemas.contains(getSchema()))
       {
-        throw getBadRequestException("main resource schema '" + schema + "' is not present in resource");
+        throw getBadRequestException("main resource schema '" + getSchema() + "' is not present in resource");
       }
 
       Function<String, String> missingSchema = s -> "resource schema with uri '" + s + "' is not registered";
-      this.metaSchema = Optional.ofNullable(schemaFactory.getResourceSchema(schema))
-                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schema)));
+      this.metaSchema = Optional.ofNullable(schemaFactory.getResourceSchema(getSchema()))
+                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(getSchema())));
       extensions = new ArrayList<>();
-      schemas.remove(schema);
+      schemas.remove(getSchema());
       for ( String schemaUri : schemas )
       {
         extensions.add(Optional.ofNullable(schemaFactory.getResourceSchema(schemaUri))
