@@ -21,7 +21,7 @@ import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
-import de.gold.scim.endpoints.base.UserResourceType;
+import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
 import de.gold.scim.exceptions.InternalServerException;
@@ -66,7 +66,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void initialize()
   {
     userHandler = Mockito.spy(new TestUserHandlerImpl());
-    resourceEndpointHandler = new ResourceEndpointHandler(new UserResourceType(userHandler));
+    resourceEndpointHandler = new ResourceEndpointHandler(new UserEndpointDefinition(userHandler));
   }
 
   /**

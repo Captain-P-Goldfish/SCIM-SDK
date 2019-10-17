@@ -13,10 +13,10 @@ import de.gold.scim.utils.JsonHelper;
  * <br>
  * this is the default endpoint definition for the /Groups endpoint as it was defined in the RFC7643
  */
-public class GroupResourceType extends EndpointDefinition
+public class GroupEndpointDefinition extends EndpointDefinition
 {
 
-  public GroupResourceType(ResourceHandler<Group> resourceHandler)
+  public GroupEndpointDefinition(ResourceHandler<Group> resourceHandler)
   {
     super(JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON),
           JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON), null, resourceHandler);
