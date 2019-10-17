@@ -32,4 +32,6 @@ public class ScimType
    * the request was invalid and cannot be used for further processing
    */
   public static final String UNPARSABLE_REQUEST = "unparsableRequest";
+
+  public static final String INVALID_FILTER = "invalidFilter";
 }

@@ -4,10 +4,18 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.filter.FilterNode;
+import de.gold.scim.filter.antlr.FilterRuleErrorListener;
+import de.gold.scim.filter.antlr.FilterVisitor;
+import de.gold.scim.filter.antlr.ScimFilterLexer;
+import de.gold.scim.filter.antlr.ScimFilterParser;
+import de.gold.scim.schemas.ResourceType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,6 +80,30 @@ public final class RequestUtils
                                   + "'";
       throw new BadRequestException(errorMessage, null, ScimType.INVALID_PARAMETERS);
     }
+  }
+
+  /**
+   * parsed the filter of a list request
+   *
+   * @param resourceType the resource type that describes the endpoint on which the filter is used so that the
+   *          filter expression can be correctly resolved
+   * @param filter the filter expression that must apply to the given resource type
+   * @return The parsed filter expression as resolvable tree structure that might be used to resolve them to jpa
+   *         predicates for example
+   */
+  public static FilterNode parseFilter(ResourceType resourceType, String filter)
+  {
+    FilterRuleErrorListener filterRuleErrorListener = new FilterRuleErrorListener();
+    ScimFilterLexer lexer = new ScimFilterLexer(CharStreams.fromString(filter));
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(filterRuleErrorListener);
+    CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
+    ScimFilterParser scimFilterParser = new ScimFilterParser(commonTokenStream);
+    scimFilterParser.removeErrorListeners();
+    scimFilterParser.addErrorListener(filterRuleErrorListener);
+    ScimFilterParser.FilterContext filterContext = scimFilterParser.filter();
+    FilterVisitor filterVisitor = new FilterVisitor(resourceType);
+    return filterVisitor.visit(filterContext);
   }
 
 }

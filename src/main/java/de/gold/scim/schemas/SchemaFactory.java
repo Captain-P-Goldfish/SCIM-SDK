@@ -55,7 +55,7 @@ public final class SchemaFactory
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON));
-    registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
+    registerMetaSubSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON), "meta");
   }
 
   /**
@@ -84,6 +84,18 @@ public final class SchemaFactory
   private void registerMetaSchema(JsonNode jsonSchema)
   {
     Schema schema = new Schema(jsonSchema);
+    metaSchemas.put(schema.getId(), schema);
+  }
+
+  /**
+   * will register a new schema
+   *
+   * @param jsonSchema the schema as json node
+   * @param overrideNamePrefix a name that as prepended to the attribute names of the attributes to this schema
+   */
+  private void registerMetaSubSchema(JsonNode jsonSchema, String overrideNamePrefix)
+  {
+    Schema schema = new Schema(jsonSchema, overrideNamePrefix);
     metaSchemas.put(schema.getId(), schema);
   }
 

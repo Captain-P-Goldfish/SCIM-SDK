@@ -1,5 +1,8 @@
 package de.gold.scim.schemas;
 
+import static de.gold.scim.utils.TestHelper.getAttributeString;
+import static de.gold.scim.utils.TestHelper.modifyAttributeMetaData;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -10,7 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -1433,100 +1435,4 @@ public class SchemaValidatorTest implements FileReferences
     MatcherAssert.assertThat(schemas, Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
   }
 
-  /**
-   * this method extracts the the attribute with the given name from the meta schema and modifies its attributes
-   * with the given values
-   *
-   * @param metaSchema the meta schema that must contain an attribute with the given attributeName parameter
-   * @param attributeName the name of the attribute that will should be modified. This attribute must exist
-   */
-  private void modifyAttributeMetaData(JsonNode metaSchema,
-                                       String attributeName,
-                                       Type type,
-                                       Mutability mutability,
-                                       Returned returned,
-                                       Uniqueness uniqueness,
-                                       Boolean multiValued,
-                                       Boolean required,
-                                       Boolean caseExact,
-                                       List<String> canonicalTypes)
-  {
-    String[] attributeNameParts = attributeName.split("\\.");
-    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
-    JsonNode attributeDefinition = null;
-    for ( JsonNode attribute : attributes )
-    {
-      String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
-      if (name.equals(attributeNameParts[0]))
-      {
-        attributeDefinition = attribute;
-        break;
-      }
-    }
-    if (attributeNameParts.length == 2)
-    {
-      JsonNode subAttributes = JsonHelper.getArrayAttribute(attributeDefinition, AttributeNames.SUB_ATTRIBUTES).get();
-      for ( JsonNode attribute : subAttributes )
-      {
-        String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
-        if (name.equals(attributeNameParts[1]))
-        {
-          attributeDefinition = attribute;
-          break;
-        }
-      }
-    }
-    Assertions.assertNotNull(attributeDefinition);
-    JsonNode finalAttributeDefinition = attributeDefinition;
-    Optional.ofNullable(type).ifPresent(t -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.TYPE, new TextNode(t.getValue()));
-    });
-    Optional.ofNullable(mutability).ifPresent(m -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.MUTABILITY, new TextNode(m.getValue()));
-    });
-    Optional.ofNullable(returned).ifPresent(r -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RETURNED, new TextNode(r.getValue()));
-    });
-    Optional.ofNullable(uniqueness).ifPresent(u -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.UNIQUENESS, new TextNode(u.getValue()));
-    });
-    Optional.ofNullable(multiValued).ifPresent(multi -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.MULTI_VALUED, BooleanNode.valueOf(multi));
-    });
-    Optional.ofNullable(required).ifPresent(r -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.REQUIRED, BooleanNode.valueOf(r));
-    });
-    Optional.ofNullable(caseExact).ifPresent(c -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.CASE_EXACT, BooleanNode.valueOf(c));
-    });
-    Optional.ofNullable(canonicalTypes).ifPresent(canonical -> {
-      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-      arrayNode.addAll(canonical.stream().map(TextNode::new).collect(Collectors.toList()));
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.REFERENCE_TYPES, arrayNode);
-    });
-  }
-
-  private String getAttributeString(String name,
-                                    Type type,
-                                    boolean multiValued,
-                                    boolean required,
-                                    boolean caseExact,
-                                    Mutability mutability,
-                                    Returned returned,
-                                    Uniqueness uniqueness)
-  {
-    // @formatter:off
-    return "{" +
-           "   \"name\": \"" + name + "\",\n" +
-           "   \"type\": \"" + type.getValue() + "\",\n" +
-           "   \"multiValued\": " + multiValued+ ",\n" +
-           "   \"description\": \"some description\",\n" +
-           "   \"required\": " + required + ",\n" +
-           "   \"caseExact\": " + caseExact + ",\n" +
-           "   \"mutability\": \"" + mutability.getValue() + "\",\n" +
-           "   \"returned\": \"" + returned.getValue() + "\",\n" +
-           "   \"uniqueness\": \"" + uniqueness.getValue() + "\"\n" +
-           "}";
-    // @formatter:on
-  }
 }

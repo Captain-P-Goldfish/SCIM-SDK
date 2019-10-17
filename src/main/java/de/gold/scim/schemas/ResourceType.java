@@ -168,6 +168,24 @@ public class ResourceType
   }
 
   /**
+   * this method will extract all {@link Schema} definitions that belong to this resource type. The first entry
+   * in the list will always be the main {@link Schema} referenced in the attribute {@link #schema}. All other
+   * {@link Schema}s in the list will be the extensions of this resource
+   *
+   * @return a list of all {@link Schema} definitions that describe this resource type
+   */
+  public List<Schema> getAllSchemas()
+  {
+    List<Schema> schemaList = new ArrayList<>();
+    schemaList.add(schemaFactory.getResourceSchema(schema));
+    schemaExtensions.forEach(schemaExtension -> {
+      schemaList.add(schemaFactory.getResourceSchema(schemaExtension.getSchema()));
+    });
+    schemaList.add(schemaFactory.getMetaSchema(SchemaUris.META));
+    return schemaList;
+  }
+
+  /**
    * will find the meta resource schema and its extensions of this resource type that apply to the given
    * document
    *
@@ -210,6 +228,14 @@ public class ResourceType
   private ScimException getBadRequestException(String message)
   {
     return new BadRequestException(message, null, null);
+  }
+
+  /**
+   * @see #schemaExtensions
+   */
+  public List<SchemaExtension> getSchemaExtensions()
+  {
+    return Collections.unmodifiableList(schemaExtensions);
   }
 
   /**
