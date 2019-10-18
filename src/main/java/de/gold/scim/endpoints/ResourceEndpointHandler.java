@@ -19,6 +19,7 @@ import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
+import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
@@ -79,8 +80,8 @@ public final class ResourceEndpointHandler
       throw new InternalServerException("At least 1 endpoint must be registered!", null, null);
     }
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
-    endpointDefinitionList.add(new ServiceProviderEndpointDefinition(serviceProvider));
-    endpointDefinitionList.add(new ResourceTypeEndpointDefinition(resourceTypeFactory));
+    endpointDefinitionList.add(0, new ServiceProviderEndpointDefinition(serviceProvider));
+    endpointDefinitionList.add(1, new ResourceTypeEndpointDefinition(resourceTypeFactory));
     for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
     {
       resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
@@ -571,13 +572,18 @@ public final class ResourceEndpointHandler
     String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
     if (StringUtils.isBlank(baseUrl))
     {
-      // TODO get url from service provider configuration
-      log.warn("TODO");
-      return "";
+      baseUrl = serviceProvider.getServiceProviderUrlExtension()
+                               .map(ServiceProviderUrlExtension::getBaseUrl)
+                               .orElse(null);
+      if (StringUtils.isBlank(baseUrl))
+      {
+        log.warn("TODO set location url");
+        return "";
+      }
     }
-    if (!baseUrl.endsWith("/"))
+    if (baseUrl.endsWith("/"))
     {
-      baseUrl += "/";
+      baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
     }
     return baseUrl + resourceType.getEndpoint() + "/" + resourceId;
   }

@@ -1,6 +1,7 @@
 package de.gold.scim.endpoints;
 
 import de.gold.scim.resources.ServiceProvider;
+import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -23,8 +24,13 @@ public final class ResourceEndpointHandlerUtil
   public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
                                                                            EndpointDefinition... endpointDefinitions)
   {
+    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder()
+                                                                          .baseUrl("https://localhost/scim/v2")
+                                                                          .build();
     return getUnitTestResourceEndpointHandler(resourceTypeFactory,
-                                              ServiceProvider.builder().build(),
+                                              ServiceProvider.builder()
+                                                             .serviceProviderUrlExtension(urlExtension)
+                                                             .build(),
                                               endpointDefinitions);
   }
 

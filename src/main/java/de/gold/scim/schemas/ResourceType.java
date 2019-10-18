@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.endpoints.ResourceHandler;
@@ -105,7 +106,7 @@ public class ResourceType extends ResourceNode
     Optional<ObjectNode> metaNode = JsonHelper.getObjectAttribute(resourceTypeDocument, AttributeNames.META);
     Meta meta;
     final String resourceType = "ResourceType";
-    final String location = "/ResourceTypes/" + getName();
+    final String location = EndpointPaths.RESOURCE_TYPES + "/" + getName();
     if (metaNode.isPresent())
     {
       meta = JsonHelper.copyResourceToObject(metaNode.get(), Meta.class);

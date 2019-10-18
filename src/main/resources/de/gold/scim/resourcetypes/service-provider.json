@@ -3,8 +3,8 @@
     "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
   ],
   "schema": "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig",
-  "id": "ServiceProvider",
-  "name": "ServiceProvider",
+  "id": "ServiceProviderConfig",
+  "name": "ServiceProviderConfig",
   "description": "the service providers configuration",
   "endpoint": "/ServiceProviderConfig",
   "schemaExtensions": [
@@ -12,5 +12,11 @@
       "schema": "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProvider",
       "required": false
     }
-  ]
+  ],
+  "meta": {
+    "resourceType": "ResourceType",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/ResourceTypes/ServiceProviderConfig"
+  }
 }

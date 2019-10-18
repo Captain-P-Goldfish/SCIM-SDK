@@ -69,7 +69,7 @@ public class ResourceTypeTest implements FileReferences
                             resourceType.getSchemas());
     Assertions.assertEquals("User", resourceType.getId().get());
     Assertions.assertEquals("User", resourceType.getName());
-    Assertions.assertEquals("User Account", resourceType.getAttributeDescription());
+    Assertions.assertEquals("User Account", resourceType.getDescription().get());
     Assertions.assertEquals(SchemaUris.USER_URI, resourceType.getSchema());
     Assertions.assertEquals("/Users", resourceType.getEndpoint());
 
