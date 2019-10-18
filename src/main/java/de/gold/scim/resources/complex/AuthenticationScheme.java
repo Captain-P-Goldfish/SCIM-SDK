@@ -36,7 +36,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public String getName()
   {
-    return getStringAttribute(AttributeNames.NAME).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.NAME).orElseThrow(() -> {
       return new InvalidConfigException("the 'name' attribute is required");
     });
   }
@@ -46,7 +46,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public void setName(String name)
   {
-    setAttribute(AttributeNames.NAME, Objects.requireNonNull(name));
+    setAttribute(AttributeNames.RFC7643.NAME, Objects.requireNonNull(name));
   }
 
   /**
@@ -54,7 +54,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public String getDescription()
   {
-    return getStringAttribute(AttributeNames.DESCRIPTION).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.DESCRIPTION).orElseThrow(() -> {
       return new InvalidConfigException("the 'description' attribute is required");
     });
   }
@@ -64,7 +64,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public void setDescription(String description)
   {
-    setAttribute(AttributeNames.DESCRIPTION, Objects.requireNonNull(description));
+    setAttribute(AttributeNames.RFC7643.DESCRIPTION, Objects.requireNonNull(description));
   }
 
   /**
@@ -73,7 +73,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public String getType()
   {
-    return getStringAttribute(AttributeNames.TYPE).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.TYPE).orElseThrow(() -> {
       return new InvalidConfigException("the 'type' attribute is required");
     });
   }
@@ -84,7 +84,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public void setType(String type)
   {
-    setAttribute(AttributeNames.TYPE, Objects.requireNonNull(type));
+    setAttribute(AttributeNames.RFC7643.TYPE, Objects.requireNonNull(type));
   }
 
   /**
@@ -92,7 +92,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public Optional<String> getSpecUri()
   {
-    return getStringAttribute(AttributeNames.SPEC_URI);
+    return getStringAttribute(AttributeNames.RFC7643.SPEC_URI);
   }
 
   /**
@@ -100,7 +100,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public void setSpecUri(String specUri)
   {
-    setAttribute(AttributeNames.SPEC_URI, specUri);
+    setAttribute(AttributeNames.RFC7643.SPEC_URI, specUri);
   }
 
   /**
@@ -108,7 +108,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public Optional<String> getDocumentationUri()
   {
-    return getStringAttribute(AttributeNames.DOCUMENTATION_URI);
+    return getStringAttribute(AttributeNames.RFC7643.DOCUMENTATION_URI);
   }
 
   /**
@@ -116,7 +116,7 @@ public class AuthenticationScheme extends ScimObjectNode
    */
   public void setDocumentationUri(String documentationUri)
   {
-    setAttribute(AttributeNames.DOCUMENTATION_URI, documentationUri);
+    setAttribute(AttributeNames.RFC7643.DOCUMENTATION_URI, documentationUri);
   }
 
 }

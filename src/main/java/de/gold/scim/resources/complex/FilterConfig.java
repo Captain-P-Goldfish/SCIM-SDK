@@ -35,7 +35,7 @@ public class FilterConfig extends ScimObjectNode
    */
   public boolean isSupported()
   {
-    return getBooleanAttribute(AttributeNames.SUPPORTED).orElse(false);
+    return getBooleanAttribute(AttributeNames.RFC7643.SUPPORTED).orElse(false);
   }
 
   /**
@@ -43,7 +43,7 @@ public class FilterConfig extends ScimObjectNode
    */
   public void setSupported(Boolean supported)
   {
-    setAttribute(AttributeNames.SUPPORTED, Optional.ofNullable(supported).orElse(false));
+    setAttribute(AttributeNames.RFC7643.SUPPORTED, Optional.ofNullable(supported).orElse(false));
   }
 
   /**
@@ -51,7 +51,7 @@ public class FilterConfig extends ScimObjectNode
    */
   public int getMaxResults()
   {
-    return getIntegerAttribute(AttributeNames.MAX_RESULTS).orElse(DEFAULT_MAX_RESULTS);
+    return getIntegerAttribute(AttributeNames.RFC7643.MAX_RESULTS).orElse(DEFAULT_MAX_RESULTS);
   }
 
   /**
@@ -59,6 +59,6 @@ public class FilterConfig extends ScimObjectNode
    */
   public void setMaxResults(Integer maxResults)
   {
-    setAttribute(AttributeNames.MAX_RESULTS, Optional.ofNullable(maxResults).orElse(DEFAULT_MAX_RESULTS));
+    setAttribute(AttributeNames.RFC7643.MAX_RESULTS, Optional.ofNullable(maxResults).orElse(DEFAULT_MAX_RESULTS));
   }
 }

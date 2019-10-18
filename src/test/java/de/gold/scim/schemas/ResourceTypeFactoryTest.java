@@ -81,7 +81,7 @@ public class ResourceTypeFactoryTest
    * schema-validation of the resource type fails.
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.NAME, AttributeNames.ENDPOINT, AttributeNames.SCHEMA})
+  @ValueSource(strings = {AttributeNames.RFC7643.NAME, AttributeNames.RFC7643.ENDPOINT, AttributeNames.RFC7643.SCHEMA})
   public void testRegisterResourceTypeWithSchemaValidationFailure(String attributeName)
   {
     // remove the enterprise extension from the resource type document
@@ -104,7 +104,7 @@ public class ResourceTypeFactoryTest
   public void testRegisterResourceTypeWithInvalidResourceSchema()
   {
     // remove the enterprise extension from the resource type document
-    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.ID);
+    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.ID);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> resourceTypeFactory.registerResourceType(null,
                                                                            userResourceType,
@@ -122,7 +122,7 @@ public class ResourceTypeFactoryTest
   @Test
   public void testRegisterResourceTypeWithUnknownExtension()
   {
-    JsonHelper.removeAttribute(userResourceType, AttributeNames.SCHEMA_EXTENSIONS);
+    JsonHelper.removeAttribute(userResourceType, AttributeNames.RFC7643.SCHEMA_EXTENSIONS);
     // now register and expect an exception
     Assertions.assertThrows(InvalidResourceTypeException.class,
                             () -> resourceTypeFactory.registerResourceType(null,
@@ -139,7 +139,8 @@ public class ResourceTypeFactoryTest
   @Test
   public void testRegisterResourceTypeWithUnknownExtension2()
   {
-    ArrayNode extensions = JsonHelper.getArrayAttribute(userResourceType, AttributeNames.SCHEMA_EXTENSIONS).get();
+    ArrayNode extensions = JsonHelper.getArrayAttribute(userResourceType, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
+                                     .get();
     extensions.removeAll();
     // now register and expect an exception
     Assertions.assertThrows(InvalidResourceTypeException.class,
@@ -188,7 +189,7 @@ public class ResourceTypeFactoryTest
   {
     JsonNode oldResourceSchema = userResourceSchema.deepCopy();
     schemaFactory.registerResourceSchema(oldResourceSchema);
-    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.DESCRIPTION);
+    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.DESCRIPTION);
     Assertions.assertNotEquals(oldResourceSchema, userResourceSchema);
 
     ResourceType resourceType = Assertions.assertDoesNotThrow(() -> {

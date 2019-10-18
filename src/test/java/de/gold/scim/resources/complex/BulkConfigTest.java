@@ -40,9 +40,9 @@ public class BulkConfigTest
   {
     BulkConfig bulkConfig = BulkConfig.builder().build();
 
-    bulkConfig.remove(AttributeNames.SUPPORTED);
-    bulkConfig.remove(AttributeNames.MAX_OPERATIONS);
-    bulkConfig.remove(AttributeNames.MAX_PAYLOAD_SIZE);
+    bulkConfig.remove(AttributeNames.RFC7643.SUPPORTED);
+    bulkConfig.remove(AttributeNames.RFC7643.MAX_OPERATIONS);
+    bulkConfig.remove(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE);
 
     Assertions.assertFalse(bulkConfig.isSupported());
     Assertions.assertEquals(BulkConfig.DEFAULT_MAX_OPERATIONS, bulkConfig.getMaxOperations());

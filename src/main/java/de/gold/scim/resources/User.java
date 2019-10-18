@@ -99,7 +99,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getUserName()
   {
-    return getStringAttribute(AttributeNames.USER_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.USER_NAME);
   }
 
   /**
@@ -111,7 +111,7 @@ public class User extends ResourceNode
    */
   public void setUserName(String userName)
   {
-    setAttribute(AttributeNames.USER_NAME, userName);
+    setAttribute(AttributeNames.RFC7643.USER_NAME, userName);
   }
 
   /**
@@ -122,7 +122,7 @@ public class User extends ResourceNode
    */
   public Optional<Name> getNameNode()
   {
-    return getObjectAttribute(AttributeNames.NAME, Name.class);
+    return getObjectAttribute(AttributeNames.RFC7643.NAME, Name.class);
   }
 
   /**
@@ -133,7 +133,7 @@ public class User extends ResourceNode
    */
   public void setNameNode(Name name)
   {
-    setAttribute(AttributeNames.NAME, name);
+    setAttribute(AttributeNames.RFC7643.NAME, name);
   }
 
   /**
@@ -145,7 +145,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getDisplayName()
   {
-    return getStringAttribute(AttributeNames.DISPLAY_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
   }
 
   /**
@@ -157,7 +157,7 @@ public class User extends ResourceNode
    */
   public void setDisplayName(String displayName)
   {
-    setAttribute(AttributeNames.DISPLAY_NAME, displayName);
+    setAttribute(AttributeNames.RFC7643.DISPLAY_NAME, displayName);
   }
 
   /**
@@ -166,7 +166,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getNickName()
   {
-    return getStringAttribute(AttributeNames.NICK_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.NICK_NAME);
   }
 
   /**
@@ -175,7 +175,7 @@ public class User extends ResourceNode
    */
   public void setNickName(String nickName)
   {
-    setAttribute(AttributeNames.NICK_NAME, nickName);
+    setAttribute(AttributeNames.RFC7643.NICK_NAME, nickName);
   }
 
   /**
@@ -185,7 +185,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getProfileUrl()
   {
-    return getStringAttribute(AttributeNames.PROFILE_URL);
+    return getStringAttribute(AttributeNames.RFC7643.PROFILE_URL);
   }
 
   /**
@@ -195,7 +195,7 @@ public class User extends ResourceNode
    */
   public void setProfileUrl(String profileUrl)
   {
-    setAttribute(AttributeNames.PROFILE_URL, profileUrl);
+    setAttribute(AttributeNames.RFC7643.PROFILE_URL, profileUrl);
   }
 
   /**
@@ -203,7 +203,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getTitle()
   {
-    return getStringAttribute(AttributeNames.TITLE);
+    return getStringAttribute(AttributeNames.RFC7643.TITLE);
   }
 
   /**
@@ -211,7 +211,7 @@ public class User extends ResourceNode
    */
   public void setTitle(String title)
   {
-    setAttribute(AttributeNames.TITLE, title);
+    setAttribute(AttributeNames.RFC7643.TITLE, title);
   }
 
   /**
@@ -220,7 +220,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getUserType()
   {
-    return getStringAttribute(AttributeNames.USER_TYPE);
+    return getStringAttribute(AttributeNames.RFC7643.USER_TYPE);
   }
 
   /**
@@ -229,7 +229,7 @@ public class User extends ResourceNode
    */
   public void setUserType(String userType)
   {
-    setAttribute(AttributeNames.USER_TYPE, userType);
+    setAttribute(AttributeNames.RFC7643.USER_TYPE, userType);
   }
 
   /**
@@ -244,7 +244,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getPreferredLanguage()
   {
-    return getStringAttribute(AttributeNames.PREFERRED_LANGUAGE);
+    return getStringAttribute(AttributeNames.RFC7643.PREFERRED_LANGUAGE);
   }
 
   /**
@@ -259,7 +259,7 @@ public class User extends ResourceNode
    */
   public void setPreferredLanguage(String preferredLanguage)
   {
-    setAttribute(AttributeNames.PREFERRED_LANGUAGE, preferredLanguage);
+    setAttribute(AttributeNames.RFC7643.PREFERRED_LANGUAGE, preferredLanguage);
   }
 
   // @formatter:off
@@ -287,7 +287,7 @@ public class User extends ResourceNode
   // @formatter:on
   public Optional<String> getLocale()
   {
-    return getStringAttribute(AttributeNames.LOCALE);
+    return getStringAttribute(AttributeNames.RFC7643.LOCALE);
   }
 
   // @formatter:off
@@ -315,7 +315,7 @@ public class User extends ResourceNode
   // @formatter:on
   public void setLocale(String locale)
   {
-    setAttribute(AttributeNames.LOCALE, locale);
+    setAttribute(AttributeNames.RFC7643.LOCALE, locale);
   }
 
   /**
@@ -324,7 +324,7 @@ public class User extends ResourceNode
    */
   public Optional<String> getTimezone()
   {
-    return getStringAttribute(AttributeNames.TIMEZONE);
+    return getStringAttribute(AttributeNames.RFC7643.TIMEZONE);
   }
 
   /**
@@ -333,7 +333,7 @@ public class User extends ResourceNode
    */
   public void setTimezone(String timezone)
   {
-    setAttribute(AttributeNames.TIMEZONE, timezone);
+    setAttribute(AttributeNames.RFC7643.TIMEZONE, timezone);
   }
 
   /**
@@ -343,7 +343,7 @@ public class User extends ResourceNode
    */
   public Optional<Boolean> isActive()
   {
-    return getBooleanAttribute(AttributeNames.ACTIVE);
+    return getBooleanAttribute(AttributeNames.RFC7643.ACTIVE);
   }
 
   /**
@@ -353,7 +353,7 @@ public class User extends ResourceNode
    */
   public void setActive(Boolean active)
   {
-    setAttribute(AttributeNames.ACTIVE, active);
+    setAttribute(AttributeNames.RFC7643.ACTIVE, active);
   }
 
   // @formatter:off
@@ -403,7 +403,7 @@ public class User extends ResourceNode
   // @formatter:on
   public Optional<String> getPassword()
   {
-    return getStringAttribute(AttributeNames.PASSWORD);
+    return getStringAttribute(AttributeNames.RFC7643.PASSWORD);
   }
 
   // @formatter:off
@@ -453,7 +453,7 @@ public class User extends ResourceNode
   // @formatter:on
   public void setPassword(String password)
   {
-    setAttribute(AttributeNames.PASSWORD, password);
+    setAttribute(AttributeNames.RFC7643.PASSWORD, password);
   }
 
   /**
@@ -466,7 +466,7 @@ public class User extends ResourceNode
    */
   public List<Email> getEmails()
   {
-    return getArrayAttribute(AttributeNames.EMAILS, Email.class);
+    return getArrayAttribute(AttributeNames.RFC7643.EMAILS, Email.class);
   }
 
   /**
@@ -479,7 +479,7 @@ public class User extends ResourceNode
    */
   public void setEmails(List<Email> emails)
   {
-    setAttribute(AttributeNames.EMAILS, emails);
+    setAttribute(AttributeNames.RFC7643.EMAILS, emails);
   }
 
   /**
@@ -492,7 +492,7 @@ public class User extends ResourceNode
    */
   public void addEmail(Email email)
   {
-    addAttribute(AttributeNames.EMAILS, email);
+    addAttribute(AttributeNames.RFC7643.EMAILS, email);
   }
 
   /**
@@ -504,7 +504,7 @@ public class User extends ResourceNode
    */
   public List<PhoneNumber> getPhoneNumbers()
   {
-    return getArrayAttribute(AttributeNames.PHONE_NUMBERS, PhoneNumber.class);
+    return getArrayAttribute(AttributeNames.RFC7643.PHONE_NUMBERS, PhoneNumber.class);
   }
 
   /**
@@ -516,7 +516,7 @@ public class User extends ResourceNode
    */
   public void setPhoneNumbers(List<PhoneNumber> phoneNumbers)
   {
-    setAttribute(AttributeNames.PHONE_NUMBERS, phoneNumbers);
+    setAttribute(AttributeNames.RFC7643.PHONE_NUMBERS, phoneNumbers);
   }
 
   /**
@@ -528,7 +528,7 @@ public class User extends ResourceNode
    */
   public void addPhoneNumber(PhoneNumber phoneNumber)
   {
-    addAttribute(AttributeNames.PHONE_NUMBERS, phoneNumber);
+    addAttribute(AttributeNames.RFC7643.PHONE_NUMBERS, phoneNumber);
   }
 
   /**
@@ -541,7 +541,7 @@ public class User extends ResourceNode
    */
   public List<Ims> getIms()
   {
-    return getArrayAttribute(AttributeNames.IMS, Ims.class);
+    return getArrayAttribute(AttributeNames.RFC7643.IMS, Ims.class);
   }
 
   /**
@@ -554,7 +554,7 @@ public class User extends ResourceNode
    */
   public void setIms(List<Ims> ims)
   {
-    setAttribute(AttributeNames.IMS, ims);
+    setAttribute(AttributeNames.RFC7643.IMS, ims);
   }
 
   /**
@@ -567,7 +567,7 @@ public class User extends ResourceNode
    */
   public void addIms(Ims ims)
   {
-    addAttribute(AttributeNames.IMS, ims);
+    addAttribute(AttributeNames.RFC7643.IMS, ims);
   }
 
   /**
@@ -582,7 +582,7 @@ public class User extends ResourceNode
    */
   public List<Photo> getPhotos()
   {
-    return getArrayAttribute(AttributeNames.PHOTOS, Photo.class);
+    return getArrayAttribute(AttributeNames.RFC7643.PHOTOS, Photo.class);
   }
 
   /**
@@ -597,7 +597,7 @@ public class User extends ResourceNode
    */
   public void setPhotos(List<Photo> photos)
   {
-    setAttribute(AttributeNames.PHOTOS, photos);
+    setAttribute(AttributeNames.RFC7643.PHOTOS, photos);
   }
 
   /**
@@ -612,7 +612,7 @@ public class User extends ResourceNode
    */
   public void addPhoto(Photo photo)
   {
-    addAttribute(AttributeNames.PHOTOS, photo);
+    addAttribute(AttributeNames.RFC7643.PHOTOS, photo);
   }
 
   /**
@@ -621,7 +621,7 @@ public class User extends ResourceNode
    */
   public List<Address> getAddresses()
   {
-    return getArrayAttribute(AttributeNames.ADDRESSES, Address.class);
+    return getArrayAttribute(AttributeNames.RFC7643.ADDRESSES, Address.class);
   }
 
   /**
@@ -630,7 +630,7 @@ public class User extends ResourceNode
    */
   public void setAddresses(List<Address> addresses)
   {
-    setAttribute(AttributeNames.ADDRESSES, addresses);
+    setAttribute(AttributeNames.RFC7643.ADDRESSES, addresses);
   }
 
   /**
@@ -639,7 +639,7 @@ public class User extends ResourceNode
    */
   public void addAddress(Address address)
   {
-    addAttribute(AttributeNames.ADDRESSES, address);
+    addAttribute(AttributeNames.RFC7643.ADDRESSES, address);
   }
 
   /**
@@ -660,7 +660,7 @@ public class User extends ResourceNode
    */
   public List<GroupNode> getGroups()
   {
-    return getArrayAttribute(AttributeNames.GROUPS, GroupNode.class);
+    return getArrayAttribute(AttributeNames.RFC7643.GROUPS, GroupNode.class);
   }
 
   /**
@@ -681,7 +681,7 @@ public class User extends ResourceNode
    */
   public void setGroups(List<GroupNode> groups)
   {
-    setAttribute(AttributeNames.GROUPS, groups);
+    setAttribute(AttributeNames.RFC7643.GROUPS, groups);
   }
 
   /**
@@ -702,7 +702,7 @@ public class User extends ResourceNode
    */
   public void addGroup(GroupNode group)
   {
-    addAttribute(AttributeNames.GROUPS, group);
+    addAttribute(AttributeNames.RFC7643.GROUPS, group);
   }
 
   /**
@@ -714,7 +714,7 @@ public class User extends ResourceNode
    */
   public List<Entitlement> getEntitlements()
   {
-    return getArrayAttribute(AttributeNames.ENTITLEMENTS, Entitlement.class);
+    return getArrayAttribute(AttributeNames.RFC7643.ENTITLEMENTS, Entitlement.class);
   }
 
   /**
@@ -726,7 +726,7 @@ public class User extends ResourceNode
    */
   public void setEntitlements(List<Entitlement> entitlements)
   {
-    setAttribute(AttributeNames.ENTITLEMENTS, entitlements);
+    setAttribute(AttributeNames.RFC7643.ENTITLEMENTS, entitlements);
   }
 
   /**
@@ -738,7 +738,7 @@ public class User extends ResourceNode
    */
   public void addEntitlement(Entitlement entitlement)
   {
-    addAttribute(AttributeNames.ENTITLEMENTS, entitlement);
+    addAttribute(AttributeNames.RFC7643.ENTITLEMENTS, entitlement);
   }
 
   /**
@@ -748,7 +748,7 @@ public class User extends ResourceNode
    */
   public List<PersonRole> getRoles()
   {
-    return getArrayAttribute(AttributeNames.ROLES, PersonRole.class);
+    return getArrayAttribute(AttributeNames.RFC7643.ROLES, PersonRole.class);
   }
 
   /**
@@ -758,7 +758,7 @@ public class User extends ResourceNode
    */
   public void setRoles(List<PersonRole> personRoles)
   {
-    setAttribute(AttributeNames.ROLES, personRoles);
+    setAttribute(AttributeNames.RFC7643.ROLES, personRoles);
   }
 
   /**
@@ -768,7 +768,7 @@ public class User extends ResourceNode
    */
   public void addRole(PersonRole personRole)
   {
-    addAttribute(AttributeNames.ROLES, personRole);
+    addAttribute(AttributeNames.RFC7643.ROLES, personRole);
   }
 
   /**
@@ -779,7 +779,7 @@ public class User extends ResourceNode
    */
   public List<ScimX509Certificate> getX509Certificates()
   {
-    return getArrayAttribute(AttributeNames.X509_CERTIFICATES, ScimX509Certificate.class);
+    return getArrayAttribute(AttributeNames.RFC7643.X509_CERTIFICATES, ScimX509Certificate.class);
   }
 
   /**
@@ -790,7 +790,7 @@ public class User extends ResourceNode
    */
   public void setX509Certificates(List<ScimX509Certificate> x509Certificates)
   {
-    setAttribute(AttributeNames.X509_CERTIFICATES, x509Certificates);
+    setAttribute(AttributeNames.RFC7643.X509_CERTIFICATES, x509Certificates);
   }
 
   /**
@@ -801,7 +801,7 @@ public class User extends ResourceNode
    */
   public void addX509Certificate(ScimX509Certificate x509Certificate)
   {
-    addAttribute(AttributeNames.X509_CERTIFICATES, x509Certificate);
+    addAttribute(AttributeNames.RFC7643.X509_CERTIFICATES, x509Certificate);
   }
 
   /**

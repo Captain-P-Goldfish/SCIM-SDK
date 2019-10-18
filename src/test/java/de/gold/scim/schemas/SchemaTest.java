@@ -72,7 +72,7 @@ class SchemaTest
    * verifies that an exception is thrown if the given schema does not have one of the given attributes
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.ID, AttributeNames.ATTRIBUTES})
+  @ValueSource(strings = {AttributeNames.RFC7643.ID, AttributeNames.RFC7643.ATTRIBUTES})
   public void testParseSchemaWithMissingAttribute(String attributeName)
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
@@ -85,7 +85,7 @@ class SchemaTest
    * verifies that an exception is thrown if the id-attribute is missing
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.ID, AttributeNames.ATTRIBUTES})
+  @ValueSource(strings = {AttributeNames.RFC7643.ID, AttributeNames.RFC7643.ATTRIBUTES})
   public void testIdAttributeIsMissing(String attributeName)
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);

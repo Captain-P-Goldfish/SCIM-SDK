@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.Optional;
 
 import de.gold.scim.constants.AttributeNames;
-import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.resources.complex.Meta;
 
 
@@ -22,20 +21,15 @@ import de.gold.scim.resources.complex.Meta;
  * (see Section 2.2) listed here SHALL take precedence over older definitions that may be included in existing
  * schemas.
  */
-public abstract class ResourceNode extends ScimObjectNode
+public abstract class ResourceNode extends AbstractSchemasHolder
 {
-
-  public ResourceNode()
-  {
-    super(null);
-  }
 
   /**
    * @return the list of schemas witin this resource
    */
   public List<String> getSchemas()
   {
-    return getArrayAttribute(AttributeNames.SCHEMAS);
+    return getArrayAttribute(AttributeNames.RFC7643.SCHEMAS);
   }
 
   /**
@@ -43,7 +37,7 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public void setSchemas(List<String> schemas)
   {
-    setStringAttributeList(AttributeNames.SCHEMAS, schemas);
+    setStringAttributeList(AttributeNames.RFC7643.SCHEMAS, schemas);
   }
 
   /**
@@ -58,7 +52,7 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public Optional<String> getId()
   {
-    return getStringAttribute(AttributeNames.ID);
+    return getStringAttribute(AttributeNames.RFC7643.ID);
   }
 
   /**
@@ -73,7 +67,7 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public void setId(String id)
   {
-    setAttribute(AttributeNames.ID, id);
+    setAttribute(AttributeNames.RFC7643.ID, id);
   }
 
   /**
@@ -91,7 +85,7 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public Optional<String> getExternalId()
   {
-    return getStringAttribute(AttributeNames.EXTERNAL_ID);
+    return getStringAttribute(AttributeNames.RFC7643.EXTERNAL_ID);
   }
 
   /**
@@ -109,7 +103,7 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public void setExternalId(String externalId)
   {
-    setAttribute(AttributeNames.EXTERNAL_ID, externalId);
+    setAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId);
   }
 
   /**
@@ -120,7 +114,7 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public Optional<Meta> getMeta()
   {
-    return getObjectAttribute(AttributeNames.META, Meta.class);
+    return getObjectAttribute(AttributeNames.RFC7643.META, Meta.class);
   }
 
   /**
@@ -131,6 +125,6 @@ public abstract class ResourceNode extends ScimObjectNode
    */
   public void setMeta(Meta meta)
   {
-    setAttribute(AttributeNames.META, meta);
+    setAttribute(AttributeNames.RFC7643.META, meta);
   }
 }

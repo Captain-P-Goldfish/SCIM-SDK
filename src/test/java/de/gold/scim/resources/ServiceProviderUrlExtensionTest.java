@@ -35,7 +35,7 @@ public class ServiceProviderUrlExtensionTest
   {
     ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
 
-    urlExtension.remove(AttributeNames.BASE_URL);
+    urlExtension.remove(AttributeNames.Custom.BASE_URL);
 
     Assertions.assertThrows(InvalidConfigException.class, urlExtension::getBaseUrl);
   }

@@ -47,7 +47,7 @@ public class Name extends ScimObjectNode
    */
   public Optional<String> getFormatted()
   {
-    return getStringAttribute(AttributeNames.FORMATTED);
+    return getStringAttribute(AttributeNames.RFC7643.FORMATTED);
   }
 
   /**
@@ -56,7 +56,7 @@ public class Name extends ScimObjectNode
    */
   public void setFormatted(String formatted)
   {
-    setAttribute(AttributeNames.FORMATTED, formatted);
+    setAttribute(AttributeNames.RFC7643.FORMATTED, formatted);
   }
 
   /**
@@ -65,7 +65,7 @@ public class Name extends ScimObjectNode
    */
   public Optional<String> getFamilyName()
   {
-    return getStringAttribute(AttributeNames.FAMILY_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.FAMILY_NAME);
   }
 
   /**
@@ -74,7 +74,7 @@ public class Name extends ScimObjectNode
    */
   public void setFamilyName(String familyName)
   {
-    setAttribute(AttributeNames.FAMILY_NAME, familyName);
+    setAttribute(AttributeNames.RFC7643.FAMILY_NAME, familyName);
   }
 
   /**
@@ -83,7 +83,7 @@ public class Name extends ScimObjectNode
    */
   public Optional<String> getGivenName()
   {
-    return getStringAttribute(AttributeNames.GIVEN_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.GIVEN_NAME);
   }
 
   /**
@@ -92,7 +92,7 @@ public class Name extends ScimObjectNode
    */
   public void setGivenName(String givenName)
   {
-    setAttribute(AttributeNames.GIVEN_NAME, givenName);
+    setAttribute(AttributeNames.RFC7643.GIVEN_NAME, givenName);
   }
 
   /**
@@ -100,7 +100,7 @@ public class Name extends ScimObjectNode
    */
   public Optional<String> getMiddleName()
   {
-    return getStringAttribute(AttributeNames.MIDDLE_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.MIDDLE_NAME);
   }
 
   /**
@@ -108,7 +108,7 @@ public class Name extends ScimObjectNode
    */
   public void setMiddleName(String middleName)
   {
-    setAttribute(AttributeNames.MIDDLE_NAME, middleName);
+    setAttribute(AttributeNames.RFC7643.MIDDLE_NAME, middleName);
   }
 
   /**
@@ -117,7 +117,7 @@ public class Name extends ScimObjectNode
    */
   public Optional<String> getHonorificPrefix()
   {
-    return getStringAttribute(AttributeNames.HONORIFIC_PREFIX);
+    return getStringAttribute(AttributeNames.RFC7643.HONORIFIC_PREFIX);
   }
 
   /**
@@ -126,7 +126,7 @@ public class Name extends ScimObjectNode
    */
   public void setHonorificPrefix(String honorificPrefix)
   {
-    setAttribute(AttributeNames.HONORIFIC_PREFIX, honorificPrefix);
+    setAttribute(AttributeNames.RFC7643.HONORIFIC_PREFIX, honorificPrefix);
   }
 
   /**
@@ -135,7 +135,7 @@ public class Name extends ScimObjectNode
    */
   public Optional<String> getHonorificSuffix()
   {
-    return getStringAttribute(AttributeNames.HONORIFIC_SUFFIX);
+    return getStringAttribute(AttributeNames.RFC7643.HONORIFIC_SUFFIX);
   }
 
   /**
@@ -144,7 +144,7 @@ public class Name extends ScimObjectNode
    */
   public void setHonorificSuffix(String honorificSuffix)
   {
-    setAttribute(AttributeNames.HONORIFIC_SUFFIX, honorificSuffix);
+    setAttribute(AttributeNames.RFC7643.HONORIFIC_SUFFIX, honorificSuffix);
   }
 
 }

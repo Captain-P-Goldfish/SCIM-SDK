@@ -38,7 +38,7 @@ public class GroupHandlerImpl extends ResourceHandler<Group>
     {
       throw new ConflictException("resource with id '" + groupId + "' does already exist");
     }
-    JsonHelper.addAttribute(resource, AttributeNames.ID, new TextNode(groupId));
+    JsonHelper.addAttribute(resource, AttributeNames.RFC7643.ID, new TextNode(groupId));
     inMemoryMap.put(groupId, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());

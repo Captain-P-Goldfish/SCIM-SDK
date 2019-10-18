@@ -38,7 +38,7 @@ public class PatchConfigTest
   {
     PatchConfig patchConfig = PatchConfig.builder().build();
 
-    patchConfig.remove(AttributeNames.SUPPORTED);
+    patchConfig.remove(AttributeNames.RFC7643.SUPPORTED);
 
     Assertions.assertFalse(patchConfig.isSupported());
   }

@@ -39,8 +39,8 @@ public class FilterConfigTest
   {
     FilterConfig eTagConfig = FilterConfig.builder().build();
 
-    eTagConfig.remove(AttributeNames.SUPPORTED);
-    eTagConfig.remove(AttributeNames.MAX_RESULTS);
+    eTagConfig.remove(AttributeNames.RFC7643.SUPPORTED);
+    eTagConfig.remove(AttributeNames.RFC7643.MAX_RESULTS);
 
     Assertions.assertFalse(eTagConfig.isSupported());
     Assertions.assertEquals(FilterConfig.DEFAULT_MAX_RESULTS, eTagConfig.getMaxResults());

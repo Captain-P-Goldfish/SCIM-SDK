@@ -14,6 +14,6 @@ public class InvalidFilterException extends ScimException
 
   public InvalidFilterException(String message, Throwable cause)
   {
-    super(message, cause, HttpStatus.SC_BAD_REQUEST, ScimType.INVALID_FILTER);
+    super(message, cause, HttpStatus.SC_BAD_REQUEST, ScimType.RFC7644.INVALID_FILTER);
   }
 }

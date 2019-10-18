@@ -27,4 +27,5 @@ public final class EndpointPaths
 
   public static final String ME = "/Me";
 
+  public static final String BULK = "/Bulk";
 }

@@ -48,11 +48,11 @@ public class AuthenticationSchemeTest
       return AuthenticationScheme.builder().name("name").description("description").type("type").build();
     });
 
-    authenticationScheme.remove(AttributeNames.NAME);
-    authenticationScheme.remove(AttributeNames.DESCRIPTION);
-    authenticationScheme.remove(AttributeNames.TYPE);
-    authenticationScheme.remove(AttributeNames.DOCUMENTATION_URI);
-    authenticationScheme.remove(AttributeNames.SPEC_URI);
+    authenticationScheme.remove(AttributeNames.RFC7643.NAME);
+    authenticationScheme.remove(AttributeNames.RFC7643.DESCRIPTION);
+    authenticationScheme.remove(AttributeNames.RFC7643.TYPE);
+    authenticationScheme.remove(AttributeNames.RFC7643.DOCUMENTATION_URI);
+    authenticationScheme.remove(AttributeNames.RFC7643.SPEC_URI);
 
     Assertions.assertThrows(InvalidConfigException.class, authenticationScheme::getName);
     Assertions.assertThrows(InvalidConfigException.class, authenticationScheme::getDescription);

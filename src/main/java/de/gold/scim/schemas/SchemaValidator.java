@@ -227,11 +227,11 @@ public class SchemaValidator
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
-                                       + AttributeNames.SCHEMAS + "' attribute but is "
+                                       + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
                                        + "not present within the document";
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new InternalServerException(message.get(), null,
-                                                                                  ScimType.MISSING_EXTENSION));
+                                                                                  ScimType.Custom.MISSING_EXTENSION));
       JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory,
                                                             schemaExtension,
                                                             extension,
@@ -240,7 +240,7 @@ public class SchemaValidator
                                                             excludedAttributes);
       if (extensionNode == null)
       {
-        JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.SCHEMAS).ifPresent(arrayNode -> {
+        JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.RFC7643.SCHEMAS).ifPresent(arrayNode -> {
           JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getId());
         });
       }
@@ -249,7 +249,7 @@ public class SchemaValidator
         JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
       }
     }
-    JsonNode metaNode = document.get(AttributeNames.META);
+    JsonNode metaNode = document.get(AttributeNames.RFC7643.META);
     Schema metaSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.META);
     JsonNode validatedMeta = validateExtensionForResponse(resourceTypeFactory,
                                                           metaSchema,
@@ -257,7 +257,7 @@ public class SchemaValidator
                                                           validatedRequest,
                                                           attributes,
                                                           excludedAttributes);
-    JsonHelper.addAttribute(validatedMainDocument, AttributeNames.META, validatedMeta);
+    JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
     return validatedMainDocument;
   }
 
@@ -376,15 +376,15 @@ public class SchemaValidator
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
-                                       + AttributeNames.SCHEMAS + "' attribute but is "
+                                       + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
                                        + "not present within the document";
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
                                    .orElseThrow(() -> new BadRequestException(message.get(), null,
-                                                                              ScimType.MISSING_EXTENSION));
+                                                                              ScimType.Custom.MISSING_EXTENSION));
       JsonNode extensionNode = validateExtensionForRequest(resourceTypeFactory, schemaExtension, extension, httpMethod);
       if (extensionNode == null)
       {
-        JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.SCHEMAS).ifPresent(arrayNode -> {
+        JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.RFC7643.SCHEMAS).ifPresent(arrayNode -> {
           JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getId());
         });
       }
@@ -486,7 +486,7 @@ public class SchemaValidator
     JsonNode validatedDocument = validateAttributes(metaSchema.getAttributes(), document, null);
     if (validatedDocument != null && schemasNode != null)
     {
-      JsonHelper.addAttribute(validatedDocument, AttributeNames.SCHEMAS, schemasNode);
+      JsonHelper.addAttribute(validatedDocument, AttributeNames.RFC7643.SCHEMAS, schemasNode);
     }
     return validatedDocument;
   }
@@ -596,7 +596,7 @@ public class SchemaValidator
    */
   private int checkForPrimary(JsonNode jsonNode, SchemaAttribute schemaAttribute, int primaryCounter)
   {
-    boolean isPrimary = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.PRIMARY).isPresent();
+    boolean isPrimary = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.PRIMARY).isPresent();
     int counter = primaryCounter + (isPrimary ? 1 : 0);
     if (counter > 1)
     {
@@ -755,12 +755,12 @@ public class SchemaValidator
          || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
         && isNodeNull)
     {
-      throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), ScimType.REQUIRED);
+      throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), ScimType.Custom.REQUIRED);
     }
     else if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && HttpMethod.POST.equals(httpMethod)
              && isNodeNull)
     {
-      throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), ScimType.REQUIRED);
+      throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), ScimType.Custom.REQUIRED);
     }
   }
 
@@ -1142,7 +1142,7 @@ public class SchemaValidator
   {
     final String metaSchemaId = metaSchema.getId();
 
-    final String schemasAttribute = AttributeNames.SCHEMAS;
+    final String schemasAttribute = AttributeNames.RFC7643.SCHEMAS;
     final String documentNoSchemasMessage = "document does not have a '" + schemasAttribute + "'-attribute";
     List<String> documentSchemas = JsonHelper.getSimpleAttributeArray(document, schemasAttribute)
                                              .orElseThrow(() -> getException(documentNoSchemasMessage, null));

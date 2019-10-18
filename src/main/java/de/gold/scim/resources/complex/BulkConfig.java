@@ -43,7 +43,7 @@ public class BulkConfig extends ScimObjectNode
    */
   public boolean isSupported()
   {
-    return getBooleanAttribute(AttributeNames.SUPPORTED).orElse(false);
+    return getBooleanAttribute(AttributeNames.RFC7643.SUPPORTED).orElse(false);
   }
 
   /**
@@ -51,7 +51,7 @@ public class BulkConfig extends ScimObjectNode
    */
   public void setSupported(Boolean supported)
   {
-    setAttribute(AttributeNames.SUPPORTED, Optional.ofNullable(supported).orElse(false));
+    setAttribute(AttributeNames.RFC7643.SUPPORTED, Optional.ofNullable(supported).orElse(false));
   }
 
   /**
@@ -59,7 +59,7 @@ public class BulkConfig extends ScimObjectNode
    */
   public int getMaxOperations()
   {
-    return getIntegerAttribute(AttributeNames.MAX_OPERATIONS).orElse(DEFAULT_MAX_OPERATIONS);
+    return getIntegerAttribute(AttributeNames.RFC7643.MAX_OPERATIONS).orElse(DEFAULT_MAX_OPERATIONS);
   }
 
   /**
@@ -67,7 +67,8 @@ public class BulkConfig extends ScimObjectNode
    */
   public void setMaxOperations(Integer maxOperations)
   {
-    setAttribute(AttributeNames.MAX_OPERATIONS, Optional.ofNullable(maxOperations).orElse(DEFAULT_MAX_OPERATIONS));
+    setAttribute(AttributeNames.RFC7643.MAX_OPERATIONS,
+                 Optional.ofNullable(maxOperations).orElse(DEFAULT_MAX_OPERATIONS));
   }
 
   /**
@@ -75,7 +76,7 @@ public class BulkConfig extends ScimObjectNode
    */
   public int getMaxPayloadSize()
   {
-    return getIntegerAttribute(AttributeNames.MAX_PAYLOAD_SIZE).orElse(DEFAULT_MAX_PAYLOAD_SIZE);
+    return getIntegerAttribute(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE).orElse(DEFAULT_MAX_PAYLOAD_SIZE);
   }
 
   /**
@@ -83,6 +84,7 @@ public class BulkConfig extends ScimObjectNode
    */
   public void setMaxPayloadSize(Integer maxPayloadSize)
   {
-    setAttribute(AttributeNames.MAX_PAYLOAD_SIZE, Optional.ofNullable(maxPayloadSize).orElse(DEFAULT_MAX_PAYLOAD_SIZE));
+    setAttribute(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE,
+                 Optional.ofNullable(maxPayloadSize).orElse(DEFAULT_MAX_PAYLOAD_SIZE));
   }
 }

@@ -242,30 +242,33 @@ public class SchemaAttribute
     this.namePrefix = namePrefix;
     Function<String, String> errorMessageBuilder = attribute -> "could not find required attribute '" + attribute
                                                                 + "' in meta-schema";
-    final String nameAttribute = AttributeNames.NAME;
+    final String nameAttribute = AttributeNames.RFC7643.NAME;
     final String nameErrorMessage = errorMessageBuilder.apply(nameAttribute);
     this.name = JsonHelper.getSimpleAttribute(jsonNode, nameAttribute)
                           .orElseThrow(() -> getException(nameErrorMessage, null));
-    final String typeAttribute = AttributeNames.TYPE;
+    final String typeAttribute = AttributeNames.RFC7643.TYPE;
     final String typeErrorMessage = errorMessageBuilder.apply(typeAttribute);
     this.type = Type.getByValue(JsonHelper.getSimpleAttribute(jsonNode, typeAttribute)
                                           .orElseThrow(() -> getException(typeErrorMessage, null)));
-    final String descriptionAttribute = AttributeNames.DESCRIPTION;
+    final String descriptionAttribute = AttributeNames.RFC7643.DESCRIPTION;
     final String descriptionErrorMessage = errorMessageBuilder.apply(descriptionAttribute);
     this.description = JsonHelper.getSimpleAttribute(jsonNode, descriptionAttribute)
                                  .orElseThrow(() -> getException(descriptionErrorMessage, null));
-    this.mutability = Mutability.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.MUTABILITY)
+    this.mutability = Mutability.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.MUTABILITY)
                                                       .orElse(null));
-    this.returned = Returned.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RETURNED).orElse(null));
-    this.uniqueness = Uniqueness.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.UNIQUENESS)
+    this.returned = Returned.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.RETURNED)
+                                                  .orElse(null));
+    this.uniqueness = Uniqueness.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.UNIQUENESS)
                                                       .orElse(Uniqueness.NONE.getValue()));
-    this.multiValued = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.MULTI_VALUED, Boolean.class)
+    this.multiValued = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.MULTI_VALUED, Boolean.class)
                                  .orElse(false);
-    this.required = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.REQUIRED, Boolean.class).orElse(false);
-    this.caseExact = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.CASE_EXACT, Boolean.class).orElse(false);
-    this.canonicalValues = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.CANONICAL_VALUES)
+    this.required = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.REQUIRED, Boolean.class)
+                              .orElse(false);
+    this.caseExact = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.CASE_EXACT, Boolean.class)
+                               .orElse(false);
+    this.canonicalValues = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.CANONICAL_VALUES)
                                      .orElse(Collections.emptyList());
-    this.referenceTypes = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.REFERENCE_TYPES)
+    this.referenceTypes = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.REFERENCE_TYPES)
                                     .map(strings -> strings.stream()
                                                            .map(ReferenceTypes::getByValue)
                                                            .collect(Collectors.toList()))
@@ -345,7 +348,7 @@ public class SchemaAttribute
       return Collections.emptyList();
     }
     List<SchemaAttribute> schemaAttributeList = new ArrayList<>();
-    final String subAttributeName = AttributeNames.SUB_ATTRIBUTES;
+    final String subAttributeName = AttributeNames.RFC7643.SUB_ATTRIBUTES;
     String errorMessage = "missing attribute '" + subAttributeName + "' on '" + type + "'-attribute";
     ArrayNode subAttributesArray = JsonHelper.getArrayAttribute(jsonNode, subAttributeName)
                                              .orElseThrow(() -> getException(errorMessage, null));
@@ -445,23 +448,23 @@ public class SchemaAttribute
   {
     ScimObjectNode objectNode = new ScimObjectNode(this);
 
-    JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(name));
-    JsonHelper.addAttribute(objectNode, AttributeNames.TYPE, new TextNode(type.getValue()));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.NAME, new TextNode(name));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.TYPE, new TextNode(type.getValue()));
     Optional.ofNullable(description)
             .ifPresent(s -> JsonHelper.addAttribute(objectNode,
-                                                    AttributeNames.DESCRIPTION,
+                                                    AttributeNames.RFC7643.DESCRIPTION,
                                                     new TextNode(this.description)));
-    JsonHelper.addAttribute(objectNode, AttributeNames.MUTABILITY, new TextNode(mutability.getValue()));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RETURNED, new TextNode(returned.getValue()));
-    JsonHelper.addAttribute(objectNode, AttributeNames.UNIQUENESS, new TextNode(uniqueness.getValue()));
-    JsonHelper.addAttribute(objectNode, AttributeNames.MULTI_VALUED, BooleanNode.valueOf(multiValued));
-    JsonHelper.addAttribute(objectNode, AttributeNames.REQUIRED, BooleanNode.valueOf(required));
-    JsonHelper.addAttribute(objectNode, AttributeNames.CASE_EXACT, BooleanNode.valueOf(caseExact));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.MUTABILITY, new TextNode(mutability.getValue()));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.RETURNED, new TextNode(returned.getValue()));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.UNIQUENESS, new TextNode(uniqueness.getValue()));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.MULTI_VALUED, BooleanNode.valueOf(multiValued));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.REQUIRED, BooleanNode.valueOf(required));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.CASE_EXACT, BooleanNode.valueOf(caseExact));
     List<JsonNode> canonValues = canonicalValues.stream().map(TextNode::new).collect(Collectors.toList());
     if (!canonValues.isEmpty())
     {
       JsonHelper.addAttribute(objectNode,
-                              AttributeNames.CANONICAL_VALUES,
+                              AttributeNames.RFC7643.CANONICAL_VALUES,
                               new ArrayNode(JsonNodeFactory.instance, canonValues));
     }
     List<JsonNode> referType = referenceTypes.stream()
@@ -471,7 +474,7 @@ public class SchemaAttribute
     if (!referType.isEmpty())
     {
       JsonHelper.addAttribute(objectNode,
-                              AttributeNames.REFERENCE_TYPES,
+                              AttributeNames.RFC7643.REFERENCE_TYPES,
                               new ArrayNode(JsonNodeFactory.instance, referType));
     }
     List<JsonNode> subAttr = subAttributes.stream()
@@ -481,7 +484,7 @@ public class SchemaAttribute
     if (!subAttr.isEmpty())
     {
       JsonHelper.addAttribute(objectNode,
-                              AttributeNames.SUB_ATTRIBUTES,
+                              AttributeNames.RFC7643.SUB_ATTRIBUTES,
                               new ArrayNode(JsonNodeFactory.instance, subAttr));
     }
     return objectNode;

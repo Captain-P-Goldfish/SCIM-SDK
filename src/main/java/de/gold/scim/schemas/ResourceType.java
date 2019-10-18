@@ -71,24 +71,26 @@ public class ResourceType extends ResourceNode
   protected ResourceType(SchemaFactory schemaFactory, JsonNode resourceTypeDocument)
   {
     this.schemaFactory = getSchemaFactory(schemaFactory);
-    setSchemas(JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.SCHEMAS)
+    setSchemas(JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.RFC7643.SCHEMAS)
                          .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI)));
-    setId(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ID)
-                    .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ID))));
-    setName(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.NAME)
-                      .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.NAME))));
-    setDescription(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.DESCRIPTION).orElse(null));
-    setEndpoint(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.ENDPOINT)
-                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.ENDPOINT))));
-    setSchema(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.SCHEMA)
-                        .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA))));
+    setId(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.RFC7643.ID)
+                    .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.RFC7643.ID))));
+    setName(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.RFC7643.NAME)
+                      .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.RFC7643.NAME))));
+    setDescription(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.RFC7643.DESCRIPTION)
+                             .orElse(null));
+    setEndpoint(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.RFC7643.ENDPOINT)
+                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.RFC7643.ENDPOINT))));
+    setSchema(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.RFC7643.SCHEMA)
+                        .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.RFC7643.SCHEMA))));
     List<SchemaExtension> schemaExtensions = new ArrayList<>();
-    JsonHelper.getArrayAttribute(resourceTypeDocument, AttributeNames.SCHEMA_EXTENSIONS).ifPresent(jsonNodes -> {
-      for ( JsonNode jsonNode : jsonNodes )
-      {
-        schemaExtensions.add(new SchemaExtension(jsonNode));
-      }
-    });
+    JsonHelper.getArrayAttribute(resourceTypeDocument, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
+              .ifPresent(jsonNodes -> {
+                for ( JsonNode jsonNode : jsonNodes )
+                {
+                  schemaExtensions.add(new SchemaExtension(jsonNode));
+                }
+              });
     setSchemaExtensions(schemaExtensions);
     Meta meta = getMetaNode(resourceTypeDocument);
     setMeta(meta);
@@ -103,7 +105,7 @@ public class ResourceType extends ResourceNode
    */
   private Meta getMetaNode(JsonNode resourceTypeDocument)
   {
-    Optional<ObjectNode> metaNode = JsonHelper.getObjectAttribute(resourceTypeDocument, AttributeNames.META);
+    Optional<ObjectNode> metaNode = JsonHelper.getObjectAttribute(resourceTypeDocument, AttributeNames.RFC7643.META);
     Meta meta;
     final String resourceType = "ResourceType";
     final String location = EndpointPaths.RESOURCE_TYPES + "/" + getName();
@@ -258,7 +260,7 @@ public class ResourceType extends ResourceNode
    */
   public String getEndpoint()
   {
-    return getStringAttribute(AttributeNames.ENDPOINT).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.ENDPOINT).orElseThrow(() -> {
       return new InvalidResourceTypeException("the endpoint is a required attribute", null, null, null);
     });
   }
@@ -269,7 +271,7 @@ public class ResourceType extends ResourceNode
    */
   private void setEndpoint(String endpoint)
   {
-    setAttribute(AttributeNames.ENDPOINT, Objects.requireNonNull(StringUtils.stripToNull(endpoint)));
+    setAttribute(AttributeNames.RFC7643.ENDPOINT, Objects.requireNonNull(StringUtils.stripToNull(endpoint)));
   }
 
   /**
@@ -278,7 +280,7 @@ public class ResourceType extends ResourceNode
    */
   public String getName()
   {
-    return getStringAttribute(AttributeNames.NAME).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.NAME).orElseThrow(() -> {
       return new InvalidResourceTypeException("the name is a required attribute", null, null, null);
     });
   }
@@ -289,7 +291,7 @@ public class ResourceType extends ResourceNode
    */
   private void setName(String name)
   {
-    setAttribute(AttributeNames.NAME, name);
+    setAttribute(AttributeNames.RFC7643.NAME, name);
   }
 
   /**
@@ -298,7 +300,7 @@ public class ResourceType extends ResourceNode
    */
   public Optional<String> getDescription()
   {
-    return getStringAttribute(AttributeNames.DESCRIPTION);
+    return getStringAttribute(AttributeNames.RFC7643.DESCRIPTION);
   }
 
   /**
@@ -307,7 +309,7 @@ public class ResourceType extends ResourceNode
    */
   private void setDescription(String description)
   {
-    setAttribute(AttributeNames.DESCRIPTION, description);
+    setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
   }
 
   /**
@@ -316,7 +318,7 @@ public class ResourceType extends ResourceNode
    */
   private void setResourceTypeDescription(String description)
   {
-    setAttribute(AttributeNames.DESCRIPTION, description);
+    setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
   }
 
   /**
@@ -325,7 +327,7 @@ public class ResourceType extends ResourceNode
    */
   public String getSchema()
   {
-    return getStringAttribute(AttributeNames.SCHEMA).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.SCHEMA).orElseThrow(() -> {
       return new InvalidResourceTypeException("the schema is a required attribute", null, null, null);
     });
   }
@@ -336,7 +338,7 @@ public class ResourceType extends ResourceNode
    */
   private void setSchema(String schema)
   {
-    setAttribute(AttributeNames.SCHEMA, schema);
+    setAttribute(AttributeNames.RFC7643.SCHEMA, schema);
   }
 
   /**
@@ -344,7 +346,7 @@ public class ResourceType extends ResourceNode
    */
   public List<SchemaExtension> getSchemaExtensions()
   {
-    return getArrayAttribute(AttributeNames.SCHEMA_EXTENSIONS, SchemaExtension.class);
+    return getArrayAttribute(AttributeNames.RFC7643.SCHEMA_EXTENSIONS, SchemaExtension.class);
   }
 
   /**
@@ -352,7 +354,7 @@ public class ResourceType extends ResourceNode
    */
   private void setSchemaExtensions(List<SchemaExtension> schemaExtensions)
   {
-    setAttribute(AttributeNames.SCHEMA_EXTENSIONS, schemaExtensions);
+    setAttribute(AttributeNames.RFC7643.SCHEMA_EXTENSIONS, schemaExtensions);
   }
 
   /**
@@ -365,10 +367,10 @@ public class ResourceType extends ResourceNode
     public SchemaExtension(JsonNode jsonNode)
     {
       super(null);
-      setSchema(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.SCHEMA)
-                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.SCHEMA))));
-      setRequired(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.REQUIRED, Boolean.class)
-                            .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.REQUIRED))));
+      setSchema(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.SCHEMA)
+                          .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.RFC7643.SCHEMA))));
+      setRequired(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.REQUIRED, Boolean.class)
+                            .orElseThrow(() -> getInvalidResourceException(missingAttrMessage(AttributeNames.RFC7643.REQUIRED))));
     }
 
     /**
@@ -377,7 +379,7 @@ public class ResourceType extends ResourceNode
      */
     public String getSchema()
     {
-      return getStringAttribute(AttributeNames.SCHEMA).orElseThrow(() -> {
+      return getStringAttribute(AttributeNames.RFC7643.SCHEMA).orElseThrow(() -> {
         return new InvalidResourceTypeException("the schema attribute is a required attribute", null, null, null);
       });
     }
@@ -388,7 +390,7 @@ public class ResourceType extends ResourceNode
      */
     private void setSchema(String schema)
     {
-      setAttribute(AttributeNames.SCHEMA, schema);
+      setAttribute(AttributeNames.RFC7643.SCHEMA, schema);
     }
 
 
@@ -400,7 +402,7 @@ public class ResourceType extends ResourceNode
      */
     public boolean isRequired()
     {
-      return getBooleanAttribute(AttributeNames.REQUIRED).orElseThrow(() -> {
+      return getBooleanAttribute(AttributeNames.RFC7643.REQUIRED).orElseThrow(() -> {
         return new InvalidResourceTypeException("the required attribute is a required attribute", null, null, null);
       });
     }
@@ -413,7 +415,7 @@ public class ResourceType extends ResourceNode
      */
     private void setRequired(boolean required)
     {
-      setAttribute(AttributeNames.REQUIRED, required);
+      setAttribute(AttributeNames.RFC7643.REQUIRED, required);
     }
   }
 
@@ -437,8 +439,8 @@ public class ResourceType extends ResourceNode
 
     public ResourceSchema(JsonNode resourceDocument)
     {
-      List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.SCHEMAS)
-                                       .orElseThrow(() -> getBadRequestException(missingAttrMessage(AttributeNames.SCHEMAS)));
+      List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.RFC7643.SCHEMAS)
+                                       .orElseThrow(() -> getBadRequestException(missingAttrMessage(AttributeNames.RFC7643.SCHEMAS)));
       if (!schemas.contains(getSchema()))
       {
         throw getBadRequestException("main resource schema '" + getSchema() + "' is not present in resource");

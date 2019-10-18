@@ -13,6 +13,7 @@ import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.utils.JsonHelper;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.ToString;
 
@@ -31,6 +32,7 @@ public class ListResponse extends ScimResponse
   /**
    * this is the actual node that represents this response
    */
+  @Getter(AccessLevel.PROTECTED)
   private JsonNode listResponseNode;
 
   /**
@@ -56,14 +58,18 @@ public class ListResponse extends ScimResponse
   public ListResponse(String resourceJsonRepresentation)
   {
     this.listResponseNode = JsonHelper.readJsonDocument(resourceJsonRepresentation);
-    this.totalResults = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.TOTAL_RESULTS, Integer.class)
+    this.totalResults = JsonHelper.getSimpleAttribute(listResponseNode,
+                                                      AttributeNames.RFC7643.TOTAL_RESULTS,
+                                                      Integer.class)
                                   .orElse(null);
-    this.itemsPerPage = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.ITEMS_PER_PAGE, Integer.class)
+    this.itemsPerPage = JsonHelper.getSimpleAttribute(listResponseNode,
+                                                      AttributeNames.RFC7643.ITEMS_PER_PAGE,
+                                                      Integer.class)
                                   .orElse(null);
-    this.startIndex = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.START_INDEX, Integer.class)
+    this.startIndex = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.RFC7643.START_INDEX, Integer.class)
                                 .orElse(null);
     this.listedResources = new ArrayList<>();
-    JsonHelper.getArrayAttribute(listResponseNode, AttributeNames.RESOURCES).ifPresent(resourceArray -> {
+    JsonHelper.getArrayAttribute(listResponseNode, AttributeNames.RFC7643.RESOURCES).ifPresent(resourceArray -> {
       resourceArray.forEach(listedResources::add);
     });
   }
@@ -86,7 +92,7 @@ public class ListResponse extends ScimResponse
   {
     ArrayNode schemas = new ArrayNode(JsonNodeFactory.instance);
     schemas.add(SchemaUris.LIST_RESPONSE_URI);
-    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RESOURCES, schemas);
+    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.RESOURCES, schemas);
   }
 
   /**
@@ -97,7 +103,7 @@ public class ListResponse extends ScimResponse
     this.totalResults = totalResults;
     if (totalResults != null)
     {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.TOTAL_RESULTS, new IntNode(totalResults));
+      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.TOTAL_RESULTS, new IntNode(totalResults));
     }
   }
 
@@ -109,7 +115,7 @@ public class ListResponse extends ScimResponse
     this.itemsPerPage = itemsPerPage;
     if (itemsPerPage != null)
     {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.ITEMS_PER_PAGE, new IntNode(itemsPerPage));
+      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.ITEMS_PER_PAGE, new IntNode(itemsPerPage));
     }
   }
 
@@ -121,7 +127,7 @@ public class ListResponse extends ScimResponse
     this.startIndex = startIndex;
     if (startIndex != null)
     {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.START_INDEX, new IntNode(startIndex));
+      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.START_INDEX, new IntNode(startIndex));
     }
   }
 
@@ -133,7 +139,7 @@ public class ListResponse extends ScimResponse
     this.listedResources = listedResources == null ? new ArrayList<>() : listedResources;
     ArrayNode resources = new ArrayNode(JsonNodeFactory.instance);
     this.listedResources.forEach(resources::add);
-    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RESOURCES, resources);
+    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.RESOURCES, resources);
   }
 
   /**

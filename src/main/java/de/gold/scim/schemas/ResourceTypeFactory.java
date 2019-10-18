@@ -154,7 +154,7 @@ public final class ResourceTypeFactory
    */
   private void addSchemaExtensions(JsonNode resourceType, JsonNode[] resourceSchemaExtensions)
   {
-    ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(resourceType, AttributeNames.SCHEMA_EXTENSIONS)
+    ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(resourceType, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
                                            .orElse(null);
     Set<String> resourceTypeExtensionIds = getExtensionIds(schemaExtensions);
     Set<String> extensionsToRegisterIds = getExtensionIds(resourceSchemaExtensions);
@@ -240,7 +240,7 @@ public final class ResourceTypeFactory
     for ( JsonNode extension : arrayNode )
     {
       // should never give a nullPointer since schema validation was executed before
-      resourceTypeExtensionIds.add(extension.get(AttributeNames.SCHEMA).textValue());
+      resourceTypeExtensionIds.add(extension.get(AttributeNames.RFC7643.SCHEMA).textValue());
     }
     return resourceTypeExtensionIds;
   }
@@ -253,7 +253,7 @@ public final class ResourceTypeFactory
     }
     return Arrays.stream(resourceSchemaExtensions)
                  // should never give a nullPointer since schema validation was executed before
-                 .map(jsonNode -> jsonNode.get(AttributeNames.ID).textValue())
+                 .map(jsonNode -> jsonNode.get(AttributeNames.RFC7643.ID).textValue())
                  .collect(Collectors.toSet());
   }
 
@@ -282,12 +282,12 @@ public final class ResourceTypeFactory
     ObjectNode resourceType = new ObjectNode(JsonNodeFactory.instance);
     ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
     schemasNode.add(new TextNode(SchemaUris.RESOURCE_TYPE_URI));
-    JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMAS, schemasNode);
-    JsonHelper.addAttribute(resourceType, AttributeNames.ID, new TextNode(id));
-    JsonHelper.addAttribute(resourceType, AttributeNames.NAME, new TextNode(name));
-    JsonHelper.addAttribute(resourceType, AttributeNames.DESCRIPTION, new TextNode(description));
-    JsonHelper.addAttribute(resourceType, AttributeNames.SCHEMA, new TextNode(schema));
-    JsonHelper.addAttribute(resourceType, AttributeNames.ENDPOINT, new TextNode(endpoint));
+    JsonHelper.addAttribute(resourceType, AttributeNames.RFC7643.SCHEMAS, schemasNode);
+    JsonHelper.addAttribute(resourceType, AttributeNames.RFC7643.ID, new TextNode(id));
+    JsonHelper.addAttribute(resourceType, AttributeNames.RFC7643.NAME, new TextNode(name));
+    JsonHelper.addAttribute(resourceType, AttributeNames.RFC7643.DESCRIPTION, new TextNode(description));
+    JsonHelper.addAttribute(resourceType, AttributeNames.RFC7643.SCHEMA, new TextNode(schema));
+    JsonHelper.addAttribute(resourceType, AttributeNames.RFC7643.ENDPOINT, new TextNode(endpoint));
     registerResourceType(resourceHandler, resourceType, resourceSchema, resourceSchemaExtensions);
   }
 

@@ -45,7 +45,7 @@ public class Address extends ScimObjectNode
    */
   public Optional<String> getFormatted()
   {
-    return getStringAttribute(AttributeNames.FORMATTED);
+    return getStringAttribute(AttributeNames.RFC7643.FORMATTED);
   }
 
   /**
@@ -54,7 +54,7 @@ public class Address extends ScimObjectNode
    */
   public void setFormatted(String formatted)
   {
-    setAttribute(AttributeNames.FORMATTED, formatted);
+    setAttribute(AttributeNames.RFC7643.FORMATTED, formatted);
   }
 
   /**
@@ -63,7 +63,7 @@ public class Address extends ScimObjectNode
    */
   public Optional<String> getStreetAddress()
   {
-    return getStringAttribute(AttributeNames.STREET_ADDRESS);
+    return getStringAttribute(AttributeNames.RFC7643.STREET_ADDRESS);
   }
 
   /**
@@ -72,7 +72,7 @@ public class Address extends ScimObjectNode
    */
   public void setStreetAddress(String streetAddress)
   {
-    setAttribute(AttributeNames.STREET_ADDRESS, streetAddress);
+    setAttribute(AttributeNames.RFC7643.STREET_ADDRESS, streetAddress);
   }
 
   /**
@@ -80,7 +80,7 @@ public class Address extends ScimObjectNode
    */
   public Optional<String> getLocality()
   {
-    return getStringAttribute(AttributeNames.LOCALITY);
+    return getStringAttribute(AttributeNames.RFC7643.LOCALITY);
   }
 
   /**
@@ -88,7 +88,7 @@ public class Address extends ScimObjectNode
    */
   public void setLocality(String locality)
   {
-    setAttribute(AttributeNames.LOCALITY, locality);
+    setAttribute(AttributeNames.RFC7643.LOCALITY, locality);
   }
 
   /**
@@ -96,7 +96,7 @@ public class Address extends ScimObjectNode
    */
   public Optional<String> getRegion()
   {
-    return getStringAttribute(AttributeNames.REGION);
+    return getStringAttribute(AttributeNames.RFC7643.REGION);
   }
 
   /**
@@ -104,7 +104,7 @@ public class Address extends ScimObjectNode
    */
   public void setRegion(String region)
   {
-    setAttribute(AttributeNames.REGION, region);
+    setAttribute(AttributeNames.RFC7643.REGION, region);
   }
 
   /**
@@ -112,7 +112,7 @@ public class Address extends ScimObjectNode
    */
   public Optional<String> getPostalCode()
   {
-    return getStringAttribute(AttributeNames.POSTAL_CODE);
+    return getStringAttribute(AttributeNames.RFC7643.POSTAL_CODE);
   }
 
   /**
@@ -120,7 +120,7 @@ public class Address extends ScimObjectNode
    */
   public void setPostalCode(String postalCode)
   {
-    setAttribute(AttributeNames.POSTAL_CODE, postalCode);
+    setAttribute(AttributeNames.RFC7643.POSTAL_CODE, postalCode);
   }
 
   /**
@@ -129,7 +129,7 @@ public class Address extends ScimObjectNode
    */
   public Optional<String> getCountry()
   {
-    return getStringAttribute(AttributeNames.COUNTRY);
+    return getStringAttribute(AttributeNames.RFC7643.COUNTRY);
   }
 
   /**
@@ -138,6 +138,6 @@ public class Address extends ScimObjectNode
    */
   public void setCountry(String country)
   {
-    setAttribute(AttributeNames.COUNTRY, country);
+    setAttribute(AttributeNames.RFC7643.COUNTRY, country);
   }
 }

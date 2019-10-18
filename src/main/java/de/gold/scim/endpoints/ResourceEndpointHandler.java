@@ -19,6 +19,7 @@ import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.FilterNode;
+import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.ServiceProviderUrlExtension;
@@ -309,9 +310,61 @@ public final class ResourceEndpointHandler
   }
 
   /**
-   * this endpoint can be used to query resources
+   * Clients MAY execute queries without passing parameters on the URL by using the HTTP POST verb combined with
+   * the "/.search" path extension. The inclusion of "/.search" on the end of a valid SCIM endpoint SHALL be
+   * used to indicate that the HTTP POST verb is intended to be a query operation.
    *
-   * @param endpoint the resource endpoint that was called
+   * @param endpoint the resource endpoint that was called. This string should only contain the
+   *          resources-endpoint not the "/.search" extension e.g. "/Users" or "Users".
+   * @param searchRequest the JSON request body of the search request if the request was sent over POST
+   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
+   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
+   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
+   *          If this parameter is not present the application will try to read a hardcoded URL from the service
+   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
+   *          thrown
+   * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
+   */
+  public ScimResponse listResources(String endpoint, String searchRequest, Supplier<String> baseUrlSupplier)
+  {
+    return listResources(endpoint, JsonHelper.readJsonDocument(searchRequest, SearchRequest.class), baseUrlSupplier);
+  }
+
+  /**
+   * Clients MAY execute queries without passing parameters on the URL by using the HTTP POST verb combined with
+   * the "/.search" path extension. The inclusion of "/.search" on the end of a valid SCIM endpoint SHALL be
+   * used to indicate that the HTTP POST verb is intended to be a query operation.
+   *
+   * @param endpoint the resource endpoint that was called. This string should only contain the
+   *          resources-endpoint * not the "/.search" extension e.g. "/Users" or "Users".
+   * @param searchRequest the JSON request body of the search request if the request was sent over POST
+   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
+   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
+   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
+   *          If this parameter is not present the application will try to read a hardcoded URL from the service
+   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
+   *          thrown
+   * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
+   */
+  public ScimResponse listResources(String endpoint, SearchRequest searchRequest, Supplier<String> baseUrlSupplier)
+  {
+    return listResources(endpoint,
+                         searchRequest.getStartIndex().orElse(null),
+                         searchRequest.getCount().orElse(null),
+                         searchRequest.getFilter().orElse(null),
+                         searchRequest.getSortBy().orElse(null),
+                         searchRequest.getSortOrder().orElse(null),
+                         searchRequest.getAttributes().orElse(null),
+                         searchRequest.getExcludedAttributes().orElse(null),
+                         baseUrlSupplier);
+  }
+
+  /**
+   * Clients MAY execute queries without passing parameters on the URL by using the HTTP POST verb combined with
+   * the "/.search" path extension. The inclusion of "/.search" on the end of a valid SCIM endpoint SHALL be
+   * used to indicate that the HTTP POST verb is intended to be a query operation.
+   *
+   * @param endpoint the resource endpoint that was called e.g. "/Users" or "Users".
    * @param startIndex The 1-based index of the first query result. A value less than 1 SHALL be interpreted as
    *          1.<br>
    *          <b>DEFAULT:</b> 1
@@ -359,7 +412,7 @@ public final class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @return a ListResponse with all returned resources
+   * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
   public ScimResponse listResources(String endpoint,
                                     Integer startIndex,
@@ -374,9 +427,12 @@ public final class ResourceEndpointHandler
     final ResourceType resourceType = getResourceType(endpoint);
     final int effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
     final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
-    final FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
-    final SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
-    final SortOrder sortOrdering = SortOrder.getByValue(sortOrder);
+    final FilterNode filterNode = serviceProvider.getFilterConfig().isSupported()
+      ? RequestUtils.parseFilter(resourceType, filter) : null;
+    final SchemaAttribute sortByAttribute = serviceProvider.getSortConfig().isSupported()
+      ? RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy) : null;
+    final SortOrder sortOrdering = serviceProvider.getSortConfig().isSupported() ? SortOrder.getByValue(sortOrder)
+      : null;
 
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
     PartialListResponse resources = resourceHandler.listResources(effectiveStartIndex,
@@ -387,8 +443,9 @@ public final class ResourceEndpointHandler
     List<ResourceNode> resourceList = resources.getResources();
     if (resources.getResources().size() > effectiveCount)
     {
-      log.warn("the service provider tried to return more results than allowed. Tried to return  '"
-               + resources.getResources().size() + "' results reducing this list to '" + effectiveCount + "' results");
+      log.warn("the service provider tried to return more results than allowed. Tried to return '"
+               + resources.getResources().size() + "' results. The list will be reduced to '" + effectiveCount
+               + "' results");
       resourceList = resourceList.subList(0, effectiveCount);
     }
 
@@ -499,7 +556,7 @@ public final class ResourceEndpointHandler
       if (resource == null)
       {
         throw new BadRequestException("the request body does not contain any writable parameters", null,
-                                      ScimType.UNPARSABLE_REQUEST);
+                                      ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
       resourceNode.setId(id);
@@ -580,7 +637,8 @@ public final class ResourceEndpointHandler
   {
     Supplier<String> errorMessage = () -> "no resource found for endpoint '" + endpoint + "'";
     return Optional.ofNullable(resourceTypeFactory.getResourceType(endpoint))
-                   .orElseThrow(() -> new BadRequestException(errorMessage.get(), null, ScimType.UNKNOWN_RESOURCE));
+                   .orElseThrow(() -> new BadRequestException(errorMessage.get(), null,
+                                                              ScimType.Custom.UNKNOWN_RESOURCE));
   }
 
   /**

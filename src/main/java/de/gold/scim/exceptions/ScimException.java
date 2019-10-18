@@ -19,11 +19,6 @@ public abstract class ScimException extends RuntimeException
 {
 
   /**
-   * A detailed human-readable message..
-   */
-  protected String detail;
-
-  /**
    * The HTTP status code.
    */
   protected int status;
@@ -36,8 +31,12 @@ public abstract class ScimException extends RuntimeException
   public ScimException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause);
-    this.detail = message;
     this.status = status == null ? HttpStatus.SC_INTERNAL_SERVER_ERROR : status;
     this.scimType = StringUtils.isBlank(scimType) ? null : scimType;
+  }
+
+  public String getDetail()
+  {
+    return getMessage();
   }
 }

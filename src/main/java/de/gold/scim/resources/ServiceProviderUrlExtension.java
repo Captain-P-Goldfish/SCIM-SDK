@@ -30,7 +30,7 @@ public class ServiceProviderUrlExtension extends ScimObjectNode
    */
   public String getBaseUrl()
   {
-    return getStringAttribute(AttributeNames.BASE_URL).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.Custom.BASE_URL).orElseThrow(() -> {
       return new InvalidConfigException("The base URL is not present");
     });
   }
@@ -40,7 +40,7 @@ public class ServiceProviderUrlExtension extends ScimObjectNode
    */
   public void setBaseUrl(String baseUrl)
   {
-    setAttribute(AttributeNames.BASE_URL, Optional.ofNullable(baseUrl).orElseThrow(() -> {
+    setAttribute(AttributeNames.Custom.BASE_URL, Optional.ofNullable(baseUrl).orElseThrow(() -> {
       return new InvalidConfigException("The base URL must not be empty");
     }));
   }

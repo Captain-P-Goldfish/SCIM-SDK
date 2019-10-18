@@ -38,7 +38,7 @@ public enum SortOrder
     catch (IllegalArgumentException ex)
     {
       throw new BadRequestException("sortOrdering value '" + sortOrder + "' cannot be parsed to a valid value", ex,
-                                    ScimType.INVALID_PARAMETERS);
+                                    ScimType.Custom.INVALID_PARAMETERS);
     }
   }
 }

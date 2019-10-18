@@ -94,7 +94,7 @@ class SchemaFactoryTest implements FileReferences
   public void testRegisterSchemasWithMissingSchemasAttribute()
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.SCHEMAS);
+    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
@@ -106,7 +106,7 @@ class SchemaFactoryTest implements FileReferences
   public void testRegisterSchemasWithEmptySchemasAttribute()
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(userResourceSchema, AttributeNames.SCHEMAS).get();
+    ArrayNode schemas = JsonHelper.getArrayAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS).get();
     schemas.removeAll();
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));

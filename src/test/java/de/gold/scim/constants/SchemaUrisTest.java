@@ -35,4 +35,40 @@ public class SchemaUrisTest
   {
     Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:", SchemaUris.SCIM_MESSAGES_URI);
   }
+
+  /**
+   * this test will verify that the schema uris in the constants class are using the correct values
+   */
+  @Test
+  public void testCheckUrisDefinedByScim()
+  {
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:User", SchemaUris.USER_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:Group", SchemaUris.GROUP_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+                            SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:ResourceType", SchemaUris.RESOURCE_TYPE_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:SearchRequest", SchemaUris.SEARCH_REQUEST_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:Error", SchemaUris.ERROR_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:Schema", SchemaUris.SCHEMA_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig",
+                            SchemaUris.SERVICE_PROVIDER_CONFIG_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:ListResponse", SchemaUris.LIST_RESPONSE_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:BulkRequest", SchemaUris.BULK_REQUEST_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:BulkResponse", SchemaUris.BULK_RESPONSE_URI);
+    Assertions.assertEquals("urn:ietf:params:scim:api:messages:2.0:PatchOp", SchemaUris.PATCH_OP);
+
+  }
+
+  /**
+   * this test will verify that the custom uris that were defined for this implementation do have the correct
+   * values
+   */
+  @Test
+  public void testCheckUrisNotDefinedByScim()
+  {
+
+    Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:Meta", SchemaUris.META);
+    Assertions.assertEquals("urn:gold:params:scim:schemas:extension:url:2.0:ServiceProvider",
+                            SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI);
+  }
 }

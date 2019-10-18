@@ -1,11 +1,14 @@
 package de.gold.scim.endpoints.handler;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
+import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.ResourceHandler;
+import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.filter.FilterNode;
@@ -15,6 +18,7 @@ import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.SchemaAttribute;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -23,6 +27,7 @@ import lombok.AllArgsConstructor;
  * <br>
  * the resourceType handler for the resourceType endpoint that will provide the different resources
  */
+@Slf4j
 @AllArgsConstructor
 public class ResourceTypeHandler extends ResourceHandler<ResourceType>
 {
@@ -61,8 +66,6 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
 
   /**
    * {@inheritDoc}
-   *
-   * @return
    */
   @Override
   public PartialListResponse listResources(int startIndex,
@@ -72,8 +75,23 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
                                            SortOrder sortOrder)
   {
     List<ResourceNode> resourceNodes = new ArrayList<>();
-    resourceNodes.addAll(new ArrayList<>(resourceTypeFactory.getAllResourceTypes()).subList(startIndex - 1, count));
-    return PartialListResponse.builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
+    Collection<ResourceType> resourceTypeList = resourceTypeFactory.getAllResourceTypes();
+    if (startIndex > resourceTypeList.size())
+    {
+      throw new BadRequestException("the parameter 'startIndex: " + startIndex
+                                    + "' exceeds the number of existing values '" + resourceTypeList.size() + "'", null,
+                                    ScimType.Custom.INVALID_PARAMETERS);
+    }
+    resourceNodes.addAll(new ArrayList<>(resourceTypeList).subList(Math.min(startIndex - 1,
+                                                                            resourceTypeList.size() - 1),
+                                                                   Math.min(startIndex - 1 + count,
+                                                                            resourceTypeList.size())));
+    // TODO implement filtering and sorting
+    log.warn("TODO implement filtering and sorting");
+    return PartialListResponse.builder()
+                              .resources(resourceNodes)
+                              .totalResults(resourceTypeFactory.getAllResourceTypes().size())
+                              .build();
   }
 
   /**

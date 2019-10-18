@@ -99,7 +99,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public Optional<String> getType()
   {
-    return getStringAttribute(AttributeNames.TYPE);
+    return getStringAttribute(AttributeNames.RFC7643.TYPE);
   }
 
   /**
@@ -107,7 +107,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public void setType(String type)
   {
-    setAttribute(AttributeNames.TYPE, type);
+    setAttribute(AttributeNames.RFC7643.TYPE, type);
   }
 
   /**
@@ -117,7 +117,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public boolean isPrimary()
   {
-    return getBooleanAttribute(AttributeNames.PRIMARY).orElse(false);
+    return getBooleanAttribute(AttributeNames.RFC7643.PRIMARY).orElse(false);
   }
 
   /**
@@ -127,7 +127,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public void setPrimary(Boolean primary)
   {
-    setAttribute(AttributeNames.PRIMARY, primary);
+    setAttribute(AttributeNames.RFC7643.PRIMARY, primary);
   }
 
   /**
@@ -135,7 +135,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public Optional<String> getDisplay()
   {
-    return getStringAttribute(AttributeNames.DISPLAY);
+    return getStringAttribute(AttributeNames.RFC7643.DISPLAY);
   }
 
   /**
@@ -143,7 +143,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public void setDisplay(String display)
   {
-    setAttribute(AttributeNames.DISPLAY, display);
+    setAttribute(AttributeNames.RFC7643.DISPLAY, display);
   }
 
   /**
@@ -151,7 +151,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public Optional<String> getValue()
   {
-    return getStringAttribute(AttributeNames.VALUE);
+    return getStringAttribute(AttributeNames.RFC7643.VALUE);
   }
 
   /**
@@ -159,7 +159,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public void setValue(String value)
   {
-    setAttribute(AttributeNames.VALUE, value);
+    setAttribute(AttributeNames.RFC7643.VALUE, value);
   }
 
   /**
@@ -171,7 +171,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public Optional<String> getRef()
   {
-    return getStringAttribute(AttributeNames.REF);
+    return getStringAttribute(AttributeNames.RFC7643.REF);
   }
 
   /**
@@ -183,7 +183,7 @@ public class MultiComplexNode extends ScimObjectNode
    */
   public void setRef(String ref)
   {
-    setAttribute(AttributeNames.REF, ref);
+    setAttribute(AttributeNames.RFC7643.REF, ref);
   }
 
 }

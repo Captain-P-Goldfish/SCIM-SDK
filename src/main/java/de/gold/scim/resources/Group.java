@@ -51,7 +51,7 @@ public class Group extends ResourceNode
    */
   public Optional<String> getDisplayName()
   {
-    return getStringAttribute(AttributeNames.DISPLAY_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
   }
 
   /**
@@ -59,7 +59,7 @@ public class Group extends ResourceNode
    */
   public void setDisplayName(String displayName)
   {
-    setAttribute(AttributeNames.DISPLAY_NAME, displayName);
+    setAttribute(AttributeNames.RFC7643.DISPLAY_NAME, displayName);
   }
 
   /**
@@ -72,7 +72,7 @@ public class Group extends ResourceNode
    */
   public List<Member> getMembers()
   {
-    return getArrayAttribute(AttributeNames.MEMBERS, Member.class);
+    return getArrayAttribute(AttributeNames.RFC7643.MEMBERS, Member.class);
   }
 
   /**
@@ -85,7 +85,7 @@ public class Group extends ResourceNode
    */
   public void setMembers(List<Member> members)
   {
-    setAttribute(AttributeNames.MEMBERS, members);
+    setAttribute(AttributeNames.RFC7643.MEMBERS, members);
   }
 
   /**
@@ -98,6 +98,6 @@ public class Group extends ResourceNode
    */
   public void addMember(Member member)
   {
-    addAttribute(AttributeNames.MEMBERS, member);
+    addAttribute(AttributeNames.RFC7643.MEMBERS, member);
   }
 }

@@ -9,6 +9,7 @@ import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.HttpHeader;
+import de.gold.scim.resources.AbstractSchemasHolder;
 import lombok.Getter;
 
 
@@ -18,7 +19,7 @@ import lombok.Getter;
  * <br>
  * The abstract implementation for all responses created by this framework
  */
-public abstract class ScimResponse
+public abstract class ScimResponse extends AbstractSchemasHolder
 {
 
   /**

@@ -1,5 +1,7 @@
 package de.gold.scim.endpoints;
 
+import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
+
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -12,24 +14,32 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
+import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.endpoints.base.GroupEndpointDefinition;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.endpoints.handler.GroupHandlerImpl;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
+import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ServiceProvider;
+import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.GetResponse;
+import de.gold.scim.response.ListResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
+import de.gold.scim.schemas.ResourceTypeFactory;
+import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -45,6 +55,16 @@ public class ResourceEndpointHandlerTest implements FileReferences
 {
 
   /**
+   * defines the base url for the meta-attribute
+   */
+  private static final String BASE_URL = "https://localhost/scim/v2";
+
+  /**
+   * the resource type factory in which the resources will be registered
+   */
+  private ResourceTypeFactory resourceTypeFactory;
+
+  /**
    * the resource endpoints implementation that will handle any request
    */
   private ResourceEndpointHandler resourceEndpointHandler;
@@ -56,14 +76,29 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private UserHandlerImpl userHandler;
 
   /**
+   * a mockito mock to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
+   * implementation
+   */
+  private GroupHandlerImpl groupHandler;
+
+  /**
    * initializes this test
    */
   @BeforeEach
   public void initialize()
   {
     userHandler = Mockito.spy(new UserHandlerImpl());
-    resourceEndpointHandler = new ResourceEndpointHandler(ServiceProvider.builder().build(),
-                                                          new UserEndpointDefinition(userHandler));
+    groupHandler = Mockito.spy(new GroupHandlerImpl());
+    resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
+    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(userHandler);
+    GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);
+
+    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
+    ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
+    resourceEndpointHandler = getUnitTestResourceEndpointHandler(resourceTypeFactory,
+                                                                 serviceProvider,
+                                                                 userEndpoint,
+                                                                 groupEndpoint);
   }
 
   /**
@@ -250,7 +285,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.UNPARSABLE_REQUEST, errorResponse.getScimException().getScimType());
+    Assertions.assertEquals(ScimType.Custom.UNPARSEABLE_REQUEST, errorResponse.getScimException().getScimType());
   }
 
   /**
@@ -362,7 +397,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
   /**
@@ -381,7 +416,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
   /**
@@ -401,7 +436,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
   /**
@@ -419,6 +454,48 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
+
+  /**
+   * tests that if count is set to 1 that only a single entry is returned no matter which startIndex is used.
+   * This test depends on at least 4 registered resource types otherwise this test will get
+   * {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {-1, 0, 1, 2, 3, 4})
+  public void testListResourceTypesWithStartIndex(int startIndex)
+  {
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      SearchRequest.builder()
+                                                                                   .startIndex(startIndex)
+                                                                                   .count(1)
+                                                                                   .build(),
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.SC_OK, listResponse.getHttpStatus());
+    Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
+    Assertions.assertEquals(1, listResponse.getListedResources().size());
+    Assertions.assertEquals(1, listResponse.getItemsPerPage());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is thrown if the start index exceeds the number of existing
+   * entries at the ResourceType endpoint
+   */
+  @Test
+  public void testListResourceTypesWithStartIndexOutOfRange()
+  {
+    final int startIndex = resourceTypeFactory.getAllResourceTypes().size() + 1;
+    Assertions.assertThrows(BadRequestException.class,
+                            () -> resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                        SearchRequest.builder()
+                                                                                     .startIndex(startIndex)
+                                                                                     .count(1)
+                                                                                     .build(),
+                                                                        null));
+  }
+
+
 
   /**
    * reads a user from the endpoint

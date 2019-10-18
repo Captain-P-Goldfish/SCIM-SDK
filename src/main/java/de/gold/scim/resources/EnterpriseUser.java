@@ -47,7 +47,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public Optional<String> getEmployeeNumber()
   {
-    return getStringAttribute(AttributeNames.EMPLOYEE_NUMBER);
+    return getStringAttribute(AttributeNames.RFC7643.EMPLOYEE_NUMBER);
   }
 
   /**
@@ -56,7 +56,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public void setEmployeeNumber(String employeeNumber)
   {
-    setAttribute(AttributeNames.EMPLOYEE_NUMBER, employeeNumber);
+    setAttribute(AttributeNames.RFC7643.EMPLOYEE_NUMBER, employeeNumber);
   }
 
   /**
@@ -64,7 +64,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public Optional<String> getCostCenter()
   {
-    return getStringAttribute(AttributeNames.COST_CENTER);
+    return getStringAttribute(AttributeNames.RFC7643.COST_CENTER);
   }
 
   /**
@@ -72,7 +72,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public void setCostCenter(String costCenter)
   {
-    setAttribute(AttributeNames.COST_CENTER, costCenter);
+    setAttribute(AttributeNames.RFC7643.COST_CENTER, costCenter);
   }
 
   /**
@@ -80,7 +80,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public Optional<String> getOrganization()
   {
-    return getStringAttribute(AttributeNames.ORGANIZATION);
+    return getStringAttribute(AttributeNames.RFC7643.ORGANIZATION);
   }
 
   /**
@@ -88,7 +88,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public void setOrganization(String organization)
   {
-    setAttribute(AttributeNames.ORGANIZATION, organization);
+    setAttribute(AttributeNames.RFC7643.ORGANIZATION, organization);
   }
 
   /**
@@ -96,7 +96,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public Optional<String> getDivision()
   {
-    return getStringAttribute(AttributeNames.DIVISION);
+    return getStringAttribute(AttributeNames.RFC7643.DIVISION);
   }
 
   /**
@@ -104,7 +104,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public void setDivision(String division)
   {
-    setAttribute(AttributeNames.DIVISION, division);
+    setAttribute(AttributeNames.RFC7643.DIVISION, division);
   }
 
   /**
@@ -112,7 +112,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public Optional<String> getDepartment()
   {
-    return getStringAttribute(AttributeNames.DEPARTMENT);
+    return getStringAttribute(AttributeNames.RFC7643.DEPARTMENT);
   }
 
   /**
@@ -120,7 +120,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public void setDepartment(String department)
   {
-    setAttribute(AttributeNames.DEPARTMENT, department);
+    setAttribute(AttributeNames.RFC7643.DEPARTMENT, department);
   }
 
   /**
@@ -129,7 +129,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public Optional<Manager> getManager()
   {
-    return getObjectAttribute(AttributeNames.MANAGER, Manager.class);
+    return getObjectAttribute(AttributeNames.RFC7643.MANAGER, Manager.class);
   }
 
   /**
@@ -138,7 +138,7 @@ public class EnterpriseUser extends ScimObjectNode
    */
   public void setManager(Manager manager)
   {
-    setAttribute(AttributeNames.MANAGER, manager);
+    setAttribute(AttributeNames.RFC7643.MANAGER, manager);
   }
 
 

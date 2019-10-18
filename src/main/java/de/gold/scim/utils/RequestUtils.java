@@ -85,7 +85,7 @@ public final class RequestUtils
       final String errorMessage = "the attributes and excludedAttributes parameter must not be set at the same time:"
                                   + "\n\tattributes: '" + attributes + "'\n\texcludedAttributes: '" + excludedAttributes
                                   + "'";
-      throw new BadRequestException(errorMessage, null, ScimType.INVALID_PARAMETERS);
+      throw new BadRequestException(errorMessage, null, ScimType.Custom.INVALID_PARAMETERS);
     }
   }
 
@@ -173,7 +173,7 @@ public final class RequestUtils
     }
     catch (BadRequestException ex)
     {
-      ex.setScimType(ScimType.INVALID_PARAMETERS);
+      ex.setScimType(ScimType.Custom.INVALID_PARAMETERS);
       throw ex;
     }
   }

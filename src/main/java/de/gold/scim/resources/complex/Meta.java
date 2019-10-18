@@ -44,7 +44,7 @@ public class Meta extends ScimObjectNode
    */
   public Optional<String> getResourceType()
   {
-    return getStringAttribute(AttributeNames.RESOURCE_TYPE);
+    return getStringAttribute(AttributeNames.RFC7643.RESOURCE_TYPE);
   }
 
   /**
@@ -53,7 +53,7 @@ public class Meta extends ScimObjectNode
    */
   public void setResourceType(String resourceType)
   {
-    setAttribute(AttributeNames.RESOURCE_TYPE, resourceType);
+    setAttribute(AttributeNames.RFC7643.RESOURCE_TYPE, resourceType);
   }
 
   /**
@@ -61,7 +61,7 @@ public class Meta extends ScimObjectNode
    */
   public Optional<Instant> getCreated()
   {
-    return getDateTimeAttribute(AttributeNames.CREATED);
+    return getDateTimeAttribute(AttributeNames.RFC7643.CREATED);
   }
 
   /**
@@ -70,7 +70,7 @@ public class Meta extends ScimObjectNode
   public void setCreated(String dateTime)
   {
 
-    setAttribute(AttributeNames.CREATED, dateTime);
+    setAttribute(AttributeNames.RFC7643.CREATED, dateTime);
   }
 
   /**
@@ -78,7 +78,7 @@ public class Meta extends ScimObjectNode
    */
   public void setCreated(OffsetDateTime dateTime)
   {
-    setDateTimeAttribute(AttributeNames.CREATED, dateTime);
+    setDateTimeAttribute(AttributeNames.RFC7643.CREATED, dateTime);
   }
 
   /**
@@ -86,7 +86,7 @@ public class Meta extends ScimObjectNode
    */
   public void setCreated(LocalDateTime dateTime)
   {
-    setDateTimeAttribute(AttributeNames.CREATED, dateTime);
+    setDateTimeAttribute(AttributeNames.RFC7643.CREATED, dateTime);
   }
 
   /**
@@ -94,7 +94,7 @@ public class Meta extends ScimObjectNode
    */
   public void setCreated(Instant dateTime)
   {
-    setDateTimeAttribute(AttributeNames.CREATED, dateTime);
+    setDateTimeAttribute(AttributeNames.RFC7643.CREATED, dateTime);
   }
 
   /**
@@ -104,7 +104,7 @@ public class Meta extends ScimObjectNode
    */
   public Optional<Instant> getLastModified()
   {
-    return getDateTimeAttribute(AttributeNames.LAST_MODIFIED);
+    return getDateTimeAttribute(AttributeNames.RFC7643.LAST_MODIFIED);
   }
 
   /**
@@ -114,7 +114,7 @@ public class Meta extends ScimObjectNode
    */
   public void setLastModified(String dateTime)
   {
-    setAttribute(AttributeNames.LAST_MODIFIED, dateTime);
+    setAttribute(AttributeNames.RFC7643.LAST_MODIFIED, dateTime);
   }
 
   /**
@@ -124,7 +124,7 @@ public class Meta extends ScimObjectNode
    */
   public void setLastModified(Instant dateTime)
   {
-    setDateTimeAttribute(AttributeNames.LAST_MODIFIED, dateTime);
+    setDateTimeAttribute(AttributeNames.RFC7643.LAST_MODIFIED, dateTime);
   }
 
   /**
@@ -134,7 +134,7 @@ public class Meta extends ScimObjectNode
    */
   public void setLastModified(OffsetDateTime dateTime)
   {
-    setDateTimeAttribute(AttributeNames.LAST_MODIFIED, dateTime);
+    setDateTimeAttribute(AttributeNames.RFC7643.LAST_MODIFIED, dateTime);
   }
 
   /**
@@ -144,7 +144,7 @@ public class Meta extends ScimObjectNode
    */
   public void setLastModified(LocalDateTime dateTime)
   {
-    setDateTimeAttribute(AttributeNames.LAST_MODIFIED, dateTime);
+    setDateTimeAttribute(AttributeNames.RFC7643.LAST_MODIFIED, dateTime);
   }
 
   /**
@@ -153,7 +153,7 @@ public class Meta extends ScimObjectNode
    */
   public Optional<String> getLocation()
   {
-    return getStringAttribute(AttributeNames.LOCATION);
+    return getStringAttribute(AttributeNames.RFC7643.LOCATION);
   }
 
   /**
@@ -162,7 +162,7 @@ public class Meta extends ScimObjectNode
    */
   public void setLocation(String location)
   {
-    setAttribute(AttributeNames.LOCATION, location);
+    setAttribute(AttributeNames.RFC7643.LOCATION, location);
   }
 
   /**
@@ -176,7 +176,7 @@ public class Meta extends ScimObjectNode
    */
   public Optional<String> getVersion()
   {
-    return getStringAttribute(AttributeNames.VERSION);
+    return getStringAttribute(AttributeNames.RFC7643.VERSION);
   }
 
   /**
@@ -190,7 +190,7 @@ public class Meta extends ScimObjectNode
    */
   public void setVersion(String version)
   {
-    setAttribute(AttributeNames.VERSION, version);
+    setAttribute(AttributeNames.RFC7643.VERSION, version);
   }
 
 }

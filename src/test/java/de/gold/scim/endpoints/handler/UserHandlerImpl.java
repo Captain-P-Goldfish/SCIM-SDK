@@ -38,7 +38,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
     {
       throw new ConflictException("resource with id '" + userId + "' does already exist");
     }
-    JsonHelper.addAttribute(resource, AttributeNames.ID, new TextNode(userId));
+    JsonHelper.addAttribute(resource, AttributeNames.RFC7643.ID, new TextNode(userId));
     inMemoryMap.put(userId, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());

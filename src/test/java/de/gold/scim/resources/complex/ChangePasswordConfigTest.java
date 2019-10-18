@@ -38,7 +38,7 @@ public class ChangePasswordConfigTest
   {
     ChangePasswordConfig changePasswordConfig = ChangePasswordConfig.builder().build();
 
-    changePasswordConfig.remove(AttributeNames.SUPPORTED);
+    changePasswordConfig.remove(AttributeNames.RFC7643.SUPPORTED);
 
     Assertions.assertFalse(changePasswordConfig.isSupported());
   }

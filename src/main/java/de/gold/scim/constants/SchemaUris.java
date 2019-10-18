@@ -41,6 +41,13 @@ public final class SchemaUris
 
   public static final String BULK_RESPONSE_URI = SCIM_MESSAGES_URI + "BulkResponse";
 
-
+  /**
+   * actually a custom meta schema URI that is used to validate the meta-attributes. This is not part of the
+   * SCIM specification!
+   */
   public static final String META = "urn:ietf:params:scim:schemas:core:2.0:Meta";
+
+  public static final String SEARCH_REQUEST_URI = SCIM_MESSAGES_URI + "SearchRequest";
+
+  public static final String PATCH_OP = SCIM_MESSAGES_URI + "PatchOp";
 }

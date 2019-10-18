@@ -38,7 +38,7 @@ public class ETagConfigTest
   {
     ETagConfig eTagConfig = ETagConfig.builder().build();
 
-    eTagConfig.remove(AttributeNames.SUPPORTED);
+    eTagConfig.remove(AttributeNames.RFC7643.SUPPORTED);
 
     Assertions.assertFalse(eTagConfig.isSupported());
   }

@@ -74,16 +74,17 @@ public class Schema
   protected Schema(JsonNode jsonNode, String namePrefix)
   {
 
-    this.schemas = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.SCHEMAS).orElse(Collections.emptyList());
-    String errorMessage = "attribute '" + AttributeNames.ID + "' is missing cannot resolve schema";
-    this.id = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.ID)
+    this.schemas = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.SCHEMAS)
+                             .orElse(Collections.emptyList());
+    String errorMessage = "attribute '" + AttributeNames.RFC7643.ID + "' is missing cannot resolve schema";
+    this.id = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.ID)
                         .orElseThrow(() -> new InvalidSchemaException(errorMessage, null,
                                                                       HttpStatus.SC_INTERNAL_SERVER_ERROR, null));
-    this.name = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.NAME).orElse(null);
-    this.description = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.DESCRIPTION).orElse(null);
+    this.name = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.NAME).orElse(null);
+    this.description = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.DESCRIPTION).orElse(null);
     this.attributes = new ArrayList<>();
     String noAttributesErrorMessage = "schema with id '" + id + "' does not have attributes";
-    ArrayNode attributes = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.ATTRIBUTES)
+    ArrayNode attributes = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.RFC7643.ATTRIBUTES)
                                      .orElseThrow(() -> new InvalidSchemaException(noAttributesErrorMessage, null,
                                                                                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
                                                                                    null));
@@ -164,14 +165,18 @@ public class Schema
   {
     ScimObjectNode objectNode = new ScimObjectNode(null);
     List<JsonNode> schemas = getSchemas().stream().map(TextNode::new).collect(Collectors.toList());
-    JsonHelper.addAttribute(objectNode, AttributeNames.SCHEMAS, new ArrayNode(JsonNodeFactory.instance, schemas));
-    JsonHelper.addAttribute(objectNode, AttributeNames.ID, new TextNode(id));
+    JsonHelper.addAttribute(objectNode,
+                            AttributeNames.RFC7643.SCHEMAS,
+                            new ArrayNode(JsonNodeFactory.instance, schemas));
+    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.ID, new TextNode(id));
     Optional.ofNullable(getName())
-            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.NAME, new TextNode(s)));
+            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.NAME, new TextNode(s)));
     Optional.ofNullable(getDescription())
-            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.DESCRIPTION, new TextNode(s)));
+            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.DESCRIPTION, new TextNode(s)));
     List<JsonNode> attributes = getAttributes().stream().map(SchemaAttribute::toJsonNode).collect(Collectors.toList());
-    JsonHelper.addAttribute(objectNode, AttributeNames.ATTRIBUTES, new ArrayNode(JsonNodeFactory.instance, attributes));
+    JsonHelper.addAttribute(objectNode,
+                            AttributeNames.RFC7643.ATTRIBUTES,
+                            new ArrayNode(JsonNodeFactory.instance, attributes));
     return objectNode;
   }
 

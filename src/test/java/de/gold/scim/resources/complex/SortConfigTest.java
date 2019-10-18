@@ -37,7 +37,7 @@ public class SortConfigTest
   {
     SortConfig sortConfig = SortConfig.builder().build();
 
-    sortConfig.remove(AttributeNames.SUPPORTED);
+    sortConfig.remove(AttributeNames.RFC7643.SUPPORTED);
 
     Assertions.assertFalse(sortConfig.isSupported());
   }

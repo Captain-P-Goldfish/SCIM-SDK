@@ -180,10 +180,10 @@ public class SchemaValidatorTest implements FileReferences
     log.trace(testName);
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode jsonNode = SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, jsonDocument);
-    Assertions.assertTrue(JsonHelper.getArrayAttribute(jsonNode, AttributeNames.SCHEMAS).isPresent(),
+    Assertions.assertTrue(JsonHelper.getArrayAttribute(jsonNode, AttributeNames.RFC7643.SCHEMAS).isPresent(),
                           "the schemas attribute must not be removed from the document");
-    ArrayNode documentSchemas = JsonHelper.getArrayAttribute(jsonDocument, AttributeNames.SCHEMAS).get();
-    ArrayNode jsonNodeSchemas = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.SCHEMAS).get();
+    ArrayNode documentSchemas = JsonHelper.getArrayAttribute(jsonDocument, AttributeNames.RFC7643.SCHEMAS).get();
+    ArrayNode jsonNodeSchemas = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.RFC7643.SCHEMAS).get();
     Assertions.assertEquals(documentSchemas, jsonNodeSchemas);
   }
 
@@ -191,7 +191,8 @@ public class SchemaValidatorTest implements FileReferences
    * checks that the validation will fail if a required attribute is missing
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.SCHEMAS, AttributeNames.NAME, AttributeNames.SCHEMA, AttributeNames.ENDPOINT})
+  @ValueSource(strings = {AttributeNames.RFC7643.SCHEMAS, AttributeNames.RFC7643.NAME, AttributeNames.RFC7643.SCHEMA,
+                          AttributeNames.RFC7643.ENDPOINT})
   public void testValidationFailsOnMissingRequiredAttribute(String attributeName)
   {
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
@@ -208,13 +209,14 @@ public class SchemaValidatorTest implements FileReferences
    * checks that the validation will fail if a required attribute is missing within a sub-attribute
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.NAME, AttributeNames.TYPE, AttributeNames.MULTI_VALUED})
+  @ValueSource(strings = {AttributeNames.RFC7643.NAME, AttributeNames.RFC7643.TYPE,
+                          AttributeNames.RFC7643.MULTI_VALUED})
   public void testValidationFailsOnMissingRequiredSubAttribute(String attributeName)
   {
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
-    JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
+    JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.removeAttribute(firstAttribute, attributeName);
 
@@ -228,14 +230,14 @@ public class SchemaValidatorTest implements FileReferences
    * checks that the validation will fail if a canonical value has a typo
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.MUTABILITY, AttributeNames.TYPE, AttributeNames.RETURNED,
-                          AttributeNames.UNIQUENESS})
+  @ValueSource(strings = {AttributeNames.RFC7643.MUTABILITY, AttributeNames.RFC7643.TYPE,
+                          AttributeNames.RFC7643.RETURNED, AttributeNames.RFC7643.UNIQUENESS})
   public void testValidationFailsOnTypoInCanonicalValue(String attributeName)
   {
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
-    JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.ATTRIBUTES).get();
+    JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.writeValue(firstAttribute, attributeName, "unknown_value");
     Assertions.assertThrows(DocumentValidationException.class,
@@ -256,7 +258,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNodeFactory factory = new JsonNodeFactory(false);
     ArrayNode arrayNode = new ArrayNode(factory);
     arrayNode.add("bla");
-    JsonHelper.replaceNode(userSchema, AttributeNames.ID, arrayNode);
+    JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               metaSchema,
@@ -273,7 +275,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     IntNode idNode = new IntNode(new Random().nextInt());
-    JsonHelper.replaceNode(userSchema, AttributeNames.ID, idNode);
+    JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, idNode);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               metaSchema,
@@ -285,7 +287,7 @@ public class SchemaValidatorTest implements FileReferences
    * uri
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.SCHEMA, AttributeNames.ENDPOINT})
+  @ValueSource(strings = {AttributeNames.RFC7643.SCHEMA, AttributeNames.RFC7643.ENDPOINT})
   public void testValidationFailsIfUriReferenceIsNotAUri(String attributeName)
   {
     Schema resourceTypeSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
@@ -355,7 +357,7 @@ public class SchemaValidatorTest implements FileReferences
                                                    Mutability.READ_WRITE,
                                                    Returned.DEFAULT,
                                                    Uniqueness.NONE);
-    JsonNode metaAttributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
+    JsonNode metaAttributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonNode createMetaAttribute = JsonHelper.readJsonDocument(dateTimeTypeString);
     JsonHelper.addAttributeToArray(metaAttributes, createMetaAttribute);
     TextNode textNode = new TextNode(dateTime);
@@ -378,13 +380,13 @@ public class SchemaValidatorTest implements FileReferences
                                                                            resourceTypeSchema,
                                                                            userResourceTypeSchema);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());
-    ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(validatedSchema, AttributeNames.SCHEMA_EXTENSIONS)
+    ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(validatedSchema, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
                                            .orElseThrow(() -> new IllegalStateException("the document does not contain "
                                                                                         + "an endpoint  attribute"));
     ObjectNode schemaExtensionAttribute = (ObjectNode)schemaExtensions.get(0);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(schemaExtensionAttribute, helloWorldKey).isPresent());
 
-    Assertions.assertFalse(JsonHelper.getObjectAttribute(validatedSchema, AttributeNames.META).isPresent(),
+    Assertions.assertFalse(JsonHelper.getObjectAttribute(validatedSchema, AttributeNames.RFC7643.META).isPresent(),
                            "meta attribute must be removed from validated request-document");
   }
 
@@ -422,7 +424,7 @@ public class SchemaValidatorTest implements FileReferences
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(metaSchemaLocation));
     JsonNode resourceSchema = JsonHelper.loadJsonDocument(documentLocation);
 
-    JsonHelper.removeAttribute(resourceSchema, AttributeNames.ID);
+    JsonHelper.removeAttribute(resourceSchema, AttributeNames.RFC7643.ID);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
       SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, resourceSchema);
     });
@@ -462,7 +464,7 @@ public class SchemaValidatorTest implements FileReferences
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
-    Assertions.assertNull(validatedDocument.get(AttributeNames.PASSWORD));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.PASSWORD));
   }
 
   /**
@@ -480,9 +482,9 @@ public class SchemaValidatorTest implements FileReferences
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
-    Assertions.assertNull(validatedDocument.get(AttributeNames.ID));
-    Assertions.assertNull(validatedDocument.get(AttributeNames.DISPLAY));
-    Assertions.assertNull(validatedDocument.get(AttributeNames.GROUPS));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.ID));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.DISPLAY));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.GROUPS));
   }
 
   /**
@@ -503,7 +505,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                           Mutability.READ_WRITE,
                                                                           Returned.ALWAYS,
                                                                           Uniqueness.NONE));
-    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchemaNode, AttributeNames.ATTRIBUTES).get();
+    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchemaNode, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonHelper.addAttributeToArray(attributes, uniqueArray);
 
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
@@ -535,7 +537,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                           Mutability.READ_WRITE,
                                                                           Returned.ALWAYS,
                                                                           uniqueness));
-    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchemaNode, AttributeNames.ATTRIBUTES).get();
+    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchemaNode, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonHelper.addAttributeToArray(attributes, uniqueArray);
 
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
@@ -565,7 +567,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.EMAILS,
+                            AttributeNames.RFC7643.EMAILS,
                             null,
                             null,
                             null,
@@ -582,7 +584,7 @@ public class SchemaValidatorTest implements FileReferences
                          "}";
     // @formatter:on
     JsonNode emailNode = JsonHelper.readJsonDocument(email);
-    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.EMAILS).get();
+    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.EMAILS).get();
     emailArray.add(emailNode);
     emailArray.add(emailNode);
     Schema metaSchema = new Schema(metaSchemaNode);
@@ -610,7 +612,7 @@ public class SchemaValidatorTest implements FileReferences
                          "}";
     // @formatter:on
     JsonNode emailNode = JsonHelper.readJsonDocument(email);
-    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.EMAILS).get();
+    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.EMAILS).get();
     emailArray.add(emailNode);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
@@ -627,7 +629,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.EXTERNAL_ID,
+                            AttributeNames.RFC7643.EXTERNAL_ID,
                             null,
                             null,
                             Returned.NEVER,
@@ -642,7 +644,8 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory, metaSchema, userSchema);
     });
-    Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.EXTERNAL_ID).isPresent());
+    Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.RFC7643.EXTERNAL_ID)
+                                     .isPresent());
   }
 
   /**
@@ -654,7 +657,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(userSchema, AttributeNames.SCHEMAS).get();
+    ArrayNode schemas = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.SCHEMAS).get();
     schemas.removeAll();
     schemas.add("urn:some:unknown:id:reference");
     Assertions.assertThrows(DocumentValidationException.class,
@@ -674,7 +677,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USER_NAME,
+                            AttributeNames.RFC7643.USER_NAME,
                             null,
                             mutability,
                             Returned.NEVER,
@@ -684,7 +687,7 @@ public class SchemaValidatorTest implements FileReferences
                             null,
                             null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.removeAttribute(userSchema, AttributeNames.USER_NAME);
+    JsonHelper.removeAttribute(userSchema, AttributeNames.RFC7643.USER_NAME);
 
     Schema metaSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class,
@@ -704,7 +707,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USER_NAME,
+                            AttributeNames.RFC7643.USER_NAME,
                             Type.INTEGER,
                             null,
                             null,
@@ -730,7 +733,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USER_NAME,
+                            AttributeNames.RFC7643.USER_NAME,
                             Type.INTEGER,
                             null,
                             null,
@@ -740,7 +743,7 @@ public class SchemaValidatorTest implements FileReferences
                             null,
                             null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.USER_NAME, new IntNode(Integer.MAX_VALUE));
+    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.USER_NAME, new IntNode(Integer.MAX_VALUE));
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
@@ -750,7 +753,9 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.POST);
     });
     Assertions.assertEquals(Integer.MAX_VALUE,
-                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USER_NAME, Integer.class)
+                            JsonHelper.getSimpleAttribute(validatedDocument,
+                                                          AttributeNames.RFC7643.USER_NAME,
+                                                          Integer.class)
                                       .get());
   }
 
@@ -762,7 +767,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.USER_NAME,
+                            AttributeNames.RFC7643.USER_NAME,
                             Type.DECIMAL,
                             null,
                             null,
@@ -772,7 +777,7 @@ public class SchemaValidatorTest implements FileReferences
                             null,
                             null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.USER_NAME, new DoubleNode(Double.MAX_VALUE));
+    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.USER_NAME, new DoubleNode(Double.MAX_VALUE));
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
@@ -781,7 +786,9 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.POST);
     });
     Assertions.assertEquals(Double.MAX_VALUE,
-                            JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.USER_NAME, Double.class)
+                            JsonHelper.getSimpleAttribute(validatedDocument,
+                                                          AttributeNames.RFC7643.USER_NAME,
+                                                          Double.class)
                                       .get());
   }
 
@@ -794,7 +801,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.USER_NAME, NullNode.instance);
+    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.USER_NAME, NullNode.instance);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                                              metaSchema,
@@ -814,7 +821,16 @@ public class SchemaValidatorTest implements FileReferences
   public void testUseSimpleNodeTypeOnMultiValuedAttribute()
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    modifyAttributeMetaData(metaSchemaNode, AttributeNames.USER_NAME, null, null, null, null, true, null, null, null);
+    modifyAttributeMetaData(metaSchemaNode,
+                            AttributeNames.RFC7643.USER_NAME,
+                            null,
+                            null,
+                            null,
+                            null,
+                            true,
+                            null,
+                            null,
+                            null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     Schema metaSchema = new Schema(metaSchemaNode);
@@ -825,7 +841,7 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.POST);
     });
 
-    JsonNode userName = validatedDocument.get(AttributeNames.USER_NAME);
+    JsonNode userName = validatedDocument.get(AttributeNames.RFC7643.USER_NAME);
     Assertions.assertNotNull(userName);
     Assertions.assertTrue(userName.isArray());
     Assertions.assertEquals(1, userName.size());
@@ -883,11 +899,12 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    JsonNode schemaExtensions = JsonHelper.getArrayAttribute(userResourceType, AttributeNames.SCHEMA_EXTENSIONS).get();
+    JsonNode schemaExtensions = JsonHelper.getArrayAttribute(userResourceType, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
+                                          .get();
     // sets the enterprise user extension to required
     for ( JsonNode schemaExtension : schemaExtensions )
     {
-      JsonHelper.addAttribute(schemaExtension, AttributeNames.REQUIRED, BooleanNode.valueOf(true));
+      JsonHelper.addAttribute(schemaExtension, AttributeNames.RFC7643.REQUIRED, BooleanNode.valueOf(true));
     }
     ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
                                                                          userResourceType,
@@ -913,7 +930,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode,
-                            AttributeNames.NICK_NAME,
+                            AttributeNames.RFC7643.NICK_NAME,
                             null,
                             null,
                             returned,
@@ -930,29 +947,29 @@ public class SchemaValidatorTest implements FileReferences
                                                          metaSchema,
                                                          userSchema,
                                                          null,
-                                                         AttributeNames.NICK_NAME,
+                                                         AttributeNames.RFC7643.NICK_NAME,
                                                          null);
     });
 
-    JsonNode nickName = validatedDocument.get(AttributeNames.NICK_NAME);
+    JsonNode nickName = validatedDocument.get(AttributeNames.RFC7643.NICK_NAME);
     Assertions.assertNull(nickName);
-    JsonNode id = validatedDocument.get(AttributeNames.ID);
+    JsonNode id = validatedDocument.get(AttributeNames.RFC7643.ID);
     Assertions.assertNotNull(id);
-    JsonNode userName = validatedDocument.get(AttributeNames.USER_NAME);
+    JsonNode userName = validatedDocument.get(AttributeNames.RFC7643.USER_NAME);
     Assertions.assertNull(userName);
-    JsonNode externalId = validatedDocument.get(AttributeNames.EXTERNAL_ID);
+    JsonNode externalId = validatedDocument.get(AttributeNames.RFC7643.EXTERNAL_ID);
     Assertions.assertNull(externalId);
-    JsonNode description = validatedDocument.get(AttributeNames.DESCRIPTION);
+    JsonNode description = validatedDocument.get(AttributeNames.RFC7643.DESCRIPTION);
     Assertions.assertNull(description);
-    JsonNode display = validatedDocument.get(AttributeNames.DISPLAY);
+    JsonNode display = validatedDocument.get(AttributeNames.RFC7643.DISPLAY);
     Assertions.assertNull(display);
-    JsonNode phoneNumbers = validatedDocument.get(AttributeNames.PHONE_NUMBERS);
+    JsonNode phoneNumbers = validatedDocument.get(AttributeNames.RFC7643.PHONE_NUMBERS);
     Assertions.assertNull(phoneNumbers);
-    JsonNode emails = validatedDocument.get(AttributeNames.EMAILS);
+    JsonNode emails = validatedDocument.get(AttributeNames.RFC7643.EMAILS);
     Assertions.assertNull(emails);
-    JsonNode groups = validatedDocument.get(AttributeNames.GROUPS);
+    JsonNode groups = validatedDocument.get(AttributeNames.RFC7643.GROUPS);
     Assertions.assertNull(groups);
-    JsonNode roles = validatedDocument.get(AttributeNames.ROLES);
+    JsonNode roles = validatedDocument.get(AttributeNames.RFC7643.ROLES);
     Assertions.assertNull(roles);
   }
 
@@ -961,10 +978,11 @@ public class SchemaValidatorTest implements FileReferences
    * until they have been requested explicitly
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.NAME, AttributeNames.DISPLAY_NAME,
-                          AttributeNames.EMAILS, AttributeNames.PHONE_NUMBERS,
-                          AttributeNames.PHONE_NUMBERS + "." + AttributeNames.VALUE,
-                          AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME})
+  @ValueSource(strings = {AttributeNames.RFC7643.USER_NAME, AttributeNames.RFC7643.NAME,
+                          AttributeNames.RFC7643.DISPLAY_NAME, AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.PHONE_NUMBERS,
+                          AttributeNames.RFC7643.PHONE_NUMBERS + "." + AttributeNames.RFC7643.VALUE,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME})
   public void testDoNotReturnRequestAttributes(String attributeName)
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
@@ -1004,7 +1022,7 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testRequestAttributeIsReturnedAfterPutPostOrPatchRequest()
   {
-    final String attributeName = AttributeNames.USER_NAME;
+    final String attributeName = AttributeNames.RFC7643.USER_NAME;
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
@@ -1027,7 +1045,7 @@ public class SchemaValidatorTest implements FileReferences
     });
 
     Assertions.assertNotNull(validatedDocument.get(attributeName));
-    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.ID));
   }
 
   /**
@@ -1044,10 +1062,11 @@ public class SchemaValidatorTest implements FileReferences
    * </pre>
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.DISPLAY_NAME, AttributeNames.EXTERNAL_ID,
-                          AttributeNames.NAME, AttributeNames.EMAILS,
-                          AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME,
-                          AttributeNames.NAME + "." + AttributeNames.MIDDLE_NAME})
+  @ValueSource(strings = {AttributeNames.RFC7643.USER_NAME, AttributeNames.RFC7643.DISPLAY_NAME,
+                          AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
+                          AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
   public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName)
   {
     final String fullName = SchemaUris.USER_URI + ":" + attributeName;
@@ -1086,7 +1105,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(complexAttribute);
       Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
     }
-    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.ID));
   }
 
   /**
@@ -1103,10 +1122,11 @@ public class SchemaValidatorTest implements FileReferences
    * </pre>
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.USER_NAME, AttributeNames.DISPLAY_NAME, AttributeNames.EXTERNAL_ID,
-                          AttributeNames.NAME, AttributeNames.EMAILS,
-                          AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME,
-                          AttributeNames.NAME + "." + AttributeNames.MIDDLE_NAME})
+  @ValueSource(strings = {AttributeNames.RFC7643.USER_NAME, AttributeNames.RFC7643.DISPLAY_NAME,
+                          AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
+                          AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
   public void testAttributeIsReturnedIfShortNameIsUsedOnAttributesParameter(String attributeName)
   {
     final String fullName = attributeName;
@@ -1145,7 +1165,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(complexAttribute);
       Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
     }
-    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.ID));
   }
 
   /**
@@ -1164,7 +1184,7 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testAttributeIsReturnedIfResourceUriIsUsedOnAttributesParameter()
   {
-    final String attributeName = AttributeNames.NAME;
+    final String attributeName = AttributeNames.RFC7643.NAME;
 
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     modifyAttributeMetaData(metaSchemaNode, attributeName, null, null, Returned.REQUEST, null, null, null, null, null);
@@ -1190,7 +1210,7 @@ public class SchemaValidatorTest implements FileReferences
     });
 
     Assertions.assertNotNull(validatedDocument.get(attributeName));
-    Assertions.assertNotNull(validatedDocument.get(AttributeNames.ID));
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.ID));
   }
 
   /**
@@ -1198,8 +1218,9 @@ public class SchemaValidatorTest implements FileReferences
    * schema extension and not the main resource
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.EMPLOYEE_NUMBER, AttributeNames.COST_CENTER, AttributeNames.ORGANIZATION,
-                          AttributeNames.DIVISION, AttributeNames.DEPARTMENT, AttributeNames.MANAGER})
+  @ValueSource(strings = {AttributeNames.RFC7643.EMPLOYEE_NUMBER, AttributeNames.RFC7643.COST_CENTER,
+                          AttributeNames.RFC7643.ORGANIZATION, AttributeNames.RFC7643.DIVISION,
+                          AttributeNames.RFC7643.DEPARTMENT, AttributeNames.RFC7643.MANAGER})
   public void testRequestAttributeIsReturnedAfterPutPostOrPatchRequestForExtension(String attributeName)
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -1240,8 +1261,9 @@ public class SchemaValidatorTest implements FileReferences
    * default or request and they are not defined in the attributes parameter
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.EMPLOYEE_NUMBER, AttributeNames.COST_CENTER, AttributeNames.ORGANIZATION,
-                          AttributeNames.DIVISION, AttributeNames.DEPARTMENT, AttributeNames.MANAGER})
+  @ValueSource(strings = {AttributeNames.RFC7643.EMPLOYEE_NUMBER, AttributeNames.RFC7643.COST_CENTER,
+                          AttributeNames.RFC7643.ORGANIZATION, AttributeNames.RFC7643.DIVISION,
+                          AttributeNames.RFC7643.DEPARTMENT, AttributeNames.RFC7643.MANAGER})
   public void testRemoveAttributesFromResponseOnExtension(String attributeName)
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -1288,12 +1310,12 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    Arrays.asList(AttributeNames.EMPLOYEE_NUMBER,
-                  AttributeNames.COST_CENTER,
-                  AttributeNames.ORGANIZATION,
-                  AttributeNames.DIVISION,
-                  AttributeNames.DEPARTMENT,
-                  AttributeNames.MANAGER)
+    Arrays.asList(AttributeNames.RFC7643.EMPLOYEE_NUMBER,
+                  AttributeNames.RFC7643.COST_CENTER,
+                  AttributeNames.RFC7643.ORGANIZATION,
+                  AttributeNames.RFC7643.DIVISION,
+                  AttributeNames.RFC7643.DEPARTMENT,
+                  AttributeNames.RFC7643.MANAGER)
           .forEach(attributeName -> {
 
             modifyAttributeMetaData(enterpriseUserExtension,
@@ -1323,7 +1345,7 @@ public class SchemaValidatorTest implements FileReferences
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNull(enterpriseUser);
-    List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.SCHEMAS).get();
+    List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.RFC7643.SCHEMAS).get();
     MatcherAssert.assertThat(schemas, Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
   }
 
@@ -1336,12 +1358,12 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    List<String> excludedList = Arrays.asList(AttributeNames.USER_NAME,
-                                              AttributeNames.DISPLAY_NAME,
-                                              AttributeNames.EXTERNAL_ID,
-                                              AttributeNames.EMAILS,
-                                              AttributeNames.NAME + "." + AttributeNames.GIVEN_NAME,
-                                              AttributeNames.NAME + "." + AttributeNames.MIDDLE_NAME);
+    List<String> excludedList = Arrays.asList(AttributeNames.RFC7643.USER_NAME,
+                                              AttributeNames.RFC7643.DISPLAY_NAME,
+                                              AttributeNames.RFC7643.EXTERNAL_ID,
+                                              AttributeNames.RFC7643.EMAILS,
+                                              AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
+                                              AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME);
     String excluded = String.join(",", excludedList);
     ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
                                                                          userResourceType,
@@ -1394,9 +1416,9 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          null,
-                                                         AttributeNames.NAME);
+                                                         AttributeNames.RFC7643.NAME);
     });
-    Assertions.assertNull(validatedDocument.get(AttributeNames.NAME));
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
   }
 
   /**
@@ -1409,12 +1431,12 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
     String excluded = String.join(",",
-                                  AttributeNames.EMPLOYEE_NUMBER,
-                                  AttributeNames.COST_CENTER,
-                                  AttributeNames.ORGANIZATION,
-                                  AttributeNames.DIVISION,
-                                  AttributeNames.DEPARTMENT,
-                                  AttributeNames.MANAGER);
+                                  AttributeNames.RFC7643.EMPLOYEE_NUMBER,
+                                  AttributeNames.RFC7643.COST_CENTER,
+                                  AttributeNames.RFC7643.ORGANIZATION,
+                                  AttributeNames.RFC7643.DIVISION,
+                                  AttributeNames.RFC7643.DEPARTMENT,
+                                  AttributeNames.RFC7643.MANAGER);
     ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
                                                                          userResourceType,
                                                                          userResourceSchema,
@@ -1431,7 +1453,7 @@ public class SchemaValidatorTest implements FileReferences
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNull(enterpriseUser);
-    List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.SCHEMAS).get();
+    List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.RFC7643.SCHEMAS).get();
     MatcherAssert.assertThat(schemas, Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
   }
 

@@ -91,7 +91,8 @@ public class ResourceTypeTest implements FileReferences
    * this test will simply test if a resource type object will be built successfully
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.ID, AttributeNames.NAME, AttributeNames.SCHEMA, AttributeNames.ENDPOINT})
+  @ValueSource(strings = {AttributeNames.RFC7643.ID, AttributeNames.RFC7643.NAME, AttributeNames.RFC7643.SCHEMA,
+                          AttributeNames.RFC7643.ENDPOINT})
   public void testCreateResourceTypeWithMissingAttribute(String attributeName)
   {
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -141,7 +142,7 @@ public class ResourceTypeTest implements FileReferences
     schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
     ResourceType roleResourceType = new ResourceType(schemaFactory, JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.SCHEMAS).get();
+    ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS).get();
     schemas.add(new TextNode("urn:unknown:reference"));
     Assertions.assertThrows(InvalidResourceTypeException.class, () -> roleResourceType.getResourceSchema(adminRole));
   }
@@ -154,7 +155,7 @@ public class ResourceTypeTest implements FileReferences
   public void testSetDefaultSchemasAttribute()
   {
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    JsonHelper.removeAttribute(roleResourceTypeNode, AttributeNames.SCHEMAS);
+    JsonHelper.removeAttribute(roleResourceTypeNode, AttributeNames.RFC7643.SCHEMAS);
     ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory,
 
                                                                                      roleResourceTypeNode));
@@ -173,7 +174,7 @@ public class ResourceTypeTest implements FileReferences
     JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
     ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
-    JsonHelper.removeAttribute(adminRole, AttributeNames.SCHEMAS);
+    JsonHelper.removeAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS);
     Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
   }
 
@@ -189,7 +190,7 @@ public class ResourceTypeTest implements FileReferences
     ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
-    JsonHelper.replaceNode(adminRole, AttributeNames.SCHEMAS, schemasNode);
+    JsonHelper.replaceNode(adminRole, AttributeNames.RFC7643.SCHEMAS, schemasNode);
     Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
   }
 
@@ -204,7 +205,7 @@ public class ResourceTypeTest implements FileReferences
     JsonNode customUserResourceType = JsonHelper.loadJsonDocument(USER_CUSTOM_RESOURCE_TYPE);
     ResourceType userResourceType = new ResourceType(schemaFactory, customUserResourceType);
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(chuckNorris, AttributeNames.SCHEMAS).get();
+    ArrayNode schemas = JsonHelper.getArrayAttribute(chuckNorris, AttributeNames.RFC7643.SCHEMAS).get();
     final String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
     JsonHelper.addAttributeToArray(schemas, new TextNode(roleUri));
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);

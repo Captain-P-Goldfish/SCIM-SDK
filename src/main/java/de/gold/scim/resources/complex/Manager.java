@@ -36,7 +36,7 @@ public class Manager extends ScimObjectNode
    */
   public Optional<String> getDisplayName()
   {
-    return getStringAttribute(AttributeNames.DISPLAY_NAME);
+    return getStringAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
   }
 
   /**
@@ -44,7 +44,7 @@ public class Manager extends ScimObjectNode
    */
   public void setDisplayName(String displayName)
   {
-    setAttribute(AttributeNames.DISPLAY_NAME, displayName);
+    setAttribute(AttributeNames.RFC7643.DISPLAY_NAME, displayName);
   }
 
   /**
@@ -52,7 +52,7 @@ public class Manager extends ScimObjectNode
    */
   public Optional<String> getValue()
   {
-    return getStringAttribute(AttributeNames.VALUE);
+    return getStringAttribute(AttributeNames.RFC7643.VALUE);
   }
 
   /**
@@ -60,7 +60,7 @@ public class Manager extends ScimObjectNode
    */
   public void setValue(String value)
   {
-    setAttribute(AttributeNames.VALUE, value);
+    setAttribute(AttributeNames.RFC7643.VALUE, value);
   }
 
   /**
@@ -68,7 +68,7 @@ public class Manager extends ScimObjectNode
    */
   public Optional<String> getRef()
   {
-    return getStringAttribute(AttributeNames.REF);
+    return getStringAttribute(AttributeNames.RFC7643.REF);
   }
 
   /**
@@ -76,6 +76,6 @@ public class Manager extends ScimObjectNode
    */
   public void setRef(String ref)
   {
-    setAttribute(AttributeNames.REF, ref);
+    setAttribute(AttributeNames.RFC7643.REF, ref);
   }
 }

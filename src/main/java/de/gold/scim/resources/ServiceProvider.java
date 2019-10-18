@@ -60,7 +60,7 @@ public class ServiceProvider extends ResourceNode
    */
   public Optional<String> getDocumentationUri()
   {
-    return getStringAttribute(AttributeNames.DOCUMENTATION_URI);
+    return getStringAttribute(AttributeNames.RFC7643.DOCUMENTATION_URI);
   }
 
   /**
@@ -68,7 +68,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setDocumentationUri(String documentationUri)
   {
-    setAttribute(AttributeNames.DOCUMENTATION_URI, documentationUri);
+    setAttribute(AttributeNames.RFC7643.DOCUMENTATION_URI, documentationUri);
   }
 
   /**
@@ -76,7 +76,7 @@ public class ServiceProvider extends ResourceNode
    */
   public PatchConfig getPatchConfig()
   {
-    return getObjectAttribute(AttributeNames.PATCH, PatchConfig.class).orElse(PatchConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.PATCH, PatchConfig.class).orElse(PatchConfig.builder().build());
   }
 
   /**
@@ -84,7 +84,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setPatchConfig(PatchConfig patchConfig)
   {
-    setAttribute(AttributeNames.PATCH, Optional.ofNullable(patchConfig).orElse(PatchConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.PATCH, Optional.ofNullable(patchConfig).orElse(PatchConfig.builder().build()));
   }
 
   /**
@@ -92,7 +92,7 @@ public class ServiceProvider extends ResourceNode
    */
   public BulkConfig getBulkConfig()
   {
-    return getObjectAttribute(AttributeNames.BULK, BulkConfig.class).orElse(BulkConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.BULK, BulkConfig.class).orElse(BulkConfig.builder().build());
   }
 
   /**
@@ -100,7 +100,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setBulkConfig(BulkConfig bulkConfig)
   {
-    setAttribute(AttributeNames.BULK, Optional.ofNullable(bulkConfig).orElse(BulkConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.BULK, Optional.ofNullable(bulkConfig).orElse(BulkConfig.builder().build()));
   }
 
   /**
@@ -108,7 +108,7 @@ public class ServiceProvider extends ResourceNode
    */
   public FilterConfig getFilterConfig()
   {
-    return getObjectAttribute(AttributeNames.FILTER, FilterConfig.class).orElse(FilterConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.FILTER, FilterConfig.class).orElse(FilterConfig.builder().build());
   }
 
   /**
@@ -116,7 +116,8 @@ public class ServiceProvider extends ResourceNode
    */
   public void setFilterConfig(FilterConfig filterConfig)
   {
-    setAttribute(AttributeNames.FILTER, Optional.ofNullable(filterConfig).orElse(FilterConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.FILTER,
+                 Optional.ofNullable(filterConfig).orElse(FilterConfig.builder().build()));
   }
 
   /**
@@ -124,7 +125,7 @@ public class ServiceProvider extends ResourceNode
    */
   public ChangePasswordConfig getChangePasswordConfig()
   {
-    return getObjectAttribute(AttributeNames.CHANGE_PASSWORD,
+    return getObjectAttribute(AttributeNames.RFC7643.CHANGE_PASSWORD,
                               ChangePasswordConfig.class).orElse(ChangePasswordConfig.builder().build());
   }
 
@@ -133,7 +134,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setChangePasswordConfig(ChangePasswordConfig changePasswordConfig)
   {
-    setAttribute(AttributeNames.CHANGE_PASSWORD,
+    setAttribute(AttributeNames.RFC7643.CHANGE_PASSWORD,
                  Optional.ofNullable(changePasswordConfig).orElse(ChangePasswordConfig.builder().build()));
   }
 
@@ -142,7 +143,7 @@ public class ServiceProvider extends ResourceNode
    */
   public SortConfig getSortConfig()
   {
-    return getObjectAttribute(AttributeNames.SORT, SortConfig.class).orElse(SortConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.SORT, SortConfig.class).orElse(SortConfig.builder().build());
   }
 
   /**
@@ -150,7 +151,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setSortConfig(SortConfig sortConfig)
   {
-    setAttribute(AttributeNames.SORT, Optional.ofNullable(sortConfig).orElse(SortConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.SORT, Optional.ofNullable(sortConfig).orElse(SortConfig.builder().build()));
   }
 
   /**
@@ -158,7 +159,7 @@ public class ServiceProvider extends ResourceNode
    */
   public ETagConfig getETagConfig()
   {
-    return getObjectAttribute(AttributeNames.ETAG, ETagConfig.class).orElse(ETagConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.ETAG, ETagConfig.class).orElse(ETagConfig.builder().build());
   }
 
   /**
@@ -166,7 +167,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setETagConfig(ETagConfig eTagConfig)
   {
-    setAttribute(AttributeNames.ETAG, Optional.ofNullable(eTagConfig).orElse(ETagConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.ETAG, Optional.ofNullable(eTagConfig).orElse(ETagConfig.builder().build()));
   }
 
   /**
@@ -176,7 +177,7 @@ public class ServiceProvider extends ResourceNode
    */
   public List<AuthenticationScheme> getAuthenticationSchemes()
   {
-    return getArrayAttribute(AttributeNames.AUTHENTICATION_SCHEMES, AuthenticationScheme.class);
+    return getArrayAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, AuthenticationScheme.class);
   }
 
   /**
@@ -191,7 +192,7 @@ public class ServiceProvider extends ResourceNode
       log.warn("no authentication scheme has been set this might cause InternalServerErrors on the "
                + "ResourceTypeEndpoint");
     }
-    setAttribute(AttributeNames.AUTHENTICATION_SCHEMES, authenticationSchemes);
+    setAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, authenticationSchemes);
   }
 
   /**

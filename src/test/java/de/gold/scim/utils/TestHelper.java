@@ -42,7 +42,7 @@ public final class TestHelper
   public static void addMetaToDocument(JsonNode document)
   {
     JsonHelper.addAttribute(document,
-                            AttributeNames.META,
+                            AttributeNames.RFC7643.META,
                             Meta.builder()
                                 .resourceType("User")
                                 .created(LocalDateTime.now())
@@ -102,7 +102,7 @@ public final class TestHelper
                                                                                       mutability,
                                                                                       returned,
                                                                                       uniqueness));
-    JsonHelper.getArrayAttribute(schemaNode, AttributeNames.ATTRIBUTES).ifPresent(arrayNode -> {
+    JsonHelper.getArrayAttribute(schemaNode, AttributeNames.RFC7643.ATTRIBUTES).ifPresent(arrayNode -> {
       arrayNode.add(newAttribute);
     });
     return newAttribute;
@@ -127,11 +127,11 @@ public final class TestHelper
                                              List<String> canonicalTypes)
   {
     String[] attributeNameParts = attributeName.split("\\.");
-    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.ATTRIBUTES).get();
+    JsonNode attributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonNode attributeDefinition = null;
     for ( JsonNode attribute : attributes )
     {
-      String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
+      String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.RFC7643.NAME).get();
       if (name.equals(attributeNameParts[0]))
       {
         attributeDefinition = attribute;
@@ -140,10 +140,11 @@ public final class TestHelper
     }
     if (attributeNameParts.length == 2)
     {
-      JsonNode subAttributes = JsonHelper.getArrayAttribute(attributeDefinition, AttributeNames.SUB_ATTRIBUTES).get();
+      JsonNode subAttributes = JsonHelper.getArrayAttribute(attributeDefinition, AttributeNames.RFC7643.SUB_ATTRIBUTES)
+                                         .get();
       for ( JsonNode attribute : subAttributes )
       {
-        String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.NAME).get();
+        String name = JsonHelper.getSimpleAttribute(attribute, AttributeNames.RFC7643.NAME).get();
         if (name.equals(attributeNameParts[1]))
         {
           attributeDefinition = attribute;
@@ -154,30 +155,32 @@ public final class TestHelper
     Assertions.assertNotNull(attributeDefinition);
     JsonNode finalAttributeDefinition = attributeDefinition;
     Optional.ofNullable(type).ifPresent(t -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.TYPE, new TextNode(t.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.TYPE, new TextNode(t.getValue()));
     });
     Optional.ofNullable(mutability).ifPresent(m -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.MUTABILITY, new TextNode(m.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.MUTABILITY, new TextNode(m.getValue()));
     });
     Optional.ofNullable(returned).ifPresent(r -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RETURNED, new TextNode(r.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.RETURNED, new TextNode(r.getValue()));
     });
     Optional.ofNullable(uniqueness).ifPresent(u -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.UNIQUENESS, new TextNode(u.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.UNIQUENESS, new TextNode(u.getValue()));
     });
     Optional.ofNullable(multiValued).ifPresent(multi -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.MULTI_VALUED, BooleanNode.valueOf(multi));
+      JsonHelper.addAttribute(finalAttributeDefinition,
+                              AttributeNames.RFC7643.MULTI_VALUED,
+                              BooleanNode.valueOf(multi));
     });
     Optional.ofNullable(required).ifPresent(r -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.REQUIRED, BooleanNode.valueOf(r));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.REQUIRED, BooleanNode.valueOf(r));
     });
     Optional.ofNullable(caseExact).ifPresent(c -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.CASE_EXACT, BooleanNode.valueOf(c));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.CASE_EXACT, BooleanNode.valueOf(c));
     });
     Optional.ofNullable(canonicalTypes).ifPresent(canonical -> {
       ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
       arrayNode.addAll(canonical.stream().map(TextNode::new).collect(Collectors.toList()));
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.REFERENCE_TYPES, arrayNode);
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.REFERENCE_TYPES, arrayNode);
     });
   }
 

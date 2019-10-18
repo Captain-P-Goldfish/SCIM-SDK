@@ -29,13 +29,13 @@ public class ServiceProviderTest
     log.warn(serviceProvider.toPrettyString());
     MatcherAssert.assertThat(serviceProvider, Matchers.not(Matchers.emptyIterable()));
     Assertions.assertEquals(7, serviceProvider.size());
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.SCHEMAS));
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.PATCH));
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.BULK));
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.FILTER));
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.CHANGE_PASSWORD));
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.SORT));
-    Assertions.assertNotNull(serviceProvider.get(AttributeNames.ETAG));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.PATCH));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.BULK));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.FILTER));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.CHANGE_PASSWORD));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.SORT));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.ETAG));
   }
 
   /**
@@ -47,13 +47,13 @@ public class ServiceProviderTest
   {
     ServiceProvider serviceProvider = ServiceProvider.builder().documentationUri("test").build();
 
-    serviceProvider.remove(AttributeNames.DOCUMENTATION_URI);
-    serviceProvider.remove(AttributeNames.PATCH);
-    serviceProvider.remove(AttributeNames.BULK);
-    serviceProvider.remove(AttributeNames.FILTER);
-    serviceProvider.remove(AttributeNames.CHANGE_PASSWORD);
-    serviceProvider.remove(AttributeNames.SORT);
-    serviceProvider.remove(AttributeNames.ETAG);
+    serviceProvider.remove(AttributeNames.RFC7643.DOCUMENTATION_URI);
+    serviceProvider.remove(AttributeNames.RFC7643.PATCH);
+    serviceProvider.remove(AttributeNames.RFC7643.BULK);
+    serviceProvider.remove(AttributeNames.RFC7643.FILTER);
+    serviceProvider.remove(AttributeNames.RFC7643.CHANGE_PASSWORD);
+    serviceProvider.remove(AttributeNames.RFC7643.SORT);
+    serviceProvider.remove(AttributeNames.RFC7643.ETAG);
 
     Assertions.assertNotNull(serviceProvider.getDocumentationUri());
     Assertions.assertNotNull(serviceProvider.getPatchConfig());

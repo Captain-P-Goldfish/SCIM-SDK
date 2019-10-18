@@ -10,18 +10,21 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.ResourceTypeNames;
-import de.gold.scim.endpoints.ResourceEndpointHandler;
 import de.gold.scim.endpoints.handler.GroupHandlerImpl;
+import de.gold.scim.endpoints.handler.ResourceTypeHandler;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
-import de.gold.scim.resources.ServiceProvider;
-import de.gold.scim.resources.ServiceProviderUrlExtension;
-import de.gold.scim.response.GetResponse;
-import de.gold.scim.response.ScimResponse;
+import de.gold.scim.exceptions.NotImplementedException;
+import de.gold.scim.exceptions.ResourceNotFoundException;
+import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.ResourceTypeFactoryUtil;
+import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -35,19 +38,14 @@ public class ResourceTypeEndpointDefinitionTest
 {
 
   /**
-   * defines the base url for the meta-attribute
-   */
-  private static final String BASE_URL = "https://localhost/scim/v2";
-
-  /**
    * the resource type factory in which the resources will be registered
    */
   private ResourceTypeFactory resourceTypeFactory;
 
   /**
-   * the endpoint definition that handles all requests
+   * the resource type handler implementation that was registered
    */
-  private ResourceEndpointHandler resourceEndpointHandler;
+  private ResourceTypeHandler resourceTypeHandler;
 
   /**
    * initializes the resource endpoint implementation
@@ -60,13 +58,10 @@ public class ResourceTypeEndpointDefinitionTest
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(new GroupHandlerImpl());
     MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl());
 
-    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
-    ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
-    resourceEndpointHandler = getUnitTestResourceEndpointHandler(resourceTypeFactory,
-                                                                 serviceProvider,
-                                                                 userEndpoint,
-                                                                 groupEndpoint,
-                                                                 meEndpoint);
+    // this line is simply used to register the endpoints on the resourceTypeFactory
+    getUnitTestResourceEndpointHandler(resourceTypeFactory, userEndpoint, groupEndpoint, meEndpoint);
+    this.resourceTypeHandler = (ResourceTypeHandler)resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES)
+                                                                       .getResourceHandlerImpl();
   }
 
   /**
@@ -79,11 +74,7 @@ public class ResourceTypeEndpointDefinitionTest
                           ResourceTypeNames.ME, ResourceTypeNames.SERVICE_PROVIDER_CONFIG})
   public void testGetResourceTypeByName(String name)
   {
-    ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.RESOURCE_TYPES, name);
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
-    GetResponse getResponse = (GetResponse)scimResponse;
-    ResourceType resourceType = ResourceTypeFactoryUtil.getResourceType(resourceTypeFactory,
-                                                                        getResponse.getExistingResource());
+    ResourceType resourceType = resourceTypeHandler.getResource(name);
     Assertions.assertEquals(name, resourceType.getName());
     log.debug(resourceType.toPrettyString());
     Assertions.assertTrue(resourceType.getMeta().isPresent());
@@ -103,7 +94,7 @@ public class ResourceTypeEndpointDefinitionTest
    */
   private String getLocationUrl(String resourceTypeName)
   {
-    return BASE_URL + EndpointPaths.RESOURCE_TYPES + "/" + resourceTypeName;
+    return EndpointPaths.RESOURCE_TYPES + "/" + resourceTypeName;
   }
 
   /**
@@ -112,6 +103,69 @@ public class ResourceTypeEndpointDefinitionTest
   @Test
   public void testListResourceTypes()
   {
-    Assertions.fail("implement service provider endpoint first");
+    PartialListResponse<ResourceType> listResponse = resourceTypeHandler.listResources(1, 10, null, null, null);
+    Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getResources().size());
+  }
+
+  /**
+   * verifies that the listResources method will never return more entries than stated in count with count has a
+   * value that enforces less than count entries in the last request
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3, 4, 5})
+  public void testListResourceTypesWithStartIndexAndCount(int count)
+  {
+    for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
+    {
+      PartialListResponse<ResourceType> listResponse = resourceTypeHandler.listResources(startIndex + 1,
+                                                                                         count,
+                                                                                         null,
+                                                                                         null,
+                                                                                         null);
+      MatcherAssert.assertThat(listResponse.getResources().size(), Matchers.lessThanOrEqualTo(count));
+      Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
+      log.debug("returned entries: {}", listResponse.getResources().size());
+    }
+  }
+
+  /**
+   * tries to get a resource with an id that does not exist
+   */
+  @Test
+  public void testGetResourceWithInvalidId()
+  {
+    Assertions.assertThrows(ResourceNotFoundException.class,
+                            () -> resourceTypeHandler.getResource("nonExistingResource"));
+  }
+
+  /**
+   * tries to create a resource on the endpoint
+   */
+  @Test
+  public void testCreateResource()
+  {
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    ResourceType userResourceType = ResourceTypeFactoryUtil.getResourceType(resourceTypeFactory, userResourceTypeNode);
+    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.createResource(userResourceType));
+  }
+
+  /**
+   * tries to update a resource on the endpoint
+   */
+  @Test
+  public void testUpdateResource()
+  {
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    ResourceType userResourceType = ResourceTypeFactoryUtil.getResourceType(resourceTypeFactory, userResourceTypeNode);
+    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.updateResource(userResourceType));
+  }
+
+  /**
+   * tries to delete a resource on the endpoint
+   */
+  @Test
+  public void testDeleteResource()
+  {
+    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.deleteResource("blubb"));
   }
 }

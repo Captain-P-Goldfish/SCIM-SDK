@@ -28,7 +28,7 @@ public class ChangePasswordConfig extends ScimObjectNode
    */
   public boolean isSupported()
   {
-    return getBooleanAttribute(AttributeNames.SUPPORTED).orElse(false);
+    return getBooleanAttribute(AttributeNames.RFC7643.SUPPORTED).orElse(false);
   }
 
   /**
@@ -36,6 +36,6 @@ public class ChangePasswordConfig extends ScimObjectNode
    */
   public void setSupported(Boolean supported)
   {
-    setAttribute(AttributeNames.SUPPORTED, Optional.ofNullable(supported).orElse(false));
+    setAttribute(AttributeNames.RFC7643.SUPPORTED, Optional.ofNullable(supported).orElse(false));
   }
 }
