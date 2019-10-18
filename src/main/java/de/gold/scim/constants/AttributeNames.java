@@ -206,6 +206,12 @@ public final class AttributeNames
     public static final String ACTIVE = "active";
 
     public static final String LOCALITY = "locality";
+
+    public static final String DETAIL = "detail";
+
+    public static final String STATUS = "status";
+
+    public static final String SCIM_TYPE = "scimType";
   }
 
 }

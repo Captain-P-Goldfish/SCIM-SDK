@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
-import lombok.Getter;
 
 
 /**
@@ -19,7 +18,6 @@ public class GetResponse extends ScimResponse
   /**
    * the resource that was created
    */
-  @Getter
   private JsonNode existingResource;
 
   public GetResponse(JsonNode existingResource, String location)

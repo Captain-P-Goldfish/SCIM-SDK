@@ -2,14 +2,12 @@ package de.gold.scim.response;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.HttpHeader;
-import de.gold.scim.resources.AbstractSchemasHolder;
 import lombok.Getter;
 
 
@@ -19,7 +17,7 @@ import lombok.Getter;
  * <br>
  * The abstract implementation for all responses created by this framework
  */
-public abstract class ScimResponse extends AbstractSchemasHolder
+public abstract class ScimResponse
 {
 
   /**
@@ -31,34 +29,7 @@ public abstract class ScimResponse extends AbstractSchemasHolder
   public ScimResponse()
   {
     this.httpHeaders = new HashMap<>();
-    setDefaultHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
-  }
-
-  public ScimResponse(Map<String, String> httpHeaders)
-  {
-    this.httpHeaders = Objects.requireNonNull(httpHeaders);
-    setDefaultHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
-  }
-
-  /**
-   * adds a header to the {@link #httpHeaders} map if it is not already set or removes it if the given value is
-   * null
-   *
-   * @param headerName the name of the header
-   * @param headerValue the value of the header to set. Will remove that attribute from the map if null
-   */
-  private void setDefaultHeader(String headerName, String headerValue)
-  {
-    if (StringUtils.isBlank(headerName))
-    {
-      return;
-    }
-    if (httpHeaders.containsKey(headerName) && StringUtils.isBlank(headerValue))
-    {
-      httpHeaders.remove(headerName);
-      return;
-    }
-    httpHeaders.put(headerName, headerValue);
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
 
   /**

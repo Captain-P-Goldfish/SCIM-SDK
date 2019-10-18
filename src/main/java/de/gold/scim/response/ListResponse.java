@@ -13,9 +13,7 @@ import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.utils.JsonHelper;
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.ToString;
 
 
 /**
@@ -24,35 +22,36 @@ import lombok.ToString;
  * <br>
  * represents a list response
  */
-@Getter
-@ToString(exclude = {"listResponseNode", "listedResources"})
 public class ListResponse extends ScimResponse
 {
 
   /**
    * this is the actual node that represents this response
    */
-  @Getter(AccessLevel.PROTECTED)
   private JsonNode listResponseNode;
 
   /**
    * the resources that have been extracted
    */
+  @Getter
   private List<JsonNode> listedResources;
 
   /**
    * Non-negative integer. Specifies the total number of results matching the client query, e.g., 1000
    */
+  @Getter
   private Integer totalResults;
 
   /**
    * Non-negative integer. Specifies the number of query results returned in a query response page, e.g., 10.
    */
+  @Getter
   private Integer itemsPerPage;
 
   /**
    * The 1-based index of the first result in the current set of query results, e.g., 1.
    */
+  @Getter
   private Integer startIndex;
 
   public ListResponse(String resourceJsonRepresentation)
@@ -92,7 +91,7 @@ public class ListResponse extends ScimResponse
   {
     ArrayNode schemas = new ArrayNode(JsonNodeFactory.instance);
     schemas.add(SchemaUris.LIST_RESPONSE_URI);
-    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.RESOURCES, schemas);
+    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.SCHEMAS, schemas);
   }
 
   /**

@@ -486,16 +486,17 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testListResourceTypesWithStartIndexOutOfRange()
   {
     final int startIndex = resourceTypeFactory.getAllResourceTypes().size() + 1;
-    Assertions.assertThrows(BadRequestException.class,
-                            () -> resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
-                                                                        SearchRequest.builder()
-                                                                                     .startIndex(startIndex)
-                                                                                     .count(1)
-                                                                                     .build(),
-                                                                        null));
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                   SearchRequest.builder().startIndex(startIndex).count(1).build(),
+                                                   null);
+    });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+    Assertions.assertNotNull(errorResponse.getScimException().getDetail());
   }
-
-
 
   /**
    * reads a user from the endpoint

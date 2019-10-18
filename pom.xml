@@ -45,6 +45,7 @@
         <version.hamcrest>1.3</version.hamcrest>
         <version.reflections>0.9.11</version.reflections>
         <version.mockito>3.1.0</version.mockito>
+        <version.resteasy.jaxrs>3.9.0.Final</version.resteasy.jaxrs>
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
@@ -153,6 +154,12 @@
                 <version>${version.mockito}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.jboss.resteasy</groupId>
+                <artifactId>resteasy-jaxrs</artifactId>
+                <version>${version.resteasy.jaxrs}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -222,6 +229,10 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.resteasy</groupId>
+            <artifactId>resteasy-jaxrs</artifactId>
         </dependency>
     </dependencies>
 

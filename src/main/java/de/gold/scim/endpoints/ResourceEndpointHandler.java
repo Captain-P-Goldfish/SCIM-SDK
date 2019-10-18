@@ -424,48 +424,60 @@ public final class ResourceEndpointHandler
                                     String excludedAttributes,
                                     Supplier<String> baseUrlSupplier)
   {
-    final ResourceType resourceType = getResourceType(endpoint);
-    final int effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
-    final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
-    final FilterNode filterNode = serviceProvider.getFilterConfig().isSupported()
-      ? RequestUtils.parseFilter(resourceType, filter) : null;
-    final SchemaAttribute sortByAttribute = serviceProvider.getSortConfig().isSupported()
-      ? RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy) : null;
-    final SortOrder sortOrdering = serviceProvider.getSortConfig().isSupported() ? SortOrder.getByValue(sortOrder)
-      : null;
-
-    ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-    PartialListResponse resources = resourceHandler.listResources(effectiveStartIndex,
-                                                                  effectiveCount,
-                                                                  filterNode,
-                                                                  sortByAttribute,
-                                                                  sortOrdering);
-    List<ResourceNode> resourceList = resources.getResources();
-    if (resources.getResources().size() > effectiveCount)
+    try
     {
-      log.warn("the service provider tried to return more results than allowed. Tried to return '"
-               + resources.getResources().size() + "' results. The list will be reduced to '" + effectiveCount
-               + "' results");
-      resourceList = resourceList.subList(0, effectiveCount);
-    }
 
-    List<JsonNode> validatedResourceList = new ArrayList<>();
-    for ( ResourceNode resourceNode : resourceList )
+      final ResourceType resourceType = getResourceType(endpoint);
+      final int effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
+      final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
+      final FilterNode filterNode = serviceProvider.getFilterConfig().isSupported()
+        ? RequestUtils.parseFilter(resourceType, filter) : null;
+      final SchemaAttribute sortByAttribute = serviceProvider.getSortConfig().isSupported()
+        ? RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy) : null;
+      final SortOrder sortOrdering = serviceProvider.getSortConfig().isSupported() ? SortOrder.getByValue(sortOrder)
+        : null;
+
+      ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      PartialListResponse resources = resourceHandler.listResources(effectiveStartIndex,
+                                                                    effectiveCount,
+                                                                    filterNode,
+                                                                    sortByAttribute,
+                                                                    sortOrdering);
+      List<ResourceNode> resourceList = resources.getResources();
+      if (resources.getResources().size() > effectiveCount)
+      {
+        log.warn("the service provider tried to return more results than allowed. Tried to return '"
+                 + resources.getResources().size() + "' results. The list will be reduced to '" + effectiveCount
+                 + "' results");
+        resourceList = resourceList.subList(0, effectiveCount);
+      }
+
+      List<JsonNode> validatedResourceList = new ArrayList<>();
+      for ( ResourceNode resourceNode : resourceList )
+      {
+        final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
+        Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
+        meta.setLocation(location);
+        resourceNode.setMeta(meta);
+        JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                                 resourceType,
+                                                                                 resourceNode,
+                                                                                 null,
+                                                                                 attributes,
+                                                                                 excludedAttributes);
+        validatedResourceList.add(validatedResource);
+      }
+
+      return new ListResponse(validatedResourceList, resources.getTotalResults(), effectiveCount, effectiveStartIndex);
+    }
+    catch (ScimException ex)
     {
-      final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
-      Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
-      meta.setLocation(location);
-      resourceNode.setMeta(meta);
-      JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                               resourceType,
-                                                                               resourceNode,
-                                                                               null,
-                                                                               attributes,
-                                                                               excludedAttributes);
-      validatedResourceList.add(validatedResource);
+      return new ErrorResponse(ex);
     }
-
-    return new ListResponse(validatedResourceList, resources.getTotalResults(), effectiveCount, effectiveStartIndex);
+    catch (Exception ex)
+    {
+      return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
+    }
   }
 
   /**
