@@ -1,11 +1,14 @@
 package de.gold.scim.endpoints.handler;
 
-import java.util.List;
 import java.util.function.Function;
 
+import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.NotImplementedException;
+import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.ServiceProvider;
+import de.gold.scim.response.PartialListResponse;
+import de.gold.scim.schemas.SchemaAttribute;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -58,15 +61,15 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
 
   /**
    * listing of service provider configurations not supported
+   *
+   * @return
    */
   @Override
-  public List<ServiceProvider> listResources(int startIndex,
-                                             int count,
-                                             String filter,
-                                             String sortBy,
-                                             String sortOrder,
-                                             String attributes,
-                                             String excludedAttriutes)
+  public PartialListResponse listResources(int startIndex,
+                                           int count,
+                                           FilterNode filter,
+                                           SchemaAttribute sortBy,
+                                           SortOrder sortOrder)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("list"));
   }

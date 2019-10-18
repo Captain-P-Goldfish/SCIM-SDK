@@ -2,11 +2,7 @@ package de.gold.scim.filter;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.stream.Collectors;
-
-import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
@@ -18,8 +14,8 @@ import de.gold.scim.filter.antlr.Comparator;
 import de.gold.scim.filter.antlr.CompareValue;
 import de.gold.scim.filter.antlr.ScimFilterParser;
 import de.gold.scim.schemas.ResourceType;
-import de.gold.scim.schemas.Schema;
 import de.gold.scim.schemas.SchemaAttribute;
+import de.gold.scim.utils.RequestUtils;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -62,7 +58,7 @@ public class AttributeExpressionLeaf extends FilterNode
   {
     this.attributeName = new AttributeName(context.attributePath());
     this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
-    this.schemaAttribute = getSchemaAttribute(resourceType, attributeName);
+    this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, attributeName);
     this.compareValue = context.compareValue() == null ? null
       : new CompareValue(context.compareValue(), schemaAttribute);
     validateFilterComparator();
@@ -85,60 +81,6 @@ public class AttributeExpressionLeaf extends FilterNode
           throw new InvalidFilterException("the comparator '" + comparator + "' is not allowed on attribute type '"
                                            + schemaAttribute.getType() + "'", null);
       }
-    }
-  }
-
-  /**
-   * gets the {@link SchemaAttribute} from the given {@link ResourceType}
-   *
-   * @param resourceType the resource type from which the attribute definition should be extracted
-   * @param attributeName this instance holds the attribute name to extract the {@link SchemaAttribute} from the
-   *          {@link ResourceType}
-   * @return the found {@link SchemaAttribute} definition
-   * @throws de.gold.scim.exceptions.InvalidFilterException if no {@link SchemaAttribute} was found for the
-   *           given name attribute
-   */
-  private SchemaAttribute getSchemaAttribute(ResourceType resourceType, AttributeName attributeName)
-  {
-    final boolean resourceUriPresent = StringUtils.isNotBlank(attributeName.getResourceUri());
-    final String scimNodeName = attributeName.getShortName();
-    List<Schema> resourceTypeSchemas = resourceType.getAllSchemas();
-
-    List<SchemaAttribute> schemaAttributeList;
-    if (resourceUriPresent)
-    {
-      schemaAttributeList = resourceTypeSchemas.stream()
-                                               .filter(schema -> schema.getId().equals(attributeName.getResourceUri()))
-                                               .map(schema -> schema.getSchemaAttribute(scimNodeName))
-                                               .filter(Objects::nonNull)
-                                               .collect(Collectors.toList());
-    }
-    else
-    {
-      schemaAttributeList = resourceTypeSchemas.stream()
-                                               .map(schema -> schema.getSchemaAttribute(scimNodeName))
-                                               .filter(Objects::nonNull)
-                                               .collect(Collectors.toList());
-    }
-    if (schemaAttributeList.isEmpty())
-    {
-      throw new InvalidFilterException("the attribute with the name '" + attributeName.getShortName() + "' is "
-                                       + "unknown to resource type '" + resourceType.getName() + "'", null);
-    }
-    else if (schemaAttributeList.size() > 1)
-    {
-      String schemaIds = schemaAttributeList.stream()
-                                            .map(schemaAttribute -> schemaAttribute.getSchema().getId())
-                                            .collect(Collectors.joining(","));
-      String exampleAttributeName = schemaAttributeList.get(0).getSchema().getId() + ":" + attributeName.getShortName();
-      throw new InvalidFilterException("the attribute with the name '" + attributeName.getShortName() + "' is "
-                                       + "ambiguous it was found in the schemas with the ids [" + schemaIds + "]. "
-                                       + "Please use the fully qualified Uri for this attribute e.g.: "
-                                       + exampleAttributeName, null);
-    }
-    else
-    {
-      return schemaAttributeList.get(0);
     }
   }
 

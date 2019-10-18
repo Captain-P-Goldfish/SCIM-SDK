@@ -473,4 +473,14 @@ public class FilterVisitorTest
     }
   }
 
+  /**
+   * verifies that an empty filter does not cause any exceptions
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"", " ", "  "})
+  public void testFilterIsEmpty(String filter)
+  {
+    Assertions.assertNull(RequestUtils.parseFilter(userResourceType, filter));
+  }
+
 }

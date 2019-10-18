@@ -3,6 +3,8 @@ package de.gold.scim.utils;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -10,12 +12,17 @@ import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.InvalidFilterException;
 import de.gold.scim.filter.FilterNode;
+import de.gold.scim.filter.antlr.AttributeName;
 import de.gold.scim.filter.antlr.FilterRuleErrorListener;
 import de.gold.scim.filter.antlr.FilterVisitor;
 import de.gold.scim.filter.antlr.ScimFilterLexer;
 import de.gold.scim.filter.antlr.ScimFilterParser;
+import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.schemas.ResourceType;
+import de.gold.scim.schemas.Schema;
+import de.gold.scim.schemas.SchemaAttribute;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -93,6 +100,10 @@ public final class RequestUtils
    */
   public static FilterNode parseFilter(ResourceType resourceType, String filter)
   {
+    if (StringUtils.isBlank(filter))
+    {
+      return null;
+    }
     FilterRuleErrorListener filterRuleErrorListener = new FilterRuleErrorListener();
     ScimFilterLexer lexer = new ScimFilterLexer(CharStreams.fromString(filter));
     lexer.removeErrorListeners();
@@ -106,4 +117,144 @@ public final class RequestUtils
     return filterVisitor.visit(filterContext);
   }
 
+  /**
+   * The 1-based index of the first query result. A value less than 1 SHALL be interpreted as 1.
+   *
+   * @param startIndex the index to start with to list the resources
+   * @return number "1" or greater
+   */
+  public static int getEffectiveStartIndex(Integer startIndex)
+  {
+    if (startIndex == null || startIndex < 1)
+    {
+      return 1;
+    }
+    return startIndex;
+  }
+
+  /**
+   * Will get the effective count value as described in RFC7644:<br>
+   * <br>
+   * Non-negative integer. Specifies the desired maximum number of query results per page, e.g., 10. A negative
+   * value SHALL be interpreted as "0". A value of "0" indicates that no resource results are to be returned
+   * except for "totalResults". <br>
+   * <b>DEFAULT:</b> None<br>
+   * When specified, the service provider MUST NOT return more results than specified, although it MAY return
+   * fewer results. If unspecified, the maximum number of results is set by the service provider.
+   */
+  public static int getEffectiveCount(ServiceProvider serviceProvider, Integer count)
+  {
+    if (count == null)
+    {
+      return serviceProvider.getFilterConfig().getMaxResults();
+    }
+    if (count < 0)
+    {
+      return 0;
+    }
+    return Math.min(count, serviceProvider.getFilterConfig().getMaxResults());
+  }
+
+  /**
+   * gets the {@link SchemaAttribute} from the given {@link ResourceType}
+   *
+   * @param resourceType the resource type from which the attribute definition should be extracted
+   * @param sortBy this instance holds the attribute name to extract the {@link SchemaAttribute} from the
+   *          {@link ResourceType}
+   * @return the found {@link SchemaAttribute} definition
+   * @throws de.gold.scim.exceptions.BadRequestException if no {@link SchemaAttribute} was found for the given
+   *           name attribute
+   */
+  public static SchemaAttribute getSchemaAttributeForSortBy(ResourceType resourceType, String sortBy)
+  {
+    try
+    {
+      return StringUtils.isBlank(sortBy) ? null : getSchemaAttribute(resourceType, new AttributeName(sortBy));
+    }
+    catch (BadRequestException ex)
+    {
+      ex.setScimType(ScimType.INVALID_PARAMETERS);
+      throw ex;
+    }
+  }
+
+  /**
+   * gets the {@link SchemaAttribute} from the given {@link ResourceType}
+   *
+   * @param resourceType the resource type from which the attribute definition should be extracted
+   * @param attributeName this instance holds the attribute name to extract the {@link SchemaAttribute} from the
+   *          {@link ResourceType}
+   * @return the found {@link SchemaAttribute} definition
+   * @throws de.gold.scim.exceptions.InvalidFilterException if no {@link SchemaAttribute} was found for the
+   *           given name attribute
+   */
+  public static SchemaAttribute getSchemaAttributeForFilter(ResourceType resourceType, AttributeName attributeName)
+  {
+    try
+    {
+      return getSchemaAttribute(resourceType, attributeName);
+    }
+    catch (BadRequestException ex)
+    {
+      throw new InvalidFilterException(ex.getMessage(), ex);
+    }
+  }
+
+  /**
+   * gets the {@link SchemaAttribute} from the given {@link ResourceType}
+   *
+   * @param resourceType the resource type from which the attribute definition should be extracted
+   * @param attributeName this instance holds the attribute name to extract the {@link SchemaAttribute} from the
+   *          {@link ResourceType}
+   * @return the found {@link SchemaAttribute} definition
+   * @throws de.gold.scim.exceptions.BadRequestException if no {@link SchemaAttribute} was found for the given
+   *           name attribute
+   */
+  private static SchemaAttribute getSchemaAttribute(ResourceType resourceType, AttributeName attributeName)
+  {
+    if (attributeName == null)
+    {
+      return null;
+    }
+    final boolean resourceUriPresent = StringUtils.isNotBlank(attributeName.getResourceUri());
+    final String scimNodeName = attributeName.getShortName();
+    List<Schema> resourceTypeSchemas = resourceType.getAllSchemas();
+
+    List<SchemaAttribute> schemaAttributeList;
+    if (resourceUriPresent)
+    {
+      schemaAttributeList = resourceTypeSchemas.stream()
+                                               .filter(schema -> schema.getId().equals(attributeName.getResourceUri()))
+                                               .map(schema -> schema.getSchemaAttribute(scimNodeName))
+                                               .filter(Objects::nonNull)
+                                               .collect(Collectors.toList());
+    }
+    else
+    {
+      schemaAttributeList = resourceTypeSchemas.stream()
+                                               .map(schema -> schema.getSchemaAttribute(scimNodeName))
+                                               .filter(Objects::nonNull)
+                                               .collect(Collectors.toList());
+    }
+    if (schemaAttributeList.isEmpty())
+    {
+      throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
+                                    + "unknown to resource type '" + resourceType.getName() + "'", null, null);
+    }
+    else if (schemaAttributeList.size() > 1)
+    {
+      String schemaIds = schemaAttributeList.stream()
+                                            .map(schemaAttribute -> schemaAttribute.getSchema().getId())
+                                            .collect(Collectors.joining(","));
+      String exampleAttributeName = schemaAttributeList.get(0).getSchema().getId() + ":" + attributeName.getShortName();
+      throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
+                                    + "ambiguous it was found in the schemas with the ids [" + schemaIds + "]. "
+                                    + "Please use the fully qualified Uri for this attribute e.g.: "
+                                    + exampleAttributeName, null, null);
+    }
+    else
+    {
+      return schemaAttributeList.get(0);
+    }
+  }
 }

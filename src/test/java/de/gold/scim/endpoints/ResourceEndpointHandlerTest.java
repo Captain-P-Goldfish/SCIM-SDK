@@ -497,7 +497,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
    */
   private String getLocation(String endpoint, String resourceId)
   {
-    return getBaseUrlSupplier().get() + "/" + endpoint + "/" + resourceId;
+    return getBaseUrlSupplier().get() + endpoint + "/" + resourceId;
   }
 
   /**

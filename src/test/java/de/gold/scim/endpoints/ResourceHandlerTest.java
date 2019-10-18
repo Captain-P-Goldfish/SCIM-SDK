@@ -1,12 +1,14 @@
 package de.gold.scim.endpoints;
 
-import java.util.List;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import de.gold.scim.constants.enums.SortOrder;
+import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.User;
+import de.gold.scim.response.PartialListResponse;
+import de.gold.scim.schemas.SchemaAttribute;
 
 
 /**
@@ -54,13 +56,11 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public List<User> listResources(int startIndex,
-                                    int count,
-                                    String filter,
-                                    String sortBy,
-                                    String sortOrder,
-                                    String attributes,
-                                    String excludedAttriutes)
+    public PartialListResponse listResources(int startIndex,
+                                             int count,
+                                             FilterNode filter,
+                                             SchemaAttribute sortBy,
+                                             SortOrder sortOrder)
     {
       return null;
     }
@@ -97,13 +97,11 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public List listResources(int startIndex,
-                              int count,
-                              String filter,
-                              String sortBy,
-                              String sortOrder,
-                              String attributes,
-                              String excludedAttriutes)
+    public PartialListResponse listResources(int startIndex,
+                                             int count,
+                                             FilterNode filter,
+                                             SchemaAttribute sortBy,
+                                             SortOrder sortOrder)
     {
       return null;
     }

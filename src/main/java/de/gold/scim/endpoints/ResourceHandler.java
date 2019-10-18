@@ -2,9 +2,12 @@ package de.gold.scim.endpoints;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.List;
 
+import de.gold.scim.constants.enums.SortOrder;
+import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.ResourceNode;
+import de.gold.scim.response.PartialListResponse;
+import de.gold.scim.schemas.SchemaAttribute;
 import lombok.Getter;
 
 
@@ -37,13 +40,11 @@ public abstract class ResourceHandler<T extends ResourceNode>
 
   public abstract T getResource(String id);
 
-  public abstract List<T> listResources(int startIndex,
-                                        int count,
-                                        String filter,
-                                        String sortBy,
-                                        String sortOrder,
-                                        String attributes,
-                                        String excludedAttriutes);
+  public abstract PartialListResponse<T> listResources(int startIndex,
+                                                       int count,
+                                                       FilterNode filter,
+                                                       SchemaAttribute sortBy,
+                                                       SortOrder sortOrder);
 
   public abstract T updateResource(T resourceToUpdate);
 

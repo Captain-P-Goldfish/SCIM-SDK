@@ -4,11 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
+import de.gold.scim.filter.FilterNode;
+import de.gold.scim.resources.ResourceNode;
+import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
+import de.gold.scim.schemas.SchemaAttribute;
 import lombok.AllArgsConstructor;
 
 
@@ -56,17 +61,19 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
 
   /**
    * {@inheritDoc}
+   *
+   * @return
    */
   @Override
-  public List<ResourceType> listResources(int startIndex,
-                                          int count,
-                                          String filter,
-                                          String sortBy,
-                                          String sortOrder,
-                                          String attributes,
-                                          String excludedAttriutes)
+  public PartialListResponse listResources(int startIndex,
+                                           int count,
+                                           FilterNode filter,
+                                           SchemaAttribute sortBy,
+                                           SortOrder sortOrder)
   {
-    return new ArrayList<>(resourceTypeFactory.getAllResourceTypes()).subList(startIndex - 1, count);
+    List<ResourceNode> resourceNodes = new ArrayList<>();
+    resourceNodes.addAll(new ArrayList<>(resourceTypeFactory.getAllResourceTypes()).subList(startIndex - 1, count));
+    return PartialListResponse.builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
   }
 
   /**

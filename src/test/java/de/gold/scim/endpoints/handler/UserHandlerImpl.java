@@ -2,17 +2,20 @@ package de.gold.scim.endpoints.handler;
 
 import java.time.Instant;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.ConflictException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
+import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.User;
+import de.gold.scim.response.PartialListResponse;
+import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.JsonHelper;
 
 
@@ -51,13 +54,11 @@ public class UserHandlerImpl extends ResourceHandler<User>
   }
 
   @Override
-  public List<User> listResources(int startIndex,
-                                  int count,
-                                  String filter,
-                                  String sortBy,
-                                  String sortOrder,
-                                  String attributes,
-                                  String excludedAttriutes)
+  public PartialListResponse listResources(int startIndex,
+                                           int count,
+                                           FilterNode filter,
+                                           SchemaAttribute sortBy,
+                                           SortOrder sortOrder)
   {
     return null;
   }

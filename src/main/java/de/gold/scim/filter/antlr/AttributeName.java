@@ -1,6 +1,8 @@
 package de.gold.scim.filter.antlr;
 
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,6 +44,18 @@ public class AttributeName
                        : "." + attributePathContext.subattribute.getText());
     this.resourceUri = resolveResourceUri(attributePathContext).orElse(null);
     this.fullName = (resourceUri == null ? "" : StringUtils.stripToEmpty(resourceUri) + ":") + shortName;
+  }
+
+  public AttributeName(String attributeName)
+  {
+    Pattern pattern = Pattern.compile("(([\\w:.]+):)?(\\w+(\\.\\w+)?)");
+    Matcher matcher = pattern.matcher(attributeName);
+    if (matcher.matches())
+    {
+      this.resourceUri = matcher.group(2);
+      this.shortName = matcher.group(3);
+    }
+    this.fullName = attributeName;
   }
 
   /**

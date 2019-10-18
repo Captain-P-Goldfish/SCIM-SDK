@@ -319,7 +319,7 @@
 
                         <requireFileChecksum>
                             <file>${project.basedir}/src/main/resources/de/gold/scim/meta/schema.schema.json</file>
-                            <checksum>3f69ecdbbf138b57936caddba2de01b3</checksum>
+                            <checksum>978b058ec4ed804828b631ee6de810e9</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -331,7 +331,7 @@
                         <requireFileChecksum>
                             <file>${project.basedir}/src/main/resources/de/gold/scim/meta/service-provider.schema.json
                             </file>
-                            <checksum>debe75ffe21e5925fc617e2eb4b9bdfd</checksum>
+                            <checksum>23633eb301eb720b5908c6ba64f4a1f9</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                     </rules>

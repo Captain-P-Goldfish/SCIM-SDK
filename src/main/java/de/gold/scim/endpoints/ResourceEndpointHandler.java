@@ -11,12 +11,14 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
 import de.gold.scim.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
+import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.ServiceProviderUrlExtension;
@@ -26,10 +28,12 @@ import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.GetResponse;
 import de.gold.scim.response.ListResponse;
+import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
+import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.schemas.SchemaValidator;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
@@ -355,7 +359,7 @@ public final class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @return a
+   * @return a ListResponse with all returned resources
    */
   public ScimResponse listResources(String endpoint,
                                     Integer startIndex,
@@ -367,8 +371,44 @@ public final class ResourceEndpointHandler
                                     String excludedAttributes,
                                     Supplier<String> baseUrlSupplier)
   {
-    ResourceType resourceType = getResourceType(endpoint);
-    return new ListResponse(null, 0, count, startIndex);
+    final ResourceType resourceType = getResourceType(endpoint);
+    final int effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
+    final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
+    final FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
+    final SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+    final SortOrder sortOrdering = SortOrder.getByValue(sortOrder);
+
+    ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+    PartialListResponse resources = resourceHandler.listResources(effectiveStartIndex,
+                                                                  effectiveCount,
+                                                                  filterNode,
+                                                                  sortByAttribute,
+                                                                  sortOrdering);
+    List<ResourceNode> resourceList = resources.getResources();
+    if (resources.getResources().size() > effectiveCount)
+    {
+      log.warn("the service provider tried to return more results than allowed. Tried to return  '"
+               + resources.getResources().size() + "' results reducing this list to '" + effectiveCount + "' results");
+      resourceList = resourceList.subList(0, effectiveCount);
+    }
+
+    List<JsonNode> validatedResourceList = new ArrayList<>();
+    for ( ResourceNode resourceNode : resourceList )
+    {
+      final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
+      Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
+      meta.setLocation(location);
+      resourceNode.setMeta(meta);
+      JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                               resourceType,
+                                                                               resourceNode,
+                                                                               null,
+                                                                               attributes,
+                                                                               excludedAttributes);
+      validatedResourceList.add(validatedResource);
+    }
+
+    return new ListResponse(validatedResourceList, resources.getTotalResults(), effectiveCount, effectiveStartIndex);
   }
 
   /**
