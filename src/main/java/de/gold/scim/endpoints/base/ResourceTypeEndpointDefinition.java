@@ -17,22 +17,11 @@ import de.gold.scim.utils.JsonHelper;
 public class ResourceTypeEndpointDefinition extends EndpointDefinition
 {
 
-  /**
-   * the factory is used for unit tests to prevent application context pollution
-   */
-  private ResourceTypeFactory resourceTypeFactory;
-
-  protected ResourceTypeEndpointDefinition(ResourceTypeFactory resourceTypeFactory)
+  public ResourceTypeEndpointDefinition(ResourceTypeFactory resourceTypeFactory)
   {
     super(JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPE_RESOURCE_TYPE_JSON),
           JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON), null,
           new ResourceTypeHandler(resourceTypeFactory));
   }
-
-  public ResourceTypeEndpointDefinition()
-  {
-    this(ResourceTypeFactory.getInstance());
-  }
-
 
 }

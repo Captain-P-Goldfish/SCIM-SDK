@@ -25,6 +25,8 @@ public final class SchemaUris
 
   public static final String SERVICE_PROVIDER_CONFIG_URI = SCIM_CORE_URI + "ServiceProviderConfig";
 
+  public static final String SERVICE_PROVIDER_EXTENSION_URL_URI = "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProvider";
+
   public static final String ENTERPRISE_USER_URI = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
 
   public static final String USER_URI = SCIM_CORE_URI + "User";

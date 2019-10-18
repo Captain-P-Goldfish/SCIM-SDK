@@ -180,6 +180,11 @@ public final class AttributeNames
   public static final String ETAG = "etag";
 
   public static final String AUTHENTICATION_SCHEMES = "authenticationSchemes";
+
+  /**
+   * a custom attribute introduced for the {@link de.gold.scim.resources.ServiceProviderUrlExtension}
+   */
+  public static final String BASE_URL = "baseUrl";
 }
 
 

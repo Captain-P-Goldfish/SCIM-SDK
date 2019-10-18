@@ -1,9 +1,11 @@
 package de.gold.scim.resources;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.resources.complex.AuthenticationScheme;
 import de.gold.scim.resources.complex.BulkConfig;
 import de.gold.scim.resources.complex.ChangePasswordConfig;
@@ -38,8 +40,10 @@ public class ServiceProvider extends ResourceNode
                          ETagConfig eTagConfig,
                          FilterConfig filterConfig,
                          BulkConfig bulkConfig,
-                         List<AuthenticationScheme> authenticationSchemes)
+                         List<AuthenticationScheme> authenticationSchemes,
+                         ServiceProviderUrlExtension serviceProviderUrlExtension)
   {
+    setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
     setPatchConfig(patchConfig);
     setChangePasswordConfig(changePasswordConfig);
@@ -48,6 +52,7 @@ public class ServiceProvider extends ResourceNode
     setFilterConfig(filterConfig);
     setBulkConfig(bulkConfig);
     setAuthenticationSchemes(authenticationSchemes);
+    setServiceProviderUrlExtension(serviceProviderUrlExtension);
   }
 
   /**
@@ -187,5 +192,23 @@ public class ServiceProvider extends ResourceNode
                + "ResourceTypeEndpoint");
     }
     setAttribute(AttributeNames.AUTHENTICATION_SCHEMES, authenticationSchemes);
+  }
+
+  /**
+   * represents an extension to the {@link ServiceProvider} that can be used to add a global base url that
+   * should be used to access the resources
+   */
+  public Optional<ServiceProviderUrlExtension> getServiceProviderUrlExtension()
+  {
+    return getObjectAttribute(SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI, ServiceProviderUrlExtension.class);
+  }
+
+  /**
+   * represents an extension to the {@link ServiceProvider} that can be used to add a global base url that
+   * should be used to access the resources
+   */
+  public void setServiceProviderUrlExtension(ServiceProviderUrlExtension serviceProviderUrlExtension)
+  {
+    setAttribute(SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI, serviceProviderUrlExtension);
   }
 }

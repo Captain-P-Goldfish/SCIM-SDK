@@ -28,7 +28,8 @@ public class ServiceProviderTest
     ServiceProvider serviceProvider = ServiceProvider.builder().build();
     log.warn(serviceProvider.toPrettyString());
     MatcherAssert.assertThat(serviceProvider, Matchers.not(Matchers.emptyIterable()));
-    Assertions.assertEquals(6, serviceProvider.size());
+    Assertions.assertEquals(7, serviceProvider.size());
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.SCHEMAS));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.PATCH));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.BULK));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.FILTER));
@@ -63,5 +64,22 @@ public class ServiceProviderTest
     Assertions.assertNotNull(serviceProvider.getETagConfig());
     Assertions.assertNotNull(serviceProvider.getAuthenticationSchemes());
     MatcherAssert.assertThat(serviceProvider.getAuthenticationSchemes(), Matchers.empty());
+  }
+
+  /**
+   * verifies that the url extension can successfully be set and removed
+   */
+  @Test
+  public void testGetAndSetUrlExtension()
+  {
+    final String baseUrl = "https://localhost:7scim/v2";
+    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(baseUrl).build();
+    ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
+    Assertions.assertTrue(serviceProvider.getServiceProviderUrlExtension().isPresent());
+    Assertions.assertEquals(urlExtension, serviceProvider.getServiceProviderUrlExtension().get());
+    Assertions.assertEquals(baseUrl, serviceProvider.getServiceProviderUrlExtension().get().getBaseUrl());
+
+    serviceProvider.setServiceProviderUrlExtension(null);
+    Assertions.assertFalse(serviceProvider.getServiceProviderUrlExtension().isPresent());
   }
 }

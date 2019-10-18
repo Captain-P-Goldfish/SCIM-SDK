@@ -1,5 +1,8 @@
 package de.gold.scim.endpoints;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
 
@@ -8,6 +11,8 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
+import de.gold.scim.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
@@ -73,7 +78,10 @@ public final class ResourceEndpointHandler
     {
       throw new InternalServerException("At least 1 endpoint must be registered!", null, null);
     }
-    for ( EndpointDefinition endpointDefinition : endpointDefinitions )
+    List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
+    endpointDefinitionList.add(new ServiceProviderEndpointDefinition(serviceProvider));
+    endpointDefinitionList.add(new ResourceTypeEndpointDefinition(resourceTypeFactory));
+    for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
     {
       resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
                                                endpointDefinition.getResourceType(),

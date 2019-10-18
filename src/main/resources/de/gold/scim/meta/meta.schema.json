@@ -1,4 +1,7 @@
 {
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
   "id": "urn:ietf:params:scim:schemas:core:2.0:Meta",
   "name": "Meta",
   "description": "A complex attribute containing resource metadata.  All \"meta\" sub-attributes are assigned, by the service provider (have a \"mutability\" of \"readOnly\"), and all of these sub-attributes have a \"returned\" characteristic of \"default\". This attribute SHALL be ignored when provided by clients. ",

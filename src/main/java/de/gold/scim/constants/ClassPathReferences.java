@@ -35,5 +35,9 @@ public final class ClassPathReferences
 
   public static final String META_SCHEMA_JSON = "/de/gold/scim/meta/meta.schema.json";
 
+  public static final String SERVICE_PROVIDER_URL_EXTENSION_SCHEMA_JSON = "/de/gold/scim/meta/service-provider-url"
+                                                                          + ".json";
 
+
+  public static final String SERVICE_PROVIDER_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/service-provider.json";
 }

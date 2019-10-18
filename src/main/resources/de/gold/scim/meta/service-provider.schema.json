@@ -1,4 +1,7 @@
 {
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
   "id": "urn:ietf:params:scim:schemas:core:2.0:ServiceProviderConfig",
   "name": "Service Provider Configuration",
   "description": "Schema for representing the service provider's configuration",
