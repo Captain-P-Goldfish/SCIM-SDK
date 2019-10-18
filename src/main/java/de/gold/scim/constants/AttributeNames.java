@@ -155,5 +155,31 @@ public final class AttributeNames
 
   public static final String RESOURCES = "Resources";
 
+  public static final String SUPPORTED = "supported";
+
+  public static final String MAX_OPERATIONS = "maxOperations";
+
+  public static final String MAX_PAYLOAD_SIZE = "maxPayloadSize";
+
+  public static final String SPEC_URI = "specUri";
+
+  public static final String DOCUMENTATION_URI = "documentationUri";
+
+  public static final String MAX_RESULTS = "maxResults";
+
+  public static final String PATCH = "patch";
+
+  public static final String BULK = "bulk";
+
+  public static final String FILTER = "filter";
+
+  public static final String CHANGE_PASSWORD = "changePassword";
+
+  public static final String SORT = "sort";
+
+  public static final String ETAG = "etag";
+
+  public static final String AUTHENTICATION_SCHEMES = "authenticationSchemes";
 }
+
 

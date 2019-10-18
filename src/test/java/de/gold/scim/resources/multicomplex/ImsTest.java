@@ -48,7 +48,7 @@ public class ImsTest
     Assertions.assertEquals(value, ims.getValue().get());
     Assertions.assertEquals(display, ims.getDisplay().get());
     Assertions.assertEquals(primary, ims.isPrimary());
-    Assertions.assertEquals(type, ims.getScimType().get());
+    Assertions.assertEquals(type, ims.getType().get());
     Assertions.assertEquals(ref, ims.getRef().get());
   }
 }

@@ -87,7 +87,7 @@ public class MultiComplexNode extends ScimObjectNode
   public MultiComplexNode(String type, Boolean primary, String display, String value, String ref)
   {
     this();
-    setScimType(type);
+    setType(type);
     setPrimary(primary);
     setDisplay(display);
     setValue(value);
@@ -97,7 +97,7 @@ public class MultiComplexNode extends ScimObjectNode
   /**
    * A label indicating the attribute's function, e.g., "work" or "home".
    */
-  public Optional<String> getScimType()
+  public Optional<String> getType()
   {
     return getStringAttribute(AttributeNames.TYPE);
   }
@@ -105,7 +105,7 @@ public class MultiComplexNode extends ScimObjectNode
   /**
    * A label indicating the attribute's function, e.g., "work" or "home".
    */
-  public void setScimType(String type)
+  public void setType(String type)
   {
     setAttribute(AttributeNames.TYPE, type);
   }

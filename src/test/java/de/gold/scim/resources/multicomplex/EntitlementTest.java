@@ -54,7 +54,7 @@ public class EntitlementTest
     Assertions.assertEquals(value, entitlement.getValue().get());
     Assertions.assertEquals(display, entitlement.getDisplay().get());
     Assertions.assertEquals(primary, entitlement.isPrimary());
-    Assertions.assertEquals(type, entitlement.getScimType().get());
+    Assertions.assertEquals(type, entitlement.getType().get());
     Assertions.assertEquals(ref, entitlement.getRef().get());
   }
 }

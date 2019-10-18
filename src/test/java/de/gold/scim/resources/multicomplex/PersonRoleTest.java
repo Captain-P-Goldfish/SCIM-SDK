@@ -54,7 +54,7 @@ public class PersonRoleTest
     Assertions.assertEquals(value, personRole.getValue().get());
     Assertions.assertEquals(display, personRole.getDisplay().get());
     Assertions.assertEquals(primary, personRole.isPrimary());
-    Assertions.assertEquals(type, personRole.getScimType().get());
+    Assertions.assertEquals(type, personRole.getType().get());
     Assertions.assertEquals(ref, personRole.getRef().get());
   }
 }

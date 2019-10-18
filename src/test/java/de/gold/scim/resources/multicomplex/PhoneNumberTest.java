@@ -54,7 +54,7 @@ public class PhoneNumberTest
     Assertions.assertEquals(value, phoneNumber.getValue().get());
     Assertions.assertEquals(display, phoneNumber.getDisplay().get());
     Assertions.assertEquals(primary, phoneNumber.isPrimary());
-    Assertions.assertEquals(type, phoneNumber.getScimType().get());
+    Assertions.assertEquals(type, phoneNumber.getType().get());
     Assertions.assertEquals(ref, phoneNumber.getRef().get());
   }
 }

@@ -35,6 +35,7 @@ import lombok.Getter;
 // @formatter:on
 public enum Uniqueness
 {
+
   NONE("none"), SERVER("server"), GLOBAL("global");
 
   @Getter

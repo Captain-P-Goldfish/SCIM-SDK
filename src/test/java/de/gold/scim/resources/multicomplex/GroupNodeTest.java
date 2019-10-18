@@ -54,7 +54,7 @@ public class GroupNodeTest
     Assertions.assertEquals(value, groupNode.getValue().get());
     Assertions.assertEquals(display, groupNode.getDisplay().get());
     Assertions.assertEquals(primary, groupNode.isPrimary());
-    Assertions.assertEquals(type, groupNode.getScimType().get());
+    Assertions.assertEquals(type, groupNode.getType().get());
     Assertions.assertEquals(ref, groupNode.getRef().get());
   }
 }

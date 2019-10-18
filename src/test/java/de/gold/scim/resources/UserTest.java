@@ -267,7 +267,7 @@ public class UserTest implements FileReferences
     T multiComplexNode = createNewInstanceOfType(type);
     multiComplexNode.setValue(UUID.randomUUID().toString());
     multiComplexNode.setDisplay(UUID.randomUUID().toString());
-    multiComplexNode.setScimType(UUID.randomUUID().toString());
+    multiComplexNode.setType(UUID.randomUUID().toString());
     multiComplexNode.setRef(UUID.randomUUID().toString());
     multiComplexNode.setPrimary(primary);
     return multiComplexNode;

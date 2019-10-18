@@ -30,6 +30,7 @@ import lombok.Getter;
 // @formatter:on
 public enum Mutability
 {
+
   READ_ONLY("readOnly"), READ_WRITE("readWrite"), IMMUTABLE("immutable"), WRITE_ONLY("writeOnly");
 
   @Getter

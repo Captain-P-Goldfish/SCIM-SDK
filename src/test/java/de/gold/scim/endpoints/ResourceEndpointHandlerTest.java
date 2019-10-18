@@ -21,6 +21,7 @@ import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
+import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.CreateResponse;
@@ -61,7 +62,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void initialize()
   {
     userHandler = Mockito.spy(new UserHandlerImpl());
-    resourceEndpointHandler = new ResourceEndpointHandler(new UserEndpointDefinition(userHandler));
+    resourceEndpointHandler = new ResourceEndpointHandler(ServiceProvider.builder().build(),
+                                                          new UserEndpointDefinition(userHandler));
   }
 
   /**
@@ -71,7 +73,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @Test
   public void testCreateEndpointWithoutResourceEndpoints()
   {
-    Assertions.assertThrows(InternalServerException.class, ResourceEndpointHandler::new);
+    Assertions.assertThrows(InternalServerException.class,
+                            () -> new ResourceEndpointHandler(ServiceProvider.builder().build()));
   }
 
   /**

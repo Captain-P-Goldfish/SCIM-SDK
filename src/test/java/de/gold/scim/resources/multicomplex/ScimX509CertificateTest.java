@@ -54,7 +54,7 @@ public class ScimX509CertificateTest
     Assertions.assertEquals(value, x509Certificate.getValue().get());
     Assertions.assertEquals(display, x509Certificate.getDisplay().get());
     Assertions.assertEquals(primary, x509Certificate.isPrimary());
-    Assertions.assertEquals(type, x509Certificate.getScimType().get());
+    Assertions.assertEquals(type, x509Certificate.getType().get());
     Assertions.assertEquals(ref, x509Certificate.getRef().get());
   }
 }

@@ -48,7 +48,7 @@ public class PhotoTest
     Assertions.assertEquals(value, photo.getValue().get());
     Assertions.assertEquals(display, photo.getDisplay().get());
     Assertions.assertEquals(primary, photo.isPrimary());
-    Assertions.assertEquals(type, photo.getScimType().get());
+    Assertions.assertEquals(type, photo.getType().get());
     Assertions.assertEquals(ref, photo.getRef().get());
   }
 }

@@ -28,7 +28,7 @@ import lombok.Getter;
  *          the GET request "attributes" parameter is specified,
  *          attribute values are only returned if the attribute is named
  *          in the "attributes" parameter.  DEFAULT.
- * 
+ *
  * request  The attribute is returned in response to any PUT,
  *          POST, or PATCH operations if the attribute was specified by
  *          the client (for example, the attribute was modified).  The
@@ -38,6 +38,7 @@ import lombok.Getter;
 // @formatter:on
 public enum Returned
 {
+
   DEFAULT("default"), ALWAYS("always"), NEVER("never"), REQUEST("request");
 
   @Getter

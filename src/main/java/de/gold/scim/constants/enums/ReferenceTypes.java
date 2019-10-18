@@ -28,6 +28,7 @@ import lombok.Getter;
 // @formatter:on
 public enum ReferenceTypes
 {
+
   RESOURCE("resource"), EXTERNAL("external"), URI("uri");
 
   @Getter

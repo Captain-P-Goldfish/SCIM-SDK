@@ -48,7 +48,7 @@ public class MemberTest
     Assertions.assertEquals(value, member.getValue().get());
     Assertions.assertEquals(display, member.getDisplay().get());
     Assertions.assertEquals(primary, member.isPrimary());
-    Assertions.assertEquals(type, member.getScimType().get());
+    Assertions.assertEquals(type, member.getType().get());
     Assertions.assertEquals(ref, member.getRef().get());
   }
 }

@@ -13,6 +13,7 @@ import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.resources.ResourceNode;
+import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
@@ -26,6 +27,7 @@ import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.SchemaValidator;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -41,22 +43,32 @@ public final class ResourceEndpointHandler
 {
 
   /**
+   * each created {@link de.gold.scim.endpoints.ResourceEndpointHandler} must get hold of a single
+   * {@link ServiceProvider} instance which holds the configuration of this service provider implementation
+   */
+  @Getter
+  private final ServiceProvider serviceProvider;
+
+  /**
    * this is used to prevent application context pollution in unit tests
    */
   private ResourceTypeFactory resourceTypeFactory;
 
-  public ResourceEndpointHandler(EndpointDefinition... endpointDefinitions)
+  public ResourceEndpointHandler(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
   {
-    this(ResourceTypeFactory.getInstance(), endpointDefinitions);
+    this(ResourceTypeFactory.getInstance(), serviceProvider, endpointDefinitions);
   }
 
   /**
    * this constructor was introduced for unit tests to add a specific resourceTypeFactory instance which will
    * prevent application context pollution within unit tests
    */
-  ResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory, EndpointDefinition... endpointDefinitions)
+  ResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
+                          ServiceProvider serviceProvider,
+                          EndpointDefinition... endpointDefinitions)
   {
     this.resourceTypeFactory = resourceTypeFactory;
+    this.serviceProvider = serviceProvider;
     if (endpointDefinitions == null || endpointDefinitions.length == 0)
     {
       throw new InternalServerException("At least 1 endpoint must be registered!", null, null);

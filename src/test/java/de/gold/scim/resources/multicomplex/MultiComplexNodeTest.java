@@ -48,7 +48,7 @@ public class MultiComplexNodeTest
     Assertions.assertEquals(value, multiComplexNode.getValue().get());
     Assertions.assertEquals(display, multiComplexNode.getDisplay().get());
     Assertions.assertEquals(primary, multiComplexNode.isPrimary());
-    Assertions.assertEquals(type, multiComplexNode.getScimType().get());
+    Assertions.assertEquals(type, multiComplexNode.getType().get());
     Assertions.assertEquals(ref, multiComplexNode.getRef().get());
   }
 
@@ -66,7 +66,7 @@ public class MultiComplexNodeTest
     Assertions.assertEquals(value, multiComplexNode.getValue().get());
     Assertions.assertEquals(display, multiComplexNode.getDisplay().get());
     Assertions.assertFalse(multiComplexNode.isPrimary());
-    Assertions.assertEquals(type, multiComplexNode.getScimType().get());
+    Assertions.assertEquals(type, multiComplexNode.getType().get());
     Assertions.assertEquals(ref, multiComplexNode.getRef().get());
   }
 }

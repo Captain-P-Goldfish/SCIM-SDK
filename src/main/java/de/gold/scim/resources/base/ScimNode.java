@@ -41,7 +41,7 @@ public interface ScimNode
   /**
    * @return represents the type of this node
    */
-  default Type getType()
+  default Type getScimType()
   {
     return getSchemaAttribute() == null ? null : getSchemaAttribute().getType();
   }
@@ -50,7 +50,7 @@ public interface ScimNode
   /**
    * @return the meta description of this node
    */
-  default String getDescription()
+  default String getAttributeDescription()
   {
     return getSchemaAttribute() == null ? null : getSchemaAttribute().getDescription();
   }
@@ -116,8 +116,8 @@ public interface ScimNode
 
 
   /**
-   * @return the reference types that are valid for this node. Only important if the {@link #getType()} method
-   *         returns the value {@link Type#REFERENCE}
+   * @return the reference types that are valid for this node. Only important if the {@link #getScimType()}
+   *         method returns the value {@link Type#REFERENCE}
    */
   default List<ReferenceTypes> getReferenceTypes()
   {

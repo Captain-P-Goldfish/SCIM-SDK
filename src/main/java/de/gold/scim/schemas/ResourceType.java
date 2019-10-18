@@ -295,9 +295,9 @@ public class ResourceType extends ResourceNode
    * The resource type's human-readable description. When applicable, service providers MUST specify the
    * description. OPTIONAL.
    */
-  public String getDescription()
+  public Optional<String> getDescription()
   {
-    return getStringAttribute(AttributeNames.DESCRIPTION).orElse(null);
+    return getStringAttribute(AttributeNames.DESCRIPTION);
   }
 
   /**

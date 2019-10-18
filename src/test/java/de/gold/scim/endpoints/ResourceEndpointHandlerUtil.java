@@ -1,5 +1,6 @@
 package de.gold.scim.endpoints;
 
+import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -22,6 +23,18 @@ public final class ResourceEndpointHandlerUtil
   public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
                                                                            EndpointDefinition... endpointDefinitions)
   {
-    return new ResourceEndpointHandler(resourceTypeFactory, endpointDefinitions);
+    return getUnitTestResourceEndpointHandler(resourceTypeFactory,
+                                              ServiceProvider.builder().build(),
+                                              endpointDefinitions);
+  }
+
+  /**
+   * creates a new endpoint definition with the given {@link ResourceTypeFactory}
+   */
+  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
+                                                                           ServiceProvider serviceProvider,
+                                                                           EndpointDefinition... endpointDefinitions)
+  {
+    return new ResourceEndpointHandler(resourceTypeFactory, serviceProvider, endpointDefinitions);
   }
 }

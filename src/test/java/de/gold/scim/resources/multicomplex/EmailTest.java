@@ -48,7 +48,7 @@ public class EmailTest
     Assertions.assertEquals(value, email.getValue().get());
     Assertions.assertEquals(display, email.getDisplay().get());
     Assertions.assertEquals(primary, email.isPrimary());
-    Assertions.assertEquals(type, email.getScimType().get());
+    Assertions.assertEquals(type, email.getType().get());
     Assertions.assertEquals(ref, email.getRef().get());
   }
 }
