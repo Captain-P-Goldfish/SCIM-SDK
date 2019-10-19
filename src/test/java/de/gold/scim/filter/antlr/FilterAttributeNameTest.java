@@ -16,11 +16,11 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class AttributeNameTest
+public class FilterAttributeNameTest
 {
 
   /**
-   * verifies that the {@link AttributeName} constructor with the string parameter will resolve the given
+   * verifies that the {@link FilterAttributeName} constructor with the string parameter will resolve the given
    * attribute names correctly
    */
   @ParameterizedTest
@@ -29,7 +29,7 @@ public class AttributeNameTest
 
   public void testCreateAttributeNameWithStringConstructor(String attributeNameString)
   {
-    AttributeName attributeName = Assertions.assertDoesNotThrow(() -> new AttributeName(attributeNameString));
+    FilterAttributeName attributeName = Assertions.assertDoesNotThrow(() -> new FilterAttributeName(attributeNameString));
     MatcherAssert.assertThat(attributeName.getFullName(), Matchers.endsWith(attributeNameString));
     if (StringUtils.isNotBlank(attributeNameString) && attributeNameString.contains(":"))
     {

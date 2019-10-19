@@ -14,7 +14,7 @@ import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidFilterException;
 import de.gold.scim.filter.FilterNode;
-import de.gold.scim.filter.antlr.AttributeName;
+import de.gold.scim.filter.antlr.FilterAttributeName;
 import de.gold.scim.filter.antlr.FilterRuleErrorListener;
 import de.gold.scim.filter.antlr.FilterVisitor;
 import de.gold.scim.filter.antlr.ScimFilterLexer;
@@ -169,7 +169,7 @@ public final class RequestUtils
   {
     try
     {
-      return StringUtils.isBlank(sortBy) ? null : getSchemaAttribute(resourceType, new AttributeName(sortBy));
+      return StringUtils.isBlank(sortBy) ? null : getSchemaAttribute(resourceType, new FilterAttributeName(sortBy));
     }
     catch (BadRequestException ex)
     {
@@ -188,7 +188,8 @@ public final class RequestUtils
    * @throws de.gold.scim.exceptions.InvalidFilterException if no {@link SchemaAttribute} was found for the
    *           given name attribute
    */
-  public static SchemaAttribute getSchemaAttributeForFilter(ResourceType resourceType, AttributeName attributeName)
+  public static SchemaAttribute getSchemaAttributeForFilter(ResourceType resourceType,
+                                                            FilterAttributeName attributeName)
   {
     try
     {
@@ -210,7 +211,7 @@ public final class RequestUtils
    * @throws de.gold.scim.exceptions.BadRequestException if no {@link SchemaAttribute} was found for the given
    *           name attribute
    */
-  private static SchemaAttribute getSchemaAttribute(ResourceType resourceType, AttributeName attributeName)
+  private static SchemaAttribute getSchemaAttribute(ResourceType resourceType, FilterAttributeName attributeName)
   {
     if (attributeName == null)
     {

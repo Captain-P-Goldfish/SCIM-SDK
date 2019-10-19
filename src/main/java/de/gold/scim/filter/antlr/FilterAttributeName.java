@@ -18,7 +18,7 @@ import lombok.Getter;
  */
 @Getter
 @EqualsAndHashCode
-public class AttributeName
+public class FilterAttributeName
 {
 
   /**
@@ -37,7 +37,7 @@ public class AttributeName
    */
   private String fullName;
 
-  public AttributeName(ScimFilterParser.AttributePathContext attributePathContext)
+  public FilterAttributeName(ScimFilterParser.AttributePathContext attributePathContext)
   {
     this.shortName = attributePathContext.attribute.getText()
                      + StringUtils.stripToEmpty(attributePathContext.subattribute == null ? null
@@ -46,7 +46,7 @@ public class AttributeName
     this.fullName = (resourceUri == null ? "" : StringUtils.stripToEmpty(resourceUri) + ":") + shortName;
   }
 
-  public AttributeName(String attributeName)
+  public FilterAttributeName(String attributeName)
   {
     Pattern pattern = Pattern.compile("(([\\w:.]+):)?(\\w+(\\.\\w+)?)");
     Matcher matcher = pattern.matcher(attributeName);

@@ -9,9 +9,9 @@ import de.gold.scim.constants.enums.ReferenceTypes;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidFilterException;
-import de.gold.scim.filter.antlr.AttributeName;
 import de.gold.scim.filter.antlr.Comparator;
 import de.gold.scim.filter.antlr.CompareValue;
+import de.gold.scim.filter.antlr.FilterAttributeName;
 import de.gold.scim.filter.antlr.ScimFilterParser;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.SchemaAttribute;
@@ -36,7 +36,7 @@ public class AttributeExpressionLeaf extends FilterNode
    * schema. if the attribute cannot be found in the represented {@link de.gold.scim.schemas.ResourceType} an
    * {@link de.gold.scim.exceptions.InvalidFilterException} is thrown
    */
-  private AttributeName attributeName;
+  private FilterAttributeName attributeName;
 
   /**
    * the comparator that tells us how the comparison should be executed
@@ -56,7 +56,7 @@ public class AttributeExpressionLeaf extends FilterNode
 
   public AttributeExpressionLeaf(ScimFilterParser.AttributeExpressionContext context, ResourceType resourceType)
   {
-    this.attributeName = new AttributeName(context.attributePath());
+    this.attributeName = new FilterAttributeName(context.attributePath());
     this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
     this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, attributeName);
     this.compareValue = context.compareValue() == null ? null
