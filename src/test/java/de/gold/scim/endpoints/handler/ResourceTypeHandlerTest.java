@@ -1,4 +1,4 @@
-package de.gold.scim.endpoints.base;
+package de.gold.scim.endpoints.handler;
 
 import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
 
@@ -15,9 +15,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.ResourceTypeNames;
-import de.gold.scim.endpoints.handler.GroupHandlerImpl;
-import de.gold.scim.endpoints.handler.ResourceTypeHandler;
-import de.gold.scim.endpoints.handler.UserHandlerImpl;
+import de.gold.scim.endpoints.base.GroupEndpointDefinition;
+import de.gold.scim.endpoints.base.MeEndpointDefinition;
+import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.response.PartialListResponse;
@@ -30,11 +30,11 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * author Pascal Knueppel <br>
- * created at: 17.10.2019 - 23:57 <br>
+ * created at: 19.10.2019 - 13:17 <br>
  * <br>
  */
 @Slf4j
-public class ResourceTypeEndpointDefinitionTest
+public class ResourceTypeHandlerTest
 {
 
   /**
