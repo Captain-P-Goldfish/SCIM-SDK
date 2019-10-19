@@ -430,12 +430,9 @@ public final class ResourceEndpointHandler
       final ResourceType resourceType = getResourceType(endpoint);
       final int effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
-      final FilterNode filterNode = serviceProvider.getFilterConfig().isSupported()
-        ? RequestUtils.parseFilter(resourceType, filter) : null;
-      final SchemaAttribute sortByAttribute = serviceProvider.getSortConfig().isSupported()
-        ? RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy) : null;
-      final SortOrder sortOrdering = serviceProvider.getSortConfig().isSupported() ? SortOrder.getByValue(sortOrder)
-        : null;
+      final FilterNode filterNode = getFilterNode(resourceType, filter);
+      final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
+      final SortOrder sortOrdering = getSortOrdering(sortOrder, sortByAttribute);
 
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       PartialListResponse resources = resourceHandler.listResources(effectiveStartIndex,
@@ -478,6 +475,78 @@ public final class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+  }
+
+  /**
+   * checks if the given filter expression must be evaluated or not. If the filtering is disabled in the
+   * {@link ServiceProvider} instance the filter expression is ignored and a debug message is printed
+   *
+   * @param resourceType the resource type on which the filter expression should be evaluated
+   * @param filter the filter expression that should be evaluated
+   * @return a filter tree structure that makes resolving the filter very easy
+   */
+  private FilterNode getFilterNode(ResourceType resourceType, String filter)
+  {
+    if (StringUtils.isBlank(filter))
+    {
+      return null;
+    }
+    if (serviceProvider.getFilterConfig().isSupported())
+    {
+      return RequestUtils.parseFilter(resourceType, filter);
+    }
+    log.debug("filter expression '{}' is not evaluated because filter support is disabled", filter);
+    return null;
+  }
+
+  /**
+   * will parse the sortBy value to a {@link SchemaAttribute} from the {@link ResourceType} if sorting is
+   * enabled and the sortBy attribute is provided
+   *
+   * @param resourceType the resourceType to which the sortBy value must apply
+   * @param sortBy the sortBy value that will be evaluated
+   * @return either the {@link SchemaAttribute} that applies to the sortBy value or null
+   */
+  private SchemaAttribute getSortByAttribute(ResourceType resourceType, String sortBy)
+  {
+    if (StringUtils.isBlank(sortBy))
+    {
+      return null;
+    }
+    if (serviceProvider.getSortConfig().isSupported())
+    {
+      return RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+    }
+    log.debug("sortBy value '{}' is ignored because sorting support is disabled", sortBy);
+    return null;
+  }
+
+  /**
+   * will parse the sortOrdering value to a {@link SortOrder} instance if sorting is enabled and the sortOrder
+   * value is provided. If the sortBy value is not null and was evaluated before but the sortOrder value is not
+   * present it will default to value {@link SortOrder#ASCENDING}
+   *
+   * @param sortOrder the sortOrder value specified by the client
+   * @param sortBy the sortBy value specified by the client
+   * @return the sortOrder value if the value was specified and sorting is enabled or null
+   */
+  private SortOrder getSortOrdering(String sortOrder, SchemaAttribute sortBy)
+  {
+    if (StringUtils.isBlank(sortOrder))
+    {
+      if (sortBy == null)
+      {
+        return null;
+      }
+      // If a value for "sortBy" is provided and no "sortOrder" is specified, "sortOrder" SHALL default to ascending
+      return SortOrder.ASCENDING;
+    }
+    if (serviceProvider.getSortConfig().isSupported())
+    {
+      return SortOrder.getByValue(sortOrder);
+    }
+    log.debug("sortOrder value '{}' is ignored because sorting support is disabled", sortOrder);
+    return null;
   }
 
   /**
