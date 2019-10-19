@@ -25,6 +25,7 @@ import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.utils.JsonHelper;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 
@@ -32,23 +33,24 @@ import lombok.Getter;
  * holds the data of an attribute definition from a schema type document
  */
 @Getter
-public class SchemaAttribute
+@EqualsAndHashCode(exclude = {"schema", "parent"})
+public final class SchemaAttribute
 {
 
   /**
    * a reference to the parent schema that holds this schema attribute
    */
-  private Schema schema;
+  private final Schema schema;
 
   /**
    * is used in case of subAttributes
    */
-  private SchemaAttribute parent;
+  private final SchemaAttribute parent;
 
   /**
    * the uri of the resource to which this attribute belongs
    */
-  private String resourceUri;
+  private final String resourceUri;
 
   /**
    * an optional attribute that is used as a workaround. For example the meta attribute definition has been
@@ -59,12 +61,12 @@ public class SchemaAttribute
    * in case of meta the attribute "created" would only get the name "created". But if this variable is set to
    * "meta" than the attribute will be accessible by the name "meta.created" instead of just "created"
    */
-  private String namePrefix;
+  private final String namePrefix;
 
   /**
    * The attribute's name.
    */
-  private String name;
+  private final String name;
 
   // @formatter:off
   /**
@@ -75,7 +77,7 @@ public class SchemaAttribute
    * defined, listing the sub-attributes of the attribute.
    */
   // @formatter:on
-  private Type type;
+  private final Type type;
 
   // @formatter:off
   /**
@@ -83,7 +85,7 @@ public class SchemaAttribute
    * applicable, service providers MUST specify the description.
    */
   // @formatter:on
-  private String description;
+  private final String description;
 
   // @formatter:off
   /**
@@ -105,7 +107,7 @@ public class SchemaAttribute
    *             "writeOnly" usually also has a returned setting of "never".
    */
   // @formatter:on
-  private Mutability mutability;
+  private final Mutability mutability;
 
   // @formatter:off
   /**
@@ -136,7 +138,7 @@ public class SchemaAttribute
    *          specified in the "attributes" parameter.
    */
   // @formatter:on
-  private Returned returned;
+  private final Returned returned;
 
   // @formatter:off
   /**
@@ -163,12 +165,12 @@ public class SchemaAttribute
    *         server SHOULD possess the same value.
    */
   // @formatter:on
-  private Uniqueness uniqueness;
+  private final Uniqueness uniqueness;
 
   /**
    * A Boolean value indicating the attribute's plurality.
    */
-  private boolean multiValued;
+  private final boolean multiValued;
 
   // @formatter:off
   /**
@@ -176,7 +178,7 @@ public class SchemaAttribute
    * attribute is required.
    */
   // @formatter:on
-  private boolean required;
+  private final boolean required;
 
   // @formatter:off
   /**
@@ -190,7 +192,7 @@ public class SchemaAttribute
    * values (see Section 3.4.2.2 of [RFC7644]).
    */
   // @formatter:on
-  private boolean caseExact;
+  private final boolean caseExact;
 
   // @formatter:off
   /**
@@ -199,7 +201,7 @@ public class SchemaAttribute
    * providers MAY choose to ignore unsupported values.  OPTIONAL.
    */
   // @formatter:on
-  private List<String> canonicalValues;
+  private final List<String> canonicalValues;
 
   // @formatter:off
   /**
@@ -219,7 +221,7 @@ public class SchemaAttribute
    * type "reference" (Section 2.3.7).
    */
   // @formatter:on
-  private List<ReferenceTypes> referenceTypes;
+  private final List<ReferenceTypes> referenceTypes;
 
   // @formatter:off
   /**
@@ -229,7 +231,7 @@ public class SchemaAttribute
    * "attributes".
    */
   // @formatter:on
-  private List<SchemaAttribute> subAttributes;
+  private final List<SchemaAttribute> subAttributes;
 
   protected SchemaAttribute(Schema schema,
                             String resourceUri,
@@ -316,7 +318,7 @@ public class SchemaAttribute
    */
   public List<String> getCanonicalValues()
   {
-    return Collections.unmodifiableList(canonicalValues);
+    return canonicalValues == null ? Collections.emptyList() : Collections.unmodifiableList(canonicalValues);
   }
 
   /**
@@ -324,7 +326,7 @@ public class SchemaAttribute
    */
   public List<ReferenceTypes> getReferenceTypes()
   {
-    return Collections.unmodifiableList(referenceTypes);
+    return referenceTypes == null ? Collections.emptyList() : Collections.unmodifiableList(referenceTypes);
   }
 
   /**
@@ -332,7 +334,7 @@ public class SchemaAttribute
    */
   public List<SchemaAttribute> getSubAttributes()
   {
-    return Collections.unmodifiableList(subAttributes);
+    return subAttributes == null ? Collections.emptyList() : Collections.unmodifiableList(subAttributes);
   }
 
   /**

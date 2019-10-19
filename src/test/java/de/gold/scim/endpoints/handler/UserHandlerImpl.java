@@ -1,7 +1,10 @@
 package de.gold.scim.endpoints.handler;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,6 +20,7 @@ import de.gold.scim.resources.User;
 import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.JsonHelper;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -25,6 +29,7 @@ import de.gold.scim.utils.JsonHelper;
  * <br>
  * a simple user resource handler for testing
  */
+@Slf4j
 public class UserHandlerImpl extends ResourceHandler<User>
 {
 
@@ -54,13 +59,22 @@ public class UserHandlerImpl extends ResourceHandler<User>
   }
 
   @Override
-  public PartialListResponse listResources(int startIndex,
-                                           int count,
-                                           FilterNode filter,
-                                           SchemaAttribute sortBy,
-                                           SortOrder sortOrder)
+  public PartialListResponse<User> listResources(int startIndex,
+                                                 int count,
+                                                 FilterNode filter,
+                                                 SchemaAttribute sortBy,
+                                                 SortOrder sortOrder)
   {
-    return null;
+    List<User> resourceNodes = new ArrayList<>();
+    Collection<User> userList = inMemoryMap.values();
+    if (startIndex <= userList.size())
+    {
+      resourceNodes.addAll(new ArrayList<>(userList).subList(Math.min(startIndex - 1, userList.size() - 1),
+                                                             Math.min(startIndex - 1 + count, userList.size())));
+    }
+    // TODO implement filtering and sorting
+    log.warn("TODO implement filtering and sorting");
+    return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(userList.size()).build();
   }
 
   @Override

@@ -2,6 +2,8 @@ package de.gold.scim.endpoints;
 
 import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
 
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -13,13 +15,16 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.GroupEndpointDefinition;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.GroupHandlerImpl;
@@ -27,8 +32,11 @@ import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
 import de.gold.scim.exceptions.InternalServerException;
+import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
+import de.gold.scim.filter.FilterNode;
 import de.gold.scim.request.SearchRequest;
+import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.User;
@@ -41,10 +49,13 @@ import de.gold.scim.response.ListResponse;
 import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
+import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.ResourceTypeFactoryUtil;
+import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -73,11 +84,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private ResourceEndpointHandler resourceEndpointHandler;
 
   /**
-   * this instance can be used to manipulate the default service provider configuration
-   */
-  private ServiceProvider serviceProvider;
-
-  /**
    * a mockito mock to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
    * implementation
    */
@@ -103,7 +109,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);
 
     ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
-    serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
+    ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
     resourceEndpointHandler = getUnitTestResourceEndpointHandler(resourceTypeFactory,
                                                                  serviceProvider,
                                                                  userEndpoint,
@@ -500,11 +506,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                    SearchRequest.builder().startIndex(startIndex).count(1).build(),
                                                    null);
     });
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
-    Assertions.assertNotNull(errorResponse.getScimException().getDetail());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(0, listResponse.getListedResources().size());
+    Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
   }
 
   /**
@@ -516,17 +521,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testReturnTooManyEntries(int count)
   {
     final int totalResults = count * 2;
-    serviceProvider.getFilterConfig().setMaxResults(totalResults);
-    List<User> userList = new ArrayList<>();
-    for ( int i = 0 ; i < totalResults ; i++ )
-    {
-      ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
-                                                                         readResourceFile(USER_RESOURCE),
-                                                                         null);
-      CreateResponse createResponse = (CreateResponse)scimResponse;
-      User user = JsonHelper.readJsonDocument(createResponse.toJsonDocument(), User.class);
-      userList.add(user);
-    }
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(totalResults);
+    List<User> userList = createUsers(totalResults);
     PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
                                                                        .totalResults(totalResults)
                                                                        .resources(userList)
@@ -550,6 +546,312 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(count, listResponse.getItemsPerPage());
     Assertions.assertEquals(1, listResponse.getStartIndex());
     Assertions.assertEquals(count, listResponse.getListedResources().size());
+  }
+
+  /**
+   * this test will verify that no the sortBy value is always null if the sorting feature is disabled
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"", "userName", SchemaUris.USER_URI + ":" + "userName", "unknownAttributeName"})
+  public void testSortByIfSortDisabled(String sortBy)
+  {
+    createUsers(1);
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(false);
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      sortBy,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+  }
+
+  /**
+   * this test will verify that no the sortBy value is always null if the sorting feature is disabled
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"userName", SchemaUris.USER_URI + ":" + "userName"})
+  public void testSortByIfSortEnabled(String sortBy)
+  {
+    createUsers(1);
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      sortBy,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+    SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1),
+                          Mockito.eq(0),
+                          Mockito.isNull(),
+                          Mockito.eq(sortByAttribute),
+                          Mockito.eq(SortOrder.ASCENDING));
+  }
+
+  /**
+   * this test will verify that an exception is thrown if the sortBy value is unknown by the resource type
+   */
+  @Test
+  public void testSortByIfSortIsEnabledWithUnknownAttribute()
+  {
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
+    String sortBy = "unknownAttributeName";
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      sortBy,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+    MatcherAssert.assertThat(errorResponse.getScimException().getDetail(), Matchers.containsString(sortBy));
+  }
+
+  /**
+   * this test will verify that the sortOrder value is correctly handled if sorting is disabled. Meaning the
+   * result must always be null
+   */
+  @ParameterizedTest
+  @CsvSource({",", "userName,", ",ASCENDING", ",DESCENDING", "userName,ASCENDING", "userName,DESCENDING",})
+  public void testSortOrderIfSortDisabled(String sortBy, SortOrder sortOrder)
+  {
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(false);
+    final String sortOrderString = sortOrder == null ? null : sortOrder.name().toLowerCase();
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      sortBy,
+                                                                      sortOrderString,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+  }
+
+  /**
+   * this test will verify that the sortOrder value is correctly handled if sorting is enabled.
+   */
+  @ParameterizedTest
+  @CsvSource({",", "userName,", ",ASCENDING", ",DESCENDING", "userName,ASCENDING", "userName,DESCENDING",})
+  public void testSortOrderIfSortEnabled(String sortBy, SortOrder sortOrder)
+  {
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
+    final String sortOrderString = sortOrder == null ? null : sortOrder.name().toLowerCase();
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      sortBy,
+                                                                      sortOrderString,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+    SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+    SortOrder actualSortOrder = sortOrder == null && sortBy != null ? SortOrder.ASCENDING : sortOrder;
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1),
+                          Mockito.eq(0),
+                          Mockito.isNull(),
+                          Mockito.eq(sortByAttribute),
+                          Mockito.eq(actualSortOrder));
+  }
+
+  /**
+   * this test will verify that the filter is not parsed if filtering is disabled
+   */
+  @Test
+  public void testFilterIfFilteringDisabled()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(false);
+    String filter = "userName eq \"chuck\"";
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      filter,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+  }
+
+  /**
+   * this test will verify that no exception is thrown if filtering is disabled and a filter with an unknown
+   * attribute is sent
+   */
+  @Test
+  public void testFilterIfFilteringDisabledWithUnknownAttribute()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(false);
+    String filter = "unknownAttributeName eq \"chuck\"";
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      filter,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.not(Matchers.typeCompatibleWith(ErrorResponse.class)));
+  }
+
+  /**
+   * this test will verify that the filter is parsed if filtering is enabled
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"userName co \"chu\"", "userName eq \"chuck\"", "userName eq \"5.5\"",
+                          "userName eq \"chu\" or name.givenName eq \"Carlos\"",
+                          "userName eq \"chu\" and name.givenName eq \"null\"",
+                          "userName eq \"chu\" and not( name.givenName eq null )",
+                          "((userName eq \"5.5\") and not( name.givenName eq \"Carlos\" OR nickName eq \"blubb\"))",
+                          "((userName eQ \"chu\") and not( name.givenName eq \"-6\" or nickName eq \"true\"))",
+                          "((userName eq \"false\") and not( name.givenName eq \"6\" or nickName eq \"true\"))",
+                          "((userName pR) and not( name.givenName Pr and nickName pr))", "emails.primary eq true",
+                          "((userName ne \"false\") and not( name.givenName co \"-6\" or nickName sw \"true\"))",
+                          "((userName ew \"false\") and not( name.givenName gt \"6\" or nickName GE \"true\"))",
+                          "((userName lt \"false\") and not( name.givenName le \"-6\" or nickName gt \"true\"))",
+                          "meta.lastModified ge \"2019-10-17T01:07:00Z\"",
+                          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter eq \"chuck\"",
+                          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value eq \"chuck\"",
+                          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value eq \"5.5\""})
+  public void testFilterIfFilteringEnabled(String filter)
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      filter,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+    FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.eq(filterNode), Mockito.isNull(), Mockito.isNull());
+  }
+
+  /**
+   * this test verifies that the framework reacts with an {@link InternalServerException} wrapped in a
+   * {@link ErrorResponse} if an exception is thrown in the developer implementation of listResources
+   */
+  @Test
+  public void testThrowNullPointerException()
+  {
+    Mockito.doThrow(NullPointerException.class)
+           .when(userHandler)
+           .listResources(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
+  }
+
+  /**
+   * verifies that a {@link de.gold.scim.exceptions.NotImplementedException} {@link ErrorResponse} is returned
+   * if the developer returns null on the
+   * {@link ResourceHandler#listResources(int, int, FilterNode, SchemaAttribute, SortOrder)} method
+   */
+  @Test
+  public void testReturnNullInDeveloperImplementationOnListResources()
+  {
+    Mockito.doReturn(null)
+           .when(userHandler)
+           .listResources(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      0,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(NotImplementedException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, errorResponse.getScimException().getStatus());
+  }
+
+  /**
+   * verifies that a {@link de.gold.scim.exceptions.NotImplementedException} {@link ErrorResponse} is returned
+   * if the developer returns null on the {@link ResourceHandler#createResource(ResourceNode)} method
+   */
+  @Test
+  public void testReturnNullInDeveloperImplementationOnCreateResource()
+  {
+    Mockito.doReturn(null).when(userHandler).createResource(Mockito.any());
+    ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
+                                                                       readResourceFile(USER_RESOURCE),
+                                                                       null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(NotImplementedException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, errorResponse.getScimException().getStatus());
+  }
+
+  /**
+   * verifies that a {@link de.gold.scim.exceptions.ResourceNotFoundException} {@link ErrorResponse} is returned
+   * if the developer returns null on the {@link ResourceHandler#updateResource(ResourceNode)} method
+   */
+  @Test
+  public void testReturnNullInDeveloperImplementationOnUpdateResource()
+  {
+    Mockito.doReturn(null).when(userHandler).updateResource(Mockito.any());
+    ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
+                                                                       UUID.randomUUID().toString(),
+                                                                       readResourceFile(USER_RESOURCE),
+                                                                       null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getScimException().getStatus());
+  }
+
+  /**
+   * the modifier on the the method {@link ResourceEndpointHandler#getServiceProvider()} must be public!
+   */
+  @Test
+  public void testAccessModifierOnServiceProviderGetter() throws NoSuchMethodException
+  {
+    Method method = ResourceEndpointHandler.class.getMethod("getServiceProvider");
+    Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
   }
 
   /**
@@ -638,5 +940,26 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private Supplier<String> getBaseUrlSupplier()
   {
     return () -> "https://goldfish.de/scim/v2";
+  }
+
+  /**
+   * creates the given number of users
+   *
+   * @param totalResults the number of users to create
+   * @return the list of the created users
+   */
+  protected List<User> createUsers(int totalResults)
+  {
+    List<User> userList = new ArrayList<>();
+    for ( int i = 0 ; i < totalResults ; i++ )
+    {
+      ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
+                                                                         readResourceFile(USER_RESOURCE),
+                                                                         null);
+      CreateResponse createResponse = (CreateResponse)scimResponse;
+      User user = JsonHelper.readJsonDocument(createResponse.toJsonDocument(), User.class);
+      userList.add(user);
+    }
+    return userList;
   }
 }

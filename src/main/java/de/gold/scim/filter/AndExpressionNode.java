@@ -11,15 +11,15 @@ import lombok.Getter;
  * <br>
  * represents two expressions that should be put together as an and operation
  */
-@EqualsAndHashCode
-public class AndExpressionNode extends FilterNode
+@EqualsAndHashCode(callSuper = false)
+public final class AndExpressionNode extends FilterNode
 {
 
   /**
    * the left and the right node of this expression
    */
   @Getter
-  private FilterNode leftNode, rightNode;
+  private final FilterNode leftNode, rightNode;
 
   public AndExpressionNode(FilterNode leftNode, FilterNode rightNode)
   {

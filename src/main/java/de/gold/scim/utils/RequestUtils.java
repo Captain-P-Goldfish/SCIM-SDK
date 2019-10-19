@@ -240,7 +240,8 @@ public final class RequestUtils
     if (schemaAttributeList.isEmpty())
     {
       throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
-                                    + "unknown to resource type '" + resourceType.getName() + "'", null, null);
+                                    + "unknown to resource type '" + resourceType.getName() + "'", null,
+                                    ScimType.Custom.INVALID_PARAMETERS);
     }
     else if (schemaAttributeList.size() > 1)
     {

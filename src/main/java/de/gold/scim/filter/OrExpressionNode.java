@@ -11,15 +11,15 @@ import lombok.Getter;
  * <br>
  * represents two expressions that should be put together as an or operation
  */
-@EqualsAndHashCode
-public class OrExpressionNode extends FilterNode
+@EqualsAndHashCode(callSuper = false)
+public final class OrExpressionNode extends FilterNode
 {
 
   /**
    * the left and the right node of this expression
    */
   @Getter
-  private FilterNode leftNode, rightNode;
+  private final FilterNode leftNode, rightNode;
 
   public OrExpressionNode(FilterNode leftNode, FilterNode rightNode)
   {

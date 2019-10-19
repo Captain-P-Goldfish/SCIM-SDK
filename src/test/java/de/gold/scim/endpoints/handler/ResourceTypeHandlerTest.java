@@ -168,4 +168,14 @@ public class ResourceTypeHandlerTest
   {
     Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.deleteResource("blubb"));
   }
+
+  /**
+   * verifies that no exception is thrown if no resource types are defined
+   */
+  @Test
+  public void testNoResourceTypesDoExist()
+  {
+    ResourceTypeFactoryUtil.clearAllResourceTypes(resourceTypeFactory);
+    Assertions.assertDoesNotThrow(() -> resourceTypeHandler.listResources(1, 0, null, null, null));
+  }
 }

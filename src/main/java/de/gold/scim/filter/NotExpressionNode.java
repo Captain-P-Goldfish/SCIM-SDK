@@ -11,15 +11,15 @@ import lombok.Getter;
  * <br>
  * represents an expression that should be negated
  */
-@EqualsAndHashCode
-public class NotExpressionNode extends FilterNode
+@EqualsAndHashCode(callSuper = false)
+public final class NotExpressionNode extends FilterNode
 {
 
   /**
    * the node that should be negated
    */
   @Getter
-  private FilterNode rightNode;
+  private final FilterNode rightNode;
 
   public NotExpressionNode(FilterNode rightNode)
   {

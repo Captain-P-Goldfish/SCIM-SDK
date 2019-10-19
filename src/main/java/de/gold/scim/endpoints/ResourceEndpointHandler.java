@@ -16,6 +16,7 @@ import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
 import de.gold.scim.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
+import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.FilterNode;
@@ -178,6 +179,11 @@ public final class ResourceEndpointHandler
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
       resourceNode.setMeta(getMeta(resourceType));
       resourceNode = resourceHandler.createResource(resourceNode);
+      if (resourceNode == null)
+      {
+        throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
+                                          + "'");
+      }
       Supplier<String> errorMessage = () -> "ID attribute not set on created resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
@@ -440,6 +446,11 @@ public final class ResourceEndpointHandler
                                                                     filterNode,
                                                                     sortByAttribute,
                                                                     sortOrdering);
+      if (resources == null)
+      {
+        throw new NotImplementedException("listResources was not implemented for resourceType '"
+                                          + resourceType.getName() + "'");
+      }
       List<ResourceNode> resourceList = resources.getResources();
       if (resources.getResources().size() > effectiveCount)
       {
@@ -534,12 +545,11 @@ public final class ResourceEndpointHandler
   {
     if (StringUtils.isBlank(sortOrder))
     {
-      if (sortBy == null)
+      if (sortBy != null)
       {
-        return null;
+        // If a value for "sortBy" is provided and no "sortOrder" is specified, "sortOrder" SHALL default to ascending
+        return SortOrder.ASCENDING;
       }
-      // If a value for "sortBy" is provided and no "sortOrder" is specified, "sortOrder" SHALL default to ascending
-      return SortOrder.ASCENDING;
     }
     if (serviceProvider.getSortConfig().isSupported())
     {
@@ -640,6 +650,11 @@ public final class ResourceEndpointHandler
                                       ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
+      if (resourceNode == null)
+      {
+        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                            + "not exist", null, null);
+      }
       resourceNode.setId(id);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
       resourceNode.setMeta(getMeta(resourceType));

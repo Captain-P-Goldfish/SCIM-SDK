@@ -32,4 +32,12 @@ public final class ResourceTypeFactoryUtil
     return new ResourceType(resourceTypeFactory.getSchemaFactory(), jsonNode);
   }
 
+  /**
+   * removes all existing resource types from the given factory
+   */
+  public static void clearAllResourceTypes(ResourceTypeFactory resourceTypeFactory)
+  {
+    resourceTypeFactory.getResourceTypes().clear();
+  }
+
 }

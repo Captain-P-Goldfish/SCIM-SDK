@@ -46,6 +46,7 @@
         <version.reflections>0.9.11</version.reflections>
         <version.mockito>3.1.0</version.mockito>
         <version.resteasy.jaxrs>3.9.0.Final</version.resteasy.jaxrs>
+        <version.equalsverifier>3.1.10</version.equalsverifier>
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
@@ -160,6 +161,12 @@
                 <version>${version.resteasy.jaxrs}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>nl.jqno.equalsverifier</groupId>
+                <artifactId>equalsverifier</artifactId>
+                <version>${version.equalsverifier}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -233,6 +240,10 @@
         <dependency>
             <groupId>org.jboss.resteasy</groupId>
             <artifactId>resteasy-jaxrs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>nl.jqno.equalsverifier</groupId>
+            <artifactId>equalsverifier</artifactId>
         </dependency>
     </dependencies>
 

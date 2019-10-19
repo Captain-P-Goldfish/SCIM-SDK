@@ -27,8 +27,8 @@ import lombok.Getter;
  * <br>
  * Represents a comparable expression in the scim filter language like "userName eq 'chuck_norris'"
  */
-@EqualsAndHashCode
-public class AttributeExpressionLeaf extends FilterNode
+@EqualsAndHashCode(callSuper = false)
+public final class AttributeExpressionLeaf extends FilterNode
 {
 
   /**
@@ -36,23 +36,23 @@ public class AttributeExpressionLeaf extends FilterNode
    * schema. if the attribute cannot be found in the represented {@link de.gold.scim.schemas.ResourceType} an
    * {@link de.gold.scim.exceptions.InvalidFilterException} is thrown
    */
-  private FilterAttributeName attributeName;
+  private final FilterAttributeName attributeName;
 
   /**
    * the comparator that tells us how the comparison should be executed
    */
   @Getter(AccessLevel.PUBLIC)
-  private Comparator comparator;
+  private final Comparator comparator;
 
   /**
    * the value of the comparison itself
    */
-  private CompareValue compareValue;
+  private final CompareValue compareValue;
 
   /**
    * the meta information of this attribute
    */
-  private SchemaAttribute schemaAttribute;
+  private final SchemaAttribute schemaAttribute;
 
   public AttributeExpressionLeaf(ScimFilterParser.AttributeExpressionContext context, ResourceType resourceType)
   {
