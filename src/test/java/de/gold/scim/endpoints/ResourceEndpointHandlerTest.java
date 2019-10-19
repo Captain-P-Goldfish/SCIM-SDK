@@ -2,6 +2,8 @@ package de.gold.scim.endpoints;
 
 import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -36,6 +38,7 @@ import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.GetResponse;
 import de.gold.scim.response.ListResponse;
+import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceTypeFactory;
@@ -70,6 +73,11 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private ResourceEndpointHandler resourceEndpointHandler;
 
   /**
+   * this instance can be used to manipulate the default service provider configuration
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * a mockito mock to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
    * implementation
    */
@@ -80,6 +88,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
    * implementation
    */
   private GroupHandlerImpl groupHandler;
+
 
   /**
    * initializes this test
@@ -94,7 +103,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);
 
     ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
-    ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
+    serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
     resourceEndpointHandler = getUnitTestResourceEndpointHandler(resourceTypeFactory,
                                                                  serviceProvider,
                                                                  userEndpoint,
@@ -496,6 +505,51 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
     Assertions.assertNotNull(errorResponse.getScimException().getDetail());
+  }
+
+  /**
+   * this test will check that the implementation is reducing the number of returned entries to the desired
+   * number of entries if the developer returned too many
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3, 4})
+  public void testReturnTooManyEntries(int count)
+  {
+    final int totalResults = count * 2;
+    serviceProvider.getFilterConfig().setMaxResults(totalResults);
+    List<User> userList = new ArrayList<>();
+    for ( int i = 0 ; i < totalResults ; i++ )
+    {
+      ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
+                                                                         readResourceFile(USER_RESOURCE),
+                                                                         null);
+      CreateResponse createResponse = (CreateResponse)scimResponse;
+      User user = JsonHelper.readJsonDocument(createResponse.toJsonDocument(), User.class);
+      userList.add(user);
+    }
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(totalResults)
+                                                                       .resources(userList)
+                                                                       .build();
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1,
+                                                                      count,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(totalResults, listResponse.getTotalResults());
+    Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    Assertions.assertEquals(1, listResponse.getStartIndex());
+    Assertions.assertEquals(count, listResponse.getListedResources().size());
   }
 
   /**
