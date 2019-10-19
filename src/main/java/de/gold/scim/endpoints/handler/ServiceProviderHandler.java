@@ -10,7 +10,6 @@ import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.SchemaAttribute;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 
 /**
@@ -35,7 +34,6 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * {@link ServiceProvider} instance which is shared with this object. so both instances need to hold the same
    * object reference in order for the application to work correctly
    */
-  @Getter
   private final ServiceProvider serviceProvider;
 
   /**
