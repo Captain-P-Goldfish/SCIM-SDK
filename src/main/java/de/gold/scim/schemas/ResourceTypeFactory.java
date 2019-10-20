@@ -39,11 +39,6 @@ public final class ResourceTypeFactory
 {
 
   /**
-   * the singleton instance
-   */
-  private static final ResourceTypeFactory INSTANCE = new ResourceTypeFactory();
-
-  /**
    * the resource type registry.<br>
    * The key will be the uri to the resource schema that represents the resource type. Like this the resource
    * type can be easier found if a request comes in
@@ -62,27 +57,9 @@ public final class ResourceTypeFactory
   /**
    * will register the default resource types
    */
-  private ResourceTypeFactory()
+  public ResourceTypeFactory()
   {
-    this.schemaFactory = SchemaFactory.getInstance();
-  }
-
-  /**
-   * @return the singleton instance
-   */
-  public static ResourceTypeFactory getInstance()
-  {
-    return INSTANCE;
-  }
-
-  /**
-   * this method is explicitly for unit tests
-   */
-  static ResourceTypeFactory getUnitTestInstance()
-  {
-    ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
-    resourceTypeFactory.setSchemaFactory(SchemaFactory.getUnitTestInstance(resourceTypeFactory));
-    return resourceTypeFactory;
+    this.schemaFactory = new SchemaFactory(this);
   }
 
   /**

@@ -163,7 +163,7 @@ public class SchemaValidatorTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    this.resourceTypeFactory = ResourceTypeFactory.getUnitTestInstance();
+    this.resourceTypeFactory = new ResourceTypeFactory();
   }
 
   /**
@@ -883,7 +883,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     JsonNode enterpriseUser = JsonHelper.getObjectAttribute(userSchema, SchemaUris.ENTERPRISE_USER_URI).get();
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      SchemaValidator.validateExtensionForRequest(ResourceTypeFactory.getUnitTestInstance(),
+      SchemaValidator.validateExtensionForRequest(new ResourceTypeFactory(),
                                                   metaSchema,
                                                   enterpriseUser,
                                                   SchemaValidator.HttpMethod.POST);

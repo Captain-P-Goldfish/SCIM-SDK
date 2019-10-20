@@ -22,7 +22,6 @@ import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.OrExpressionNode;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
-import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
 import de.gold.scim.utils.TestHelper;
@@ -55,7 +54,7 @@ public class FilterVisitorTest
   @BeforeEach
   public void initialize()
   {
-    this.resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
+    this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);

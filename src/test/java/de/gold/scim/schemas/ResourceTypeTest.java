@@ -45,7 +45,7 @@ public class ResourceTypeTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    ResourceTypeFactory resourceTypeFactory = ResourceTypeFactory.getUnitTestInstance();
+    ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     schemaFactory = Assertions.assertDoesNotThrow(resourceTypeFactory::getSchemaFactory);
     resourceTypeFactory.registerResourceType(null,
                                              JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),

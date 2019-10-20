@@ -70,7 +70,7 @@ public class ResourceType extends ResourceNode
 
   protected ResourceType(SchemaFactory schemaFactory, JsonNode resourceTypeDocument)
   {
-    this.schemaFactory = getSchemaFactory(schemaFactory);
+    this.schemaFactory = Objects.requireNonNull(schemaFactory);
     setSchemas(JsonHelper.getSimpleAttributeArray(resourceTypeDocument, AttributeNames.RFC7643.SCHEMAS)
                          .orElse(Collections.singletonList(SchemaUris.RESOURCE_TYPE_URI)));
     setId(JsonHelper.getSimpleAttribute(resourceTypeDocument, AttributeNames.RFC7643.ID)
@@ -133,25 +133,6 @@ public class ResourceType extends ResourceNode
                  .build();
     }
     return meta;
-  }
-
-  /**
-   * gets the {@link SchemaFactory} that should be used. This method is only added to be able to add clean
-   * {@link SchemaFactory} instances from unit tests
-   *
-   * @param schemaFactory null or a clean factory created by an unit test
-   * @return the factory to use
-   */
-  private SchemaFactory getSchemaFactory(SchemaFactory schemaFactory)
-  {
-    if (schemaFactory == null)
-    {
-      return SchemaFactory.getInstance();
-    }
-    else
-    {
-      return schemaFactory;
-    }
   }
 
   /**

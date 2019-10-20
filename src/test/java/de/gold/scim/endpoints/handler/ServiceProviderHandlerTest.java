@@ -1,23 +1,18 @@
 package de.gold.scim.endpoints.handler;
 
-import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import de.gold.scim.constants.EndpointPaths;
-import de.gold.scim.endpoints.base.GroupEndpointDefinition;
-import de.gold.scim.endpoints.base.MeEndpointDefinition;
-import de.gold.scim.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.endpoints.ResourceEndpointHandlerUtil;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.complex.FilterConfig;
 import de.gold.scim.resources.complex.SortConfig;
 import de.gold.scim.schemas.ResourceTypeFactory;
-import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -52,15 +47,10 @@ public class ServiceProviderHandlerTest
   @BeforeEach
   public void initialize()
   {
-    resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
-    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl());
-    GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(new GroupHandlerImpl());
-    MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl());
-
-
+    resourceTypeFactory = new ResourceTypeFactory();
     this.serviceProvider = Mockito.spy(buildServiceProvider());
     // this line is simply used to register the endpoints on the resourceTypeFactory
-    getUnitTestResourceEndpointHandler(resourceTypeFactory, serviceProvider, userEndpoint, groupEndpoint, meEndpoint);
+    ResourceEndpointHandlerUtil.registerAllEndpoints(resourceTypeFactory, serviceProvider);
     final String endpointPath = EndpointPaths.SERVICE_PROVIDER_CONFIG;
     this.serviceProviderHandler = (ServiceProviderHandler)resourceTypeFactory.getResourceType(endpointPath)
                                                                              .getResourceHandlerImpl();

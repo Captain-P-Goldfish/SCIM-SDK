@@ -17,14 +17,6 @@ public final class ResourceTypeFactoryUtil
 {
 
   /**
-   * @return a resource type factory that can be used by any unit test
-   */
-  public static ResourceTypeFactory getUnitTestResourceTypeFactory()
-  {
-    return ResourceTypeFactory.getUnitTestInstance();
-  }
-
-  /**
    * @return a new resource type for unit tests from the given json node
    */
   public static ResourceType getResourceType(ResourceTypeFactory resourceTypeFactory, JsonNode jsonNode)

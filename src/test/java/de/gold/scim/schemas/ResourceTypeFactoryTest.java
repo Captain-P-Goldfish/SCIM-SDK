@@ -58,7 +58,7 @@ public class ResourceTypeFactoryTest
   @BeforeEach
   public void initialize()
   {
-    resourceTypeFactory = Assertions.assertDoesNotThrow(ResourceTypeFactory::getUnitTestInstance);
+    resourceTypeFactory = Assertions.assertDoesNotThrow(ResourceTypeFactory::new);
     schemaFactory = resourceTypeFactory.getSchemaFactory();
     userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);

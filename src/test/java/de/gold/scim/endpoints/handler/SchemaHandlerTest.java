@@ -1,7 +1,5 @@
 package de.gold.scim.endpoints.handler;
 
-import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -19,15 +17,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.SchemaUris;
-import de.gold.scim.endpoints.base.GroupEndpointDefinition;
-import de.gold.scim.endpoints.base.MeEndpointDefinition;
-import de.gold.scim.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.endpoints.ResourceEndpointHandlerUtil;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
-import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.schemas.Schema;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -63,13 +58,8 @@ public class SchemaHandlerTest
   @BeforeEach
   public void initialize()
   {
-    resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
-    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl());
-    GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(new GroupHandlerImpl());
-    MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl());
-
-    // this line is simply used to register the endpoints on the resourceTypeFactory
-    getUnitTestResourceEndpointHandler(resourceTypeFactory, userEndpoint, groupEndpoint, meEndpoint);
+    resourceTypeFactory = new ResourceTypeFactory();
+    ResourceEndpointHandlerUtil.registerAllEndpoints(resourceTypeFactory);
     this.schemaHandler = (SchemaHandler)resourceTypeFactory.getResourceType(EndpointPaths.SCHEMAS)
                                                            .getResourceHandlerImpl();
     allSchemas = resourceTypeFactory.getAllResourceTypes()

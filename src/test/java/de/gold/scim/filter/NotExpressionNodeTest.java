@@ -9,7 +9,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
-import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
 import nl.jqno.equalsverifier.EqualsVerifier;
@@ -40,7 +39,7 @@ public class NotExpressionNodeTest
   @BeforeEach
   public void initialize()
   {
-    this.resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
+    this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);

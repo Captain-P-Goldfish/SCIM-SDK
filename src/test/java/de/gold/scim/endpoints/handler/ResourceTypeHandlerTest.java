@@ -1,7 +1,5 @@
 package de.gold.scim.endpoints.handler;
 
-import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
-
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -15,9 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.ResourceTypeNames;
-import de.gold.scim.endpoints.base.GroupEndpointDefinition;
-import de.gold.scim.endpoints.base.MeEndpointDefinition;
-import de.gold.scim.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.endpoints.ResourceEndpointHandlerUtil;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.response.PartialListResponse;
@@ -53,13 +49,8 @@ public class ResourceTypeHandlerTest
   @BeforeEach
   public void initialize()
   {
-    resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
-    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl());
-    GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(new GroupHandlerImpl());
-    MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl());
-
-    // this line is simply used to register the endpoints on the resourceTypeFactory
-    getUnitTestResourceEndpointHandler(resourceTypeFactory, userEndpoint, groupEndpoint, meEndpoint);
+    resourceTypeFactory = new ResourceTypeFactory();
+    ResourceEndpointHandlerUtil.registerAllEndpoints(resourceTypeFactory);
     this.resourceTypeHandler = (ResourceTypeHandler)resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES)
                                                                        .getResourceHandlerImpl();
   }

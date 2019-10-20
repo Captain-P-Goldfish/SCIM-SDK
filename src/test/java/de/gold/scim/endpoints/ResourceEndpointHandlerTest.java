@@ -1,7 +1,5 @@
 package de.gold.scim.endpoints;
 
-import static de.gold.scim.endpoints.ResourceEndpointHandlerUtil.getUnitTestResourceEndpointHandler;
-
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -51,7 +49,6 @@ import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
-import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
@@ -104,16 +101,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     userHandler = Mockito.spy(new UserHandlerImpl());
     groupHandler = Mockito.spy(new GroupHandlerImpl());
-    resourceTypeFactory = ResourceTypeFactoryUtil.getUnitTestResourceTypeFactory();
     UserEndpointDefinition userEndpoint = new UserEndpointDefinition(userHandler);
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);
 
     ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
     ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
-    resourceEndpointHandler = getUnitTestResourceEndpointHandler(resourceTypeFactory,
-                                                                 serviceProvider,
-                                                                 userEndpoint,
-                                                                 groupEndpoint);
+    this.resourceEndpointHandler = new ResourceEndpointHandler(serviceProvider, userEndpoint, groupEndpoint);
+    this.resourceTypeFactory = resourceEndpointHandler.getResourceTypeFactory();
   }
 
   /**

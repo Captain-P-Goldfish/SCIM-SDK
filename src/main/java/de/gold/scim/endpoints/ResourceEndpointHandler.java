@@ -40,6 +40,7 @@ import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.schemas.SchemaValidator;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,22 +66,16 @@ public final class ResourceEndpointHandler
   /**
    * this is used to prevent application context pollution in unit tests
    */
+  @Getter(AccessLevel.PROTECTED)
   private ResourceTypeFactory resourceTypeFactory;
-
-  public ResourceEndpointHandler(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
-  {
-    this(ResourceTypeFactory.getInstance(), serviceProvider, endpointDefinitions);
-  }
 
   /**
    * this constructor was introduced for unit tests to add a specific resourceTypeFactory instance which will
    * prevent application context pollution within unit tests
    */
-  ResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
-                          ServiceProvider serviceProvider,
-                          EndpointDefinition... endpointDefinitions)
+  public ResourceEndpointHandler(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
   {
-    this.resourceTypeFactory = resourceTypeFactory;
+    this.resourceTypeFactory = new ResourceTypeFactory();
     this.serviceProvider = serviceProvider;
     if (endpointDefinitions == null || endpointDefinitions.length == 0)
     {

@@ -1,5 +1,18 @@
 package de.gold.scim.endpoints;
 
+import java.util.Arrays;
+import java.util.List;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.gold.scim.endpoints.base.GroupEndpointDefinition;
+import de.gold.scim.endpoints.base.MeEndpointDefinition;
+import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
+import de.gold.scim.endpoints.base.SchemaEndpointDefinition;
+import de.gold.scim.endpoints.base.ServiceProviderEndpointDefinition;
+import de.gold.scim.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.endpoints.handler.GroupHandlerImpl;
+import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.schemas.ResourceTypeFactory;
@@ -21,14 +34,12 @@ public final class ResourceEndpointHandlerUtil
   /**
    * creates a new endpoint definition with the given {@link ResourceTypeFactory}
    */
-  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
-                                                                           EndpointDefinition... endpointDefinitions)
+  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(EndpointDefinition... endpointDefinitions)
   {
     ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder()
                                                                           .baseUrl("https://localhost/scim/v2")
                                                                           .build();
-    return getUnitTestResourceEndpointHandler(resourceTypeFactory,
-                                              ServiceProvider.builder()
+    return getUnitTestResourceEndpointHandler(ServiceProvider.builder()
                                                              .serviceProviderUrlExtension(urlExtension)
                                                              .build(),
                                               endpointDefinitions);
@@ -37,10 +48,61 @@ public final class ResourceEndpointHandlerUtil
   /**
    * creates a new endpoint definition with the given {@link ResourceTypeFactory}
    */
-  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ResourceTypeFactory resourceTypeFactory,
-                                                                           ServiceProvider serviceProvider,
+  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ServiceProvider serviceProvider,
                                                                            EndpointDefinition... endpointDefinitions)
   {
-    return new ResourceEndpointHandler(resourceTypeFactory, serviceProvider, endpointDefinitions);
+    return new ResourceEndpointHandler(serviceProvider, endpointDefinitions);
+  }
+
+  /**
+   * registers the given endpoints within the given resourceType
+   */
+  public static void registerEndpointDefinitionsInResourceType(ResourceTypeFactory resourceTypeFactory,
+                                                               EndpointDefinition... endpointDefinitionList)
+  {
+    for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
+    {
+      resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
+                                               endpointDefinition.getResourceType(),
+                                               endpointDefinition.getResourceSchema(),
+                                               endpointDefinition.getResourceSchemaExtensions()
+                                                                 .toArray(new JsonNode[0]));
+    }
+  }
+
+  /**
+   * registers all endpoints within the given resourceType
+   */
+  public static void registerAllEndpoints(ResourceTypeFactory resourceTypeFactory)
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder().build();
+    registerAllEndpoints(resourceTypeFactory, serviceProvider);
+  }
+
+  /**
+   * registers all endpoints within the given resourceType
+   */
+  public static void registerAllEndpoints(ResourceTypeFactory resourceTypeFactory, ServiceProvider serviceProvider)
+  {
+    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl());
+    GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(new GroupHandlerImpl());
+    MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl());
+    ResourceTypeEndpointDefinition resourceTypeEndpoint = new ResourceTypeEndpointDefinition(resourceTypeFactory);
+    SchemaEndpointDefinition schemaEndpoint = new SchemaEndpointDefinition(resourceTypeFactory);
+    ServiceProviderEndpointDefinition serviceProviderEndpoint = new ServiceProviderEndpointDefinition(serviceProvider);
+    List<EndpointDefinition> endpointDefinitionList = Arrays.asList(userEndpoint,
+                                                                    groupEndpoint,
+                                                                    meEndpoint,
+                                                                    resourceTypeEndpoint,
+                                                                    serviceProviderEndpoint,
+                                                                    schemaEndpoint);
+    for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
+    {
+      resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
+                                               endpointDefinition.getResourceType(),
+                                               endpointDefinition.getResourceSchema(),
+                                               endpointDefinition.getResourceSchemaExtensions()
+                                                                 .toArray(new JsonNode[0]));
+    }
   }
 }

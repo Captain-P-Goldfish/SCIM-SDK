@@ -25,11 +25,6 @@ public final class SchemaFactory
 {
 
   /**
-   * the singleton instance of this class
-   */
-  private static final SchemaFactory INSTANCE = new SchemaFactory();
-
-  /**
    * this map will hold the meta schemata that will define how other schemata must be build
    */
   @Getter(AccessLevel.PROTECTED)
@@ -48,34 +43,16 @@ public final class SchemaFactory
   @Setter(AccessLevel.PROTECTED)
   private ResourceTypeFactory resourceTypeFactory;
 
-  /*
-   * this block will register the default schemas defined by RFC7643
+  /**
+   * this constructor will register the default schemas defined by RFC7643
    */
-  private SchemaFactory()
+  protected SchemaFactory(ResourceTypeFactory resourceTypeFactory)
   {
-    this.resourceTypeFactory = ResourceTypeFactory.getInstance();
+    this.resourceTypeFactory = resourceTypeFactory;
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON));
     registerMetaSubSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON), "meta");
-  }
-
-  /**
-   * @return the singleton instance
-   */
-  public static SchemaFactory getInstance()
-  {
-    return INSTANCE;
-  }
-
-  /**
-   * this method is explicitly for unit tests
-   */
-  static SchemaFactory getUnitTestInstance(ResourceTypeFactory resourceTypeFactory)
-  {
-    SchemaFactory schemaFactory = new SchemaFactory();
-    schemaFactory.setResourceTypeFactory(resourceTypeFactory);
-    return schemaFactory;
   }
 
   /**
