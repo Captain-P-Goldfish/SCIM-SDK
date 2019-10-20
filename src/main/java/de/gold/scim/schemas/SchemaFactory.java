@@ -12,7 +12,6 @@ import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.Setter;
 
 
 /**
@@ -40,7 +39,6 @@ public final class SchemaFactory
    * used for unit tests in order to prevent application context pollution
    */
   @Getter(AccessLevel.PROTECTED)
-  @Setter(AccessLevel.PROTECTED)
   private ResourceTypeFactory resourceTypeFactory;
 
   /**
