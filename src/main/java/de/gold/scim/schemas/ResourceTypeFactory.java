@@ -131,7 +131,7 @@ public final class ResourceTypeFactory
     else
     {
       if (registeredResourceSchema != null && resourceSchema != null
-          && !registeredResourceSchema.toJsonNode().equals(resourceSchema))
+          && !registeredResourceSchema.equals(resourceSchema))
       {
         log.warn("resource schema with id '{}' is already registered. The new instance that was given is not equal to"
                  + " the old schema document which will be overridden ",

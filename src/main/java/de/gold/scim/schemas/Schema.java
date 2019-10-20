@@ -8,21 +8,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.exceptions.InvalidSchemaException;
-import de.gold.scim.resources.base.ScimObjectNode;
+import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.utils.JsonHelper;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 
@@ -33,35 +29,8 @@ import lombok.Getter;
  * this class will represent a SCIM schema definition
  */
 @Getter
-@EqualsAndHashCode
-public class Schema
+public class Schema extends ResourceNode
 {
-
-  /**
-   * a list of defined schemas that will describe this schema resource. If the collection is empty this will be
-   * a meta schema on top level
-   */
-  private final List<String> schemas;
-
-  /**
-   * the id of the schema
-   */
-  private final String id;
-
-  /**
-   * the name of the schema
-   */
-  private String name;
-
-  /**
-   * the description of the schema
-   */
-  private String description;
-
-  /**
-   * the list of attributes defined by this schema
-   */
-  private List<SchemaAttribute> attributes;
 
   /**
    * this register shall be a simple reference map that is used for scim filter expressions to find the
@@ -74,16 +43,16 @@ public class Schema
   protected Schema(JsonNode jsonNode, String namePrefix)
   {
 
-    this.schemas = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.SCHEMAS)
-                             .orElse(Collections.emptyList());
+    setSchemas(JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.SCHEMAS)
+                         .orElse(Collections.emptyList()));
     String errorMessage = "attribute '" + AttributeNames.RFC7643.ID + "' is missing cannot resolve schema";
-    this.id = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.ID)
-                        .orElseThrow(() -> new InvalidSchemaException(errorMessage, null,
-                                                                      HttpStatus.SC_INTERNAL_SERVER_ERROR, null));
-    this.name = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.NAME).orElse(null);
-    this.description = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.DESCRIPTION).orElse(null);
-    this.attributes = new ArrayList<>();
-    String noAttributesErrorMessage = "schema with id '" + id + "' does not have attributes";
+    setId(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.ID)
+                    .orElseThrow(() -> new InvalidSchemaException(errorMessage, null,
+                                                                  HttpStatus.SC_INTERNAL_SERVER_ERROR, null)));
+    setName(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.NAME).orElse(null));
+    setDescription(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.DESCRIPTION).orElse(null));
+    List<SchemaAttribute> attributeList = new ArrayList<>();
+    String noAttributesErrorMessage = "schema with id '" + getId().orElse(null) + "' does not have attributes";
     ArrayNode attributes = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.RFC7643.ATTRIBUTES)
                                      .orElseThrow(() -> new InvalidSchemaException(noAttributesErrorMessage, null,
                                                                                    HttpStatus.SC_INTERNAL_SERVER_ERROR,
@@ -91,7 +60,7 @@ public class Schema
     Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode node : attributes )
     {
-      SchemaAttribute schemaAttribute = new SchemaAttribute(this, this.id, null, node, namePrefix);
+      SchemaAttribute schemaAttribute = new SchemaAttribute(this, getNonNullId(), null, node, namePrefix);
       if (attributeNameSet.contains(schemaAttribute.getName()))
       {
         String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getName() + "' was found "
@@ -99,8 +68,9 @@ public class Schema
         throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
       }
       attributeNameSet.add(schemaAttribute.getName());
-      this.attributes.add(schemaAttribute);
+      attributeList.add(schemaAttribute);
     }
+    setAttributes(attributeList);
   }
 
   public Schema(JsonNode jsonNode)
@@ -109,19 +79,65 @@ public class Schema
   }
 
   /**
-   * @see #attributes
+   * used explicitly for schema validation for easier code reading
    */
-  public List<String> getSchemas()
+  protected String getNonNullId()
   {
-    return Collections.unmodifiableList(schemas);
+    String errorMessage = "attribute '" + AttributeNames.RFC7643.ID + "' is missing cannot resolve schema";
+    return getId().orElseThrow(() -> new InvalidSchemaException(errorMessage, null, HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                                                                null));
   }
 
   /**
-   * @see #attributes
+   * The schema's human-readable name. When applicable, service providers MUST specify the name, e.g., "User" or
+   * "Group". OPTIONAL.
+   */
+  public Optional<String> getName()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.NAME);
+  }
+
+  /**
+   * The schema's human-readable name. When applicable, service providers MUST specify the name, e.g., "User" or
+   * "Group". OPTIONAL.
+   */
+  private void setName(String name)
+  {
+    setAttribute(AttributeNames.RFC7643.NAME, name);
+  }
+
+  /**
+   * The schema's human-readable description. When applicable, service providers MUST specify the description.
+   * OPTIONAL.
+   */
+  public Optional<String> getDescription()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.DESCRIPTION);
+  }
+
+  /**
+   * The schema's human-readable description. When applicable, service providers MUST specify the description.
+   * OPTIONAL.
+   */
+  private void setDescription(String description)
+  {
+    setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
+  }
+
+  /**
+   * gets the schema attributes of this schema
    */
   public List<SchemaAttribute> getAttributes()
   {
-    return Collections.unmodifiableList(attributes);
+    return super.getArrayAttribute(AttributeNames.RFC7643.ATTRIBUTES, SchemaAttribute.class);
+  }
+
+  /**
+   * sets the attributes into this json object
+   */
+  private void setAttributes(List<SchemaAttribute> attributes)
+  {
+    setAttribute(AttributeNames.RFC7643.ATTRIBUTES, attributes);
   }
 
   /**
@@ -145,47 +161,18 @@ public class Schema
   }
 
   /**
-   * allows the child {@link SchemaAttribute}s to add themselves to this schema
+   * allows the child {@link SchemaAttribute}s to add themselves to this schema into the
+   * {@link #attributeRegister}
    */
   protected void addSchemaAttribute(SchemaAttribute schemaAttribute)
   {
     String scimNodeName = schemaAttribute.getScimNodeName().toLowerCase();
     if (attributeRegister.containsKey(scimNodeName))
     {
-      throw new InvalidSchemaException("schema '" + id + "' has an duplicate attribute name: '" + scimNodeName + "'",
-                                       null, null, null);
+      throw new InvalidSchemaException("schema '" + getNonNullId() + "' has an duplicate attribute name: '"
+                                       + scimNodeName + "'", null, null, null);
     }
     attributeRegister.put(scimNodeName, schemaAttribute);
   }
 
-  /**
-   * @return the schema as json document
-   */
-  public JsonNode toJsonNode()
-  {
-    ScimObjectNode objectNode = new ScimObjectNode(null);
-    List<JsonNode> schemas = getSchemas().stream().map(TextNode::new).collect(Collectors.toList());
-    JsonHelper.addAttribute(objectNode,
-                            AttributeNames.RFC7643.SCHEMAS,
-                            new ArrayNode(JsonNodeFactory.instance, schemas));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.ID, new TextNode(id));
-    Optional.ofNullable(getName())
-            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.NAME, new TextNode(s)));
-    Optional.ofNullable(getDescription())
-            .ifPresent(s -> JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.DESCRIPTION, new TextNode(s)));
-    List<JsonNode> attributes = getAttributes().stream().map(SchemaAttribute::toJsonNode).collect(Collectors.toList());
-    JsonHelper.addAttribute(objectNode,
-                            AttributeNames.RFC7643.ATTRIBUTES,
-                            new ArrayNode(JsonNodeFactory.instance, attributes));
-    return objectNode;
-  }
-
-  /**
-   * @return the schema as json document
-   */
-  @Override
-  public String toString()
-  {
-    return toJsonNode().toString();
-  }
 }

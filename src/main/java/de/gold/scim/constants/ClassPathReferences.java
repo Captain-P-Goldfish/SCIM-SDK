@@ -40,4 +40,6 @@ public final class ClassPathReferences
 
 
   public static final String SERVICE_PROVIDER_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/service-provider.json";
+
+  public static final String SCHEMA_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/schema.json";
 }

@@ -30,7 +30,7 @@ public class AuthenticationSchemeTest
     });
     MatcherAssert.assertThat(authenticationScheme, Matchers.not(Matchers.emptyIterable()));
     Assertions.assertEquals(3, authenticationScheme.size());
-    Assertions.assertDoesNotThrow(authenticationScheme::getName);
+    Assertions.assertDoesNotThrow(authenticationScheme::getAttributeName);
     Assertions.assertDoesNotThrow(authenticationScheme::getDescription);
     Assertions.assertDoesNotThrow(authenticationScheme::getType);
     Assertions.assertDoesNotThrow(authenticationScheme::getDocumentationUri);

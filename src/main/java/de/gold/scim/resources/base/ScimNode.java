@@ -33,7 +33,7 @@ public interface ScimNode
   /**
    * @return the simple name of this attribute e.g. "givenName" or "honoricPrefix" or "id"
    */
-  default String getName()
+  default String getAttributeName()
   {
     return getSchemaAttribute() == null ? null : getSchemaAttribute().getName();
   }
@@ -86,7 +86,7 @@ public interface ScimNode
    */
   default boolean isMultiValued()
   {
-    return getSchemaAttribute() == null ? null : getSchemaAttribute().isMultiValued();
+    return getSchemaAttribute() != null && getSchemaAttribute().isMultiValued();
   }
 
   /**
@@ -94,7 +94,7 @@ public interface ScimNode
    */
   default boolean isRequired()
   {
-    return getSchemaAttribute() == null ? null : getSchemaAttribute().isRequired();
+    return getSchemaAttribute() != null && getSchemaAttribute().isRequired();
   }
 
 
@@ -103,7 +103,7 @@ public interface ScimNode
    */
   default boolean isCaseExact()
   {
-    return getSchemaAttribute() == null ? null : getSchemaAttribute().isCaseExact();
+    return getSchemaAttribute() != null && getSchemaAttribute().isCaseExact();
   }
 
   /**

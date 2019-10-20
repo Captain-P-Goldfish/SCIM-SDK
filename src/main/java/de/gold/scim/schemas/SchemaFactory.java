@@ -7,6 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.exceptions.DocumentValidationException;
+import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -84,7 +86,7 @@ public final class SchemaFactory
   private void registerMetaSchema(JsonNode jsonSchema)
   {
     Schema schema = new Schema(jsonSchema);
-    metaSchemas.put(schema.getId(), schema);
+    metaSchemas.put(schema.getNonNullId(), schema);
   }
 
   /**
@@ -96,7 +98,7 @@ public final class SchemaFactory
   private void registerMetaSubSchema(JsonNode jsonSchema, String overrideNamePrefix)
   {
     Schema schema = new Schema(jsonSchema, overrideNamePrefix);
-    metaSchemas.put(schema.getId(), schema);
+    metaSchemas.put(schema.getNonNullId(), schema);
   }
 
   /**
@@ -107,9 +109,16 @@ public final class SchemaFactory
   public void registerResourceSchema(JsonNode jsonSchema)
   {
     Schema metaSchema = getMetaSchema(SchemaUris.SCHEMA_URI);
-    SchemaValidator.validateSchemaDocument(resourceTypeFactory, metaSchema, jsonSchema);
-    Schema schema = new Schema(jsonSchema);
-    resourceSchemas.put(schema.getId(), schema);
+    try
+    {
+      SchemaValidator.validateSchemaDocument(resourceTypeFactory, metaSchema, jsonSchema);
+      Schema schema = new Schema(jsonSchema);
+      resourceSchemas.put(schema.getNonNullId(), schema);
+    }
+    catch (DocumentValidationException ex)
+    {
+      throw new InvalidSchemaException(ex.getMessage(), ex, null, null);
+    }
   }
 
   /**

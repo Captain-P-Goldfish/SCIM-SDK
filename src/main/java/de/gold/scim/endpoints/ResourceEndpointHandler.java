@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
+import de.gold.scim.endpoints.base.SchemaEndpointDefinition;
 import de.gold.scim.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
@@ -88,6 +89,7 @@ public final class ResourceEndpointHandler
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
     endpointDefinitionList.add(0, new ServiceProviderEndpointDefinition(serviceProvider));
     endpointDefinitionList.add(1, new ResourceTypeEndpointDefinition(resourceTypeFactory));
+    endpointDefinitionList.add(2, new SchemaEndpointDefinition(resourceTypeFactory));
     for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
     {
       resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),

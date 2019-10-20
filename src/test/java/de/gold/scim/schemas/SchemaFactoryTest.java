@@ -11,7 +11,6 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
-import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
@@ -95,7 +94,7 @@ class SchemaFactoryTest implements FileReferences
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS);
-    Assertions.assertThrows(DocumentValidationException.class,
+    Assertions.assertThrows(InvalidSchemaException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
 
@@ -108,7 +107,7 @@ class SchemaFactoryTest implements FileReferences
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     ArrayNode schemas = JsonHelper.getArrayAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS).get();
     schemas.removeAll();
-    Assertions.assertThrows(DocumentValidationException.class,
+    Assertions.assertThrows(InvalidSchemaException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
 }

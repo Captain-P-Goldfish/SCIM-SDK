@@ -16,7 +16,6 @@ import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.utils.JsonHelper;
-import nl.jqno.equalsverifier.EqualsVerifier;
 
 
 /**
@@ -123,22 +122,6 @@ class SchemaAttributeTest
                                           Type.DATE_TIME.getValue(),
                                           Type.REFERENCE.getValue()),
                             type.getCanonicalValues());
-  }
-
-  /**
-   * verify that the equals method does its job correctly
-   */
-  @Test
-  public void testValidateEquals()
-  {
-    JsonNode metaSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON);
-    Schema schema = new Schema(metaSchema);
-    List<SchemaAttribute> attributes = schema.getAttributes();
-    EqualsVerifier.forClass(SchemaAttribute.class)
-                  .usingGetClass()
-                  .withIgnoredFields("schema", "parent")
-                  .withPrefabValues(SchemaAttribute.class, attributes.get(0), attributes.get(1))
-                  .verify();
   }
 
 }

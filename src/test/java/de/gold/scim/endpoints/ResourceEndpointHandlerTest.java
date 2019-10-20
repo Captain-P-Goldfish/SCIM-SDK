@@ -137,7 +137,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     User createdUser = createUser(endpoint);
     String userId = createdUser.getId().orElse(null);
     User readUser = getUser(endpoint, userId);
-    Assertions.assertEquals(createdUser, readUser);
+    Assertions.assertEquals(createdUser.getId().get(), readUser.getId().get());
+    Assertions.assertEquals(createdUser.getUserName(), readUser.getUserName());
 
     User updatedUser = updateUser(endpoint, readUser);
     Assertions.assertEquals(userId, updatedUser.getId().get());

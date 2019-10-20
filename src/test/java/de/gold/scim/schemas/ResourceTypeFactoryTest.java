@@ -15,6 +15,7 @@ import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InvalidResourceTypeException;
+import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.utils.JsonHelper;
 
 
@@ -105,7 +106,7 @@ public class ResourceTypeFactoryTest
   {
     // remove the enterprise extension from the resource type document
     JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.ID);
-    Assertions.assertThrows(DocumentValidationException.class,
+    Assertions.assertThrows(InvalidSchemaException.class,
                             () -> resourceTypeFactory.registerResourceType(null,
                                                                            userResourceType,
                                                                            userResourceSchema,
@@ -199,7 +200,7 @@ public class ResourceTypeFactoryTest
                                                       enterpriseUserExtension);
     });
     Schema schema = schemaFactory.getResourceSchema(resourceType.getSchema());
-    Assertions.assertEquals(userResourceSchema, schema.toJsonNode());
+    Assertions.assertEquals(userResourceSchema, schema);
   }
 
   /**

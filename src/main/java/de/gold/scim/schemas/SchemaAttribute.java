@@ -11,9 +11,6 @@ import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
@@ -33,8 +30,8 @@ import lombok.Getter;
  * holds the data of an attribute definition from a schema type document
  */
 @Getter
-@EqualsAndHashCode(exclude = {"schema", "parent"})
-public final class SchemaAttribute
+@EqualsAndHashCode(exclude = {"schema", "parent"}, callSuper = true)
+public final class SchemaAttribute extends ScimObjectNode
 {
 
   /**
@@ -63,182 +60,13 @@ public final class SchemaAttribute
    */
   private final String namePrefix;
 
-  /**
-   * The attribute's name.
-   */
-  private final String name;
-
-  // @formatter:off
-  /**
-   * The attribute's data type.  Valid values are "string",
-   * "boolean", "decimal", "integer", "dateTime", "reference", and
-   * "complex".  When an attribute is of type "complex", there
-   * SHOULD be a corresponding schema attribute "subAttributes"
-   * defined, listing the sub-attributes of the attribute.
-   */
-  // @formatter:on
-  private final Type type;
-
-  // @formatter:off
-  /**
-   * The attribute's human-readable description.  When
-   * applicable, service providers MUST specify the description.
-   */
-  // @formatter:on
-  private final String description;
-
-  // @formatter:off
-  /**
-   * A single keyword indicating the circumstances under
-   * which the value of the attribute can be (re)defined:
-   *
-   * readOnly  The attribute SHALL NOT be modified.
-   *
-   * readWrite  The attribute MAY be updated and read at any time.
-   *             This is the default value.
-   *
-   * immutable  The attribute MAY be defined at resource creation
-   *             (e.g., POST) or at record replacement via a request (e.g., a
-   *             PUT).  The attribute SHALL NOT be updated.
-   *
-   * writeOnly  The attribute MAY be updated at any time.  Attribute
-   *             values SHALL NOT be returned (e.g., because the value is a
-   *             stored hash).  Note: An attribute with a mutability of
-   *             "writeOnly" usually also has a returned setting of "never".
-   */
-  // @formatter:on
-  private final Mutability mutability;
-
-  // @formatter:off
-  /**
-   * A single keyword that indicates when an attribute and
-   * associated values are returned in response to a GET request or
-   * in response to a PUT, POST, or PATCH request.  Valid keywords
-   * are as follows:
-   *
-   * always   The attribute is always returned, regardless of the
-   *          contents of the "attributes" parameter.  For example, "id"
-   *          is always returned to identify a SCIM resource.
-   *
-   * never    The attribute is never returned.  This may occur because
-   *          the original attribute value (e.g., a hashed value) is not
-   *          retained by the service provider.  A service provider MAY
-   *          allow attributes to be used in a search filter.
-   *
-   * default  The attribute is returned by default in all SCIM
-   *          operation responses where attribute values are returned.  If
-   *          the GET request "attributes" parameter is specified,
-   *          attribute values are only returned if the attribute is named
-   *          in the "attributes" parameter.  DEFAULT.
-   *
-   * request  The attribute is returned in response to any PUT,
-   *          POST, or PATCH operations if the attribute was specified by
-   *          the client (for example, the attribute was modified).  The
-   *          attribute is returned in a SCIM query operation only if
-   *          specified in the "attributes" parameter.
-   */
-  // @formatter:on
-  private final Returned returned;
-
-  // @formatter:off
-  /**
-   * A single keyword value that specifies how the service
-   * provider enforces uniqueness of attribute values.  A server MAY
-   * reject an invalid value based on uniqueness by returning HTTP
-   * response code 400 (Bad Request).  A client MAY enforce
-   * uniqueness on the client side to a greater degree than the
-   * service provider enforces.  For example, a client could make a
-   * value unique while the server has uniqueness of "none".  Valid
-   * keywords are as follows:
-   *
-   * none  The values are not intended to be unique in any way.
-   *       DEFAULT.
-   *
-   * server  The value SHOULD be unique within the context of the
-   *         current SCIM endpoint (or tenancy) and MAY be globally
-   *         unique (e.g., a "username", email address, or other
-   *         server-generated key or counter).  No two resources on the
-   *         same server SHOULD possess the same value.
-   *
-   * global  The value SHOULD be globally unique (e.g., an email
-   *         address, a GUID, or other value).  No two resources on any
-   *         server SHOULD possess the same value.
-   */
-  // @formatter:on
-  private final Uniqueness uniqueness;
-
-  /**
-   * A Boolean value indicating the attribute's plurality.
-   */
-  private final boolean multiValued;
-
-  // @formatter:off
-  /**
-   * A Boolean value that specifies whether or not the
-   * attribute is required.
-   */
-  // @formatter:on
-  private final boolean required;
-
-  // @formatter:off
-  /**
-   * A Boolean value that specifies whether or not a string
-   * attribute is case sensitive.  The server SHALL use case
-   * sensitivity when evaluating filters.  For attributes that are
-   * case exact, the server SHALL preserve case for any value
-   * submitted.  If the attribute is case insensitive, the server
-   * MAY alter case for a submitted value.  Case sensitivity also
-   * impacts how attribute values MAY be compared against filter
-   * values (see Section 3.4.2.2 of [RFC7644]).
-   */
-  // @formatter:on
-  private final boolean caseExact;
-
-  // @formatter:off
-  /**
-   * A collection of suggested canonical values that
-   * MAY be used (e.g., "work" and "home").  In some cases, service
-   * providers MAY choose to ignore unsupported values.  OPTIONAL.
-   */
-  // @formatter:on
-  private final List<String> canonicalValues;
-
-  // @formatter:off
-  /**
-   * A multi-valued array of JSON strings that indicate
-   * the SCIM resource types that may be referenced.  Valid values
-   * are as follows:
-   *
-   * +  A SCIM resource type (e.g., "User" or "Group"),
-   *
-   * +  "external" - indicating that the resource is an external
-   *                 resource (e.g., a photo), or
-   *
-   * +  "uri" - indicating that the reference is to a service
-   *            endpoint or an identifier (e.g., a schema URN).
-   *
-   * This attribute is only applicable for attributes that are of
-   * type "reference" (Section 2.3.7).
-   */
-  // @formatter:on
-  private final List<ReferenceTypes> referenceTypes;
-
-  // @formatter:off
-  /**
-   * When an attribute is of type "complex",
-   * "subAttributes" defines a set of sub-attributes.
-   * "subAttributes" has the same schema sub-attributes as
-   * "attributes".
-   */
-  // @formatter:on
-  private final List<SchemaAttribute> subAttributes;
-
   protected SchemaAttribute(Schema schema,
                             String resourceUri,
                             SchemaAttribute parent,
                             JsonNode jsonNode,
                             String namePrefix)
   {
+    super(null);
     this.schema = schema;
     this.resourceUri = resourceUri;
     this.namePrefix = namePrefix;
@@ -246,37 +74,37 @@ public final class SchemaAttribute
                                                                 + "' in meta-schema";
     final String nameAttribute = AttributeNames.RFC7643.NAME;
     final String nameErrorMessage = errorMessageBuilder.apply(nameAttribute);
-    this.name = JsonHelper.getSimpleAttribute(jsonNode, nameAttribute)
-                          .orElseThrow(() -> getException(nameErrorMessage, null));
+    setName(JsonHelper.getSimpleAttribute(jsonNode, nameAttribute)
+                      .orElseThrow(() -> getException(nameErrorMessage, null)));
     final String typeAttribute = AttributeNames.RFC7643.TYPE;
     final String typeErrorMessage = errorMessageBuilder.apply(typeAttribute);
-    this.type = Type.getByValue(JsonHelper.getSimpleAttribute(jsonNode, typeAttribute)
-                                          .orElseThrow(() -> getException(typeErrorMessage, null)));
+    final Type type = Type.getByValue(JsonHelper.getSimpleAttribute(jsonNode, typeAttribute)
+                                                .orElseThrow(() -> getException(typeErrorMessage, null)));
+    setType(type);
     final String descriptionAttribute = AttributeNames.RFC7643.DESCRIPTION;
     final String descriptionErrorMessage = errorMessageBuilder.apply(descriptionAttribute);
-    this.description = JsonHelper.getSimpleAttribute(jsonNode, descriptionAttribute)
-                                 .orElseThrow(() -> getException(descriptionErrorMessage, null));
-    this.mutability = Mutability.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.MUTABILITY)
-                                                      .orElse(null));
-    this.returned = Returned.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.RETURNED)
-                                                  .orElse(null));
-    this.uniqueness = Uniqueness.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.UNIQUENESS)
-                                                      .orElse(Uniqueness.NONE.getValue()));
-    this.multiValued = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.MULTI_VALUED, Boolean.class)
-                                 .orElse(false);
-    this.required = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.REQUIRED, Boolean.class)
-                              .orElse(false);
-    this.caseExact = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.CASE_EXACT, Boolean.class)
-                               .orElse(false);
-    this.canonicalValues = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.CANONICAL_VALUES)
-                                     .orElse(Collections.emptyList());
-    this.referenceTypes = JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.REFERENCE_TYPES)
-                                    .map(strings -> strings.stream()
-                                                           .map(ReferenceTypes::getByValue)
-                                                           .collect(Collectors.toList()))
-                                    .orElse(Type.REFERENCE.equals(type)
-                                      ? Collections.singletonList(ReferenceTypes.EXTERNAL) : Collections.emptyList());
-    this.subAttributes = resolveSubAttributes(jsonNode);
+    setDescription(JsonHelper.getSimpleAttribute(jsonNode, descriptionAttribute)
+                             .orElseThrow(() -> getException(descriptionErrorMessage, null)));
+    setMutability(Mutability.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.MUTABILITY)
+                                                  .orElse(null)));
+    setReturned(Returned.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.RETURNED)
+                                              .orElse(null)));
+    setUniqueness(Uniqueness.getByValue(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.UNIQUENESS)
+                                                  .orElse(Uniqueness.NONE.getValue())));
+    setMultiValued(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.MULTI_VALUED, Boolean.class)
+                             .orElse(false));
+    setRequired(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.REQUIRED, Boolean.class).orElse(false));
+    setCaseExact(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.CASE_EXACT, Boolean.class)
+                           .orElse(false));
+    setCanonicalValues(JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.CANONICAL_VALUES)
+                                 .orElse(Collections.emptyList()));
+    setReferenceTypes(JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.REFERENCE_TYPES)
+                                .map(strings -> strings.stream()
+                                                       .map(ReferenceTypes::getByValue)
+                                                       .collect(Collectors.toList()))
+                                .orElse(Type.REFERENCE.equals(type) ? Collections.singletonList(ReferenceTypes.EXTERNAL)
+                                  : Collections.emptyList()));
+    setSubAttributes(resolveSubAttributes(jsonNode));
     this.parent = parent;
     validateAttribute();
     schema.addSchemaAttribute(this);
@@ -314,27 +142,420 @@ public final class SchemaAttribute
   }
 
   /**
-   * @see #canonicalValues
+   * The attribute's name.
    */
+  public String getName()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.NAME).orElse(null);
+  }
+
+  /**
+   * The attribute's name.
+   */
+  private void setName(String name)
+  {
+    setAttribute(AttributeNames.RFC7643.NAME, name);
+  }
+
+  // @formatter:off
+  /**
+   * The attribute's data type.  Valid values are "string",
+   * "boolean", "decimal", "integer", "dateTime", "reference", and
+   * "complex".  When an attribute is of type "complex", there
+   * SHOULD be a corresponding schema attribute "subAttributes"
+   * defined, listing the sub-attributes of the attribute.
+   */
+  // @formatter:on
+  public Type getType()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.TYPE).map(Type::getByValue).orElse(null);
+  }
+
+  // @formatter:off
+  /**
+   * The attribute's data type.  Valid values are "string",
+   * "boolean", "decimal", "integer", "dateTime", "reference", and
+   * "complex".  When an attribute is of type "complex", there
+   * SHOULD be a corresponding schema attribute "subAttributes"
+   * defined, listing the sub-attributes of the attribute.
+   */
+  // @formatter:on
+  private void setType(Type type)
+  {
+    setAttribute(AttributeNames.RFC7643.TYPE, Optional.ofNullable(type).map(Type::getValue).orElse(null));
+  }
+
+  // @formatter:off
+  /**
+   * The attribute's human-readable description.  When
+   * applicable, service providers MUST specify the description.
+   */
+  // @formatter:on
+  public String getDescription()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.DESCRIPTION).orElse(null);
+  }
+
+  // @formatter:off
+  /**
+   * The attribute's human-readable description.  When
+   * applicable, service providers MUST specify the description.
+   */
+  // @formatter:on
+  private void setDescription(String description)
+  {
+    setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
+  }
+
+  // @formatter:off
+  /**
+   * A single keyword indicating the circumstances under
+   * which the value of the attribute can be (re)defined:
+   *
+   * readOnly  The attribute SHALL NOT be modified.
+   *
+   * readWrite  The attribute MAY be updated and read at any time.
+   *             This is the default value.
+   *
+   * immutable  The attribute MAY be defined at resource creation
+   *             (e.g., POST) or at record replacement via a request (e.g., a
+   *             PUT).  The attribute SHALL NOT be updated.
+   *
+   * writeOnly  The attribute MAY be updated at any time.  Attribute
+   *             values SHALL NOT be returned (e.g., because the value is a
+   *             stored hash).  Note: An attribute with a mutability of
+   *             "writeOnly" usually also has a returned setting of "never".
+   */
+  // @formatter:on
+  public Mutability getMutability()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.MUTABILITY).map(Mutability::getByValue).orElse(null);
+  }
+
+  // @formatter:off
+  /**
+   * A single keyword indicating the circumstances under
+   * which the value of the attribute can be (re)defined:
+   *
+   * readOnly  The attribute SHALL NOT be modified.
+   *
+   * readWrite  The attribute MAY be updated and read at any time.
+   *             This is the default value.
+   *
+   * immutable  The attribute MAY be defined at resource creation
+   *             (e.g., POST) or at record replacement via a request (e.g., a
+   *             PUT).  The attribute SHALL NOT be updated.
+   *
+   * writeOnly  The attribute MAY be updated at any time.  Attribute
+   *             values SHALL NOT be returned (e.g., because the value is a
+   *             stored hash).  Note: An attribute with a mutability of
+   *             "writeOnly" usually also has a returned setting of "never".
+   */
+  // @formatter:on
+  private void setMutability(Mutability mutability)
+  {
+    setAttribute(AttributeNames.RFC7643.MUTABILITY,
+                 Optional.ofNullable(mutability).map(Mutability::getValue).orElse(null));
+  }
+
+  // @formatter:off
+  /**
+   * A single keyword that indicates when an attribute and
+   * associated values are returned in response to a GET request or
+   * in response to a PUT, POST, or PATCH request.  Valid keywords
+   * are as follows:
+   *
+   * always   The attribute is always returned, regardless of the
+   *          contents of the "attributes" parameter.  For example, "id"
+   *          is always returned to identify a SCIM resource.
+   *
+   * never    The attribute is never returned.  This may occur because
+   *          the original attribute value (e.g., a hashed value) is not
+   *          retained by the service provider.  A service provider MAY
+   *          allow attributes to be used in a search filter.
+   *
+   * default  The attribute is returned by default in all SCIM
+   *          operation responses where attribute values are returned.  If
+   *          the GET request "attributes" parameter is specified,
+   *          attribute values are only returned if the attribute is named
+   *          in the "attributes" parameter.  DEFAULT.
+   *
+   * request  The attribute is returned in response to any PUT,
+   *          POST, or PATCH operations if the attribute was specified by
+   *          the client (for example, the attribute was modified).  The
+   *          attribute is returned in a SCIM query operation only if
+   *          specified in the "attributes" parameter.
+   */
+  // @formatter:on
+  public Returned getReturned()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.RETURNED).map(Returned::getByValue).orElse(null);
+  }
+
+  // @formatter:off
+  /**
+   * A single keyword that indicates when an attribute and
+   * associated values are returned in response to a GET request or
+   * in response to a PUT, POST, or PATCH request.  Valid keywords
+   * are as follows:
+   *
+   * always   The attribute is always returned, regardless of the
+   *          contents of the "attributes" parameter.  For example, "id"
+   *          is always returned to identify a SCIM resource.
+   *
+   * never    The attribute is never returned.  This may occur because
+   *          the original attribute value (e.g., a hashed value) is not
+   *          retained by the service provider.  A service provider MAY
+   *          allow attributes to be used in a search filter.
+   *
+   * default  The attribute is returned by default in all SCIM
+   *          operation responses where attribute values are returned.  If
+   *          the GET request "attributes" parameter is specified,
+   *          attribute values are only returned if the attribute is named
+   *          in the "attributes" parameter.  DEFAULT.
+   *
+   * request  The attribute is returned in response to any PUT,
+   *          POST, or PATCH operations if the attribute was specified by
+   *          the client (for example, the attribute was modified).  The
+   *          attribute is returned in a SCIM query operation only if
+   *          specified in the "attributes" parameter.
+   */
+  // @formatter:on
+  private void setReturned(Returned returned)
+  {
+    setAttribute(AttributeNames.RFC7643.RETURNED, Optional.ofNullable(returned).map(Returned::getValue).orElse(null));
+  }
+
+  // @formatter:off
+  /**
+   * A single keyword value that specifies how the service
+   * provider enforces uniqueness of attribute values.  A server MAY
+   * reject an invalid value based on uniqueness by returning HTTP
+   * response code 400 (Bad Request).  A client MAY enforce
+   * uniqueness on the client side to a greater degree than the
+   * service provider enforces.  For example, a client could make a
+   * value unique while the server has uniqueness of "none".  Valid
+   * keywords are as follows:
+   *
+   * none  The values are not intended to be unique in any way.
+   *       DEFAULT.
+   *
+   * server  The value SHOULD be unique within the context of the
+   *         current SCIM endpoint (or tenancy) and MAY be globally
+   *         unique (e.g., a "username", email address, or other
+   *         server-generated key or counter).  No two resources on the
+   *         same server SHOULD possess the same value.
+   *
+   * global  The value SHOULD be globally unique (e.g., an email
+   *         address, a GUID, or other value).  No two resources on any
+   *         server SHOULD possess the same value.
+   */
+  // @formatter:on
+  public Uniqueness getUniqueness()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.UNIQUENESS).map(Uniqueness::getByValue).orElse(null);
+  }
+
+  // @formatter:off
+  /**
+   * A single keyword value that specifies how the service
+   * provider enforces uniqueness of attribute values.  A server MAY
+   * reject an invalid value based on uniqueness by returning HTTP
+   * response code 400 (Bad Request).  A client MAY enforce
+   * uniqueness on the client side to a greater degree than the
+   * service provider enforces.  For example, a client could make a
+   * value unique while the server has uniqueness of "none".  Valid
+   * keywords are as follows:
+   *
+   * none  The values are not intended to be unique in any way.
+   *       DEFAULT.
+   *
+   * server  The value SHOULD be unique within the context of the
+   *         current SCIM endpoint (or tenancy) and MAY be globally
+   *         unique (e.g., a "username", email address, or other
+   *         server-generated key or counter).  No two resources on the
+   *         same server SHOULD possess the same value.
+   *
+   * global  The value SHOULD be globally unique (e.g., an email
+   *         address, a GUID, or other value).  No two resources on any
+   *         server SHOULD possess the same value.
+   */
+  // @formatter:on
+  private void setUniqueness(Uniqueness uniqueness)
+  {
+    setAttribute(AttributeNames.RFC7643.UNIQUENESS,
+                 Optional.ofNullable(uniqueness).map(Uniqueness::getValue).orElse(null));
+  }
+
+  /**
+   * A Boolean value indicating the attribute's plurality.
+   */
+  public boolean isMultiValued()
+  {
+    return getBooleanAttribute(AttributeNames.RFC7643.MULTI_VALUED).orElse(false);
+  }
+
+  /**
+   * A Boolean value indicating the attribute's plurality.
+   */
+  private void setMultiValued(boolean multiValued)
+  {
+    setAttribute(AttributeNames.RFC7643.MULTI_VALUED, multiValued);
+  }
+
+  // @formatter:off
+  /**
+   * A Boolean value that specifies whether or not the
+   * attribute is required.
+   */
+  // @formatter:on
+  public boolean isRequired()
+  {
+    return getBooleanAttribute(AttributeNames.RFC7643.REQUIRED).orElse(false);
+  }
+
+  // @formatter:off
+  /**
+   * A Boolean value that specifies whether or not the
+   * attribute is required.
+   */
+  // @formatter:on
+  private void setRequired(boolean required)
+  {
+    setAttribute(AttributeNames.RFC7643.REQUIRED, required);
+  }
+
+  // @formatter:off
+  /**
+   * A Boolean value that specifies whether or not a string
+   * attribute is case sensitive.  The server SHALL use case
+   * sensitivity when evaluating filters.  For attributes that are
+   * case exact, the server SHALL preserve case for any value
+   * submitted.  If the attribute is case insensitive, the server
+   * MAY alter case for a submitted value.  Case sensitivity also
+   * impacts how attribute values MAY be compared against filter
+   * values (see Section 3.4.2.2 of [RFC7644]).
+   */
+  // @formatter:on
+  public boolean isCaseExact()
+  {
+    return getBooleanAttribute(AttributeNames.RFC7643.CASE_EXACT).orElse(false);
+  }
+
+  // @formatter:off
+  /**
+   * A Boolean value that specifies whether or not a string
+   * attribute is case sensitive.  The server SHALL use case
+   * sensitivity when evaluating filters.  For attributes that are
+   * case exact, the server SHALL preserve case for any value
+   * submitted.  If the attribute is case insensitive, the server
+   * MAY alter case for a submitted value.  Case sensitivity also
+   * impacts how attribute values MAY be compared against filter
+   * values (see Section 3.4.2.2 of [RFC7644]).
+   */
+  // @formatter:on
+  private void setCaseExact(boolean caseExact)
+  {
+    setAttribute(AttributeNames.RFC7643.CASE_EXACT, caseExact);
+  }
+
+// @formatter:off
+  /**
+   * A collection of suggested canonical values that
+   * MAY be used (e.g., "work" and "home").  In some cases, service
+   * providers MAY choose to ignore unsupported values.  OPTIONAL.
+   */
+  // @formatter:on
   public List<String> getCanonicalValues()
   {
-    return canonicalValues == null ? Collections.emptyList() : Collections.unmodifiableList(canonicalValues);
+    return getArrayAttribute(AttributeNames.RFC7643.CANONICAL_VALUES);
   }
 
+  // @formatter:off
   /**
-   * @see #referenceTypes
+   * A collection of suggested canonical values that
+   * MAY be used (e.g., "work" and "home").  In some cases, service
+   * providers MAY choose to ignore unsupported values.  OPTIONAL.
    */
+  // @formatter:on
+  private void setCanonicalValues(List<String> canonicalValues)
+  {
+    setStringAttributeList(AttributeNames.RFC7643.CANONICAL_VALUES, canonicalValues);
+  }
+
+ // @formatter:off
+  /**
+   * A multi-valued array of JSON strings that indicate
+   * the SCIM resource types that may be referenced.  Valid values
+   * are as follows:
+   *
+   * +  A SCIM resource type (e.g., "User" or "Group"),
+   *
+   * +  "external" - indicating that the resource is an external
+   *                 resource (e.g., a photo), or
+   *
+   * +  "uri" - indicating that the reference is to a service
+   *            endpoint or an identifier (e.g., a schema URN).
+   *
+   * This attribute is only applicable for attributes that are of
+   * type "reference" (Section 2.3.7).
+   */
+  // @formatter:on
   public List<ReferenceTypes> getReferenceTypes()
   {
-    return referenceTypes == null ? Collections.emptyList() : Collections.unmodifiableList(referenceTypes);
+    return getArrayAttribute(AttributeNames.RFC7643.REFERENCE_TYPES).stream()
+                                                                    .map(ReferenceTypes::getByValue)
+                                                                    .collect(Collectors.toList());
   }
 
+  // @formatter:off
   /**
-   * @see #subAttributes
+   * A multi-valued array of JSON strings that indicate
+   * the SCIM resource types that may be referenced.  Valid values
+   * are as follows:
+   *
+   * +  A SCIM resource type (e.g., "User" or "Group"),
+   *
+   * +  "external" - indicating that the resource is an external
+   *                 resource (e.g., a photo), or
+   *
+   * +  "uri" - indicating that the reference is to a service
+   *            endpoint or an identifier (e.g., a schema URN).
+   *
+   * This attribute is only applicable for attributes that are of
+   * type "reference" (Section 2.3.7).
    */
+  // @formatter:on
+  private void setReferenceTypes(List<ReferenceTypes> referenceTypes)
+  {
+    setStringAttributeList(AttributeNames.RFC7643.REFERENCE_TYPES,
+                           referenceTypes.stream().map(ReferenceTypes::getValue).collect(Collectors.toList()));
+  }
+
+  // @formatter:off
+  /**
+   * When an attribute is of type "complex",
+   * "subAttributes" defines a set of sub-attributes.
+   * "subAttributes" has the same schema sub-attributes as
+   * "attributes".
+   */
+  // @formatter:on
   public List<SchemaAttribute> getSubAttributes()
   {
-    return subAttributes == null ? Collections.emptyList() : Collections.unmodifiableList(subAttributes);
+    return getArrayAttribute(AttributeNames.RFC7643.SUB_ATTRIBUTES, SchemaAttribute.class);
+  }
+
+  // @formatter:off
+  /**
+   * When an attribute is of type "complex",
+   * "subAttributes" defines a set of sub-attributes.
+   * "subAttributes" has the same schema sub-attributes as
+   * "attributes".
+   */
+  // @formatter:on
+  private void setSubAttributes(List<SchemaAttribute> subAttributes)
+  {
+    setAttribute(AttributeNames.RFC7643.SUB_ATTRIBUTES, subAttributes);
   }
 
   /**
@@ -345,13 +566,14 @@ public final class SchemaAttribute
    */
   private List<SchemaAttribute> resolveSubAttributes(JsonNode jsonNode)
   {
-    if (!Type.COMPLEX.equals(this.type))
+    if (!Type.COMPLEX.equals(this.getType()))
     {
       return Collections.emptyList();
     }
     List<SchemaAttribute> schemaAttributeList = new ArrayList<>();
     final String subAttributeName = AttributeNames.RFC7643.SUB_ATTRIBUTES;
-    String errorMessage = "missing attribute '" + subAttributeName + "' on '" + type + "'-attribute";
+    String errorMessage = "missing attribute '" + subAttributeName + "' on '" + getType() + "'-attribute with name: "
+                          + getName();
     ArrayNode subAttributesArray = JsonHelper.getArrayAttribute(jsonNode, subAttributeName)
                                              .orElseThrow(() -> getException(errorMessage, null));
     Set<String> attributeNameSet = new HashSet<>();
@@ -413,6 +635,8 @@ public final class SchemaAttribute
    */
   private void validateAttribute()
   {
+    final Mutability mutability = getMutability();
+    final Returned returned = getReturned();
     if (Mutability.READ_ONLY.equals(mutability) && Returned.NEVER.equals(returned))
     {
       String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
@@ -441,63 +665,5 @@ public final class SchemaAttribute
   private InvalidSchemaException getException(String errorMessage, Exception cause)
   {
     return new InvalidSchemaException(errorMessage, cause, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
-  }
-
-  /**
-   * @return the attribute as json document
-   */
-  public JsonNode toJsonNode()
-  {
-    ScimObjectNode objectNode = new ScimObjectNode(this);
-
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.NAME, new TextNode(name));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.TYPE, new TextNode(type.getValue()));
-    Optional.ofNullable(description)
-            .ifPresent(s -> JsonHelper.addAttribute(objectNode,
-                                                    AttributeNames.RFC7643.DESCRIPTION,
-                                                    new TextNode(this.description)));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.MUTABILITY, new TextNode(mutability.getValue()));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.RETURNED, new TextNode(returned.getValue()));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.UNIQUENESS, new TextNode(uniqueness.getValue()));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.MULTI_VALUED, BooleanNode.valueOf(multiValued));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.REQUIRED, BooleanNode.valueOf(required));
-    JsonHelper.addAttribute(objectNode, AttributeNames.RFC7643.CASE_EXACT, BooleanNode.valueOf(caseExact));
-    List<JsonNode> canonValues = canonicalValues.stream().map(TextNode::new).collect(Collectors.toList());
-    if (!canonValues.isEmpty())
-    {
-      JsonHelper.addAttribute(objectNode,
-                              AttributeNames.RFC7643.CANONICAL_VALUES,
-                              new ArrayNode(JsonNodeFactory.instance, canonValues));
-    }
-    List<JsonNode> referType = referenceTypes.stream()
-                                             .map(ReferenceTypes::getValue)
-                                             .map(TextNode::new)
-                                             .collect(Collectors.toList());
-    if (!referType.isEmpty())
-    {
-      JsonHelper.addAttribute(objectNode,
-                              AttributeNames.RFC7643.REFERENCE_TYPES,
-                              new ArrayNode(JsonNodeFactory.instance, referType));
-    }
-    List<JsonNode> subAttr = subAttributes.stream()
-                                          .map(SchemaAttribute::toString)
-                                          .map(JsonHelper::readJsonDocument)
-                                          .collect(Collectors.toList());
-    if (!subAttr.isEmpty())
-    {
-      JsonHelper.addAttribute(objectNode,
-                              AttributeNames.RFC7643.SUB_ATTRIBUTES,
-                              new ArrayNode(JsonNodeFactory.instance, subAttr));
-    }
-    return objectNode;
-  }
-
-  /**
-   * @return the attribute as json document
-   */
-  @Override
-  public String toString()
-  {
-    return toJsonNode().toString();
   }
 }

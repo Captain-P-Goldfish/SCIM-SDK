@@ -225,7 +225,8 @@ public final class RequestUtils
     if (resourceUriPresent)
     {
       schemaAttributeList = resourceTypeSchemas.stream()
-                                               .filter(schema -> schema.getId().equals(attributeName.getResourceUri()))
+                                               .filter(schema -> attributeName.getResourceUri()
+                                                                              .equals(schema.getId().orElse(null)))
                                                .map(schema -> schema.getSchemaAttribute(scimNodeName))
                                                .filter(Objects::nonNull)
                                                .collect(Collectors.toList());
@@ -246,7 +247,7 @@ public final class RequestUtils
     else if (schemaAttributeList.size() > 1)
     {
       String schemaIds = schemaAttributeList.stream()
-                                            .map(schemaAttribute -> schemaAttribute.getSchema().getId())
+                                            .map(schemaAttribute -> schemaAttribute.getSchema().getId().orElse(null))
                                             .collect(Collectors.joining(","));
       String exampleAttributeName = schemaAttributeList.get(0).getSchema().getId() + ":" + attributeName.getShortName();
       throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "

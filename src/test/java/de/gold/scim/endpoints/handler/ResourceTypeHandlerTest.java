@@ -71,7 +71,7 @@ public class ResourceTypeHandlerTest
    */
   @ParameterizedTest
   @ValueSource(strings = {ResourceTypeNames.RESOURCE_TYPE, ResourceTypeNames.USER, ResourceTypeNames.GROUPS,
-                          ResourceTypeNames.ME, ResourceTypeNames.SERVICE_PROVIDER_CONFIG})
+                          ResourceTypeNames.ME, ResourceTypeNames.SERVICE_PROVIDER_CONFIG, ResourceTypeNames.SCHEMA})
   public void testGetResourceTypeByName(String name)
   {
     ResourceType resourceType = resourceTypeHandler.getResource(name);

@@ -116,10 +116,7 @@ public class SchemaValidator
    */
   private final List<String> excludedAttributes;
 
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
-                          String resourceUri,
-                          String attributes,
-                          String excludedAttributes)
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory, String attributes, String excludedAttributes)
   {
     this.resourceTypeFactory = resourceTypeFactory;
     this.extensionSchema = false;
@@ -176,7 +173,7 @@ public class SchemaValidator
                                          Schema metaSchema,
                                          JsonNode schemaDocument)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, metaSchema.getId(), null, null);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, null, null);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
@@ -229,7 +226,7 @@ public class SchemaValidator
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
                                        + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
                                        + "not present within the document";
-      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
+      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId().orElse(null)))
                                    .orElseThrow(() -> new InternalServerException(message.get(), null,
                                                                                   ScimType.Custom.MISSING_EXTENSION));
       JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory,
@@ -241,12 +238,12 @@ public class SchemaValidator
       if (extensionNode == null)
       {
         JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.RFC7643.SCHEMAS).ifPresent(arrayNode -> {
-          JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getId());
+          JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getNonNullId());
         });
       }
       else
       {
-        JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+        JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getNonNullId(), extensionNode);
       }
     }
     JsonNode metaNode = document.get(AttributeNames.RFC7643.META);
@@ -378,19 +375,19 @@ public class SchemaValidator
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
                                        + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
                                        + "not present within the document";
-      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId()))
+      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getNonNullId()))
                                    .orElseThrow(() -> new BadRequestException(message.get(), null,
                                                                               ScimType.Custom.MISSING_EXTENSION));
       JsonNode extensionNode = validateExtensionForRequest(resourceTypeFactory, schemaExtension, extension, httpMethod);
       if (extensionNode == null)
       {
         JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.RFC7643.SCHEMAS).ifPresent(arrayNode -> {
-          JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getId());
+          JsonHelper.removeSimpleAttributeFromArray(arrayNode, schemaExtension.getNonNullId());
         });
       }
       else
       {
-        JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getId(), extensionNode);
+        JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getNonNullId(), extensionNode);
       }
     }
     return validatedMainDocument;
@@ -457,7 +454,7 @@ public class SchemaValidator
   {
     for ( Schema requiredExtension : resourceType.getRequiredResourceSchemaExtensions() )
     {
-      if (!JsonHelper.getObjectAttribute(document, requiredExtension.getId()).isPresent())
+      if (!JsonHelper.getObjectAttribute(document, requiredExtension.getNonNullId()).isPresent())
       {
         String errorMessage = "required extension '" + requiredExtension.getId() + "' is missing in the document";
         throw new DocumentValidationException(errorMessage, null, directionType == null
@@ -1140,7 +1137,7 @@ public class SchemaValidator
    */
   private JsonNode checkDocumentAndMetaSchemaRelationship(Schema metaSchema, JsonNode document)
   {
-    final String metaSchemaId = metaSchema.getId();
+    final String metaSchemaId = metaSchema.getNonNullId();
 
     final String schemasAttribute = AttributeNames.RFC7643.SCHEMAS;
     final String documentNoSchemasMessage = "document does not have a '" + schemasAttribute + "'-attribute";
