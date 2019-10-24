@@ -47,7 +47,7 @@ public class SearchRequestTest
   @Test
   public void testBuilderSettingMethods()
   {
-    final int startIndex = 1;
+    final long startIndex = 1;
     final int count = 1;
     final String filter = "filter";
     final String sortBy = "sortBy";
@@ -80,7 +80,7 @@ public class SearchRequestTest
   @Test
   public void testSetterMethodsWithNullValues()
   {
-    final int startIndex = 1;
+    final long startIndex = 1;
     final int count = 1;
     final String filter = "filter";
     final String sortBy = "sortBy";
@@ -116,7 +116,7 @@ public class SearchRequestTest
   @Test
   public void testSetterThatCorrectKeyNamesAreUsed()
   {
-    final int startIndex = 1;
+    final long startIndex = 1;
     final int count = 1;
     final String filter = "filter";
     final String sortBy = "sortBy";

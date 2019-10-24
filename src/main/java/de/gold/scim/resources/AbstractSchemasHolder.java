@@ -25,7 +25,7 @@ public abstract class AbstractSchemasHolder extends ScimObjectNode
    */
   public List<String> getSchemas()
   {
-    return getArrayAttribute(AttributeNames.RFC7643.SCHEMAS);
+    return getSimpleArrayAttribute(AttributeNames.RFC7643.SCHEMAS);
   }
 
   /**

@@ -71,7 +71,8 @@ public final class SchemaAttribute extends ScimObjectNode
     this.resourceUri = resourceUri;
     this.namePrefix = namePrefix;
     Function<String, String> errorMessageBuilder = attribute -> "could not find required attribute '" + attribute
-                                                                + "' in meta-schema";
+                                                                + "' in meta-schema for attribute: "
+                                                                + getScimNodeName();
     final String nameAttribute = AttributeNames.RFC7643.NAME;
     final String nameErrorMessage = errorMessageBuilder.apply(nameAttribute);
     setName(JsonHelper.getSimpleAttribute(jsonNode, nameAttribute)
@@ -468,7 +469,7 @@ public final class SchemaAttribute extends ScimObjectNode
   // @formatter:on
   public List<String> getCanonicalValues()
   {
-    return getArrayAttribute(AttributeNames.RFC7643.CANONICAL_VALUES);
+    return getSimpleArrayAttribute(AttributeNames.RFC7643.CANONICAL_VALUES);
   }
 
   // @formatter:off
@@ -503,9 +504,9 @@ public final class SchemaAttribute extends ScimObjectNode
   // @formatter:on
   public List<ReferenceTypes> getReferenceTypes()
   {
-    return getArrayAttribute(AttributeNames.RFC7643.REFERENCE_TYPES).stream()
-                                                                    .map(ReferenceTypes::getByValue)
-                                                                    .collect(Collectors.toList());
+    return getSimpleArrayAttribute(AttributeNames.RFC7643.REFERENCE_TYPES).stream()
+                                                                          .map(ReferenceTypes::getByValue)
+                                                                          .collect(Collectors.toList());
   }
 
   // @formatter:off

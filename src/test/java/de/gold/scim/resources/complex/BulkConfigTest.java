@@ -56,7 +56,7 @@ public class BulkConfigTest
   public void testSetterMethods()
   {
     final int maxOperations = 50;
-    final int maxPayLoadSize = 100_000;
+    final long maxPayLoadSize = 100_000;
     BulkConfig bulkConfig = BulkConfig.builder().build();
     bulkConfig.setSupported(true);
     bulkConfig.setMaxOperations(maxOperations);
@@ -73,7 +73,7 @@ public class BulkConfigTest
   public void testBuilderParameterSet()
   {
     final int maxOperations = 50;
-    final int maxPayLoadSize = 100_000;
+    final long maxPayLoadSize = 100_000;
     BulkConfig bulkConfig = BulkConfig.builder()
                                       .supported(true)
                                       .maxOperations(maxOperations)

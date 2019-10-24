@@ -63,7 +63,7 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * @return
    */
   @Override
-  public PartialListResponse listResources(int startIndex,
+  public PartialListResponse listResources(long startIndex,
                                            int count,
                                            FilterNode filter,
                                            SchemaAttribute sortBy,

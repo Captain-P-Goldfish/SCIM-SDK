@@ -1,5 +1,6 @@
 package de.gold.scim.filter.antlr;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -65,7 +66,7 @@ public class CompareValue
     switch (schemaAttribute.getType())
     {
       case DATE_TIME:
-        validateAttributeType(schemaAttribute, () -> isDateTime() || isNull());
+        validateAttributeType(schemaAttribute, () -> isDateTime() || isString() || isNull());
         break;
       case BOOLEAN:
         validateAttributeType(schemaAttribute, () -> isFalse() || isTrue() || isNull());
@@ -170,34 +171,15 @@ public class CompareValue
   }
 
   /**
-   * @return gets this node as integer if it is an integer
-   */
-  public Optional<Integer> getIntegerValue()
-  {
-    if (isNumber())
-    {
-      try
-      {
-        return Optional.of(Integer.parseInt(context.number.getText()));
-      }
-      catch (NumberFormatException ex)
-      {
-        log.trace(ex.getMessage(), ex);
-      }
-    }
-    return Optional.empty();
-  }
-
-  /**
    * @return gets this node as double if it is a double
    */
-  public Optional<Double> getDoubleValue()
+  public Optional<BigDecimal> getNumberValue()
   {
     if (isNumber())
     {
       try
       {
-        return Optional.of(Double.parseDouble(context.number.getText()));
+        return Optional.of(new BigDecimal(context.number.getText()));
       }
       catch (NumberFormatException ex)
       {

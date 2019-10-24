@@ -74,7 +74,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * {@inheritDoc}
    */
   @Override
-  public PartialListResponse<Schema> listResources(int startIndex,
+  public PartialListResponse<Schema> listResources(long startIndex,
                                                    int count,
                                                    FilterNode filter,
                                                    SchemaAttribute sortBy,
@@ -89,8 +89,8 @@ public class SchemaHandler extends ResourceHandler<Schema>
     List<Schema> schemaNodes = new ArrayList<>();
     if (startIndex <= allSchemas.size())
     {
-      schemaNodes.addAll(new ArrayList<>(allSchemas).subList(Math.min(startIndex - 1, allSchemas.size() - 1),
-                                                             Math.min(startIndex - 1 + count, allSchemas.size())));
+      schemaNodes.addAll(new ArrayList<>(allSchemas).subList((int)Math.min(startIndex - 1, allSchemas.size() - 1),
+                                                             (int)Math.min(startIndex - 1 + count, allSchemas.size())));
     }
     return PartialListResponse.<Schema> builder().resources(schemaNodes).totalResults(allSchemas.size()).build();
   }

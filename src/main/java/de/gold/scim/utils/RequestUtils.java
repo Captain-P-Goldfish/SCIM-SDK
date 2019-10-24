@@ -123,7 +123,7 @@ public final class RequestUtils
    * @param startIndex the index to start with to list the resources
    * @return number "1" or greater
    */
-  public static int getEffectiveStartIndex(Integer startIndex)
+  public static long getEffectiveStartIndex(Long startIndex)
   {
     if (startIndex == null || startIndex < 1)
     {

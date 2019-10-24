@@ -5,10 +5,11 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.stream.Stream;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -16,10 +17,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.exceptions.InternalServerException;
-import de.gold.scim.resources.complex.Name;
-import de.gold.scim.resources.multicomplex.PhoneNumber;
+import de.gold.scim.resources.AllTypes;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.TimeUtils;
 
 
 /**
@@ -37,27 +38,35 @@ public class ScimObjectNodeTest implements FileReferences
   @Test
   public void testAllDifferentNodeTypesFromDocument()
   {
-    Person person = JsonHelper.loadJsonDocument(ALL_TYPES_JSON, Person.class);
-    Assertions.assertEquals("chuck", person.getUserName().get());
-    Assertions.assertEquals(79, person.getNumber().get());
-    Assertions.assertEquals(50.5, person.getDecimal().get());
-    Assertions.assertEquals(false, person.isSingle().get());
-    Assertions.assertEquals("1940-03-10T00:00:00Z", person.getBirthDate().get().toString());
+    AllTypes allTypes = JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class);
+    validateAllType(allTypes);
 
-    Name name = Name.builder()
-                    .formatted("Sir Carlos Ray Norris")
-                    .familyName("Norris")
-                    .givenName("Carlos")
-                    .middlename("Ray")
-                    .honorificPrefix("Sir")
-                    .build();
-    Assertions.assertEquals(name, person.getNameNode().get());
+    AllTypes complex = allTypes.getComplex().get();
+    validateAllType(complex);
 
-    List<PhoneNumber> phoneNumbers = new ArrayList<>();
-    phoneNumbers.add(PhoneNumber.builder().value("111-111-111111").type("home").build());
-    phoneNumbers.add(PhoneNumber.builder().value("222-222-222222").type("work").build());
-    phoneNumbers.add(PhoneNumber.builder().value("333-333-333333").type("mobile").primary(true).build());
-    Assertions.assertEquals(phoneNumbers, person.getPhoneNumbers());
+    List<AllTypes> multiComplex = allTypes.getMultiComplex();
+    MatcherAssert.assertThat(multiComplex.size(), Matchers.greaterThan(0));
+    multiComplex.forEach(this::validateAllType);
+  }
+
+  /**
+   * validates the an all types attribute
+   */
+  private void validateAllType(AllTypes allTypes)
+  {
+    Assertions.assertEquals("chuck", allTypes.getString().get());
+    Assertions.assertEquals(Integer.MAX_VALUE + 1L, allTypes.getNumber().get());
+    Assertions.assertEquals(50.5, allTypes.getDecimal().get());
+    Assertions.assertEquals(false, allTypes.getBool().get());
+    Assertions.assertEquals(Instant.parse("1940-03-10T00:00:00Z"), allTypes.getDate().get());
+    MatcherAssert.assertThat(allTypes.getStringArray(), Matchers.hasItems("hello", "world"));
+    MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(44L, 55L, 66L));
+    MatcherAssert.assertThat(allTypes.getDecimalArray(), Matchers.hasItems(4.7, 5.1, 6.2));
+    Instant[] dateTimes = Stream.of("1976-03-10T00:00:00Z", "1986-03-10T00:00:00Z", "1996-03-10T00:00:00Z")
+                                .map(TimeUtils::parseDateTime)
+                                .toArray(Instant[]::new);
+    MatcherAssert.assertThat(allTypes.getDateArray(), Matchers.hasItems(dateTimes));
+    MatcherAssert.assertThat(allTypes.getBoolArray(), Matchers.contains(true, true, false));
   }
 
   /**
@@ -69,12 +78,12 @@ public class ScimObjectNodeTest implements FileReferences
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     Assertions.assertFalse(scimObjectNode.getStringAttribute("unknown").isPresent());
     Assertions.assertFalse(scimObjectNode.getBooleanAttribute("unknown").isPresent());
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute("unknown").isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute("unknown").isPresent());
     Assertions.assertFalse(scimObjectNode.getDoubleAttribute("unknown").isPresent());
     Assertions.assertFalse(scimObjectNode.getDateTimeAttribute("unknown").isPresent());
-    Assertions.assertFalse(scimObjectNode.getObjectAttribute("unknown", Person.class).isPresent());
+    Assertions.assertFalse(scimObjectNode.getObjectAttribute("unknown", AllTypes.class).isPresent());
     Assertions.assertNull(scimObjectNode.get("unknown"));
-    Assertions.assertTrue(scimObjectNode.getArrayAttribute("unknown", Person.class).isEmpty());
+    Assertions.assertTrue(scimObjectNode.getArrayAttribute("unknown", AllTypes.class).isEmpty());
   }
 
   /**
@@ -85,9 +94,9 @@ public class ScimObjectNodeTest implements FileReferences
   {
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
-    scimObjectNode.setAttribute(attributeName, 9);
+    scimObjectNode.setAttribute(attributeName, 9L);
     Assertions.assertThrows(InternalServerException.class,
-                            () -> scimObjectNode.getObjectAttribute(attributeName, Person.class));
+                            () -> scimObjectNode.getObjectAttribute(attributeName, AllTypes.class));
   }
 
   /**
@@ -98,9 +107,9 @@ public class ScimObjectNodeTest implements FileReferences
   {
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
-    scimObjectNode.setAttribute(attributeName, 9);
+    scimObjectNode.setAttribute(attributeName, 9L);
     Assertions.assertThrows(InternalServerException.class,
-                            () -> scimObjectNode.getArrayAttribute(attributeName, Person.class));
+                            () -> scimObjectNode.getArrayAttribute(attributeName, AllTypes.class));
   }
 
   /**
@@ -111,11 +120,11 @@ public class ScimObjectNodeTest implements FileReferences
   {
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
-    scimObjectNode.setAttribute(attributeName, 9);
-    Assertions.assertEquals(9, scimObjectNode.getIntegerAttribute(attributeName).get());
-    scimObjectNode.setAttribute(attributeName, (Integer)null);
+    scimObjectNode.setAttribute(attributeName, 9L);
+    Assertions.assertEquals(9, scimObjectNode.getLongAttribute(attributeName).get());
+    scimObjectNode.setAttribute(attributeName, (Long)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -130,7 +139,7 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertEquals(9.0, scimObjectNode.getDoubleAttribute(attributeName).get());
     scimObjectNode.setAttribute(attributeName, (Double)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -145,7 +154,7 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertEquals(true, scimObjectNode.getBooleanAttribute(attributeName).get());
     scimObjectNode.setAttribute(attributeName, (Boolean)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -160,7 +169,7 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertEquals("chuck", scimObjectNode.getStringAttribute(attributeName).get());
     scimObjectNode.setAttribute(attributeName, (String)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -176,7 +185,7 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertEquals(instant, scimObjectNode.getDateTimeAttribute(attributeName).get());
     scimObjectNode.setDateTimeAttribute(attributeName, (Instant)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -193,7 +202,7 @@ public class ScimObjectNodeTest implements FileReferences
                             scimObjectNode.getDateTimeAttribute(attributeName).get());
     scimObjectNode.setDateTimeAttribute(attributeName, (LocalDateTime)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -209,7 +218,7 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertEquals(offsetDateTime.toInstant(), scimObjectNode.getDateTimeAttribute(attributeName).get());
     scimObjectNode.setDateTimeAttribute(attributeName, (OffsetDateTime)null);
     Assertions.assertNull(scimObjectNode.get(attributeName));
-    Assertions.assertFalse(scimObjectNode.getIntegerAttribute(attributeName).isPresent());
+    Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
 
   /**
@@ -229,95 +238,4 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertTrue(scimObjectNode.get(attributeName).isArray());
   }
 
-  /**
-   * a simple scim object that is used to test the declared methods within the {@link ScimObjectNode} class
-   */
-  public static class Person extends ScimObjectNode
-  {
-
-    public Person()
-    {
-      super(null);
-    }
-
-    public Optional<String> getUserName()
-    {
-      return getStringAttribute("userName");
-    }
-
-    public void setUserName(String userName)
-    {
-      setAttribute("userName", userName);
-    }
-
-    public Optional<Integer> getNumber()
-    {
-      return getIntegerAttribute("number");
-    }
-
-    public void setNumber(Integer number)
-    {
-      setAttribute("number", number);
-    }
-
-    public Optional<Double> getDecimal()
-    {
-      return getDoubleAttribute("decimal");
-    }
-
-    public void setDecimal(Double decimal)
-    {
-      setAttribute("decimal", decimal);
-    }
-
-    public Optional<Boolean> isSingle()
-    {
-      return getBooleanAttribute("single");
-    }
-
-    public void isSingle(Boolean single)
-    {
-      setAttribute("single", single);
-    }
-
-    public Optional<Instant> getBirthDate()
-    {
-      return getDateTimeAttribute("birthDate");
-    }
-
-    public void setBirthDate(Instant birthDate)
-    {
-      setDateTimeAttribute("birthDate", birthDate);
-    }
-
-    public void setBirthDate(LocalDateTime birthDate)
-    {
-      setDateTimeAttribute("birthDate", birthDate);
-    }
-
-    public void setBirthDate(OffsetDateTime birthDate)
-    {
-      setDateTimeAttribute("birthDate", birthDate);
-    }
-
-    public Optional<Name> getNameNode()
-    {
-      return getObjectAttribute("name", Name.class);
-    }
-
-    public void setNameNode(Name name)
-    {
-      setAttribute("name", name);
-    }
-
-    public List<PhoneNumber> getPhoneNumbers()
-    {
-      return getArrayAttribute("phoneNumbers", PhoneNumber.class);
-    }
-
-    public void getPhoneNumbers(List<PhoneNumber> phoneNumbers)
-    {
-      setAttribute("phoneNumbers", phoneNumbers);
-    }
-  }
 }

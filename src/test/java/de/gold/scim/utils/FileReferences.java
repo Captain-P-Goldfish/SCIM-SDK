@@ -56,6 +56,10 @@ public interface FileReferences
 
   String ALL_TYPES_JSON = RESOURCE_BASE_PATH + "/miscellaneous/all-types.json";
 
+  String ALL_TYPES_JSON_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/all-types.json";
+
+  String ALL_TYPES_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/all-types.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

@@ -22,15 +22,15 @@ public class BulkConfig extends ScimObjectNode
    * the default maximum number of operations is 1. This will enforce the developer to modify the service
    * provider configuration to the applications requirements
    */
-  protected static final int DEFAULT_MAX_OPERATIONS = 1;
+  protected static final Integer DEFAULT_MAX_OPERATIONS = 1;
 
   /**
    * the default maximum payload is set to 2MB
    */
-  protected static final int DEFAULT_MAX_PAYLOAD_SIZE = (int)(Math.pow(1024, 2) * 2);
+  protected static final Long DEFAULT_MAX_PAYLOAD_SIZE = (long)(Math.pow(1024, 2) * 2);
 
   @Builder
-  public BulkConfig(Boolean supported, Integer maxOperations, Integer maxPayloadSize)
+  public BulkConfig(Boolean supported, Integer maxOperations, Long maxPayloadSize)
   {
     super(null);
     setSupported(supported);
@@ -57,9 +57,10 @@ public class BulkConfig extends ScimObjectNode
   /**
    * An integer value specifying the maximum number of operations. REQUIRED.
    */
-  public int getMaxOperations()
+  public Integer getMaxOperations()
   {
-    return getIntegerAttribute(AttributeNames.RFC7643.MAX_OPERATIONS).orElse(DEFAULT_MAX_OPERATIONS);
+    return getLongAttribute(AttributeNames.RFC7643.MAX_OPERATIONS).orElse(Long.valueOf(DEFAULT_MAX_OPERATIONS))
+                                                                  .intValue();
   }
 
   /**
@@ -67,22 +68,23 @@ public class BulkConfig extends ScimObjectNode
    */
   public void setMaxOperations(Integer maxOperations)
   {
+    Long max = maxOperations == null ? null : Long.valueOf(maxOperations);
     setAttribute(AttributeNames.RFC7643.MAX_OPERATIONS,
-                 Optional.ofNullable(maxOperations).orElse(DEFAULT_MAX_OPERATIONS));
+                 Optional.ofNullable(max).orElse(Long.valueOf(DEFAULT_MAX_OPERATIONS)));
   }
 
   /**
    * An integer value specifying the maximum payload size in bytes. REQUIRED.
    */
-  public int getMaxPayloadSize()
+  public Long getMaxPayloadSize()
   {
-    return getIntegerAttribute(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE).orElse(DEFAULT_MAX_PAYLOAD_SIZE);
+    return getLongAttribute(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE).orElse(DEFAULT_MAX_PAYLOAD_SIZE);
   }
 
   /**
    * An integer value specifying the maximum payload size in bytes. REQUIRED.
    */
-  public void setMaxPayloadSize(Integer maxPayloadSize)
+  public void setMaxPayloadSize(Long maxPayloadSize)
   {
     setAttribute(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE,
                  Optional.ofNullable(maxPayloadSize).orElse(DEFAULT_MAX_PAYLOAD_SIZE));

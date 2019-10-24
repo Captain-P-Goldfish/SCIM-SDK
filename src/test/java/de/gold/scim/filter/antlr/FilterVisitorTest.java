@@ -350,23 +350,15 @@ public class FilterVisitorTest
     switch (type)
     {
       case INTEGER:
-        Assertions.assertTrue(leaf.getIntegerValue().isPresent());
-        Assertions.assertTrue(leaf.getDoubleValue().isPresent());
-        Assertions.assertFalse(leaf.getStringValue().isPresent());
-        Assertions.assertFalse(leaf.getBooleanValue().isPresent());
-        Assertions.assertFalse(leaf.getDateTime().isPresent());
-        break;
       case DECIMAL:
-        Assertions.assertTrue(leaf.getDoubleValue().isPresent());
-        Assertions.assertFalse(leaf.getIntegerValue().isPresent());
+        Assertions.assertTrue(leaf.getNumberValue().isPresent());
         Assertions.assertFalse(leaf.getStringValue().isPresent());
         Assertions.assertFalse(leaf.getBooleanValue().isPresent());
         Assertions.assertFalse(leaf.getDateTime().isPresent());
         break;
       case BOOLEAN:
         Assertions.assertTrue(leaf.getBooleanValue().isPresent());
-        Assertions.assertFalse(leaf.getIntegerValue().isPresent());
-        Assertions.assertFalse(leaf.getDoubleValue().isPresent());
+        Assertions.assertFalse(leaf.getNumberValue().isPresent());
         Assertions.assertFalse(leaf.getStringValue().isPresent());
         Assertions.assertFalse(leaf.getDateTime().isPresent());
         break;
@@ -374,15 +366,13 @@ public class FilterVisitorTest
         Assertions.assertTrue(leaf.getDateTime().isPresent());
         Assertions.assertTrue(leaf.getStringValue().isPresent());
         Assertions.assertFalse(leaf.getBooleanValue().isPresent());
-        Assertions.assertFalse(leaf.getIntegerValue().isPresent());
-        Assertions.assertFalse(leaf.getDoubleValue().isPresent());
+        Assertions.assertFalse(leaf.getNumberValue().isPresent());
         break;
       case REFERENCE:
       case STRING:
         Assertions.assertTrue(leaf.getStringValue().isPresent());
         Assertions.assertFalse(leaf.getBooleanValue().isPresent());
-        Assertions.assertFalse(leaf.getIntegerValue().isPresent());
-        Assertions.assertFalse(leaf.getDoubleValue().isPresent());
+        Assertions.assertFalse(leaf.getNumberValue().isPresent());
         Assertions.assertFalse(leaf.getDateTime().isPresent());
         break;
     }
@@ -458,7 +448,7 @@ public class FilterVisitorTest
    * attributes
    */
   @ParameterizedTest
-  @ValueSource(strings = {"GE", "GT", "LE", "LT"})
+  @ValueSource(strings = {"GE", "GT", "LE", "LT", "SW", "EW"})
   public void testIllegalComparatorOnBoolean(Comparator comparator)
   {
     try
@@ -470,6 +460,19 @@ public class FilterVisitorTest
     {
       log.debug(ex.getMessage(), ex);
     }
+  }
+
+  /**
+   * asserts that the given comparator types are valid operation types for boolean
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"EQ", "NE", "PR"})
+  public void testLegalComparatorOnBoolean(Comparator comparator)
+  {
+    Assertions.assertDoesNotThrow(() -> RequestUtils.parseFilter(userResourceType,
+                                                                 "emails.primary " + comparator
+                                                                                   + (comparator.equals(Comparator.PR)
+                                                                                     ? "" : " true")));
   }
 
   /**

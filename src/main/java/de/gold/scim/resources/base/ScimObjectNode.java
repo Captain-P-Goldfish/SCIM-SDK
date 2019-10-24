@@ -7,8 +7,10 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -17,8 +19,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -68,9 +70,9 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   /**
    * extracts an integer type attribute
    */
-  protected Optional<Integer> getIntegerAttribute(String attributeName)
+  protected Optional<Long> getLongAttribute(String attributeName)
   {
-    return JsonHelper.getSimpleAttribute(this, attributeName, Integer.class);
+    return JsonHelper.getSimpleAttribute(this, attributeName, Long.class);
   }
 
   /**
@@ -158,10 +160,29 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
-   * extracts an object type attribute
+   * extracts a simple attribute type
+   *
+   * @param attributeName the name of the array attribute
    */
-  protected List<String> getArrayAttribute(String attributeName)
+  protected List<String> getSimpleArrayAttribute(String attributeName)
   {
+    return getSimpleArrayAttribute(attributeName, String.class);
+  }
+
+  /**
+   * extracts a simple attribute type
+   *
+   * @param attributeName the name of the array attribute
+   * @param type the type that should be extracted
+   * @param <T> a simple attribute type as Long, Double, String, Boolean or Instant. Other types are not allowed
+   */
+  protected <T> List<T> getSimpleArrayAttribute(String attributeName, Class<T> type)
+  {
+    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class).contains(type))
+    {
+      throw new InternalServerException("the type '" + type.getSimpleName() + "' is not allowed for this method", null,
+                                        null);
+    }
     JsonNode jsonNode = this.get(attributeName);
     if (jsonNode == null)
     {
@@ -173,10 +194,29 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
                                         + "name '" + attributeName + "' but type is of: " + jsonNode.getNodeType(),
                                         null, null);
     }
-    List<String> multiValuedSimpleTypes = new ArrayList<>();
+    List<T> multiValuedSimpleTypes = new ArrayList<>();
     for ( JsonNode node : jsonNode )
     {
-      multiValuedSimpleTypes.add(node.textValue());
+      if (Long.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)Long.valueOf(node.longValue()));
+      }
+      else if (Double.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)Double.valueOf(node.doubleValue()));
+      }
+      else if (Boolean.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)Boolean.valueOf(node.booleanValue()));
+      }
+      else if (String.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)node.textValue());
+      }
+      else
+      {
+        multiValuedSimpleTypes.add((T)TimeUtils.parseDateTime(node.textValue()));
+      }
     }
     return multiValuedSimpleTypes;
   }
@@ -210,14 +250,14 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   /**
    * adds or removes an integer type attribute
    */
-  protected void setAttribute(String attributeName, Integer attributeValue)
+  protected void setAttribute(String attributeName, Long attributeValue)
   {
     if (attributeValue == null)
     {
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    JsonHelper.addAttribute(this, attributeName, new IntNode(attributeValue));
+    JsonHelper.addAttribute(this, attributeName, new LongNode(attributeValue));
   }
 
   /**
@@ -315,6 +355,42 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     }
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     attributeValue.forEach(arrayNode::add);
+    JsonHelper.addAttribute(this, attributeName, arrayNode);
+  }
+
+  /**
+   * adds or removes an array type attribute
+   */
+  protected <T> void setAttributeList(String attributeName, List<T> attributeValue)
+  {
+    if (attributeValue == null || attributeValue.isEmpty())
+    {
+      JsonHelper.removeAttribute(this, attributeName);
+      return;
+    }
+    Class type = attributeValue.stream().filter(Objects::nonNull).findAny().orElse((T)"").getClass();
+    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class).contains(type))
+    {
+      throw new InternalServerException("the type '" + type.getSimpleName() + "' is not allowed for this method", null,
+                                        null);
+    }
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    if (Long.class.isAssignableFrom(type))
+    {
+      attributeValue.forEach(t -> arrayNode.add((Long)t));
+    }
+    else if (Double.class.isAssignableFrom(type))
+    {
+      attributeValue.forEach(t -> arrayNode.add((Double)t));
+    }
+    else if (Boolean.class.isAssignableFrom(type))
+    {
+      attributeValue.forEach(t -> arrayNode.add((Boolean)t));
+    }
+    else
+    {
+      attributeValue.forEach(t -> arrayNode.add(t == null ? null : String.valueOf(t)));
+    }
     JsonHelper.addAttribute(this, attributeName, arrayNode);
   }
 

@@ -418,7 +418,7 @@ public final class ResourceEndpointHandler
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
   public ScimResponse listResources(String endpoint,
-                                    Integer startIndex,
+                                    Long startIndex,
                                     Integer count,
                                     String filter,
                                     String sortBy,
@@ -431,7 +431,7 @@ public final class ResourceEndpointHandler
     {
 
       final ResourceType resourceType = getResourceType(endpoint);
-      final int effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
+      final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);

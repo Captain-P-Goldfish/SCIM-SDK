@@ -471,8 +471,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
    * {@link BadRequestException}s
    */
   @ParameterizedTest
-  @ValueSource(ints = {-1, 0, 1, 2, 3, 4})
-  public void testListResourceTypesWithStartIndex(int startIndex)
+  @ValueSource(longs = {-1, 0, 1, 2, 3, 4})
+  public void testListResourceTypesWithStartIndex(long startIndex)
   {
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                                       SearchRequest.builder()
@@ -495,7 +495,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @Test
   public void testListResourceTypesWithStartIndexOutOfRange()
   {
-    final int startIndex = resourceTypeFactory.getAllResourceTypes().size() + 1;
+    final long startIndex = resourceTypeFactory.getAllResourceTypes().size() + 1;
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
       return resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                    SearchRequest.builder().startIndex(startIndex).count(1).build(),
@@ -515,8 +515,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @ValueSource(ints = {1, 2, 3, 4})
   public void testReturnTooManyEntries(int count)
   {
-    final int totalResults = count * 2;
-    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(totalResults);
+    final long totalResults = count * 2;
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults((int)totalResults);
     List<User> userList = createUsers(totalResults);
     PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
                                                                        .totalResults(totalResults)
@@ -527,7 +527,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
            .listResources(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       count,
                                                                       null,
                                                                       null,
@@ -553,7 +553,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     createUsers(1);
     resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(false);
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       sortBy,
@@ -563,7 +563,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+           .listResources(Mockito.eq(1L), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
   }
 
   /**
@@ -576,7 +576,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     createUsers(1);
     resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       sortBy,
@@ -588,7 +588,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
     SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1),
+           .listResources(Mockito.eq(1L),
                           Mockito.eq(0),
                           Mockito.isNull(),
                           Mockito.eq(sortByAttribute),
@@ -604,7 +604,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
     String sortBy = "unknownAttributeName";
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       sortBy,
@@ -630,7 +630,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(false);
     final String sortOrderString = sortOrder == null ? null : sortOrder.name().toLowerCase();
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       sortBy,
@@ -640,7 +640,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+           .listResources(Mockito.eq(1L), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
   }
 
   /**
@@ -653,7 +653,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
     final String sortOrderString = sortOrder == null ? null : sortOrder.name().toLowerCase();
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       sortBy,
@@ -666,7 +666,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
     SortOrder actualSortOrder = sortOrder == null && sortBy != null ? SortOrder.ASCENDING : sortOrder;
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1),
+           .listResources(Mockito.eq(1L),
                           Mockito.eq(0),
                           Mockito.isNull(),
                           Mockito.eq(sortByAttribute),
@@ -682,7 +682,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(false);
     String filter = "userName eq \"chuck\"";
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       filter,
                                                                       null,
@@ -692,7 +692,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+           .listResources(Mockito.eq(1L), Mockito.eq(0), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
   }
 
   /**
@@ -705,7 +705,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(false);
     String filter = "unknownAttributeName eq \"chuck\"";
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       filter,
                                                                       null,
@@ -739,7 +739,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       filter,
                                                                       null,
@@ -751,7 +751,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
     FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1), Mockito.eq(0), Mockito.eq(filterNode), Mockito.isNull(), Mockito.isNull());
+           .listResources(Mockito.eq(1L), Mockito.eq(0), Mockito.eq(filterNode), Mockito.isNull(), Mockito.isNull());
   }
 
   /**
@@ -763,9 +763,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     Mockito.doThrow(NullPointerException.class)
            .when(userHandler)
-           .listResources(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       null,
@@ -781,16 +781,16 @@ public class ResourceEndpointHandlerTest implements FileReferences
   /**
    * verifies that a {@link de.gold.scim.exceptions.NotImplementedException} {@link ErrorResponse} is returned
    * if the developer returns null on the
-   * {@link ResourceHandler#listResources(int, int, FilterNode, SchemaAttribute, SortOrder)} method
+   * {@link ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder)} method
    */
   @Test
   public void testReturnNullInDeveloperImplementationOnListResources()
   {
     Mockito.doReturn(null)
            .when(userHandler)
-           .listResources(Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-                                                                      1,
+                                                                      1L,
                                                                       0,
                                                                       null,
                                                                       null,
@@ -943,7 +943,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
    * @param totalResults the number of users to create
    * @return the list of the created users
    */
-  protected List<User> createUsers(int totalResults)
+  protected List<User> createUsers(long totalResults)
   {
     List<User> userList = new ArrayList<>();
     for ( int i = 0 ; i < totalResults ; i++ )

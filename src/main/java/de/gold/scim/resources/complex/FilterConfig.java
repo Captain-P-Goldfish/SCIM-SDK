@@ -49,9 +49,9 @@ public class FilterConfig extends ScimObjectNode
   /**
    * An integer value specifying the maximum number of resources returned in a response. REQUIRED.
    */
-  public int getMaxResults()
+  public Integer getMaxResults()
   {
-    return getIntegerAttribute(AttributeNames.RFC7643.MAX_RESULTS).orElse(DEFAULT_MAX_RESULTS);
+    return getLongAttribute(AttributeNames.RFC7643.MAX_RESULTS).orElse(Long.valueOf(DEFAULT_MAX_RESULTS)).intValue();
   }
 
   /**
@@ -59,6 +59,8 @@ public class FilterConfig extends ScimObjectNode
    */
   public void setMaxResults(Integer maxResults)
   {
-    setAttribute(AttributeNames.RFC7643.MAX_RESULTS, Optional.ofNullable(maxResults).orElse(DEFAULT_MAX_RESULTS));
+    Long results = maxResults == null ? null : Long.valueOf(maxResults);
+    setAttribute(AttributeNames.RFC7643.MAX_RESULTS,
+                 Optional.ofNullable(results).orElse(Long.valueOf(DEFAULT_MAX_RESULTS)));
   }
 }

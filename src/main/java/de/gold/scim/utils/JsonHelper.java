@@ -412,6 +412,10 @@ public final class JsonHelper
     {
       return Optional.of((T)Double.valueOf(attribute.asDouble()));
     }
+    if (Long.class.equals(type))
+    {
+      return Optional.of((T)Long.valueOf(attribute.asLong()));
+    }
     throw IncompatibleAttributeException.builder()
                                         .message("attribute '" + attribute + "' is not of type" + type.getSimpleName())
                                         .build();
@@ -456,4 +460,20 @@ public final class JsonHelper
     }
   }
 
+  /**
+   * will extract a scim attribute by its scim-name.
+   *
+   * @param attributeName the scim name of the attribute e.g. "userName" of "name.givenName"
+   * @return the json node or an empty
+   */
+  public static Optional<JsonNode> getSimpleAttributeByName(JsonNode jsonNode, String attributeName)
+  {
+    String[] nameParts = attributeName.split("\\.");
+    JsonNode subNode = jsonNode.get(nameParts[0]);
+    if (nameParts.length == 1)
+    {
+      return Optional.ofNullable(subNode);
+    }
+    return Optional.ofNullable(subNode.get(nameParts[1]));
+  }
 }

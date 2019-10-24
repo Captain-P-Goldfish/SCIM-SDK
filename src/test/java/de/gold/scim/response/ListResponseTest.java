@@ -36,9 +36,9 @@ public class ListResponseTest implements FileReferences
   @Test
   public void testListResponseCreation()
   {
-    final int totalResults = 10;
+    final long totalResults = 10;
     final int itemsPerPage = 2;
-    final int startIndex = 1;
+    final long startIndex = 1;
     List<JsonNode> resourceNodes = Arrays.asList(JsonHelper.loadJsonDocument(USER_RESOURCE),
                                                  JsonHelper.loadJsonDocument(USER_RESOURCE));
     ListResponse listResponse = new ListResponse(resourceNodes, totalResults, itemsPerPage, startIndex);
@@ -52,7 +52,7 @@ public class ListResponseTest implements FileReferences
                             listResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     JsonNode listJson = JsonHelper.readJsonDocument(listResponse.toJsonDocument());
     Assertions.assertEquals(totalResults,
-                            JsonHelper.getSimpleAttribute(listJson, AttributeNames.RFC7643.TOTAL_RESULTS, Integer.class)
+                            JsonHelper.getSimpleAttribute(listJson, AttributeNames.RFC7643.TOTAL_RESULTS, Long.class)
                                       .get());
     Assertions.assertTrue(JsonHelper.getSimpleAttributeArray(listJson, AttributeNames.RFC7643.SCHEMAS).isPresent());
     List<String> schemas = JsonHelper.getSimpleAttributeArray(listJson, AttributeNames.RFC7643.SCHEMAS).get();
@@ -65,7 +65,7 @@ public class ListResponseTest implements FileReferences
                                                           Integer.class)
                                       .get());
     Assertions.assertEquals(startIndex,
-                            JsonHelper.getSimpleAttribute(listJson, AttributeNames.RFC7643.START_INDEX, Integer.class)
+                            JsonHelper.getSimpleAttribute(listJson, AttributeNames.RFC7643.START_INDEX, Long.class)
                                       .get());
     ArrayNode resources = JsonHelper.getArrayAttribute(listJson, AttributeNames.RFC7643.RESOURCES).get();
     Assertions.assertEquals(2, resources.size());

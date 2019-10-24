@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.AttributeNames;
@@ -40,7 +41,7 @@ public class ListResponse extends ScimResponse
    * Non-negative integer. Specifies the total number of results matching the client query, e.g., 1000
    */
   @Getter
-  private Integer totalResults;
+  private Long totalResults;
 
   /**
    * Non-negative integer. Specifies the number of query results returned in a query response page, e.g., 10.
@@ -52,20 +53,20 @@ public class ListResponse extends ScimResponse
    * The 1-based index of the first result in the current set of query results, e.g., 1.
    */
   @Getter
-  private Integer startIndex;
+  private Long startIndex;
 
   public ListResponse(String resourceJsonRepresentation)
   {
     this.listResponseNode = JsonHelper.readJsonDocument(resourceJsonRepresentation);
     this.totalResults = JsonHelper.getSimpleAttribute(listResponseNode,
                                                       AttributeNames.RFC7643.TOTAL_RESULTS,
-                                                      Integer.class)
+                                                      Long.class)
                                   .orElse(null);
     this.itemsPerPage = JsonHelper.getSimpleAttribute(listResponseNode,
                                                       AttributeNames.RFC7643.ITEMS_PER_PAGE,
                                                       Integer.class)
                                   .orElse(null);
-    this.startIndex = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.RFC7643.START_INDEX, Integer.class)
+    this.startIndex = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.RFC7643.START_INDEX, Long.class)
                                 .orElse(null);
     this.listedResources = new ArrayList<>();
     JsonHelper.getArrayAttribute(listResponseNode, AttributeNames.RFC7643.RESOURCES).ifPresent(resourceArray -> {
@@ -73,7 +74,7 @@ public class ListResponse extends ScimResponse
     });
   }
 
-  public ListResponse(List<JsonNode> listedResources, Integer totalResults, Integer itemsPerPage, Integer startIndex)
+  public ListResponse(List<JsonNode> listedResources, Long totalResults, Integer itemsPerPage, Long startIndex)
   {
     super();
     this.listResponseNode = new ObjectNode(JsonNodeFactory.instance);
@@ -97,12 +98,12 @@ public class ListResponse extends ScimResponse
   /**
    * @see #totalResults
    */
-  public void setTotalResults(Integer totalResults)
+  public void setTotalResults(Long totalResults)
   {
     this.totalResults = totalResults;
     if (totalResults != null)
     {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.TOTAL_RESULTS, new IntNode(totalResults));
+      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.TOTAL_RESULTS, new LongNode(totalResults));
     }
   }
 
@@ -121,12 +122,12 @@ public class ListResponse extends ScimResponse
   /**
    * @see #startIndex
    */
-  public void setStartIndex(Integer startIndex)
+  public void setStartIndex(Long startIndex)
   {
     this.startIndex = startIndex;
     if (startIndex != null)
     {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.START_INDEX, new IntNode(startIndex));
+      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.START_INDEX, new LongNode(startIndex));
     }
   }
 

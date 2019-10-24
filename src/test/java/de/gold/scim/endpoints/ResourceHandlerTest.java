@@ -56,7 +56,7 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public PartialListResponse listResources(int startIndex,
+    public PartialListResponse listResources(long startIndex,
                                              int count,
                                              FilterNode filter,
                                              SchemaAttribute sortBy,
@@ -97,7 +97,7 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public PartialListResponse listResources(int startIndex,
+    public PartialListResponse listResources(long startIndex,
                                              int count,
                                              FilterNode filter,
                                              SchemaAttribute sortBy,

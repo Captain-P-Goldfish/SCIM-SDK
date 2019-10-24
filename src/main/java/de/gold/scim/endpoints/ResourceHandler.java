@@ -40,7 +40,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
 
   public abstract T getResource(String id);
 
-  public abstract PartialListResponse<T> listResources(int startIndex,
+  public abstract PartialListResponse<T> listResources(long startIndex,
                                                        int count,
                                                        FilterNode filter,
                                                        SchemaAttribute sortBy,

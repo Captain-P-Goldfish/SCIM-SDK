@@ -59,7 +59,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
   }
 
   @Override
-  public PartialListResponse<User> listResources(int startIndex,
+  public PartialListResponse<User> listResources(long startIndex,
                                                  int count,
                                                  FilterNode filter,
                                                  SchemaAttribute sortBy,
@@ -69,8 +69,8 @@ public class UserHandlerImpl extends ResourceHandler<User>
     Collection<User> userList = inMemoryMap.values();
     if (startIndex <= userList.size())
     {
-      resourceNodes.addAll(new ArrayList<>(userList).subList(Math.min(startIndex - 1, userList.size() - 1),
-                                                             Math.min(startIndex - 1 + count, userList.size())));
+      resourceNodes.addAll(new ArrayList<>(userList).subList((int)Math.min(startIndex - 1, userList.size() - 1),
+                                                             (int)Math.min(startIndex - 1 + count, userList.size())));
     }
     // TODO implement filtering and sorting
     log.warn("TODO implement filtering and sorting");

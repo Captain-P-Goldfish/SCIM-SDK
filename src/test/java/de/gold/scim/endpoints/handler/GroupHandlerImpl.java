@@ -54,7 +54,7 @@ public class GroupHandlerImpl extends ResourceHandler<Group>
   }
 
   @Override
-  public PartialListResponse listResources(int startIndex,
+  public PartialListResponse listResources(long startIndex,
                                            int count,
                                            FilterNode filter,
                                            SchemaAttribute sortBy,

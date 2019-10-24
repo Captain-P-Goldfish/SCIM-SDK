@@ -15,7 +15,7 @@ import lombok.Getter;
  * created at: 18.10.2019 - 17:50 <br>
  * <br>
  * this type must be returned by
- * {@link de.gold.scim.endpoints.ResourceHandler#listResources(int, int, FilterNode, SchemaAttribute, SortOrder)}
+ * {@link de.gold.scim.endpoints.ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder)}
  * methods
  */
 @Getter
@@ -33,5 +33,5 @@ public class PartialListResponse<T extends ResourceNode>
    * since the found number of results might exceed the maximum number of results so the client will be able to
    * use paging mechanisms
    */
-  private int totalResults;
+  private long totalResults;
 }

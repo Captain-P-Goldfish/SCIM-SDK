@@ -66,7 +66,7 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
    * {@inheritDoc}
    */
   @Override
-  public PartialListResponse listResources(int startIndex,
+  public PartialListResponse listResources(long startIndex,
                                            int count,
                                            FilterNode filter,
                                            SchemaAttribute sortBy,
@@ -76,10 +76,10 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
     Collection<ResourceType> resourceTypeList = resourceTypeFactory.getAllResourceTypes();
     if (startIndex <= resourceTypeList.size())
     {
-      resourceNodes.addAll(new ArrayList<>(resourceTypeList).subList(Math.min(startIndex - 1,
-                                                                              resourceTypeList.size() - 1),
-                                                                     Math.min(startIndex - 1 + count,
-                                                                              resourceTypeList.size())));
+      resourceNodes.addAll(new ArrayList<>(resourceTypeList).subList((int)Math.min(startIndex - 1,
+                                                                                   resourceTypeList.size() - 1),
+                                                                     (int)Math.min(startIndex - 1 + count,
+                                                                                   resourceTypeList.size())));
     }
     // TODO implement filtering and sorting
     log.warn("TODO implement filtering and sorting");

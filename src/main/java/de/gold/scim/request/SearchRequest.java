@@ -25,7 +25,7 @@ public class SearchRequest extends AbstractSchemasHolder
   }
 
   @Builder
-  public SearchRequest(Integer startIndex,
+  public SearchRequest(Long startIndex,
                        Integer count,
                        String filter,
                        String sortBy,
@@ -46,15 +46,15 @@ public class SearchRequest extends AbstractSchemasHolder
   /**
    * An integer indicating the 1-based index of the first query result. See Section 3.4.2.4. OPTIONAL.
    */
-  public Optional<Integer> getStartIndex()
+  public Optional<Long> getStartIndex()
   {
-    return getIntegerAttribute(AttributeNames.RFC7643.START_INDEX);
+    return getLongAttribute(AttributeNames.RFC7643.START_INDEX);
   }
 
   /**
    * An integer indicating the 1-based index of the first query result. See Section 3.4.2.4. OPTIONAL.
    */
-  public void setStartIndex(Integer startIndex)
+  public void setStartIndex(Long startIndex)
   {
     setAttribute(AttributeNames.RFC7643.START_INDEX, startIndex);
   }
@@ -64,7 +64,7 @@ public class SearchRequest extends AbstractSchemasHolder
    */
   public Optional<Integer> getCount()
   {
-    return getIntegerAttribute(AttributeNames.RFC7643.COUNT);
+    return getLongAttribute(AttributeNames.RFC7643.COUNT).map(Long::intValue);
   }
 
   /**
@@ -72,7 +72,7 @@ public class SearchRequest extends AbstractSchemasHolder
    */
   public void setCount(Integer count)
   {
-    setAttribute(AttributeNames.RFC7643.COUNT, count);
+    setAttribute(AttributeNames.RFC7643.COUNT, count == null ? null : Long.valueOf(count));
   }
 
   /**

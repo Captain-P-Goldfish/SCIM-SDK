@@ -1,5 +1,6 @@
 package de.gold.scim.filter;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -78,8 +79,39 @@ public final class AttributeExpressionLeaf extends FilterNode
         case GT:
         case LE:
         case LT:
+        case SW:
+        case EW:
+        case CO:
           throw new InvalidFilterException("the comparator '" + comparator + "' is not allowed on attribute type '"
                                            + schemaAttribute.getType() + "'", null);
+      }
+    }
+    if (Type.DATE_TIME.equals(schemaAttribute.getType()))
+    {
+      switch (comparator)
+      {
+        case EQ:
+        case NE:
+        case GE:
+        case GT:
+        case LE:
+        case LT:
+          if (!compareValue.isDateTime() && !compareValue.isNull())
+          {
+            throw new InvalidFilterException("the comparator '" + comparator + "' in combination with the given value"
+                                             + " '" + compareValue.getValue() + "' is not allowed on attribute type '"
+                                             + schemaAttribute.getType() + "'", null);
+          }
+          break;
+        case PR:
+          break;
+        default:
+          if (!compareValue.isDateTime() && !compareValue.isString() && !compareValue.isNull())
+          {
+            throw new InvalidFilterException("the comparator '" + comparator + "' in combination with the given value"
+                                             + " '" + compareValue.getValue() + "' is not allowed on attribute type '"
+                                             + schemaAttribute.getType() + "'", null);
+          }
       }
     }
   }
@@ -127,14 +159,9 @@ public final class AttributeExpressionLeaf extends FilterNode
     return compareValue == null ? Optional.empty() : compareValue.getBooleanValue();
   }
 
-  public Optional<Integer> getIntegerValue()
+  public Optional<BigDecimal> getNumberValue()
   {
-    return compareValue == null ? Optional.empty() : compareValue.getIntegerValue();
-  }
-
-  public Optional<Double> getDoubleValue()
-  {
-    return compareValue == null ? Optional.empty() : compareValue.getDoubleValue();
+    return compareValue == null ? Optional.empty() : compareValue.getNumberValue();
   }
 
   public Optional<String> getStringValue()
@@ -185,6 +212,11 @@ public final class AttributeExpressionLeaf extends FilterNode
   public List<ReferenceTypes> getReferenceTypes()
   {
     return schemaAttribute.getReferenceTypes();
+  }
+
+  public boolean isNull()
+  {
+    return compareValue == null || compareValue.isNull();
   }
 
   @Override
