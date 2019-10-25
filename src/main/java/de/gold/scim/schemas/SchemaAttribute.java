@@ -641,7 +641,7 @@ public final class SchemaAttribute extends ScimObjectNode
     if (Mutability.READ_ONLY.equals(mutability) && Returned.NEVER.equals(returned))
     {
       String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
-                            + "mutability 'readOnly' and returned 'never' are an illegal in combination. The client is "
+                            + "mutability 'readOnly' and returned 'never' are an illegal combination. The client is "
                             + "not able to write to the given attribute and the server will never return it.";
       throw getException(errorMessage, null);
     }

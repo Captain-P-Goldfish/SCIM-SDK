@@ -1,5 +1,6 @@
 package de.gold.scim.schemas;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -16,8 +17,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
+import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.resources.ResourceNode;
+import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
 
@@ -71,11 +74,30 @@ public class Schema extends ResourceNode
       attributeList.add(schemaAttribute);
     }
     setAttributes(attributeList);
+    initMeta(jsonNode.get(AttributeNames.RFC7643.META));
   }
 
   public Schema(JsonNode jsonNode)
   {
     this(jsonNode, null);
+  }
+
+  /**
+   * @param jsonNode
+   */
+  private void initMeta(JsonNode jsonNode)
+  {
+    Meta meta;
+    if (jsonNode == null)
+    {
+      LocalDateTime now = LocalDateTime.now();
+      meta = Meta.builder().created(now).lastModified(now).resourceType(ResourceTypeNames.SCHEMA).build();
+    }
+    else
+    {
+      meta = JsonHelper.copyResourceToObject(jsonNode, Meta.class);
+    }
+    setMeta(meta);
   }
 
   /**

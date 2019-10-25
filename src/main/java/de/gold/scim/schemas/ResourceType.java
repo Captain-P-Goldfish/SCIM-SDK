@@ -339,9 +339,57 @@ public class ResourceType extends ResourceNode
   }
 
   /**
+   * @see FilterExtension
+   */
+  public Optional<FilterExtension> getFilterExtension()
+  {
+    return getObjectAttribute(SchemaUris.RESOURCE_TYPE_FILTER_EXTENSION_URI, FilterExtension.class);
+  }
+
+  /**
+   * @see FilterExtension
+   */
+  public void setFilterExtension(FilterExtension filterExtension)
+  {
+    setAttribute(SchemaUris.RESOURCE_TYPE_FILTER_EXTENSION_URI, filterExtension);
+  }
+
+  /**
+   * a resource type extension for enabling application based filtering. This switch will disable developer
+   * control for filtering since the {@link de.gold.scim.filter.FilterNode} given into the
+   * {@link ResourceHandler} implementation will be null if the switch is enabled
+   */
+  public static class FilterExtension extends ScimObjectNode
+  {
+
+    public FilterExtension(boolean autoFiltering)
+    {
+      super(null);
+      setAutoFiltering(autoFiltering);
+    }
+
+    /**
+     * enabled application side filtering. The developer will no longer be able to do the filtering himself if
+     * this has been enabled
+     */
+    public boolean isAutoFiltering()
+    {
+      return getBooleanAttribute(AttributeNames.Custom.AUTO_FILTERING).orElse(false);
+    }
+
+    /**
+     * enabled application side filtering. The developer will no longer be able to do the filtering himself if
+     * this has been enabled
+     */
+    public void setAutoFiltering(Boolean autoFiltering)
+    {
+      setAttribute(AttributeNames.Custom.AUTO_FILTERING, autoFiltering);
+    }
+  }
+
+  /**
    * a schema extension representation
    */
-  @Getter
   public class SchemaExtension extends ScimObjectNode
   {
 

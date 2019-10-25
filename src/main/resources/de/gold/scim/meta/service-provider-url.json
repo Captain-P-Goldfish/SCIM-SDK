@@ -2,7 +2,7 @@
   "schemas": [
     "urn:ietf:params:scim:schemas:core:2.0:Schema"
   ],
-  "id": "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProvider",
+  "id": "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProviderUrl",
   "name": "ServiceProviderUrl",
   "description": "An extension that holds a fallback base URL to build location attributes which is used if no other ways are provided to build a location url",
   "attributes": [
@@ -17,5 +17,11 @@
       "caseExact": true,
       "required": true
     }
-  ]
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/Schemas/ServiceProviderUrl"
+  }
 }

@@ -259,4 +259,27 @@ public class ResourceTypeTest implements FileReferences
                                                         resourceType.getSchemaExtensions().get(0).getSchema())
                                     .isPresent());
   }
+
+  /**
+   * will simply test setting, getting and changing the attribute in the
+   * {@link de.gold.scim.schemas.ResourceType.FilterExtension} of a {@link ResourceType}
+   */
+  @Test
+  public void testGetAndFilterFilterExtension()
+  {
+    JsonNode resourceTypeResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPE_RESOURCE_TYPE_JSON);
+    JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
+    JsonNode resourceTypeFilterExt = JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPES_FILTER_EXT_JSON);
+    schemaFactory.registerResourceSchema(resourceTypeSchema);
+    schemaFactory.registerResourceSchema(resourceTypeFilterExt);
+    ResourceType resourceType = new ResourceType(schemaFactory, resourceTypeResourceType);
+    Assertions.assertFalse(resourceType.getFilterExtension().isPresent());
+    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+    Assertions.assertTrue(resourceType.getFilterExtension().isPresent());
+    Assertions.assertTrue(resourceType.getFilterExtension().get().isAutoFiltering());
+    resourceType.getFilterExtension().get().setAutoFiltering(false);
+    Assertions.assertFalse(resourceType.getFilterExtension().get().isAutoFiltering());
+    resourceType.setFilterExtension(null);
+    Assertions.assertFalse(resourceType.getFilterExtension().isPresent());
+  }
 }

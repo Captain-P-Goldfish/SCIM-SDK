@@ -1,7 +1,5 @@
 package de.gold.scim.endpoints.handler;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +37,11 @@ public class ResourceTypeHandlerTest
   private ResourceTypeFactory resourceTypeFactory;
 
   /**
+   * the resource type for the resource types endpoint
+   */
+  private ResourceType resourceTypeResourceType;
+
+  /**
    * the resource type handler implementation that was registered
    */
   private ResourceTypeHandler resourceTypeHandler;
@@ -51,8 +54,8 @@ public class ResourceTypeHandlerTest
   {
     resourceTypeFactory = new ResourceTypeFactory();
     ResourceEndpointHandlerUtil.registerAllEndpoints(resourceTypeFactory);
-    this.resourceTypeHandler = (ResourceTypeHandler)resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES)
-                                                                       .getResourceHandlerImpl();
+    this.resourceTypeResourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
+    this.resourceTypeHandler = (ResourceTypeHandler)resourceTypeResourceType.getResourceHandlerImpl();
   }
 
   /**
@@ -96,27 +99,6 @@ public class ResourceTypeHandlerTest
   {
     PartialListResponse<ResourceType> listResponse = resourceTypeHandler.listResources(1, 10, null, null, null);
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getResources().size());
-  }
-
-  /**
-   * verifies that the listResources method will never return more entries than stated in count with count has a
-   * value that enforces less than count entries in the last request
-   */
-  @ParameterizedTest
-  @ValueSource(ints = {1, 2, 3, 4, 5})
-  public void testListResourceTypesWithStartIndexAndCount(int count)
-  {
-    for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
-    {
-      PartialListResponse<ResourceType> listResponse = resourceTypeHandler.listResources(startIndex + 1,
-                                                                                         count,
-                                                                                         null,
-                                                                                         null,
-                                                                                         null);
-      MatcherAssert.assertThat(listResponse.getResources().size(), Matchers.lessThanOrEqualTo(count));
-      Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
-      log.debug("returned entries: {}", listResponse.getResources().size());
-    }
   }
 
   /**

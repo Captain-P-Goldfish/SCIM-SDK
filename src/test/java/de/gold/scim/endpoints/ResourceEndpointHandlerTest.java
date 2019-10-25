@@ -3,9 +3,11 @@ package de.gold.scim.endpoints;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -24,8 +26,10 @@ import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.GroupEndpointDefinition;
+import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.GroupHandlerImpl;
+import de.gold.scim.endpoints.handler.ResourceTypeHandler;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
@@ -49,6 +53,7 @@ import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
+import de.gold.scim.schemas.Schema;
 import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
@@ -81,16 +86,22 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private ResourceEndpointHandler resourceEndpointHandler;
 
   /**
-   * a mockito mock to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
+   * a mockito spy to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
    * implementation
    */
   private UserHandlerImpl userHandler;
 
   /**
-   * a mockito mock to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
+   * a mockito spy to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
    * implementation
    */
   private GroupHandlerImpl groupHandler;
+
+  /**
+   * a mockito spy to verify that the methods are called correctly by the {@link ResourceEndpointHandler}
+   * implementation
+   */
+  private ResourceTypeHandler resourceTypeHandler;
 
 
   /**
@@ -108,6 +119,11 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
     this.resourceEndpointHandler = new ResourceEndpointHandler(serviceProvider, userEndpoint, groupEndpoint);
     this.resourceTypeFactory = resourceEndpointHandler.getResourceTypeFactory();
+
+    resourceTypeHandler = new ResourceTypeHandler(resourceTypeFactory);
+    resourceTypeHandler = Mockito.spy(resourceTypeHandler);
+    EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
+    resourceEndpointHandler.registerEndpoint(endpointDefinition);
   }
 
   /**
@@ -489,8 +505,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that a {@link BadRequestException} is thrown if the start index exceeds the number of existing
-   * entries at the ResourceType endpoint
+   * verifies that no results will be returned if the startIndex exceeds the number of results that are
+   * available
    */
   @Test
   public void testListResourceTypesWithStartIndexOutOfRange()
@@ -847,6 +863,127 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     Method method = ResourceEndpointHandler.class.getMethod("getServiceProvider");
     Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
+  }
+
+  /**
+   * verifies that the listResources method will never return more entries than stated in count with count has a
+   * value that enforces less than count entries in the last request
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3, 4, 5})
+  public void testListResourceTypesWithStartIndexAndCount(int count)
+  {
+    for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
+    {
+      SearchRequest searchRequest = SearchRequest.builder().startIndex(startIndex + 1L).count(count).build();
+      ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                        searchRequest,
+                                                                        null);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      ListResponse listResponse = (ListResponse)scimResponse;
+
+      MatcherAssert.assertThat(listResponse.getListedResources().size(), Matchers.lessThanOrEqualTo(count));
+      Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
+      log.debug("returned entries: {}", listResponse.getListedResources().size());
+    }
+  }
+
+  /**
+   * verifies that the listResources method will never return more entries than stated in count with count has a
+   * value that enforces less than count entries in the last request
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3, 4, 5})
+  public void testListResourceTypesWithStartIndexAndCountForSchemas(int count)
+  {
+    for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
+    {
+      SearchRequest searchRequest = SearchRequest.builder().startIndex(startIndex + 1L).count(count).build();
+      ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.SCHEMAS, searchRequest, null);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      ListResponse listResponse = (ListResponse)scimResponse;
+      MatcherAssert.assertThat(listResponse.getListedResources().size(), Matchers.lessThanOrEqualTo(count));
+
+      List<Schema> allSchemas = resourceTypeFactory.getAllResourceTypes()
+                                                   .stream()
+                                                   .map(ResourceType::getAllSchemas)
+                                                   .flatMap(Collection::stream)
+                                                   .distinct()
+                                                   .collect(Collectors.toList());
+      Assertions.assertEquals(allSchemas.size(), listResponse.getTotalResults());
+      log.debug("returned entries: {}", listResponse.getListedResources().size());
+    }
+  }
+
+  /**
+   * the test will assert that the filter is not getting parsed if the filter feature is disabled
+   */
+  @Test
+  public void testFilterWithFilteringDisabled()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(false);
+    final String filter = "schemaExtensions pr";
+    SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null);
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L), Mockito.anyInt(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+  }
+
+  /**
+   * this test will assert that the {@link FilterNode} is successfully passed to the {@link ResourceHandler} if
+   * filtering is enabled and that the entries are returned unmodified
+   */
+  @Test
+  public void testFilterWithFilteringOnServiceProviderEnabled()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    final String filter = "schemaExtensions pr";
+    SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null);
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
+
+    Assertions.assertFalse(resourceType.getFilterExtension().isPresent());
+    FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L), Mockito.anyInt(), Mockito.eq(filterNode), Mockito.isNull(), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getListedResources().size());
+  }
+
+  /**
+   * this test will assure if autoFiltering is enabled that the filtering is executed successfully on the
+   * returned resources
+   */
+  @Test
+  public void testFilterWithFilteringOnServiceProviderAndResourceTypeEnabled()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    final String filter = "schemaExtensions pr";
+    SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
+    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null);
+
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L), Mockito.anyInt(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Collection<ResourceType> resourceTypes = resourceTypeFactory.getAllResourceTypes();
+
+    Assertions.assertNotEquals(resourceTypes.size(), listResponse.getListedResources().size());
+    Assertions.assertEquals(resourceTypes.stream().filter(rt -> rt.getSchemaExtensions().size() > 0).count(),
+                            listResponse.getListedResources().size());
   }
 
   /**

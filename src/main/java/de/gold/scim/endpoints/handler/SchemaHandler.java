@@ -1,6 +1,5 @@
 package de.gold.scim.endpoints.handler;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
@@ -86,13 +85,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
                                                  .flatMap(Collection::stream)
                                                  .distinct()
                                                  .collect(Collectors.toList());
-    List<Schema> schemaNodes = new ArrayList<>();
-    if (startIndex <= allSchemas.size())
-    {
-      schemaNodes.addAll(new ArrayList<>(allSchemas).subList((int)Math.min(startIndex - 1, allSchemas.size() - 1),
-                                                             (int)Math.min(startIndex - 1 + count, allSchemas.size())));
-    }
-    return PartialListResponse.<Schema> builder().resources(schemaNodes).totalResults(allSchemas.size()).build();
+    return PartialListResponse.<Schema> builder().resources(allSchemas).totalResults(allSchemas.size()).build();
   }
 
   /**

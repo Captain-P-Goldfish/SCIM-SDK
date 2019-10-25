@@ -2,6 +2,7 @@ package de.gold.scim.schemas;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -9,8 +10,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.constants.EndpointPaths;
+import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.exceptions.InvalidSchemaException;
+import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.utils.JsonHelper;
+import de.gold.scim.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -90,5 +95,41 @@ class SchemaTest
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonHelper.removeAttribute(userResourceSchema, attributeName);
     Assertions.assertThrows(InvalidSchemaException.class, () -> new Schema(userResourceSchema));
+  }
+
+  /**
+   * this test will verify that if a meta attribute was added to a json schema definition that the values from
+   * the file are preserved and used in the representation
+   */
+  @Test
+  public void testMetaAttributeIsPreservedFromJsonFile()
+  {
+    JsonNode serviceProviderSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON);
+    Schema schema = new Schema(serviceProviderSchema, null);
+    Meta meta = schema.getMeta().get();
+    Assertions.assertEquals(ResourceTypeNames.SCHEMA, meta.getResourceType().get());
+    Assertions.assertEquals(TimeUtils.parseDateTime("2019-10-18T14:51:11+02:00"), meta.getCreated().get());
+    Assertions.assertEquals(TimeUtils.parseDateTime("2019-10-18T14:51:11+02:00"), meta.getLastModified().get());
+    Assertions.assertEquals(EndpointPaths.SCHEMAS + "/" + ResourceTypeNames.SERVICE_PROVIDER_CONFIG,
+                            meta.getLocation().get());
+    Assertions.assertFalse(meta.getVersion().isPresent());
+  }
+
+  /**
+   * this test will verify that if a meta attribute will be created for a new {@link Schema} instance if no meta
+   * attribute is present within the json
+   */
+  @Test
+  public void testMetaAttributeCreatedIfMissingInJsonFile()
+  {
+    JsonNode serviceProviderSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON);
+    JsonHelper.removeAttribute(serviceProviderSchema, AttributeNames.RFC7643.META);
+    Schema schema = new Schema(serviceProviderSchema, null);
+    Meta meta = schema.getMeta().get();
+    Assertions.assertEquals(ResourceTypeNames.SCHEMA, meta.getResourceType().get());
+    Assertions.assertTrue(meta.getCreated().isPresent());
+    Assertions.assertTrue(meta.getLastModified().isPresent());
+    Assertions.assertFalse(meta.getLocation().isPresent());
+    Assertions.assertFalse(meta.getVersion().isPresent());
   }
 }

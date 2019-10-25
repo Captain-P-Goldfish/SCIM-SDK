@@ -1,7 +1,6 @@
 package de.gold.scim.endpoints.handler;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 
@@ -72,18 +71,8 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
                                            SchemaAttribute sortBy,
                                            SortOrder sortOrder)
   {
-    List<ResourceNode> resourceNodes = new ArrayList<>();
-    Collection<ResourceType> resourceTypeList = resourceTypeFactory.getAllResourceTypes();
-    if (startIndex <= resourceTypeList.size())
-    {
-      resourceNodes.addAll(new ArrayList<>(resourceTypeList).subList((int)Math.min(startIndex - 1,
-                                                                                   resourceTypeList.size() - 1),
-                                                                     (int)Math.min(startIndex - 1 + count,
-                                                                                   resourceTypeList.size())));
-    }
-    // TODO implement filtering and sorting
-    log.warn("TODO implement filtering and sorting");
-    return PartialListResponse.builder().resources(resourceNodes).totalResults(resourceTypeList.size()).build();
+    List<ResourceNode> resourceTypeList = new ArrayList<>(resourceTypeFactory.getAllResourceTypes());
+    return PartialListResponse.builder().resources(resourceTypeList).totalResults(resourceTypeList.size()).build();
   }
 
   /**

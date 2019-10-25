@@ -29,6 +29,7 @@ import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidDateTimeRepresentationException;
+import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.resources.base.ScimArrayNode;
 import de.gold.scim.resources.base.ScimBooleanNode;
 import de.gold.scim.resources.base.ScimDoubleNode;
@@ -248,12 +249,22 @@ public class SchemaValidator
     }
     JsonNode metaNode = document.get(AttributeNames.RFC7643.META);
     Schema metaSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.META);
-    JsonNode validatedMeta = validateExtensionForResponse(resourceTypeFactory,
-                                                          metaSchema,
-                                                          metaNode,
-                                                          validatedRequest,
-                                                          attributes,
-                                                          excludedAttributes);
+    JsonNode validatedMeta;
+    try
+    {
+      validatedMeta = validateExtensionForResponse(resourceTypeFactory,
+                                                   metaSchema,
+                                                   metaNode,
+                                                   validatedRequest,
+                                                   attributes,
+                                                   excludedAttributes);
+    }
+    catch (ScimException ex)
+    {
+      log.error("meta attribute validation failed for resource type: " + resourceType.getName() + " ["
+                + resourceType.getSchema() + "]");
+      throw ex;
+    }
     JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
     return validatedMainDocument;
   }
@@ -770,9 +781,11 @@ public class SchemaValidator
   private void validateIsRequiredForResponse(JsonNode document, SchemaAttribute schemaAttribute)
   {
     boolean isNodeNull = document == null || document.isNull();
-    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getFullResourceName()
-                                          + "' is required on response. attribute-mutability is '"
-                                          + schemaAttribute.getMutability() + "'!";
+    Supplier<String> errorMessage = () -> String.format("the attribute '%s' is required on response.\n\tmutability: "
+                                                        + "'%s'\n\treturned: '%s'",
+                                                        schemaAttribute.getFullResourceName(),
+                                                        schemaAttribute.getMutability(),
+                                                        schemaAttribute.getReturned());
     if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
     {
       throw getException(errorMessage.get(), null);

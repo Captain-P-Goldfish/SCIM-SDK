@@ -2,6 +2,7 @@ package de.gold.scim.endpoints;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -21,6 +22,7 @@ import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.FilterNode;
+import de.gold.scim.filter.resources.FilterResourceResolver;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
@@ -85,14 +87,21 @@ public final class ResourceEndpointHandler
     endpointDefinitionList.add(0, new ServiceProviderEndpointDefinition(serviceProvider));
     endpointDefinitionList.add(1, new ResourceTypeEndpointDefinition(resourceTypeFactory));
     endpointDefinitionList.add(2, new SchemaEndpointDefinition(resourceTypeFactory));
-    for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
-    {
-      resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
-                                               endpointDefinition.getResourceType(),
-                                               endpointDefinition.getResourceSchema(),
-                                               endpointDefinition.getResourceSchemaExtensions()
-                                                                 .toArray(new JsonNode[0]));
-    }
+    endpointDefinitionList.forEach(this::registerEndpoint);
+  }
+
+  /**
+   * registers a new endpoint
+   *
+   * @param endpointDefinition the endpoint to register that will override an existing one if one is already
+   *          present
+   */
+  protected void registerEndpoint(EndpointDefinition endpointDefinition)
+  {
+    resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
+                                             endpointDefinition.getResourceType(),
+                                             endpointDefinition.getResourceSchema(),
+                                             endpointDefinition.getResourceSchemaExtensions().toArray(new JsonNode[0]));
   }
 
   /**
@@ -417,48 +426,69 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
-  public ScimResponse listResources(String endpoint,
-                                    Long startIndex,
-                                    Integer count,
-                                    String filter,
-                                    String sortBy,
-                                    String sortOrder,
-                                    String attributes,
-                                    String excludedAttributes,
-                                    Supplier<String> baseUrlSupplier)
+  public <T extends ResourceNode> ScimResponse listResources(String endpoint,
+                                                             Long startIndex,
+                                                             Integer count,
+                                                             String filter,
+                                                             String sortBy,
+                                                             String sortOrder,
+                                                             String attributes,
+                                                             String excludedAttributes,
+                                                             Supplier<String> baseUrlSupplier)
   {
     try
     {
-
       final ResourceType resourceType = getResourceType(endpoint);
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);
+      final boolean autoFiltering = resourceType.getFilterExtension()
+                                                .map(ResourceType.FilterExtension::isAutoFiltering)
+                                                .orElse(false);
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
       final SortOrder sortOrdering = getSortOrdering(sortOrder, sortByAttribute);
 
-      ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      PartialListResponse resources = resourceHandler.listResources(effectiveStartIndex,
-                                                                    effectiveCount,
-                                                                    filterNode,
-                                                                    sortByAttribute,
-                                                                    sortOrdering);
+      ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
+      PartialListResponse<T> resources = resourceHandler.listResources(effectiveStartIndex,
+                                                                       effectiveCount,
+                                                                       autoFiltering ? null : filterNode,
+                                                                       sortByAttribute,
+                                                                       sortOrdering);
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"
                                           + resourceType.getName() + "'");
       }
-      List<ResourceNode> resourceList = resources.getResources();
-      if (resources.getResources().size() > effectiveCount)
+
+      List<T> resourceList = resources.getResources();
+      List<T> filteredResources = filterResources(filterNode, resourceList, resourceType);
+
+      long totalResults = resourceList.size() != filteredResources.size() ? filteredResources.size()
+        : (resources.getTotalResults() == 0 ? filteredResources.size() : resources.getTotalResults());
+
+      // this if-block will assert that no more results will be returned than the countValue allows.
+      if (effectiveStartIndex <= filteredResources.size())
+      {
+        filteredResources = filteredResources.subList((int)Math.min(effectiveStartIndex - 1,
+                                                                    filteredResources.size() - 1),
+                                                      (int)Math.min(effectiveStartIndex - 1 + effectiveCount,
+                                                                    filteredResources.size()));
+      }
+      else
+      {
+        // startIndex is greater than the number of entries available so we will return an empty list
+        filteredResources = Collections.emptyList();
+      }
+      if (filteredResources.size() > effectiveCount)
       {
         log.warn("the service provider tried to return more results than allowed. Tried to return '"
-                 + resources.getResources().size() + "' results. The list will be reduced to '" + effectiveCount
+                 + filteredResources.size() + "' results. The list will be reduced to '" + effectiveCount
                  + "' results");
-        resourceList = resourceList.subList(0, effectiveCount);
+        filteredResources = filteredResources.subList(0, effectiveCount);
       }
 
       List<JsonNode> validatedResourceList = new ArrayList<>();
-      for ( ResourceNode resourceNode : resourceList )
+      for ( ResourceNode resourceNode : filteredResources )
       {
         final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
         Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
@@ -473,7 +503,7 @@ public final class ResourceEndpointHandler
         validatedResourceList.add(validatedResource);
       }
 
-      return new ListResponse(validatedResourceList, resources.getTotalResults(), effectiveCount, effectiveStartIndex);
+      return new ListResponse(validatedResourceList, totalResults, effectiveCount, effectiveStartIndex);
     }
     catch (ScimException ex)
     {
@@ -483,6 +513,34 @@ public final class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+  }
+
+  /**
+   * this method executes filtering on the given resource list
+   *
+   * @param filterNode the filter expression from the client. Might be null if filtering is disabled
+   * @param resourceList the list that should be filtered
+   * @param resourceType the resource type must have filtering enabled. If filtering is not explicitly enabled
+   *          the developer must do the filtering manually
+   * @return the filtered list or the {@code resourceList}
+   */
+  protected <T extends ResourceNode> List<T> filterResources(FilterNode filterNode,
+                                                             List<T> resourceList,
+                                                             ResourceType resourceType)
+  {
+    boolean isApplicationFilteringEnabled = resourceType.getFilterExtension()
+                                                        .map(ResourceType.FilterExtension::isAutoFiltering)
+                                                        .orElse(false);
+    List<T> filteredResourceType;
+    if (isApplicationFilteringEnabled && filterNode != null)
+    {
+      filteredResourceType = FilterResourceResolver.filterResources(resourceList, filterNode);
+    }
+    else
+    {
+      filteredResourceType = resourceList;
+    }
+    return filteredResourceType;
   }
 
   /**

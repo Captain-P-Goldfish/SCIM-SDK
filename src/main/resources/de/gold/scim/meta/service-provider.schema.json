@@ -211,7 +211,13 @@
         }
       ]
     }
-  ]
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/Schemas/ServiceProviderConfig"
+  }
 }
 
 

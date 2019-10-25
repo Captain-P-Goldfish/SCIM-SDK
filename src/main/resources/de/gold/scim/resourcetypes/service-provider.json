@@ -9,7 +9,7 @@
   "endpoint": "/ServiceProviderConfig",
   "schemaExtensions": [
     {
-      "schema": "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProvider",
+      "schema": "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProviderUrl",
       "required": false
     }
   ],

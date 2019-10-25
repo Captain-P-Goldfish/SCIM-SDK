@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -93,23 +91,6 @@ public class SchemaHandlerTest
   {
     PartialListResponse<Schema> listResponse = schemaHandler.listResources(1, Integer.MAX_VALUE, null, null, null);
     Assertions.assertEquals(allSchemas.size(), listResponse.getResources().size());
-  }
-
-  /**
-   * verifies that the listResources method will never return more entries than stated in count with count has a
-   * value that enforces less than count entries in the last request
-   */
-  @ParameterizedTest
-  @ValueSource(ints = {1, 2, 3, 4, 5})
-  public void testListResourceTypesWithStartIndexAndCount(int count)
-  {
-    for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
-    {
-      PartialListResponse<Schema> listResponse = schemaHandler.listResources(startIndex + 1, count, null, null, null);
-      MatcherAssert.assertThat(listResponse.getResources().size(), Matchers.lessThanOrEqualTo(count));
-      Assertions.assertEquals(allSchemas.size(), listResponse.getTotalResults());
-      log.debug("returned entries: {}", listResponse.getResources().size());
-    }
   }
 
   /**

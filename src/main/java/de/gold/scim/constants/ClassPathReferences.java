@@ -17,6 +17,8 @@ public final class ClassPathReferences
 
   public static final String META_RESOURCE_TYPES_JSON = "/de/gold/scim/meta/resource-type.schema.json";
 
+  public static final String RESOURCE_TYPES_FILTER_EXT_JSON = "/de/gold/scim/meta/resource-type-filter-ext.json";
+
   public static final String META_SERVICE_PROVIDER_JSON = "/de/gold/scim/meta/service-provider.schema.json";
 
   public static final String USER_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/user.json";
