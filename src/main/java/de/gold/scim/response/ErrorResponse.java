@@ -1,6 +1,7 @@
 package de.gold.scim.response;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.builder.EqualsBuilder;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -12,6 +13,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.exceptions.ResponseException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
@@ -31,6 +33,7 @@ public class ErrorResponse extends ScimResponse
   /**
    * this is the json representation that is used as error response
    */
+  @Getter
   private final JsonNode errorNode;
 
   /**
@@ -38,6 +41,20 @@ public class ErrorResponse extends ScimResponse
    */
   @Getter
   private ScimException scimException;
+
+  public ErrorResponse(JsonNode errorNode)
+  {
+    this.errorNode = errorNode;
+    this.scimException = new ResponseException(JsonHelper.getSimpleAttribute(errorNode, AttributeNames.RFC7643.DETAIL)
+                                                         .orElse(null),
+                                               JsonHelper.getSimpleAttribute(errorNode,
+                                                                             AttributeNames.RFC7643.STATUS,
+                                                                             Integer.class)
+                                                         .orElse(null),
+                                               JsonHelper.getSimpleAttribute(errorNode,
+                                                                             AttributeNames.RFC7643.SCIM_TYPE)
+                                                         .orElse(null));
+  }
 
   public ErrorResponse(ScimException scimException)
   {
@@ -91,5 +108,23 @@ public class ErrorResponse extends ScimResponse
   public String toJsonDocument()
   {
     return errorNode.toString();
+  }
+
+  @Override
+  public boolean equals(Object o)
+  {
+    if (this == o)
+    {
+      return true;
+    }
+
+    if (!(o instanceof ErrorResponse))
+    {
+      return false;
+    }
+
+    ErrorResponse that = (ErrorResponse)o;
+
+    return new EqualsBuilder().append(errorNode, that.errorNode).isEquals();
   }
 }

@@ -1,0 +1,90 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:api:messages:2.0:BulkRequest",
+  "name": "BulkRequest",
+  "description": "schema representation of a bulk request",
+  "attributes": [
+    {
+      "name": "failOnErrors",
+      "type": "integer",
+      "description": "An integer specifying the number of errors that the service provider will accept before the operation is terminated and an error response is returned. OPTIONAL in a request. Not valid in a response.",
+      "mutability": "writeOnly",
+      "returned": "never",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
+    {
+      "name": "Operations",
+      "type": "complex",
+      "description": "Defines operations within a bulk job. Each operation corresponds to a single HTTP request against a resource endpoint. REQUIRED.",
+      "mutability": "writeOnly",
+      "returned": "never",
+      "uniqueness": "none",
+      "multiValued": true,
+      "caseExact": false,
+      "required": true,
+      "subAttributes": [
+        {
+          "name": "method",
+          "type": "string",
+          "description": "The HTTP method of the current operation.  Possible values are 'POST', 'PUT', 'PATCH', or 'DELETE'.  REQUIRED.",
+          "canonicalValues": [
+            "POST",
+            "PUT",
+            "PATCH",
+            "DELETE"
+          ],
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": true
+        },
+        {
+          "name": "bulkId",
+          "type": "string",
+          "description": "The transient identifier of a newly created resource, unique within a bulk request and created by the client. The bulkId serves as a surrogate resource id enabling clients to uniquely identify newly created resources in the response and cross-reference new resources in and across operations within a bulk request.  REQUIRED when \"method\" is \"POST\".",
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "path",
+          "type": "string",
+          "description": "The resource's relative path to the SCIM service provider's root.If \"method\" is \"POST\", the value must specify a resource type endpoint, e.g., /Users or /Groups, whereas all other \"method\" values must specify the path to a specific resource, e.g., /Users/2819c223-7f76-453a-919d-413861904646.REQUIRED in a request.",
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": true,
+          "required": true
+        },
+        {
+          "name": "data",
+          "type": "string",
+          "description": "The resource data as it would appear for a single SCIM POST, PUT, or PATCH operation. REQUIRED in a request when \"method\" is \"POST\", \"PUT\", or \"PATCH\".",
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/Schemas/BulkRequest"
+  }
+}

@@ -11,6 +11,7 @@ import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidFilterException;
 import de.gold.scim.utils.JsonHelper;
 
@@ -52,5 +53,17 @@ public class ErrorResponseTest
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
+  }
+
+  /**
+   * just for code coverage
+   */
+  @Test
+  public void testEquals()
+  {
+    ErrorResponse errorResponse = new ErrorResponse(new BadRequestException("test", null, "test"));
+    Assertions.assertEquals(errorResponse, errorResponse);
+    Assertions.assertNotEquals(errorResponse, null);
+    Assertions.assertNotEquals(errorResponse, 5);
   }
 }

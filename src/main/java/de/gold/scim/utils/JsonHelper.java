@@ -120,6 +120,10 @@ public final class JsonHelper
    */
   public static JsonNode readJsonDocument(String jsonDocument)
   {
+    if (jsonDocument == null)
+    {
+      return null;
+    }
     log.trace("trying to read json document: {}", jsonDocument);
     try (Reader reader = new StringReader(jsonDocument))
     {

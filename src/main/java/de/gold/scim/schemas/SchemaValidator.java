@@ -170,9 +170,9 @@ public class SchemaValidator
    * @param schemaDocument the new schema document that should be validated
    * @return the validated schema definition
    */
-  static JsonNode validateSchemaDocument(ResourceTypeFactory resourceTypeFactory,
-                                         Schema metaSchema,
-                                         JsonNode schemaDocument)
+  public static JsonNode validateSchemaDocument(ResourceTypeFactory resourceTypeFactory,
+                                                Schema metaSchema,
+                                                JsonNode schemaDocument)
   {
     SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, null, null);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
@@ -702,16 +702,22 @@ public class SchemaValidator
     switch (type)
     {
       case STRING:
-        isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);
+        isNodeOfExpectedType(schemaAttribute,
+                             simpleDocumentNode,
+                             jsonNode -> jsonNode.isTextual() || jsonNode.isObject());
         return new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue());
       case BOOLEAN:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isBoolean);
         return new ScimBooleanNode(schemaAttribute, simpleDocumentNode.booleanValue());
       case INTEGER:
-        isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isInt);
+        isNodeOfExpectedType(schemaAttribute,
+                             simpleDocumentNode,
+                             jsonNode -> jsonNode.isInt() || jsonNode.isLong() || jsonNode.isBigDecimal());
         return new ScimIntNode(schemaAttribute, simpleDocumentNode.intValue());
       case DECIMAL:
-        isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isDouble);
+        isNodeOfExpectedType(schemaAttribute,
+                             simpleDocumentNode,
+                             jsonNode -> jsonNode.isFloat() || jsonNode.isDouble() || jsonNode.isBigDecimal());
         return new ScimDoubleNode(schemaAttribute, simpleDocumentNode.doubleValue());
       case DATE_TIME:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);

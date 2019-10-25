@@ -23,6 +23,7 @@ import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.resources.FilterResourceResolver;
+import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
@@ -776,6 +777,16 @@ public final class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+  }
+
+  public ScimResponse bulk(String bulkRequestBody)
+  {
+    return bulk(JsonHelper.readJsonDocument(bulkRequestBody, BulkRequest.class));
+  }
+
+  public ScimResponse bulk(BulkRequest bulkRequest)
+  {
+    return null;
   }
 
   /**

@@ -32,4 +32,12 @@ public final class ResourceTypeFactoryUtil
     resourceTypeFactory.getResourceTypes().clear();
   }
 
+  /**
+   * retrieves the {@link SchemaFactory} for unit tests
+   */
+  public static SchemaFactory getSchemaFactory(ResourceTypeFactory resourceTypeFactory)
+  {
+    return resourceTypeFactory.getSchemaFactory();
+  }
+
 }

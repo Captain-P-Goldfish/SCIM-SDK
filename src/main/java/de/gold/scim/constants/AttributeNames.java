@@ -217,6 +217,20 @@ public final class AttributeNames
     public static final String STATUS = "status";
 
     public static final String SCIM_TYPE = "scimType";
+
+    public static final String FAIL_ON_ERRORS = "failOnErrors";
+
+    public static final String OPERATIONS = "Operations";
+
+    public static final String METHOD = "method";
+
+    public static final String BULK_ID = "bulkId";
+
+    public static final String PATH = "path";
+
+    public static final String DATA = "data";
+
+    public static final String RESPONSE = "response";
   }
 
 }

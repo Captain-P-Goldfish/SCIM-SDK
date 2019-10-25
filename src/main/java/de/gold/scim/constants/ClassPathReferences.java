@@ -44,4 +44,8 @@ public final class ClassPathReferences
   public static final String SERVICE_PROVIDER_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/service-provider.json";
 
   public static final String SCHEMA_RESOURCE_TYPE_JSON = "/de/gold/scim/resourcetypes/schema.json";
+
+  public static final String BULK_REQUEST_SCHEMA = "/de/gold/scim/request/bulk-request.json";
+
+  public static final String BULK_RESPONSE_SCHEMA = "/de/gold/scim/request/bulk-response.json";
 }
