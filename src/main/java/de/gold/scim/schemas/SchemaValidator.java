@@ -554,6 +554,7 @@ public class SchemaValidator
     {
       return Optional.empty();
     }
+    validateComplexAndArrayTypeAttribute(documentNode, schemaAttribute);
 
     if (schemaAttribute.isMultiValued())
     {
@@ -562,6 +563,42 @@ public class SchemaValidator
     else
     {
       return handleNode(documentNode, schemaAttribute);
+    }
+  }
+
+  /**
+   * this method will verify that complex and multi valued attributes are sent as defined in the schema. An
+   * exception are simple multi valued arrays. If sent as a primitive they should be accepted as an array with a
+   * single attribute
+   *
+   * @param document the document part to validate
+   * @param schemaAttribute the meta information of the attribute
+   */
+  private void validateComplexAndArrayTypeAttribute(JsonNode document, SchemaAttribute schemaAttribute)
+  {
+    Supplier<String> errorMessage = () -> String.format("the attribute '%s' does not apply to its defined type. The "
+                                                        + "received document node is of type '%s' but the schema"
+                                                        + " defintion is as follows: \n\tmultivalued: %s\n\ttype: "
+                                                        + "%s\nfor schema with id %s\n%s",
+                                                        schemaAttribute.getScimNodeName(),
+                                                        document.getNodeType(),
+                                                        schemaAttribute.isMultiValued(),
+                                                        schemaAttribute.getType(),
+                                                        schemaAttribute.getSchema().getId().orElse(null),
+                                                        document.toPrettyString());
+    if (schemaAttribute.isMultiValued())
+    {
+      if (document != null && !document.isArray())
+      {
+        throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
+      }
+    }
+    else if (Type.COMPLEX.equals(schemaAttribute.getType()))
+    {
+      if (document != null && !document.isObject())
+      {
+        throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
+      }
     }
   }
 
