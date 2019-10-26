@@ -1239,6 +1239,7 @@ public class FilterResourceResolverTest implements FileReferences
     return dynamicTests;
   }
 
+
   @TestFactory
   public List<DynamicTest> testCompareDateTimeValues()
   {
@@ -1308,7 +1309,7 @@ public class FilterResourceResolverTest implements FileReferences
                                      Comparator.SW,
                                      allTypesArray[1],
                                      allTypesArray[2]));
-    dynamicTests.add(getAllTypesTest(() -> allTypesArray[0].setDate(offsetDateTime.toString()),
+    dynamicTests.add(getAllTypesTest(() -> allTypesArray[0].setDate(offsetDateTime.withNano(0).toString()),
                                      allTypesList,
                                      "date",
                                      "194",
