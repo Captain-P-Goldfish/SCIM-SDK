@@ -39,13 +39,17 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.Returned;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.constants.enums.Uniqueness;
 import de.gold.scim.exceptions.DocumentValidationException;
+import de.gold.scim.resources.User;
 import de.gold.scim.resources.base.ScimNode;
+import de.gold.scim.resources.complex.Meta;
+import de.gold.scim.resources.complex.Name;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.TestHelper;
@@ -1455,6 +1459,94 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNull(enterpriseUser);
     List<String> schemas = JsonHelper.getSimpleAttributeArray(validatedDocument, AttributeNames.RFC7643.SCHEMAS).get();
     MatcherAssert.assertThat(schemas, Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
+  }
+
+  /**
+   * this test will verify that an attribute that is set to multivalued=false and is an array in the
+   * datastructure is removed from the data structure during validation
+   */
+  @Test
+  public void testComplexArrayAttributeForNonMultivaluedAttribute()
+  {
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    modifyAttributeMetaData(userResourceSchema,
+                            AttributeNames.RFC7643.NAME,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            true,
+                            null,
+                            null);
+    User userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    List<Name> nameList = Arrays.asList(Name.builder().familyName("norris").build(),
+                                        Name.builder().familyName("goldfish").build());
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    nameList.forEach(arrayNode::add);
+    userSchema.set(AttributeNames.RFC7643.NAME, arrayNode);
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .location("/Users")
+                    .build();
+    userSchema.setMeta(meta);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    Assertions.assertNotNull(resourceType);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         null);
+    });
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
+  }
+
+  /**
+   * verifies that a missing required complex type will cause a {@link DocumentValidationException} on
+   * validation
+   */
+  @Test
+  public void test()
+  {
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    modifyAttributeMetaData(userResourceSchema,
+                            AttributeNames.RFC7643.NAME,
+                            null,
+                            null,
+                            null,
+                            null,
+                            null,
+                            true,
+                            null,
+                            null);
+    User userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .location("/Users")
+                    .build();
+    userSchema.setMeta(meta);
+    userSchema.setNameNode(null);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    Assertions.assertNotNull(resourceType);
+    Assertions.assertThrows(DocumentValidationException.class, () -> {
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, userSchema, null, null, null);
+    });
   }
 
 }
