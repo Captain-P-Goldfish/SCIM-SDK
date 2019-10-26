@@ -1,4 +1,4 @@
-package de.gold.scim.request;
+package de.gold.scim.response;
 
 import java.util.Collections;
 import java.util.List;
@@ -12,7 +12,6 @@ import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.InvalidSchemaException;
-import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.schemas.Schema;
@@ -94,6 +93,6 @@ public class BulkResponseTest
     Schema bulkResponseSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_RESPONSE_URI);
     Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(resourceTypeFactory,
                                                                                bulkResponseSchema,
-                                                                               bulkResponse));
+                                                                               bulkResponse.getAsJsonNode()));
   }
 }

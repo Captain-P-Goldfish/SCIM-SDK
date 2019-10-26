@@ -1,8 +1,13 @@
 package de.gold.scim.utils;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -259,5 +264,35 @@ public final class RequestUtils
     {
       return schemaAttributeList.get(0);
     }
+  }
+
+  /**
+   * gets the query parameter from the given URL
+   *
+   * @param query the query string
+   * @return the query parameters as a map
+   */
+  public static Map<String, String> getQueryParameters(String query)
+  {
+    Map<String, String> queryParameter = new HashMap<>();
+    if (StringUtils.isBlank(query))
+    {
+      return Collections.emptyMap();
+    }
+    String[] pairs = query.split("&");
+    for ( String pair : pairs )
+    {
+      int index = pair.indexOf("=");
+      try
+      {
+        queryParameter.put(URLDecoder.decode(pair.substring(0, index), StandardCharsets.UTF_8.name()),
+                           URLDecoder.decode(pair.substring(index + 1), StandardCharsets.UTF_8.name()));
+      }
+      catch (UnsupportedEncodingException e)
+      {
+        throw new IllegalStateException(e.getMessage(), e);
+      }
+    }
+    return queryParameter;
   }
 }

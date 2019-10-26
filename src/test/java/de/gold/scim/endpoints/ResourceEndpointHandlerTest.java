@@ -987,6 +987,27 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * the {@link ResourceEndpointHandler#registerEndpoint(EndpointDefinition)} method must be accessible for
+   * developers
+   */
+  @Test
+  public void testRegisterEndpointMustBePublic() throws NoSuchMethodException
+  {
+    Method method = ResourceEndpointHandler.class.getMethod("registerEndpoint", EndpointDefinition.class);
+    Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
+  }
+
+  /**
+   * the {@link ResourceEndpointHandler#getServiceProvider()} method must be accessible for developers
+   */
+  @Test
+  public void testGetServiceProviderMustBePublic() throws NoSuchMethodException
+  {
+    Method method = ResourceEndpointHandler.class.getMethod("getServiceProvider");
+    Assertions.assertTrue(Modifier.isPublic(method.getModifiers()));
+  }
+
+  /**
    * reads a user from the endpoint
    *
    * @param endpoint the resource endpoint that should be used

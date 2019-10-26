@@ -1,4 +1,4 @@
-package de.gold.scim.request;
+package de.gold.scim.response;
 
 import java.util.UUID;
 
@@ -10,7 +10,6 @@ import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidSchemaException;
-import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.utils.FileReferences;
 
 

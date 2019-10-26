@@ -23,7 +23,6 @@ import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.resources.FilterResourceResolver;
-import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
@@ -52,11 +51,10 @@ import lombok.extern.slf4j.Slf4j;
  * author Pascal Knueppel <br>
  * created at: 03.10.2019 - 19:28 <br>
  * <br>
- * The main class of this framework. The resource endpoint can be used to register all resource types that
- * will then be used to delegate to the different resource implementations
+ * This class is used to execute the SCIM operations on the specific endpoints
  */
 @Slf4j
-public final class ResourceEndpointHandler
+class ResourceEndpointHandler
 {
 
   /**
@@ -76,7 +74,7 @@ public final class ResourceEndpointHandler
    * this constructor was introduced for unit tests to add a specific resourceTypeFactory instance which will
    * prevent application context pollution within unit tests
    */
-  public ResourceEndpointHandler(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
+  protected ResourceEndpointHandler(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
   {
     this.resourceTypeFactory = new ResourceTypeFactory();
     this.serviceProvider = serviceProvider;
@@ -97,7 +95,7 @@ public final class ResourceEndpointHandler
    * @param endpointDefinition the endpoint to register that will override an existing one if one is already
    *          present
    */
-  protected void registerEndpoint(EndpointDefinition endpointDefinition)
+  public void registerEndpoint(EndpointDefinition endpointDefinition)
   {
     resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
                                              endpointDefinition.getResourceType(),
@@ -115,7 +113,7 @@ public final class ResourceEndpointHandler
    * @param resourceDocument the resource document
    * @return the scim response for the client
    */
-  public ScimResponse createResource(String endpoint, String resourceDocument)
+  protected ScimResponse createResource(String endpoint, String resourceDocument)
   {
     return createResource(endpoint, resourceDocument, null, null, null);
   }
@@ -136,7 +134,7 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  public ScimResponse createResource(String endpoint, String resourceDocument, Supplier<String> baseUrlSupplier)
+  protected ScimResponse createResource(String endpoint, String resourceDocument, Supplier<String> baseUrlSupplier)
   {
     return createResource(endpoint, resourceDocument, null, null, baseUrlSupplier);
   }
@@ -167,11 +165,11 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  public ScimResponse createResource(String endpoint,
-                                     String resourceDocument,
-                                     String attributes,
-                                     String excludedAttributes,
-                                     Supplier<String> baseUrlSupplier)
+  protected ScimResponse createResource(String endpoint,
+                                        String resourceDocument,
+                                        String attributes,
+                                        String excludedAttributes,
+                                        Supplier<String> baseUrlSupplier)
   {
     try
     {
@@ -226,7 +224,7 @@ public final class ResourceEndpointHandler
    * @param id the id of the resource that was requested
    * @return the scim response for the client
    */
-  public ScimResponse getResource(String endpoint, String id)
+  protected ScimResponse getResource(String endpoint, String id)
   {
     return getResource(endpoint, id, null, null, null);
   }
@@ -246,7 +244,7 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  public ScimResponse getResource(String endpoint, String id, Supplier<String> baseUrlSupplier)
+  protected ScimResponse getResource(String endpoint, String id, Supplier<String> baseUrlSupplier)
   {
     return getResource(endpoint, id, null, null, baseUrlSupplier);
   }
@@ -276,11 +274,11 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  public ScimResponse getResource(String endpoint,
-                                  String id,
-                                  String attributes,
-                                  String excludedAttributes,
-                                  Supplier<String> baseUrlSupplier)
+  protected ScimResponse getResource(String endpoint,
+                                     String id,
+                                     String attributes,
+                                     String excludedAttributes,
+                                     Supplier<String> baseUrlSupplier)
   {
     try
     {
@@ -338,7 +336,7 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
-  public ScimResponse listResources(String endpoint, String searchRequest, Supplier<String> baseUrlSupplier)
+  protected ScimResponse listResources(String endpoint, String searchRequest, Supplier<String> baseUrlSupplier)
   {
     return listResources(endpoint, JsonHelper.readJsonDocument(searchRequest, SearchRequest.class), baseUrlSupplier);
   }
@@ -359,7 +357,7 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
-  public ScimResponse listResources(String endpoint, SearchRequest searchRequest, Supplier<String> baseUrlSupplier)
+  protected ScimResponse listResources(String endpoint, SearchRequest searchRequest, Supplier<String> baseUrlSupplier)
   {
     return listResources(endpoint,
                          searchRequest.getStartIndex().orElse(null),
@@ -427,15 +425,15 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
-  public <T extends ResourceNode> ScimResponse listResources(String endpoint,
-                                                             Long startIndex,
-                                                             Integer count,
-                                                             String filter,
-                                                             String sortBy,
-                                                             String sortOrder,
-                                                             String attributes,
-                                                             String excludedAttributes,
-                                                             Supplier<String> baseUrlSupplier)
+  protected <T extends ResourceNode> ScimResponse listResources(String endpoint,
+                                                                Long startIndex,
+                                                                Integer count,
+                                                                String filter,
+                                                                String sortBy,
+                                                                String sortOrder,
+                                                                String attributes,
+                                                                String excludedAttributes,
+                                                                Supplier<String> baseUrlSupplier)
   {
     try
     {
@@ -626,7 +624,7 @@ public final class ResourceEndpointHandler
    * @param resourceDocument the resource document
    * @return the scim response for the client
    */
-  public ScimResponse updateResource(String endpoint, String id, String resourceDocument)
+  protected ScimResponse updateResource(String endpoint, String id, String resourceDocument)
   {
     return updateResource(endpoint, id, resourceDocument, null, null, null);
   }
@@ -648,10 +646,10 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  public ScimResponse updateResource(String endpoint,
-                                     String id,
-                                     String resourceDocument,
-                                     Supplier<String> baseUrlSupplier)
+  protected ScimResponse updateResource(String endpoint,
+                                        String id,
+                                        String resourceDocument,
+                                        Supplier<String> baseUrlSupplier)
   {
     return updateResource(endpoint, id, resourceDocument, null, null, baseUrlSupplier);
   }
@@ -683,12 +681,12 @@ public final class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  public ScimResponse updateResource(String endpoint,
-                                     String id,
-                                     String resourceDocument,
-                                     String attributes,
-                                     String excludedAttributes,
-                                     Supplier<String> baseUrlSupplier)
+  protected ScimResponse updateResource(String endpoint,
+                                        String id,
+                                        String resourceDocument,
+                                        String attributes,
+                                        String excludedAttributes,
+                                        Supplier<String> baseUrlSupplier)
   {
     try
     {
@@ -760,7 +758,7 @@ public final class ResourceEndpointHandler
    * @param id the id of the resource that was requested
    * @return an empty response that does not create a response body
    */
-  public ScimResponse deleteResource(String endpoint, String id)
+  protected ScimResponse deleteResource(String endpoint, String id)
   {
     try
     {
@@ -777,16 +775,6 @@ public final class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
-  }
-
-  public ScimResponse bulk(String bulkRequestBody)
-  {
-    return bulk(JsonHelper.readJsonDocument(bulkRequestBody, BulkRequest.class));
-  }
-
-  public ScimResponse bulk(BulkRequest bulkRequest)
-  {
-    return null;
   }
 
   /**

@@ -1,11 +1,10 @@
-package de.gold.scim.request;
+package de.gold.scim.response;
 
 import java.util.Optional;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.resources.base.ScimObjectNode;
-import de.gold.scim.response.ErrorResponse;
 import lombok.Builder;
 
 

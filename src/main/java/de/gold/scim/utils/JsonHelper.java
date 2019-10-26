@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -120,7 +122,7 @@ public final class JsonHelper
    */
   public static JsonNode readJsonDocument(String jsonDocument)
   {
-    if (jsonDocument == null)
+    if (StringUtils.isBlank(jsonDocument))
     {
       return null;
     }
