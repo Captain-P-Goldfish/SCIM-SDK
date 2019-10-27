@@ -35,7 +35,7 @@ public class CreateResponseTest implements FileReferences
     Assertions.assertEquals(location, createResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             createResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    Assertions.assertEquals(userResource, JsonHelper.readJsonDocument(createResponse.toJsonDocument()));
+    Assertions.assertEquals(userResource, JsonHelper.readJsonDocument(createResponse.toString()));
 
     Response response = createResponse.buildResponse();
     Assertions.assertEquals(2, response.getHeaders().size());

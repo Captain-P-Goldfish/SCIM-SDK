@@ -2,7 +2,6 @@ package de.gold.scim.endpoints.handler;
 
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -20,6 +19,7 @@ import de.gold.scim.resources.User;
 import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.JsonHelper;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -33,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserHandlerImpl extends ResourceHandler<User>
 {
 
+  @Getter
   private Map<String, User> inMemoryMap = new HashMap<>();
 
   @Override
@@ -65,23 +66,15 @@ public class UserHandlerImpl extends ResourceHandler<User>
                                                  SchemaAttribute sortBy,
                                                  SortOrder sortOrder)
   {
-    List<User> resourceNodes = new ArrayList<>();
-    Collection<User> userList = inMemoryMap.values();
-    if (startIndex <= userList.size())
-    {
-      resourceNodes.addAll(new ArrayList<>(userList).subList((int)Math.min(startIndex - 1, userList.size() - 1),
-                                                             (int)Math.min(startIndex - 1 + count, userList.size())));
-    }
-    // TODO implement filtering and sorting
-    log.warn("TODO implement filtering and sorting");
-    return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(userList.size()).build();
+    List<User> resourceNodes = new ArrayList<>(inMemoryMap.values());
+    return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
   }
 
   @Override
   public User updateResource(User resource)
   {
     String userId = resource.getId().get();
-    User oldUser = getResource(userId);
+    User oldUser = inMemoryMap.get(userId);
     if (oldUser == null)
     {
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);

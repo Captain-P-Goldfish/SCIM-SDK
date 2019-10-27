@@ -45,9 +45,14 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   @Getter
   private SchemaAttribute schemaAttribute;
 
-  public ScimObjectNode(SchemaAttribute schemaAttribute)
+  public ScimObjectNode()
   {
     super(JsonNodeFactory.instance);
+  }
+
+  public ScimObjectNode(SchemaAttribute schemaAttribute)
+  {
+    this();
     this.schemaAttribute = schemaAttribute;
   }
 
@@ -68,11 +73,19 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
-   * extracts an integer type attribute
+   * extracts a long type attribute
    */
   protected Optional<Long> getLongAttribute(String attributeName)
   {
     return JsonHelper.getSimpleAttribute(this, attributeName, Long.class);
+  }
+
+  /**
+   * extracts an integer type attribute
+   */
+  protected Optional<Integer> getIntegerAttribute(String attributeName)
+  {
+    return JsonHelper.getSimpleAttribute(this, attributeName, Integer.class);
   }
 
   /**
@@ -248,7 +261,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
-   * adds or removes an integer type attribute
+   * adds or removes a long type attribute
    */
   protected void setAttribute(String attributeName, Long attributeValue)
   {
@@ -258,6 +271,14 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       return;
     }
     JsonHelper.addAttribute(this, attributeName, new LongNode(attributeValue));
+  }
+
+  /**
+   * adds or removes an integer type attribute
+   */
+  protected void setAttribute(String attributeName, Integer attributeValue)
+  {
+    setAttribute(attributeName, attributeValue == null ? null : attributeValue.longValue());
   }
 
   /**

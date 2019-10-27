@@ -1,7 +1,6 @@
 package de.gold.scim.response;
 
 import de.gold.scim.constants.HttpStatus;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -10,9 +9,13 @@ import lombok.NoArgsConstructor;
  * <br>
  * represents an update response object
  */
-@NoArgsConstructor
 public class DeleteResponse extends ScimResponse
 {
+
+  public DeleteResponse()
+  {
+    super(null);
+  }
 
   /**
    * {@inheritDoc}
@@ -21,14 +24,5 @@ public class DeleteResponse extends ScimResponse
   public int getHttpStatus()
   {
     return HttpStatus.SC_NO_CONTENT;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String toJsonDocument()
-  {
-    return null;
   }
 }

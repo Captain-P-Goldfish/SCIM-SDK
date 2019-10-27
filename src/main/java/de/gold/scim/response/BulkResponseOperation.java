@@ -154,7 +154,7 @@ public class BulkResponseOperation extends ScimObjectNode
    */
   public void setResponse(ErrorResponse response)
   {
-    set(AttributeNames.RFC7643.RESPONSE, response == null ? null : response.getErrorNode());
+    set(AttributeNames.RFC7643.RESPONSE, response);
   }
 
 }

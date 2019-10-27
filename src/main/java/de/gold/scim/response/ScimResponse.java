@@ -5,9 +5,10 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.lang3.StringUtils;
+import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.HttpHeader;
+import de.gold.scim.resources.AbstractSchemasHolder;
 import lombok.Getter;
 
 
@@ -17,7 +18,7 @@ import lombok.Getter;
  * <br>
  * The abstract implementation for all responses created by this framework
  */
-public abstract class ScimResponse
+public abstract class ScimResponse extends AbstractSchemasHolder
 {
 
   /**
@@ -26,8 +27,15 @@ public abstract class ScimResponse
   @Getter
   private Map<String, String> httpHeaders;
 
-  public ScimResponse()
+  public ScimResponse(JsonNode responseNode)
   {
+    super();
+    if (responseNode != null)
+    {
+      responseNode.fields().forEachRemaining(childNode -> {
+        this.set(childNode.getKey(), childNode.getValue());
+      });
+    }
     this.httpHeaders = new HashMap<>();
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
@@ -41,10 +49,9 @@ public abstract class ScimResponse
   {
     Response.ResponseBuilder responseBuilder = Response.status(getHttpStatus());
     httpHeaders.forEach(responseBuilder::header);
-    final String responseDocument = toJsonDocument();
-    if (StringUtils.isNotBlank(responseDocument))
+    if (!this.isEmpty())
     {
-      responseBuilder.entity(responseDocument);
+      responseBuilder.entity(toString());
     }
     return responseBuilder.build();
   }
@@ -54,8 +61,4 @@ public abstract class ScimResponse
    */
   public abstract int getHttpStatus();
 
-  /**
-   * will translate this response into a valid json document
-   */
-  public abstract String toJsonDocument();
 }

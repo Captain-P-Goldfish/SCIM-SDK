@@ -78,7 +78,6 @@ public class BulkResponseTest
     final ErrorResponse response = new ErrorResponse(new InvalidSchemaException("invalid syntax", null,
                                                                                 HttpStatus.SC_BAD_REQUEST,
                                                                                 ScimType.RFC7644.INVALID_SYNTAX));
-
     List<BulkResponseOperation> operations = Collections.singletonList(BulkResponseOperation.builder()
                                                                                             .method(method)
                                                                                             .bulkId(bulkId)
@@ -87,12 +86,16 @@ public class BulkResponseTest
                                                                                             .status(status)
                                                                                             .response(response)
                                                                                             .build());
-    BulkResponse bulkResponse = BulkResponse.builder().bulkResponseOperation(operations).build();
+    BulkResponse bulkResponse = BulkResponse.builder()
+                                            .httpStatus(HttpStatus.SC_OK)
+                                            .bulkResponseOperation(operations)
+                                            .build();
+    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     SchemaFactory schemaFactory = ResourceTypeFactoryUtil.getSchemaFactory(resourceTypeFactory);
     Schema bulkResponseSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_RESPONSE_URI);
     Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(resourceTypeFactory,
                                                                                bulkResponseSchema,
-                                                                               bulkResponse.getAsJsonNode()));
+                                                                               bulkResponse));
   }
 }

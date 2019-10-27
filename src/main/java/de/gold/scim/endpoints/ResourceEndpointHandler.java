@@ -17,6 +17,7 @@ import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
 import de.gold.scim.endpoints.base.SchemaEndpointDefinition;
 import de.gold.scim.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.IOException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
@@ -173,9 +174,21 @@ class ResourceEndpointHandler
   {
     try
     {
+      if (StringUtils.isBlank(resourceDocument))
+      {
+        throw new BadRequestException("the request body is empty", null, ScimType.Custom.INVALID_PARAMETERS);
+      }
       RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
-      JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
+      JsonNode resource;
+      try
+      {
+        resource = JsonHelper.readJsonDocument(resourceDocument);
+      }
+      catch (IOException ex)
+      {
+        throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
+      }
       resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                             resourceType,
                                                             resource,
@@ -690,9 +703,21 @@ class ResourceEndpointHandler
   {
     try
     {
+      if (StringUtils.isBlank(resourceDocument))
+      {
+        throw new BadRequestException("the request body is empty", null, ScimType.Custom.INVALID_PARAMETERS);
+      }
       RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
-      JsonNode resource = JsonHelper.readJsonDocument(resourceDocument);
+      JsonNode resource;
+      try
+      {
+        resource = JsonHelper.readJsonDocument(resourceDocument);
+      }
+      catch (IOException ex)
+      {
+        throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
+      }
       resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                             resourceType,
                                                             resource,

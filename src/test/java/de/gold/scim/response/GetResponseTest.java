@@ -35,7 +35,7 @@ public class GetResponseTest implements FileReferences
     Assertions.assertEquals(location, getResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             getResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    Assertions.assertEquals(userResource, JsonHelper.readJsonDocument(getResponse.toJsonDocument()));
+    Assertions.assertEquals(userResource, JsonHelper.readJsonDocument(getResponse.toString()));
 
     Response response = getResponse.buildResponse();
     Assertions.assertEquals(2, response.getHeaders().size());

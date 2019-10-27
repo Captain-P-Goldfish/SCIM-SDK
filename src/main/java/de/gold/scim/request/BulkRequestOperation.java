@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.utils.JsonHelper;
@@ -43,7 +44,7 @@ public class BulkRequestOperation extends ScimObjectNode
   public String getMethod()
   {
     return getStringAttribute(AttributeNames.RFC7643.METHOD).orElseThrow(() -> {
-      return new BadRequestException("the 'method' attribute is mandatory", null, null);
+      return new BadRequestException("the 'method' attribute is mandatory", null, ScimType.Custom.INVALID_PARAMETERS);
     });
   }
 

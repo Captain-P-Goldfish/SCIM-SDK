@@ -50,7 +50,7 @@ public class ListResponseTest implements FileReferences
     Assertions.assertNull(listResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             listResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    JsonNode listJson = JsonHelper.readJsonDocument(listResponse.toJsonDocument());
+    JsonNode listJson = JsonHelper.readJsonDocument(listResponse.toString());
     Assertions.assertEquals(totalResults,
                             JsonHelper.getSimpleAttribute(listJson, AttributeNames.RFC7643.TOTAL_RESULTS, Long.class)
                                       .get());
@@ -84,6 +84,8 @@ public class ListResponseTest implements FileReferences
     log.debug(listJson.toPrettyString());
 
     ListResponse clientListResponse = new ListResponse(listJson.toString());
-    Assertions.assertEquals(listJson.toString(), clientListResponse.toJsonDocument());
+    Assertions.assertEquals(listJson.toString(), clientListResponse.toString());
+
+    // TODO
   }
 }

@@ -36,7 +36,8 @@ public class UpdateResponseTest implements FileReferences
     Assertions.assertEquals(location, updateResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             updateResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    Assertions.assertEquals(userResource, JsonHelper.readJsonDocument(updateResponse.toJsonDocument()));
+    Assertions.assertEquals(userResource, JsonHelper.readJsonDocument(updateResponse.toString()));
+    Assertions.assertEquals(userResource, updateResponse);
 
     Response response = updateResponse.buildResponse();
     Assertions.assertEquals(2, response.getHeaders().size());

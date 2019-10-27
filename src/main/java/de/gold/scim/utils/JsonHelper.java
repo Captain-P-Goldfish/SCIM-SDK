@@ -133,7 +133,10 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.exceptions.IOException.builder().message("test").cause(e).build();
+      throw de.gold.scim.exceptions.IOException.builder()
+                                               .message("Invalid content the document could not be parsed")
+                                               .cause(e)
+                                               .build();
     }
   }
 
@@ -153,7 +156,10 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.exceptions.IOException.builder().message("test").cause(e).build();
+      throw de.gold.scim.exceptions.IOException.builder()
+                                               .message("Invalid content the document could not be parsed")
+                                               .cause(e)
+                                               .build();
     }
   }
 

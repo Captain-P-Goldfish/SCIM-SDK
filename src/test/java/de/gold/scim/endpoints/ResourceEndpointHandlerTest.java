@@ -178,7 +178,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     Assertions.assertEquals(HttpStatus.SC_CREATED, scimResponse.getHttpStatus());
-    String createResponse = scimResponse.toJsonDocument();
+    String createResponse = scimResponse.toString();
     Assertions.assertNotNull(createResponse);
     User user = JsonHelper.readJsonDocument(createResponse, User.class);
     String userId = user.getId().orElse(null);
@@ -1008,6 +1008,76 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * Verifies that a {@link BadRequestException} is thrown if the request body is empty on create
+   */
+  @Test
+  public void testCreateUserWithEmptyRequestBody()
+  {
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.createResource(EndpointPaths.USERS, null, baseUrl);
+    });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * Verifies that a {@link BadRequestException} is thrown if the request body is invalid on create
+   */
+  @Test
+  public void testCreateUserWithInvalidRequestBodyContent()
+  {
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    final String invalidRequestBody = "<root>invalid</root>";
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.createResource(EndpointPaths.USERS, invalidRequestBody, baseUrl);
+    });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * Verifies that a {@link BadRequestException} is thrown if the request body is empty on update
+   */
+  @Test
+  public void testUpdateUserWithEmptyRequestBody()
+  {
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.updateResource(EndpointPaths.USERS, "123456", null, baseUrl);
+    });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * Verifies that a {@link BadRequestException} is thrown if the request body is invalid on update
+   */
+  @Test
+  public void testUpdateUserWithInvalidRequestBodyContent()
+  {
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    final String invalidRequestBody = "<root>invalid</root>";
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.updateResource(EndpointPaths.USERS, "123456", invalidRequestBody, baseUrl);
+    });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+  }
+
+  /**
    * reads a user from the endpoint
    *
    * @param endpoint the resource endpoint that should be used
@@ -1023,7 +1093,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             scimResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     Assertions.assertNotNull(scimResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
-    User user = JsonHelper.readJsonDocument(scimResponse.toJsonDocument(), User.class);
+    User user = JsonHelper.readJsonDocument(scimResponse.toString(), User.class);
     Meta meta = user.getMeta().get();
     Assertions.assertEquals("User", meta.getResourceType().get());
     Assertions.assertEquals(getLocation(endpoint, userId), meta.getLocation().get());
@@ -1060,7 +1130,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             scimResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     Assertions.assertNotNull(scimResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
-    User updatedUser = JsonHelper.readJsonDocument(scimResponse.toJsonDocument(), User.class);
+    User updatedUser = JsonHelper.readJsonDocument(scimResponse.toString(), User.class);
     Assertions.assertEquals(updateUser, updatedUser);
     Assertions.assertNotEquals(readUser, updatedUser);
     Assertions.assertEquals(usertype, updatedUser.getUserType().get());
@@ -1110,7 +1180,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                          readResourceFile(USER_RESOURCE),
                                                                          null);
       CreateResponse createResponse = (CreateResponse)scimResponse;
-      User user = JsonHelper.readJsonDocument(createResponse.toJsonDocument(), User.class);
+      User user = JsonHelper.readJsonDocument(createResponse.toString(), User.class);
       userList.add(user);
     }
     return userList;

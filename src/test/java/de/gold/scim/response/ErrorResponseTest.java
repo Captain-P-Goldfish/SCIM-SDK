@@ -12,6 +12,7 @@ import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.InvalidFilterException;
 import de.gold.scim.utils.JsonHelper;
 
@@ -39,7 +40,7 @@ public class ErrorResponseTest
     Assertions.assertNull(errorResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             errorResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    JsonNode errorJson = JsonHelper.readJsonDocument(errorResponse.toJsonDocument());
+    JsonNode errorJson = JsonHelper.readJsonDocument(errorResponse.toString());
     Assertions.assertEquals(detail, JsonHelper.getSimpleAttribute(errorJson, AttributeNames.RFC7643.DETAIL).get());
     Assertions.assertEquals(ScimType.RFC7644.INVALID_FILTER,
                             JsonHelper.getSimpleAttribute(errorJson, AttributeNames.RFC7643.SCIM_TYPE).get());
@@ -65,5 +66,14 @@ public class ErrorResponseTest
     Assertions.assertEquals(errorResponse, errorResponse);
     Assertions.assertNotEquals(errorResponse, null);
     Assertions.assertNotEquals(errorResponse, 5);
+  }
+
+  /**
+   * verifies that an exception is thrown if the status is not present in the {@link ErrorResponse}
+   */
+  @Test
+  public void testErrorOnEmptyStatus()
+  {
+    Assertions.assertThrows(InternalServerException.class, () -> new ErrorResponse((JsonNode)null));
   }
 }

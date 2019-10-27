@@ -3,6 +3,7 @@ package de.gold.scim.endpoints;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -21,12 +22,15 @@ import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.BulkRequestOperation;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.response.BulkResponse;
+import de.gold.scim.response.BulkResponseOperation;
+import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -36,6 +40,7 @@ import lombok.Getter;
  * This class will receive any request and will then delegate the request to the correct endpoint and resource
  * type
  */
+@Slf4j
 public final class ResourceEndpoint extends ResourceEndpointHandler
 {
 
@@ -70,7 +75,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
     UriInfos uriInfos = getRequestUrlInfos(requestUrl, httpMethod);
     if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
     {
-      return bulk(uriInfos, httpMethod, requestBody);
+      return bulk(uriInfos, requestBody);
     }
     return resolveRequest(httpMethod, requestBody, uriInfos);
   }
@@ -131,20 +136,93 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * resolves a bulk request
    *
    * @param uriInfos the parsed URL information for the bulk request
-   * @param httpMethod the http method that was used by in the request
    * @param requestBody the bulk request body
    * @return the response of the bulk request
    */
-  private BulkResponse bulk(UriInfos uriInfos, HttpMethod httpMethod, String requestBody)
+  private BulkResponse bulk(UriInfos uriInfos, String requestBody)
   {
     BulkRequest bulkRequest = JsonHelper.readJsonDocument(requestBody, BulkRequest.class);
     List<BulkRequestOperation> operations = bulkRequest.getBulkRequestOperations();
-    List<ScimResponse> scimResponseList = new ArrayList<>();
+    operations = sortOperations(operations);
+    List<BulkResponseOperation> responseOperations = new ArrayList<>();
+    final int failOnErrors = bulkRequest.getFailOnErrors().orElse(Integer.MAX_VALUE);
+    validateFailOnErrors(failOnErrors);
+    int errorCounter = 0;
     for ( BulkRequestOperation operation : operations )
     {
-      // TODO
+      HttpMethod httpMethod = HttpMethod.valueOf(operation.getMethod());
+      validateHttpMethodForBulkOperation(httpMethod);
+      String[] pathParts = operation.getPath().split("/");
+      ResourceType resourceType = getResourceType(pathParts);
+      UriInfos operationUriInfo = UriInfos.builder()
+                                          .baseUri(uriInfos.getBaseUri())
+                                          .resourceEndpoint(pathParts[0])
+                                          .resourceId(pathParts.length > 1 ? pathParts[1] : null)
+                                          .resourceType(resourceType)
+                                          .build();
+      ScimResponse scimResponse = resolveRequest(httpMethod, requestBody, operationUriInfo);
+      if (ErrorResponse.class.isAssignableFrom(scimResponse.getClass()))
+      {
+        errorCounter++;
+        if (errorCounter > failOnErrors)
+        {
+          // TODO handle failOnErrors exceeded
+          log.warn("TODO handle failOnErrors exceeded");
+          continue;
+        }
+      }
+      final String location = uriInfos.getBaseUri() + operationUriInfo.getResourceEndpoint()
+                              + (operationUriInfo.getResourceId() == null ? ""
+                                : "/" + operationUriInfo.getResourceId());
+      responseOperations.add(BulkResponseOperation.builder()
+                                                  .bulkId(operation.getBulkId().orElse(null))
+                                                  .status(scimResponse.getHttpStatus())
+                                                  .method(operation.getMethod())
+                                                  .location(location)
+                                                  .response(ErrorResponse.class.isAssignableFrom(scimResponse.getClass())
+                                                    ? (ErrorResponse)scimResponse : null)
+                                                  .build());
     }
-    return BulkResponse.builder().build();
+    return BulkResponse.builder().bulkResponseOperation(responseOperations).build();
+  }
+
+  private void validateFailOnErrors(int failOnErrors)
+  {
+    log.warn("TODO validate fail on errors");
+  }
+
+  /**
+   * this method must resolve the order of the operations by resolving the bulkIds and the references within the
+   * methods
+   *
+   * @param operations the list of operations
+   * @return the sorted operations in the order they should be executed
+   */
+  private List<BulkRequestOperation> sortOperations(List<BulkRequestOperation> operations)
+  {
+    // TODO
+    log.warn("TODO sorting bulk operations not yet implemented");
+    return operations;
+  }
+
+  /**
+   * verifies that the bulk operation uses a valid http method<br>
+   * <br>
+   *
+   * <pre>
+   *    The body of a bulk operation contains a set of HTTP resource operations
+   *    using one of the HTTP methods supported by the API, i.e., POST, PUT,
+   *    PATCH, or DELETE.
+   * </pre>
+   */
+  private void validateHttpMethodForBulkOperation(HttpMethod httpMethod)
+  {
+    List<HttpMethod> validMethods = Arrays.asList(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE);
+    if (!validMethods.contains(httpMethod))
+    {
+      throw new BadRequestException("bulk request used invalid http method. Only the following methods are allowed "
+                                    + "for bulk: " + validMethods, null, ScimType.Custom.UNPARSEABLE_REQUEST);
+    }
   }
 
   /**
@@ -177,6 +255,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                 .resourceEndpoint(resourceType.getEndpoint())
                                 .resourceId(resourceId)
                                 .queryParameters(url.getQuery())
+                                .resourceType(resourceType)
                                 .build();
     validateUriInfos(uriInfos, httpMethod);
     return uriInfos;
@@ -250,7 +329,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
     for ( ResourceType resourceType : getResourceTypeFactory().getAllResourceTypes() )
     {
       if (StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 1])
-          || StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 2]))
+          || (urlParts.length > 1 && StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 2])))
       {
         return resourceType;
       }

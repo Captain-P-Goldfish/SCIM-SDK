@@ -1,20 +1,16 @@
 package de.gold.scim.response;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.utils.JsonHelper;
-import lombok.Getter;
 
 
 /**
@@ -26,58 +22,29 @@ import lombok.Getter;
 public class ListResponse extends ScimResponse
 {
 
-  /**
-   * this is the actual node that represents this response
-   */
-  private JsonNode listResponseNode;
-
-  /**
-   * the resources that have been extracted
-   */
-  @Getter
-  private List<JsonNode> listedResources;
-
-  /**
-   * Non-negative integer. Specifies the total number of results matching the client query, e.g., 1000
-   */
-  @Getter
-  private Long totalResults;
-
-  /**
-   * Non-negative integer. Specifies the number of query results returned in a query response page, e.g., 10.
-   */
-  @Getter
-  private Integer itemsPerPage;
-
-  /**
-   * The 1-based index of the first result in the current set of query results, e.g., 1.
-   */
-  @Getter
-  private Long startIndex;
-
   public ListResponse(String resourceJsonRepresentation)
   {
-    this.listResponseNode = JsonHelper.readJsonDocument(resourceJsonRepresentation);
-    this.totalResults = JsonHelper.getSimpleAttribute(listResponseNode,
-                                                      AttributeNames.RFC7643.TOTAL_RESULTS,
-                                                      Long.class)
-                                  .orElse(null);
-    this.itemsPerPage = JsonHelper.getSimpleAttribute(listResponseNode,
-                                                      AttributeNames.RFC7643.ITEMS_PER_PAGE,
-                                                      Integer.class)
-                                  .orElse(null);
-    this.startIndex = JsonHelper.getSimpleAttribute(listResponseNode, AttributeNames.RFC7643.START_INDEX, Long.class)
-                                .orElse(null);
-    this.listedResources = new ArrayList<>();
-    JsonHelper.getArrayAttribute(listResponseNode, AttributeNames.RFC7643.RESOURCES).ifPresent(resourceArray -> {
-      resourceArray.forEach(listedResources::add);
-    });
+    super(JsonHelper.readJsonDocument(resourceJsonRepresentation));
+    // JsonNode responseNode = JsonHelper.readJsonDocument(resourceJsonRepresentation);
+    // setTotalResults(JsonHelper.getSimpleAttribute(responseNode, AttributeNames.RFC7643.TOTAL_RESULTS,
+    // Long.class)
+    // .orElse(null));
+    // this.itemsPerPage = JsonHelper.getSimpleAttribute(responseNode,
+    // AttributeNames.RFC7643.ITEMS_PER_PAGE,
+    // Integer.class)
+    // .orElse(null);
+    // this.startIndex = JsonHelper.getSimpleAttribute(responseNode, AttributeNames.RFC7643.START_INDEX,
+    // Long.class)
+    // .orElse(null);
+    // this.listedResources = new ArrayList<>();
+    // JsonHelper.getArrayAttribute(responseNode, AttributeNames.RFC7643.RESOURCES).ifPresent(resourceArray -> {
+    // resourceArray.forEach(listedResources::add);
+    // });
   }
 
   public ListResponse(List<JsonNode> listedResources, Long totalResults, Integer itemsPerPage, Long startIndex)
   {
-    super();
-    this.listResponseNode = new ObjectNode(JsonNodeFactory.instance);
+    super(null);
     setSchemasAttribute();
     setTotalResults(totalResults);
     setItemsPerPage(itemsPerPage);
@@ -92,54 +59,71 @@ public class ListResponse extends ScimResponse
   {
     ArrayNode schemas = new ArrayNode(JsonNodeFactory.instance);
     schemas.add(SchemaUris.LIST_RESPONSE_URI);
-    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.SCHEMAS, schemas);
+    JsonHelper.addAttribute(this, AttributeNames.RFC7643.SCHEMAS, schemas);
   }
 
   /**
-   * @see #totalResults
+   * Non-negative integer. Specifies the total number of results matching the client query, e.g., 1000
+   */
+  public long getTotalResults()
+  {
+    return getLongAttribute(AttributeNames.RFC7643.TOTAL_RESULTS).orElse(0L);
+  }
+
+  /**
+   * Non-negative integer. Specifies the total number of results matching the client query, e.g., 1000
    */
   public void setTotalResults(Long totalResults)
   {
-    this.totalResults = totalResults;
-    if (totalResults != null)
-    {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.TOTAL_RESULTS, new LongNode(totalResults));
-    }
+    setAttribute(AttributeNames.RFC7643.TOTAL_RESULTS, totalResults);
   }
 
   /**
-   * @see #itemsPerPage
+   * Non-negative integer. Specifies the total number of results matching the client query, e.g., 1000
+   */
+  public int getItemsPerPage()
+  {
+    return getIntegerAttribute(AttributeNames.RFC7643.ITEMS_PER_PAGE).orElse(0);
+  }
+
+  /**
+   * Non-negative integer. Specifies the number of query results returned in a query response page, e.g., 10.
    */
   public void setItemsPerPage(Integer itemsPerPage)
   {
-    this.itemsPerPage = itemsPerPage;
-    if (itemsPerPage != null)
-    {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.ITEMS_PER_PAGE, new IntNode(itemsPerPage));
-    }
+    setAttribute(AttributeNames.RFC7643.ITEMS_PER_PAGE, itemsPerPage);
   }
 
   /**
-   * @see #startIndex
+   * The 1-based index of the first result in the current set of query results, e.g., 1.
+   */
+  public long getStartIndex()
+  {
+    return getLongAttribute(AttributeNames.RFC7643.START_INDEX).orElse(1L);
+  }
+
+  /**
+   * The 1-based index of the first result in the current set of query results, e.g., 1.
    */
   public void setStartIndex(Long startIndex)
   {
-    this.startIndex = startIndex;
-    if (startIndex != null)
-    {
-      JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.START_INDEX, new LongNode(startIndex));
-    }
+    setAttribute(AttributeNames.RFC7643.START_INDEX, startIndex);
   }
 
   /**
-   * @see #listedResources
+   * the resources that have been extracted
+   */
+  public List<ScimObjectNode> getListedResources()
+  {
+    return getArrayAttribute(AttributeNames.RFC7643.RESOURCES, ScimObjectNode.class);
+  }
+
+  /**
+   * the resources that have been extracted
    */
   public void setListedResources(List<JsonNode> listedResources)
   {
-    this.listedResources = listedResources == null ? new ArrayList<>() : listedResources;
-    ArrayNode resources = new ArrayNode(JsonNodeFactory.instance);
-    this.listedResources.forEach(resources::add);
-    JsonHelper.addAttribute(this.listResponseNode, AttributeNames.RFC7643.RESOURCES, resources);
+    setAttribute(AttributeNames.RFC7643.RESOURCES, listedResources);
   }
 
   /**
@@ -149,14 +133,5 @@ public class ListResponse extends ScimResponse
   public int getHttpStatus()
   {
     return HttpStatus.SC_OK;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String toJsonDocument()
-  {
-    return listResponseNode.toString();
   }
 }

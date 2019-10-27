@@ -30,7 +30,7 @@ public class DeleteResponseTest
     Assertions.assertNull(deleteResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             deleteResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    Assertions.assertNull(deleteResponse.toJsonDocument());
+    Assertions.assertTrue(deleteResponse.isEmpty());
 
     Response response = deleteResponse.buildResponse();
     Assertions.assertEquals(1, response.getHeaders().size());
@@ -38,5 +38,6 @@ public class DeleteResponseTest
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpStatus.SC_NO_CONTENT, deleteResponse.getHttpStatus());
+    Assertions.assertNull(response.getEntity());
   }
 }

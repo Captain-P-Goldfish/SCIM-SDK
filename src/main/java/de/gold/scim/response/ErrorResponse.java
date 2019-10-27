@@ -1,21 +1,16 @@
 package de.gold.scim.response;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.builder.EqualsBuilder;
+import java.util.Collections;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.ResponseException;
 import de.gold.scim.exceptions.ScimException;
-import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,34 +26,21 @@ public class ErrorResponse extends ScimResponse
 {
 
   /**
-   * this is the json representation that is used as error response
-   */
-  @Getter
-  private final JsonNode errorNode;
-
-  /**
    * the exception that should be turned into a SCIM error response
    */
   @Getter
   private ScimException scimException;
 
-  public ErrorResponse(JsonNode errorNode)
+  public ErrorResponse(JsonNode responseNode)
   {
-    this.errorNode = errorNode;
-    this.scimException = new ResponseException(JsonHelper.getSimpleAttribute(errorNode, AttributeNames.RFC7643.DETAIL)
-                                                         .orElse(null),
-                                               JsonHelper.getSimpleAttribute(errorNode,
-                                                                             AttributeNames.RFC7643.STATUS,
-                                                                             Integer.class)
-                                                         .orElse(null),
-                                               JsonHelper.getSimpleAttribute(errorNode,
-                                                                             AttributeNames.RFC7643.SCIM_TYPE)
-                                                         .orElse(null));
+    super(responseNode);
+    setSchemas(Collections.singletonList(SchemaUris.ERROR_URI));
+    this.scimException = new ResponseException(getDetail().orElse(null), getStatus(), getScimType().orElse(null));
   }
 
   public ErrorResponse(ScimException scimException)
   {
-    this.errorNode = new ObjectNode(JsonNodeFactory.instance);
+    super(null);
     this.scimException = scimException;
     if (HttpStatus.SC_INTERNAL_SERVER_ERROR == getHttpStatus())
     {
@@ -68,28 +50,60 @@ public class ErrorResponse extends ScimResponse
     {
       log.debug(scimException.getMessage(), scimException);
     }
-    writeValuesToErrorNode();
+    setSchemas(Collections.singletonList(SchemaUris.ERROR_URI));
+    setStatus(scimException.getStatus());
+    setDetail(scimException.getDetail());
+    setScimType(scimException.getScimType());
   }
 
   /**
-   * adds the attributes into the error node representation
+   * The HTTP status code (see Section 6 of [RFC7231]) expressed as a JSON string. REQUIRED.
    */
-  protected void writeValuesToErrorNode()
+  public int getStatus()
   {
-    ArrayNode schemas = new ArrayNode(JsonNodeFactory.instance);
-    schemas.add(SchemaUris.ERROR_URI);
-    JsonHelper.addAttribute(this.errorNode, AttributeNames.RFC7643.SCHEMAS, schemas);
-    JsonHelper.addAttribute(this.errorNode, AttributeNames.RFC7643.STATUS, new IntNode(scimException.getStatus()));
-    if (StringUtils.isNotBlank(scimException.getDetail()))
-    {
-      JsonHelper.addAttribute(this.errorNode, AttributeNames.RFC7643.DETAIL, new TextNode(scimException.getDetail()));
-    }
-    if (StringUtils.isNotBlank(scimException.getScimType()))
-    {
-      JsonHelper.addAttribute(this.errorNode,
-                              AttributeNames.RFC7643.SCIM_TYPE,
-                              new TextNode(scimException.getScimType()));
-    }
+    return getIntegerAttribute(AttributeNames.RFC7643.STATUS).orElseThrow(() -> {
+      return new InternalServerException("the http 'status' is a mandatory attribute", null, null);
+    });
+  }
+
+  /**
+   * The HTTP status code (see Section 6 of [RFC7231]) expressed as a JSON string. REQUIRED.
+   */
+  public void setStatus(int status)
+  {
+    setAttribute(AttributeNames.RFC7643.STATUS, status);
+  }
+
+  /**
+   * A SCIM detail error keyword. See Table 9. OPTIONAL.
+   */
+  public Optional<String> getScimType()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.SCIM_TYPE);
+  }
+
+  /**
+   * A SCIM detail error keyword. See Table 9. OPTIONAL.
+   */
+  public void setScimType(String scimType)
+  {
+    setAttribute(AttributeNames.RFC7643.SCIM_TYPE, scimType);
+  }
+
+  /**
+   * A detailed human-readable message. OPTIONAL.
+   */
+  public Optional<String> getDetail()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.DETAIL);
+  }
+
+  /**
+   * A detailed human-readable message. OPTIONAL.
+   */
+  public void setDetail(String detail)
+  {
+    setAttribute(AttributeNames.RFC7643.DETAIL, detail);
   }
 
   /**
@@ -99,32 +113,5 @@ public class ErrorResponse extends ScimResponse
   public int getHttpStatus()
   {
     return scimException.getStatus();
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String toJsonDocument()
-  {
-    return errorNode.toString();
-  }
-
-  @Override
-  public boolean equals(Object o)
-  {
-    if (this == o)
-    {
-      return true;
-    }
-
-    if (!(o instanceof ErrorResponse))
-    {
-      return false;
-    }
-
-    ErrorResponse that = (ErrorResponse)o;
-
-    return new EqualsBuilder().append(errorNode, that.errorNode).isEquals();
   }
 }

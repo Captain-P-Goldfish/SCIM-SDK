@@ -15,15 +15,9 @@ import de.gold.scim.constants.HttpStatus;
 public class GetResponse extends ScimResponse
 {
 
-  /**
-   * the resource that was created
-   */
-  private JsonNode existingResource;
-
-  public GetResponse(JsonNode existingResource, String location)
+  public GetResponse(JsonNode responseNode, String location)
   {
-    super();
-    this.existingResource = existingResource;
+    super(responseNode);
     getHttpHeaders().put(HttpHeader.LOCATION_HEADER, location);
   }
 
@@ -34,14 +28,5 @@ public class GetResponse extends ScimResponse
   public int getHttpStatus()
   {
     return HttpStatus.SC_OK;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public String toJsonDocument()
-  {
-    return existingResource.toString();
   }
 }
