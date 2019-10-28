@@ -11,7 +11,7 @@ filter:   filter AND filter             #andExpression
 attributeExpression:    attributePath compareOperator compareValue
                       | attributePath PR ;
 
-valuePath: attributePath '[' filter ']' ('.' subattribute=ATTRIBUTE_NAME)?;
+valuePath: attributePath ('[' filter ']')? ('.' subattribute=ATTRIBUTE_NAME)?;
 
 attributePath:   resourceUri=NAME_URI? attribute=ATTRIBUTE_NAME ('.' subattribute=ATTRIBUTE_NAME)? ;
 

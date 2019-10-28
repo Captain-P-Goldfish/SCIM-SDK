@@ -124,6 +124,33 @@ public final class RequestUtils
   }
 
   /**
+   * parses a value path context for patch path expressions
+   *
+   * @param resourceType the resource type that describes the endpoint on which the path expression is used
+   * @param path the path expression that must apply to the given resource type
+   * @return The parsed path expression as resolvable tree structure to find matching attributes within a single
+   *         resource
+   */
+  public static FilterNode parsePatchPath(ResourceType resourceType, String path)
+  {
+    if (StringUtils.isBlank(path))
+    {
+      return null;
+    }
+    FilterRuleErrorListener filterRuleErrorListener = new FilterRuleErrorListener();
+    ScimFilterLexer lexer = new ScimFilterLexer(CharStreams.fromString(path));
+    lexer.removeErrorListeners();
+    lexer.addErrorListener(filterRuleErrorListener);
+    CommonTokenStream commonTokenStream = new CommonTokenStream(lexer);
+    ScimFilterParser scimFilterParser = new ScimFilterParser(commonTokenStream);
+    scimFilterParser.removeErrorListeners();
+    scimFilterParser.addErrorListener(filterRuleErrorListener);
+    ScimFilterParser.ValuePathContext valuePathContext = scimFilterParser.valuePath();
+    FilterVisitor filterVisitor = new FilterVisitor(resourceType);
+    return filterVisitor.visit(valuePathContext);
+  }
+
+  /**
    * The 1-based index of the first query result. A value less than 1 SHALL be interpreted as 1.
    *
    * @param startIndex the index to start with to list the resources
@@ -301,13 +328,13 @@ public final class RequestUtils
    * will check the failOnErrors attribute in a bulk request and return a sanitized value.<br>
    * <br>
    * RFC7644 chapter 3.7.3 defines the minimum value of failOnErrors as 1
-   * 
+   *
    * <pre>
    *   The "failOnErrors" attribute is set to '1', indicating that the
    *   service provider will stop processing and return results after one
    *   error
    * </pre>
-   * 
+   *
    * @param bulkRequest the bulk request
    * @return a failOnErrors value that has been validated and sanitized
    */

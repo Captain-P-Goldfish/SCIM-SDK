@@ -16,10 +16,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.ClassPathReferences;
+import de.gold.scim.filter.AttributeExpressionLeaf;
+import de.gold.scim.filter.AttributePathLeaf;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.antlr.Comparator;
 import de.gold.scim.resources.AllTypes;
@@ -31,6 +35,7 @@ import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -38,6 +43,7 @@ import de.gold.scim.utils.RequestUtils;
  * created at: 20.10.2019 - 21:56 <br>
  * <br>
  */
+@Slf4j
 public class FilterResourceResolverTest implements FileReferences
 {
 
@@ -1752,6 +1758,39 @@ public class FilterResourceResolverTest implements FileReferences
     List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(allTypesList, filterNode);
     Assertions.assertEquals(2, filteredAllTypes.size());
     MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(allTypesArray[0], allTypesArray[1]));
+  }
+
+  /**
+   * verifies that bracket filters can be resolved as they have to be for patch expressions
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"date", "complex.stringArray", "CoMpLeX.NuMbEr", "complex[string eq \"chuck\"]",
+                          "multicomplex[stringArray eq \"hello\"].number",
+                          "urn:gold:params:scim:schemas:custom:2.0:AllTypes:date",
+                          "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex.stringarray",
+                          "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex[string eq \"chuck\"]",
+                          "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multicomplex[stringArray eq \"hello\"]"
+                                                                                                           + ".number"})
+  public void testValuePathFilteringForPatch(String path)
+  {
+    final FilterNode filterNode = RequestUtils.parsePatchPath(allTypesResourceType, path);
+    Assertions.assertNotNull(filterNode);
+    log.warn(filterNode.toString());
+    if (AttributePathLeaf.class.isAssignableFrom(filterNode.getClass()))
+    {
+      AttributePathLeaf attributePathLeaf = (AttributePathLeaf)filterNode;
+      Assertions.assertNotNull(attributePathLeaf.getSchemaAttribute());
+      Assertions.assertNotNull(attributePathLeaf.getFilterAttributeName());
+    }
+    else
+    {
+      MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
+      AttributeExpressionLeaf expressionLeaf = (AttributeExpressionLeaf)filterNode;
+      if (path.endsWith(".number"))
+      {
+        Assertions.assertEquals("number", expressionLeaf.getSubAttributeName());
+      }
+    }
   }
 
   /**
