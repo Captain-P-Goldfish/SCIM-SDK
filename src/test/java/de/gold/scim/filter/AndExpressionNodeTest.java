@@ -66,7 +66,7 @@ public class AndExpressionNodeTest
     Assertions.assertNotNull(filterNode2);
     EqualsVerifier.forClass(AndExpressionNode.class)
                   .usingGetClass()
-                  .withIgnoredFields("parent")
+                  .withIgnoredFields("parent", "subAttributeName")
                   .withPrefabValues(FilterNode.class, filterNode1, filterNode2)
                   .verify();
   }

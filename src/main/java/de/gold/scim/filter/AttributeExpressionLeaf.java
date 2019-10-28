@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
@@ -60,10 +61,21 @@ public final class AttributeExpressionLeaf extends FilterNode
   public AttributeExpressionLeaf(ScimFilterParser.AttributeExpressionContext context, ResourceType resourceType)
   {
     ScimFilterParser.ValuePathContext attributeValuePath = getParentValuePath(context);
-    String parentName = attributeValuePath == null ? null : attributeValuePath.attributePath().attribute.getText();
-
     this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
-    FilterAttributeName attributeName = new FilterAttributeName(parentName, context.attributePath());
+    FilterAttributeName attributeName = new FilterAttributeName(attributeValuePath, context.attributePath());
+    String parentName = attributeName.getSubAttributeName();
+
+    if (attributeValuePath != null)
+    {
+      String subName = attributeValuePath.subattribute == null ? null : attributeValuePath.subattribute.getText();
+      if (subName != null)
+      {
+        String fullSubname = StringUtils.stripToEmpty(parentName) + subName;
+        SchemaAttribute subAttributeSchema = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullSubname);
+        super.setSubAttributeName(subAttributeSchema == null ? null : subAttributeSchema.getName());
+      }
+    }
+
     this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, attributeName);
     if (parentName != null && !parentName.equals(schemaAttribute.getParent().getName()))
     {

@@ -65,7 +65,7 @@ public class NotExpressionNodeTest
     Assertions.assertNotNull(filterNode2);
     EqualsVerifier.forClass(NotExpressionNode.class)
                   .usingGetClass()
-                  .withIgnoredFields("parent")
+                  .withIgnoredFields("parent", "subAttributeName")
                   .withPrefabValues(FilterNode.class, filterNode1, filterNode2)
                   .verify();
   }

@@ -171,7 +171,7 @@ public final class RequestUtils
    * @throws de.gold.scim.exceptions.BadRequestException if no {@link SchemaAttribute} was found for the given
    *           name attribute
    */
-  public static SchemaAttribute getSchemaAttributeForSortBy(ResourceType resourceType, String sortBy)
+  public static SchemaAttribute getSchemaAttributeByAttributeName(ResourceType resourceType, String sortBy)
   {
     try
     {

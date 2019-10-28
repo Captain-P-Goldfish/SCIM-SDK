@@ -65,7 +65,7 @@ public class OrExpressionNodeTest
     Assertions.assertNotNull(filterNode2);
     EqualsVerifier.forClass(OrExpressionNode.class)
                   .usingGetClass()
-                  .withIgnoredFields("parent")
+                  .withIgnoredFields("parent", "subAttributeName")
                   .withPrefabValues(FilterNode.class, filterNode1, filterNode2)
                   .verify();
   }

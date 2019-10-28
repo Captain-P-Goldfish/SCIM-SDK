@@ -593,7 +593,7 @@ class ResourceEndpointHandler
     }
     if (serviceProvider.getSortConfig().isSupported())
     {
-      return RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+      return RequestUtils.getSchemaAttributeByAttributeName(resourceType, sortBy);
     }
     log.debug("sortBy value '{}' is ignored because sorting support is disabled", sortBy);
     return null;

@@ -27,6 +27,7 @@ public final class OrExpressionNode extends FilterNode
     this.leftNode = leftNode;
     rightNode.setParent(this);
     this.rightNode = rightNode;
+    setSubAttributeName(leftNode.getSubAttributeName());
   }
 
   @Override

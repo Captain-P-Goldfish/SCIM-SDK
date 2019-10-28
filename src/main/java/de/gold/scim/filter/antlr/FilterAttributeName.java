@@ -37,10 +37,21 @@ public class FilterAttributeName
    */
   private String fullName;
 
+  /**
+   * a sub attribute of bracket notations for patch operation resolving
+   */
+  private String subAttributeName;
+
+  public FilterAttributeName(ScimFilterParser.ValuePathContext valuePathContext,
+                             ScimFilterParser.AttributePathContext attributePathContext)
+  {
+    this(valuePathContext == null ? null : valuePathContext.attributePath().attribute.getText(), attributePathContext);
+  }
+
   public FilterAttributeName(String parentName, ScimFilterParser.AttributePathContext attributePathContext)
   {
-    String parentPrefix = parentName == null ? "" : (parentName + ".");
-    this.shortName = parentPrefix + attributePathContext.attribute.getText()
+    this.subAttributeName = parentName == null ? null : (parentName + ".");
+    this.shortName = StringUtils.stripToEmpty(subAttributeName) + attributePathContext.attribute.getText()
                      + StringUtils.stripToEmpty(attributePathContext.subattribute == null ? null
                        : "." + attributePathContext.subattribute.getText());
     this.resourceUri = resolveResourceUri(attributePathContext).orElse(null);

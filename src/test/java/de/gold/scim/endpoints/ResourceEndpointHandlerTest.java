@@ -602,7 +602,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
-    SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+    SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, sortBy);
     Mockito.verify(userHandler, Mockito.times(1))
            .listResources(Mockito.eq(1L),
                           Mockito.eq(0),
@@ -679,7 +679,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
-    SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeForSortBy(resourceType, sortBy);
+    SchemaAttribute sortByAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, sortBy);
     SortOrder actualSortOrder = sortOrder == null && sortBy != null ? SortOrder.ASCENDING : sortOrder;
     Mockito.verify(userHandler, Mockito.times(1))
            .listResources(Mockito.eq(1L),

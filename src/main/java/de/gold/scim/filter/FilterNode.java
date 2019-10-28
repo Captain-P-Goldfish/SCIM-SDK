@@ -20,4 +20,18 @@ public abstract class FilterNode
   @Getter
   @Setter(AccessLevel.PROTECTED)
   private FilterNode parent;
+
+  /**
+   * this attribute is relevant for resolving value-paths on patch operations
+   */
+  @Getter
+  private String subAttributeName;
+
+  /**
+   * this attribute is relevant for resolving value-paths on patch operations
+   */
+  public void setSubAttributeName(String subAttributeName)
+  {
+    this.subAttributeName = subAttributeName;
+  }
 }

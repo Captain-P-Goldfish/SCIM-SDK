@@ -25,6 +25,7 @@ public final class NotExpressionNode extends FilterNode
   {
     rightNode.setParent(this);
     this.rightNode = rightNode;
+    setSubAttributeName(rightNode.getSubAttributeName());
   }
 
   @Override
