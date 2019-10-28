@@ -24,6 +24,7 @@ import de.gold.scim.filter.antlr.FilterRuleErrorListener;
 import de.gold.scim.filter.antlr.FilterVisitor;
 import de.gold.scim.filter.antlr.ScimFilterLexer;
 import de.gold.scim.filter.antlr.ScimFilterParser;
+import de.gold.scim.request.BulkRequest;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.Schema;
@@ -294,5 +295,33 @@ public final class RequestUtils
       }
     }
     return queryParameter;
+  }
+
+  /**
+   * will check the failOnErrors attribute in a bulk request and return a sanitized value.<br>
+   * <br>
+   * RFC7644 chapter 3.7.3 defines the minimum value of failOnErrors as 1
+   * 
+   * <pre>
+   *   The "failOnErrors" attribute is set to '1', indicating that the
+   *   service provider will stop processing and return results after one
+   *   error
+   * </pre>
+   * 
+   * @param bulkRequest the bulk request
+   * @return a failOnErrors value that has been validated and sanitized
+   */
+  public static int getEffectiveFailOnErrors(BulkRequest bulkRequest)
+  {
+    Integer failOnErrors = bulkRequest.getFailOnErrors().orElse(null);
+    if (failOnErrors == null)
+    {
+      return Integer.MAX_VALUE;
+    }
+    if (failOnErrors < 1)
+    {
+      return 1;
+    }
+    return failOnErrors;
   }
 }

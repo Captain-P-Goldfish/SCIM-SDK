@@ -29,6 +29,8 @@ import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.exceptions.NotImplementedException;
+import de.gold.scim.exceptions.ResponseException;
 import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.BulkRequestOperation;
 import de.gold.scim.request.SearchRequest;
@@ -39,6 +41,7 @@ import de.gold.scim.response.BulkResponse;
 import de.gold.scim.response.BulkResponseOperation;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
+import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.GetResponse;
 import de.gold.scim.response.ListResponse;
 import de.gold.scim.response.ScimResponse;
@@ -495,7 +498,7 @@ public class ResourceEndpointTest
       Assertions.assertEquals(HttpStatus.SC_NO_CONTENT, bulkResponseOperation.getStatus());
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
-      Assertions.assertFalse(bulkResponseOperation.getLocation().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
     }
   }
 
@@ -506,13 +509,23 @@ public class ResourceEndpointTest
    */
   private List<BulkRequestOperation> getDeleteUserBulkOperations(Collection<User> createUsers)
   {
+    return getDeleteUserBulkOperations(createUsers, HttpMethod.DELETE);
+  }
+
+  /**
+   * creates delete requests for the create operations
+   *
+   * @param createUsers the create operations to access the ids
+   */
+  private List<BulkRequestOperation> getDeleteUserBulkOperations(Collection<User> createUsers, HttpMethod httpMethod)
+  {
     List<BulkRequestOperation> operations = new ArrayList<>();
     for ( User createdUser : createUsers )
     {
       final String id = createdUser.getId().get();
       operations.add(BulkRequestOperation.builder()
                                          .bulkId(UUID.randomUUID().toString())
-                                         .method(HttpMethod.DELETE)
+                                         .method(httpMethod)
                                          .path(EndpointPaths.USERS + "/" + id)
                                          .build());
     }
@@ -526,6 +539,16 @@ public class ResourceEndpointTest
    */
   private List<BulkRequestOperation> getUpdateUserBulkOperations(Collection<User> createdUsers)
   {
+    return getUpdateUserBulkOperations(createdUsers, HttpMethod.PUT);
+  }
+
+  /**
+   * creates update requests for the create operations
+   *
+   * @param createdUsers the create operations to access the ids
+   */
+  private List<BulkRequestOperation> getUpdateUserBulkOperations(Collection<User> createdUsers, HttpMethod httpMethod)
+  {
     List<BulkRequestOperation> operations = new ArrayList<>();
     for ( User createdUser : createdUsers )
     {
@@ -533,7 +556,7 @@ public class ResourceEndpointTest
       final String newUserName = UUID.randomUUID().toString();
       final User user = User.builder().userName(newUserName).nickName(newUserName).build();
       operations.add(BulkRequestOperation.builder()
-                                         .method(HttpMethod.PUT)
+                                         .method(httpMethod)
                                          .path(EndpointPaths.USERS + "/" + id)
                                          .data(user.toString())
                                          .build());
@@ -563,69 +586,265 @@ public class ResourceEndpointTest
     return operations;
   }
 
+  /**
+   * shows that the request is validated and an exception is thrown if the bulk request is not conform to its
+   * definition
+   */
   @Test
   public void testSendBulkRequestWithJsonArrayInBody()
   {
-    Assertions.fail("send json array in request body to bulk endpoint");
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, createOperations.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+                             Matchers.containsString("document does not have a 'schemas'-attribute"));
   }
 
+  /**
+   * verifies that an exception is thrown if a bulk post-request is missing a bulkId
+   */
   @Test
-  public void testBulkIdIsMissing()
+  public void testBulkIdIsMissingOnPost()
   {
-    Assertions.fail("the bulkId is missing on create user");
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    createOperations.get(createOperations.size() - 1).setBulkId(null);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+                             Matchers.equalTo("missing 'bulkId' on BULK-POST request"));
   }
 
-  @Test
-  public void testBulkIdIsMissingOnOtherRequestsThanCreate()
+  /**
+   * checks that the bulk requests will be handled successfully for update and delete if the bulkId is missing
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"PUT", "DELETE"})
+  public void testBulkIdIsMissingOnOtherRequestsThanCreate(HttpMethod httpMethod)
   {
-    Assertions.fail("there must be no error if the bulkId is missing on another request part than create");
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+
+    for ( int i = 0 ; i < maxOperations ; i++ )
+    {
+      String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder()
+                      .resourceType(ResourceTypeNames.USER)
+                      .created(LocalDateTime.now())
+                      .lastModified(LocalDateTime.now())
+                      .build();
+      User user = User.builder().id(id).userName(id).meta(meta).build();
+      userHandler.getInMemoryMap().put(id, user);
+    }
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    switch (httpMethod)
+    {
+      case PUT:
+        operations.addAll(getUpdateUserBulkOperations(userHandler.getInMemoryMap().values(), httpMethod));
+        break;
+      case DELETE:
+        operations.addAll(getDeleteUserBulkOperations(userHandler.getInMemoryMap().values(), httpMethod));
+        break;
+      default:
+        throw new IllegalStateException("not yet supported");
+    }
+
+    operations.forEach(operation -> operation.setBulkId(null));
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
   }
 
-  @Test
-  public void testFailOnErrorsWorks()
+  /**
+   * verifies that the processing of the operations is aborted after the failOnErrors value is exceeded
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3})
+  public void testFailOnErrorsWorks(int failOnErrors)
   {
-    Assertions.fail("fail on errors must be used");
+    final int maxOperations = failOnErrors + 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    Mockito.doThrow(new BadRequestException("something bad", null, null))
+           .when(userHandler)
+           .createResource(Mockito.any());
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    BulkRequest bulkRequest = BulkRequest.builder()
+                                         .failOnErrors(failOnErrors)
+                                         .bulkRequestOperation(createOperations)
+                                         .build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(failOnErrors, bulkResponse.getBulkResponseOperations().size());
+
+    bulkResponse.getBulkResponseOperations().forEach(operation -> {
+      Assertions.assertTrue(operation.getResponse().isPresent());
+      ErrorResponse errorResponse = operation.getResponse().get();
+      MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                               Matchers.typeCompatibleWith(ResponseException.class));
+      Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+      Assertions.assertEquals("something bad", errorResponse.getDetail().get());
+    });
+
+    log.warn(bulkResponse.toPrettyString());
   }
 
+  /**
+   * verifies that bulk cannot be used if the service provider has set its support to false
+   */
   @Test
   public void testFailIfBulkIsNotSupported()
   {
-    Assertions.fail("fail if bulk is not supported by the service provider");
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(false);
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(NotImplementedException.class));
+    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+                             Matchers.equalTo("bulk is not supported by this service provider"));
   }
 
-  @Test
-  public void testFailIfMaxOperationsIsExceeded()
+  /**
+   * verifies that exceeding the maximum number of operations will cause a {@link BadRequestException}
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {1, 2, 3})
+  public void testFailIfMaxOperationsIsExceeded(int maxOperations)
   {
-    Assertions.fail("fail if max operations is exceeded");
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations + 1);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals("too many operations maximum number of operations is '" + maxOperations + "'",
+                            errorResponse.getDetail().get());
   }
 
+  /**
+   * verifies that a {@link BadRequestException} is thrown if the maximum payload size is exceeded
+   */
   @Test
   public void testFailIfMaxPayloadIsExceeded()
   {
-    Assertions.fail("fail if max payload size is exceeded");
+    final int maxOperations = 10;
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+
+    final long maxPayloadSize = bulkRequest.toString().getBytes().length - 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(maxPayloadSize);
+
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals("request body too large with '" + (maxPayloadSize + 1) + "'-bytes "
+                            + "maximum payload size is '" + maxPayloadSize + "'",
+                            errorResponse.getDetail().get());
   }
 
-  @Test
-  public void testFailIfInvalidHttpMethodIsUsedOnBulk()
-  {
-    Assertions.fail("fail that bulk fails if invalid http method is used");
-  }
-
+  /**
+   * verifies that schema validation is executed on a bulk request
+   */
   @Test
   public void testValidateBulkRequestWithSchema()
   {
-    Assertions.fail("do bulk request validation");
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    BulkRequest bulkRequest = BulkRequest.builder().build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    Assertions.assertEquals("the attribute 'urn:ietf:params:scim:api:messages:2.0:BulkRequest:Operations' "
+                            + "is required \n\tmutability: 'WRITE_ONLY'\n\treturned: 'NEVER'",
+                            errorResponse.getDetail().get());
   }
 
+  /**
+   * verifies that failed post operations do not contain a location
+   */
   @Test
-  public void testValidateBulkResponseWithSchema()
+  public void testNoLocationOnFailedPostBulkOperation()
   {
-    Assertions.fail("do bulk response validation");
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    Mockito.doThrow(new BadRequestException("something bad", null, null))
+           .when(userHandler)
+           .createResource(Mockito.any());
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
+    Assertions.assertFalse(bulkResponse.getBulkResponseOperations().get(0).getLocation().isPresent());
   }
 
-  @Test
-  public void testVerifyThaBulkResponseWasSchemaValidated()
+  /**
+   * verifies that the bulk operation fails and a {@link ErrorResponse} is returned if the bulk operation is
+   * questioned with the wrong http method
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"GET", "PUT", "PATCH", "DELETE"})
+  public void testAccessBulkEndpointWithOtherHttpMethodThanPost(HttpMethod httpMethod)
   {
-    Assertions.fail("assert that schema validation was performed on bulk response");
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, httpMethod, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(BadRequestException.class));
+    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+                             Matchers.equalTo("Bulk endpoint can only be reached with a HTTP-POST request"));
   }
 }

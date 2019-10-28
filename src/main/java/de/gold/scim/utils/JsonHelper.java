@@ -443,6 +443,10 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T copyResourceToObject(JsonNode resource, Class<T> type)
   {
+    if (resource == null)
+    {
+      return null;
+    }
     if (resource.isArray())
     {
       throw new IncompatibleAttributeException("operation not possible for array", null, null,

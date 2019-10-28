@@ -38,6 +38,8 @@ public class ScimType
      * the request was invalid and cannot be used for further processing
      */
     public static final String UNPARSEABLE_REQUEST = "unparseableRequest";
+
+    public static final String TOO_LARGE = "tooLarge";
   }
 
 

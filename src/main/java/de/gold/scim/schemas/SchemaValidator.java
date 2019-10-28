@@ -117,11 +117,14 @@ public class SchemaValidator
    */
   private final List<String> excludedAttributes;
 
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory, String attributes, String excludedAttributes)
+  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
+                          DirectionType directionType,
+                          String attributes,
+                          String excludedAttributes)
   {
     this.resourceTypeFactory = resourceTypeFactory;
     this.extensionSchema = false;
-    this.directionType = null;
+    this.directionType = directionType;
     this.httpMethod = null;
     this.validatedRequest = null;
     this.attributes = RequestUtils.getAttributes(attributes);
@@ -174,7 +177,24 @@ public class SchemaValidator
                                                 Schema metaSchema,
                                                 JsonNode schemaDocument)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, null, null);
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, null, null, null);
+    return schemaValidator.validateDocument(metaSchema, schemaDocument);
+  }
+
+  /**
+   * this method will validate a new schema declaration against a meta schema. In other validations it might
+   * happen that specific attributes will be removed from the document because they do not belong into a request
+   * or a response. This method will ignore the direction-validation and keeps these attributes
+   *
+   * @param metaSchema the meta schema that is used to validate the new schema
+   * @param schemaDocument the new schema document that should be validated
+   * @return the validated schema definition
+   */
+  public static JsonNode validateSchemaDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
+                                                          Schema metaSchema,
+                                                          JsonNode schemaDocument)
+  {
+    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, null, null);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
@@ -800,9 +820,10 @@ public class SchemaValidator
   private void validateIsRequiredForRequest(JsonNode document, SchemaAttribute schemaAttribute)
   {
     boolean isNodeNull = document == null || document.isNull();
-    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getFullResourceName()
-                                          + "' is required on '" + httpMethod + "' request for its mutability is '"
-                                          + schemaAttribute.getMutability() + "'!";
+    Supplier<String> errorMessage = () -> "the attribute '" + schemaAttribute.getFullResourceName() + "' is required "
+                                          + (httpMethod == null ? "" : "for http method '" + httpMethod + "' ")
+                                          + "\n\tmutability: '" + schemaAttribute.getMutability() + "'"
+                                          + "\n\treturned: '" + schemaAttribute.getReturned() + "'";
     if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
          || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
         && isNodeNull)
