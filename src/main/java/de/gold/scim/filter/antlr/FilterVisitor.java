@@ -103,4 +103,16 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
   {
     return new AttributeExpressionLeaf(ctx, resourceType);
   }
+
+  /**
+   * will resolve a value path that is representing a bracket filter notation
+   * 
+   * @param ctx the parsing context from antlr
+   * @return resolves the bracket notation into a normal filter expression
+   */
+  @Override
+  public FilterNode visitValuePath(ScimFilterParser.ValuePathContext ctx)
+  {
+    return visit(ctx.filter());
+  }
 }

@@ -485,4 +485,16 @@ public class FilterVisitorTest
     Assertions.assertNull(RequestUtils.parseFilter(userResourceType, filter));
   }
 
+  /**
+   * this test will verify that the bracket filter notation is resolved correctly e.g.: emails[type eq "work"
+   * and value co "@example.com"]
+   */
+  @Test
+  public void testParseFilterwithBracketNotation()
+  {
+    final String filter = "emails[type eq \"work\" and value co \"@example.com\" or display co \"hello world\"]";
+    FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
+    log.warn(filterNode.toString());
+  }
+
 }

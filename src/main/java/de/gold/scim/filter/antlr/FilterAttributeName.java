@@ -37,9 +37,10 @@ public class FilterAttributeName
    */
   private String fullName;
 
-  public FilterAttributeName(ScimFilterParser.AttributePathContext attributePathContext)
+  public FilterAttributeName(String parentName, ScimFilterParser.AttributePathContext attributePathContext)
   {
-    this.shortName = attributePathContext.attribute.getText()
+    String parentPrefix = parentName == null ? "" : (parentName + ".");
+    this.shortName = parentPrefix + attributePathContext.attribute.getText()
                      + StringUtils.stripToEmpty(attributePathContext.subattribute == null ? null
                        : "." + attributePathContext.subattribute.getText());
     this.resourceUri = resolveResourceUri(attributePathContext).orElse(null);

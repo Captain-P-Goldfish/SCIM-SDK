@@ -5,6 +5,8 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import org.antlr.v4.runtime.ParserRuleContext;
+
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.ReferenceTypes;
 import de.gold.scim.constants.enums.Type;
@@ -57,12 +59,45 @@ public final class AttributeExpressionLeaf extends FilterNode
 
   public AttributeExpressionLeaf(ScimFilterParser.AttributeExpressionContext context, ResourceType resourceType)
   {
-    this.attributeName = new FilterAttributeName(context.attributePath());
+    ScimFilterParser.ValuePathContext attributeValuePath = getParentValuePath(context);
+    String parentName = attributeValuePath == null ? null : attributeValuePath.attributePath().attribute.getText();
+
     this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
+    FilterAttributeName attributeName = new FilterAttributeName(parentName, context.attributePath());
     this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, attributeName);
+    if (parentName != null && !parentName.equals(schemaAttribute.getParent().getName()))
+    {
+      this.attributeName = new FilterAttributeName(schemaAttribute.getParent().getScimNodeName(),
+                                                   context.attributePath());
+    }
+    else
+    {
+      this.attributeName = attributeName;
+    }
     this.compareValue = context.compareValue() == null ? null
       : new CompareValue(context.compareValue(), schemaAttribute);
     validateFilterComparator();
+  }
+
+  /**
+   * checks if this expression was initiated from a
+   * {@link de.gold.scim.filter.antlr.ScimFilterParser.ValuePathContext} and returns the parent attribute path
+   * context if present
+   */
+  private ScimFilterParser.ValuePathContext getParentValuePath(ParserRuleContext context)
+  {
+    if (ScimFilterParser.ValuePathContext.class.isAssignableFrom(context.getClass()))
+    {
+      return (ScimFilterParser.ValuePathContext)context;
+    }
+    else if (context.getParent() != null)
+    {
+      return getParentValuePath(context.getParent());
+    }
+    else
+    {
+      return null;
+    }
   }
 
   /**

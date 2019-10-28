@@ -4,11 +4,14 @@ filter:   filter AND filter             #andExpression
         | filter OR filter              #orExpression
         | NOT '(' filter ')'            #notExpression
         | '(' filter ')'                #parenthesisExpression
+        | valuePath                     #valuePathExpression
         | attributeExpression           #attrExpression
         ;
 
 attributeExpression:    attributePath compareOperator compareValue
                       | attributePath PR ;
+
+valuePath: attributePath '[' filter ']';
 
 attributePath:   resourceUri=NAME_URI? attribute=ATTRIBUTE_NAME ('.' subattribute=ATTRIBUTE_NAME)? ;
 
