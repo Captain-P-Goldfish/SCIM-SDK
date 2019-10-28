@@ -4,6 +4,9 @@ import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -26,10 +29,14 @@ import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
+import de.gold.scim.request.BulkRequest;
+import de.gold.scim.request.BulkRequestOperation;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
+import de.gold.scim.response.BulkResponse;
+import de.gold.scim.response.BulkResponseOperation;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.GetResponse;
@@ -422,5 +429,203 @@ public class ResourceEndpointTest
                          .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
                          .collect(Collectors.joining("\n")));
     log.warn(listResponse.toPrettyString());
+  }
+
+  /**
+   * will verify that a user can be created, updated and deleted when using bulk
+   */
+  @Test
+  public void testSendBulkRequest()
+  {
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations * 3);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    operations.addAll(createOperations);
+    final int failOnErrors = 0;
+    BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    final String url = BASE_URI + EndpointPaths.BULK;
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    Assertions.assertEquals(maxOperations, userHandler.getInMemoryMap().size());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any());
+
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertEquals(HttpMethod.POST, bulkResponseOperation.getMethod());
+      Assertions.assertEquals(HttpStatus.SC_CREATED, bulkResponseOperation.getStatus());
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
+      MatcherAssert.assertThat(bulkResponseOperation.getLocation().get(),
+                               Matchers.startsWith(BASE_URI + EndpointPaths.USERS));
+    }
+    operations = new ArrayList<>();
+    operations.addAll(getUpdateUserBulkOperations(userHandler.getInMemoryMap().values()));
+    operations.addAll(getDeleteUserBulkOperations(userHandler.getInMemoryMap().values()));
+    bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any());
+
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    for ( BulkResponseOperation bulkResponseOperation : responseOperations.subList(0, maxOperations - 1) )
+    {
+      Assertions.assertEquals(HttpMethod.PUT, bulkResponseOperation.getMethod());
+      Assertions.assertEquals(HttpStatus.SC_OK, bulkResponseOperation.getStatus());
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+      Assertions.assertFalse(bulkResponseOperation.getBulkId().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
+      MatcherAssert.assertThat(bulkResponseOperation.getLocation().get(),
+                               Matchers.startsWith(BASE_URI + EndpointPaths.USERS));
+    }
+
+    for ( BulkResponseOperation bulkResponseOperation : responseOperations.subList(maxOperations,
+                                                                                   responseOperations.size() - 1) )
+    {
+      Assertions.assertEquals(HttpMethod.DELETE, bulkResponseOperation.getMethod());
+      Assertions.assertEquals(HttpStatus.SC_NO_CONTENT, bulkResponseOperation.getStatus());
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
+      Assertions.assertFalse(bulkResponseOperation.getLocation().isPresent());
+    }
+  }
+
+  /**
+   * creates delete requests for the create operations
+   *
+   * @param createUsers the create operations to access the ids
+   */
+  private List<BulkRequestOperation> getDeleteUserBulkOperations(Collection<User> createUsers)
+  {
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    for ( User createdUser : createUsers )
+    {
+      final String id = createdUser.getId().get();
+      operations.add(BulkRequestOperation.builder()
+                                         .bulkId(UUID.randomUUID().toString())
+                                         .method(HttpMethod.DELETE)
+                                         .path(EndpointPaths.USERS + "/" + id)
+                                         .build());
+    }
+    return operations;
+  }
+
+  /**
+   * creates update requests for the create operations
+   *
+   * @param createdUsers the create operations to access the ids
+   */
+  private List<BulkRequestOperation> getUpdateUserBulkOperations(Collection<User> createdUsers)
+  {
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    for ( User createdUser : createdUsers )
+    {
+      final String id = createdUser.getId().get();
+      final String newUserName = UUID.randomUUID().toString();
+      final User user = User.builder().userName(newUserName).nickName(newUserName).build();
+      operations.add(BulkRequestOperation.builder()
+                                         .method(HttpMethod.PUT)
+                                         .path(EndpointPaths.USERS + "/" + id)
+                                         .data(user.toString())
+                                         .build());
+    }
+    return operations;
+  }
+
+  /**
+   * creates several create operations for a bulk operations
+   *
+   * @param numberOfOperations number of operations to create
+   */
+  protected List<BulkRequestOperation> getCreateUserBulkOperations(int numberOfOperations)
+  {
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    for ( int i = 0 ; i < numberOfOperations ; i++ )
+    {
+      final String username = UUID.randomUUID().toString();
+      final User user = User.builder().userName(username).build();
+      operations.add(BulkRequestOperation.builder()
+                                         .bulkId(UUID.randomUUID().toString())
+                                         .method(HttpMethod.POST)
+                                         .path(EndpointPaths.USERS)
+                                         .data(user.toString())
+                                         .build());
+    }
+    return operations;
+  }
+
+  @Test
+  public void testSendBulkRequestWithJsonArrayInBody()
+  {
+    Assertions.fail("send json array in request body to bulk endpoint");
+  }
+
+  @Test
+  public void testBulkIdIsMissing()
+  {
+    Assertions.fail("the bulkId is missing on create user");
+  }
+
+  @Test
+  public void testBulkIdIsMissingOnOtherRequestsThanCreate()
+  {
+    Assertions.fail("there must be no error if the bulkId is missing on another request part than create");
+  }
+
+  @Test
+  public void testFailOnErrorsWorks()
+  {
+    Assertions.fail("fail on errors must be used");
+  }
+
+  @Test
+  public void testFailIfBulkIsNotSupported()
+  {
+    Assertions.fail("fail if bulk is not supported by the service provider");
+  }
+
+  @Test
+  public void testFailIfMaxOperationsIsExceeded()
+  {
+    Assertions.fail("fail if max operations is exceeded");
+  }
+
+  @Test
+  public void testFailIfMaxPayloadIsExceeded()
+  {
+    Assertions.fail("fail if max payload size is exceeded");
+  }
+
+  @Test
+  public void testFailIfInvalidHttpMethodIsUsedOnBulk()
+  {
+    Assertions.fail("fail that bulk fails if invalid http method is used");
+  }
+
+  @Test
+  public void testValidateBulkRequestWithSchema()
+  {
+    Assertions.fail("do bulk request validation");
+  }
+
+  @Test
+  public void testValidateBulkResponseWithSchema()
+  {
+    Assertions.fail("do bulk response validation");
+  }
+
+  @Test
+  public void testVerifyThaBulkResponseWasSchemaValidated()
+  {
+    Assertions.fail("assert that schema validation was performed on bulk response");
   }
 }

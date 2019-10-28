@@ -50,7 +50,7 @@ public final class ResourceTypeFactory
    * this instance is hold in order for unit tests to be able to write tests without polluting the whole
    * application context which might lead to unpredictable unit test errors
    */
-  @Getter(AccessLevel.PROTECTED)
+  @Getter
   @Setter(AccessLevel.PRIVATE)
   private SchemaFactory schemaFactory;
 

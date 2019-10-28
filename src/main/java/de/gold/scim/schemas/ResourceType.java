@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -197,7 +198,7 @@ public class ResourceType extends ResourceNode
    */
   private String missingAttrMessage(String attributeName)
   {
-    return "missing '" + attributeName + "' attribute in resource type";
+    return "missing '" + attributeName + "' attribute in resource type with name '" + getName() + "'";
   }
 
   /**
@@ -468,8 +469,11 @@ public class ResourceType extends ResourceNode
 
     public ResourceSchema(JsonNode resourceDocument)
     {
+      Supplier<String> errorMessage = () -> missingAttrMessage(AttributeNames.RFC7643.SCHEMAS) + " in resource "
+                                            + "document: \n"
+                                            + (resourceDocument == null ? null : resourceDocument.toPrettyString());
       List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.RFC7643.SCHEMAS)
-                                       .orElseThrow(() -> getBadRequestException(missingAttrMessage(AttributeNames.RFC7643.SCHEMAS)));
+                                       .orElseThrow(() -> getBadRequestException(errorMessage.get()));
       if (!schemas.contains(getSchema()))
       {
         throw getBadRequestException("main resource schema '" + getSchema() + "' is not present in resource");

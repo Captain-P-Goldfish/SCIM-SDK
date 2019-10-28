@@ -742,7 +742,8 @@ public class SchemaValidator
         isNodeOfExpectedType(schemaAttribute,
                              simpleDocumentNode,
                              jsonNode -> jsonNode.isTextual() || jsonNode.isObject());
-        return new ScimTextNode(schemaAttribute, simpleDocumentNode.textValue());
+        return new ScimTextNode(schemaAttribute, simpleDocumentNode.isTextual() ? simpleDocumentNode.textValue()
+          : simpleDocumentNode.toString());
       case BOOLEAN:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isBoolean);
         return new ScimBooleanNode(schemaAttribute, simpleDocumentNode.booleanValue());

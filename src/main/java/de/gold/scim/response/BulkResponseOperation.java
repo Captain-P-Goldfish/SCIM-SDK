@@ -1,8 +1,13 @@
 package de.gold.scim.response;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.HttpMethod;
+import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.resources.base.ScimObjectNode;
 import lombok.Builder;
@@ -18,13 +23,21 @@ import lombok.Builder;
 public class BulkResponseOperation extends ScimObjectNode
 {
 
+  /**
+   * these are the only http methods allowed by bulk
+   */
+  protected final static List<HttpMethod> VALID_METHODS = Arrays.asList(HttpMethod.POST,
+                                                                        HttpMethod.PUT,
+                                                                        HttpMethod.PATCH,
+                                                                        HttpMethod.DELETE);
+
   public BulkResponseOperation()
   {
     super(null);
   }
 
   @Builder
-  public BulkResponseOperation(String method,
+  public BulkResponseOperation(HttpMethod method,
                                String bulkId,
                                String version,
                                String location,
@@ -44,9 +57,9 @@ public class BulkResponseOperation extends ScimObjectNode
    * The HTTP method of the current operation. Possible values are "POST", "PUT", "PATCH", or "DELETE".
    * REQUIRED.
    */
-  public String getMethod()
+  public HttpMethod getMethod()
   {
-    return getStringAttribute(AttributeNames.RFC7643.METHOD).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.METHOD).map(HttpMethod::valueOf).orElseThrow(() -> {
       return new InternalServerException("the 'method' attribute is mandatory", null, null);
     });
   }
@@ -55,9 +68,14 @@ public class BulkResponseOperation extends ScimObjectNode
    * The HTTP method of the current operation. Possible values are "POST", "PUT", "PATCH", or "DELETE".
    * REQUIRED.
    */
-  public void setMethod(String method)
+  public void setMethod(HttpMethod method)
   {
-    setAttribute(AttributeNames.RFC7643.METHOD, method);
+    if (method != null && !VALID_METHODS.contains(method))
+    {
+      throw new BadRequestException("bulk does only support the following methods '" + VALID_METHODS
+                                    + "' but found method: " + method, null, ScimType.Custom.INVALID_PARAMETERS);
+    }
+    setAttribute(AttributeNames.RFC7643.METHOD, method == null ? null : method.name());
   }
 
   /**
@@ -154,7 +172,7 @@ public class BulkResponseOperation extends ScimObjectNode
    */
   public void setResponse(ErrorResponse response)
   {
-    set(AttributeNames.RFC7643.RESPONSE, response);
+    setAttribute(AttributeNames.RFC7643.RESPONSE, response);
   }
 
 }

@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.SchemaUris;
+import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.ResourceTypeFactoryUtil;
 import de.gold.scim.schemas.Schema;
@@ -73,7 +74,7 @@ public class BulkRequestTest implements FileReferences
   public void testSchemaValidation()
   {
     final Integer failOnErrors = 5;
-    final String method = "POST";
+    final HttpMethod method = HttpMethod.POST;
     final String bulkId = UUID.randomUUID().toString();
     final String path = EndpointPaths.USERS;
     final String data = readResourceFile(USER_RESOURCE);

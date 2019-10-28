@@ -7,17 +7,23 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.EndpointPaths;
+import de.gold.scim.constants.HttpStatus;
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.NotImplementedException;
+import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.BulkRequestOperation;
 import de.gold.scim.resources.ServiceProvider;
@@ -26,6 +32,9 @@ import de.gold.scim.response.BulkResponseOperation;
 import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.schemas.ResourceType;
+import de.gold.scim.schemas.Schema;
+import de.gold.scim.schemas.SchemaFactory;
+import de.gold.scim.schemas.SchemaValidator;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
 import lombok.Builder;
@@ -141,7 +150,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    */
   private BulkResponse bulk(UriInfos uriInfos, String requestBody)
   {
-    BulkRequest bulkRequest = JsonHelper.readJsonDocument(requestBody, BulkRequest.class);
+    BulkRequest bulkRequest = parseAndValidateBulkRequest(requestBody);
     List<BulkRequestOperation> operations = bulkRequest.getBulkRequestOperations();
     operations = sortOperations(operations);
     List<BulkResponseOperation> responseOperations = new ArrayList<>();
@@ -150,9 +159,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
     int errorCounter = 0;
     for ( BulkRequestOperation operation : operations )
     {
-      HttpMethod httpMethod = HttpMethod.valueOf(operation.getMethod());
+      HttpMethod httpMethod = operation.getMethod();
       validateHttpMethodForBulkOperation(httpMethod);
-      String[] pathParts = operation.getPath().split("/");
+      String[] pathParts = operation.getPath().replaceFirst("^/", "").split("/");
       ResourceType resourceType = getResourceType(pathParts);
       UriInfos operationUriInfo = UriInfos.builder()
                                           .baseUri(uriInfos.getBaseUri())
@@ -160,7 +169,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                           .resourceId(pathParts.length > 1 ? pathParts[1] : null)
                                           .resourceType(resourceType)
                                           .build();
-      ScimResponse scimResponse = resolveRequest(httpMethod, requestBody, operationUriInfo);
+      ScimResponse scimResponse = resolveRequest(httpMethod, operation.getData().orElse(null), operationUriInfo);
       if (ErrorResponse.class.isAssignableFrom(scimResponse.getClass()))
       {
         errorCounter++;
@@ -171,9 +180,11 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
           continue;
         }
       }
-      final String location = uriInfos.getBaseUri() + operationUriInfo.getResourceEndpoint()
-                              + (operationUriInfo.getResourceId() == null ? ""
-                                : "/" + operationUriInfo.getResourceId());
+      final String id = Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.ID))
+                                .map(jsonNode -> "/" + jsonNode.textValue())
+                                .orElse("");
+      final String location = HttpMethod.DELETE.equals(httpMethod) ? null
+        : (uriInfos.getBaseUri() + "/" + operationUriInfo.getResourceEndpoint() + id);
       responseOperations.add(BulkResponseOperation.builder()
                                                   .bulkId(operation.getBulkId().orElse(null))
                                                   .status(scimResponse.getHttpStatus())
@@ -183,7 +194,31 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                                     ? (ErrorResponse)scimResponse : null)
                                                   .build());
     }
-    return BulkResponse.builder().bulkResponseOperation(responseOperations).build();
+    return BulkResponse.builder().httpStatus(HttpStatus.SC_OK).bulkResponseOperation(responseOperations).build();
+  }
+
+  /**
+   * tries to parse the bulk request and validates it eventually
+   *
+   * @param requestBody the request body that shall represent the bulk request
+   * @return the parsed bulk request
+   */
+  private BulkRequest parseAndValidateBulkRequest(String requestBody)
+  {
+    try
+    {
+      JsonNode jsonNode = JsonHelper.readJsonDocument(requestBody);
+      SchemaFactory schemaFactory = getResourceTypeFactory().getSchemaFactory();
+      Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
+      JsonNode validatedRequest = SchemaValidator.validateSchemaDocument(getResourceTypeFactory(),
+                                                                         bulkRequestSchema,
+                                                                         jsonNode);
+      return JsonHelper.copyResourceToObject(validatedRequest, BulkRequest.class);
+    }
+    catch (ScimException ex)
+    {
+      throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
+    }
   }
 
   private void validateFailOnErrors(int failOnErrors)

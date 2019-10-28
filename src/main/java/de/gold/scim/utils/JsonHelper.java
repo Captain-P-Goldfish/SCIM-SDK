@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.IncompatibleAttributeException;
 import de.gold.scim.exceptions.InternalServerException;
 import lombok.AccessLevel;
@@ -442,6 +443,11 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T copyResourceToObject(JsonNode resource, Class<T> type)
   {
+    if (resource.isArray())
+    {
+      throw new IncompatibleAttributeException("operation not possible for array", null, null,
+                                               ScimType.Custom.INVALID_PARAMETERS);
+    }
     if (type.isAssignableFrom(resource.getClass()))
     {
       return (T)resource;

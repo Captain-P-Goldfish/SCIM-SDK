@@ -1,11 +1,14 @@
 package de.gold.scim.request;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import org.apache.commons.lang3.StringUtils;
 
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.utils.JsonHelper;
@@ -22,13 +25,21 @@ import lombok.Builder;
 public class BulkRequestOperation extends ScimObjectNode
 {
 
+  /**
+   * these are the only http methods allowed by bulk
+   */
+  protected final static List<HttpMethod> VALID_METHODS = Arrays.asList(HttpMethod.POST,
+                                                                        HttpMethod.PUT,
+                                                                        HttpMethod.PATCH,
+                                                                        HttpMethod.DELETE);
+
   public BulkRequestOperation()
   {
     super(null);
   }
 
   @Builder
-  public BulkRequestOperation(String method, String bulkId, String path, String data)
+  public BulkRequestOperation(HttpMethod method, String bulkId, String path, String data)
   {
     this();
     setMethod(method);
@@ -41,9 +52,9 @@ public class BulkRequestOperation extends ScimObjectNode
    * The HTTP method of the current operation. Possible values are "POST", "PUT", "PATCH", or "DELETE".
    * REQUIRED.
    */
-  public String getMethod()
+  public HttpMethod getMethod()
   {
-    return getStringAttribute(AttributeNames.RFC7643.METHOD).orElseThrow(() -> {
+    return getStringAttribute(AttributeNames.RFC7643.METHOD).map(HttpMethod::valueOf).orElseThrow(() -> {
       return new BadRequestException("the 'method' attribute is mandatory", null, ScimType.Custom.INVALID_PARAMETERS);
     });
   }
@@ -52,9 +63,14 @@ public class BulkRequestOperation extends ScimObjectNode
    * The HTTP method of the current operation. Possible values are "POST", "PUT", "PATCH", or "DELETE".
    * REQUIRED.
    */
-  public void setMethod(String method)
+  public void setMethod(HttpMethod method)
   {
-    setAttribute(AttributeNames.RFC7643.METHOD, method);
+    if (method != null && !VALID_METHODS.contains(method))
+    {
+      throw new BadRequestException("bulk does only support the following methods '" + VALID_METHODS
+                                    + "' but found method: " + method, null, ScimType.Custom.INVALID_PARAMETERS);
+    }
+    setAttribute(AttributeNames.RFC7643.METHOD, method == null ? null : method.name());
   }
 
   /**
@@ -105,11 +121,10 @@ public class BulkRequestOperation extends ScimObjectNode
    * The resource data as it would appear for a single SCIM POST, PUT, or PATCH operation. REQUIRED in a request
    * when "method" is "POST", "PUT", or "PATCH".
    */
-  public String getData()
+  public Optional<String> getData()
   {
-    return Optional.ofNullable(get(AttributeNames.RFC7643.DATA)).map(JsonNode::toString).orElseThrow(() -> {
-      return new BadRequestException("the attribute 'data' is mandatory", null, null);
-    });
+    return Optional.ofNullable(get(AttributeNames.RFC7643.DATA))
+                   .map(jsonNode -> jsonNode.isTextual() ? jsonNode.textValue() : jsonNode.toString());
   }
 
   /**
@@ -118,6 +133,10 @@ public class BulkRequestOperation extends ScimObjectNode
    */
   public void setData(String data)
   {
+    if (StringUtils.isBlank(data))
+    {
+      return;
+    }
     set(AttributeNames.RFC7643.DATA, JsonHelper.readJsonDocument(data));
   }
 }

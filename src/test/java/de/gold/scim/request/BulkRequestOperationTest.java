@@ -2,10 +2,13 @@ package de.gold.scim.request;
 
 import java.util.UUID;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import de.gold.scim.constants.EndpointPaths;
+import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.utils.FileReferences;
 import de.gold.scim.utils.JsonHelper;
@@ -26,7 +29,7 @@ public class BulkRequestOperationTest implements FileReferences
   @Test
   public void testGetAndSetValues()
   {
-    final String method = "POST";
+    final HttpMethod method = HttpMethod.POST;
     final String bulkId = UUID.randomUUID().toString();
     final String path = EndpointPaths.USERS;
     final String data = readResourceFile(USER_RESOURCE).replaceAll("\\s", "");
@@ -40,9 +43,9 @@ public class BulkRequestOperationTest implements FileReferences
     Assertions.assertEquals(method, operations.getMethod());
     Assertions.assertEquals(bulkId, operations.getBulkId().get());
     Assertions.assertEquals(path, operations.getPath());
-    Assertions.assertEquals(data, operations.getData());
+    Assertions.assertEquals(data, operations.getData().get());
 
-    Assertions.assertEquals(method, operations.get("method").textValue());
+    Assertions.assertEquals(method.name(), operations.get("method").textValue());
     Assertions.assertEquals(bulkId, operations.get("bulkId").textValue());
     Assertions.assertEquals(path, operations.get("path").textValue());
     Assertions.assertEquals(data, operations.get("data").toString());
@@ -58,6 +61,27 @@ public class BulkRequestOperationTest implements FileReferences
     BulkRequestOperation operations = new BulkRequestOperation();
     Assertions.assertThrows(BadRequestException.class, operations::getMethod);
     Assertions.assertThrows(BadRequestException.class, operations::getPath);
-    Assertions.assertThrows(BadRequestException.class, operations::getData);
+  }
+
+  /**
+   * verifies that only the valid http methods can be set for a request operation
+   */
+  @Test
+  public void testInvalidHttpMethodSet()
+  {
+    Assertions.assertThrows(BadRequestException.class,
+                            () -> BulkRequestOperation.builder().method(HttpMethod.GET).build());
+
+  }
+
+  /**
+   * verifies the content of the valid methods array
+   */
+  @Test
+  public void testValidMethods()
+  {
+    MatcherAssert.assertThat(BulkRequestOperation.VALID_METHODS,
+                             Matchers.contains(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE));
+
   }
 }

@@ -7,9 +7,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.node.TextNode;
-
-import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.ResourceHandler;
 import de.gold.scim.exceptions.ConflictException;
@@ -18,7 +15,6 @@ import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.User;
 import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.schemas.SchemaAttribute;
-import de.gold.scim.utils.JsonHelper;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -44,7 +40,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
     {
       throw new ConflictException("resource with id '" + userId + "' does already exist");
     }
-    JsonHelper.addAttribute(resource, AttributeNames.RFC7643.ID, new TextNode(userId));
+    resource.setId(userId);
     inMemoryMap.put(userId, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());

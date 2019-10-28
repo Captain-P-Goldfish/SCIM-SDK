@@ -11,6 +11,7 @@ import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.exceptions.InvalidSchemaException;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.schemas.ResourceTypeFactoryUtil;
@@ -70,7 +71,7 @@ public class BulkResponseTest
   @Test
   public void testSchemaValidation()
   {
-    final String method = "POST";
+    final HttpMethod method = HttpMethod.POST;
     final String bulkId = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
     final String location = EndpointPaths.USERS + "/" + UUID.randomUUID().toString();
