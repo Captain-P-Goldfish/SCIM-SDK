@@ -231,6 +231,8 @@ public final class AttributeNames
     public static final String DATA = "data";
 
     public static final String RESPONSE = "response";
+
+    public static final String OP = "op";
   }
 
 }

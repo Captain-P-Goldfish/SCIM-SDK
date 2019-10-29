@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
@@ -24,6 +25,8 @@ import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.resources.FilterResourceResolver;
+import de.gold.scim.patch.PatchHandler;
+import de.gold.scim.request.PatchOpRequest;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
@@ -39,6 +42,7 @@ import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
+import de.gold.scim.schemas.Schema;
 import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.schemas.SchemaValidator;
 import de.gold.scim.utils.JsonHelper;
@@ -800,6 +804,80 @@ class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+  }
+
+  /**
+   * gets the resource that should be patched and will inject the patch operations into the returned resource.
+   * After the patch operation has been processed the patched object will be given to the
+   * {@link ResourceHandler#updateResource(ResourceNode)} method
+   *
+   * @param endpoint the resource endpoint that was called
+   * @param id the id of the resource that should be patched
+   * @param requestBody the patch request body
+   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
+   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
+   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
+   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
+   *          form (e.g., userName, name, emails).
+   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
+   *          attributes. Additionally, the default set of attributes minus those attributes listed in
+   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
+   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
+   *          name, emails).
+   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
+   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
+   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
+   *          If this parameter is not present the application will try to read a hardcoded URL from the service
+   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
+   *          thrown
+   * @return the updated resource or an error response
+   */
+  protected ScimResponse patchResource(String endpoint,
+                                       String id,
+                                       String requestBody,
+                                       String attributes,
+                                       String excludedAttributes,
+                                       Supplier<String> baseUrlSupplier)
+  {
+    ResourceType resourceType = getResourceType(endpoint);
+    ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+    Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
+    JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
+    patchDocument = SchemaValidator.validateSchemaDocumentForRequest(resourceTypeFactory, patchSchema, patchDocument);
+    ResourceNode resourceNode = resourceHandler.getResource(id);
+    if (resourceNode == null)
+    {
+      throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                          + "not exist", null, null);
+    }
+
+    Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
+    String resourceId = resourceNode.getId()
+                                    .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
+    if (!resourceId.equals(id))
+    {
+      throw new InternalServerException("the id of the returned resource does not match the "
+                                        + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
+                                        null, null);
+    }
+
+    PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
+    PatchHandler patchHandler = new PatchHandler(resourceType);
+    resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
+    resourceNode = resourceHandler.updateResource(resourceNode);
+
+    final String location = getLocation(resourceType, id, baseUrlSupplier);
+    Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
+    meta.setLocation(location);
+    resourceNode.setMeta(meta);
+    JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                            resourceType,
+                                                                            resourceNode,
+                                                                            null,
+                                                                            attributes,
+                                                                            excludedAttributes);
+
+    return new UpdateResponse(responseResource, location);
   }
 
   /**

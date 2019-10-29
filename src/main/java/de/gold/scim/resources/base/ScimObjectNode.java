@@ -224,7 +224,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       }
       else if (String.class.isAssignableFrom(type))
       {
-        multiValuedSimpleTypes.add((T)node.textValue());
+        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.textValue() : node.toString()));
       }
       else
       {
