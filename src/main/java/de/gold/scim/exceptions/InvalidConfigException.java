@@ -15,6 +15,6 @@ public class InvalidConfigException extends ScimException
   @Builder
   public InvalidConfigException(String message)
   {
-    super(message, null, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+    super(message, null, HttpStatus.INTERNAL_SERVER_ERROR, null);
   }
 }

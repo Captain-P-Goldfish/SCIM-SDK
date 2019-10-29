@@ -15,6 +15,6 @@ public class InternalServerException extends ScimException
   @Builder
   public InternalServerException(String message, Throwable cause, String scimType)
   {
-    super(message, cause, HttpStatus.SC_INTERNAL_SERVER_ERROR, scimType);
+    super(message, cause, HttpStatus.INTERNAL_SERVER_ERROR, scimType);
   }
 }

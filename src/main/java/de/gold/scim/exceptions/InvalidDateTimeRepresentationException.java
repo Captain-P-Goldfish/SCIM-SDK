@@ -13,6 +13,6 @@ public class InvalidDateTimeRepresentationException extends ScimException
 
   public InvalidDateTimeRepresentationException(String message, Throwable cause, Integer status, String scimType)
   {
-    super(message, cause, status == null ? HttpStatus.SC_BAD_REQUEST : status, scimType);
+    super(message, cause, status == null ? HttpStatus.BAD_REQUEST : status, scimType);
   }
 }

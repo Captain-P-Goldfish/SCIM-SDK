@@ -42,7 +42,7 @@ public class ErrorResponse extends ScimResponse
   {
     super(null);
     this.scimException = scimException;
-    if (HttpStatus.SC_INTERNAL_SERVER_ERROR == getHttpStatus())
+    if (HttpStatus.INTERNAL_SERVER_ERROR == getHttpStatus())
     {
       log.error(scimException.getMessage(), scimException);
     }

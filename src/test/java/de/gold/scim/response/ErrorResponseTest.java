@@ -44,7 +44,7 @@ public class ErrorResponseTest
     Assertions.assertEquals(detail, JsonHelper.getSimpleAttribute(errorJson, AttributeNames.RFC7643.DETAIL).get());
     Assertions.assertEquals(ScimType.RFC7644.INVALID_FILTER,
                             JsonHelper.getSimpleAttribute(errorJson, AttributeNames.RFC7643.SCIM_TYPE).get());
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST,
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             JsonHelper.getSimpleAttribute(errorJson, AttributeNames.RFC7643.STATUS, Integer.class)
                                       .get());
 
@@ -53,7 +53,7 @@ public class ErrorResponseTest
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, response.getStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getStatus());
   }
 
   /**

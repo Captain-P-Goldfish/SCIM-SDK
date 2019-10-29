@@ -23,6 +23,6 @@ public class DeleteResponse extends ScimResponse
   @Override
   public int getHttpStatus()
   {
-    return HttpStatus.SC_NO_CONTENT;
+    return HttpStatus.NO_CONTENT;
   }
 }

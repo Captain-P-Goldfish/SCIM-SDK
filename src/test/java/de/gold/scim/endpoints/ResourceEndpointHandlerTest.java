@@ -161,7 +161,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(ResourceNotFoundException.class));
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**
@@ -177,7 +177,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                        getBaseUrlSupplier());
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
-    Assertions.assertEquals(HttpStatus.SC_CREATED, scimResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
     String createResponse = scimResponse.toString();
     Assertions.assertNotNull(createResponse);
     User user = JsonHelper.readJsonDocument(createResponse, User.class);
@@ -210,7 +210,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(exception, errorResponse.getScimException());
-    Assertions.assertEquals(HttpStatus.SC_CONFLICT, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.CONFLICT, errorResponse.getHttpStatus());
   }
 
   /**
@@ -229,7 +229,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(exception, errorResponse.getScimException().getCause());
-    Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
   /**
@@ -243,7 +243,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**
@@ -261,7 +261,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
   /**
@@ -277,7 +277,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**
@@ -293,7 +293,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
   /**
@@ -310,7 +310,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals(ScimType.Custom.UNPARSEABLE_REQUEST, errorResponse.getScimException().getScimType());
   }
 
@@ -329,7 +329,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**
@@ -352,7 +352,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
   /**
@@ -370,7 +370,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**
@@ -388,7 +388,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
   /**
@@ -404,7 +404,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**
@@ -422,7 +422,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
@@ -441,7 +441,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
@@ -461,7 +461,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
@@ -478,7 +478,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
   /**
@@ -498,7 +498,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse listResponse = (ListResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_OK, listResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
     Assertions.assertEquals(1, listResponse.getListedResources().size());
     Assertions.assertEquals(1, listResponse.getItemsPerPage());
@@ -817,7 +817,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(NotImplementedException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, errorResponse.getScimException().getStatus());
+    Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getScimException().getStatus());
   }
 
   /**
@@ -834,7 +834,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(NotImplementedException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_IMPLEMENTED, errorResponse.getScimException().getStatus());
+    Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getScimException().getStatus());
   }
 
   /**
@@ -852,7 +852,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.SC_NOT_FOUND, errorResponse.getScimException().getStatus());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getScimException().getStatus());
   }
 
   /**
@@ -1021,7 +1021,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
   }
 
   /**
@@ -1039,7 +1039,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
   }
 
   /**
@@ -1056,7 +1056,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
   }
 
   /**
@@ -1074,7 +1074,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
-    Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
   }
 
   /**
@@ -1089,7 +1089,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.getResource(endpoint, userId, getBaseUrlSupplier());
     Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.eq(userId));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
-    Assertions.assertEquals(HttpStatus.SC_OK, scimResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             scimResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     Assertions.assertNotNull(scimResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
@@ -1126,7 +1126,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                        getBaseUrlSupplier());
     Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
-    Assertions.assertEquals(HttpStatus.SC_OK, scimResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             scimResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     Assertions.assertNotNull(scimResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));

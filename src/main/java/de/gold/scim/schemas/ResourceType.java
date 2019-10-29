@@ -209,7 +209,7 @@ public class ResourceType extends ResourceNode
    */
   private ScimException getInvalidResourceException(String message)
   {
-    return new InvalidResourceTypeException(message, null, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+    return new InvalidResourceTypeException(message, null, HttpStatus.INTERNAL_SERVER_ERROR, null);
   }
 
   /**

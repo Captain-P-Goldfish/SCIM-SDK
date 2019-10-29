@@ -665,6 +665,6 @@ public final class SchemaAttribute extends ScimObjectNode
    */
   private InvalidSchemaException getException(String errorMessage, Exception cause)
   {
-    return new InvalidSchemaException(errorMessage, cause, HttpStatus.SC_INTERNAL_SERVER_ERROR, null);
+    return new InvalidSchemaException(errorMessage, cause, HttpStatus.INTERNAL_SERVER_ERROR, null);
   }
 }

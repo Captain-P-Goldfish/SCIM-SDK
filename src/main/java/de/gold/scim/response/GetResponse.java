@@ -27,6 +27,6 @@ public class GetResponse extends ScimResponse
   @Override
   public int getHttpStatus()
   {
-    return HttpStatus.SC_OK;
+    return HttpStatus.OK;
   }
 }

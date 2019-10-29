@@ -35,9 +35,9 @@ public class BulkResponseOperationTest implements FileReferences
     final String bulkId = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
     final String location = EndpointPaths.USERS + "/" + UUID.randomUUID().toString();
-    final Integer status = HttpStatus.SC_OK;
+    final Integer status = HttpStatus.OK;
     final ErrorResponse response = new ErrorResponse(new InvalidSchemaException("invalid syntax", null,
-                                                                                HttpStatus.SC_BAD_REQUEST,
+                                                                                HttpStatus.BAD_REQUEST,
                                                                                 ScimType.RFC7644.INVALID_SYNTAX));
 
     BulkResponseOperation operations = BulkResponseOperation.builder()

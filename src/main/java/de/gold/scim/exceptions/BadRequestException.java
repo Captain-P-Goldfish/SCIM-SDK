@@ -13,6 +13,6 @@ public class BadRequestException extends ScimException
 
   public BadRequestException(String message, Throwable cause, String scimType)
   {
-    super(message, cause, HttpStatus.SC_BAD_REQUEST, scimType);
+    super(message, cause, HttpStatus.BAD_REQUEST, scimType);
   }
 }

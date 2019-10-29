@@ -489,7 +489,7 @@ public class SchemaValidator
       {
         String errorMessage = "required extension '" + requiredExtension.getId() + "' is missing in the document";
         throw new DocumentValidationException(errorMessage, null, directionType == null
-          ? HttpStatus.SC_INTERNAL_SERVER_ERROR : directionType.getHttpStatus(), null);
+          ? HttpStatus.INTERNAL_SERVER_ERROR : directionType.getHttpStatus(), null);
       }
     }
   }
@@ -1251,7 +1251,7 @@ public class SchemaValidator
    */
   private Integer getHttpStatus()
   {
-    return directionType == null ? HttpStatus.SC_INTERNAL_SERVER_ERROR : directionType.getHttpStatus();
+    return directionType == null ? HttpStatus.INTERNAL_SERVER_ERROR : directionType.getHttpStatus();
   }
 
   /**
@@ -1272,7 +1272,7 @@ public class SchemaValidator
   protected enum DirectionType
   {
 
-    REQUEST(HttpStatus.SC_BAD_REQUEST), RESPONSE(HttpStatus.SC_INTERNAL_SERVER_ERROR);
+    REQUEST(HttpStatus.BAD_REQUEST), RESPONSE(HttpStatus.INTERNAL_SERVER_ERROR);
 
     /**
      * should be interna l server error if the response validation fails and a bad request if the request

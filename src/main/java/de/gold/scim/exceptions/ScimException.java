@@ -31,7 +31,7 @@ public abstract class ScimException extends RuntimeException
   public ScimException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause);
-    this.status = status == null ? HttpStatus.SC_INTERNAL_SERVER_ERROR : status;
+    this.status = status == null ? HttpStatus.INTERNAL_SERVER_ERROR : status;
     this.scimType = StringUtils.isBlank(scimType) ? null : scimType;
   }
 

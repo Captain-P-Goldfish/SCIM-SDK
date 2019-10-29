@@ -27,6 +27,6 @@ public class CreateResponse extends ScimResponse
   @Override
   public int getHttpStatus()
   {
-    return HttpStatus.SC_CREATED;
+    return HttpStatus.CREATED;
   }
 }

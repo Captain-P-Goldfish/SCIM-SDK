@@ -75,9 +75,9 @@ public class BulkResponseTest
     final String bulkId = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
     final String location = EndpointPaths.USERS + "/" + UUID.randomUUID().toString();
-    final Integer status = HttpStatus.SC_OK;
+    final Integer status = HttpStatus.OK;
     final ErrorResponse response = new ErrorResponse(new InvalidSchemaException("invalid syntax", null,
-                                                                                HttpStatus.SC_BAD_REQUEST,
+                                                                                HttpStatus.BAD_REQUEST,
                                                                                 ScimType.RFC7644.INVALID_SYNTAX));
     List<BulkResponseOperation> operations = Collections.singletonList(BulkResponseOperation.builder()
                                                                                             .method(method)
@@ -88,10 +88,10 @@ public class BulkResponseTest
                                                                                             .response(response)
                                                                                             .build());
     BulkResponse bulkResponse = BulkResponse.builder()
-                                            .httpStatus(HttpStatus.SC_OK)
+                                            .httpStatus(HttpStatus.OK)
                                             .bulkResponseOperation(operations)
                                             .build();
-    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     SchemaFactory schemaFactory = ResourceTypeFactoryUtil.getSchemaFactory(resourceTypeFactory);
     Schema bulkResponseSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_RESPONSE_URI);

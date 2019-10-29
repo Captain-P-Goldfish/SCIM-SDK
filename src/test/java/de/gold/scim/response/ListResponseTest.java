@@ -79,7 +79,7 @@ public class ListResponseTest implements FileReferences
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
-    Assertions.assertEquals(HttpStatus.SC_OK, response.getStatus());
+    Assertions.assertEquals(HttpStatus.OK, response.getStatus());
     Assertions.assertEquals(listJson, JsonHelper.readJsonDocument((String)response.getEntity()));
     log.debug(listJson.toPrettyString());
 

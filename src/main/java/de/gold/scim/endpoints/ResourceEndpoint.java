@@ -212,7 +212,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       }
     }
     BulkResponse bulkResponse = BulkResponse.builder()
-                                            .httpStatus(HttpStatus.SC_OK)
+                                            .httpStatus(HttpStatus.OK)
                                             .bulkResponseOperation(responseOperations)
                                             .build();
     return bulkResponse;
@@ -282,13 +282,13 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * verifies that the bulk operation is valid<br>
    * <br>
    * e.g. not all http methods are allowed on the bulk endpoint
-   * 
+   *
    * <pre>
    *    The body of a bulk operation contains a set of HTTP resource operations
    *    using one of the HTTP methods supported by the API, i.e., POST, PUT,
    *    PATCH, or DELETE.
    * </pre>
-   * 
+   *
    * @param operation the operation to validate
    */
   private void validateOperation(BulkRequestOperation operation)

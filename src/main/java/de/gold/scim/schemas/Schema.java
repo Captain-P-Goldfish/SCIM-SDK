@@ -50,15 +50,15 @@ public class Schema extends ResourceNode
                          .orElse(Collections.emptyList()));
     String errorMessage = "attribute '" + AttributeNames.RFC7643.ID + "' is missing cannot resolve schema";
     setId(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.ID)
-                    .orElseThrow(() -> new InvalidSchemaException(errorMessage, null,
-                                                                  HttpStatus.SC_INTERNAL_SERVER_ERROR, null)));
+                    .orElseThrow(() -> new InvalidSchemaException(errorMessage, null, HttpStatus.INTERNAL_SERVER_ERROR,
+                                                                  null)));
     setName(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.NAME).orElse(null));
     setDescription(JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.DESCRIPTION).orElse(null));
     List<SchemaAttribute> attributeList = new ArrayList<>();
     String noAttributesErrorMessage = "schema with id '" + getId().orElse(null) + "' does not have attributes";
     ArrayNode attributes = JsonHelper.getArrayAttribute(jsonNode, AttributeNames.RFC7643.ATTRIBUTES)
                                      .orElseThrow(() -> new InvalidSchemaException(noAttributesErrorMessage, null,
-                                                                                   HttpStatus.SC_INTERNAL_SERVER_ERROR,
+                                                                                   HttpStatus.INTERNAL_SERVER_ERROR,
                                                                                    null));
     Set<String> attributeNameSet = new HashSet<>();
     for ( JsonNode node : attributes )
@@ -106,7 +106,7 @@ public class Schema extends ResourceNode
   protected String getNonNullId()
   {
     String errorMessage = "attribute '" + AttributeNames.RFC7643.ID + "' is missing cannot resolve schema";
-    return getId().orElseThrow(() -> new InvalidSchemaException(errorMessage, null, HttpStatus.SC_INTERNAL_SERVER_ERROR,
+    return getId().orElseThrow(() -> new InvalidSchemaException(errorMessage, null, HttpStatus.INTERNAL_SERVER_ERROR,
                                                                 null));
   }
 

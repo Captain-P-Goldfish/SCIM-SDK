@@ -210,7 +210,7 @@ public class ResourceEndpointTest
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     CreateResponse createResponse = (CreateResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_CREATED, createResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.CREATED, createResponse.getHttpStatus());
     User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
     Assertions.assertEquals(user.getUserName().get(), createdUser.getUserName().get());
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
@@ -243,7 +243,7 @@ public class ResourceEndpointTest
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, user.toString());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_OK, getResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
     User returnedUser = JsonHelper.copyResourceToObject(getResponse, User.class);
     Assertions.assertEquals(user.getUserName().get(), returnedUser.getUserName().get());
     Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
@@ -278,7 +278,7 @@ public class ResourceEndpointTest
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PUT, changedUser.toString());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_OK, updateResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
     User returnedUser = JsonHelper.copyResourceToObject(updateResponse, User.class);
     Assertions.assertNotEquals(user.getUserName().get(), returnedUser.getUserName().get());
     Assertions.assertEquals(changedUser.getUserName().get(), returnedUser.getUserName().get());
@@ -315,7 +315,7 @@ public class ResourceEndpointTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
     DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
     Assertions.assertTrue(deleteResponse.isEmpty());
-    Assertions.assertEquals(HttpStatus.SC_NO_CONTENT, deleteResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
@@ -364,7 +364,7 @@ public class ResourceEndpointTest
     ListResponse listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
     Assertions.assertEquals(counter, listResponse.getTotalResults());
-    Assertions.assertEquals(HttpStatus.SC_OK, listResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
@@ -420,7 +420,7 @@ public class ResourceEndpointTest
     ListResponse listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
     Assertions.assertEquals(counter, listResponse.getTotalResults());
-    Assertions.assertEquals(HttpStatus.SC_OK, listResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
@@ -455,13 +455,13 @@ public class ResourceEndpointTest
     Assertions.assertEquals(maxOperations, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any());
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
       Assertions.assertEquals(HttpMethod.POST, bulkResponseOperation.getMethod());
-      Assertions.assertEquals(HttpStatus.SC_CREATED, bulkResponseOperation.getStatus());
+      Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus());
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
@@ -475,7 +475,7 @@ public class ResourceEndpointTest
     scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any());
 
@@ -483,7 +483,7 @@ public class ResourceEndpointTest
     for ( BulkResponseOperation bulkResponseOperation : responseOperations.subList(0, maxOperations - 1) )
     {
       Assertions.assertEquals(HttpMethod.PUT, bulkResponseOperation.getMethod());
-      Assertions.assertEquals(HttpStatus.SC_OK, bulkResponseOperation.getStatus());
+      Assertions.assertEquals(HttpStatus.OK, bulkResponseOperation.getStatus());
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
       Assertions.assertFalse(bulkResponseOperation.getBulkId().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
@@ -495,7 +495,7 @@ public class ResourceEndpointTest
                                                                                    responseOperations.size() - 1) )
     {
       Assertions.assertEquals(HttpMethod.DELETE, bulkResponseOperation.getMethod());
-      Assertions.assertEquals(HttpStatus.SC_NO_CONTENT, bulkResponseOperation.getStatus());
+      Assertions.assertEquals(HttpStatus.NO_CONTENT, bulkResponseOperation.getStatus());
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
@@ -673,7 +673,7 @@ public class ResourceEndpointTest
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
-    Assertions.assertEquals(HttpStatus.SC_OK, bulkResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
   }
 
   /**
@@ -706,7 +706,7 @@ public class ResourceEndpointTest
       ErrorResponse errorResponse = operation.getResponse().get();
       MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                                Matchers.typeCompatibleWith(ResponseException.class));
-      Assertions.assertEquals(HttpStatus.SC_BAD_REQUEST, errorResponse.getHttpStatus());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
       Assertions.assertEquals("something bad", errorResponse.getDetail().get());
     });
 

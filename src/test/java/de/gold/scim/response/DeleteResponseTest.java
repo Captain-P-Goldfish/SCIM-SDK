@@ -37,7 +37,7 @@ public class DeleteResponseTest
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
-    Assertions.assertEquals(HttpStatus.SC_NO_CONTENT, deleteResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
     Assertions.assertNull(response.getEntity());
   }
 }

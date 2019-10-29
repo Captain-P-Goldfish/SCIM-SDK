@@ -13,6 +13,6 @@ public class NotImplementedException extends ScimException
 
   public NotImplementedException(String message)
   {
-    super(message, null, HttpStatus.SC_NOT_IMPLEMENTED, null);
+    super(message, null, HttpStatus.NOT_IMPLEMENTED, null);
   }
 }

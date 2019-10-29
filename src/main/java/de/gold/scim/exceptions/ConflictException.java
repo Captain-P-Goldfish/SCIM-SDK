@@ -13,6 +13,6 @@ public class ConflictException extends ScimException
 
   public ConflictException(String message)
   {
-    super(message, null, HttpStatus.SC_CONFLICT, null);
+    super(message, null, HttpStatus.CONFLICT, null);
   }
 }

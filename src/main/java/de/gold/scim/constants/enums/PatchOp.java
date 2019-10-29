@@ -39,6 +39,6 @@ public enum PatchOp
       }
     }
     throw new UnknownValueException("the value '" + value + "' is not a valid patch operation", null,
-                                    HttpStatus.SC_BAD_REQUEST, ScimType.Custom.INVALID_PARAMETERS);
+                                    HttpStatus.BAD_REQUEST, ScimType.Custom.INVALID_PARAMETERS);
   }
 }
