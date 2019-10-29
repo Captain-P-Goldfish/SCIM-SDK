@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
+import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -270,7 +271,14 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    JsonHelper.addAttribute(this, attributeName, new LongNode(attributeValue));
+    if (attributeValue == attributeValue.intValue())
+    {
+      JsonHelper.addAttribute(this, attributeName, new IntNode(attributeValue.intValue()));
+    }
+    else
+    {
+      JsonHelper.addAttribute(this, attributeName, new LongNode(attributeValue));
+    }
   }
 
   /**

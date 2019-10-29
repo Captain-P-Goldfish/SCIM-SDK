@@ -24,9 +24,9 @@ public class PatchRequestOperationTest
   public void testCreateEmptyObject()
   {
     PatchRequestOperation operation = PatchRequestOperation.builder().build();
-    Assertions.assertTrue(operation.isEmpty());
+    Assertions.assertTrue(operation.isEmpty(), operation.toPrettyString());
     operation = new PatchRequestOperation();
-    Assertions.assertTrue(operation.isEmpty());
+    Assertions.assertTrue(operation.isEmpty(), operation.toPrettyString());
   }
 
   /**
@@ -36,21 +36,21 @@ public class PatchRequestOperationTest
   public void testGetterAndSetterMethods()
   {
     PatchRequestOperation operation = PatchRequestOperation.builder().build();
-    Assertions.assertTrue(operation.isEmpty());
+    Assertions.assertTrue(operation.isEmpty(), operation.toPrettyString());
 
     final String value = "{\"emails\":[{\"value\":\"babs@jensen.org\",\"type\":\"home\"}],\"nickname\":\"Babs\"}";
     final String path = "members[value eq \"2819c223-7f76-...413861904646\"]";
     final PatchOp patchOp = PatchOp.REPLACE;
     operation.setPath(path);
-    operation.setValue(Collections.singletonList(value));
+    operation.setValues(Collections.singletonList(value));
     operation.setOp(patchOp);
 
-    Assertions.assertEquals(1, operation.getValue().size());
-    Assertions.assertEquals(value, operation.getValue().get(0));
+    Assertions.assertEquals(1, operation.getValues().size());
+    Assertions.assertEquals(value, operation.getValues().get(0));
     Assertions.assertEquals(path, operation.getPath().get());
     Assertions.assertEquals(patchOp, operation.getOp());
 
     operation.setValueNode(JsonHelper.readJsonDocument(value));
-    Assertions.assertEquals(value, operation.getValue().get(0));
+    Assertions.assertEquals(value, operation.getValues().get(0));
   }
 }

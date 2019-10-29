@@ -6,5 +6,11 @@
   "name": "AllTypes",
   "description": "AllTypes",
   "schema": "urn:gold:params:scim:schemas:custom:2.0:AllTypes",
-  "endpoint": "/AllTypes"
+  "endpoint": "/AllTypes",
+  "schemaExtensions": [
+    {
+      "schema": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+      "required": false
+    }
+  ]
 }

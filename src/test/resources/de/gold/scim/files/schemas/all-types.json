@@ -262,6 +262,17 @@
           "caseExact": false
         },
         {
+          "name": "primary",
+          "type": "boolean",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
           "name": "number",
           "type": "integer",
           "mutability": "readWrite",

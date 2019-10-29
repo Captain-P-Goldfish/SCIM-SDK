@@ -192,17 +192,18 @@ public final class RequestUtils
    * gets the {@link SchemaAttribute} from the given {@link ResourceType}
    *
    * @param resourceType the resource type from which the attribute definition should be extracted
-   * @param sortBy this instance holds the attribute name to extract the {@link SchemaAttribute} from the
+   * @param attributeName this instance holds the attribute name to extract the {@link SchemaAttribute} from the
    *          {@link ResourceType}
    * @return the found {@link SchemaAttribute} definition
    * @throws de.gold.scim.exceptions.BadRequestException if no {@link SchemaAttribute} was found for the given
    *           name attribute
    */
-  public static SchemaAttribute getSchemaAttributeByAttributeName(ResourceType resourceType, String sortBy)
+  public static SchemaAttribute getSchemaAttributeByAttributeName(ResourceType resourceType, String attributeName)
   {
     try
     {
-      return StringUtils.isBlank(sortBy) ? null : getSchemaAttribute(resourceType, new FilterAttributeName(sortBy));
+      return StringUtils.isBlank(attributeName) ? null
+        : getSchemaAttribute(resourceType, new FilterAttributeName(attributeName));
     }
     catch (BadRequestException ex)
     {
@@ -282,7 +283,8 @@ public final class RequestUtils
       String schemaIds = schemaAttributeList.stream()
                                             .map(schemaAttribute -> schemaAttribute.getSchema().getId().orElse(null))
                                             .collect(Collectors.joining(","));
-      String exampleAttributeName = schemaAttributeList.get(0).getSchema().getId() + ":" + attributeName.getShortName();
+      String exampleAttributeName = schemaAttributeList.get(0).getSchema().getId().orElse(null) + ":"
+                                    + attributeName.getShortName();
       throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
                                     + "ambiguous it was found in the schemas with the ids [" + schemaIds + "]. "
                                     + "Please use the fully qualified Uri for this attribute e.g.: "

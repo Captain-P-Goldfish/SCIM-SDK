@@ -80,7 +80,10 @@ public class FilterResourceResolverTest implements FileReferences
 
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
-    this.allTypesResourceType = resourceTypeFactory.registerResourceType(null, allTypesResourceType, allTypesSchema);
+    this.allTypesResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         allTypesResourceType,
+                                                                         allTypesSchema,
+                                                                         enterpriseUser);
   }
 
   /**

@@ -24,12 +24,19 @@ public class PatchRequestOperation extends ScimObjectNode
 {
 
   @Builder
-  public PatchRequestOperation(String path, PatchOp op, List<String> value)
+  public PatchRequestOperation(String path, PatchOp op, List<String> values, JsonNode valueNode)
   {
     this();
     setPath(path);
     setOp(op);
-    setValue(value);
+    if (values == null || values.isEmpty())
+    {
+      setValueNode(valueNode);
+    }
+    else
+    {
+      setValues(values);
+    }
   }
 
   /**
@@ -73,7 +80,7 @@ public class PatchRequestOperation extends ScimObjectNode
    * the new value of the targeted attribute <br>
    * (This will never return null on server side for schema validation is executed before this method is called)
    */
-  public List<String> getValue()
+  public List<String> getValues()
   {
     return getSimpleArrayAttribute(AttributeNames.RFC7643.VALUE);
   }
@@ -81,7 +88,7 @@ public class PatchRequestOperation extends ScimObjectNode
   /**
    * the new value of the targeted attribute
    */
-  public void setValue(List<String> value)
+  public void setValues(List<String> value)
   {
     setAttributeList(AttributeNames.RFC7643.VALUE, value);
   }
@@ -91,7 +98,7 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   public void setValueNode(JsonNode value)
   {
-    setAttribute(AttributeNames.RFC7643.VALUE, Collections.singletonList(value));
+    setAttribute(AttributeNames.RFC7643.VALUE, value == null ? null : Collections.singletonList(value));
   }
 
 }

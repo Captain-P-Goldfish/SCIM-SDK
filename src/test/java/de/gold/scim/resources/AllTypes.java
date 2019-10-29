@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.resources.base.ScimObjectNode;
 
 
@@ -143,6 +144,16 @@ public class AllTypes extends ResourceNode
 
   public void setMultiComplex(List<AllTypes> allTypesList)
   {
-    setAttributeList("multiComplex", allTypesList);
+    setAttribute("multiComplex", allTypesList);
+  }
+
+  public Optional<EnterpriseUser> getEnterpriseUser()
+  {
+    return getObjectAttribute(SchemaUris.ENTERPRISE_USER_URI, EnterpriseUser.class);
+  }
+
+  public void setEnterpriseUser(EnterpriseUser enterpriseUser)
+  {
+    setAttribute(SchemaUris.ENTERPRISE_USER_URI, enterpriseUser);
   }
 }
