@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class PatchAddToTargetTest implements FileReferences
+public class PatchTargetHandlerTest implements FileReferences
 {
 
   /**
@@ -408,11 +408,11 @@ public class PatchAddToTargetTest implements FileReferences
   }
 
   /**
-   * this test will show that the given path filter is invalid for multi valued complex types. A multi valued
-   * complex type add operation must contain a filter expression
+   * verifies that a {@link de.gold.scim.exceptions.BadRequestException} is thrown if no results are presentfor
+   * the specified target
    */
   @Test
-  public void testAddArrayAttributeToMultiComplexType()
+  public void testAddArrayAttributeToMultiComplexTypeWithMissingTarget()
   {
     List<String> values = Collections.singletonList("hello world");
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -431,9 +431,44 @@ public class PatchAddToTargetTest implements FileReferences
     catch (ScimException ex)
     {
       log.warn(ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      MatcherAssert.assertThat(ex.getDetail(),
+                               Matchers.equalTo("the multi valued complex type "
+                                                + "'urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex' "
+                                                + "is not set"));
     }
+  }
+
+  /**
+   * this test will show that the given path filter is invalid for multi valued complex types. A multi valued
+   * complex type add operation must contain a filter expression
+   */
+  @Test
+  public void testAddArrayAttributeToMultiComplexType()
+  {
+    List<String> values = Collections.singletonList("hello world");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path("multicomplex.stringarray")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    AllTypes complex2 = new AllTypes();
+    complex.setString("goldfish");
+    complex2.setString("goldfish");
+    complex.setStringArray(Collections.singletonList("happy day"));
+    complex2.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().get(1).getStringArray().size());
   }
 
   @Test

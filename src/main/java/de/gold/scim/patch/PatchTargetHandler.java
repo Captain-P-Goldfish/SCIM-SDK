@@ -1,6 +1,6 @@
 package de.gold.scim.patch;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.PatchOp;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.NotImplementedException;
@@ -66,7 +67,7 @@ import lombok.extern.slf4j.Slf4j;
  * </pre>
  */
 @Slf4j
-public class PatchAddToTarget extends AbstractPatch
+public class PatchTargetHandler extends AbstractPatch
 {
 
   /**
@@ -74,12 +75,18 @@ public class PatchAddToTarget extends AbstractPatch
    */
   private final FilterNode path;
 
+  /**
+   * the patch operation to handle
+   */
+  private final PatchOp patchOp;
+
   private final SchemaAttribute schemaAttribute;
 
-  public PatchAddToTarget(ResourceType resourceType, String path)
+  public PatchTargetHandler(ResourceType resourceType, PatchOp patchOp, String path)
   {
     super(resourceType);
     this.path = RequestUtils.parsePatchPath(resourceType, path);
+    this.patchOp = patchOp;
     this.schemaAttribute = getSchemaAttribute();
   }
 
@@ -104,8 +111,8 @@ public class PatchAddToTarget extends AbstractPatch
     if (firstAttribute == null && !Type.COMPLEX.equals(schemaAttribute.getType())
         || (firstAttribute != null && !firstAttribute.isArray() && !firstAttribute.isObject()))
     {
-      return addOrReplaceSimpleNode(schemaAttribute, resource, firstAttribute, values);
-
+      addOrReplaceSimpleNode(schemaAttribute, resource, values);
+      return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
     }
     else if (firstAttribute != null && firstAttribute.isArray())
     {
@@ -124,16 +131,11 @@ public class PatchAddToTarget extends AbstractPatch
    *
    * @param schemaAttribute the attribute schema definition
    * @param objectNode the object node into which the new node should be added or replaced
-   * @param firstAttribute the original value of the resource. if null or if the value is not equals to the new
-   *          value an effective change was done
    * @param values the values that should be added to the node. This list must not contain more than a single
    *          entry
    * @return true if an effective change was made, false else
    */
-  protected boolean addOrReplaceSimpleNode(SchemaAttribute schemaAttribute,
-                                           ObjectNode objectNode,
-                                           JsonNode firstAttribute,
-                                           List<String> values)
+  protected void addOrReplaceSimpleNode(SchemaAttribute schemaAttribute, ObjectNode objectNode, List<String> values)
   {
     if (values.size() != 1 && !schemaAttribute.isMultiValued())
     {
@@ -142,7 +144,6 @@ public class PatchAddToTarget extends AbstractPatch
                                     ScimType.RFC7644.INVALID_VALUE);
     }
     objectNode.set(schemaAttribute.getName(), createNewNode(schemaAttribute, values.get(0)));
-    return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
   }
 
   /**
@@ -171,22 +172,12 @@ public class PatchAddToTarget extends AbstractPatch
         complexNode = new ScimObjectNode(schemaAttribute);
         resource.set(schemaAttribute.getName(), complexNode);
       }
-      if (subAttribute.isMultiValued())
+      if (handleInnerComplexAttribute(subAttribute, complexNode, values))
       {
-        ArrayNode arrayNode = (ArrayNode)complexNode.get(subAttribute.getName());
-        if (arrayNode == null)
-        {
-          arrayNode = new ScimArrayNode(subAttribute);
-          complexNode.set(subAttribute.getName(), arrayNode);
-        }
-        values.forEach(arrayNode::add);
         return true;
       }
-      else
-      {
-        resource.set(schemaAttribute.getName(), complexNode);
-        return addOrReplaceSimpleNode(subAttribute, complexNode, resource.get(fullAttributeNames[1]), values);
-      }
+      JsonNode firstAttribute = resource.get(fullAttributeNames[1]);
+      return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
     }
     else
     {
@@ -208,6 +199,26 @@ public class PatchAddToTarget extends AbstractPatch
       resource.set(schemaAttribute.getName(), newNode);
       return !newNode.equals(oldNode);
     }
+  }
+
+  private boolean handleInnerComplexAttribute(SchemaAttribute subAttribute, ObjectNode complexNode, List<String> values)
+  {
+    if (subAttribute.isMultiValued())
+    {
+      ArrayNode arrayNode = (ArrayNode)complexNode.get(subAttribute.getName());
+      if (arrayNode == null)
+      {
+        arrayNode = new ScimArrayNode(subAttribute);
+        complexNode.set(subAttribute.getName(), arrayNode);
+      }
+      values.forEach(arrayNode::add);
+      return true;
+    }
+    else
+    {
+      addOrReplaceSimpleNode(subAttribute, complexNode, values);
+    }
+    return false;
   }
 
   /**
@@ -245,7 +256,7 @@ public class PatchAddToTarget extends AbstractPatch
    * handles multi valued complex nodes
    * 
    * @param schemaAttribute the schema attribute definition of the top level node
-   * @param firstAttribute the array node that is represented by the {@code schemaAttribute}
+   * @param multiValuedComplex the array node that is represented by the {@code schemaAttribute}
    * @param fullAttributeNames the array of full attribute names with their resourceUris e.g. <br>
    * 
    *          <pre>
@@ -257,7 +268,7 @@ public class PatchAddToTarget extends AbstractPatch
    * @return true if an effective change has been made, false else
    */
   private boolean handleMultiValuedAttribute(SchemaAttribute schemaAttribute,
-                                             ArrayNode firstAttribute,
+                                             ArrayNode multiValuedComplex,
                                              String[] fullAttributeNames,
                                              List<String> values)
   {
@@ -265,14 +276,22 @@ public class PatchAddToTarget extends AbstractPatch
     {
       if (fullAttributeNames.length > 1)
       {
-
-        return false;
+        if (multiValuedComplex.isEmpty())
+        {
+          throw new BadRequestException("the multi valued complex type '" + schemaAttribute.getFullResourceName()
+                                        + "' is not set", null, ScimType.RFC7644.NO_TARGET);
+        }
+        SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType,
+                                                                                      fullAttributeNames[1]);
+        List<ObjectNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
+        matchingComplexNodes.forEach(jsonNodes -> handleInnerComplexAttribute(subAttribute, jsonNodes, values));
+        return true;
       }
       else
       {
         for ( String value : values )
         {
-          firstAttribute.add(JsonHelper.readJsonDocument(value));
+          multiValuedComplex.add(JsonHelper.readJsonDocument(value));
         }
         return true;
       }
@@ -281,10 +300,28 @@ public class PatchAddToTarget extends AbstractPatch
     {
       for ( String value : values )
       {
-        firstAttribute.add(createNewNode(schemaAttribute, value));
+        multiValuedComplex.add(createNewNode(schemaAttribute, value));
       }
       return true;
     }
+  }
+
+  /**
+   * this method will extract all complex types from the given array node that do match the filter
+   * 
+   * @param multiValuedComplex the multi valued complex node
+   * @param path the filter expression that must be resolved to get the matching nodes
+   * @return the list of nodes that should be modified
+   */
+  private List<ObjectNode> resolveFilter(ArrayNode multiValuedComplex, FilterNode path)
+  {
+    PatchFilterResolver patchFilterResolver = new PatchFilterResolver(resourceType);
+    List<ObjectNode> matchingComplexNodes = new ArrayList<>();
+    for ( JsonNode complex : multiValuedComplex )
+    {
+      patchFilterResolver.isNodeMatchingFilter((ObjectNode)complex, path).ifPresent(matchingComplexNodes::add);
+    }
+    return matchingComplexNodes;
   }
 
   /**
@@ -357,7 +394,12 @@ public class PatchAddToTarget extends AbstractPatch
       String[] attributeNames = attributeName.split("\\.");
       String resourceUri = pathLeaf.getFilterAttributeName().getResourceUri() == null ? ""
         : pathLeaf.getFilterAttributeName().getResourceUri() + ":";
-      return Arrays.stream(attributeNames).map(s -> resourceUri + s).toArray(String[]::new);
+      attributeNames[0] = resourceUri + attributeNames[0];
+      for ( int i = 1 ; i < attributeNames.length ; i++ )
+      {
+        attributeNames[i] = attributeNames[i - 1] + "." + attributeNames[i];
+      }
+      return attributeNames;
     }
     else
     {

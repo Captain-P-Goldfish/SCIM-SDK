@@ -85,7 +85,7 @@ public class PatchHandler
 
     if (target.isPresent())
     {
-      PatchAddToTarget patchAddToTarget = new PatchAddToTarget(resourceType, target.get());
+      PatchTargetHandler patchAddToTarget = new PatchTargetHandler(resourceType, operation.getOp(), target.get());
       return patchAddToTarget.addOperationValues(resource, operation.getValues());
     }
     else
