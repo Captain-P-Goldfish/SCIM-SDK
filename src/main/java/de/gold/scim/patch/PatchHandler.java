@@ -85,7 +85,8 @@ public class PatchHandler
 
     if (target.isPresent())
     {
-      return addOperationValues(resource, operation.getValues());
+      PatchAddToTarget patchAddToTarget = new PatchAddToTarget(resourceType, target.get());
+      return patchAddToTarget.addOperationValues(resource, operation.getValues());
     }
     else
     {
@@ -126,11 +127,6 @@ public class PatchHandler
   }
 
 
-
-  private boolean addOperationValues(ResourceNode resource, List<String> values)
-  {
-    throw new NotImplementedException("not yet");
-  }
 
   private boolean removeValues(ResourceNode resource, PatchRequestOperation operation)
   {

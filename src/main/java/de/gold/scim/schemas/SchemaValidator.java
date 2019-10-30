@@ -34,6 +34,7 @@ import de.gold.scim.resources.base.ScimArrayNode;
 import de.gold.scim.resources.base.ScimBooleanNode;
 import de.gold.scim.resources.base.ScimDoubleNode;
 import de.gold.scim.resources.base.ScimIntNode;
+import de.gold.scim.resources.base.ScimLongNode;
 import de.gold.scim.resources.base.ScimNode;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.resources.base.ScimTextNode;
@@ -771,7 +772,14 @@ public class SchemaValidator
         isNodeOfExpectedType(schemaAttribute,
                              simpleDocumentNode,
                              jsonNode -> jsonNode.isInt() || jsonNode.isLong() || jsonNode.isBigDecimal());
-        return new ScimIntNode(schemaAttribute, simpleDocumentNode.intValue());
+        if (simpleDocumentNode.intValue() == simpleDocumentNode.longValue())
+        {
+          return new ScimIntNode(schemaAttribute, simpleDocumentNode.intValue());
+        }
+        else
+        {
+          return new ScimLongNode(schemaAttribute, simpleDocumentNode.intValue());
+        }
       case DECIMAL:
         isNodeOfExpectedType(schemaAttribute,
                              simpleDocumentNode,

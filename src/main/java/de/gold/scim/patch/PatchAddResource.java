@@ -8,12 +8,10 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.constants.AttributeNames;
-import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.Mutability;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.exceptions.BadRequestException;
-import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.resources.base.ScimArrayNode;
 import de.gold.scim.resources.base.ScimObjectNode;
 import de.gold.scim.schemas.ResourceType;
@@ -39,17 +37,13 @@ import de.gold.scim.utils.RequestUtils;
  *       added to the resource.
  * </pre>
  */
-public class PatchAddResource
+public class PatchAddResource extends AbstractPatch
 {
 
-  /**
-   * this resource type is used to get the attribute definitions of the values from the patch operations
-   */
-  private final ResourceType resourceType;
 
   public PatchAddResource(ResourceType resourceType)
   {
-    this.resourceType = resourceType;
+    super(resourceType);
   }
 
   /**
@@ -304,23 +298,4 @@ public class PatchAddResource
     return true;
   }
 
-  /**
-   * tries to resolve that attribute path and gets the schema of the attribute
-   *
-   * @param key the attribute name of which the definition should be extracted
-   * @return the schema attribute or an exception if the definition does not exist for the resourceType
-   */
-  private SchemaAttribute getSchemaAttribute(String key)
-  {
-    try
-    {
-      return RequestUtils.getSchemaAttributeByAttributeName(resourceType, key);
-    }
-    catch (ScimException ex)
-    {
-      ex.setScimType(ScimType.RFC7644.INVALID_PATH);
-      ex.setStatus(HttpStatus.BAD_REQUEST);
-      throw ex;
-    }
-  }
 }
