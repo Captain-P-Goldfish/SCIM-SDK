@@ -1,7 +1,5 @@
 package de.gold.scim.endpoints.base;
 
-import java.util.Arrays;
-
 import de.gold.scim.constants.ClassPathReferences;
 import de.gold.scim.endpoints.EndpointDefinition;
 import de.gold.scim.endpoints.handler.ServiceProviderHandler;
@@ -27,8 +25,7 @@ public class ServiceProviderEndpointDefinition extends EndpointDefinition
   public ServiceProviderEndpointDefinition(ServiceProvider serviceProvider)
   {
     super(JsonHelper.loadJsonDocument(ClassPathReferences.SERVICE_PROVIDER_RESOURCE_TYPE_JSON),
-          JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON),
-          Arrays.asList(JsonHelper.loadJsonDocument(ClassPathReferences.SERVICE_PROVIDER_URL_EXTENSION_SCHEMA_JSON)),
+          JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON), null,
           new ServiceProviderHandler(serviceProvider));
   }
 

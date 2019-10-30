@@ -74,8 +74,7 @@ public class SchemaHandlerTest
    * @param name the uri of the schema
    */
   @ParameterizedTest
-  @ValueSource(strings = {SchemaUris.SCHEMA_URI, SchemaUris.SERVICE_PROVIDER_CONFIG_URI,
-                          SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI, SchemaUris.RESOURCE_TYPE_URI,
+  @ValueSource(strings = {SchemaUris.SCHEMA_URI, SchemaUris.SERVICE_PROVIDER_CONFIG_URI, SchemaUris.RESOURCE_TYPE_URI,
                           SchemaUris.USER_URI, SchemaUris.ENTERPRISE_USER_URI, SchemaUris.GROUP_URI})
   public void testGetResourceTypeByName(String name)
   {

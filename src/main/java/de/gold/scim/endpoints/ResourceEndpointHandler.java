@@ -30,7 +30,6 @@ import de.gold.scim.request.PatchOpRequest;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
-import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
@@ -923,13 +922,10 @@ class ResourceEndpointHandler
     String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
     if (StringUtils.isBlank(baseUrl))
     {
-      baseUrl = serviceProvider.getServiceProviderUrlExtension()
-                               .map(ServiceProviderUrlExtension::getBaseUrl)
-                               .orElse(null);
       if (StringUtils.isBlank(baseUrl))
       {
-        log.warn("TODO set location url");
-        return "";
+        return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint() + "/"
+               + resourceId;
       }
     }
     if (baseUrl.endsWith("/"))

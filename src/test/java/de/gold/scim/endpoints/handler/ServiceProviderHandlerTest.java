@@ -9,7 +9,6 @@ import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.endpoints.ResourceEndpointHandlerUtil;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.resources.ServiceProvider;
-import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.complex.FilterConfig;
 import de.gold.scim.resources.complex.SortConfig;
 import de.gold.scim.schemas.ResourceTypeFactory;
@@ -61,13 +60,9 @@ public class ServiceProviderHandlerTest
    */
   private ServiceProvider buildServiceProvider()
   {
-    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder()
-                                                                          .baseUrl("https://localhost/scim/v2")
-                                                                          .build();
     return ServiceProvider.builder()
                           .filterConfig(FilterConfig.builder().supported(true).maxResults(10).build())
                           .sortConfig(SortConfig.builder().supported(true).build())
-                          .serviceProviderUrlExtension(urlExtension)
                           .build();
   }
 

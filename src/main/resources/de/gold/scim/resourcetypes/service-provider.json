@@ -7,12 +7,6 @@
   "name": "ServiceProviderConfig",
   "description": "the service providers configuration",
   "endpoint": "/ServiceProviderConfig",
-  "schemaExtensions": [
-    {
-      "schema": "urn:gold:params:scim:schemas:extension:url:2.0:ServiceProviderUrl",
-      "required": false
-    }
-  ],
   "meta": {
     "resourceType": "ResourceType",
     "created": "2019-10-18T14:51:11+02:00",

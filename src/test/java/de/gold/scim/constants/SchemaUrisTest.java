@@ -67,7 +67,5 @@ public class SchemaUrisTest
   public void testCheckUrisNotDefinedByScim()
   {
     Assertions.assertEquals("urn:ietf:params:scim:schemas:core:2.0:Meta", SchemaUris.META);
-    Assertions.assertEquals("urn:gold:params:scim:schemas:extension:url:2.0:ServiceProviderUrl",
-                            SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI);
   }
 }

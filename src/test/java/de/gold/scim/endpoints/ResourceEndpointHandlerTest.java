@@ -40,7 +40,6 @@ import de.gold.scim.filter.FilterNode;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
-import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.response.CreateResponse;
@@ -115,8 +114,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     UserEndpointDefinition userEndpoint = new UserEndpointDefinition(userHandler);
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);
 
-    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder().baseUrl(BASE_URL).build();
-    ServiceProvider serviceProvider = ServiceProvider.builder().serviceProviderUrlExtension(urlExtension).build();
+    ServiceProvider serviceProvider = ServiceProvider.builder().build();
     this.resourceEndpointHandler = new ResourceEndpointHandler(serviceProvider, userEndpoint, groupEndpoint);
     this.resourceTypeFactory = resourceEndpointHandler.getResourceTypeFactory();
 

@@ -14,7 +14,6 @@ import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.GroupHandlerImpl;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.resources.ServiceProvider;
-import de.gold.scim.resources.ServiceProviderUrlExtension;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -30,45 +29,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceEndpointHandlerUtil
 {
-
-  /**
-   * creates a new endpoint definition with the given {@link ResourceTypeFactory}
-   */
-  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(EndpointDefinition... endpointDefinitions)
-  {
-    ServiceProviderUrlExtension urlExtension = ServiceProviderUrlExtension.builder()
-                                                                          .baseUrl("https://localhost/scim/v2")
-                                                                          .build();
-    return getUnitTestResourceEndpointHandler(ServiceProvider.builder()
-                                                             .serviceProviderUrlExtension(urlExtension)
-                                                             .build(),
-                                              endpointDefinitions);
-  }
-
-  /**
-   * creates a new endpoint definition with the given {@link ResourceTypeFactory}
-   */
-  public static ResourceEndpointHandler getUnitTestResourceEndpointHandler(ServiceProvider serviceProvider,
-                                                                           EndpointDefinition... endpointDefinitions)
-  {
-    return new ResourceEndpointHandler(serviceProvider, endpointDefinitions);
-  }
-
-  /**
-   * registers the given endpoints within the given resourceType
-   */
-  public static void registerEndpointDefinitionsInResourceType(ResourceTypeFactory resourceTypeFactory,
-                                                               EndpointDefinition... endpointDefinitionList)
-  {
-    for ( EndpointDefinition endpointDefinition : endpointDefinitionList )
-    {
-      resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
-                                               endpointDefinition.getResourceType(),
-                                               endpointDefinition.getResourceSchema(),
-                                               endpointDefinition.getResourceSchemaExtensions()
-                                                                 .toArray(new JsonNode[0]));
-    }
-  }
 
   /**
    * registers all endpoints within the given resourceType

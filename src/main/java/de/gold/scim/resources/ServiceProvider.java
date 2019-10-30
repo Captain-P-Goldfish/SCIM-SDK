@@ -40,8 +40,7 @@ public class ServiceProvider extends ResourceNode
                          ETagConfig eTagConfig,
                          FilterConfig filterConfig,
                          BulkConfig bulkConfig,
-                         List<AuthenticationScheme> authenticationSchemes,
-                         ServiceProviderUrlExtension serviceProviderUrlExtension)
+                         List<AuthenticationScheme> authenticationSchemes)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -52,7 +51,6 @@ public class ServiceProvider extends ResourceNode
     setFilterConfig(filterConfig);
     setBulkConfig(bulkConfig);
     setAuthenticationSchemes(authenticationSchemes);
-    setServiceProviderUrlExtension(serviceProviderUrlExtension);
   }
 
   /**
@@ -193,23 +191,5 @@ public class ServiceProvider extends ResourceNode
                + "ResourceTypeEndpoint");
     }
     setAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, authenticationSchemes);
-  }
-
-  /**
-   * represents an extension to the {@link ServiceProvider} that can be used to add a global base url that
-   * should be used to access the resources
-   */
-  public Optional<ServiceProviderUrlExtension> getServiceProviderUrlExtension()
-  {
-    return getObjectAttribute(SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI, ServiceProviderUrlExtension.class);
-  }
-
-  /**
-   * represents an extension to the {@link ServiceProvider} that can be used to add a global base url that
-   * should be used to access the resources
-   */
-  public void setServiceProviderUrlExtension(ServiceProviderUrlExtension serviceProviderUrlExtension)
-  {
-    setAttribute(SchemaUris.SERVICE_PROVIDER_EXTENSION_URL_URI, serviceProviderUrlExtension);
   }
 }
