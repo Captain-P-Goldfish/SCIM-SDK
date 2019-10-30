@@ -922,11 +922,8 @@ class ResourceEndpointHandler
     String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
     if (StringUtils.isBlank(baseUrl))
     {
-      if (StringUtils.isBlank(baseUrl))
-      {
-        return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint() + "/"
-               + resourceId;
-      }
+      return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint() + "/"
+             + resourceId;
     }
     if (baseUrl.endsWith("/"))
     {
