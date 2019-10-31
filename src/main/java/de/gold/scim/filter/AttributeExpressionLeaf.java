@@ -56,6 +56,7 @@ public final class AttributeExpressionLeaf extends FilterNode
   /**
    * the meta information of this attribute
    */
+  @Getter
   private final SchemaAttribute schemaAttribute;
 
   public AttributeExpressionLeaf(ScimFilterParser.AttributeExpressionContext context, ResourceType resourceType)
@@ -63,7 +64,7 @@ public final class AttributeExpressionLeaf extends FilterNode
     ScimFilterParser.ValuePathContext attributeValuePath = getParentValuePath(context);
     this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
     FilterAttributeName attributeName = new FilterAttributeName(attributeValuePath, context.attributePath());
-    String parentName = attributeName.getSubAttributeName();
+    String parentName = attributeName.getParentAttributeName();
 
     if (attributeValuePath != null)
     {
@@ -89,6 +90,11 @@ public final class AttributeExpressionLeaf extends FilterNode
     this.compareValue = context.compareValue() == null ? null
       : new CompareValue(context.compareValue(), schemaAttribute);
     validateFilterComparator();
+  }
+
+  public String getParentAttributeName()
+  {
+    return attributeName.getParentAttributeName();
   }
 
   /**
@@ -194,6 +200,16 @@ public final class AttributeExpressionLeaf extends FilterNode
   public String getFullName()
   {
     return attributeName.getFullName();
+  }
+
+  public String getAttributeName()
+  {
+    return attributeName.getAttributeName();
+  }
+
+  public String getComplexSubAttributeName()
+  {
+    return attributeName.getComplexSubAttributeName();
   }
 
   public String getValue()

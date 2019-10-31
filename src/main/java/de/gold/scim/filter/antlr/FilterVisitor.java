@@ -6,7 +6,7 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 import de.gold.scim.filter.AndExpressionNode;
 import de.gold.scim.filter.AttributeExpressionLeaf;
-import de.gold.scim.filter.AttributePathLeaf;
+import de.gold.scim.filter.AttributePathRoot;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.NotExpressionNode;
 import de.gold.scim.filter.OrExpressionNode;
@@ -114,13 +114,7 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
   @Override
   public FilterNode visitValuePath(ScimFilterParser.ValuePathContext ctx)
   {
-    if (ctx.filter() != null)
-    {
-      return visit(ctx.filter());
-    }
-    else
-    {
-      return new AttributePathLeaf(resourceType, ctx.attributePath());
-    }
+    FilterNode childNode = ctx.filter() == null ? null : visit(ctx.filter());
+    return new AttributePathRoot(childNode, resourceType, ctx);
   }
 }

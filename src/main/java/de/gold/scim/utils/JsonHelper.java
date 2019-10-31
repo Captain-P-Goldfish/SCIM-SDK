@@ -13,6 +13,7 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -135,7 +136,7 @@ public final class JsonHelper
     catch (IOException e)
     {
       throw de.gold.scim.exceptions.IOException.builder()
-                                               .message("Invalid content the document could not be parsed")
+                                               .message("Invalid content, the document could not be parsed")
                                                .cause(e)
                                                .build();
     }
@@ -158,7 +159,7 @@ public final class JsonHelper
     catch (IOException e)
     {
       throw de.gold.scim.exceptions.IOException.builder()
-                                               .message("Invalid content the document could not be parsed")
+                                               .message("Invalid content, the document could not be parsed")
                                                .cause(e)
                                                .build();
     }
@@ -497,5 +498,27 @@ public final class JsonHelper
       return Optional.ofNullable(subNode);
     }
     return Optional.ofNullable(subNode.get(nameParts[1]));
+  }
+
+  /**
+   * validates if the given string structure is valid json or not
+   *
+   * @param json the string to validate
+   * @return true if the given string is a valid json structure, false else
+   */
+  public static boolean isValidJson(final String json)
+  {
+    try
+    {
+      final JsonParser parser = new ObjectMapper().getFactory().createParser(json);
+      while (parser.nextToken() != null)
+      {}
+      return true;
+    }
+    catch (IOException ex)
+    {
+      log.trace(ex.getMessage());
+      return false;
+    }
   }
 }

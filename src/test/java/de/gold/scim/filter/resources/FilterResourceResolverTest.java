@@ -22,8 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.constants.ClassPathReferences;
-import de.gold.scim.filter.AttributeExpressionLeaf;
-import de.gold.scim.filter.AttributePathLeaf;
+import de.gold.scim.filter.AttributePathRoot;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.antlr.Comparator;
 import de.gold.scim.resources.AllTypes;
@@ -1776,24 +1775,11 @@ public class FilterResourceResolverTest implements FileReferences
                                                                                                            + ".number"})
   public void testValuePathFilteringForPatch(String path)
   {
-    final FilterNode filterNode = RequestUtils.parsePatchPath(allTypesResourceType, path);
+    final AttributePathRoot filterNode = RequestUtils.parsePatchPath(allTypesResourceType, path);
     Assertions.assertNotNull(filterNode);
     log.warn(filterNode.toString());
-    if (AttributePathLeaf.class.isAssignableFrom(filterNode.getClass()))
-    {
-      AttributePathLeaf attributePathLeaf = (AttributePathLeaf)filterNode;
-      Assertions.assertNotNull(attributePathLeaf.getSchemaAttribute());
-      Assertions.assertNotNull(attributePathLeaf.getFilterAttributeName());
-    }
-    else
-    {
-      MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
-      AttributeExpressionLeaf expressionLeaf = (AttributeExpressionLeaf)filterNode;
-      if (path.endsWith(".number"))
-      {
-        Assertions.assertEquals("number", expressionLeaf.getSubAttributeName());
-      }
-    }
+    Assertions.assertNotNull(filterNode.getSchemaAttribute());
+    Assertions.assertNotNull(filterNode.getFullName());
   }
 
   /**

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.node.LongNode;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.filter.AndExpressionNode;
 import de.gold.scim.filter.AttributeExpressionLeaf;
+import de.gold.scim.filter.AttributePathRoot;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.NotExpressionNode;
 import de.gold.scim.filter.OrExpressionNode;
@@ -39,7 +40,7 @@ public class FilterResourceResolver
 
   /**
    * filters the given resources based on the filternode
-   * 
+   *
    * @param resources the resources that must be filtered
    * @param filterNode the filter node that holds the information how the resources should be filtered
    * @param <T> a {@link ResourceNode} type
@@ -52,7 +53,7 @@ public class FilterResourceResolver
 
   /**
    * creates a predicate that tells us if the given resource does match the filter or not
-   * 
+   *
    * @param filterNode the filter expression
    * @return the predicate that tells us if evaluated if the resource does match the filter or not
    */
@@ -63,7 +64,7 @@ public class FilterResourceResolver
 
   /**
    * checks the current filter node and evaluates it or does a recursive call to itself
-   * 
+   *
    * @param resourceNode the resource node to evaluate
    * @param filterNode the filternode to which the resource must match
    * @return true if the resource node does match to the filter
@@ -91,12 +92,17 @@ public class FilterResourceResolver
     {
       return visitAttributeExpressionLeaf(resourceNode, (AttributeExpressionLeaf)filterNode);
     }
+    else if (AttributePathRoot.class.isAssignableFrom(filterNode.getClass()))
+    {
+      AttributePathRoot attributePathRoot = (AttributePathRoot)filterNode;
+      return isResourceMatchingFilter(resourceNode, attributePathRoot.getChild());
+    }
     return false;
   }
 
   /**
    * evaluates a leaf node so a direct expression that must be evaluated
-   * 
+   *
    * @param resourceNode the resource node that must evaluate to the expression leaf
    * @param attributeExpressionLeaf the leaf node that holds the expressions information
    * @return true if the expression matches, false else
@@ -126,7 +132,7 @@ public class FilterResourceResolver
 
   /**
    * evaluates a multi valued complex node in the resource node
-   * 
+   *
    * @param multiComplexNode the multi valued complex node
    * @param innerAttributeName the attribute name of the attribute within the multi valued complex node
    * @param attributeExpressionLeaf the expression leaf that describes the inner node
@@ -149,7 +155,7 @@ public class FilterResourceResolver
 
   /**
    * evaluates a simple complex node in the resource node
-   * 
+   *
    * @param complexNode the simple complex node
    * @param innerAttributeName the name of the attribute within the complex node
    * @param attributeExpressionLeaf the expression leaf that describes the inner node
@@ -173,13 +179,13 @@ public class FilterResourceResolver
 
   /**
    * checks if the given simple attribute node does match the given filter expression
-   * 
+   *
    * @param attributeNode a simple attribute node with primitive values. This might be a json array with
    *          primitives or a json primitive
    * @param attributeExpressionLeaf the expression leaf that describes the node
    * @return true if the attribute matches the expression, false else
    */
-  private static boolean checkValueEquality(JsonNode attributeNode, AttributeExpressionLeaf attributeExpressionLeaf)
+  protected static boolean checkValueEquality(JsonNode attributeNode, AttributeExpressionLeaf attributeExpressionLeaf)
   {
 
     switch (attributeExpressionLeaf.getType())
@@ -202,7 +208,7 @@ public class FilterResourceResolver
   /**
    * checks if the given simple attribute node (json array with boolean or json boolean) matches the given
    * expression
-   * 
+   *
    * @param attributeNode the simple attribute node with primitive values
    * @param boolValue the comparison value from the filter expression
    * @param attributeExpressionLeaf the expression leaf that describes the node
@@ -297,7 +303,7 @@ public class FilterResourceResolver
   /**
    * evaluates if the given json string node does apply to the given comparison operation (this might also be an
    * array of json primitive strings)
-   * 
+   *
    * @param jsonNode the json string primitve
    * @param comparison a comparison operation that should be executed on the given json string
    * @return true if the json string applies to the given comparison operation
@@ -327,7 +333,7 @@ public class FilterResourceResolver
   /**
    * evaluates the given dateTime jsonNode that should be a primitve json string or array with primitive strings
    * applying to the dateTime syntax.
-   * 
+   *
    * @param jsonNode the dateTime node that should be represented as a string
    * @param attributeExpressionLeaf the expression leaf that describes the node
    * @return true if the given datetime does match to the given expression, false else
@@ -396,7 +402,7 @@ public class FilterResourceResolver
   /**
    * checks if the given number json node matches the given filter expression. This might be a simple json
    * number or an array of json numbers
-   * 
+   *
    * @param number the json node that should be evaluated
    * @param compareNumber the number from the filter expression
    * @param comparator the comparator operation
@@ -442,7 +448,7 @@ public class FilterResourceResolver
 
   /**
    * turns the given json node to a list of strings that can be compared
-   * 
+   *
    * @param number a number node which is either a simple json node or a json array of numbers
    * @return a list of string representations of these numbers
    */
@@ -465,7 +471,7 @@ public class FilterResourceResolver
 
   /**
    * evaluates that the given number node applies to the given comparison operation
-   * 
+   *
    * @param numberNode the number node that is either a primitive json number node or an array of numbers
    * @param comparison the comparison operation to which at least one of the numbers of the json node must apply
    * @return true if the json node applies to the given comparison operation, false else

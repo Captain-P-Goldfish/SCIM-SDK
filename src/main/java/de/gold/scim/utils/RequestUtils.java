@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.InvalidFilterException;
+import de.gold.scim.filter.AttributePathRoot;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.antlr.FilterAttributeName;
 import de.gold.scim.filter.antlr.FilterRuleErrorListener;
@@ -131,7 +132,7 @@ public final class RequestUtils
    * @return The parsed path expression as resolvable tree structure to find matching attributes within a single
    *         resource
    */
-  public static FilterNode parsePatchPath(ResourceType resourceType, String path)
+  public static AttributePathRoot parsePatchPath(ResourceType resourceType, String path)
   {
     if (StringUtils.isBlank(path))
     {
@@ -147,7 +148,15 @@ public final class RequestUtils
     scimFilterParser.addErrorListener(filterRuleErrorListener);
     ScimFilterParser.ValuePathContext valuePathContext = scimFilterParser.valuePath();
     FilterVisitor filterVisitor = new FilterVisitor(resourceType);
-    return filterVisitor.visit(valuePathContext);
+    FilterNode filterNode = filterVisitor.visit(valuePathContext);
+    if (filterNode == null || !AttributePathRoot.class.isAssignableFrom(filterNode.getClass()))
+    {
+      throw new BadRequestException("the path expression is invalid and not supported for patch operations: '" + path
+                                    + "'", null, ScimType.RFC7644.INVALID_PATH);
+    }
+    AttributePathRoot attributePathRoot = (AttributePathRoot)filterNode;
+    attributePathRoot.setOriginalExpressionString(path);
+    return attributePathRoot;
   }
 
   /**

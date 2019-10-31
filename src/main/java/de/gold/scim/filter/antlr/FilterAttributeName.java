@@ -27,20 +27,22 @@ public class FilterAttributeName
    */
   private String resourceUri;
 
-  /**
-   * the short name of the attribute e.g. 'userName' or 'name.givenName'
-   */
-  private String shortName;
+  private String attributeName;
 
   /**
-   * the fully qualified name of this attribute {@link #resourceUri} + {@link #shortName}
+   * the fully qualified name of this attribute {@link #resourceUri} + {@link #getShortName()}
    */
   private String fullName;
 
   /**
-   * a sub attribute of bracket notations for patch operation resolving
+   * the name of the parent attribute in case of bracket filter notation
    */
-  private String subAttributeName;
+  private String parentAttributeName;
+
+  /**
+   * the name of the sub attribute in case of bracket filter notation
+   */
+  private String complexSubAttributeName;
 
   public FilterAttributeName(ScimFilterParser.ValuePathContext valuePathContext,
                              ScimFilterParser.AttributePathContext attributePathContext)
@@ -50,22 +52,23 @@ public class FilterAttributeName
 
   public FilterAttributeName(String parentName, ScimFilterParser.AttributePathContext attributePathContext)
   {
-    this.subAttributeName = parentName == null ? null : (parentName + ".");
-    this.shortName = StringUtils.stripToEmpty(subAttributeName) + attributePathContext.attribute.getText()
-                     + StringUtils.stripToEmpty(attributePathContext.subattribute == null ? null
-                       : "." + attributePathContext.subattribute.getText());
+    this.parentAttributeName = parentName == null ? null : (parentName + ".");
+    this.attributeName = attributePathContext.attribute.getText();
+    this.complexSubAttributeName = attributePathContext.subattribute == null ? null
+      : attributePathContext.subattribute.getText();
     this.resourceUri = resolveResourceUri(attributePathContext).orElse(null);
-    this.fullName = (resourceUri == null ? "" : StringUtils.stripToEmpty(resourceUri) + ":") + shortName;
+    this.fullName = (resourceUri == null ? "" : StringUtils.stripToEmpty(resourceUri) + ":") + getShortName();
   }
 
   public FilterAttributeName(String attributeName)
   {
-    Pattern pattern = Pattern.compile("(([\\w:.]+):)?(\\w+(\\.\\w+)?)");
+    Pattern pattern = Pattern.compile("(([\\w:.]+):)?(\\w+)(\\.)?(\\w+)?");
     Matcher matcher = pattern.matcher(attributeName);
     if (matcher.matches())
     {
       this.resourceUri = matcher.group(2);
-      this.shortName = matcher.group(3);
+      this.attributeName = matcher.group(3);
+      this.complexSubAttributeName = matcher.group(5);
     }
     this.fullName = attributeName;
   }
@@ -84,6 +87,17 @@ public class FilterAttributeName
     }
     String resourceUri = StringUtils.stripToEmpty(attributePathContext.resourceUri.getText());
     return Optional.of(StringUtils.stripToNull(resourceUri.replaceFirst(":$", "")));
+  }
+
+  /**
+   * the short name of the attribute e.g. 'userName' or 'name.givenName'
+   */
+  public String getShortName()
+  {
+    return StringUtils.stripToNull(StringUtils.stripToEmpty(parentAttributeName)
+                                   + StringUtils.stripToEmpty(attributeName)
+                                   + StringUtils.stripToEmpty(this.complexSubAttributeName == null ? null
+                                     : "." + this.complexSubAttributeName));
   }
 
   @Override

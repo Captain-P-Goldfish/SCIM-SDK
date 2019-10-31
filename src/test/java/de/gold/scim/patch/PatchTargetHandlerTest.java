@@ -192,7 +192,8 @@ public class PatchTargetHandlerTest implements FileReferences
    * verifies that simple attribute can successfully be added to complex types
    */
   @ParameterizedTest
-  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "bool,false", "date,1996-03-10T00:00:00Z"})
+  @CsvSource({"string,hello world", "number,5", "number," + Long.MAX_VALUE, "decimal,5.8", "bool,true", "bool,false",
+              "date," + "1996-03-10T00:00:00Z"})
   public void testAddSimpleAttributeToComplexType(String attributeName, String value)
   {
     List<String> values = Collections.singletonList(value);
@@ -340,7 +341,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                         "\"boolArray\": [true, false, true]," +
                                         "\"decimalArray\": [1.1, 2.2, 3.3]" +
                                         "}",
-                                        
+
                                         "{" +
                                         "\"string\": \"happy day\"," +
                                         "\"number\": 45678987646454," +
@@ -469,13 +470,181 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals(2, allTypes.getMultiComplex().size());
     Assertions.assertEquals(2, allTypes.getMultiComplex().get(0).getStringArray().size());
     Assertions.assertEquals(2, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }
 
+  /**
+   * this test will show that the given path filter is invalid for multi valued complex types. A multi valued
+   * complex type add operation must contain a filter expression
+   */
   @Test
-  public void testAddSimpleAttribute_()
+  public void testAddSimpleAttributeToMultiComplexType()
+  {
+    final String value = "hello world";
+    List<String> values = Collections.singletonList(value);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path("multicomplex.string")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    AllTypes complex2 = new AllTypes();
+    complex.setString("goldfish");
+    complex2.setString("goldfish");
+    complex.setStringArray(Collections.singletonList("happy day"));
+    complex2.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size(), "multiComplex and meta must be present");
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(value, allTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertEquals(value, allTypes.getMultiComplex().get(1).getString().get());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that the meta attribute is not touched if no effective change was made
+   */
+  @Test
+  public void testAddSimpleAttributeToMultiComplexTypeWithoutEffectiveChange()
+  {
+    final String value = "hello world";
+    List<String> values = Collections.singletonList(value);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path("multicomplex.string")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    AllTypes complex2 = new AllTypes();
+    complex.setString(value);
+    complex2.setString(value);
+    complex.setStringArray(Collections.singletonList("happy day"));
+    complex2.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.size(), "multiComplex and meta must be present");
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(value, allTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertEquals(value, allTypes.getMultiComplex().get(1).getString().get());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertFalse(allTypes.getMeta().isPresent());
+  }
+
+  /**
+   * this test will show that a sanitized exception is thrown if the client gave an illegal value for a complex
+   * type injection
+   */
+  @Test
+  public void testAddComplexIntoMultiValuedWithIllegalValue()
   {
     List<String> values = Collections.singletonList("goldfish");
     final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"]";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals("the given expression is not valid for an add-operation: 'multiComplex[stringarray eq "
+                              + "\"hello world\" or stringarray eq \"goodbye world\"]'. Did you want an expression "
+                              + "like this 'multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye "
+                              + "world\"].subAttributeName'?",
+                              ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that an exception is thrown if the client tries to add a non json value into a complex type
+   */
+  @Test
+  public void testAddComplexIntoMultiValuedWithSimpleValue()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multiComplex";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals("the value parameters must be valid json representations but was\n'goldfish'",
+                              ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that an exception is thrown if the client tries to add several values to a simple type
+   */
+  @Test
+  public void testAddSeveralValuesToSimpleType()
+  {
+    List<String> values = Arrays.asList("value1", "value2");
+    final String path = "string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals("several values found for non multivalued node of type 'STRING'", ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that an exception is thrown if the subAttribute of a expression filter is unknown
+   */
+  @Test
+  public void testAddSimpleAttributeToComplexTypesWithUnknownSubAttribute()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].unknown";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
                                                                                 .path(path)
@@ -490,9 +659,154 @@ public class PatchTargetHandlerTest implements FileReferences
     multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
 
     allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2));
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals("the attribute with the name 'multiComplex.unknown' is unknown "
+                              + "to resource type 'AllTypes'",
+                              ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that a simple attribute can be added to multi complex type that will match the given filter
+   * expression
+   */
+  @Test
+  public void testAddSimpleAttributeToComplexTypesMatchingFilter()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes multiComplex1 = new AllTypes();
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes();
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+    AllTypes multiComplex3 = new AllTypes();
+    multiComplex3.setStringArray(Collections.singletonList("empty world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
-    Assertions.assertEquals(1, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals(3, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(2,
+                            allTypes.getMultiComplex().get(0).size(),
+                            allTypes.getMultiComplex().get(0).toPrettyString());
+    Assertions.assertEquals(2,
+                            allTypes.getMultiComplex().get(1).size(),
+                            allTypes.getMultiComplex().get(1).toPrettyString());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(2).size(),
+                            allTypes.getMultiComplex().get(2).toPrettyString());
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(1).getString().get());
+    Assertions.assertFalse(allTypes.getMultiComplex().get(2).getString().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that the last modified value is not set if no effective change was made
+   */
+  @Test
+  public void testAddSimpleAttributeToComplexTypesWithoutEffectiveChange()
+  {
+    final String value = "happy day";
+    List<String> values = Collections.singletonList(value);
+    final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes multiComplex1 = new AllTypes();
+    multiComplex1.setString(value);
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes();
+    multiComplex2.setString(value);
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+    AllTypes multiComplex3 = new AllTypes();
+    multiComplex3.setStringArray(Collections.singletonList("empty world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(2,
+                            allTypes.getMultiComplex().get(0).size(),
+                            allTypes.getMultiComplex().get(0).toPrettyString());
+    Assertions.assertEquals(2,
+                            allTypes.getMultiComplex().get(1).size(),
+                            allTypes.getMultiComplex().get(1).toPrettyString());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(2).size(),
+                            allTypes.getMultiComplex().get(2).toPrettyString());
+    Assertions.assertEquals(value, allTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertEquals(value, allTypes.getMultiComplex().get(1).getString().get());
+    Assertions.assertFalse(allTypes.getMultiComplex().get(2).getString().isPresent());
+    Assertions.assertFalse(allTypes.getMeta().isPresent(), "no effective change has been made so meta must be empty");
+  }
+
+  /**
+   * verifies that a simple attribute can be added to multi complex types that will match the given filter
+   * expression
+   */
+  @Test
+  public void testAddArrayAttributeToComplexTypesMatchingFilter()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multicomplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].stringarray";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes multiComplex1 = new AllTypes();
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes();
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+    AllTypes multiComplex3 = new AllTypes();
+    multiComplex3.setStringArray(Collections.singletonList("empty world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(0).size(),
+                            allTypes.getMultiComplex().get(0).toPrettyString());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(1).size(),
+                            allTypes.getMultiComplex().get(1).toPrettyString());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(2).size(),
+                            allTypes.getMultiComplex().get(2).toPrettyString());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals("hello world", allTypes.getMultiComplex().get(0).getStringArray().get(0));
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(0).getStringArray().get(1));
+    Assertions.assertEquals(2, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertEquals("goodbye world", allTypes.getMultiComplex().get(1).getStringArray().get(0));
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(1).getStringArray().get(1));
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(2).getStringArray().size());
+    Assertions.assertEquals("empty world", allTypes.getMultiComplex().get(2).getStringArray().get(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }
 
 }
