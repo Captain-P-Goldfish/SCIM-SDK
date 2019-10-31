@@ -95,6 +95,31 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * this test will verify that the patch operation is able to add values that are not yet present within the
+   * resource
+   */
+  @ParameterizedTest
+  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "bool,false", "date,1996-03-10T00:00:00Z"})
+  public void testReplaceSimpleAttribute(String attributeName, String value)
+  {
+    List<String> values = Collections.singletonList(value);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertNotNull(allTypes.get(attributeName));
+    Assertions.assertEquals(value, allTypes.get(attributeName).asText());
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
    * will verify that already existing attributes are getting replaced by the add operation
    */
   @ParameterizedTest
@@ -104,6 +129,29 @@ public class PatchTargetHandlerTest implements FileReferences
     List<String> values = Collections.singletonList(value);
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
+                                                                                .path(attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertNotNull(allTypes.get(attributeName));
+    Assertions.assertEquals(value, allTypes.get(attributeName).asText());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * will verify that already existing attributes are getting replaced by the replace operation
+   */
+  @ParameterizedTest
+  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "date,1996-03-10T00:00:00Z"})
+  public void testReplaceSimpleAttributeWithExistingValues(String attributeName, String value)
+  {
+    List<String> values = Collections.singletonList(value);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
                                                                                 .path(attributeName)
                                                                                 .values(values)
                                                                                 .build());
@@ -140,6 +188,52 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verfies that a string array can be added with the replace operation
+   */
+  @Test
+  public void testAddSimpleStringArrayAttributeWithReplaceOperation()
+  {
+    List<String> values = Arrays.asList("hello world", "goodbye world");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("stringarray")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(values.size(), allTypes.getStringArray().size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verfies that a string array can be replaced with the replace operation
+   */
+  @Test
+  public void testReplaceSimpleStringArrayAttribute()
+  {
+    List<String> values = Arrays.asList("hello world", "goodbye world");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("stringarray")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes.setStringArray(Arrays.asList("1", "2", "3", "4", "humpty dumpty"));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(values.size(), allTypes.getStringArray().size());
+    MatcherAssert.assertThat(allTypes.getStringArray(), Matchers.contains(values));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
    * verfies that several values can be added to simple number array types
    */
   @ParameterizedTest
@@ -149,6 +243,29 @@ public class PatchTargetHandlerTest implements FileReferences
     List<String> values = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 0).map(String::valueOf).collect(Collectors.toList());
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
+                                                                                .path(attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(values.size(), allTypes.getNumberArray().size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verfies that several values can be added to simple number array types with the replace operation
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"numberarray", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:numberarray"})
+  public void testReplaceSimpleNumberArrayAttribute(String attributeName)
+  {
+    List<String> values = Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 0).map(String::valueOf).collect(Collectors.toList());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
                                                                                 .path(attributeName)
                                                                                 .values(values)
                                                                                 .build());
@@ -190,6 +307,32 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verfies that an array attribute can be replaced
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"numberarray", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:numberarray"})
+  public void testReplaceSimpleNumberArrayAttributeAndPreserveOldValues(String attributeName)
+  {
+    List<String> values = Stream.of(9, 0).map(String::valueOf).collect(Collectors.toList());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    List<Long> numberList = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L);
+    allTypes.setNumberArray(numberList);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.getNumberArray().size());
+    MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(9L, 0L));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
    * verifies that simple attribute can successfully be added to complex types
    */
   @ParameterizedTest
@@ -200,6 +343,31 @@ public class PatchTargetHandlerTest implements FileReferences
     List<String> values = Collections.singletonList(value);
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
+                                                                                .path("complex." + attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertEquals(value, allTypes.getComplex().get().get(attributeName).asText());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that simple attribute can successfully be added to complex types with the replace operation
+   */
+  @ParameterizedTest
+  @CsvSource({"string,hello world", "number,5", "number," + Long.MAX_VALUE, "decimal,5.8", "bool,true", "bool,false",
+              "date," + "1996-03-10T00:00:00Z"})
+  public void testAddSimpleAttributeToComplexTypeWithReplaceOperation(String attributeName, String value)
+  {
+    List<String> values = Collections.singletonList(value);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
                                                                                 .path("complex." + attributeName)
                                                                                 .values(values)
                                                                                 .build());
@@ -255,6 +423,45 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that arrays on complex types can be replaced
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"complex.stringarray",
+                          "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex.stringarray"})
+  public void testReplaceArrayOnComplexType(String attributeName)
+  {
+    List<String> values = Arrays.asList("hello world", "goodbye world");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    AllTypes allTypes = new AllTypes();
+    allTypes.setString("salty");
+    AllTypes complex = new AllTypes();
+    complex.setString("sweet");
+    complex.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setComplex(complex);
+
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    Assertions.assertEquals(3, allTypes.size());
+    Assertions.assertTrue(allTypes.getString().isPresent());
+    Assertions.assertEquals("salty", allTypes.getString().get());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent());
+    Assertions.assertEquals("sweet", allTypes.getComplex().get().getString().get());
+    Assertions.assertEquals(2, allTypes.getComplex().get().getStringArray().size());
+    Assertions.assertEquals("hello world", allTypes.getComplex().get().getStringArray().get(0));
+    Assertions.assertEquals("goodbye world", allTypes.getComplex().get().getStringArray().get(1));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
    * verifies that a complex type can be set as whole object
    */
   @ParameterizedTest
@@ -266,6 +473,37 @@ public class PatchTargetHandlerTest implements FileReferences
                                                     + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
+                                                                                .path(attributeName)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertEquals(2, allTypes.getComplex().get().size());
+    Assertions.assertEquals(2, allTypes.getComplex().get().getStringArray().size());
+    Assertions.assertTrue(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertEquals(Long.MAX_VALUE, allTypes.getComplex().get().getNumber().get());
+    Assertions.assertEquals("hello world", allTypes.getComplex().get().getStringArray().get(0));
+    Assertions.assertEquals("goodbye world", allTypes.getComplex().get().getStringArray().get(1));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that a complex type can be set as whole object with replace operation
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"complex", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex"})
+  public void testAddSimpleAttributeToComplexTypeWithReplace(String attributeName)
+  {
+
+    List<String> values = Collections.singletonList("{\"number\": " + Long.MAX_VALUE + ","
+                                                    + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
                                                                                 .path(attributeName)
                                                                                 .values(values)
                                                                                 .build());
@@ -330,6 +568,47 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that a complex type can completely replaced
+   */
+  @Test
+  public void testReplaceComplexAttribute()
+  {
+
+    List<String> values = Collections.singletonList("{\"number\": " + Long.MAX_VALUE + ","
+                                                    + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("complex")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes.setString("hf");
+
+    AllTypes complex = new AllTypes();
+    complex.setString("goldfish");
+    complex.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.size());
+    Assertions.assertTrue(allTypes.getString().isPresent());
+    Assertions.assertEquals("hf", allTypes.getString().get());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertEquals(2, allTypes.getComplex().get().size());
+    Assertions.assertEquals(2, allTypes.getComplex().get().getStringArray().size());
+    Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent());
+    Assertions.assertEquals("goldfish", allTypes.getComplex().get().getString().get());
+    Assertions.assertFalse(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertEquals(2, allTypes.getComplex().get().getStringArray().size());
+    Assertions.assertEquals("hello world", allTypes.getComplex().get().getStringArray().get(0));
+    Assertions.assertEquals("goodbye world", allTypes.getComplex().get().getStringArray().get(1));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
    * verifies that complex types can be added to a multi valued complex type
    */
   @Test
@@ -352,6 +631,43 @@ public class PatchTargetHandlerTest implements FileReferences
     // @formatter:on
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
+                                                                                .path("multicomplex")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(0)), allTypes.getMultiComplex().get(0));
+    Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(1)), allTypes.getMultiComplex().get(1));
+  }
+
+  /**
+   * verifies that complex types can be added to a multi valued complex type with the replace operation
+   */
+  @Test
+  public void testAddNewAttributeToMultiValuedComplexNodeWithReplaceOperation()
+  {
+    // @formatter:off
+    List<String> values = Arrays.asList("{" +
+                                        "\"string\": \"hello world\"," +
+                                        "\"number\": 5," +
+                                        "\"boolArray\": [true, false, true]," +
+                                        "\"decimalArray\": [1.1, 2.2, 3.3]" +
+                                        "}",
+
+                                        "{" +
+                                        "\"string\": \"happy day\"," +
+                                        "\"number\": 45678987646454," +
+                                        "\"stringArray\": [\"true\", \"wtf\", \"hello world\"]," +
+                                        "\"dateArray\": [ \"1976-03-10T00:00:00Z\", \"1986-03-10T00:00:00Z\" ]" +
+                                        "}");
+    // @formatter:on
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
                                                                                 .path("multicomplex")
                                                                                 .values(values)
                                                                                 .build());
@@ -410,15 +726,60 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that a {@link de.gold.scim.exceptions.BadRequestException} is thrown if no results are presentfor
-   * the specified target
+   * verifies that a multi valued complex type can be replaced
    */
   @Test
-  public void testAddArrayAttributeToMultiComplexTypeWithMissingTarget()
+  public void testReplaceMultiValuedComplexType()
+  {
+    // @formatter:off
+    List<String> values = Arrays.asList("{" +
+                                        "\"string\": \"hello world\"," +
+                                        "\"number\": 5," +
+                                        "\"boolArray\": [true, false, true]," +
+                                        "\"decimalArray\": [1.1, 2.2, 3.3]" +
+                                        "}",
+
+                                        "{" +
+                                        "\"string\": \"happy day\"," +
+                                        "\"number\": 45678987646454," +
+                                        "\"stringArray\": [\"true\", \"wtf\", \"hello world\"]," +
+                                        "\"dateArray\": [ \"1976-03-10T00:00:00Z\", \"1986-03-10T00:00:00Z\" ]" +
+                                        "}");
+    // @formatter:on
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("multicomplex")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setString("goldfish");
+    complex.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setMultiComplex(Collections.singletonList(complex));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(complex, allTypes.getMultiComplex().get(0));
+    MatcherAssert.assertThat(allTypes.getMultiComplex(), Matchers.not(Matchers.hasItem(complex)));
+    Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(0)), allTypes.getMultiComplex().get(0));
+    Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(1)), allTypes.getMultiComplex().get(1));
+  }
+
+  /**
+   * verifies that a {@link de.gold.scim.exceptions.BadRequestException} is thrown if no results are present for
+   * the specified target
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddArrayAttributeToMultiComplexTypeWithMissingTarget(PatchOp patchOp)
   {
     List<String> values = Collections.singletonList("hello world");
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path("multicomplex.stringarray")
                                                                                 .values(values)
                                                                                 .build());
@@ -443,8 +804,8 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * this test will show that the given path filter is invalid for multi valued complex types. A multi valued
-   * complex type add operation must contain a filter expression
+   * this test will show that values can be added to arrays within multi complex attributes. If no filter is
+   * given then the new value will be added to all complex representations within the multi valued complex array
    */
   @Test
   public void testAddArrayAttributeToMultiComplexType()
@@ -476,16 +837,51 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * this test will show that the given path filter is invalid for multi valued complex types. A multi valued
-   * complex type add operation must contain a filter expression
+   * this test will show that arrays within multi valued complex types can be replaced.
    */
   @Test
-  public void testAddSimpleAttributeToMultiComplexType()
+  public void testReplaceArrayAttributeInMultiComplexType()
+  {
+    List<String> values = Collections.singletonList("hello world");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("multicomplex.stringarray")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    AllTypes complex2 = new AllTypes();
+    complex.setString("goldfish");
+    complex2.setString("goldfish");
+    complex.setStringArray(Collections.singletonList("happy day"));
+    complex2.setStringArray(Collections.singletonList("happy day"));
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertEquals("hello world", allTypes.getMultiComplex().get(0).getStringArray().get(0));
+    Assertions.assertEquals("hello world", allTypes.getMultiComplex().get(1).getStringArray().get(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * this test will show that a simple attribute within multi valued complex types can be replaced if already
+   * existent
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSimpleAttributeToMultiComplexType(PatchOp patchOp)
   {
     final String value = "hello world";
     List<String> values = Collections.singletonList(value);
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path("multicomplex.string")
                                                                                 .values(values)
                                                                                 .build());
@@ -514,13 +910,14 @@ public class PatchTargetHandlerTest implements FileReferences
   /**
    * verifies that the meta attribute is not touched if no effective change was made
    */
-  @Test
-  public void testAddSimpleAttributeToMultiComplexTypeWithoutEffectiveChange()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSimpleAttributeToMultiComplexTypeWithoutEffectiveChange(PatchOp patchOp)
   {
     final String value = "hello world";
     List<String> values = Collections.singletonList(value);
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path("multicomplex.string")
                                                                                 .values(values)
                                                                                 .build());
@@ -549,13 +946,14 @@ public class PatchTargetHandlerTest implements FileReferences
    * this test will show that a sanitized exception is thrown if the client gave an illegal value for a complex
    * type injection
    */
-  @Test
-  public void testAddComplexIntoMultiValuedWithIllegalValue()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddComplexIntoMultiValuedWithIllegalValue(PatchOp patchOp)
   {
     List<String> values = Collections.singletonList("goldfish");
     final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"]";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -582,13 +980,14 @@ public class PatchTargetHandlerTest implements FileReferences
   /**
    * verifies that an exception is thrown if the client tries to add a non json value into a complex type
    */
-  @Test
-  public void testAddComplexIntoMultiValuedWithSimpleValue()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddComplexIntoMultiValuedWithSimpleValue(PatchOp patchOp)
   {
     List<String> values = Collections.singletonList("goldfish");
     final String path = "multiComplex";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -612,13 +1011,14 @@ public class PatchTargetHandlerTest implements FileReferences
   /**
    * verifies that an exception is thrown if the client tries to add several values to a simple type
    */
-  @Test
-  public void testAddSeveralValuesToSimpleType()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSeveralValuesToSimpleType(PatchOp patchOp)
   {
     List<String> values = Arrays.asList("value1", "value2");
     final String path = "string";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -679,13 +1079,14 @@ public class PatchTargetHandlerTest implements FileReferences
    * verifies that a simple attribute can be added to multi complex type that will match the given filter
    * expression
    */
-  @Test
-  public void testAddSimpleAttributeToComplexTypesMatchingFilter()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSimpleAttributeToComplexTypesMatchingFilter(PatchOp patchOp)
   {
     List<String> values = Collections.singletonList("goldfish");
     final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].string";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -721,14 +1122,15 @@ public class PatchTargetHandlerTest implements FileReferences
   /**
    * verifies that the last modified value is not set if no effective change was made
    */
-  @Test
-  public void testAddSimpleAttributeToComplexTypesWithoutEffectiveChange()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSimpleAttributeToComplexTypesWithoutEffectiveChange(PatchOp patchOp)
   {
     final String value = "happy day";
     List<String> values = Collections.singletonList(value);
     final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].string";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -811,16 +1213,62 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies an add operation will also be handled on an extension
+   * verifies that an array within a multi valued complex type can be replaced
    */
   @Test
-  public void testAddSimpleAttributeToExtension()
+  public void testReplaceArrayAttributeInComplexTypesMatchingFilter()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multicomplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"].stringarray";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes multiComplex1 = new AllTypes();
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes();
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+    AllTypes multiComplex3 = new AllTypes();
+    multiComplex3.setStringArray(Collections.singletonList("empty world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(0).size(),
+                            allTypes.getMultiComplex().get(0).toPrettyString());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(1).size(),
+                            allTypes.getMultiComplex().get(1).toPrettyString());
+    Assertions.assertEquals(1,
+                            allTypes.getMultiComplex().get(2).size(),
+                            allTypes.getMultiComplex().get(2).toPrettyString());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(0).getStringArray().get(0));
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(1).getStringArray().get(0));
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(2).getStringArray().size());
+    Assertions.assertEquals("empty world", allTypes.getMultiComplex().get(2).getStringArray().get(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies an add operation will also be handled on an extension
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSimpleAttributeToExtension(PatchOp patchOp)
   {
     final String value = "hello world";
     List<String> values = Collections.singletonList(value);
     final String path = "costCenter";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -841,14 +1289,15 @@ public class PatchTargetHandlerTest implements FileReferences
   /**
    * verifies an add operation will also be handled on an extension that has not been set yet
    */
-  @Test
-  public void testAddSimpleAttributeToExtensionIfExtensionNotPresent()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddSimpleAttributeToExtensionIfExtensionNotPresent(PatchOp patchOp)
   {
     final String value = "hello world";
     List<String> values = Collections.singletonList(value);
     final String path = "costCenter";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());

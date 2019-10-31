@@ -53,10 +53,8 @@ public class PatchHandler
       switch (operation.getOp())
       {
         case ADD:
-          changeWasMade.weakCompareAndSet(false, addValues(resource, operation));
-          break;
         case REPLACE:
-          changeWasMade.weakCompareAndSet(false, replaceValues(resource, operation));
+          changeWasMade.weakCompareAndSet(false, addOrReplaceValues(resource, operation));
           break;
         case REMOVE:
           changeWasMade.weakCompareAndSet(false, removeValues(resource, operation));
@@ -73,7 +71,7 @@ public class PatchHandler
    * @param resource the resource to which the attributes should be added
    * @param operation the operation request that contains the new attributes
    */
-  private boolean addValues(ResourceNode resource, PatchRequestOperation operation)
+  private boolean addOrReplaceValues(ResourceNode resource, PatchRequestOperation operation)
   {
     Optional<String> target = operation.getPath();
     List<String> values = operation.getValues();
@@ -96,8 +94,8 @@ public class PatchHandler
                                       + " a single value must be present in the values list which represents the "
                                       + "resource itself", null, ScimType.RFC7644.INVALID_VALUE);
       }
-      PatchAddResource patchAddResource = new PatchAddResource(resourceType);
-      return patchAddResource.addResourceValues(resource, JsonHelper.readJsonDocument(values.get(0)), null);
+      PatchResourceHandler patchResourceHandler = new PatchResourceHandler(resourceType, operation.getOp());
+      return patchResourceHandler.addResourceValues(resource, JsonHelper.readJsonDocument(values.get(0)), null);
     }
   }
 

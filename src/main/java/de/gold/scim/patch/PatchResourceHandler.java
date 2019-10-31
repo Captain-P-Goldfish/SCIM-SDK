@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.ScimType;
 import de.gold.scim.constants.enums.Mutability;
+import de.gold.scim.constants.enums.PatchOp;
 import de.gold.scim.constants.enums.Type;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.resources.base.ScimArrayNode;
@@ -27,7 +28,7 @@ import de.gold.scim.utils.RequestUtils;
  * this class will handle the in which the patch-add operation does not define a target and the value is
  * represented by the resource itself:<br>
  * <br>
- * 
+ *
  * <pre>
  *    The result of the add operation depends upon what the target location
  *    indicated by "path" references:
@@ -37,13 +38,18 @@ import de.gold.scim.utils.RequestUtils;
  *       added to the resource.
  * </pre>
  */
-public class PatchAddResource extends AbstractPatch
+public class PatchResourceHandler extends AbstractPatch
 {
 
+  /**
+   * tells us if the current operation is an add or a replace operation.
+   */
+  private PatchOp patchOp;
 
-  public PatchAddResource(ResourceType resourceType)
+  public PatchResourceHandler(ResourceType resourceType, PatchOp op)
   {
     super(resourceType);
+    this.patchOp = op;
   }
 
   /**
@@ -166,7 +172,9 @@ public class PatchAddResource extends AbstractPatch
         // resource.
         return false;
       }
-      else
+
+
+      if (PatchOp.ADD.equals(patchOp))
       {
         ObjectNode complexNode;
         if (resource.get(schemaAttribute.getName()) == null)
@@ -196,6 +204,11 @@ public class PatchAddResource extends AbstractPatch
           resource.set(schemaAttribute.getName(), complexNode);
         }
         return changeWasMade.get();
+      }
+      else
+      {
+        resource.set(schemaAttribute.getName(), value);
+        return true;
       }
     }
   }
