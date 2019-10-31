@@ -25,6 +25,7 @@ import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.request.PatchOpRequest;
 import de.gold.scim.request.PatchRequestOperation;
 import de.gold.scim.resources.AllTypes;
+import de.gold.scim.resources.EnterpriseUser;
 import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.ResourceTypeFactory;
 import de.gold.scim.utils.FileReferences;
@@ -805,6 +806,61 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(1).getStringArray().get(1));
     Assertions.assertEquals(1, allTypes.getMultiComplex().get(2).getStringArray().size());
     Assertions.assertEquals("empty world", allTypes.getMultiComplex().get(2).getStringArray().get(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies an add operation will also be handled on an extension
+   */
+  @Test
+  public void testAddSimpleAttributeToExtension()
+  {
+    final String value = "hello world";
+    List<String> values = Collections.singletonList(value);
+    final String path = "costCenter";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes.setEnterpriseUser(EnterpriseUser.builder().costCenter("humpty dumpty").build());
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
+    Assertions.assertTrue(allTypes.getEnterpriseUser().get().getCostCenter().isPresent());
+    Assertions.assertEquals(value, allTypes.getEnterpriseUser().get().getCostCenter().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies an add operation will also be handled on an extension that has not been set yet
+   */
+  @Test
+  public void testAddSimpleAttributeToExtensionIfExtensionNotPresent()
+  {
+    final String value = "hello world";
+    List<String> values = Collections.singletonList(value);
+    final String path = "costCenter";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
+    Assertions.assertTrue(allTypes.getEnterpriseUser().get().getCostCenter().isPresent());
+    Assertions.assertEquals(value, allTypes.getEnterpriseUser().get().getCostCenter().get());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }

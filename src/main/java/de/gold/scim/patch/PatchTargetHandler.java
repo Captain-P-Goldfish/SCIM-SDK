@@ -117,14 +117,27 @@ public class PatchTargetHandler extends AbstractPatch
     String[] fullAttributeNames = getAttributeNames();
 
     String firstAttributeName = fullAttributeNames[0];
-    JsonNode firstAttribute = getAttributeFromObject(resource, firstAttributeName);
-
     SchemaAttribute schemaAttribute = getSchemaAttribute(firstAttributeName);
+    boolean isExtension = resourceType.getSchemaExtensions()
+                                      .stream()
+                                      .anyMatch(ext -> ext.getSchema().equals(schemaAttribute.getResourceUri()));
+    ObjectNode currentParent = resource;
+    if (isExtension)
+    {
+      currentParent = (ObjectNode)currentParent.get(schemaAttribute.getResourceUri());
+      if (currentParent == null)
+      {
+        currentParent = new ScimObjectNode();
+        resource.set(schemaAttribute.getResourceUri(), currentParent);
+      }
+    }
+    JsonNode firstAttribute = getAttributeFromObject(currentParent, firstAttributeName);
+
     // if the attribute is null we know that this is a simple attribute
     if (firstAttribute == null && !Type.COMPLEX.equals(schemaAttribute.getType())
         || (firstAttribute != null && !firstAttribute.isArray() && !firstAttribute.isObject()))
     {
-      return addOrReplaceSimpleNode(schemaAttribute, resource, values);
+      return addOrReplaceSimpleNode(schemaAttribute, currentParent, values);
     }
     else if (firstAttribute != null && firstAttribute.isArray())
     {
@@ -132,7 +145,7 @@ public class PatchTargetHandler extends AbstractPatch
     }
     else if (Type.COMPLEX.equals(schemaAttribute.getType()))
     {
-      return handleComplexAttribute(schemaAttribute, resource, fullAttributeNames, values);
+      return handleComplexAttribute(schemaAttribute, currentParent, fullAttributeNames, values);
     }
 
     return false;

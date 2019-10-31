@@ -56,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class PatchAddResourceTest implements FileReferences
+public class PatchResourceHandlerTest implements FileReferences
 {
 
   /**
