@@ -139,14 +139,49 @@ public class PatchTargetHandler extends AbstractPatch
     if (firstAttribute == null && !Type.COMPLEX.equals(schemaAttribute.getType())
         || (firstAttribute != null && !firstAttribute.isArray() && !firstAttribute.isObject()))
     {
-      return addOrReplaceSimpleNode(schemaAttribute, currentParent, values);
+      return handleSimpleNode(schemaAttribute, currentParent, values);
     }
     else if (firstAttribute != null && firstAttribute.isArray())
     {
-      return handleMultiValuedAttribute(schemaAttribute, (ArrayNode)firstAttribute, fullAttributeNames, values);
+      if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null
+          && path.getChild() == null)
+      {
+        boolean effectiveChangeMade;
+        if (firstAttribute.isEmpty())
+        {
+          effectiveChangeMade = false;
+        }
+        else
+        {
+          effectiveChangeMade = true;
+        }
+        resource.remove(schemaAttribute.getName());
+        return effectiveChangeMade;
+      }
+      boolean changeWasMade = handleMultiValuedAttribute(schemaAttribute,
+                                                         (ArrayNode)firstAttribute,
+                                                         fullAttributeNames,
+                                                         values);
+      if (firstAttribute.isEmpty())
+      {
+        resource.remove(schemaAttribute.getName());
+      }
+      return changeWasMade;
     }
     else if (Type.COMPLEX.equals(schemaAttribute.getType()))
     {
+      if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null)
+      {
+        if (firstAttribute == null)
+        {
+          return false;
+        }
+        else
+        {
+          resource.remove(firstAttributeName);
+          return true;
+        }
+      }
       return handleComplexAttribute(schemaAttribute, currentParent, fullAttributeNames, values);
     }
 
@@ -162,15 +197,29 @@ public class PatchTargetHandler extends AbstractPatch
    *          entry
    * @return true if an effective change was made, false else
    */
-  protected boolean addOrReplaceSimpleNode(SchemaAttribute schemaAttribute, ObjectNode objectNode, List<String> values)
+  protected boolean handleSimpleNode(SchemaAttribute schemaAttribute, ObjectNode objectNode, List<String> values)
   {
-    if (values.size() != 1 && !schemaAttribute.isMultiValued())
+    if (!PatchOp.REMOVE.equals(patchOp) && values.size() > 1 && !schemaAttribute.isMultiValued())
     {
       throw new BadRequestException("found multiple values for simple attribute '"
                                     + schemaAttribute.getFullResourceName() + "': " + String.join(",", values), null,
                                     ScimType.RFC7644.INVALID_VALUE);
     }
+
     JsonNode oldNode = objectNode.get(schemaAttribute.getName());
+    if (PatchOp.REMOVE.equals(patchOp))
+    {
+      if (oldNode == null)
+      {
+        return false;
+      }
+      else
+      {
+        objectNode.remove(schemaAttribute.getName());
+        return true;
+      }
+    }
+
     JsonNode newNode = createNewNode(schemaAttribute, values.get(0));
     if (!newNode.equals(oldNode))
     {
@@ -211,7 +260,16 @@ public class PatchTargetHandler extends AbstractPatch
       }
       if (handleInnerComplexAttribute(subAttribute, complexNode, values))
       {
+        if (complexNode.isEmpty())
+        {
+          resource.remove(schemaAttribute.getName());
+        }
         return true;
+      }
+      else if (complexNode.isEmpty())
+      {
+        resource.remove(schemaAttribute.getName());
+        return false;
       }
       JsonNode firstAttribute = resource.get(fullAttributeNames[1]);
       return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
@@ -262,12 +320,21 @@ public class PatchTargetHandler extends AbstractPatch
       {
         arrayNode.removeAll();
       }
-      values.forEach(arrayNode::add);
+      if (PatchOp.REMOVE.equals(patchOp))
+      {
+        boolean effectiveChange = !complexNode.get(subAttribute.getName()).isEmpty();
+        complexNode.remove(subAttribute.getName());
+        return effectiveChange;
+      }
+      else
+      {
+        values.forEach(arrayNode::add);
+      }
       return true;
     }
     else
     {
-      return addOrReplaceSimpleNode(subAttribute, complexNode, values);
+      return handleSimpleNode(subAttribute, complexNode, values);
     }
   }
 
@@ -306,7 +373,7 @@ public class PatchTargetHandler extends AbstractPatch
    * handles multi valued complex nodes
    *
    * @param schemaAttribute the schema attribute definition of the top level node
-   * @param multiValuedComplex the array node that is represented by the {@code schemaAttribute}
+   * @param multiValued the array node that is represented by the {@code schemaAttribute}
    * @param fullAttributeNames the array of full attribute names with their resourceUris e.g. <br>
    *
    *          <pre>
@@ -318,7 +385,7 @@ public class PatchTargetHandler extends AbstractPatch
    * @return true if an effective change has been made, false else
    */
   private boolean handleMultiValuedAttribute(SchemaAttribute schemaAttribute,
-                                             ArrayNode multiValuedComplex,
+                                             ArrayNode multiValued,
                                              String[] fullAttributeNames,
                                              List<String> values)
   {
@@ -326,45 +393,67 @@ public class PatchTargetHandler extends AbstractPatch
     {
       if (fullAttributeNames.length > 1)
       {
-        if (multiValuedComplex.isEmpty())
+        if (!PatchOp.REMOVE.equals(patchOp) && multiValued.isEmpty())
         {
           throw new BadRequestException("the multi valued complex type '" + schemaAttribute.getFullResourceName()
                                         + "' is not set", null, ScimType.RFC7644.NO_TARGET);
         }
         SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType,
                                                                                       fullAttributeNames[1]);
-        List<IndexNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
+        List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
         AtomicBoolean changeWasMade = new AtomicBoolean(false);
-        matchingComplexNodes.forEach(jsonNodes -> {
-          changeWasMade.weakCompareAndSet(false,
-                                          handleInnerComplexAttribute(subAttribute, jsonNodes.getObjectNode(), values));
-        });
+        for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+        {
+          ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
+          changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
+          if (complexNode.isEmpty())
+          {
+            multiValued.remove(matchingComplexNodes.get(i).getIndex());
+          }
+        }
+        matchingComplexNodes.forEach(jsonNodes -> {});
         return changeWasMade.get();
       }
       else if (StringUtils.isNotBlank(path.getSubAttributeName()))
       {
         String fullName = fullAttributeNames[0] + "." + path.getSubAttributeName();
         SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullName);
-        List<IndexNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
+        List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
         AtomicBoolean changeWasMade = new AtomicBoolean(false);
-        matchingComplexNodes.forEach(jsonNodes -> {
-          changeWasMade.weakCompareAndSet(false,
-                                          handleInnerComplexAttribute(subAttribute, jsonNodes.getObjectNode(), values));
-        });
+        for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+        {
+          ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
+          changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
+          if (complexNode.isEmpty())
+          {
+            multiValued.remove(matchingComplexNodes.get(i).getIndex());
+          }
+        }
         return changeWasMade.get();
       }
       else
       {
+        if (PatchOp.REMOVE.equals(patchOp))
+        {
+          List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
+          boolean changeWasMade = false;
+          for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+          {
+            multiValued.remove(matchingComplexNodes.get(i).getIndex());
+            changeWasMade = true;
+          }
+          return changeWasMade;
+        }
         if (PatchOp.REPLACE.equals(patchOp))
         {
-          multiValuedComplex.removeAll();
+          multiValued.removeAll();
         }
         for ( String value : values )
         {
           try
           {
             JsonNode jsonNode = JsonHelper.readJsonDocument(value);
-            multiValuedComplex.add(jsonNode);
+            multiValued.add(jsonNode);
           }
           catch (IOException ex)
           {
@@ -379,11 +468,11 @@ public class PatchTargetHandler extends AbstractPatch
     {
       if (PatchOp.REPLACE.equals(patchOp))
       {
-        multiValuedComplex.removeAll();
+        multiValued.removeAll();
       }
       for ( String value : values )
       {
-        multiValuedComplex.add(createNewNode(schemaAttribute, value));
+        multiValued.add(createNewNode(schemaAttribute, value));
       }
       return true;
     }

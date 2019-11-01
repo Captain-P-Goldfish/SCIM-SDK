@@ -50,7 +50,7 @@ public class PatchHandler
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
     for ( PatchRequestOperation operation : patchOpRequest.getOperations() )
     {
-      changeWasMade.weakCompareAndSet(false, addOrReplaceValues(resource, operation));
+      changeWasMade.weakCompareAndSet(false, handlePatchOp(resource, operation));
     }
     setLastModified(resource, changeWasMade);
     return resource;
@@ -62,11 +62,11 @@ public class PatchHandler
    * @param resource the resource to which the attributes should be added
    * @param operation the operation request that contains the new attributes
    */
-  private boolean addOrReplaceValues(ResourceNode resource, PatchRequestOperation operation)
+  private boolean handlePatchOp(ResourceNode resource, PatchRequestOperation operation)
   {
     Optional<String> target = operation.getPath();
     List<String> values = operation.getValues();
-    if (values == null || values.isEmpty())
+    if (!operation.getOp().equals(PatchOp.REMOVE) && (values == null || values.isEmpty()))
     {
       throw new BadRequestException("no value attributes present in patch operation", null,
                                     ScimType.RFC7644.INVALID_VALUE);

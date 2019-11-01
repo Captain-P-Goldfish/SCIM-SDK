@@ -1501,7 +1501,6 @@ public class PatchTargetHandlerTest implements FileReferences
   @Test
   public void testMissingTargetForRemove()
   {
-    final String value = "hello world";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder().op(PatchOp.REMOVE).build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
@@ -1510,6 +1509,7 @@ public class PatchTargetHandlerTest implements FileReferences
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
     {
@@ -1541,6 +1541,7 @@ public class PatchTargetHandlerTest implements FileReferences
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
     {
@@ -1552,35 +1553,23 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that an exception is thrown if the target does not exist
+   * verifies that nothing happens if the specified path does not exist
    */
   @ParameterizedTest
   @ValueSource(strings = {"string", "stringArray", "complex", "complex.string", "complex.stringarray", "multicomplex",
                           "multicomplex.string", "multicomplex.stringarray"})
   public void testRemoveNotExistingTarget(String path)
   {
-    final String value = "hello world";
-    List<String> values = Collections.singletonList(value);
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.REMOVE)
                                                                                 .path(path)
-                                                                                .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     AllTypes allTypes = new AllTypes();
 
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-    }
-    catch (ScimException ex)
-    {
-      log.debug(ex.getDetail(), ex);
-      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals("cannot remove not existing target '" + path + "'", ex.getDetail());
-    }
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertTrue(allTypes.isEmpty(), allTypes.toPrettyString());
   }
 
   /**
@@ -1600,7 +1589,7 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setString("hello world");
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertEquals(1, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -1673,7 +1662,7 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setComplex(complex);
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertTrue(allTypes.getComplex().isPresent());
     Assertions.assertEquals(1, allTypes.getComplex().get().size());
     Assertions.assertFalse(allTypes.getComplex().get().getString().isPresent());
@@ -1705,7 +1694,7 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(2, allTypes.size());
     Assertions.assertTrue(allTypes.getComplex().isPresent());
-    Assertions.assertEquals(1, allTypes.getComplex().get().size());
+    Assertions.assertEquals(1, allTypes.getComplex().get().size(), allTypes.getComplex().get().toPrettyString());
     Assertions.assertEquals(0, allTypes.getComplex().get().getStringArray().size());
     Assertions.assertTrue(allTypes.getComplex().get().getNumber().isPresent());
     Assertions.assertEquals(5L, allTypes.getComplex().get().getNumber().get());
@@ -1760,7 +1749,7 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setMultiComplex(Collections.singletonList(complex));
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertEquals(1, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(0, allTypes.getMultiComplex().size());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
@@ -1786,7 +1775,7 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setMultiComplex(Collections.singletonList(complex));
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(1, allTypes.getMultiComplex().size());
     Assertions.assertTrue(allTypes.getMultiComplex().get(0).getBool().isPresent());
     Assertions.assertTrue(allTypes.getMultiComplex().get(0).getBool().get());
@@ -1811,14 +1800,13 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes();
     AllTypes complex = new AllTypes();
     complex.setNumber(5L);
-    complex.setBool(true);
     AllTypes complex2 = new AllTypes();
     complex2.setNumber(10L);
     allTypes.setMultiComplex(Arrays.asList(complex, complex2));
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size());
-    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size(), allTypes.toPrettyString());
     Assertions.assertTrue(allTypes.getMultiComplex().get(0).getNumber().isPresent());
     Assertions.assertEquals(10L, allTypes.getMultiComplex().get(0).getNumber().get());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
@@ -1882,8 +1870,8 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setMultiComplex(Arrays.asList(complex, complex2));
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size());
-    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size(), allTypes.toPrettyString());
     Assertions.assertTrue(allTypes.getMultiComplex().get(0).getNumber().isPresent());
     Assertions.assertEquals(10L, allTypes.getMultiComplex().get(0).getNumber().get());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
