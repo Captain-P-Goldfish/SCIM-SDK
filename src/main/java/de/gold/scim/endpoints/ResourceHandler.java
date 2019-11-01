@@ -4,6 +4,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
 import de.gold.scim.constants.enums.SortOrder;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.response.PartialListResponse;
@@ -39,7 +40,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
     }
     else
     {
-      this.type = (Class<T>)ResourceNode.class;
+      throw new InternalServerException("ResourceHandler implementations must be generified!", null, null);
     }
   }
 
