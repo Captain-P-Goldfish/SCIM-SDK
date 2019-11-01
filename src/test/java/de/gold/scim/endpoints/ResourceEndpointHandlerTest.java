@@ -1222,6 +1222,29 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * this test will verify that the schemas endpoint is using autoFiltering by default
+   */
+  @Test
+  public void testSchemasEndpointUsesAutoFiltering()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    Assertions.assertTrue(resourceTypeFactory.getResourceType(EndpointPaths.SCHEMAS)
+                                             .getFilterExtension()
+                                             .isAutoFiltering());
+    String filter = "id ew \"ServiceProviderConfig\"";
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.SCHEMAS,
+                                                                      SearchRequest.builder().filter(filter).build(),
+                                                                      getBaseUrlSupplier());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(1, listResponse.getTotalResults());
+    Assertions.assertEquals(1, listResponse.getListedResources().size());
+    Assertions.assertEquals(1, listResponse.getItemsPerPage());
+    log.debug(listResponse.toPrettyString());
+  }
+
+  /**
    * reads a user from the endpoint
    *
    * @param endpoint the resource endpoint that should be used

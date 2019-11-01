@@ -87,10 +87,12 @@ class ResourceEndpointHandler
       throw new InternalServerException("At least 1 endpoint must be registered!", null, null);
     }
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
+
+    registerEndpoint(new ServiceProviderEndpointDefinition(serviceProvider));
     ResourceType resourceType = registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
     resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
-    endpointDefinitionList.add(0, new ServiceProviderEndpointDefinition(serviceProvider));
-    endpointDefinitionList.add(2, new SchemaEndpointDefinition(resourceTypeFactory));
+    resourceType = registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
+    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
     endpointDefinitionList.forEach(this::registerEndpoint);
   }
 
