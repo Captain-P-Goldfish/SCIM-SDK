@@ -1347,6 +1347,52 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that an exception is thrown if the filter does not return any results
+   */
+  @Test
+  public void testAndExpressionFilter()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multicomplex[stringarray eq \"hello world\" and string eq \"blubb\"].stringarray";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes multiComplex1 = new AllTypes();
+    multiComplex1.setString("blubb");
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes();
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+    AllTypes multiComplex3 = new AllTypes();
+    multiComplex3.setStringArray(Collections.singletonList("empty world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(3, allTypes.getMultiComplex().size());
+
+    Assertions.assertEquals(2, allTypes.getMultiComplex().get(0).size());
+    Assertions.assertEquals("blubb", allTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(0).getStringArray().size());
+    Assertions.assertEquals("goldfish", allTypes.getMultiComplex().get(0).getStringArray().get(0));
+
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(1).size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(1).getStringArray().size());
+    Assertions.assertEquals("goodbye world", allTypes.getMultiComplex().get(1).getStringArray().get(0));
+
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(2).size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().get(2).getStringArray().size());
+    Assertions.assertEquals("empty world", allTypes.getMultiComplex().get(2).getStringArray().get(0));
+
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
    * verifies an add operation will also be handled on an extension
    */
   @ParameterizedTest
