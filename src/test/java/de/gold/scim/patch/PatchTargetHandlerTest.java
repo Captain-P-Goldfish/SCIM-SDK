@@ -1495,4 +1495,399 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }
 
+  /**
+   * verifies an add operation will also be handled on an extension that has not been set yet
+   */
+  @Test
+  public void testMissingTargetForRemove()
+  {
+    final String value = "hello world";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder().op(PatchOp.REMOVE).build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("missing target for remove operation", ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies an add operation will also be handled on an extension that has not been set yet
+   */
+  @Test
+  public void testRemoveWithValuesSet()
+  {
+    final String value = "hello world";
+    List<String> values = Collections.singletonList(value);
+    final String path = "string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("values must not be set for remove operation but was: hello world", ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies that an exception is thrown if the target does not exist
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"string", "stringArray", "complex", "complex.string", "complex.stringarray", "multicomplex",
+                          "multicomplex.string", "multicomplex.stringarray"})
+  public void testRemoveNotExistingTarget(String path)
+  {
+    final String value = "hello world";
+    List<String> values = Collections.singletonList(value);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("cannot remove not existing target '" + path + "'", ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies removing a simple attribute works as expected
+   */
+  @Test
+  public void testRemoveSimpleAttribute()
+  {
+    final String path = "string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes.setString("hello world");
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a simple array attribute works as expected
+   */
+  @Test
+  public void testRemoveSimpleArrayAttribute()
+  {
+    final String path = "stringarray";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    allTypes.setStringArray(Collections.singletonList("hello world"));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that removing an attribute from a complex attribute and the complex attribute is empty afterwards,
+   * that the whole complex attribute is removed
+   */
+  @Test
+  public void testRemoveSimpleAttributeWithinComplex()
+  {
+    final String path = "complex.string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setString("hello world");
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertFalse(allTypes.getComplex().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a simple array attribute works as expected
+   */
+  @Test
+  public void testRemoveSimpleAttributeWithinComplexWithSeveralValues()
+  {
+    final String path = "complex.string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setString("hello world");
+    complex.setNumber(5L);
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertEquals(1, allTypes.getComplex().get().size());
+    Assertions.assertFalse(allTypes.getComplex().get().getString().isPresent());
+    Assertions.assertTrue(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertEquals(5L, allTypes.getComplex().get().getNumber().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a simple array attribute works as expected
+   */
+  @Test
+  public void testRemoveArrayAttributeFromComplex()
+  {
+    final String path = "complex.stringarray";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setStringArray(Collections.singletonList("hello world"));
+    complex.setNumber(5L);
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertEquals(1, allTypes.getComplex().get().size());
+    Assertions.assertEquals(0, allTypes.getComplex().get().getStringArray().size());
+    Assertions.assertTrue(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertEquals(5L, allTypes.getComplex().get().getNumber().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a multi complex type works as expected
+   */
+  @Test
+  public void testRemoveMulticomplex()
+  {
+    final String path = "multicomplex";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setStringArray(Collections.singletonList("hello world"));
+    complex.setNumber(5L);
+    AllTypes complex2 = new AllTypes();
+    complex2.setNumber(3L);
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertEquals(0, allTypes.getMultiComplex().size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a the only value from a multi complex type removes the whole type
+   */
+  @Test
+  public void testRemoveTheOnlyAttributeFromMulticomplex()
+  {
+    final String path = "multicomplex.number";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setNumber(5L);
+    allTypes.setMultiComplex(Collections.singletonList(complex));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.size());
+    Assertions.assertEquals(0, allTypes.getMultiComplex().size());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a value from a multi complex type works as expected
+   */
+  @Test
+  public void testRemoveMulticomplexSimpleAttribute()
+  {
+    final String path = "multicomplex.number";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setNumber(5L);
+    complex.setBool(true);
+    allTypes.setMultiComplex(Collections.singletonList(complex));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertTrue(allTypes.getMultiComplex().get(0).getBool().isPresent());
+    Assertions.assertTrue(allTypes.getMultiComplex().get(0).getBool().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a value from a multi valued complex type with filter removes the whole complex type if it
+   * was the only attribute
+   */
+  @Test
+  public void testRemoveMulticomplexSimpleAttributeByFilter()
+  {
+    final String path = "multicomplex[number eq 5].number";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setNumber(5L);
+    complex.setBool(true);
+    AllTypes complex2 = new AllTypes();
+    complex2.setNumber(10L);
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertTrue(allTypes.getMultiComplex().get(0).getNumber().isPresent());
+    Assertions.assertEquals(10L, allTypes.getMultiComplex().get(0).getNumber().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a value from a multi valued complex type with filter works as expected
+   */
+  @Test
+  public void testRemoveMulticomplexSimpleAttributeByFilter2()
+  {
+    final String path = "multicomplex[string eq \"hello world\"].number";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setString("hello world");
+    complex.setNumber(5L);
+    complex.setBool(true);
+    AllTypes complex2 = new AllTypes();
+    complex2.setNumber(10L);
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
+    Assertions.assertFalse(allTypes.getMultiComplex().get(0).getNumber().isPresent());
+    Assertions.assertTrue(allTypes.getMultiComplex().get(0).getString().isPresent());
+    Assertions.assertEquals("hello world", allTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertTrue(allTypes.getMultiComplex().get(1).getNumber().isPresent());
+    Assertions.assertEquals(10L, allTypes.getMultiComplex().get(1).getNumber().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies removing a whole complex type from an array with a filter works as expected
+   */
+  @Test
+  public void testRemoveMulticomplexByFilter()
+  {
+    final String path = "multicomplex[string eq \"hello world\"]";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes complex = new AllTypes();
+    complex.setString("hello world");
+    complex.setNumber(5L);
+    complex.setBool(true);
+    AllTypes complex2 = new AllTypes();
+    complex2.setNumber(10L);
+    allTypes.setMultiComplex(Arrays.asList(complex, complex2));
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertTrue(allTypes.getMultiComplex().get(0).getNumber().isPresent());
+    Assertions.assertEquals(10L, allTypes.getMultiComplex().get(0).getNumber().get());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
 }

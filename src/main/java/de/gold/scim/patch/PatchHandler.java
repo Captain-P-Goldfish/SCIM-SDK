@@ -7,8 +7,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.PatchOp;
 import de.gold.scim.exceptions.BadRequestException;
-import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.request.PatchOpRequest;
 import de.gold.scim.request.PatchRequestOperation;
 import de.gold.scim.resources.ResourceNode;
@@ -50,16 +50,7 @@ public class PatchHandler
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
     for ( PatchRequestOperation operation : patchOpRequest.getOperations() )
     {
-      switch (operation.getOp())
-      {
-        case ADD:
-        case REPLACE:
-          changeWasMade.weakCompareAndSet(false, addOrReplaceValues(resource, operation));
-          break;
-        case REMOVE:
-          changeWasMade.weakCompareAndSet(false, removeValues(resource, operation));
-          break;
-      }
+      changeWasMade.weakCompareAndSet(false, addOrReplaceValues(resource, operation));
     }
     setLastModified(resource, changeWasMade);
     return resource;
@@ -88,6 +79,10 @@ public class PatchHandler
     }
     else
     {
+      if (PatchOp.REMOVE.equals(operation.getOp()))
+      {
+        throw new BadRequestException("missing target for remove operation", null, ScimType.RFC7644.NO_TARGET);
+      }
       if (values.size() > 1)
       {
         throw new BadRequestException("too many resources set in patch operation. If the target is not specified only"
@@ -122,18 +117,6 @@ public class PatchHandler
         resource.setMeta(meta);
       }
     }
-  }
-
-
-
-  private boolean removeValues(ResourceNode resource, PatchRequestOperation operation)
-  {
-    throw new NotImplementedException("not yet");
-  }
-
-  private boolean replaceValues(ResourceNode resource, PatchRequestOperation operation)
-  {
-    throw new NotImplementedException("not yet");
   }
 
 }

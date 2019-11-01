@@ -496,7 +496,7 @@ public class PatchTargetHandler extends AbstractPatch
     if (values != null && !values.isEmpty())
     {
       throw new BadRequestException("values must not be set for remove operation but was: " + String.join(",", values),
-                                    null, ScimType.RFC7644.INVALID_PATH);
+                                    null, ScimType.RFC7644.INVALID_VALUE);
     }
     if (path == null)
     {
