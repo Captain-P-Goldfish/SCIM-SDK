@@ -2,6 +2,7 @@ package de.gold.scim.patch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.lang3.StringUtils;
@@ -31,6 +32,8 @@ import de.gold.scim.schemas.ResourceType;
 import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.JsonHelper;
 import de.gold.scim.utils.RequestUtils;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -199,8 +202,8 @@ public class PatchTargetHandler extends AbstractPatch
   {
     if (fullAttributeNames.length > 1)
     {
-      SchemaAttribute subAttribute = getSchemaAttribute(fullAttributeNames[1]);
 
+      SchemaAttribute subAttribute = getSchemaAttribute(fullAttributeNames[1]);
       ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
       if (complexNode == null)
       {
@@ -229,10 +232,20 @@ public class PatchTargetHandler extends AbstractPatch
                                       + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
                                       null, ScimType.RFC7644.INVALID_VALUE);
       }
-      JsonNode oldNode = resource.get(schemaAttribute.getName());
-      newNode = mergeObjectNodes((ObjectNode)newNode, oldNode);
-      resource.set(schemaAttribute.getName(), newNode);
-      return !newNode.equals(oldNode);
+      boolean changeWasMade = false;
+      if (PatchOp.ADD.equals(patchOp))
+      {
+        JsonNode oldNode = resource.get(schemaAttribute.getName());
+        newNode = mergeObjectNodes((ObjectNode)newNode, oldNode);
+        resource.set(schemaAttribute.getName(), newNode);
+        changeWasMade = !newNode.equals(oldNode);
+      }
+      else if (PatchOp.REPLACE.equals(patchOp))
+      {
+        resource.set(schemaAttribute.getName(), newNode);
+        changeWasMade = true;
+      }
+      return changeWasMade;
     }
   }
 
@@ -245,6 +258,10 @@ public class PatchTargetHandler extends AbstractPatch
       {
         arrayNode = new ScimArrayNode(subAttribute);
         complexNode.set(subAttribute.getName(), arrayNode);
+      }
+      if (PatchOp.REPLACE.equals(patchOp))
+      {
+        arrayNode.removeAll();
       }
       values.forEach(arrayNode::add);
       return true;
@@ -317,28 +334,32 @@ public class PatchTargetHandler extends AbstractPatch
         }
         SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType,
                                                                                       fullAttributeNames[1]);
-        List<ObjectNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
+        List<IndexNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
         AtomicBoolean changeWasMade = new AtomicBoolean(false);
-        matchingComplexNodes.forEach(jsonNodes -> changeWasMade.weakCompareAndSet(false,
-                                                                                  handleInnerComplexAttribute(subAttribute,
-                                                                                                              jsonNodes,
-                                                                                                              values)));
+        matchingComplexNodes.forEach(jsonNodes -> {
+          changeWasMade.weakCompareAndSet(false,
+                                          handleInnerComplexAttribute(subAttribute, jsonNodes.getObjectNode(), values));
+        });
         return changeWasMade.get();
       }
       else if (StringUtils.isNotBlank(path.getSubAttributeName()))
       {
         String fullName = fullAttributeNames[0] + "." + path.getSubAttributeName();
         SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullName);
-        List<ObjectNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
+        List<IndexNode> matchingComplexNodes = resolveFilter(multiValuedComplex, path);
         AtomicBoolean changeWasMade = new AtomicBoolean(false);
-        matchingComplexNodes.forEach(jsonNodes -> changeWasMade.weakCompareAndSet(false,
-                                                                                  handleInnerComplexAttribute(subAttribute,
-                                                                                                              jsonNodes,
-                                                                                                              values)));
+        matchingComplexNodes.forEach(jsonNodes -> {
+          changeWasMade.weakCompareAndSet(false,
+                                          handleInnerComplexAttribute(subAttribute, jsonNodes.getObjectNode(), values));
+        });
         return changeWasMade.get();
       }
       else
       {
+        if (PatchOp.REPLACE.equals(patchOp))
+        {
+          multiValuedComplex.removeAll();
+        }
         for ( String value : values )
         {
           try
@@ -357,6 +378,10 @@ public class PatchTargetHandler extends AbstractPatch
     }
     else
     {
+      if (PatchOp.REPLACE.equals(patchOp))
+      {
+        multiValuedComplex.removeAll();
+      }
       for ( String value : values )
       {
         multiValuedComplex.add(createNewNode(schemaAttribute, value));
@@ -372,13 +397,18 @@ public class PatchTargetHandler extends AbstractPatch
    * @param path the filter expression that must be resolved to get the matching nodes
    * @return the list of nodes that should be modified
    */
-  private List<ObjectNode> resolveFilter(ArrayNode multiValuedComplex, FilterNode path)
+  private List<IndexNode> resolveFilter(ArrayNode multiValuedComplex, FilterNode path)
   {
     PatchFilterResolver patchFilterResolver = new PatchFilterResolver();
-    List<ObjectNode> matchingComplexNodes = new ArrayList<>();
-    for ( JsonNode complex : multiValuedComplex )
+    List<IndexNode> matchingComplexNodes = new ArrayList<>();
+    for ( int i = 0 ; i < multiValuedComplex.size() ; i++ )
     {
-      patchFilterResolver.isNodeMatchingFilter((ObjectNode)complex, path).ifPresent(matchingComplexNodes::add);
+      JsonNode complex = multiValuedComplex.get(i);
+      Optional<ObjectNode> filteredNode = patchFilterResolver.isNodeMatchingFilter((ObjectNode)complex, path);
+      if (filteredNode.isPresent())
+      {
+        matchingComplexNodes.add(new IndexNode(i, filteredNode.get()));
+      }
     }
     return matchingComplexNodes;
   }
@@ -584,5 +614,24 @@ public class PatchTargetHandler extends AbstractPatch
       this.schemaAttribute = getSchemaAttribute(path.getFullName());
     }
     return this.schemaAttribute;
+  }
+
+  /**
+   * a helper class that is used in case of filtering. We will also hold the index of the filtered nodes
+   */
+  @Getter
+  @AllArgsConstructor
+  private static class IndexNode
+  {
+
+    /**
+     * the index of a filtered node
+     */
+    private int index;
+
+    /**
+     * a filtered node
+     */
+    private ObjectNode objectNode;
   }
 }

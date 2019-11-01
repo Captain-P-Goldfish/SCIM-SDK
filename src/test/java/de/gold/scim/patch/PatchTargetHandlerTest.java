@@ -228,7 +228,7 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(2, allTypes.size());
     Assertions.assertEquals(values.size(), allTypes.getStringArray().size());
-    MatcherAssert.assertThat(allTypes.getStringArray(), Matchers.contains(values));
+    MatcherAssert.assertThat(allTypes.getStringArray(), Matchers.hasItems(values.toArray(new String[0])));
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -469,8 +469,12 @@ public class PatchTargetHandlerTest implements FileReferences
   public void testAddSimpleAttributeToComplexType(String attributeName)
   {
 
-    List<String> values = Collections.singletonList("{\"number\": " + Long.MAX_VALUE + ","
-                                                    + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
+    // @formatter:off
+    List<String> values = Collections.singletonList(  "{"
+                                                    + "   \"number\": " + Long.MAX_VALUE + ","
+                                                    + "   \"stringArray\":[\"hello world\", \"goodbye world\"]"
+                                                    + "}");
+    // @formatter:on
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
                                                                                 .path(attributeName)
@@ -500,8 +504,12 @@ public class PatchTargetHandlerTest implements FileReferences
   public void testAddSimpleAttributeToComplexTypeWithReplace(String attributeName)
   {
 
-    List<String> values = Collections.singletonList("{\"number\": " + Long.MAX_VALUE + ","
-                                                    + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
+    // @formatter:off
+    List<String> values = Collections.singletonList(  "{"
+                                                    + "   \"number\": " + Long.MAX_VALUE + ","
+                                                    + "   \"stringArray\":[\"hello world\", \"goodbye world\"]"
+                                                    + "}");
+    // @formatter:on
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.REPLACE)
                                                                                 .path(attributeName)
@@ -530,8 +538,12 @@ public class PatchTargetHandlerTest implements FileReferences
   public void testAddSimpleAttributeToComplexTypeWithAlreadyExistingValues()
   {
 
-    List<String> values = Collections.singletonList("{\"number\": " + Long.MAX_VALUE + ","
-                                                    + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
+    // @formatter:off
+    List<String> values = Collections.singletonList(  "{"
+                                                    + "   \"number\": " + Long.MAX_VALUE + ","
+                                                    + "   \"stringArray\":[\"hello world\", \"goodbye world\"]"
+                                                    + "}");
+    // @formatter:on
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
                                                                                 .path("complex")
@@ -574,8 +586,12 @@ public class PatchTargetHandlerTest implements FileReferences
   public void testReplaceComplexAttribute()
   {
 
-    List<String> values = Collections.singletonList("{\"number\": " + Long.MAX_VALUE + ","
-                                                    + "\"stringArray\":[\"hello world\", \"goodbye world\"]}");
+    // @formatter:off
+    List<String> values = Collections.singletonList(  "{"
+                                                    + "   \"number\": " + Long.MAX_VALUE + ","
+                                                    + "   \"stringArray\":[\"hello world\", \"goodbye world\"]"
+                                                    + "}");
+    // @formatter:on
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.REPLACE)
                                                                                 .path("complex")
@@ -598,9 +614,9 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(allTypes.getComplex().isPresent());
     Assertions.assertEquals(2, allTypes.getComplex().get().size());
     Assertions.assertEquals(2, allTypes.getComplex().get().getStringArray().size());
-    Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent());
-    Assertions.assertEquals("goldfish", allTypes.getComplex().get().getString().get());
-    Assertions.assertFalse(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertFalse(allTypes.getComplex().get().getString().isPresent());
+    Assertions.assertTrue(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertEquals(Long.MAX_VALUE, allTypes.getComplex().get().getNumber().get());
     Assertions.assertEquals(2, allTypes.getComplex().get().getStringArray().size());
     Assertions.assertEquals("hello world", allTypes.getComplex().get().getStringArray().get(0));
     Assertions.assertEquals("goodbye world", allTypes.getComplex().get().getStringArray().get(1));
@@ -763,7 +779,6 @@ public class PatchTargetHandlerTest implements FileReferences
 
     Assertions.assertEquals(2, allTypes.size());
     Assertions.assertEquals(2, allTypes.getMultiComplex().size());
-    Assertions.assertEquals(complex, allTypes.getMultiComplex().get(0));
     MatcherAssert.assertThat(allTypes.getMultiComplex(), Matchers.not(Matchers.hasItem(complex)));
     Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(0)), allTypes.getMultiComplex().get(0));
     Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(1)), allTypes.getMultiComplex().get(1));
@@ -946,14 +961,13 @@ public class PatchTargetHandlerTest implements FileReferences
    * this test will show that a sanitized exception is thrown if the client gave an illegal value for a complex
    * type injection
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"ADD", "REPLACE"})
-  public void testAddComplexIntoMultiValuedWithIllegalValue(PatchOp patchOp)
+  @Test
+  public void testAddComplexIntoMultiValuedWithIllegalValue()
   {
     List<String> values = Collections.singletonList("goldfish");
     final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"]";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(patchOp)
+                                                                                .op(PatchOp.ADD)
                                                                                 .path(path)
                                                                                 .values(values)
                                                                                 .build());
@@ -967,10 +981,45 @@ public class PatchTargetHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
+      log.debug(ex.getDetail(), ex);
       Assertions.assertEquals("the given expression is not valid for an add-operation: 'multiComplex[stringarray eq "
                               + "\"hello world\" or stringarray eq \"goodbye world\"]'. Did you want an expression "
                               + "like this 'multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye "
                               + "world\"].subAttributeName'?",
+                              ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * this test will show that a sanitized exception is thrown if the client gave an illegal value for a complex
+   * type replacement
+   */
+  @Test
+  public void testReplaceComplexIntoMultiValuedWithIllegalValue()
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"]";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals("the values are expected to be valid json representations for an expression as "
+                              + "'multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"]' "
+                              + "but was: goldfish",
                               ex.getDetail());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
