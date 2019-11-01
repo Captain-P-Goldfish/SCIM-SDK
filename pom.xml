@@ -5,7 +5,8 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.gold</groupId>
-    <artifactId>scim</artifactId>
+    <artifactId>scim-parent</artifactId>
+    <packaging>pom</packaging>
     <version>0.0.1-SNAPSHOT</version>
 
     <developers>
@@ -18,6 +19,10 @@
             </roles>
         </developer>
     </developers>
+
+    <modules>
+        <module>scim-server</module>
+    </modules>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
@@ -193,10 +198,7 @@
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr4</artifactId>
-        </dependency>
+
 
         <!-- logging dependencies -->
         <dependency>
@@ -251,24 +253,6 @@
         <finalName>${project.artifactId}-${project.version}</finalName>
 
         <plugins>
-            <plugin>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4-maven-plugin</artifactId>
-                <version>${version.antlr}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>antlr4</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <outputDirectory>${project.build.directory}/generated-sources/antlr4</outputDirectory>
-                    <listener>false</listener>
-                    <visitor>true</visitor>
-                </configuration>
-            </plugin>
-
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -292,7 +276,7 @@
                 <artifactId>formatter-maven-plugin</artifactId>
                 <version>${version.maven.formatter.plugin}</version>
                 <configuration>
-                    <configFile>formatter.xml</configFile>
+                    <configFile>${project.parent.basedir}/formatter.xml</configFile>
                     <lineEnding>LF</lineEnding>
                 </configuration>
                 <executions>
@@ -338,24 +322,6 @@
                         <banDuplicatePomDependencyVersions/>
 
                         <dependencyConvergence/>
-
-                        <requireFileChecksum>
-                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/schema.schema.json</file>
-                            <checksum>33f97bfe81f80a3136b4a7121ecad00a</checksum>
-                            <type>md5</type>
-                        </requireFileChecksum>
-                        <requireFileChecksum>
-                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/resource-type.schema.json
-                            </file>
-                            <checksum>eb3f49ab90010b93d695f8f9d6a6d7af</checksum>
-                            <type>md5</type>
-                        </requireFileChecksum>
-                        <requireFileChecksum>
-                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/service-provider.schema.json
-                            </file>
-                            <checksum>b5ded77bc2afd7b5f9757d15219a2735</checksum>
-                            <type>md5</type>
-                        </requireFileChecksum>
                     </rules>
                 </configuration>
             </plugin>
