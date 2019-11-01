@@ -11,6 +11,8 @@
 
     <artifactId>scim-server</artifactId>
 
+    <name>SCIM Server</name>
+
     <dependencies>
         <dependency>
             <groupId>org.antlr</groupId>
@@ -45,18 +47,21 @@
                 <configuration>
                     <rules>
                         <requireFileChecksum>
-                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/schema.schema.json</file>
+                            <file>${project.basedir}/src/main/resources/de/gold/scim/server/meta/schema.schema.json
+                            </file>
                             <checksum>33f97bfe81f80a3136b4a7121ecad00a</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
-                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/resource-type.schema.json
+                            <file>
+                                ${project.basedir}/src/main/resources/de/gold/scim/server/meta/resource-type.schema.json
                             </file>
                             <checksum>eb3f49ab90010b93d695f8f9d6a6d7af</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
-                            <file>${project.basedir}/src/main/resources/de/gold/scim/meta/service-provider.schema.json
+                            <file>
+                                ${project.basedir}/src/main/resources/de/gold/scim/server/meta/service-provider.schema.json
                             </file>
                             <checksum>b5ded77bc2afd7b5f9757d15219a2735</checksum>
                             <type>md5</type>

@@ -6,8 +6,11 @@
 
     <groupId>de.gold</groupId>
     <artifactId>scim-parent</artifactId>
+
     <packaging>pom</packaging>
     <version>0.0.1-SNAPSHOT</version>
+
+    <name>SCIM</name>
 
     <developers>
         <developer>
