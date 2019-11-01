@@ -50,7 +50,15 @@ public class PatchFilterResolver
     else if (NotExpressionNode.class.isAssignableFrom(path.getClass()))
     {
       NotExpressionNode notExpressionNode = (NotExpressionNode)path;
-      return isNodeMatchingFilter(complexNode, notExpressionNode.getRightNode());
+      Optional<ObjectNode> matchingNode = isNodeMatchingFilter(complexNode, notExpressionNode.getRightNode());
+      if (matchingNode.isPresent())
+      {
+        return Optional.empty();
+      }
+      else
+      {
+        return Optional.of(complexNode);
+      }
     }
     else if (OrExpressionNode.class.isAssignableFrom(path.getClass()))
     {
