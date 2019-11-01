@@ -17,7 +17,6 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -815,41 +814,6 @@ public class SchemaValidatorTest implements FileReferences
                             () -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               metaSchema,
                                                                               userSchema));
-  }
-
-  /**
-   * this test will verify that simple values that are sent on multivalued attributes are explicitly converted
-   * into arrays. So it is allowed to send simple single values on multivalued types
-   */
-  @Disabled("temporarily disabled. Due to another fix this test is broken and the fix is a bit more complicated")
-  @Test
-  public void testUseSimpleNodeTypeOnMultiValuedAttribute()
-  {
-    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    TestHelper.modifyAttributeMetaData(metaSchemaNode,
-                                       AttributeNames.RFC7643.USER_NAME,
-                                       null,
-                                       null,
-                                       null,
-                                       null,
-                                       true,
-                                       null,
-                                       null,
-                                       null);
-    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-
-    Schema metaSchema = new Schema(metaSchemaNode);
-    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
-                                                        metaSchema,
-                                                        userSchema,
-                                                        SchemaValidator.HttpMethod.POST);
-    });
-
-    JsonNode userName = validatedDocument.get(AttributeNames.RFC7643.USER_NAME);
-    Assertions.assertNotNull(userName);
-    Assertions.assertTrue(userName.isArray());
-    Assertions.assertEquals(1, userName.size());
   }
 
   /**
