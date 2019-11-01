@@ -53,6 +53,7 @@ public final class SchemaFactory
     registerMetaSubSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON), "meta");
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.BULK_REQUEST_SCHEMA));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.BULK_RESPONSE_SCHEMA));
+    registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.PATCH_REQUEST_SCHEMA));
   }
 
   /**

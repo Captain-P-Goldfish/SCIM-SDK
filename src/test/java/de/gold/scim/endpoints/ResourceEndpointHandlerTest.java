@@ -2,7 +2,9 @@ package de.gold.scim.endpoints;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.UUID;
@@ -22,8 +24,10 @@ import org.mockito.Mockito;
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
+import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.constants.ScimType;
+import de.gold.scim.constants.enums.PatchOp;
 import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.GroupEndpointDefinition;
 import de.gold.scim.endpoints.base.ResourceTypeEndpointDefinition;
@@ -37,11 +41,14 @@ import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
 import de.gold.scim.filter.FilterNode;
+import de.gold.scim.request.PatchOpRequest;
+import de.gold.scim.request.PatchRequestOperation;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
+import de.gold.scim.resources.complex.Name;
 import de.gold.scim.response.CreateResponse;
 import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.ErrorResponse;
@@ -1073,6 +1080,70 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * Verifies that a resource can successfully be patched
+   */
+  @Test
+  public void testPatchResource()
+  {
+    resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.patchResource(EndpointPaths.USERS, id, patchOpRequest.toString(), baseUrl);
+    });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    copiedUser.setNameNode(name);
+    Assertions.assertEquals(copiedUser, updateResponse);
+
+    GetResponse getResponse = (GetResponse)resourceEndpointHandler.getResource(EndpointPaths.USERS, id, baseUrl);
+    Assertions.assertEquals(updateResponse, getResponse);
+    Assertions.assertEquals(copiedUser, getResponse);
+  }
+
+  /**
+   * Verifies that a {@link NotImplementedException} is thrown if the service provider has support for patch
+   * deactivated
+   */
+  @Test
+  public void testPatchResourceWithoutServiceProviderSupport()
+  {
+    resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(false);
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Assertions.assertThrows(NotImplementedException.class, () -> {
+      resourceEndpointHandler.patchResource(EndpointPaths.USERS, "123456", patchOpRequest.toString(), baseUrl);
+    });
   }
 
   /**

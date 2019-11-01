@@ -44,4 +44,6 @@ public final class ClassPathReferences
   public static final String BULK_REQUEST_SCHEMA = "/de/gold/scim/request/bulk-request.json";
 
   public static final String BULK_RESPONSE_SCHEMA = "/de/gold/scim/response/bulk-response.json";
+
+  public static final String PATCH_REQUEST_SCHEMA = "/de/gold/scim/request/patch-request.json";
 }

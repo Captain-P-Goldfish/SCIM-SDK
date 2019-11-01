@@ -813,6 +813,27 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that should be patched
    * @param requestBody the patch request body
+   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
+   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
+   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
+   *          If this parameter is not present the application will try to read a hardcoded URL from the service
+   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
+   *          thrown
+   * @return the updated resource or an error response
+   */
+  protected ScimResponse patchResource(String endpoint, String id, String requestBody, Supplier<String> baseUrlSupplier)
+  {
+    return patchResource(endpoint, id, requestBody, null, null, baseUrlSupplier);
+  }
+
+  /**
+   * gets the resource that should be patched and will inject the patch operations into the returned resource.
+   * After the patch operation has been processed the patched object will be given to the
+   * {@link ResourceHandler#updateResource(ResourceNode)} method
+   *
+   * @param endpoint the resource endpoint that was called
+   * @param id the id of the resource that should be patched
+   * @param requestBody the patch request body
    * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
    *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
    *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
@@ -838,6 +859,10 @@ class ResourceEndpointHandler
                                        String excludedAttributes,
                                        Supplier<String> baseUrlSupplier)
   {
+    if (!serviceProvider.getPatchConfig().isSupported())
+    {
+      throw new NotImplementedException("patch is not supported by this service provider");
+    }
     ResourceType resourceType = getResourceType(endpoint);
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
     Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
@@ -863,6 +888,10 @@ class ResourceEndpointHandler
     PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
     PatchHandler patchHandler = new PatchHandler(resourceType);
     resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
+    SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                               resourceType,
+                                               resourceNode,
+                                               SchemaValidator.HttpMethod.PUT);
     resourceNode = resourceHandler.updateResource(resourceNode);
 
     final String location = getLocation(resourceType, id, baseUrlSupplier);
