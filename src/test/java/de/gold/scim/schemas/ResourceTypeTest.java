@@ -273,13 +273,14 @@ public class ResourceTypeTest implements FileReferences
     schemaFactory.registerResourceSchema(resourceTypeSchema);
     schemaFactory.registerResourceSchema(resourceTypeFilterExt);
     ResourceType resourceType = new ResourceType(schemaFactory, resourceTypeResourceType);
-    Assertions.assertFalse(resourceType.getFilterExtension().isPresent());
+    Assertions.assertNotNull(resourceType.getFilterExtension());
     resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
-    Assertions.assertTrue(resourceType.getFilterExtension().isPresent());
-    Assertions.assertTrue(resourceType.getFilterExtension().get().isAutoFiltering());
-    resourceType.getFilterExtension().get().setAutoFiltering(false);
-    Assertions.assertFalse(resourceType.getFilterExtension().get().isAutoFiltering());
+    Assertions.assertNotNull(resourceType.getFilterExtension());
+    Assertions.assertTrue(resourceType.getFilterExtension().isAutoFiltering());
+    resourceType.getFilterExtension().setAutoFiltering(false);
+    Assertions.assertFalse(resourceType.getFilterExtension().isAutoFiltering());
     resourceType.setFilterExtension(null);
-    Assertions.assertFalse(resourceType.getFilterExtension().isPresent());
+    Assertions.assertNotNull(resourceType.getFilterExtension());
+    Assertions.assertFalse(resourceType.getFilterExtension().isAutoFiltering());
   }
 }

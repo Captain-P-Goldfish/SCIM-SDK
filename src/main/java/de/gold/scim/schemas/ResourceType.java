@@ -342,9 +342,16 @@ public class ResourceType extends ResourceNode
   /**
    * @see FilterExtension
    */
-  public Optional<FilterExtension> getFilterExtension()
+  public FilterExtension getFilterExtension()
   {
-    return getObjectAttribute(SchemaUris.RESOURCE_TYPE_FILTER_EXTENSION_URI, FilterExtension.class);
+    FilterExtension filterExtension = getObjectAttribute(SchemaUris.RESOURCE_TYPE_FILTER_EXTENSION_URI,
+                                                         FilterExtension.class).orElse(null);
+    if (filterExtension == null)
+    {
+      filterExtension = new FilterExtension(false);
+      setFilterExtension(filterExtension);
+    }
+    return filterExtension;
   }
 
   /**

@@ -87,8 +87,9 @@ class ResourceEndpointHandler
       throw new InternalServerException("At least 1 endpoint must be registered!", null, null);
     }
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
+    ResourceType resourceType = registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
+    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
     endpointDefinitionList.add(0, new ServiceProviderEndpointDefinition(serviceProvider));
-    endpointDefinitionList.add(1, new ResourceTypeEndpointDefinition(resourceTypeFactory));
     endpointDefinitionList.add(2, new SchemaEndpointDefinition(resourceTypeFactory));
     endpointDefinitionList.forEach(this::registerEndpoint);
   }
@@ -99,12 +100,13 @@ class ResourceEndpointHandler
    * @param endpointDefinition the endpoint to register that will override an existing one if one is already
    *          present
    */
-  public void registerEndpoint(EndpointDefinition endpointDefinition)
+  public ResourceType registerEndpoint(EndpointDefinition endpointDefinition)
   {
-    resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
-                                             endpointDefinition.getResourceType(),
-                                             endpointDefinition.getResourceSchema(),
-                                             endpointDefinition.getResourceSchemaExtensions().toArray(new JsonNode[0]));
+    return resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
+                                                    endpointDefinition.getResourceType(),
+                                                    endpointDefinition.getResourceSchema(),
+                                                    endpointDefinition.getResourceSchemaExtensions()
+                                                                      .toArray(new JsonNode[0]));
   }
 
   /**
@@ -308,7 +310,7 @@ class ResourceEndpointHandler
                                             + "not exist", null, null);
       }
       String resourceId = resourceNode.getId().orElse(null);
-      if (StringUtils.isBlank(resourceId) || !resourceId.equals(id))
+      if (resourceId != null && !resourceId.equals(id))
       {
         throw new InternalServerException("the id of the returned resource does not match the "
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
@@ -457,9 +459,7 @@ class ResourceEndpointHandler
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);
-      final boolean autoFiltering = resourceType.getFilterExtension()
-                                                .map(ResourceType.FilterExtension::isAutoFiltering)
-                                                .orElse(false);
+      final boolean autoFiltering = resourceType.getFilterExtension().isAutoFiltering();
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
       final SortOrder sortOrdering = getSortOrdering(sortOrder, sortByAttribute);
 
@@ -543,9 +543,7 @@ class ResourceEndpointHandler
                                                              List<T> resourceList,
                                                              ResourceType resourceType)
   {
-    boolean isApplicationFilteringEnabled = resourceType.getFilterExtension()
-                                                        .map(ResourceType.FilterExtension::isAutoFiltering)
-                                                        .orElse(false);
+    boolean isApplicationFilteringEnabled = resourceType.getFilterExtension().isAutoFiltering();
     List<T> filteredResourceType;
     if (isApplicationFilteringEnabled && filterNode != null)
     {
@@ -963,13 +961,13 @@ class ResourceEndpointHandler
     String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
     if (StringUtils.isBlank(baseUrl))
     {
-      return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint() + "/"
-             + resourceId;
+      return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint()
+             + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
     }
     if (baseUrl.endsWith("/"))
     {
       baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
     }
-    return baseUrl + resourceType.getEndpoint() + "/" + resourceId;
+    return baseUrl + resourceType.getEndpoint() + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
   }
 }

@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import de.gold.scim.constants.enums.SortOrder;
+import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.filter.FilterNode;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.User;
@@ -29,12 +30,12 @@ public class ResourceHandlerTest
   }
 
   /**
-   * checks that the instance creation does not fail if no generic parameter was set
+   * checks that the developer is informed that a resource handler implementation must be generified
    */
   @Test
   public void testGetNonParametrizedImpl()
   {
-    Assertions.assertDoesNotThrow(NonParametrizedResourceHandlerImpl::new);
+    Assertions.assertThrows(InternalServerException.class, NonParametrizedResourceHandlerImpl::new);
   }
 
   /**

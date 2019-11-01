@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.function.Supplier;
@@ -21,6 +22,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
+import de.gold.scim.constants.AttributeNames;
 import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpHeader;
 import de.gold.scim.constants.HttpStatus;
@@ -37,6 +39,7 @@ import de.gold.scim.endpoints.handler.ResourceTypeHandler;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.ConflictException;
+import de.gold.scim.exceptions.DocumentValidationException;
 import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResourceNotFoundException;
@@ -47,6 +50,7 @@ import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.User;
+import de.gold.scim.resources.complex.AuthenticationScheme;
 import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.resources.complex.Name;
 import de.gold.scim.response.CreateResponse;
@@ -123,7 +127,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceTypeHandler = new ResourceTypeHandler(resourceTypeFactory);
     resourceTypeHandler = Mockito.spy(resourceTypeHandler);
     EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
-    resourceEndpointHandler.registerEndpoint(endpointDefinition);
+    ResourceType resourceType = resourceEndpointHandler.registerEndpoint(endpointDefinition);
+    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
   }
 
   /**
@@ -247,8 +252,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
-   * if the returned resource by the getResource endpoint has no id an {@link InternalServerException} must be
-   * thrown
+   * if the returned resource by the getResource endpoint has no id a {@link DocumentValidationException} must
+   * be thrown
    */
   @ParameterizedTest
   @ValueSource(strings = {"", "123456"})
@@ -260,7 +265,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", id, getBaseUrlSupplier());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(DocumentValidationException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
   }
 
@@ -502,6 +507,76 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
     Assertions.assertEquals(1, listResponse.getListedResources().size());
     Assertions.assertEquals(1, listResponse.getItemsPerPage());
+  }
+
+  /**
+   * get service provider configuration with null value
+   */
+  @Test
+  public void testGetServiceProviderConfiguration()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    AuthenticationScheme authScheme = AuthenticationScheme.builder()
+                                                          .name("Oauth2")
+                                                          .description("...")
+                                                          .type("...")
+                                                          .build();
+    resourceEndpointHandler.getServiceProvider().setAuthenticationSchemes(Collections.singletonList(authScheme));
+    ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG, null, null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
+    Assertions.assertEquals(EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                            getResponse.get(AttributeNames.RFC7643.META)
+                                       .get(AttributeNames.RFC7643.LOCATION)
+                                       .textValue());
+    log.debug(getResponse.toPrettyString());
+  }
+
+  /**
+   * get service provider configuration with a random id. this must have the same result as with a null value
+   */
+  @Test
+  public void testGetServiceProviderConfigurationWithRandomId()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    AuthenticationScheme authScheme = AuthenticationScheme.builder()
+                                                          .name("Oauth2")
+                                                          .description("...")
+                                                          .type("...")
+                                                          .build();
+    resourceEndpointHandler.getServiceProvider().setAuthenticationSchemes(Collections.singletonList(authScheme));
+    String randomId = UUID.randomUUID().toString();
+    ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                                                                    randomId,
+                                                                    null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
+    Assertions.assertEquals(EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                            getResponse.get(AttributeNames.RFC7643.META)
+                                       .get(AttributeNames.RFC7643.LOCATION)
+                                       .textValue());
+    log.debug(getResponse.toPrettyString());
+  }
+
+  /**
+   * get service provider configuration without a authentication scheme. this will result in an internal server
+   * error with http status 500
+   */
+  @Test
+  public void testGetServiceProviderConfigurationWithoutAuthScheme()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG, null, null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+                             Matchers.startsWith("the attribute 'urn:ietf:params:scim:schemas:core:2"
+                                                 + ".0:ServiceProviderConfig:authenticationSchemes' is "
+                                                 + "required on response"));
+    log.debug(errorResponse.toPrettyString());
   }
 
   /**
@@ -934,13 +1009,15 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
   /**
    * this test will assert that the {@link FilterNode} is successfully passed to the {@link ResourceHandler} if
-   * filtering is enabled and that the entries are returned unmodified
+   * filtering is enabled and autoFiltering is disabled and that the entries are returned unmodified
    */
   @Test
   public void testFilterWithFilteringOnServiceProviderEnabled()
   {
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES).getFilterExtension().setAutoFiltering(false);
+
     final String filter = "schemaExtensions pr";
     SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
@@ -948,7 +1025,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
 
-    Assertions.assertFalse(resourceType.getFilterExtension().isPresent());
+    Assertions.assertFalse(resourceType.getFilterExtension().isAutoFiltering());
     FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
     Mockito.verify(resourceTypeHandler, Mockito.times(1))
            .listResources(Mockito.eq(1L), Mockito.anyInt(), Mockito.eq(filterNode), Mockito.isNull(), Mockito.isNull());

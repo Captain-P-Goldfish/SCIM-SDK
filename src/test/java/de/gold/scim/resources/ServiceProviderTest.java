@@ -28,7 +28,7 @@ public class ServiceProviderTest
     ServiceProvider serviceProvider = ServiceProvider.builder().build();
     log.warn(serviceProvider.toPrettyString());
     MatcherAssert.assertThat(serviceProvider, Matchers.not(Matchers.emptyIterable()));
-    Assertions.assertEquals(7, serviceProvider.size());
+    Assertions.assertEquals(8, serviceProvider.size());
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.SCHEMAS));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.PATCH));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.BULK));
@@ -36,6 +36,7 @@ public class ServiceProviderTest
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.CHANGE_PASSWORD));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.SORT));
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.ETAG));
+    Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.META));
   }
 
   /**

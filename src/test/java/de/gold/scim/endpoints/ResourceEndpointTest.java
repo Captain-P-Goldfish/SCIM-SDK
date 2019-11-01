@@ -29,20 +29,16 @@ import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.constants.enums.HttpMethod;
 import de.gold.scim.constants.enums.PatchOp;
-import de.gold.scim.constants.enums.SortOrder;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
-import de.gold.scim.exceptions.InternalServerException;
 import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResponseException;
-import de.gold.scim.filter.FilterNode;
 import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.BulkRequestOperation;
 import de.gold.scim.request.PatchOpRequest;
 import de.gold.scim.request.PatchRequestOperation;
 import de.gold.scim.request.SearchRequest;
-import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
@@ -54,11 +50,9 @@ import de.gold.scim.response.DeleteResponse;
 import de.gold.scim.response.ErrorResponse;
 import de.gold.scim.response.GetResponse;
 import de.gold.scim.response.ListResponse;
-import de.gold.scim.response.PartialListResponse;
 import de.gold.scim.response.ScimResponse;
 import de.gold.scim.response.UpdateResponse;
 import de.gold.scim.schemas.ResourceType;
-import de.gold.scim.schemas.SchemaAttribute;
 import de.gold.scim.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -936,58 +930,5 @@ public class ResourceEndpointTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
-  }
-
-  /**
-   * this test will verify that the developer will be informed of the missing generic type in the
-   * {@link ResourceHandler} implementation.
-   *
-   * @see DefaultResourceHandler
-   */
-  @Test
-  public void testCreateNonGenerifiedResourceHandler()
-  {
-    Assertions.assertThrows(InternalServerException.class, () -> new DefaultResourceHandler());
-  }
-
-  /**
-   * this is a simple default resource handler implementation that must cause an error on instance creation
-   */
-  public static class DefaultResourceHandler extends ResourceHandler
-  {
-
-    @Override
-    public ResourceNode createResource(ResourceNode resource)
-    {
-      return null;
-    }
-
-    @Override
-    public ResourceNode getResource(String id)
-    {
-      return null;
-    }
-
-    @Override
-    public PartialListResponse listResources(long startIndex,
-                                             int count,
-                                             FilterNode filter,
-                                             SchemaAttribute sortBy,
-                                             SortOrder sortOrder)
-    {
-      return null;
-    }
-
-    @Override
-    public ResourceNode updateResource(ResourceNode resourceToUpdate)
-    {
-      return null;
-    }
-
-    @Override
-    public void deleteResource(String id)
-    {
-
-    }
   }
 }

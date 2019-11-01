@@ -1,16 +1,19 @@
 package de.gold.scim.resources;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
 import de.gold.scim.constants.AttributeNames;
+import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.constants.SchemaUris;
 import de.gold.scim.resources.complex.AuthenticationScheme;
 import de.gold.scim.resources.complex.BulkConfig;
 import de.gold.scim.resources.complex.ChangePasswordConfig;
 import de.gold.scim.resources.complex.ETagConfig;
 import de.gold.scim.resources.complex.FilterConfig;
+import de.gold.scim.resources.complex.Meta;
 import de.gold.scim.resources.complex.PatchConfig;
 import de.gold.scim.resources.complex.SortConfig;
 import lombok.Builder;
@@ -51,6 +54,12 @@ public class ServiceProvider extends ResourceNode
     setFilterConfig(filterConfig);
     setBulkConfig(bulkConfig);
     setAuthenticationSchemes(authenticationSchemes);
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.SERVICE_PROVIDER_CONFIG)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    setMeta(meta);
   }
 
   /**
@@ -67,6 +76,7 @@ public class ServiceProvider extends ResourceNode
   public void setDocumentationUri(String documentationUri)
   {
     setAttribute(AttributeNames.RFC7643.DOCUMENTATION_URI, documentationUri);
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -83,6 +93,7 @@ public class ServiceProvider extends ResourceNode
   public void setPatchConfig(PatchConfig patchConfig)
   {
     setAttribute(AttributeNames.RFC7643.PATCH, Optional.ofNullable(patchConfig).orElse(PatchConfig.builder().build()));
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -99,6 +110,7 @@ public class ServiceProvider extends ResourceNode
   public void setBulkConfig(BulkConfig bulkConfig)
   {
     setAttribute(AttributeNames.RFC7643.BULK, Optional.ofNullable(bulkConfig).orElse(BulkConfig.builder().build()));
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -116,6 +128,7 @@ public class ServiceProvider extends ResourceNode
   {
     setAttribute(AttributeNames.RFC7643.FILTER,
                  Optional.ofNullable(filterConfig).orElse(FilterConfig.builder().build()));
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -134,6 +147,7 @@ public class ServiceProvider extends ResourceNode
   {
     setAttribute(AttributeNames.RFC7643.CHANGE_PASSWORD,
                  Optional.ofNullable(changePasswordConfig).orElse(ChangePasswordConfig.builder().build()));
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -150,6 +164,7 @@ public class ServiceProvider extends ResourceNode
   public void setSortConfig(SortConfig sortConfig)
   {
     setAttribute(AttributeNames.RFC7643.SORT, Optional.ofNullable(sortConfig).orElse(SortConfig.builder().build()));
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -166,6 +181,7 @@ public class ServiceProvider extends ResourceNode
   public void setETagConfig(ETagConfig eTagConfig)
   {
     setAttribute(AttributeNames.RFC7643.ETAG, Optional.ofNullable(eTagConfig).orElse(ETagConfig.builder().build()));
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
   /**
@@ -187,9 +203,10 @@ public class ServiceProvider extends ResourceNode
   {
     if (authenticationSchemes == null || authenticationSchemes.isEmpty())
     {
-      log.warn("no authentication scheme has been set this might cause InternalServerErrors on the "
-               + "ResourceTypeEndpoint");
+      log.warn("no authentication scheme has been set, this will cause a DocumentValidationException on the "
+               + "\"/ServiceProviderConfig\" endpoint!");
     }
     setAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, authenticationSchemes);
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 }
