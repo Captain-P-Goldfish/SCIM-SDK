@@ -77,11 +77,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
 {
 
   /**
-   * defines the base url for the meta-attribute
-   */
-  private static final String BASE_URL = "https://localhost/scim/v2";
-
-  /**
    * the resource type factory in which the resources will be registered
    */
   private ResourceTypeFactory resourceTypeFactory;
@@ -1141,9 +1136,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
-    Assertions.assertThrows(NotImplementedException.class, () -> {
-      resourceEndpointHandler.patchResource(EndpointPaths.USERS, "123456", patchOpRequest.toString(), baseUrl);
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.patchResource(EndpointPaths.USERS, "123456", patchOpRequest.toString(), baseUrl);
     });
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
   }
 
   /**

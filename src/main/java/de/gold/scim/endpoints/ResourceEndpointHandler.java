@@ -859,53 +859,65 @@ class ResourceEndpointHandler
                                        String excludedAttributes,
                                        Supplier<String> baseUrlSupplier)
   {
-    if (!serviceProvider.getPatchConfig().isSupported())
+    try
     {
-      throw new NotImplementedException("patch is not supported by this service provider");
+
+      if (!serviceProvider.getPatchConfig().isSupported())
+      {
+        throw new NotImplementedException("patch is not supported by this service provider");
+      }
+      ResourceType resourceType = getResourceType(endpoint);
+      ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
+      JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
+      patchDocument = SchemaValidator.validateSchemaDocumentForRequest(resourceTypeFactory, patchSchema, patchDocument);
+      ResourceNode resourceNode = resourceHandler.getResource(id);
+      if (resourceNode == null)
+      {
+        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                            + "not exist", null, null);
+      }
+
+      Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
+      String resourceId = resourceNode.getId()
+                                      .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
+      if (!resourceId.equals(id))
+      {
+        throw new InternalServerException("the id of the returned resource does not match the "
+                                          + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
+                                          null, null);
+      }
+
+      PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
+      PatchHandler patchHandler = new PatchHandler(resourceType);
+      resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
+      SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                 resourceType,
+                                                 resourceNode,
+                                                 SchemaValidator.HttpMethod.PUT);
+      resourceNode = resourceHandler.updateResource(resourceNode);
+
+      final String location = getLocation(resourceType, id, baseUrlSupplier);
+      Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
+      meta.setLocation(location);
+      resourceNode.setMeta(meta);
+      JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                              resourceType,
+                                                                              resourceNode,
+                                                                              null,
+                                                                              attributes,
+                                                                              excludedAttributes);
+
+      return new UpdateResponse(responseResource, location);
     }
-    ResourceType resourceType = getResourceType(endpoint);
-    ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-    Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
-    JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
-    patchDocument = SchemaValidator.validateSchemaDocumentForRequest(resourceTypeFactory, patchSchema, patchDocument);
-    ResourceNode resourceNode = resourceHandler.getResource(id);
-    if (resourceNode == null)
+    catch (ScimException ex)
     {
-      throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
-                                          + "not exist", null, null);
+      return new ErrorResponse(ex);
     }
-
-    Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
-    String resourceId = resourceNode.getId()
-                                    .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
-    if (!resourceId.equals(id))
+    catch (Exception ex)
     {
-      throw new InternalServerException("the id of the returned resource does not match the "
-                                        + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
-                                        null, null);
+      return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
-
-    PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
-    PatchHandler patchHandler = new PatchHandler(resourceType);
-    resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
-    SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
-                                               resourceType,
-                                               resourceNode,
-                                               SchemaValidator.HttpMethod.PUT);
-    resourceNode = resourceHandler.updateResource(resourceNode);
-
-    final String location = getLocation(resourceType, id, baseUrlSupplier);
-    Meta meta = resourceNode.getMeta().orElse(getMeta(resourceType));
-    meta.setLocation(location);
-    resourceNode.setMeta(meta);
-    JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                            resourceType,
-                                                                            resourceNode,
-                                                                            null,
-                                                                            attributes,
-                                                                            excludedAttributes);
-
-    return new UpdateResponse(responseResource, location);
   }
 
   /**

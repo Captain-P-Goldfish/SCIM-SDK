@@ -896,4 +896,39 @@ public class ResourceEndpointTest
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
   }
+
+  /**
+   * Verifies that an {@link ErrorResponse} is returned if patch is not supported
+   */
+  @Test
+  public void testPatchResourceWithoutPatchSupport()
+  {
+    serviceProvider.getPatchConfig().setSupported(false);
+
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
+  }
 }
