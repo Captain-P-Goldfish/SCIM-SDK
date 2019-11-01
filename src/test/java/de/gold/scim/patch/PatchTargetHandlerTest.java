@@ -1307,6 +1307,46 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that an exception is thrown if the filter does not return any results
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testReplaceWithNotMatchingFilter(PatchOp patchOp)
+  {
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multicomplex[stringarray eq \"goldfish\" or stringarray eq \"blubb\"].stringarray";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes();
+    AllTypes multiComplex1 = new AllTypes();
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes();
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+    AllTypes multiComplex3 = new AllTypes();
+    multiComplex3.setStringArray(Collections.singletonList("empty world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("the given filter expression '" + path + "' did not give any " + "results.",
+                              ex.getDetail());
+    }
+  }
+
+  /**
    * verifies an add operation will also be handled on an extension
    */
   @ParameterizedTest

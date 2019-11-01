@@ -18,7 +18,6 @@ import de.gold.scim.exceptions.BadRequestException;
 import de.gold.scim.exceptions.IOException;
 import de.gold.scim.exceptions.ScimException;
 import de.gold.scim.filter.AttributePathRoot;
-import de.gold.scim.filter.FilterNode;
 import de.gold.scim.filter.resources.PatchFilterResolver;
 import de.gold.scim.resources.ResourceNode;
 import de.gold.scim.resources.base.ScimArrayNode;
@@ -397,7 +396,7 @@ public class PatchTargetHandler extends AbstractPatch
    * @param path the filter expression that must be resolved to get the matching nodes
    * @return the list of nodes that should be modified
    */
-  private List<IndexNode> resolveFilter(ArrayNode multiValuedComplex, FilterNode path)
+  private List<IndexNode> resolveFilter(ArrayNode multiValuedComplex, AttributePathRoot path)
   {
     PatchFilterResolver patchFilterResolver = new PatchFilterResolver();
     List<IndexNode> matchingComplexNodes = new ArrayList<>();
@@ -409,6 +408,11 @@ public class PatchTargetHandler extends AbstractPatch
       {
         matchingComplexNodes.add(new IndexNode(i, filteredNode.get()));
       }
+    }
+    if (path.getChild() != null && matchingComplexNodes.isEmpty())
+    {
+      throw new BadRequestException("the given filter expression '" + path.toString() + "' did not give any "
+                                    + "results.", null, ScimType.RFC7644.NO_TARGET);
     }
     return matchingComplexNodes;
   }
