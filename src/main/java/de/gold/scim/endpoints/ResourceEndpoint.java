@@ -147,7 +147,10 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                               requestBody,
                               uriInfos::getBaseUri);
       case PATCH:
-        throw new NotImplementedException("not yet implemented");
+        return patchResource(uriInfos.getResourceEndpoint(),
+                             uriInfos.getResourceId(),
+                             requestBody,
+                             uriInfos::getBaseUri);
       default:
         return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId());
     }

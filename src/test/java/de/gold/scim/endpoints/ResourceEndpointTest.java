@@ -5,10 +5,12 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.hamcrest.MatcherAssert;
@@ -26,6 +28,7 @@ import de.gold.scim.constants.EndpointPaths;
 import de.gold.scim.constants.HttpStatus;
 import de.gold.scim.constants.ResourceTypeNames;
 import de.gold.scim.constants.enums.HttpMethod;
+import de.gold.scim.constants.enums.PatchOp;
 import de.gold.scim.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.exceptions.BadRequestException;
@@ -33,10 +36,13 @@ import de.gold.scim.exceptions.NotImplementedException;
 import de.gold.scim.exceptions.ResponseException;
 import de.gold.scim.request.BulkRequest;
 import de.gold.scim.request.BulkRequestOperation;
+import de.gold.scim.request.PatchOpRequest;
+import de.gold.scim.request.PatchRequestOperation;
 import de.gold.scim.request.SearchRequest;
 import de.gold.scim.resources.ServiceProvider;
 import de.gold.scim.resources.User;
 import de.gold.scim.resources.complex.Meta;
+import de.gold.scim.resources.complex.Name;
 import de.gold.scim.response.BulkResponse;
 import de.gold.scim.response.BulkResponseOperation;
 import de.gold.scim.response.CreateResponse;
@@ -846,5 +852,48 @@ public class ResourceEndpointTest
                              Matchers.typeCompatibleWith(BadRequestException.class));
     MatcherAssert.assertThat(errorResponse.getDetail().get(),
                              Matchers.equalTo("Bulk endpoint can only be reached with a HTTP-POST request"));
+  }
+
+  /**
+   * Verifies that a resource can successfully be patched
+   */
+  @Test
+  public void testPatchResource()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    copiedUser.setNameNode(name);
+    Assertions.assertEquals(copiedUser, updateResponse);
+
+    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, baseUrl);
+    Assertions.assertEquals(updateResponse, getResponse);
+    Assertions.assertEquals(copiedUser, getResponse);
   }
 }
