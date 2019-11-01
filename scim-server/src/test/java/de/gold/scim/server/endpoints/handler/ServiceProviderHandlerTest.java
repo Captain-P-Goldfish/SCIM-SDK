@@ -5,12 +5,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import de.gold.scim.server.constants.EndpointPaths;
+import de.gold.scim.common.constants.EndpointPaths;
+import de.gold.scim.common.exceptions.NotImplementedException;
+import de.gold.scim.common.resources.ServiceProvider;
+import de.gold.scim.common.resources.complex.FilterConfig;
+import de.gold.scim.common.resources.complex.SortConfig;
 import de.gold.scim.server.endpoints.ResourceEndpointHandlerUtil;
-import de.gold.scim.server.exceptions.NotImplementedException;
-import de.gold.scim.server.resources.ServiceProvider;
-import de.gold.scim.server.resources.complex.FilterConfig;
-import de.gold.scim.server.resources.complex.SortConfig;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import lombok.extern.slf4j.Slf4j;
 

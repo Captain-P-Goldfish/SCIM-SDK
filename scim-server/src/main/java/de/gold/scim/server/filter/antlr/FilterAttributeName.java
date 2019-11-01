@@ -6,7 +6,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import de.gold.scim.server.constants.SchemaUris;
+import de.gold.scim.common.constants.SchemaUris;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 

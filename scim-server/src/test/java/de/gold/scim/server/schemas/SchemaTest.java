@@ -8,14 +8,15 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.server.constants.AttributeNames;
-import de.gold.scim.server.constants.ClassPathReferences;
-import de.gold.scim.server.constants.EndpointPaths;
-import de.gold.scim.server.constants.ResourceTypeNames;
-import de.gold.scim.server.exceptions.InvalidSchemaException;
-import de.gold.scim.server.resources.complex.Meta;
-import de.gold.scim.server.utils.JsonHelper;
-import de.gold.scim.server.utils.TimeUtils;
+import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.constants.EndpointPaths;
+import de.gold.scim.common.constants.ResourceTypeNames;
+import de.gold.scim.common.exceptions.InvalidSchemaException;
+import de.gold.scim.common.resources.complex.Meta;
+import de.gold.scim.common.schemas.Schema;
+import de.gold.scim.common.utils.JsonHelper;
+import de.gold.scim.common.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 
 

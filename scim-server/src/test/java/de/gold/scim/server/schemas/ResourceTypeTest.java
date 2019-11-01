@@ -14,13 +14,14 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import de.gold.scim.server.constants.AttributeNames;
-import de.gold.scim.server.constants.ClassPathReferences;
-import de.gold.scim.server.constants.SchemaUris;
-import de.gold.scim.server.exceptions.BadRequestException;
-import de.gold.scim.server.exceptions.InvalidResourceTypeException;
+import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.exceptions.BadRequestException;
+import de.gold.scim.common.exceptions.InvalidResourceTypeException;
+import de.gold.scim.common.schemas.Schema;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.utils.FileReferences;
-import de.gold.scim.server.utils.JsonHelper;
 import de.gold.scim.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 

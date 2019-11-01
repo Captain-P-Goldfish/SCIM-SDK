@@ -12,17 +12,17 @@ import org.junit.platform.commons.util.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.server.constants.ClassPathReferences;
-import de.gold.scim.server.constants.SchemaUris;
-import de.gold.scim.server.constants.enums.Type;
-import de.gold.scim.server.exceptions.InvalidFilterException;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.constants.enums.Type;
+import de.gold.scim.common.exceptions.InvalidFilterException;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.filter.AndExpressionNode;
 import de.gold.scim.server.filter.AttributeExpressionLeaf;
 import de.gold.scim.server.filter.FilterNode;
 import de.gold.scim.server.filter.OrExpressionNode;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
-import de.gold.scim.server.utils.JsonHelper;
 import de.gold.scim.server.utils.RequestUtils;
 import de.gold.scim.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;

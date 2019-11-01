@@ -7,14 +7,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import de.gold.scim.server.constants.enums.SortOrder;
+import de.gold.scim.common.constants.enums.SortOrder;
+import de.gold.scim.common.exceptions.ConflictException;
+import de.gold.scim.common.exceptions.ResourceNotFoundException;
+import de.gold.scim.common.resources.User;
+import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.endpoints.ResourceHandler;
-import de.gold.scim.server.exceptions.ConflictException;
-import de.gold.scim.server.exceptions.ResourceNotFoundException;
 import de.gold.scim.server.filter.FilterNode;
-import de.gold.scim.server.resources.User;
 import de.gold.scim.server.response.PartialListResponse;
-import de.gold.scim.server.schemas.SchemaAttribute;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

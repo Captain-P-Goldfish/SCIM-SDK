@@ -7,15 +7,18 @@ import java.util.UUID;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import de.gold.scim.server.constants.EndpointPaths;
-import de.gold.scim.server.constants.HttpStatus;
-import de.gold.scim.server.constants.SchemaUris;
-import de.gold.scim.server.constants.ScimType;
-import de.gold.scim.server.constants.enums.HttpMethod;
-import de.gold.scim.server.exceptions.InvalidSchemaException;
+import de.gold.scim.common.constants.EndpointPaths;
+import de.gold.scim.common.constants.HttpStatus;
+import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.constants.enums.HttpMethod;
+import de.gold.scim.common.exceptions.InvalidSchemaException;
+import de.gold.scim.common.response.BulkResponse;
+import de.gold.scim.common.response.BulkResponseOperation;
+import de.gold.scim.common.response.ErrorResponse;
+import de.gold.scim.common.schemas.Schema;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import de.gold.scim.server.schemas.ResourceTypeFactoryUtil;
-import de.gold.scim.server.schemas.Schema;
 import de.gold.scim.server.schemas.SchemaFactory;
 import de.gold.scim.server.schemas.SchemaValidator;
 
@@ -27,43 +30,6 @@ import de.gold.scim.server.schemas.SchemaValidator;
  */
 public class BulkResponseTest
 {
-
-
-  /**
-   * verifies that the correct schema uri is set
-   */
-  @Test
-  public void testSchemaUriIsSet()
-  {
-    BulkResponse bulkResponse = new BulkResponse();
-    Assertions.assertEquals(1, bulkResponse.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.BULK_RESPONSE_URI, bulkResponse.getSchemas().get(0));
-  }
-
-  /**
-   * verifies that the getter and setter methods are working as expected
-   */
-  @Test
-  public void testGetAndSetValues()
-  {
-    final List<BulkResponseOperation> operations = Collections.singletonList(BulkResponseOperation.builder().build());
-
-    BulkResponse bulkResponse = BulkResponse.builder().bulkResponseOperation(operations).build();
-
-    Assertions.assertEquals(operations, bulkResponse.getBulkResponseOperations());
-
-    Assertions.assertEquals(operations.size(), bulkResponse.get("Operations").size());
-  }
-
-  /**
-   * verifies that the bulk request operation is never null if getter is called
-   */
-  @Test
-  public void testOperationsIsNeverNull()
-  {
-    BulkResponse bulkResponse = new BulkResponse();
-    Assertions.assertNotNull(bulkResponse.getBulkResponseOperations());
-  }
 
   /**
    * this test will verify that the bulk request can be validated against its schema

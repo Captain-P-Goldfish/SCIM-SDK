@@ -4,12 +4,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.gold.scim.server.constants.HttpStatus;
-import de.gold.scim.server.constants.ScimType;
-import de.gold.scim.server.exceptions.ScimException;
-import de.gold.scim.server.resources.base.ScimArrayNode;
+import de.gold.scim.common.constants.HttpStatus;
+import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.exceptions.ScimException;
+import de.gold.scim.common.resources.base.ScimArrayNode;
+import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.schemas.ResourceType;
-import de.gold.scim.server.schemas.SchemaAttribute;
 import de.gold.scim.server.utils.RequestUtils;
 
 

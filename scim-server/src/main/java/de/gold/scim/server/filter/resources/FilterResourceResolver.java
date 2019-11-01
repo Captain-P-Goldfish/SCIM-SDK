@@ -14,7 +14,9 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.LongNode;
 
-import de.gold.scim.server.exceptions.InternalServerException;
+import de.gold.scim.common.exceptions.InternalServerException;
+import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.utils.TimeUtils;
 import de.gold.scim.server.filter.AndExpressionNode;
 import de.gold.scim.server.filter.AttributeExpressionLeaf;
 import de.gold.scim.server.filter.AttributePathRoot;
@@ -22,8 +24,6 @@ import de.gold.scim.server.filter.FilterNode;
 import de.gold.scim.server.filter.NotExpressionNode;
 import de.gold.scim.server.filter.OrExpressionNode;
 import de.gold.scim.server.filter.antlr.Comparator;
-import de.gold.scim.server.resources.ResourceNode;
-import de.gold.scim.server.utils.TimeUtils;
 import lombok.extern.slf4j.Slf4j;
 
 

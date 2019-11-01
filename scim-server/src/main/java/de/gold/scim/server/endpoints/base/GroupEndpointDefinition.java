@@ -1,10 +1,10 @@
 package de.gold.scim.server.endpoints.base;
 
-import de.gold.scim.server.constants.ClassPathReferences;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.resources.Group;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.endpoints.EndpointDefinition;
 import de.gold.scim.server.endpoints.ResourceHandler;
-import de.gold.scim.server.resources.Group;
-import de.gold.scim.server.utils.JsonHelper;
 
 
 /**

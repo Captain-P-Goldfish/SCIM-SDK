@@ -25,6 +25,7 @@
 
     <modules>
         <module>scim-server</module>
+        <module>scim-common</module>
     </modules>
 
     <properties>
@@ -74,6 +75,11 @@
             </dependency>
 
             <!-- application dependencies -->
+            <dependency>
+                <groupId>de.gold</groupId>
+                <artifactId>scim-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>

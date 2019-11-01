@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <parent>
+        <artifactId>scim-parent</artifactId>
+        <groupId>de.gold</groupId>
+        <version>0.0.1-SNAPSHOT</version>
+    </parent>
+    <modelVersion>4.0.0</modelVersion>
+
+    <artifactId>scim-common</artifactId>
+
+    <name>SCIM Common</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${version.maven.enforcer.plugin}</version>
+                <configuration>
+                    <rules>
+                        <requireFileChecksum>
+                            <file>${project.basedir}/src/main/resources/de/gold/scim/common/meta/schema.schema.json
+                            </file>
+                            <checksum>33f97bfe81f80a3136b4a7121ecad00a</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/gold/scim/common/meta/resource-type.schema.json
+                            </file>
+                            <checksum>eb3f49ab90010b93d695f8f9d6a6d7af</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/gold/scim/common/meta/service-provider.schema.json
+                            </file>
+                            <checksum>b5ded77bc2afd7b5f9757d15219a2735</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                    </rules>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

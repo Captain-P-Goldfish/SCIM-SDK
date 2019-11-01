@@ -21,18 +21,18 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.server.constants.ClassPathReferences;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.resources.User;
+import de.gold.scim.common.resources.complex.Name;
+import de.gold.scim.common.resources.multicomplex.Email;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.filter.AttributePathRoot;
 import de.gold.scim.server.filter.FilterNode;
 import de.gold.scim.server.filter.antlr.Comparator;
 import de.gold.scim.server.resources.AllTypes;
-import de.gold.scim.server.resources.User;
-import de.gold.scim.server.resources.complex.Name;
-import de.gold.scim.server.resources.multicomplex.Email;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import de.gold.scim.server.utils.FileReferences;
-import de.gold.scim.server.utils.JsonHelper;
 import de.gold.scim.server.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
 

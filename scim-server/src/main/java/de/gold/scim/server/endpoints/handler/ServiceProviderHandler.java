@@ -2,13 +2,13 @@ package de.gold.scim.server.endpoints.handler;
 
 import java.util.function.Function;
 
-import de.gold.scim.server.constants.enums.SortOrder;
+import de.gold.scim.common.constants.enums.SortOrder;
+import de.gold.scim.common.exceptions.NotImplementedException;
+import de.gold.scim.common.resources.ServiceProvider;
+import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.endpoints.ResourceHandler;
-import de.gold.scim.server.exceptions.NotImplementedException;
 import de.gold.scim.server.filter.FilterNode;
-import de.gold.scim.server.resources.ServiceProvider;
 import de.gold.scim.server.response.PartialListResponse;
-import de.gold.scim.server.schemas.SchemaAttribute;
 import lombok.AllArgsConstructor;
 
 
@@ -30,7 +30,7 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
   };
 
   /**
-   * each created {@link de.gold.scim.endpoints.ResourceEndpointHandler} must get hold of a single
+   * each created {@link de.gold.scim.server.endpoints.ResourceEndpointHandler} must get hold of a single
    * {@link ServiceProvider} instance which is shared with this object. so both instances need to hold the same
    * object reference in order for the application to work correctly
    */

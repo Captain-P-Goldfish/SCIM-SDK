@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.gold.scim.common.resources.ServiceProvider;
 import de.gold.scim.server.endpoints.base.GroupEndpointDefinition;
 import de.gold.scim.server.endpoints.base.MeEndpointDefinition;
 import de.gold.scim.server.endpoints.base.ResourceTypeEndpointDefinition;
@@ -13,7 +14,6 @@ import de.gold.scim.server.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.server.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.server.endpoints.handler.GroupHandlerImpl;
 import de.gold.scim.server.endpoints.handler.UserHandlerImpl;
-import de.gold.scim.server.resources.ServiceProvider;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

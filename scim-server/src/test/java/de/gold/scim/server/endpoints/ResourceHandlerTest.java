@@ -3,13 +3,13 @@ package de.gold.scim.server.endpoints;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import de.gold.scim.server.constants.enums.SortOrder;
-import de.gold.scim.server.exceptions.InternalServerException;
+import de.gold.scim.common.constants.enums.SortOrder;
+import de.gold.scim.common.exceptions.InternalServerException;
+import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.resources.User;
+import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.filter.FilterNode;
-import de.gold.scim.server.resources.ResourceNode;
-import de.gold.scim.server.resources.User;
 import de.gold.scim.server.response.PartialListResponse;
-import de.gold.scim.server.schemas.SchemaAttribute;
 
 
 /**

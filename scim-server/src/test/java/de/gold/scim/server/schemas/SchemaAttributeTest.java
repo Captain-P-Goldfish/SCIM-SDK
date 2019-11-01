@@ -9,13 +9,15 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.server.constants.ClassPathReferences;
-import de.gold.scim.server.constants.enums.Mutability;
-import de.gold.scim.server.constants.enums.ReferenceTypes;
-import de.gold.scim.server.constants.enums.Returned;
-import de.gold.scim.server.constants.enums.Type;
-import de.gold.scim.server.constants.enums.Uniqueness;
-import de.gold.scim.server.utils.JsonHelper;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.constants.enums.Mutability;
+import de.gold.scim.common.constants.enums.ReferenceTypes;
+import de.gold.scim.common.constants.enums.Returned;
+import de.gold.scim.common.constants.enums.Type;
+import de.gold.scim.common.constants.enums.Uniqueness;
+import de.gold.scim.common.schemas.Schema;
+import de.gold.scim.common.schemas.SchemaAttribute;
+import de.gold.scim.common.utils.JsonHelper;
 
 
 /**

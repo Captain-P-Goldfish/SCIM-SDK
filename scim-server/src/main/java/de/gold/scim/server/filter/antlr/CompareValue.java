@@ -5,11 +5,11 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
-import de.gold.scim.server.exceptions.InvalidDateTimeRepresentationException;
-import de.gold.scim.server.exceptions.InvalidFilterException;
+import de.gold.scim.common.exceptions.InvalidDateTimeRepresentationException;
+import de.gold.scim.common.exceptions.InvalidFilterException;
+import de.gold.scim.common.schemas.SchemaAttribute;
+import de.gold.scim.common.utils.TimeUtils;
 import de.gold.scim.server.filter.AttributeExpressionLeaf;
-import de.gold.scim.server.schemas.SchemaAttribute;
-import de.gold.scim.server.utils.TimeUtils;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

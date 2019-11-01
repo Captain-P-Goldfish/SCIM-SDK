@@ -16,11 +16,12 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import de.gold.scim.server.constants.AttributeNames;
-import de.gold.scim.server.constants.SchemaUris;
+import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.exceptions.InvalidResourceTypeException;
+import de.gold.scim.common.schemas.Schema;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.endpoints.ResourceHandler;
-import de.gold.scim.server.exceptions.InvalidResourceTypeException;
-import de.gold.scim.server.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;

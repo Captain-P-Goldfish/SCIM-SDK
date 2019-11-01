@@ -1,9 +1,9 @@
 package de.gold.scim.server.filter;
 
+import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.filter.antlr.FilterAttributeName;
 import de.gold.scim.server.filter.antlr.ScimFilterParser;
 import de.gold.scim.server.schemas.ResourceType;
-import de.gold.scim.server.schemas.SchemaAttribute;
 import de.gold.scim.server.utils.RequestUtils;
 import lombok.Getter;
 import lombok.Setter;

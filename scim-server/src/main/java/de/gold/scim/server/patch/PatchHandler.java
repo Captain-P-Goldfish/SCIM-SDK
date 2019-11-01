@@ -6,15 +6,15 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import de.gold.scim.server.constants.ScimType;
-import de.gold.scim.server.constants.enums.PatchOp;
-import de.gold.scim.server.exceptions.BadRequestException;
-import de.gold.scim.server.request.PatchOpRequest;
-import de.gold.scim.server.request.PatchRequestOperation;
-import de.gold.scim.server.resources.ResourceNode;
-import de.gold.scim.server.resources.complex.Meta;
+import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.constants.enums.PatchOp;
+import de.gold.scim.common.exceptions.BadRequestException;
+import de.gold.scim.common.request.PatchOpRequest;
+import de.gold.scim.common.request.PatchRequestOperation;
+import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.resources.complex.Meta;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.schemas.ResourceType;
-import de.gold.scim.server.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
 

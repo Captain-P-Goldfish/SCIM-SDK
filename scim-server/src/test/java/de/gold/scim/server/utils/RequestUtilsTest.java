@@ -11,7 +11,7 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.platform.commons.util.StringUtils;
 
-import de.gold.scim.server.exceptions.BadRequestException;
+import de.gold.scim.common.exceptions.BadRequestException;
 
 
 /**

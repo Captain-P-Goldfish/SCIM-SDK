@@ -9,11 +9,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import de.gold.scim.server.constants.AttributeNames;
-import de.gold.scim.server.constants.ClassPathReferences;
-import de.gold.scim.server.exceptions.InvalidSchemaException;
+import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.exceptions.InvalidSchemaException;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.utils.FileReferences;
-import de.gold.scim.server.utils.JsonHelper;
 
 
 /**

@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.server.constants.ClassPathReferences;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
-import de.gold.scim.server.utils.JsonHelper;
 import de.gold.scim.server.utils.RequestUtils;
 import nl.jqno.equalsverifier.EqualsVerifier;
 

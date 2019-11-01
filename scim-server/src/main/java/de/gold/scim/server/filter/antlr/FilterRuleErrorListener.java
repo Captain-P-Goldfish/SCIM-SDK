@@ -9,7 +9,7 @@ import org.antlr.v4.runtime.Recognizer;
 import org.antlr.v4.runtime.atn.ATNConfigSet;
 import org.antlr.v4.runtime.dfa.DFA;
 
-import de.gold.scim.server.exceptions.InvalidFilterException;
+import de.gold.scim.common.exceptions.InvalidFilterException;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 

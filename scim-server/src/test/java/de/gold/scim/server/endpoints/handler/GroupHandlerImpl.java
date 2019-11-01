@@ -7,16 +7,16 @@ import java.util.UUID;
 
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import de.gold.scim.server.constants.AttributeNames;
-import de.gold.scim.server.constants.enums.SortOrder;
+import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.enums.SortOrder;
+import de.gold.scim.common.exceptions.ConflictException;
+import de.gold.scim.common.exceptions.ResourceNotFoundException;
+import de.gold.scim.common.resources.Group;
+import de.gold.scim.common.schemas.SchemaAttribute;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.endpoints.ResourceHandler;
-import de.gold.scim.server.exceptions.ConflictException;
-import de.gold.scim.server.exceptions.ResourceNotFoundException;
 import de.gold.scim.server.filter.FilterNode;
-import de.gold.scim.server.resources.Group;
 import de.gold.scim.server.response.PartialListResponse;
-import de.gold.scim.server.schemas.SchemaAttribute;
-import de.gold.scim.server.utils.JsonHelper;
 
 
 /**

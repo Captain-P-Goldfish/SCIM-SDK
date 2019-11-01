@@ -2,11 +2,9 @@ package de.gold.scim.server.response;
 
 import java.util.List;
 
-import de.gold.scim.server.constants.enums.SortOrder;
-import de.gold.scim.server.endpoints.ResourceHandler;
-import de.gold.scim.server.filter.FilterNode;
-import de.gold.scim.server.resources.ResourceNode;
-import de.gold.scim.server.schemas.SchemaAttribute;
+import de.gold.scim.common.constants.enums.SortOrder;
+import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.schemas.SchemaAttribute;
 import lombok.Builder;
 import lombok.Getter;
 

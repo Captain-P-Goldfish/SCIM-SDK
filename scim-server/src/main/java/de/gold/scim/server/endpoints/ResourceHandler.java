@@ -3,12 +3,12 @@ package de.gold.scim.server.endpoints;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 
-import de.gold.scim.server.constants.enums.SortOrder;
-import de.gold.scim.server.exceptions.InternalServerException;
+import de.gold.scim.common.constants.enums.SortOrder;
+import de.gold.scim.common.exceptions.InternalServerException;
+import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.filter.FilterNode;
-import de.gold.scim.server.resources.ResourceNode;
 import de.gold.scim.server.response.PartialListResponse;
-import de.gold.scim.server.schemas.SchemaAttribute;
 import lombok.Getter;
 
 

@@ -5,11 +5,12 @@ import java.util.Map;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.gold.scim.server.constants.ClassPathReferences;
-import de.gold.scim.server.constants.SchemaUris;
-import de.gold.scim.server.exceptions.DocumentValidationException;
-import de.gold.scim.server.exceptions.InvalidSchemaException;
-import de.gold.scim.server.utils.JsonHelper;
+import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.exceptions.DocumentValidationException;
+import de.gold.scim.common.exceptions.InvalidSchemaException;
+import de.gold.scim.common.schemas.Schema;
+import de.gold.scim.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 

@@ -4,8 +4,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import de.gold.scim.server.constants.SchemaUris;
-import de.gold.scim.server.resources.base.ScimObjectNode;
+import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.resources.EnterpriseUser;
+import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.resources.base.ScimObjectNode;
 
 
 /**

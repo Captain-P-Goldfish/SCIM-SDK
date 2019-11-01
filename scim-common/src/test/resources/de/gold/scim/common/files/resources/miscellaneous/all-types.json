@@ -1,0 +1,126 @@
+{
+  "string": "chuck",
+  "number": 2147483648,
+  "decimal": 50.5,
+  "bool": false,
+  "date": "1940-03-10T00:00:00Z",
+  "stringArray": [
+    "hello",
+    "world"
+  ],
+  "numberArray": [
+    44,
+    55,
+    66
+  ],
+  "decimalArray": [
+    4.7,
+    5.1,
+    6.2
+  ],
+  "dateArray": [
+    "1976-03-10T00:00:00Z",
+    "1986-03-10T00:00:00Z",
+    "1996-03-10T00:00:00Z"
+  ],
+  "boolArray": [
+    true,
+    true,
+    false
+  ],
+  "complex": {
+    "string": "chuck",
+    "number": 2147483648,
+    "decimal": 50.5,
+    "bool": false,
+    "date": "1940-03-10T00:00:00Z",
+    "stringArray": [
+      "hello",
+      "world"
+    ],
+    "numberArray": [
+      44,
+      55,
+      66
+    ],
+    "decimalArray": [
+      4.7,
+      5.1,
+      6.2
+    ],
+    "dateArray": [
+      "1976-03-10T00:00:00Z",
+      "1986-03-10T00:00:00Z",
+      "1996-03-10T00:00:00Z"
+    ],
+    "boolArray": [
+      true,
+      true,
+      false
+    ]
+  },
+  "multiComplex": [
+    {
+      "string": "chuck",
+      "number": 2147483648,
+      "decimal": 50.5,
+      "bool": false,
+      "date": "1940-03-10T00:00:00Z",
+      "stringArray": [
+        "hello",
+        "world"
+      ],
+      "numberArray": [
+        44,
+        55,
+        66
+      ],
+      "decimalArray": [
+        4.7,
+        5.1,
+        6.2
+      ],
+      "dateArray": [
+        "1976-03-10T00:00:00Z",
+        "1986-03-10T00:00:00Z",
+        "1996-03-10T00:00:00Z"
+      ],
+      "boolArray": [
+        true,
+        true,
+        false
+      ]
+    },
+    {
+      "string": "chuck",
+      "number": 2147483648,
+      "decimal": 50.5,
+      "bool": false,
+      "date": "1940-03-10T00:00:00Z",
+      "stringArray": [
+        "hello",
+        "world"
+      ],
+      "numberArray": [
+        44,
+        55,
+        66
+      ],
+      "decimalArray": [
+        4.7,
+        5.1,
+        6.2
+      ],
+      "dateArray": [
+        "1976-03-10T00:00:00Z",
+        "1986-03-10T00:00:00Z",
+        "1996-03-10T00:00:00Z"
+      ],
+      "boolArray": [
+        true,
+        true,
+        false
+      ]
+    }
+  ]
+}

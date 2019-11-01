@@ -7,17 +7,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import de.gold.scim.server.constants.AttributeNames;
-import de.gold.scim.server.constants.ScimType;
-import de.gold.scim.server.constants.enums.Mutability;
-import de.gold.scim.server.constants.enums.PatchOp;
-import de.gold.scim.server.constants.enums.Type;
-import de.gold.scim.server.exceptions.BadRequestException;
-import de.gold.scim.server.resources.base.ScimArrayNode;
-import de.gold.scim.server.resources.base.ScimObjectNode;
+import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.constants.enums.Mutability;
+import de.gold.scim.common.constants.enums.PatchOp;
+import de.gold.scim.common.constants.enums.Type;
+import de.gold.scim.common.exceptions.BadRequestException;
+import de.gold.scim.common.resources.base.ScimArrayNode;
+import de.gold.scim.common.resources.base.ScimObjectNode;
+import de.gold.scim.common.schemas.SchemaAttribute;
+import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.schemas.ResourceType;
-import de.gold.scim.server.schemas.SchemaAttribute;
-import de.gold.scim.server.utils.JsonHelper;
 import de.gold.scim.server.utils.RequestUtils;
 
 
