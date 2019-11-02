@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -475,9 +476,9 @@ public final class JsonHelper
   {
     try
     {
-      return type.newInstance();
+      return type.getConstructor().newInstance();
     }
-    catch (InstantiationException | IllegalAccessException e)
+    catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
     {
       throw new InternalServerException("could not create instance of type '" + type + "': " + e.getMessage(), e, null);
     }

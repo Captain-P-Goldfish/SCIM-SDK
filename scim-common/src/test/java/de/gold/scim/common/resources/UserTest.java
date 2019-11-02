@@ -1,5 +1,6 @@
 package de.gold.scim.common.resources;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -283,9 +284,9 @@ public class UserTest implements FileReferences
   {
     try
     {
-      return type.newInstance();
+      return type.getConstructor().newInstance();
     }
-    catch (InstantiationException | IllegalAccessException e)
+    catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
     {
       throw new IllegalStateException(e);
     }
