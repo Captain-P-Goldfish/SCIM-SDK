@@ -13,14 +13,30 @@ support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is sim
 2. a resource type definition that describes the endpoint and the additional schema extensions that may be used within
  the shema definition  
 
-### additional features
+For more detailed information take a look into the [wiki](https://github.com/Captain-P-Goldfish/SCIM/wiki)
 
-- values with a returned value of "request" would normally only be returned if present in the *attributes* parameter in
- a query request. If you want to access the full data set add the resource URI to the *attributes* parameter e.g.: 
- **urn:ietf:params:scim:schemas:core:2.0:User**
+The following features are supported
+
+- [x] create
+- [x] read
+- [x] list (including filtering) see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features)
+- [x] update
+- [x] patch
+- [x] delete
+- [x] bulk
+- [x] attributes-parameter
+- [x] excludedAttributes-parameter
+
+for any registered resource
+
+the following features will be developed in the future:
+
+Missing features defined by SCIM
+- [ ] resource versioning
+
+Upcoming features not defined by SCIM
+- [ ] auto sorting  => see also [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features)
+- [ ] authorization for specific endpoints
+- [ ] authorization for specific attributes
+- [ ] attribute validation (e.g. array-max-length=2 or number-min-value=10)
  
-### restrictions
- 
-- the *attributes* parameter does not accept sub-attribute definitions for multivalued complex types. For example you
- cannot put a value like "*emails.value*" into the *attributes* parameter and expect that only the value key for
-  emails is returned in the response. But at least it works for simple complex types e.g. "*name.givenName*"  
