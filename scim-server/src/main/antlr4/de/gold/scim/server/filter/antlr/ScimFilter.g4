@@ -51,7 +51,7 @@ ATTRIBUTE_NAME: ALPHA (NAMECHAR)*;
 NAMECHAR: '_' | DIGIT | ALPHA;
 NAME_URI: ALPHA (NAMECHAR | ':' | '.')* NAMECHAR+ ':';
 TEXT: '"' STRING '"';
-EXCLUDE: [ \b\t\r\n]+ -> skip ;
+EXCLUDE: [ \b\t\n]+ -> skip ;
 
 
 fragment ALPHA: ([a-zA-Z]);
