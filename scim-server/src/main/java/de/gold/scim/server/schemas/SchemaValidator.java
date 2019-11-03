@@ -927,7 +927,7 @@ public class SchemaValidator
     }
     else if ((Returned.REQUEST.equals(schemaAttribute.getReturned())
               || Returned.DEFAULT.equals(schemaAttribute.getReturned()))
-             && attributes.contains(scimNodeName))
+             && attributes.stream().anyMatch(s -> StringUtils.equalsIgnoreCase(s, scimNodeName)))
     {
       log.debug("the attribute '{}' was requested by the client but it is not present within the document. "
                 + "Maybe the value has not been set on the resource?",
@@ -994,7 +994,7 @@ public class SchemaValidator
     if (Returned.DEFAULT.equals(schemaAttribute.getReturned()) && !attributes.isEmpty()
         && isAttributeMissingInAttributeParameter(schemaAttribute))
     {
-      log.debug("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
+      log.trace("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes: {}",
                 schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned(),
@@ -1004,7 +1004,7 @@ public class SchemaValidator
     if (Returned.REQUEST.equals(schemaAttribute.getReturned())
         && isAttributeMissingInAttributeParameter(schemaAttribute) && !isAttributePresentInRequest(schemaAttribute))
     {
-      log.debug("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
+      log.trace("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes: {}",
                 schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned(),
@@ -1027,8 +1027,10 @@ public class SchemaValidator
     // this will check if the full name is matching any parameter in the attributes parameter list or
     // if this attribute to check is a subnode of the attributes defined in the attributes parameter list
     boolean anyFullNameMatch = excludedAttributes.stream()
-                                                 .anyMatch(param -> fullName.equals(param) || shortName.equals(param)
-                                                                    || param.equals(schemaAttribute.getResourceUri()));
+                                                 .anyMatch(param -> StringUtils.equalsIgnoreCase(fullName, param)
+                                                                    || StringUtils.equalsIgnoreCase(shortName, param)
+                                                                    || StringUtils.equalsIgnoreCase(param,
+                                                                                                    schemaAttribute.getResourceUri()));
     return anyFullNameMatch;
   }
 
@@ -1045,13 +1047,16 @@ public class SchemaValidator
     // this will check if the full name is matching any parameter in the attributes parameter list or
     // if this attribute to check is a subnode of the attributes defined in the attributes parameter list
     boolean anyNameMatch = attributes.stream()
-                                     .anyMatch(param -> fullName.equals(param) || shortName.equals(param)
-                                                        || (fullName.startsWith(param)
-                                                            && fullName.endsWith("." + schemaAttribute.getName()))
-                                                        || shortName.startsWith(param + ".")
-                                                        || param.startsWith(fullName + ".")
-                                                        || param.startsWith(shortName + ".")
-                                                        || param.equals(schemaAttribute.getResourceUri()));
+                                     .anyMatch(param -> StringUtils.equalsIgnoreCase(fullName, param)
+                                                        || StringUtils.equalsIgnoreCase(shortName, param)
+                                                        || (StringUtils.startsWithIgnoreCase(fullName, param)
+                                                            && StringUtils.endsWithIgnoreCase(fullName,
+                                                                                              "." + schemaAttribute.getName()))
+                                                        || StringUtils.startsWithIgnoreCase(shortName, param + ".")
+                                                        || StringUtils.startsWith(param, fullName + ".")
+                                                        || StringUtils.startsWithIgnoreCase(param, shortName + ".")
+                                                        || StringUtils.equalsIgnoreCase(param,
+                                                                                        schemaAttribute.getResourceUri()));
     return !anyNameMatch;
   }
 
