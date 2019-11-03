@@ -30,6 +30,12 @@
         </developer>
     </developers>
 
+    <scm>
+        <connection>scm:git:git://github.com/Captain-P-Goldfish/SCIM.git</connection>
+        <developerConnection>scm:git:ssh://github.com/Captain-P-Goldfish/SCIM.git</developerConnection>
+        <url>https://github.com/Captain-P-Goldfish/SCIM/tree/master</url>
+    </scm>
+
     <modules>
         <module>scim-server</module>
         <module>scim-common</module>
