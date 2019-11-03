@@ -11,6 +11,8 @@
     <version>0.0.1-SNAPSHOT</version>
 
     <name>SCIM</name>
+    <description>A full SCIM 2.0 open source implementation</description>
+    <url>https://github.com/Captain-P-Goldfish/SCIM</url>
 
     <licenses>
         <license>
