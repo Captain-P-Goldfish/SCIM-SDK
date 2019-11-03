@@ -20,11 +20,6 @@ public final class AttributeNames
   {
 
     /**
-     * a custom attribute introduced for the {@link de.gold.scim.resources.ServiceProviderUrlExtension}
-     */
-    public static final String BASE_URL = "baseUrl";
-
-    /**
      * the attribute key for enabling automatic filtering on a specific resource
      */
     public static final String AUTO_FILTERING = "autoFiltering";
