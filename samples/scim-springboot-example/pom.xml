@@ -12,6 +12,8 @@
 
     <artifactId>scim-springboot-example</artifactId>
 
+    <name>SCIM springboot example</name>
+
     <properties>
         <version.spring.boot>2.2.0.RELEASE</version.spring.boot>
     </properties>
