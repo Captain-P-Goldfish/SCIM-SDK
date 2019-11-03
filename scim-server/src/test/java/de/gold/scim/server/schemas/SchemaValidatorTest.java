@@ -1104,6 +1104,75 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * This test will verify that an attribute is also returned if the full URI of the attribute name was used in
+   * the attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @ParameterizedTest
+  @CsvSource({AttributeNames.RFC7643.USER_NAME + ",username", AttributeNames.RFC7643.DISPLAY_NAME + ",displayname",
+              AttributeNames.RFC7643.EXTERNAL_ID + ",externalid",
+              AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME + ",name.givenname",
+              AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME + ",name.middlename"})
+  public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName,
+                                                                              String caseInsensitiveName)
+  {
+    final String fullName = SchemaUris.USER_URI + ":" + caseInsensitiveName;
+
+    JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    TestHelper.modifyAttributeMetaData(metaSchemaNode,
+                                       attributeName,
+                                       null,
+                                       null,
+                                       Returned.REQUEST,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    Schema metaSchema = new Schema(metaSchemaNode);
+    JsonNode missingAttributeUser = userSchema.deepCopy();
+    JsonHelper.removeAttribute(missingAttributeUser, attributeName);
+    JsonNode validatedRequestDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                        metaSchema,
+                                                        missingAttributeUser,
+                                                        SchemaValidator.HttpMethod.PUT);
+    });
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         metaSchema,
+                                                         userSchema,
+                                                         validatedRequestDocument,
+                                                         fullName,
+                                                         null);
+    });
+
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNotNull(validatedDocument.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = validatedDocument.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+    }
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.ID));
+  }
+
+  /**
    * This test will verify that an attribute is also returned if the short name of the attribute was used in the
    * attributes parameter<br>
    * from RFC7643 chapter 7
