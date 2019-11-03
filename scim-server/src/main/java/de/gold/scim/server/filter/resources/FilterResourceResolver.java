@@ -158,8 +158,7 @@ public class FilterResourceResolver
    * @param attributeExpressionLeaf the expression leaf that describes the inner node
    * @return true if the complex node does match to the expression, false else
    */
-  private static boolean evaluateComplexNode(JsonNode complexNode,
-                                             AttributeExpressionLeaf attributeExpressionLeaf)
+  private static boolean evaluateComplexNode(JsonNode complexNode, AttributeExpressionLeaf attributeExpressionLeaf)
   {
     if (complexNode == null)
     {
@@ -273,23 +272,104 @@ public class FilterResourceResolver
       case PR:
         return jsonNode != null && !jsonNode.isNull();
       case EQ:
-        return evaluateString(jsonNode, string -> StringUtils.equals(string, attributeExpressionLeaf.getValue()));
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.equals(string, attributeExpressionLeaf.getValue());
+          }
+          else
+          {
+            return StringUtils.equalsIgnoreCase(string, attributeExpressionLeaf.getValue());
+          }
+        });
       case NE:
-        return !evaluateString(jsonNode, string -> StringUtils.equals(string, attributeExpressionLeaf.getValue()));
+        return !evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.equals(string, attributeExpressionLeaf.getValue());
+          }
+          else
+          {
+            return StringUtils.equalsIgnoreCase(string, attributeExpressionLeaf.getValue());
+          }
+        });
       case EW:
-        return evaluateString(jsonNode, string -> StringUtils.endsWith(string, attributeExpressionLeaf.getValue()));
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.endsWith(string, attributeExpressionLeaf.getValue());
+          }
+          else
+          {
+            return StringUtils.endsWithIgnoreCase(string, attributeExpressionLeaf.getValue());
+          }
+        });
       case SW:
-        return evaluateString(jsonNode, string -> StringUtils.startsWith(string, attributeExpressionLeaf.getValue()));
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.startsWith(string, attributeExpressionLeaf.getValue());
+          }
+          else
+          {
+            return StringUtils.startsWithIgnoreCase(string, attributeExpressionLeaf.getValue());
+          }
+        });
       case CO:
-        return evaluateString(jsonNode, string -> StringUtils.contains(string, attributeExpressionLeaf.getValue()));
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.contains(string, attributeExpressionLeaf.getValue());
+          }
+          else
+          {
+            return StringUtils.containsIgnoreCase(string, attributeExpressionLeaf.getValue());
+          }
+        });
       case LT:
-        return evaluateString(jsonNode, string -> StringUtils.compare(string, attributeExpressionLeaf.getValue()) < 0);
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) < 0;
+          }
+          else
+          {
+            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) < 0;
+          }
+        });
       case LE:
-        return evaluateString(jsonNode, string -> StringUtils.compare(string, attributeExpressionLeaf.getValue()) <= 0);
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) <= 0;
+          }
+          else
+          {
+            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) <= 0;
+          }
+        });
       case GT:
-        return evaluateString(jsonNode, string -> StringUtils.compare(string, attributeExpressionLeaf.getValue()) > 0);
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) > 0;
+          }
+          else
+          {
+            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) > 0;
+          }
+        });
       case GE:
-        return evaluateString(jsonNode, string -> StringUtils.compare(string, attributeExpressionLeaf.getValue()) >= 0);
+        return evaluateString(jsonNode, string -> {
+          if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
+          {
+            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) >= 0;
+          }
+          else
+          {
+            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) >= 0;
+          }
+        });
       default:
         throw new InternalServerException("Illegal comparator '" + comparator + "' for attribute type string", null,
                                           null);
