@@ -33,6 +33,7 @@ the following features will be developed in the future:
 
 Missing features defined by SCIM
 - [ ] resource versioning
+- [ ] resolving and ordering of bulkIds
 
 Upcoming features not defined by SCIM
 - [ ] auto sorting  => see also [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features)
