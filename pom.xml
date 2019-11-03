@@ -38,6 +38,18 @@
         <url>https://github.com/Captain-P-Goldfish/SCIM/tree/master</url>
     </scm>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        </snapshotRepository>
+
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
+    </distributionManagement>
+
     <modules>
         <module>scim-server</module>
         <module>scim-common</module>
@@ -83,6 +95,10 @@
         <version.maven.surefire.plugin>3.0.0-M3</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.1.0</version.maven.source.plugin>
         <version.maven.javadoc.plugin>3.1.1</version.maven.javadoc.plugin>
+        <version.maven.gpg.plugin>1.6</version.maven.gpg.plugin>
+        <version.maven.deploy.plugin>3.0.0-M1</version.maven.deploy.plugin>
+        <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
+        <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
     </properties>
 
     <dependencyManagement>
@@ -282,8 +298,20 @@
     <build>
         <finalName>${project.artifactId}-${project.version}</finalName>
 
-        <plugins>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>${version.maven.deploy.plugin}</version>
+                    <configuration>
+                        <skip>true</skip>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
 
+        <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -376,6 +404,34 @@
                 </executions>
                 <configuration>
                     <additionalOptions>-Xdoclint:none</additionalOptions>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-gpg-plugin</artifactId>
+                <version>${version.maven.gpg.plugin}</version>
+                <executions>
+                    <execution>
+                        <id>sign-artifacts</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>sign</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <version>${version.maven.release.plugin}</version>
+
+                <configuration>
+                    <localCheckout>true</localCheckout>
+                    <pushChanges>false</pushChanges>
+                    <mavenExecutorId>forked-path</mavenExecutorId>
+                    <arguments>-Dgpg.passphrase=${gpg.passphrase}</arguments>
                 </configuration>
             </plugin>
         </plugins>
