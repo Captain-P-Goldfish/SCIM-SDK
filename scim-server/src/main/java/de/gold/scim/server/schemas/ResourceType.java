@@ -342,26 +342,26 @@ public class ResourceType extends ResourceNode
   }
 
   /**
-   * @see FilterExtension
+   * @see ResourceTypeFeatures
    */
-  public FilterExtension getFilterExtension()
+  public ResourceTypeFeatures getFilterExtension()
   {
-    FilterExtension filterExtension = getObjectAttribute(SchemaUris.RESOURCE_TYPE_FILTER_EXTENSION_URI,
-                                                         FilterExtension.class).orElse(null);
+    ResourceTypeFeatures filterExtension = getObjectAttribute(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI,
+                                                              ResourceTypeFeatures.class).orElse(null);
     if (filterExtension == null)
     {
-      filterExtension = new FilterExtension(false);
+      filterExtension = new ResourceTypeFeatures(false);
       setFilterExtension(filterExtension);
     }
     return filterExtension;
   }
 
   /**
-   * @see FilterExtension
+   * @see ResourceTypeFeatures
    */
-  public void setFilterExtension(FilterExtension filterExtension)
+  public void setFilterExtension(ResourceTypeFeatures filterExtension)
   {
-    setAttribute(SchemaUris.RESOURCE_TYPE_FILTER_EXTENSION_URI, filterExtension);
+    setAttribute(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI, filterExtension);
   }
 
   /**
@@ -369,33 +369,6 @@ public class ResourceType extends ResourceNode
    * control for filtering since the {@link FilterNode} given into the {@link ResourceHandler} implementation
    * will be null if the switch is enabled
    */
-  public static class FilterExtension extends ScimObjectNode
-  {
-
-    public FilterExtension(boolean autoFiltering)
-    {
-      super(null);
-      setAutoFiltering(autoFiltering);
-    }
-
-    /**
-     * enabled application side filtering. The developer will no longer be able to do the filtering himself if
-     * this has been enabled
-     */
-    public boolean isAutoFiltering()
-    {
-      return getBooleanAttribute(AttributeNames.Custom.AUTO_FILTERING).orElse(false);
-    }
-
-    /**
-     * enabled application side filtering. The developer will no longer be able to do the filtering himself if
-     * this has been enabled
-     */
-    public void setAutoFiltering(Boolean autoFiltering)
-    {
-      setAttribute(AttributeNames.Custom.AUTO_FILTERING, autoFiltering);
-    }
-  }
 
   /**
    * a schema extension representation

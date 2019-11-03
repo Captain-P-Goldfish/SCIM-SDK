@@ -23,8 +23,8 @@ public final class SchemaUris
 
   public static final String RESOURCE_TYPE_URI = SCIM_CORE_URI + "ResourceType";
 
-  public static final String RESOURCE_TYPE_FILTER_EXTENSION_URI = "urn:gold:params:scim:schemas:extension:url:2.0:"
-                                                                  + "ResourceTypeFilter";
+  public static final String RESOURCE_TYPE_FEATURE_EXTENSION_URI = "urn:gold:params:scim:schemas:extension:url:2.0:"
+                                                                   + "ResourceTypeFeatures";
 
   public static final String SERVICE_PROVIDER_CONFIG_URI = SCIM_CORE_URI + "ServiceProviderConfig";
 

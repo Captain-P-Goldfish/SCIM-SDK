@@ -67,6 +67,7 @@ import de.gold.scim.server.filter.FilterNode;
 import de.gold.scim.server.response.PartialListResponse;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
+import de.gold.scim.server.schemas.ResourceTypeFeatures;
 import de.gold.scim.server.utils.FileReferences;
 import de.gold.scim.server.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
@@ -129,7 +130,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceTypeHandler = Mockito.spy(resourceTypeHandler);
     EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
     ResourceType resourceType = resourceEndpointHandler.registerEndpoint(endpointDefinition);
-    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
   }
 
   /**
@@ -1046,7 +1047,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     final String filter = "schemaExtensions pr";
     SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
-    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                                       searchRequest,

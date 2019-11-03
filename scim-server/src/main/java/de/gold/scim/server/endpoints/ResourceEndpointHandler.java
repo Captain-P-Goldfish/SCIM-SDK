@@ -44,6 +44,7 @@ import de.gold.scim.server.patch.PatchHandler;
 import de.gold.scim.server.response.PartialListResponse;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
+import de.gold.scim.server.schemas.ResourceTypeFeatures;
 import de.gold.scim.server.schemas.SchemaValidator;
 import de.gold.scim.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -86,9 +87,9 @@ class ResourceEndpointHandler
 
     registerEndpoint(new ServiceProviderEndpointDefinition(serviceProvider));
     ResourceType resourceType = registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
-    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
     resourceType = registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
-    resourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
     endpointDefinitionList.forEach(this::registerEndpoint);
   }
 

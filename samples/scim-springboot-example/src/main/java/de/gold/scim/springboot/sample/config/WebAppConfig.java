@@ -17,6 +17,7 @@ import de.gold.scim.common.resources.complex.SortConfig;
 import de.gold.scim.server.endpoints.ResourceEndpoint;
 import de.gold.scim.server.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.server.schemas.ResourceType;
+import de.gold.scim.server.schemas.ResourceTypeFeatures;
 import de.gold.scim.springboot.sample.handler.UserHandler;
 
 
@@ -77,7 +78,7 @@ public class WebAppConfig
   public ResourceType getUserResourceType(ResourceEndpoint resourceEndpoint)
   {
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
-    userResourceType.setFilterExtension(new ResourceType.FilterExtension(true));
+    userResourceType.setFilterExtension(new ResourceTypeFeatures(true));
     return userResourceType;
   }
 

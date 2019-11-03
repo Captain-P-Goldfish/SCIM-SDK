@@ -53,7 +53,7 @@ import de.gold.scim.common.response.UpdateResponse;
 import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.server.endpoints.handler.UserHandlerImpl;
-import de.gold.scim.server.schemas.ResourceType;
+import de.gold.scim.server.schemas.ResourceTypeFeatures;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -341,7 +341,7 @@ public class ResourceEndpointTest
     serviceProvider.getFilterConfig().setMaxResults(maxUsers);
     resourceEndpoint.getResourceTypeFactory()
                     .getResourceType(EndpointPaths.USERS)
-                    .setFilterExtension(new ResourceType.FilterExtension(true));
+                    .setFilterExtension(new ResourceTypeFeatures(true));
     int counter = 0;
     final String searchValue = "0";
     for ( int i = 0 ; i < maxUsers ; i++ )
@@ -395,7 +395,7 @@ public class ResourceEndpointTest
     serviceProvider.getFilterConfig().setMaxResults(maxUsers);
     resourceEndpoint.getResourceTypeFactory()
                     .getResourceType(EndpointPaths.USERS)
-                    .setFilterExtension(new ResourceType.FilterExtension(true));
+                    .setFilterExtension(new ResourceTypeFeatures(true));
     int counter = 0;
     final String searchValue = "0";
     for ( int i = 0 ; i < maxUsers ; i++ )

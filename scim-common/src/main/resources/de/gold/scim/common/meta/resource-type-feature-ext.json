@@ -2,7 +2,7 @@
   "schemas": [
     "urn:ietf:params:scim:schemas:core:2.0:Schema"
   ],
-  "id": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFilter",
+  "id": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures",
   "name": "ResourceTypeFilter",
   "description": "An extension that enables filtering on individual resources. If enabled the filtering is executed by the application on the returned list. This is an extra feature for resources that are not stored within databases but within inMemory data structures as maps or others. But be careful just enabling this feature is not enough you must also activate filtering in the service provider configuration, this value will be ignored otherwise.",
   "attributes": [

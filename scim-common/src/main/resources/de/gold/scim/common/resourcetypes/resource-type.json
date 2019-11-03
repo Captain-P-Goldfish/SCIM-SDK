@@ -9,11 +9,11 @@
   "endpoint": "/ResourceTypes",
   "schemaExtensions": [
     {
-      "schema": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFilter",
+      "schema": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures",
       "required": false
     }
   ],
-  "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFilter": {
+  "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures": {
     "autoFiltering": true
   },
   "meta": {
