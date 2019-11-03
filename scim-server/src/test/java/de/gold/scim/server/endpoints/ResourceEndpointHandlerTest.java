@@ -130,7 +130,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceTypeHandler = Mockito.spy(resourceTypeHandler);
     EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
     ResourceType resourceType = resourceEndpointHandler.registerEndpoint(endpointDefinition);
-    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
+    resourceType.setFeatures(new ResourceTypeFeatures(true));
   }
 
   /**
@@ -1017,7 +1017,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
-    resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES).getFilterExtension().setAutoFiltering(false);
+    resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES).getFeatures().setAutoFiltering(false);
 
     final String filter = "schemaExtensions pr";
     SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
@@ -1026,7 +1026,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null);
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
 
-    Assertions.assertFalse(resourceType.getFilterExtension().isAutoFiltering());
+    Assertions.assertFalse(resourceType.getFeatures().isAutoFiltering());
     FilterNode filterNode = RequestUtils.parseFilter(resourceType, filter);
     Mockito.verify(resourceTypeHandler, Mockito.times(1))
            .listResources(Mockito.eq(1L), Mockito.anyInt(), Mockito.eq(filterNode), Mockito.isNull(), Mockito.isNull());
@@ -1047,7 +1047,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     final String filter = "schemaExtensions pr";
     SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
-    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
+    resourceType.setFeatures(new ResourceTypeFeatures(true));
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                                       searchRequest,
@@ -1229,9 +1229,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testSchemasEndpointUsesAutoFiltering()
   {
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
-    Assertions.assertTrue(resourceTypeFactory.getResourceType(EndpointPaths.SCHEMAS)
-                                             .getFilterExtension()
-                                             .isAutoFiltering());
+    Assertions.assertTrue(resourceTypeFactory.getResourceType(EndpointPaths.SCHEMAS).getFeatures().isAutoFiltering());
     String filter = "id ew \"ServiceProviderConfig\"";
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.SCHEMAS,
                                                                       SearchRequest.builder().filter(filter).build(),

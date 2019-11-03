@@ -78,7 +78,7 @@ public class WebAppConfig
   public ResourceType getUserResourceType(ResourceEndpoint resourceEndpoint)
   {
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
-    userResourceType.setFilterExtension(new ResourceTypeFeatures(true));
+    userResourceType.setFeatures(new ResourceTypeFeatures(true));
     return userResourceType;
   }
 

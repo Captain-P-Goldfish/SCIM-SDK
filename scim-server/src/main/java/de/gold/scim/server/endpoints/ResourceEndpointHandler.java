@@ -87,9 +87,9 @@ class ResourceEndpointHandler
 
     registerEndpoint(new ServiceProviderEndpointDefinition(serviceProvider));
     ResourceType resourceType = registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
-    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
+    resourceType.setFeatures(new ResourceTypeFeatures(true));
     resourceType = registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
-    resourceType.setFilterExtension(new ResourceTypeFeatures(true));
+    resourceType.setFeatures(new ResourceTypeFeatures(true));
     endpointDefinitionList.forEach(this::registerEndpoint);
   }
 
@@ -458,7 +458,7 @@ class ResourceEndpointHandler
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);
-      final boolean autoFiltering = resourceType.getFilterExtension().isAutoFiltering();
+      final boolean autoFiltering = resourceType.getFeatures().isAutoFiltering();
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
       final SortOrder sortOrdering = getSortOrdering(sortOrder, sortByAttribute);
 
@@ -542,7 +542,7 @@ class ResourceEndpointHandler
                                                              List<T> resourceList,
                                                              ResourceType resourceType)
   {
-    boolean isApplicationFilteringEnabled = resourceType.getFilterExtension().isAutoFiltering();
+    boolean isApplicationFilteringEnabled = resourceType.getFeatures().isAutoFiltering();
     List<T> filteredResourceType;
     if (isApplicationFilteringEnabled && filterNode != null)
     {

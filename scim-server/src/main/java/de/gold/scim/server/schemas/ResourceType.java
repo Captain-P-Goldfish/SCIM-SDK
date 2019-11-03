@@ -344,14 +344,14 @@ public class ResourceType extends ResourceNode
   /**
    * @see ResourceTypeFeatures
    */
-  public ResourceTypeFeatures getFilterExtension()
+  public ResourceTypeFeatures getFeatures()
   {
     ResourceTypeFeatures filterExtension = getObjectAttribute(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI,
                                                               ResourceTypeFeatures.class).orElse(null);
     if (filterExtension == null)
     {
       filterExtension = new ResourceTypeFeatures(false);
-      setFilterExtension(filterExtension);
+      setFeatures(filterExtension);
     }
     return filterExtension;
   }
@@ -359,7 +359,7 @@ public class ResourceType extends ResourceNode
   /**
    * @see ResourceTypeFeatures
    */
-  public void setFilterExtension(ResourceTypeFeatures filterExtension)
+  public void setFeatures(ResourceTypeFeatures filterExtension)
   {
     setAttribute(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI, filterExtension);
   }
