@@ -82,10 +82,6 @@ class ResourceEndpointHandler
   {
     this.resourceTypeFactory = new ResourceTypeFactory();
     this.serviceProvider = serviceProvider;
-    if (endpointDefinitions == null || endpointDefinitions.length == 0)
-    {
-      throw new InternalServerException("At least 1 endpoint must be registered!", null, null);
-    }
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
 
     registerEndpoint(new ServiceProviderEndpointDefinition(serviceProvider));

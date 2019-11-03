@@ -133,14 +133,14 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
-   * this test must fail with an exception for no resource endpoints will be defined when creating the endpoint
-   * handler
+   * When creating the {@link ResourceEndpointHandler} without any {@link EndpointDefinition}s no exception must
+   * be thrown because this might cause problems for the developer. This is something that was discovered when
+   * setting up the sample project
    */
   @Test
   public void testCreateEndpointWithoutResourceEndpoints()
   {
-    Assertions.assertThrows(InternalServerException.class,
-                            () -> new ResourceEndpointHandler(ServiceProvider.builder().build()));
+    Assertions.assertDoesNotThrow(() -> new ResourceEndpointHandler(ServiceProvider.builder().build()));
   }
 
   /**
