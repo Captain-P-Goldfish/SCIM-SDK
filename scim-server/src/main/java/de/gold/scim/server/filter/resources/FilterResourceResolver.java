@@ -113,19 +113,19 @@ public class FilterResourceResolver
     String[] nameParts = attributeExpressionLeaf.getShortName().split("\\.");
     if (nameParts.length == 1)
     {
-      JsonNode simpleAttribute = resourceNode.get(attributeExpressionLeaf.getShortName());
+      JsonNode simpleAttribute = resourceNode.get(attributeExpressionLeaf.getSchemaAttribute().getName());
       return checkValueEquality(simpleAttribute, attributeExpressionLeaf);
     }
     else
     {
-      JsonNode complexNode = resourceNode.get(nameParts[0]);
+      JsonNode complexNode = resourceNode.get(attributeExpressionLeaf.getSchemaAttribute().getParent().getName());
       if (complexNode != null && complexNode.isArray())
       {
-        return evaluateMultiComplexNode(complexNode, nameParts[1], attributeExpressionLeaf);
+        return evaluateMultiComplexNode(complexNode, attributeExpressionLeaf);
       }
       else
       {
-        return evaluateComplexNode(complexNode, nameParts[1], attributeExpressionLeaf);
+        return evaluateComplexNode(complexNode, attributeExpressionLeaf);
       }
     }
   }
@@ -134,17 +134,15 @@ public class FilterResourceResolver
    * evaluates a multi valued complex node in the resource node
    *
    * @param multiComplexNode the multi valued complex node
-   * @param innerAttributeName the attribute name of the attribute within the multi valued complex node
    * @param attributeExpressionLeaf the expression leaf that describes the inner node
    * @return true if the multi valued complex node does match to the expression, false else
    */
   private static boolean evaluateMultiComplexNode(JsonNode multiComplexNode,
-                                                  String innerAttributeName,
                                                   AttributeExpressionLeaf attributeExpressionLeaf)
   {
     for ( JsonNode complexType : multiComplexNode )
     {
-      JsonNode simpleNode = complexType.get(innerAttributeName);
+      JsonNode simpleNode = complexType.get(attributeExpressionLeaf.getSchemaAttribute().getName());
       if (checkValueEquality(simpleNode, attributeExpressionLeaf))
       {
         return true;
@@ -157,19 +155,17 @@ public class FilterResourceResolver
    * evaluates a simple complex node in the resource node
    *
    * @param complexNode the simple complex node
-   * @param innerAttributeName the name of the attribute within the complex node
    * @param attributeExpressionLeaf the expression leaf that describes the inner node
    * @return true if the complex node does match to the expression, false else
    */
   private static boolean evaluateComplexNode(JsonNode complexNode,
-                                             String innerAttributeName,
                                              AttributeExpressionLeaf attributeExpressionLeaf)
   {
     if (complexNode == null)
     {
       return checkValueEquality(null, attributeExpressionLeaf);
     }
-    JsonNode simpleNode = complexNode.get(innerAttributeName);
+    JsonNode simpleNode = complexNode.get(attributeExpressionLeaf.getSchemaAttribute().getName());
     if (simpleNode == null)
     {
       return checkValueEquality(null, attributeExpressionLeaf);
