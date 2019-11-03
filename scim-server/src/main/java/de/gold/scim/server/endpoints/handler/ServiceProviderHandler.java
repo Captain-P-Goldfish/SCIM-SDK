@@ -59,8 +59,6 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
 
   /**
    * listing of service provider configurations not supported
-   *
-   * @return
    */
   @Override
   public PartialListResponse listResources(long startIndex,

@@ -5,6 +5,7 @@ import java.util.List;
 import de.gold.scim.common.constants.enums.SortOrder;
 import de.gold.scim.common.resources.ResourceNode;
 import de.gold.scim.common.schemas.SchemaAttribute;
+import de.gold.scim.server.filter.FilterNode;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -14,7 +15,8 @@ import lombok.Getter;
  * created at: 18.10.2019 - 17:50 <br>
  * <br>
  * this type must be returned by
- * {@link ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder)} methods
+ * {@link de.gold.scim.server.endpoints.ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder)}
+ * methods
  */
 @Getter
 @Builder
