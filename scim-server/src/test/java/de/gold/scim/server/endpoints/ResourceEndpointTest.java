@@ -341,7 +341,7 @@ public class ResourceEndpointTest
     serviceProvider.getFilterConfig().setMaxResults(maxUsers);
     resourceEndpoint.getResourceTypeFactory()
                     .getResourceType(EndpointPaths.USERS)
-                    .setFeatures(new ResourceTypeFeatures(true));
+                    .setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
     int counter = 0;
     final String searchValue = "0";
     for ( int i = 0 ; i < maxUsers ; i++ )
@@ -395,7 +395,7 @@ public class ResourceEndpointTest
     serviceProvider.getFilterConfig().setMaxResults(maxUsers);
     resourceEndpoint.getResourceTypeFactory()
                     .getResourceType(EndpointPaths.USERS)
-                    .setFeatures(new ResourceTypeFeatures(true));
+                    .setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
     int counter = 0;
     final String searchValue = "0";
     for ( int i = 0 ; i < maxUsers ; i++ )

@@ -59,9 +59,11 @@ import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.endpoints.base.GroupEndpointDefinition;
 import de.gold.scim.server.endpoints.base.ResourceTypeEndpointDefinition;
+import de.gold.scim.server.endpoints.base.ServiceProviderEndpointDefinition;
 import de.gold.scim.server.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.server.endpoints.handler.GroupHandlerImpl;
 import de.gold.scim.server.endpoints.handler.ResourceTypeHandler;
+import de.gold.scim.server.endpoints.handler.ServiceProviderHandler;
 import de.gold.scim.server.endpoints.handler.UserHandlerImpl;
 import de.gold.scim.server.filter.FilterNode;
 import de.gold.scim.server.response.PartialListResponse;
@@ -110,6 +112,11 @@ public class ResourceEndpointHandlerTest implements FileReferences
    */
   private ResourceTypeHandler resourceTypeHandler;
 
+  /**
+   * a mockito spy to verify which methods are getting called under specific circumstances
+   */
+  private ServiceProviderHandler serviceProviderHandler;
+
 
   /**
    * initializes this test
@@ -130,7 +137,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceTypeHandler = Mockito.spy(resourceTypeHandler);
     EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
     ResourceType resourceType = resourceEndpointHandler.registerEndpoint(endpointDefinition);
-    resourceType.setFeatures(new ResourceTypeFeatures(true));
+    resourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
+
+    serviceProviderHandler = Mockito.spy(new ServiceProviderHandler(serviceProvider));
+    endpointDefinition = new ServiceProviderEndpointDefinition(serviceProvider);
+    endpointDefinition.setResourceHandler(serviceProviderHandler);
+    resourceEndpointHandler.registerEndpoint(endpointDefinition);
   }
 
   /**
@@ -1047,7 +1059,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     final String filter = "schemaExtensions pr";
     SearchRequest searchRequest = SearchRequest.builder().filter(filter).build();
     ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES);
-    resourceType.setFeatures(new ResourceTypeFeatures(true));
+    resourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                                       searchRequest,
@@ -1062,6 +1074,37 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertNotEquals(resourceTypes.size(), listResponse.getListedResources().size());
     Assertions.assertEquals(resourceTypes.stream().filter(rt -> rt.getSchemaExtensions().size() > 0).count(),
                             listResponse.getListedResources().size());
+  }
+
+  /**
+   * this test will verify that if an endpoint has activated the
+   * {@link ResourceTypeFeatures#isSingletonEndpoint()} feature that a list-resources request does not return a
+   * {@link ListResponse} but a {@link GetResponse}
+   */
+  @Test
+  public void testAccessSingletonEndpointOnListResourcesEndpoint()
+  {
+    AuthenticationScheme authScheme = AuthenticationScheme.builder()
+                                                          .name("OAuth Bearer Token")
+                                                          .description("Authentication scheme using the OAuth "
+                                                                       + "Bearer Token Standard")
+                                                          .specUri("http://www.rfc-editor.org/info/rfc6750")
+                                                          .type("oauthbearertoken")
+                                                          .build();
+    resourceEndpointHandler.getServiceProvider().setAuthenticationSchemes(Collections.singletonList(authScheme));
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.SERVICE_PROVIDER_CONFIG);
+    resourceType.setFeatures(ResourceTypeFeatures.builder().singletonEndpoint(true).build());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                                                                      SearchRequest.builder().build(),
+                                                                      null);
+    Mockito.verify(serviceProviderHandler, Mockito.times(0))
+           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+    Mockito.verify(serviceProviderHandler, Mockito.times(1)).getResource(Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
+    log.debug(getResponse.toPrettyString());
   }
 
   /**

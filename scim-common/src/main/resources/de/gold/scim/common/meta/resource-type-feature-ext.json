@@ -4,18 +4,29 @@
   ],
   "id": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures",
   "name": "ResourceTypeFilter",
-  "description": "An extension that enables filtering on individual resources. If enabled the filtering is executed by the application on the returned list. This is an extra feature for resources that are not stored within databases but within inMemory data structures as maps or others. But be careful just enabling this feature is not enough you must also activate filtering in the service provider configuration, this value will be ignored otherwise.",
+  "description": "An extension that enables additional features for single resource types",
   "attributes": [
+    {
+      "name": "singletonEndpoint",
+      "type": "boolean",
+      "description": "a boolean that tells us if the endpoint is used as singleton endpoint. This feature may be used e.g. for the /ServiceProviderConfig endpoint to delegate a list-request to a simple get-request.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
     {
       "name": "autoFiltering",
       "type": "boolean",
       "description": "a boolean that will enable automatic filtering on the given resource. If enabled the developer will not receive any filter information's anymore.",
       "mutability": "readOnly",
-      "returned": "request",
+      "returned": "default",
       "uniqueness": "none",
       "multiValued": false,
       "caseExact": false,
-      "required": true
+      "required": false
     }
   ]
 }

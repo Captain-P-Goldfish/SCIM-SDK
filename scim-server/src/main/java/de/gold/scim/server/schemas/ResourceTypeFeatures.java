@@ -2,6 +2,8 @@ package de.gold.scim.server.schemas;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.resources.base.ScimObjectNode;
+import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -9,13 +11,34 @@ import de.gold.scim.common.resources.base.ScimObjectNode;
  * created at: 03.11.2019 - 12:34 <br>
  * <br>
  */
+@NoArgsConstructor
 public class ResourceTypeFeatures extends ScimObjectNode
 {
 
-  public ResourceTypeFeatures(boolean autoFiltering)
+  @Builder
+  public ResourceTypeFeatures(boolean autoFiltering, boolean singletonEndpoint)
   {
     super(null);
     setAutoFiltering(autoFiltering);
+    setSingletonEndpoint(singletonEndpoint);
+  }
+
+  /**
+   * if true it is not possible to access the list-resources endpoint anymore because all get-requests will be
+   * delegated to the get-resource endpoint
+   */
+  public boolean isSingletonEndpoint()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.SINGLETON_ENDPOINT).orElse(false);
+  }
+
+  /**
+   * if true it is not possible to access the list-resources endpoint anymore because all get-requests will be
+   * delegated to the get-resource endpoint
+   */
+  public void setSingletonEndpoint(Boolean singletonEndpoint)
+  {
+    setAttribute(AttributeNames.Custom.SINGLETON_ENDPOINT, singletonEndpoint);
   }
 
   /**

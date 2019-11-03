@@ -20,6 +20,11 @@ public final class AttributeNames
   {
 
     /**
+     * an attribute key for ResourceTypes to setup a resource endpoint as singleton endpoint
+     */
+    public static final String SINGLETON_ENDPOINT = "singletonEndpoint";
+
+    /**
      * the attribute key for enabling automatic filtering on a specific resource
      */
     public static final String AUTO_FILTERING = "autoFiltering";

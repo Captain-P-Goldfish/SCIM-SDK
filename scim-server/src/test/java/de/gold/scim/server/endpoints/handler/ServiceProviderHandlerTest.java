@@ -11,6 +11,7 @@ import de.gold.scim.common.resources.ServiceProvider;
 import de.gold.scim.common.resources.complex.FilterConfig;
 import de.gold.scim.common.resources.complex.SortConfig;
 import de.gold.scim.server.endpoints.ResourceEndpointHandlerUtil;
+import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import lombok.extern.slf4j.Slf4j;
 
@@ -73,6 +74,22 @@ public class ServiceProviderHandlerTest
   public void testGetServiceProvider()
   {
     Assertions.assertEquals(serviceProviderHandler.getResource(null), serviceProvider);
+  }
+
+  /**
+   * verifies that the feature values can successful be read and changed
+   */
+  @Test
+  public void testValidateDefaultFeatureValues()
+  {
+    ResourceType resourceType = resourceTypeFactory.getResourceType(EndpointPaths.SERVICE_PROVIDER_CONFIG);
+    Assertions.assertFalse(resourceType.getFeatures().isAutoFiltering());
+    Assertions.assertTrue(resourceType.getFeatures().isSingletonEndpoint());
+
+    resourceType.getFeatures().setAutoFiltering(true);
+    resourceType.getFeatures().setSingletonEndpoint(false);
+    Assertions.assertTrue(resourceType.getFeatures().isAutoFiltering());
+    Assertions.assertFalse(resourceType.getFeatures().isSingletonEndpoint());
   }
 
   /**

@@ -61,11 +61,6 @@ public class ResourceType extends ResourceNode
   @Setter(AccessLevel.PROTECTED)
   private ResourceHandler resourceHandlerImpl;
 
-  public ResourceType(String resourceDocument)
-  {
-    this(null, JsonHelper.readJsonDocument(resourceDocument));
-  }
-
   protected ResourceType(SchemaFactory schemaFactory, String resourceDocument)
   {
     this(schemaFactory, JsonHelper.readJsonDocument(resourceDocument));
@@ -97,6 +92,10 @@ public class ResourceType extends ResourceNode
     setSchemaExtensions(schemaExtensions);
     Meta meta = getMetaNode(resourceTypeDocument);
     setMeta(meta);
+    JsonNode featureNode = resourceTypeDocument.get(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI);
+    ResourceTypeFeatures resourceTypeFeatures = JsonHelper.copyResourceToObject(featureNode,
+                                                                                ResourceTypeFeatures.class);
+    setFeatures(resourceTypeFeatures);
   }
 
   /**
@@ -350,7 +349,7 @@ public class ResourceType extends ResourceNode
                                                               ResourceTypeFeatures.class).orElse(null);
     if (filterExtension == null)
     {
-      filterExtension = new ResourceTypeFeatures(false);
+      filterExtension = ResourceTypeFeatures.builder().autoFiltering(false).singletonEndpoint(false).build();
       setFeatures(filterExtension);
     }
     return filterExtension;

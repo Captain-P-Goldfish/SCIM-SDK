@@ -44,7 +44,6 @@ import de.gold.scim.server.patch.PatchHandler;
 import de.gold.scim.server.response.PartialListResponse;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
-import de.gold.scim.server.schemas.ResourceTypeFeatures;
 import de.gold.scim.server.schemas.SchemaValidator;
 import de.gold.scim.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -86,10 +85,8 @@ class ResourceEndpointHandler
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
 
     registerEndpoint(new ServiceProviderEndpointDefinition(serviceProvider));
-    ResourceType resourceType = registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
-    resourceType.setFeatures(new ResourceTypeFeatures(true));
-    resourceType = registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
-    resourceType.setFeatures(new ResourceTypeFeatures(true));
+    registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
+    registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
     endpointDefinitionList.forEach(this::registerEndpoint);
   }
 
@@ -455,6 +452,11 @@ class ResourceEndpointHandler
     try
     {
       final ResourceType resourceType = getResourceType(endpoint);
+      if (resourceType.getFeatures().isSingletonEndpoint())
+      {
+        // feature to solve the problem with the /ServiceProviderConfiguration endpoint
+        return getResource(endpoint, null, baseUrlSupplier);
+      }
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);
