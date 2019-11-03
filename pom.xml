@@ -26,6 +26,7 @@
     <modules>
         <module>scim-server</module>
         <module>scim-common</module>
+        <module>samples</module>
     </modules>
 
     <properties>
@@ -34,6 +35,9 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+        <!--suppress UnresolvedMavenProperty -->
+        <formatter-path>${project.parent.basedir}</formatter-path>
 
         <version.lombok>1.18.10</version.lombok>
 
@@ -285,7 +289,7 @@
                 <artifactId>formatter-maven-plugin</artifactId>
                 <version>${version.maven.formatter.plugin}</version>
                 <configuration>
-                    <configFile>${project.parent.basedir}/formatter.xml</configFile>
+                    <configFile>${formatter-path}/formatter.xml</configFile>
                     <lineEnding>LF</lineEnding>
                 </configuration>
                 <executions>
@@ -314,14 +318,6 @@
                         <requireMavenVersion>
                             <version>[3.3,)</version>
                         </requireMavenVersion>
-
-                        <requirePluginVersions>
-                            <message>Best Practice is to always define plugin versions!</message>
-                            <banSnapshots>true</banSnapshots>
-                            <unCheckedPluginList>
-                                org.apache.maven.plugins:maven-surefire-plugin,org.apache.maven.plugins:maven-jar-plugin,org.apache.maven.plugins:maven-clean-plugin,org.apache.maven.plugins:maven-install-plugin,org.apache.maven.plugins:maven-site-plugin,org.apache.maven.plugins:maven-resources-plugin,org.apache.maven.plugins:maven-deploy-plugin
-                            </unCheckedPluginList>
-                        </requirePluginVersions>
 
                         <requireReleaseDeps>
                             <message>No Snapshots Allowed on release!</message>
