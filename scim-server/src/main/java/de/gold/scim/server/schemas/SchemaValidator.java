@@ -288,7 +288,10 @@ public class SchemaValidator
                 + resourceType.getSchema() + "]");
       throw ex;
     }
-    JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
+    if (validatedMeta != null && !validatedMeta.isEmpty())
+    {
+      JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
+    }
     return validatedMainDocument;
   }
 

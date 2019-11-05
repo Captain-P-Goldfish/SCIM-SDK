@@ -1080,6 +1080,13 @@ public class SchemaValidatorTest implements FileReferences
                                                         SchemaValidator.HttpMethod.PUT);
     });
 
+    JsonHelper.addAttribute(validatedRequestDocument,
+                            AttributeNames.RFC7643.META,
+                            Meta.builder()
+                                .resourceType(ResourceTypeNames.USER)
+                                .created(LocalDateTime.now())
+                                .lastModified(LocalDateTime.now())
+                                .build());
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                          metaSchema,
@@ -1088,6 +1095,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          fullName,
                                                          null);
     });
+
+    Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.META));
 
     String[] attributeNameParts = attributeName.split("\\.");
     if (attributeNameParts.length == 1)
@@ -1501,6 +1510,34 @@ public class SchemaValidatorTest implements FileReferences
                                                          AttributeNames.RFC7643.NAME);
     });
     Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
+  }
+
+  /**
+   * Verifies that the meta attribute is not present if not requested on response
+   */
+  @Test
+  public void testAttributesParameterSetAndMetaNotPresent()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    TestHelper.addMetaToDocument(userSchema);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                         resourceType,
+                                                         userSchema,
+                                                         null,
+                                                         AttributeNames.RFC7643.NAME,
+                                                         null);
+    });
+    Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
+    JsonNode meta = validatedDocument.get(AttributeNames.RFC7643.META);
+    Assertions.assertNull(meta);
   }
 
   /**
