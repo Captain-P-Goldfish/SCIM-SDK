@@ -3,8 +3,15 @@ package de.gold.scim.common.resources;
 import java.util.List;
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
 import de.gold.scim.common.constants.AttributeNames;
+import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.constants.enums.Type;
+import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.resources.complex.Meta;
+import de.gold.scim.common.schemas.SchemaAttribute;
 
 
 /**
@@ -126,5 +133,111 @@ public abstract class ResourceNode extends AbstractSchemasHolder
   public void setMeta(Meta meta)
   {
     setAttribute(AttributeNames.RFC7643.META, meta);
+  }
+
+  /**
+   * this method is specifically for sorting and applies to the following rules for the "sortBy" attribute
+   * defined by RFC7644<br>
+   * <br>
+   *
+   * <pre>
+   *   The "sortBy" parameter specifies the attribute whose value
+   *   SHALL be used to order the returned responses.  If the "sortBy"
+   *   attribute corresponds to a singular attribute, resources are
+   *   sorted according to that attribute's value; if it's a multi-valued
+   *   attribute, resources are sorted by the value of the primary
+   *   attribute (see Section 2.4 of [RFC7643]), if any, or else the
+   *   first value in the list, if any.  If the attribute is complex, the
+   *   attribute name must be a path to a sub-attribute in standard
+   *   attribute notation (Section 3.10), e.g., "sortBy=name.givenName".
+   *   For all attribute types, if there is no data for the specified
+   *   "sortBy" value, they are sorted via the "sortOrder" parameter,
+   *   i.e., they are ordered last if ascending and first if descending.
+   * </pre>
+   *
+   * @param sortBy the sortBy attribute definition
+   * @return the json node that represents the specified attribute
+   */
+  public Optional<JsonNode> getSortingAttribute(SchemaAttribute sortBy)
+  {
+    if (sortBy == null)
+    {
+      return Optional.empty();
+    }
+    if (Type.COMPLEX.equals(sortBy.getType()))
+    {
+      throw new BadRequestException(" the attribute name must be a path to a sub-attribute in standard "
+                                    + "attribute notation, e.g., \"sortBy=name.givenName\".", null,
+                                    ScimType.RFC7644.INVALID_PATH);
+    }
+    Optional<JsonNode> parentNode = getSubNodeFromParent(this, false, sortBy.getParent());
+    if (parentNode.isPresent())
+    {
+      return getSubNodeFromParent(parentNode.get(), Type.COMPLEX.equals(sortBy.getParent().getType()), sortBy);
+    }
+    else
+    {
+      return getSubNodeFromParent(this, false, sortBy);
+    }
+  }
+
+  /**
+   * gets the attribute of the {@code sortBy} attribute definition from the given parent node
+   *
+   * @param parent the parent node from which the attribute should be extracted
+   * @param isComplex if the parent node is a complex type or a simple type
+   * @param sortBy the attribute definition of the attribute that should be returned
+   * @return the {@code sortBy} attribute or an empty if not present
+   */
+  private Optional<JsonNode> getSubNodeFromParent(JsonNode parent, boolean isComplex, SchemaAttribute sortBy)
+  {
+    if (sortBy == null)
+    {
+      return Optional.empty();
+    }
+    if (parent.isEmpty())
+    {
+      return Optional.empty();
+    }
+
+    if (parent.isArray() && isComplex)
+    {
+      JsonNode primaryNode = getPrimarySortingNodeFromMultiComplex((ArrayNode)parent);
+      return Optional.ofNullable(primaryNode.get(sortBy.getName()));
+    }
+    else if (parent.isArray())
+    {
+      return Optional.ofNullable(parent.get(0));
+    }
+    else
+    {
+      return Optional.ofNullable(parent.get(sortBy.getName()));
+    }
+  }
+
+  /**
+   * retrieves either the first node of the array list or the primary node of the attribute
+   *
+   * @param arrayNode the multi valued complex attribute that might hold a primary attribute
+   * @return the primary node if any or the first node of the array node
+   */
+  private JsonNode getPrimarySortingNodeFromMultiComplex(ArrayNode arrayNode)
+  {
+    JsonNode primaryNode = null;
+    for ( int i = 0 ; i < arrayNode.size() ; i++ )
+    {
+      JsonNode multiComplexNode = arrayNode.get(i);
+      JsonNode primary = multiComplexNode.get(AttributeNames.RFC7643.PRIMARY);
+      if (primary != null && primary.isBoolean() && primary.booleanValue())
+      {
+        primaryNode = multiComplexNode;
+        break;
+      }
+    }
+    if (primaryNode == null)
+    {
+      primaryNode = arrayNode.get(0);
+    }
+    return primaryNode;
   }
 }

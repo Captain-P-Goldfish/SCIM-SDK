@@ -16,10 +16,11 @@ public class ResourceTypeFeatures extends ScimObjectNode
 {
 
   @Builder
-  public ResourceTypeFeatures(boolean autoFiltering, boolean singletonEndpoint)
+  public ResourceTypeFeatures(boolean autoFiltering, boolean autoSorting, boolean singletonEndpoint)
   {
     super(null);
     setAutoFiltering(autoFiltering);
+    setAutoSorting(autoSorting);
     setSingletonEndpoint(singletonEndpoint);
   }
 
@@ -42,8 +43,8 @@ public class ResourceTypeFeatures extends ScimObjectNode
   }
 
   /**
-   * enabled application side filtering. The developer will no longer be able to do the filtering himself if
-   * this has been enabled
+   * enables application side filtering. The developer will no longer be able to do the filtering manually if
+   * this has been enabled because the developer will be cut off of the filtering information
    */
   public boolean isAutoFiltering()
   {
@@ -51,11 +52,29 @@ public class ResourceTypeFeatures extends ScimObjectNode
   }
 
   /**
-   * enabled application side filtering. The developer will no longer be able to do the filtering himself if
-   * this has been enabled
+   * enables application side filtering. The developer will no longer be able to do the filtering manually if
+   * this has been enabled because the developer will be cut off of the filtering information
    */
   public void setAutoFiltering(Boolean autoFiltering)
   {
     setAttribute(AttributeNames.Custom.AUTO_FILTERING, autoFiltering);
+  }
+
+  /**
+   * enables application side sorting. The developer will no longer be able to do the sorting manually if this
+   * has been enabled because the developer will be cut off of the sorting information
+   */
+  public boolean isAutoSorting()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.AUTO_SORTING).orElse(false);
+  }
+
+  /**
+   * enables application side sorting. The developer will no longer be able to do the sorting manually if this
+   * has been enabled because the developer will be cut off of the sorting information
+   */
+  public void setAutoSorting(Boolean autoSorting)
+  {
+    setAttribute(AttributeNames.Custom.AUTO_SORTING, autoSorting);
   }
 }

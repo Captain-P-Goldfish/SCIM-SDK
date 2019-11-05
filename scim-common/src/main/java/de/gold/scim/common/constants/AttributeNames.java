@@ -28,6 +28,11 @@ public final class AttributeNames
      * the attribute key for enabling automatic filtering on a specific resource
      */
     public static final String AUTO_FILTERING = "autoFiltering";
+
+    /**
+     * the attribute key for enabling automatic sorting on a specific resource
+     */
+    public static final String AUTO_SORTING = "autoSorting";
   }
 
   /**

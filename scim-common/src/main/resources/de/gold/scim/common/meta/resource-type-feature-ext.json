@@ -27,6 +27,17 @@
       "multiValued": false,
       "caseExact": false,
       "required": false
+    },
+    {
+      "name": "autoSorting",
+      "type": "boolean",
+      "description": "a boolean that will enable automatic sorting on the given resource. If enabled the developer will not receive any sorting information's anymore.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
     }
   ]
 }

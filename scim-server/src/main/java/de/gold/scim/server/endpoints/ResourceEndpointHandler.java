@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -45,6 +46,7 @@ import de.gold.scim.server.response.PartialListResponse;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import de.gold.scim.server.schemas.SchemaValidator;
+import de.gold.scim.server.sort.ResourceNodeComparator;
 import de.gold.scim.server.utils.RequestUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -463,13 +465,14 @@ class ResourceEndpointHandler
       final boolean autoFiltering = resourceType.getFeatures().isAutoFiltering();
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
       final SortOrder sortOrdering = getSortOrdering(sortOrder, sortByAttribute);
+      final boolean autoSorting = resourceType.getFeatures().isAutoSorting();
 
       ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
       PartialListResponse<T> resources = resourceHandler.listResources(effectiveStartIndex,
                                                                        effectiveCount,
                                                                        autoFiltering ? null : filterNode,
-                                                                       sortByAttribute,
-                                                                       sortOrdering);
+                                                                       autoSorting ? null : sortByAttribute,
+                                                                       autoSorting ? null : sortOrdering);
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"
@@ -478,6 +481,7 @@ class ResourceEndpointHandler
 
       List<T> resourceList = resources.getResources();
       List<T> filteredResources = filterResources(filterNode, resourceList, resourceType);
+      filteredResources = sortResources(filteredResources, sortByAttribute, sortOrdering, resourceType);
 
       long totalResults = resourceList.size() != filteredResources.size() ? filteredResources.size()
         : (resources.getTotalResults() == 0 ? filteredResources.size() : resources.getTotalResults());
@@ -529,6 +533,30 @@ class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+  }
+
+  /**
+   * this method will sort the resources based on the given attribute and the ordering
+   *
+   * @param filteredResources the resources that might have already been filtered
+   * @param sortByAttribute the sortby attribute that tells us which attribute should be used for sorting
+   * @param sortOrdering the sort order to use
+   * @return the ordered resources
+   */
+  private <T extends ResourceNode> List<T> sortResources(List<T> filteredResources,
+                                                         SchemaAttribute sortByAttribute,
+                                                         SortOrder sortOrdering,
+                                                         ResourceType resourceType)
+  {
+    if (!serviceProvider.getSortConfig().isSupported() || sortByAttribute == null
+        || !resourceType.getFeatures().isAutoSorting())
+    {
+      log.trace("auto-sorting skipped for auto-sorting is not supported or missing sortBy attribute");
+      return filteredResources;
+    }
+    return filteredResources.parallelStream()
+                            .sorted(new ResourceNodeComparator(sortByAttribute, sortOrdering))
+                            .collect(Collectors.toList());
   }
 
   /**

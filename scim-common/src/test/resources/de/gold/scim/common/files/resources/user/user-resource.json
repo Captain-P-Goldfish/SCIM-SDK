@@ -4,6 +4,16 @@
   ],
   "id": "2819c223-7f76-453a-919d-413861904646",
   "externalId": "chuck",
+  "userName": "chuck",
+  "title": "Mr.",
+  "userType": "super user",
+  "nickName": "chucky",
+  "displayName": "chuck norris",
+  "password": "bruce lee lost, he just doesn't know it",
+  "preferredLanguage": "DE",
+  "timezone": "Europe/Berlin",
+  "active": true,
+  "locale": "DE",
   "name": {
     "formatted": "Sir Carlos Ray Norris",
     "familyName": "Norris",
@@ -11,13 +21,27 @@
     "middleName": "Ray",
     "honorificPrefix": "Sir"
   },
-  "userName": "chuck",
-  "displayName": "chuck norris",
-  "password": "bruce lee lost, he just doesn't know it",
+  "addresses": [
+    {
+      "streetAddress": "somewhere 56",
+      "locality": "Bremen",
+      "country": "DE"
+    },
+    {
+      "streetAddress": "any street 1234",
+      "locality": "somewhere",
+      "country": "EN"
+    }
+  ],
   "phoneNumbers": [
     {
       "value": "555-555-555555",
       "type": "work"
+    },
+    {
+      "value": "666-666-666666",
+      "type": "home",
+      "primary": true
     }
   ],
   "emails": [
@@ -25,6 +49,14 @@
       "value": "chuck@norris.com",
       "type": "work",
       "primary": true
+    },
+    {
+      "value": "1234@1234.com",
+      "type": "home"
+    },
+    {
+      "value": "456@456.com",
+      "type": "private"
     }
   ],
   "groups": [

@@ -262,8 +262,8 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * will simply test setting, getting and changing the attribute in the {@link ResourceType.FilterExtension} of
-   * a {@link ResourceType}
+   * will simply test setting, getting and changing the attribute in the {@link ResourceTypeFeatures} of a
+   * {@link ResourceType}
    */
   @Test
   public void testGetAndFilterFilterExtension()
@@ -275,13 +275,26 @@ public class ResourceTypeTest implements FileReferences
     schemaFactory.registerResourceSchema(resourceTypeFilterExt);
     ResourceType resourceType = new ResourceType(schemaFactory, resourceTypeResourceType);
     Assertions.assertNotNull(resourceType.getFeatures());
-    resourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
+    resourceType.setFeatures(ResourceTypeFeatures.builder()
+                                                 .autoFiltering(true)
+                                                 .autoSorting(true)
+                                                 .singletonEndpoint(true)
+                                                 .build());
     Assertions.assertNotNull(resourceType.getFeatures());
     Assertions.assertTrue(resourceType.getFeatures().isAutoFiltering());
+    Assertions.assertTrue(resourceType.getFeatures().isAutoSorting());
+    Assertions.assertTrue(resourceType.getFeatures().isSingletonEndpoint());
     resourceType.getFeatures().setAutoFiltering(false);
+    resourceType.getFeatures().setAutoSorting(false);
+    resourceType.getFeatures().setSingletonEndpoint(false);
     Assertions.assertFalse(resourceType.getFeatures().isAutoFiltering());
+    Assertions.assertFalse(resourceType.getFeatures().isAutoSorting());
+    Assertions.assertFalse(resourceType.getFeatures().isSingletonEndpoint());
     resourceType.setFeatures(null);
     Assertions.assertNotNull(resourceType.getFeatures());
     Assertions.assertFalse(resourceType.getFeatures().isAutoFiltering());
+    Assertions.assertFalse(resourceType.getFeatures().isAutoSorting());
+    Assertions.assertFalse(resourceType.getFeatures().isSingletonEndpoint());
   }
+
 }

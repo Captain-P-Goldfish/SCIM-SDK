@@ -137,7 +137,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceTypeHandler = Mockito.spy(resourceTypeHandler);
     EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
     ResourceType resourceType = resourceEndpointHandler.registerEndpoint(endpointDefinition);
-    resourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
 
     serviceProviderHandler = Mockito.spy(new ServiceProviderHandler(serviceProvider));
     endpointDefinition = new ServiceProviderEndpointDefinition(serviceProvider);
@@ -680,6 +679,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     createUsers(1);
     resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(false);
+
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
                                                                       1L,
                                                                       0,
@@ -1284,6 +1285,59 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(1, listResponse.getListedResources().size());
     Assertions.assertEquals(1, listResponse.getItemsPerPage());
     log.debug(listResponse.toPrettyString());
+  }
+
+
+  /**
+   * this test will verify that the autoSorting attribute is set by default on the resource types endpoint and
+   * the schemas endpoint
+   */
+  @Test
+  public void testEndpointsWithDefaultAutoSortingTrue()
+  {
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
+    Assertions.assertTrue(resourceTypeFactory.getResourceType(EndpointPaths.SCHEMAS).getFeatures().isAutoSorting());
+    Assertions.assertTrue(resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES)
+                                             .getFeatures()
+                                             .isAutoSorting());
+  }
+
+
+  /**
+   * this test will verify that the autoSorting attribute is considered in the {@link ResourceEndpointHandler}.
+   * if autoSorting is set to true the developer should not longer get any data about the sorting information
+   * meaning the attributes must be null.
+   */
+  @Test
+  public void testAutoSortingIsUsedInHandler()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(50);
+    resourceEndpointHandler.getServiceProvider().getSortConfig().setSupported(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES).getFeatures().setAutoSorting(true);
+
+    String sortAttribute = "name";
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      SearchRequest.builder()
+                                                                                   .sortBy(sortAttribute)
+                                                                                   .build(),
+                                                                      getBaseUrlSupplier());
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(5, listResponse.getListedResources().size(), listResponse.toPrettyString());
+    MatcherAssert.assertThat(listResponse.getListedResources()
+                                         .stream()
+                                         .map(node -> node.get("name").textValue())
+                                         .collect(Collectors.toList()),
+                             Matchers.contains(resourceTypeFactory.getResourceType(EndpointPaths.GROUPS).getName(),
+                                               resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES)
+                                                                  .getName(),
+                                               resourceTypeFactory.getResourceType(EndpointPaths.SCHEMAS).getName(),
+                                               resourceTypeFactory.getResourceType(EndpointPaths.SERVICE_PROVIDER_CONFIG)
+                                                                  .getName(),
+                                               resourceTypeFactory.getResourceType(EndpointPaths.USERS).getName()));
   }
 
   /**
