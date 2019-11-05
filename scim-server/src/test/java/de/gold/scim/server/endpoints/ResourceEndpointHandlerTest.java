@@ -962,7 +962,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @ValueSource(ints = {1, 2, 3, 4, 5})
   public void testListResourceTypesWithStartIndexAndCount(int count)
   {
-    for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    final int totalResults = resourceTypeFactory.getAllResourceTypes().size();
+    for ( int startIndex = 0 ; startIndex < totalResults ; startIndex += count )
     {
       SearchRequest searchRequest = SearchRequest.builder().startIndex(startIndex + 1L).count(count).build();
       ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
@@ -972,7 +974,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
       ListResponse listResponse = (ListResponse)scimResponse;
 
       MatcherAssert.assertThat(listResponse.getListedResources().size(), Matchers.lessThanOrEqualTo(count));
-      Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
+      Assertions.assertEquals(totalResults, listResponse.getTotalResults());
+      Assertions.assertEquals(Math.min(totalResults - startIndex, count), listResponse.getItemsPerPage());
       log.debug("returned entries: {}", listResponse.getListedResources().size());
     }
   }
@@ -985,6 +988,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @ValueSource(ints = {1, 2, 3, 4, 5})
   public void testListResourceTypesWithStartIndexAndCountForSchemas(int count)
   {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
     for ( int startIndex = 0 ; startIndex < resourceTypeFactory.getAllResourceTypes().size() ; startIndex += count )
     {
       SearchRequest searchRequest = SearchRequest.builder().startIndex(startIndex + 1L).count(count).build();
