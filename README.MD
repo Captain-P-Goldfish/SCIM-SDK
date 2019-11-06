@@ -36,7 +36,6 @@ Missing features defined by SCIM
 - [ ] resolving and ordering of bulkIds
 
 Upcoming features not defined by SCIM
-- [ ] auto sorting  => see also [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features)
 - [ ] authorization for specific endpoints
 - [ ] authorization for specific attributes
 - [ ] attribute validation (e.g. array-max-length=2 or number-min-value=10)
