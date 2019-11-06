@@ -148,14 +148,15 @@ public class ResourceEndpointTest
     Assertions.assertEquals(ResourceTypeNames.USER, uriInfos.getResourceType().getName());
 
     Map<String, String> parameter = uriInfos.getQueryParameters();
-    Assertions.assertEquals(startIndex, parameter.get(AttributeNames.RFC7643.START_INDEX));
+    Assertions.assertEquals(startIndex, parameter.get(AttributeNames.RFC7643.START_INDEX.toLowerCase()));
     Assertions.assertEquals(count, parameter.get(AttributeNames.RFC7643.COUNT));
     Assertions.assertEquals(URLDecoder.decode(filter, StandardCharsets.UTF_8.name()),
                             parameter.get(AttributeNames.RFC7643.FILTER));
-    Assertions.assertEquals(sortBy, parameter.get(AttributeNames.RFC7643.SORT_BY));
-    Assertions.assertEquals(sortOrder, parameter.get(AttributeNames.RFC7643.SORT_ORDER));
+    Assertions.assertEquals(sortBy, parameter.get(AttributeNames.RFC7643.SORT_BY.toLowerCase()));
+    Assertions.assertEquals(sortOrder, parameter.get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()));
     Assertions.assertEquals(attributes, parameter.get(AttributeNames.RFC7643.ATTRIBUTES));
-    Assertions.assertEquals(excludedAttributes, parameter.get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES));
+    Assertions.assertEquals(excludedAttributes,
+                            parameter.get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()));
   }
 
   /**

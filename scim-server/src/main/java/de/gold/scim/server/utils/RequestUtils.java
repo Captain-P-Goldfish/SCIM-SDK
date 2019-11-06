@@ -321,7 +321,7 @@ public final class RequestUtils
       int index = pair.indexOf("=");
       try
       {
-        queryParameter.put(URLDecoder.decode(pair.substring(0, index), StandardCharsets.UTF_8.name()),
+        queryParameter.put(URLDecoder.decode(pair.substring(0, index).toLowerCase(), StandardCharsets.UTF_8.name()),
                            URLDecoder.decode(pair.substring(index + 1), StandardCharsets.UTF_8.name()));
       }
       catch (UnsupportedEncodingException e)

@@ -125,16 +125,17 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       case GET:
         if (uriInfos.isSearchRequest())
         {
-          String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX);
+          String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);
           return listResources(uriInfos.getResourceEndpoint(),
                                startIndex == null ? null : Long.parseLong(startIndex),
                                count == null ? null : Integer.parseInt(count),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.FILTER),
-                               uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_BY),
-                               uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_ORDER),
+                               uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_BY.toLowerCase()),
+                               uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
-                               uriInfos.getQueryParameters().get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES),
+                               uriInfos.getQueryParameters()
+                                       .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                                uriInfos::getBaseUri);
         }
         else
