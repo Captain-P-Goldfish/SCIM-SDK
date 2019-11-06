@@ -99,7 +99,7 @@ public class ServiceProviderHandlerTest
   public void testListServiceProviders()
   {
     Assertions.assertThrows(NotImplementedException.class,
-                            () -> serviceProviderHandler.listResources(0, 0, null, null, null));
+                            () -> serviceProviderHandler.listResources(0, 0, null, null, null, null, null));
   }
 
   /**

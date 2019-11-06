@@ -472,7 +472,11 @@ class ResourceEndpointHandler
                                                                        effectiveCount,
                                                                        autoFiltering ? null : filterNode,
                                                                        autoSorting ? null : sortByAttribute,
-                                                                       autoSorting ? null : sortOrdering);
+                                                                       autoSorting ? null : sortOrdering,
+                                                                       RequestUtils.getAttributes(resourceType,
+                                                                                                  attributes),
+                                                                       RequestUtils.getAttributes(resourceType,
+                                                                                                  excludedAttributes));
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"

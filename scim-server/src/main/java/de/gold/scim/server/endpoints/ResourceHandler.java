@@ -2,6 +2,7 @@ package de.gold.scim.server.endpoints;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.List;
 
 import de.gold.scim.common.constants.enums.SortOrder;
 import de.gold.scim.common.exceptions.InternalServerException;
@@ -70,6 +71,12 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param filter the parsed filter expression if the client has given a filter
    * @param sortBy the attribute value that should be used for sorting
    * @param sortOrder the sort order
+   * @param attributes the attributes that should be returned to the client. If the client send this parameter
+   *          the evaluation of these parameters might help to improve database performance by omitting
+   *          unnecessary table joins
+   * @param excludedAttributes the attributes that should NOT be returned to the client. If the client send this
+   *          parameter the evaluation of these parameters might help to improve database performance by
+   *          omitting unnecessary table joins
    * @return a list of several resources and a total results value. You may choose to leave the totalResults
    *         value blank but this might lead to erroneous results on the client side
    */
@@ -77,7 +84,9 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                                        int count,
                                                        FilterNode filter,
                                                        SchemaAttribute sortBy,
-                                                       SortOrder sortOrder);
+                                                       SortOrder sortOrder,
+                                                       List<SchemaAttribute> attributes,
+                                                       List<SchemaAttribute> excludedAttributes);
 
   /**
    * should update an existing resource with the given one. Simply use the id of the given resource and override

@@ -1,5 +1,7 @@
 package de.gold.scim.server.endpoints;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -61,7 +63,9 @@ public class ResourceHandlerTest
                                              int count,
                                              FilterNode filter,
                                              SchemaAttribute sortBy,
-                                             SortOrder sortOrder)
+                                             SortOrder sortOrder,
+                                             List<SchemaAttribute> attributes,
+                                             List<SchemaAttribute> excludedAttributes)
     {
       return null;
     }
@@ -98,14 +102,17 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public PartialListResponse listResources(long startIndex,
-                                             int count,
-                                             FilterNode filter,
-                                             SchemaAttribute sortBy,
-                                             SortOrder sortOrder)
+    public PartialListResponse<ResourceNode> listResources(long startIndex,
+                                                           int count,
+                                                           FilterNode filter,
+                                                           SchemaAttribute sortBy,
+                                                           SortOrder sortOrder,
+                                                           List list,
+                                                           List excludedAttributes)
     {
       return null;
     }
+
 
     @Override
     public ResourceNode updateResource(ResourceNode resource)

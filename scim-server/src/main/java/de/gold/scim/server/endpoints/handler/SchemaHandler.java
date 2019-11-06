@@ -77,7 +77,9 @@ public class SchemaHandler extends ResourceHandler<Schema>
                                                    int count,
                                                    FilterNode filter,
                                                    SchemaAttribute sortBy,
-                                                   SortOrder sortOrder)
+                                                   SortOrder sortOrder,
+                                                   List<SchemaAttribute> attributes,
+                                                   List<SchemaAttribute> excludedAttributes)
   {
     List<Schema> allSchemas = resourceTypeFactory.getAllResourceTypes()
                                                  .stream()

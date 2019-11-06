@@ -224,7 +224,13 @@ public class ResourceEndpointTest
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0))
-           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + createdUser.getId().get(),
                             createdUser.getMeta().get().getLocation().get());
   }
@@ -257,7 +263,13 @@ public class ResourceEndpointTest
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0))
-           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
                             returnedUser.getMeta().get().getLocation().get());
   }
@@ -293,7 +305,13 @@ public class ResourceEndpointTest
     Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0))
-           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
                             returnedUser.getMeta().get().getLocation().get());
   }
@@ -327,7 +345,13 @@ public class ResourceEndpointTest
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0))
-           .listResources(Mockito.anyLong(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
   }
 
   /**
@@ -376,7 +400,13 @@ public class ResourceEndpointTest
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1L), Mockito.eq(maxUsers), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(maxUsers),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
     log.warn(listResponse.getListedResources()
                          .stream()
                          .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
@@ -432,7 +462,13 @@ public class ResourceEndpointTest
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
     Mockito.verify(userHandler, Mockito.times(1))
-           .listResources(Mockito.eq(1L), Mockito.eq(maxUsers), Mockito.any(), Mockito.any(), Mockito.any());
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(maxUsers),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
     log.warn(listResponse.getListedResources()
                          .stream()
                          .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())

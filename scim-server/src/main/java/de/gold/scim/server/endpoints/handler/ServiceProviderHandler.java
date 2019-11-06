@@ -1,5 +1,6 @@
 package de.gold.scim.server.endpoints.handler;
 
+import java.util.List;
 import java.util.function.Function;
 
 import de.gold.scim.common.constants.enums.SortOrder;
@@ -65,7 +66,9 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
                                            int count,
                                            FilterNode filter,
                                            SchemaAttribute sortBy,
-                                           SortOrder sortOrder)
+                                           SortOrder sortOrder,
+                                           List<SchemaAttribute> attributes,
+                                           List<SchemaAttribute> excludedAttributes)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("list"));
   }

@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -56,9 +57,36 @@ public final class RequestUtils
    */
   public static List<String> getAttributes(String attributes)
   {
+    String[] attributeNameArray = getAttributeList(attributes).orElse(new String[0]);
+    return Arrays.asList(attributeNameArray);
+  }
+
+  /**
+   * this method will parse either the attributes parameter or the excludedAttributes parameter into a list of
+   * {@link SchemaAttribute}s. The expected form of the attributes list is: form (e.g., userName, name, emails)
+   *
+   * @param attributes the comma separated string of scim attribute names
+   * @return the list of attributes
+   */
+  public static List<SchemaAttribute> getAttributes(ResourceType resourceType, String attributes)
+  {
+    String[] attributeNameArray = getAttributeList(attributes).orElse(new String[0]);
+    return Arrays.stream(attributeNameArray)
+                 .map(s -> getSchemaAttributeByAttributeName(resourceType, s))
+                 .collect(Collectors.toList());
+  }
+
+  /**
+   * parses the given attributes into an array of strings
+   * 
+   * @param attributes the attributes request parameter that is expected to be a comma seperated string
+   * @return the array of the seperated attribute names or an empty
+   */
+  private static Optional<String[]> getAttributeList(String attributes)
+  {
     if (StringUtils.isBlank(attributes))
     {
-      return Collections.emptyList();
+      return Optional.empty();
     }
     if (!attributes.matches("(^[a-zA-Z0-9][:a-zA-Z0-9.,]+[a-zA-Z0-9]$)*"))
     {
@@ -66,8 +94,7 @@ public final class RequestUtils
                             + "check your syntax and please note that whitespaces are not allowed.";
       throw new BadRequestException(errorMessage, null, null);
     }
-    String[] attributeNameArray = attributes.split(",");
-    return Arrays.asList(attributeNameArray);
+    return Optional.of(attributes.split(","));
   }
 
   /**

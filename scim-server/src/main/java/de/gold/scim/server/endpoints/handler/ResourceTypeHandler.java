@@ -69,7 +69,9 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
                                            int count,
                                            FilterNode filter,
                                            SchemaAttribute sortBy,
-                                           SortOrder sortOrder)
+                                           SortOrder sortOrder,
+                                           List<SchemaAttribute> attributes,
+                                           List<SchemaAttribute> excludedAttributes)
   {
     List<ResourceNode> resourceTypeList = new ArrayList<>(resourceTypeFactory.getAllResourceTypes());
     return PartialListResponse.builder().resources(resourceTypeList).totalResults(resourceTypeList.size()).build();

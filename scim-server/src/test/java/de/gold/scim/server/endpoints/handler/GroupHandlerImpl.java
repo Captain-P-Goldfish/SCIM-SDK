@@ -2,6 +2,7 @@ package de.gold.scim.server.endpoints.handler;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -58,7 +59,9 @@ public class GroupHandlerImpl extends ResourceHandler<Group>
                                            int count,
                                            FilterNode filter,
                                            SchemaAttribute sortBy,
-                                           SortOrder sortOrder)
+                                           SortOrder sortOrder,
+                                           List<SchemaAttribute> attributes,
+                                           List<SchemaAttribute> excludedAttributes)
   {
     return null;
   }

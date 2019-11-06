@@ -104,7 +104,9 @@ public class UserHandler extends ResourceHandler<User>
                                                  int count,
                                                  FilterNode filter,
                                                  SchemaAttribute sortBy,
-                                                 SortOrder sortOrder)
+                                                 SortOrder sortOrder,
+                                                 List<SchemaAttribute> attributes,
+                                                 List<SchemaAttribute> excludedAttributes)
   {
     List<User> resourceNodes = new ArrayList<>(inMemoryMap.values());
     return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();

@@ -97,7 +97,13 @@ public class ResourceTypeHandlerTest
   @Test
   public void testListResourceTypes()
   {
-    PartialListResponse<ResourceType> listResponse = resourceTypeHandler.listResources(1, 10, null, null, null);
+    PartialListResponse<ResourceType> listResponse = resourceTypeHandler.listResources(1,
+                                                                                       10,
+                                                                                       null,
+                                                                                       null,
+                                                                                       null,
+                                                                                       null,
+                                                                                       null);
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getResources().size());
   }
 
@@ -149,6 +155,6 @@ public class ResourceTypeHandlerTest
   public void testNoResourceTypesDoExist()
   {
     ResourceTypeFactoryUtil.clearAllResourceTypes(resourceTypeFactory);
-    Assertions.assertDoesNotThrow(() -> resourceTypeHandler.listResources(1, 0, null, null, null));
+    Assertions.assertDoesNotThrow(() -> resourceTypeHandler.listResources(1, 0, null, null, null, null, null));
   }
 }

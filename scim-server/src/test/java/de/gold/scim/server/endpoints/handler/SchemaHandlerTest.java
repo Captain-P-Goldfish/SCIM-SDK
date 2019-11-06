@@ -88,7 +88,13 @@ public class SchemaHandlerTest
   @Test
   public void testListResourceTypes()
   {
-    PartialListResponse<Schema> listResponse = schemaHandler.listResources(1, Integer.MAX_VALUE, null, null, null);
+    PartialListResponse<Schema> listResponse = schemaHandler.listResources(1,
+                                                                           Integer.MAX_VALUE,
+                                                                           null,
+                                                                           null,
+                                                                           null,
+                                                                           null,
+                                                                           null);
     Assertions.assertEquals(allSchemas.size(), listResponse.getResources().size());
   }
 
