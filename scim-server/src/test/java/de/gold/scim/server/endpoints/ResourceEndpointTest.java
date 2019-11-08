@@ -1,14 +1,9 @@
 package de.gold.scim.server.endpoints;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -19,7 +14,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
@@ -63,7 +57,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class ResourceEndpointTest
+public class ResourceEndpointTest extends AbstractBulkTest
 {
 
   /**
@@ -95,111 +89,6 @@ public class ResourceEndpointTest
     serviceProvider = ServiceProvider.builder().build();
     userHandler = Mockito.spy(new UserHandlerImpl());
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-  }
-
-  /**
-   * tests that urls are correctly resolved by the {@link ResourceEndpoint}
-   */
-  @ParameterizedTest
-  @CsvSource({"/Users,,,POST", "/Users/.search,,,POST", "/Users,123456,,GET", "/Users,,startIndex=1&count=50,GET",
-              "/Users,123456,,PUT", "/Users,123456,,DELETE", "/Users,123456,,PATCH"})
-  public void testParseUri(String resourcePath, String resourceId, String query, HttpMethod httpMethod)
-  {
-    final String baseUrl = "https://localhost/management/Users/scim/v2";
-    final String resourceUrl = baseUrl + resourcePath + (resourceId == null ? "" : "/" + resourceId)
-                               + (query == null ? "" : "?" + query);
-    ResourceEndpoint.UriInfos uriInfos = resourceEndpoint.getRequestUrlInfos(resourceUrl, httpMethod);
-    Assertions.assertEquals(baseUrl, uriInfos.getBaseUri());
-    Assertions.assertEquals(ResourceTypeNames.USER, uriInfos.getResourceType().getName());
-    Assertions.assertEquals(resourcePath.replaceFirst(EndpointPaths.SEARCH, ""), uriInfos.getResourceEndpoint());
-    Assertions.assertEquals(resourceId, uriInfos.getResourceId());
-    Assertions.assertEquals(resourcePath.endsWith(EndpointPaths.SEARCH) && HttpMethod.POST.equals(httpMethod)
-                            || HttpMethod.GET.equals(httpMethod) && query != null,
-                            uriInfos.isSearchRequest());
-  }
-
-  /**
-   * will verify that the query for a filter request is correctly parsed
-   */
-  @Test
-  public void testParseQuery() throws UnsupportedEncodingException
-  {
-    final String startIndex = "1";
-    final String count = "50";
-    final String filter = "=username+eq+%5C%22chuck%5C%22";
-    final String sortBy = "userName";
-    final String sortOrder = "ascending";
-    final String attributes = "name";
-    final String excludedAttributes = "nickName";
-    final String query = String.format("startIndex=%s&count=%s&filter=%s&sortBy=%s&sortOrder=%s&attributes=%s"
-                                       + "&excludedAttributes=%s",
-                                       startIndex,
-                                       count,
-                                       filter,
-                                       sortBy,
-                                       sortOrder,
-                                       attributes,
-                                       excludedAttributes);
-    final String url = BASE_URI + EndpointPaths.USERS + "?" + query;
-    ResourceEndpoint.UriInfos uriInfos = resourceEndpoint.getRequestUrlInfos(url, HttpMethod.GET);
-    Assertions.assertEquals(BASE_URI, uriInfos.getBaseUri());
-    Assertions.assertEquals(EndpointPaths.USERS, uriInfos.getResourceEndpoint());
-    Assertions.assertNull(uriInfos.getResourceId());
-    Assertions.assertEquals(ResourceTypeNames.USER, uriInfos.getResourceType().getName());
-
-    Map<String, String> parameter = uriInfos.getQueryParameters();
-    Assertions.assertEquals(startIndex, parameter.get(AttributeNames.RFC7643.START_INDEX.toLowerCase()));
-    Assertions.assertEquals(count, parameter.get(AttributeNames.RFC7643.COUNT));
-    Assertions.assertEquals(URLDecoder.decode(filter, StandardCharsets.UTF_8.name()),
-                            parameter.get(AttributeNames.RFC7643.FILTER));
-    Assertions.assertEquals(sortBy, parameter.get(AttributeNames.RFC7643.SORT_BY.toLowerCase()));
-    Assertions.assertEquals(sortOrder, parameter.get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()));
-    Assertions.assertEquals(attributes, parameter.get(AttributeNames.RFC7643.ATTRIBUTES));
-    Assertions.assertEquals(excludedAttributes,
-                            parameter.get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()));
-  }
-
-  /**
-   * will verify that a {@link BadRequestException} is thrown if the resource endpoint is unknown
-   */
-  @Test
-  public void testUnknownResourceType()
-  {
-    final String url = BASE_URI + "/Unknown";
-    Assertions.assertThrows(BadRequestException.class, () -> resourceEndpoint.getRequestUrlInfos(url, HttpMethod.GET));
-  }
-
-  /**
-   * will verify that invalid parameter combinations in the request will lead to {@link BadRequestException}s
-   */
-  @ParameterizedTest
-  @CsvSource({"POST,123456", "PUT,", "PATCH,", "DELETE,"})
-  public void testInvalidRequestParameter(HttpMethod httpMethod, String id)
-  {
-    final String url = BASE_URI + EndpointPaths.USERS + (id == null ? "" : "/" + id);
-    Assertions.assertThrows(BadRequestException.class, () -> resourceEndpoint.getRequestUrlInfos(url, httpMethod));
-  }
-
-  /**
-   * verifies that no exceptions are thrown if the endpoint path points to bulk endpoint
-   */
-  @Test
-  public void testParseBulkRequestAsUriInfo()
-  {
-    final String url = BASE_URI + EndpointPaths.BULK;
-    Assertions.assertDoesNotThrow(() -> resourceEndpoint.getRequestUrlInfos(url, HttpMethod.POST));
-  }
-
-  /**
-   * will verify that calling the bulk endpoint with another {@link HttpMethod} than POST causes
-   * {@link BadRequestException}s
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"GET", "PUT", "DELETE", "PATCH"})
-  public void testParseBulkRequestWithInvalidHttpMethods(HttpMethod httpMethod)
-  {
-    final String url = BASE_URI + EndpointPaths.BULK;
-    Assertions.assertThrows(BadRequestException.class, () -> resourceEndpoint.getRequestUrlInfos(url, httpMethod));
   }
 
   /**
@@ -545,90 +434,6 @@ public class ResourceEndpointTest
   }
 
   /**
-   * creates delete requests for the create operations
-   *
-   * @param createUsers the create operations to access the ids
-   */
-  private List<BulkRequestOperation> getDeleteUserBulkOperations(Collection<User> createUsers)
-  {
-    return getDeleteUserBulkOperations(createUsers, HttpMethod.DELETE);
-  }
-
-  /**
-   * creates delete requests for the create operations
-   *
-   * @param createUsers the create operations to access the ids
-   */
-  private List<BulkRequestOperation> getDeleteUserBulkOperations(Collection<User> createUsers, HttpMethod httpMethod)
-  {
-    List<BulkRequestOperation> operations = new ArrayList<>();
-    for ( User createdUser : createUsers )
-    {
-      final String id = createdUser.getId().get();
-      operations.add(BulkRequestOperation.builder()
-                                         .bulkId(UUID.randomUUID().toString())
-                                         .method(httpMethod)
-                                         .path(EndpointPaths.USERS + "/" + id)
-                                         .build());
-    }
-    return operations;
-  }
-
-  /**
-   * creates update requests for the create operations
-   *
-   * @param createdUsers the create operations to access the ids
-   */
-  private List<BulkRequestOperation> getUpdateUserBulkOperations(Collection<User> createdUsers)
-  {
-    return getUpdateUserBulkOperations(createdUsers, HttpMethod.PUT);
-  }
-
-  /**
-   * creates update requests for the create operations
-   *
-   * @param createdUsers the create operations to access the ids
-   */
-  private List<BulkRequestOperation> getUpdateUserBulkOperations(Collection<User> createdUsers, HttpMethod httpMethod)
-  {
-    List<BulkRequestOperation> operations = new ArrayList<>();
-    for ( User createdUser : createdUsers )
-    {
-      final String id = createdUser.getId().get();
-      final String newUserName = UUID.randomUUID().toString();
-      final User user = User.builder().userName(newUserName).nickName(newUserName).build();
-      operations.add(BulkRequestOperation.builder()
-                                         .method(httpMethod)
-                                         .path(EndpointPaths.USERS + "/" + id)
-                                         .data(user.toString())
-                                         .build());
-    }
-    return operations;
-  }
-
-  /**
-   * creates several create operations for a bulk operations
-   *
-   * @param numberOfOperations number of operations to create
-   */
-  protected List<BulkRequestOperation> getCreateUserBulkOperations(int numberOfOperations)
-  {
-    List<BulkRequestOperation> operations = new ArrayList<>();
-    for ( int i = 0 ; i < numberOfOperations ; i++ )
-    {
-      final String username = UUID.randomUUID().toString();
-      final User user = User.builder().userName(username).build();
-      operations.add(BulkRequestOperation.builder()
-                                         .bulkId(UUID.randomUUID().toString())
-                                         .method(HttpMethod.POST)
-                                         .path(EndpointPaths.USERS)
-                                         .data(user.toString())
-                                         .build());
-    }
-    return operations;
-  }
-
-  /**
    * shows that the request is validated and an exception is thrown if the bulk request is not conform to its
    * definition
    */
@@ -665,12 +470,25 @@ public class ResourceEndpointTest
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
-                             Matchers.typeCompatibleWith(BadRequestException.class));
-    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    int responseSize = bulkResponse.getBulkResponseOperations().size();
+    BulkResponseOperation bulkResponseOperation = bulkResponse.getBulkResponseOperations().get(responseSize - 1);
+    MatcherAssert.assertThat(bulkResponseOperation.getResponse().get().getScimException().getClass(),
+                             Matchers.typeCompatibleWith(ResponseException.class));
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponseOperation.getStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponseOperation.getResponse().get().getStatus());
+    MatcherAssert.assertThat(bulkResponseOperation.getResponse().get().getDetail().get(),
                              Matchers.equalTo("missing 'bulkId' on BULK-POST request"));
+
+    for ( int i = 0 ; i < bulkResponse.getBulkResponseOperations().size() - 1 ; i++ )
+    {
+      bulkResponseOperation = bulkResponse.getBulkResponseOperations().get(i);
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+      Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus());
+      MatcherAssert.assertThat(bulkResponseOperation.getLocation().get(),
+                               Matchers.startsWith(BASE_URI + EndpointPaths.USERS));
+    }
   }
 
   /**
