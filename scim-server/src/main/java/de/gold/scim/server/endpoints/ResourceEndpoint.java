@@ -23,6 +23,10 @@ import lombok.extern.slf4j.Slf4j;
 public final class ResourceEndpoint extends ResourceEndpointHandler
 {
 
+  /**
+   * represents the bulk endpoint implementation
+   */
+  private final BulkEndpoint bulkEndpoint;
 
   /**
    * this constructor was introduced for unit tests to add a specific resourceTypeFactory instance which will
@@ -31,6 +35,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   public ResourceEndpoint(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
   {
     super(serviceProvider, endpointDefinitions);
+    bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory());
   }
 
   /**
@@ -56,7 +61,6 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod);
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
-        BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory());
         return bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody);
       }
       return resolveRequest(httpMethod, requestBody, uriInfos);
