@@ -400,5 +400,27 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertFalse(bulkResponse.getBulkResponseOperations().get(0).getLocation().isPresent());
   }
 
+  /**
+   * verifies that the location is correctly set if a bulk post request was successful
+   */
+  @Test
+  public void testCorrectLocationOnSucceededBulkPostRequest()
+  {
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
+    Assertions.assertTrue(bulkResponse.getBulkResponseOperations().get(0).getLocation().isPresent());
+    Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
+    final String id = userHandler.getInMemoryMap().keySet().iterator().next();
+    Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + id,
+                            bulkResponse.getBulkResponseOperations().get(0).getLocation().get());
+  }
+
 
 }

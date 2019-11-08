@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.SchemaUris;
 import de.gold.scim.common.constants.ScimType;
@@ -80,10 +81,8 @@ class BulkEndpoint
       UriInfos operationUriInfo = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                               baseUri + operation.getPath(),
                                                               httpMethod);
-      final String id = Optional.ofNullable(operationUriInfo.getResourceId())
-                                .map(resourceId -> "/" + resourceId)
-                                .orElse("");
-      final String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
+      String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
+      String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
       BulkResponseOperation.BulkResponseOperationBuilder responseBuilder = BulkResponseOperation.builder();
       responseBuilder.bulkId(operation.getBulkId().orElse(null)).method(operation.getMethod()).location(location);
       try
@@ -112,6 +111,14 @@ class BulkEndpoint
           responseBuilder.location(null);
         }
         errorCounter++;
+      }
+      else
+      {
+        id = Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.ID))
+                     .map(jsonNode -> "/" + jsonNode.textValue())
+                     .orElse("");
+        location = baseUri + operationUriInfo.getResourceEndpoint() + id;
+        responseBuilder.location(location);
       }
       responseOperations.add(responseBuilder.build());
     }
