@@ -285,17 +285,6 @@ public final class ResourceTypeFactory
   }
 
   /**
-   * checks if a resource type with the given name does exist
-   *
-   * @param resourceName the name of the resource
-   * @return true if a resource type with the given name was already registered, false else
-   */
-  protected boolean isResourceRegistered(String resourceName)
-  {
-    return resourceTypes.values().stream().map(ResourceType::getName).anyMatch(resourceName::equals);
-  }
-
-  /**
    * gets a resource type by its name value
    *
    * @param name the name value of the given resource type

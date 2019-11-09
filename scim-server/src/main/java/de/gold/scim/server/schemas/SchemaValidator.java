@@ -1188,8 +1188,6 @@ public class SchemaValidator
       switch (referenceType)
       {
         case RESOURCE:
-          isValidReferenceType = resourceTypeFactory.isResourceRegistered(valueNode.textValue());
-          break;
         case URI:
           isValidReferenceType = parseUri(valueNode.textValue());
           break;
