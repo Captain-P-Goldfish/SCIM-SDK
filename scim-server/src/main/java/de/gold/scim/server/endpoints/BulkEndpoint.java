@@ -173,20 +173,6 @@ class BulkEndpoint
   }
 
   /**
-   * this method must resolve the order of the operations by resolving the bulkIds and the references within the
-   * methods
-   *
-   * @param operations the list of operations
-   * @return the sorted operations in the order they should be executed
-   */
-  private List<BulkRequestOperation> sortOperations(List<BulkRequestOperation> operations)
-  {
-    // TODO
-    log.warn("TODO sorting bulk operations not yet implemented");
-    return operations;
-  }
-
-  /**
    * verifies that the bulk operation is valid<br>
    * <br>
    * e.g. not all http methods are allowed on the bulk endpoint
@@ -215,4 +201,17 @@ class BulkEndpoint
     }
   }
 
+
+  /**
+   * this method must resolve the order of the operations by resolving the bulkIds and the references within the
+   * methods
+   *
+   * @param operations the list of operations
+   * @return the sorted operations in the order they should be executed
+   */
+  private List<BulkRequestOperation> sortOperations(List<BulkRequestOperation> operations)
+  {
+    // TODO sorting bulk operations not yet implemented
+    return operations;
+  }
 }
