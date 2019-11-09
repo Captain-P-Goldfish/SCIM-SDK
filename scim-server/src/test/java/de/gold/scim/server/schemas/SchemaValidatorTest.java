@@ -841,24 +841,6 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * this test will verify that an exception is thrown if a {@link ReferenceTypes#RESOURCE} referenceType is not
-   * registered in the {@link ResourceTypeFactory}
-   */
-  @Test
-  public void testResourceReferenceIsUsedAndResourceWasNOTRegistered()
-  {
-    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
-    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode enterpriseUser = JsonHelper.getObjectAttribute(userSchema, SchemaUris.ENTERPRISE_USER_URI).get();
-    Assertions.assertThrows(DocumentValidationException.class, () -> {
-      SchemaValidator.validateExtensionForRequest(new ResourceTypeFactory(),
-                                                  metaSchema,
-                                                  enterpriseUser,
-                                                  SchemaValidator.HttpMethod.POST);
-    });
-  }
-
-  /**
    * will check that an exception is thrown if a required extension is missing
    */
   @Test
