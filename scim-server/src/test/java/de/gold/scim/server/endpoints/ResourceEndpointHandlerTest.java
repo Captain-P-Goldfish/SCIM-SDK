@@ -1475,7 +1475,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
                             scimResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     Assertions.assertNotNull(scimResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     User updatedUser = JsonHelper.readJsonDocument(scimResponse.toString(), User.class);
-    Assertions.assertEquals(updateUser, updatedUser);
     Assertions.assertNotEquals(readUser, updatedUser);
     Assertions.assertEquals(usertype, updatedUser.getUserType().get());
     Assertions.assertEquals(nickname, updatedUser.getNickName().get());
@@ -1486,7 +1485,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(getLocation(endpoint, updatedUser.getId().get()), meta.getLocation().get());
     Assertions.assertTrue(meta.getCreated().isPresent());
     Assertions.assertTrue(meta.getLastModified().isPresent());
-    // TODO check that the last modified value is correct
+
+    // the following prevents inequalities in a one second range. the last modified value must not necessarily be
+    // equals but the rest of the resource must
+    meta.setLastModified((String)null);
+    updateUser.getMeta().get().setLastModified((String)null);
+    Assertions.assertEquals(updateUser, updatedUser);
     return updatedUser;
   }
 
