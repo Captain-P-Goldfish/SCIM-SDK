@@ -2,6 +2,8 @@ package de.gold.scim.server.endpoints;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,20 +19,28 @@ import org.mockito.Mockito;
 import de.gold.scim.common.constants.EndpointPaths;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.ResourceTypeNames;
+import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.constants.enums.HttpMethod;
 import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.exceptions.NotImplementedException;
 import de.gold.scim.common.exceptions.ResponseException;
 import de.gold.scim.common.request.BulkRequest;
 import de.gold.scim.common.request.BulkRequestOperation;
+import de.gold.scim.common.resources.EnterpriseUser;
+import de.gold.scim.common.resources.Group;
 import de.gold.scim.common.resources.ServiceProvider;
 import de.gold.scim.common.resources.User;
+import de.gold.scim.common.resources.complex.Manager;
 import de.gold.scim.common.resources.complex.Meta;
+import de.gold.scim.common.resources.multicomplex.Member;
 import de.gold.scim.common.response.BulkResponse;
 import de.gold.scim.common.response.BulkResponseOperation;
 import de.gold.scim.common.response.ErrorResponse;
 import de.gold.scim.common.response.ScimResponse;
+import de.gold.scim.common.utils.JsonHelper;
+import de.gold.scim.server.endpoints.base.GroupEndpointDefinition;
 import de.gold.scim.server.endpoints.base.UserEndpointDefinition;
+import de.gold.scim.server.endpoints.handler.GroupHandlerImpl;
 import de.gold.scim.server.endpoints.handler.UserHandlerImpl;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +75,11 @@ public class BulkEndpointTest extends AbstractBulkTest
   private UserHandlerImpl userHandler;
 
   /**
+   * a mockito spy to verify the class that have been made on this instance
+   */
+  private GroupHandlerImpl groupHandler;
+
+  /**
    * initializes this test
    */
   @BeforeEach
@@ -72,7 +87,9 @@ public class BulkEndpointTest extends AbstractBulkTest
   {
     serviceProvider = ServiceProvider.builder().build();
     userHandler = Mockito.spy(new UserHandlerImpl());
-    ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
+    groupHandler = Mockito.spy(new GroupHandlerImpl());
+    ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
+                                                             new GroupEndpointDefinition(groupHandler));
     bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory());
   }
 
@@ -422,5 +439,231 @@ public class BulkEndpointTest extends AbstractBulkTest
                             bulkResponse.getBulkResponseOperations().get(0).getLocation().get());
   }
 
+  /**
+   * this test will send a bulk request in which a create group operation is referencing a user create operation
+   * with a bulkId and the group operation is executed first. In the result the user must be created and the
+   * bulkId reference must be exchanged for the id of the user
+   */
+  @Test
+  public void testResolveBulkIdWithGroupMembers()
+  {
+    final int maxOperations = 2;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
 
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(1);
+
+    String bulkId = createOperations.get(0).getBulkId().get();
+    Member member = Member.builder().value("bulkId:" + bulkId).type(ResourceTypeNames.USER).build();
+    Group group = Group.builder().displayName("admin").members(Collections.singletonList(member)).build();
+    BulkRequestOperation requestOperation = BulkRequestOperation.builder()
+                                                                .method(HttpMethod.POST)
+                                                                .path(EndpointPaths.GROUPS)
+                                                                .data(group.toString())
+                                                                .bulkId(UUID.randomUUID().toString())
+                                                                .build();
+    createOperations.add(0, requestOperation);
+
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    log.debug(bulkRequest.toPrettyString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    log.warn(bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(1, groupHandler.getInMemoryMap().size());
+    Group createGroup = groupHandler.getInMemoryMap().values().iterator().next();
+    Assertions.assertEquals(1, createGroup.getMembers().size());
+    User user = userHandler.getInMemoryMap().values().iterator().next();
+    Assertions.assertEquals(user.getId().get(), createGroup.getMembers().get(0).getValue().get());
+  }
+
+  /**
+   * verifies that a request will result in a {@link BadRequestException} if the bulkId is referencing its own
+   * resource
+   */
+  @Test
+  public void testBulkIdReferencesItself()
+  {
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    List<BulkRequestOperation> createOperations = new ArrayList<>();
+    String bulkId = UUID.randomUUID().toString();
+    Member member = Member.builder().value("bulkId:" + bulkId).type(ResourceTypeNames.GROUPS).build();
+    Group group = Group.builder().displayName("admin").members(Collections.singletonList(member)).build();
+    BulkRequestOperation requestOperation = BulkRequestOperation.builder()
+                                                                .method(HttpMethod.POST)
+                                                                .path(EndpointPaths.GROUPS)
+                                                                .data(group.toString())
+                                                                .bulkId(bulkId)
+                                                                .build();
+    createOperations.add(requestOperation);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponse.getBulkResponseOperations().get(0).getStatus());
+    Assertions.assertEquals(bulkId, bulkResponse.getBulkResponseOperations().get(0).getBulkId().get());
+    ErrorResponse errorResponse = bulkResponse.getBulkResponseOperations().get(0).getResponse().get();
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals("the bulkId '" + bulkId + "' is a self-reference. Self-references will not be resolved",
+                            errorResponse.getDetail().get());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, errorResponse.getScimType().get());
+  }
+
+  /**
+   * verifies that the implementation does also work if two operations reference the same operation with a
+   * bulkId
+   */
+  @Test
+  public void testTwoOperationsDoReferenceTheSameOperation()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(1);
+
+    String bulkId = createOperations.get(0).getBulkId().get();
+    Member member = Member.builder().value("bulkId:" + bulkId).type(ResourceTypeNames.USER).build();
+    Group group = Group.builder().displayName("admin").members(Collections.singletonList(member)).build();
+    BulkRequestOperation requestOperation = BulkRequestOperation.builder()
+                                                                .method(HttpMethod.POST)
+                                                                .path(EndpointPaths.GROUPS)
+                                                                .data(group.toString())
+                                                                .bulkId(UUID.randomUUID().toString())
+                                                                .build();
+    Group group2 = JsonHelper.copyResourceToObject(group.deepCopy(), Group.class);
+    group2.setDisplayName("root");
+    BulkRequestOperation requestOperation2 = BulkRequestOperation.builder()
+                                                                 .method(HttpMethod.POST)
+                                                                 .path(EndpointPaths.GROUPS)
+                                                                 .data(group2.toString())
+                                                                 .bulkId(UUID.randomUUID().toString())
+                                                                 .build();
+
+    createOperations.add(0, requestOperation);
+    createOperations.add(1, requestOperation2);
+
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    log.debug(bulkRequest.toPrettyString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    log.warn(bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(3, responseOperations.size());
+    Assertions.assertEquals(2, groupHandler.getInMemoryMap().size());
+    Iterator<Group> groupIterator = groupHandler.getInMemoryMap().values().iterator();
+    Group createGroup = groupIterator.next();
+    Group createGroup2 = groupIterator.next();
+    Assertions.assertEquals(1, createGroup.getMembers().size());
+    User user = userHandler.getInMemoryMap().values().iterator().next();
+    Assertions.assertEquals(user.getId().get(), createGroup.getMembers().get(0).getValue().get());
+
+    Assertions.assertEquals(1, createGroup2.getMembers().size());
+    Assertions.assertEquals(user.getId().get(), createGroup2.getMembers().get(0).getValue().get());
+  }
+
+  /**
+   * verifies that circular references will cause an error and a {@link HttpStatus#CONFLICT} status code is
+   * returned
+   */
+  @Test
+  public void testCircularReference()
+  {
+    final int maxOperations = 2;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    List<BulkRequestOperation> createOperations = new ArrayList<>();
+
+    String bulkId = UUID.randomUUID().toString();
+    String bulkId2 = UUID.randomUUID().toString();
+
+    Member member = Member.builder().value("bulkId:" + bulkId2).type(ResourceTypeNames.USER).build();
+    Group group = Group.builder().displayName("admin").members(Collections.singletonList(member)).build();
+    BulkRequestOperation requestOperation = BulkRequestOperation.builder()
+                                                                .method(HttpMethod.POST)
+                                                                .path(EndpointPaths.GROUPS)
+                                                                .data(group.toString())
+                                                                .bulkId(bulkId)
+                                                                .build();
+    Group group2 = JsonHelper.copyResourceToObject(group.deepCopy(), Group.class);
+    group2.setDisplayName("root");
+    group2.getMembers().get(0).setValue("bulkId:" + bulkId);
+    BulkRequestOperation requestOperation2 = BulkRequestOperation.builder()
+                                                                 .method(HttpMethod.POST)
+                                                                 .path(EndpointPaths.GROUPS)
+                                                                 .data(group2.toString())
+                                                                 .bulkId(bulkId2)
+                                                                 .build();
+    createOperations.add(requestOperation);
+    createOperations.add(requestOperation2);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
+    log.warn(bulkRequest.toPrettyString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());
+    ErrorResponse firstResponse = bulkResponse.getBulkResponseOperations().get(0).getResponse().get();
+    Assertions.assertEquals("the bulkIds '" + bulkId2 + "' and '" + bulkId + "' do form a circular "
+                            + "reference that cannot be resolved.",
+                            firstResponse.getDetail().get());
+    Assertions.assertEquals(HttpStatus.CONFLICT, firstResponse.getHttpStatus());
+
+    ErrorResponse secondResponse = bulkResponse.getBulkResponseOperations().get(1).getResponse().get();
+    Assertions.assertEquals("the bulkIds '" + bulkId + "' and '" + bulkId2 + "' do form a circular "
+                            + "reference that cannot be resolved.",
+                            secondResponse.getDetail().get());
+    Assertions.assertEquals(HttpStatus.CONFLICT, secondResponse.getHttpStatus());
+  }
+
+  /**
+   * this test will verify that bulkIds are also resolved on extensions as the {@link EnterpriseUser}
+   */
+  @Test
+  public void testBulkIdReferenceOnEnterpriseUserManager()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .userName(username)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .manager(Manager.builder().value("bulkId:" + bulkId).build())
+                                                  .build())
+                    .build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(user.toString())
+                                       .build());
+    user = User.builder().userName(UUID.randomUUID().toString()).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(user.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(1).getStatus());
+    Assertions.assertEquals(2, userHandler.getInMemoryMap().size());
+    List<User> createdUsers = new ArrayList<>(userHandler.getInMemoryMap().values());
+    createdUsers.forEach(createdUser -> log.warn(createdUser.toPrettyString()));
+    Assertions.assertTrue(createdUsers.get(1).getEnterpriseUser().isPresent());
+    Assertions.assertEquals(createdUsers.get(0).getId().get(),
+                            createdUsers.get(1).getEnterpriseUser().get().getManager().get().getValue().get());
+  }
 }

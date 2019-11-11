@@ -43,9 +43,18 @@ public class Schema extends ResourceNode
    */
   private Map<String, SchemaAttribute> attributeRegister = new HashMap<>();
 
+  /**
+   * this list will hold references to all schema attributes that might be used to set bulkId references in a
+   * bulk request. The condition to get added into this list for an attribute is: be of type
+   * {@link de.gold.scim.common.constants.enums.Type#COMPLEX}, mutability of other than
+   * {@link de.gold.scim.common.constants.enums.Mutability#READ_ONLY} and define the following three attributes:
+   * {@link AttributeNames.RFC7643#VALUE}, {@link AttributeNames.RFC7643#TYPE} and
+   * {@link AttributeNames.RFC7643#REF} as a resource-reference
+   */
+  private List<SchemaAttribute> bulkIdCandidates = new ArrayList<>();
+
   public Schema(JsonNode jsonNode, String namePrefix)
   {
-
     setSchemas(JsonHelper.getSimpleAttributeArray(jsonNode, AttributeNames.RFC7643.SCHEMAS)
                          .orElse(Collections.emptyList()));
     String errorMessage = "attribute '" + AttributeNames.RFC7643.ID + "' is missing cannot resolve schema";

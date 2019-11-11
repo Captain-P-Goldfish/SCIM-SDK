@@ -578,6 +578,9 @@ public final class SchemaAttribute extends ScimObjectNode
     ArrayNode subAttributesArray = JsonHelper.getArrayAttribute(jsonNode, subAttributeName)
                                              .orElseThrow(() -> getException(errorMessage, null));
     Set<String> attributeNameSet = new HashSet<>();
+    // boolean hasTypeAttribute = false;
+    boolean hasValueAttribute = false;
+    boolean isResourceReference = false;
     for ( JsonNode subAttribute : subAttributesArray )
     {
       SchemaAttribute schemaAttribute = new SchemaAttribute(schema, resourceUri, this, subAttribute, namePrefix);
@@ -587,8 +590,28 @@ public final class SchemaAttribute extends ScimObjectNode
                                       + "' was found twice within the given schema declaration";
         throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
       }
+      if (!Mutability.READ_ONLY.equals(this.getMutability()))
+      {
+        // if (AttributeNames.RFC7643.TYPE.equals(schemaAttribute.getName()))
+        // {
+        // hasTypeAttribute = true;
+        // }
+        if (AttributeNames.RFC7643.VALUE.equals(schemaAttribute.getName()))
+        {
+          hasValueAttribute = true;
+        }
+        if (AttributeNames.RFC7643.REF.equals(schemaAttribute.getName())
+            && schemaAttribute.getReferenceTypes().contains(ReferenceTypes.RESOURCE))
+        {
+          isResourceReference = true;
+        }
+      }
       attributeNameSet.add(schemaAttribute.getScimNodeName());
       schemaAttributeList.add(schemaAttribute);
+    }
+    if (hasValueAttribute && isResourceReference)
+    {
+      this.schema.getBulkIdCandidates().add(this);
     }
     return schemaAttributeList;
   }

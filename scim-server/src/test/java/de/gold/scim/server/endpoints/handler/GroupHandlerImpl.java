@@ -18,6 +18,7 @@ import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.endpoints.ResourceHandler;
 import de.gold.scim.server.filter.FilterNode;
 import de.gold.scim.server.response.PartialListResponse;
+import lombok.Getter;
 
 
 /**
@@ -29,6 +30,7 @@ import de.gold.scim.server.response.PartialListResponse;
 public class GroupHandlerImpl extends ResourceHandler<Group>
 {
 
+  @Getter
   private Map<String, Group> inMemoryMap = new HashMap<>();
 
   @Override

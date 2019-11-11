@@ -821,6 +821,19 @@ public class User extends ResourceNode
    */
   public void setEnterpriseUser(EnterpriseUser enterpriseUser)
   {
+    List<String> schemas = getSchemas();
+    if (enterpriseUser == null || enterpriseUser.isEmpty())
+    {
+      schemas.remove(SchemaUris.ENTERPRISE_USER_URI);
+    }
+    else
+    {
+      if (!schemas.contains(SchemaUris.ENTERPRISE_USER_URI))
+      {
+        schemas.add(SchemaUris.ENTERPRISE_USER_URI);
+      }
+    }
+    setSchemas(schemas);
     setAttribute(SchemaUris.ENTERPRISE_USER_URI, enterpriseUser);
   }
 
