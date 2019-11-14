@@ -1,5 +1,11 @@
 # SCIM 2.0 Open Source Implementation
 
+---
+**Note:**
+If the project does not compile within your IDE install the "lombok" plugin for your IDE and restart it.
+
+---
+
 This is an open source implementation of the SCIM (System for Cross-domain Identity Management) protocol that is
  defined by RFC7643 and RFC7644. 
 
