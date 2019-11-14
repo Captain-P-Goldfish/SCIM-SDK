@@ -129,7 +129,6 @@ class BulkEndpoint
     // used to break the infinite loop
     int maxIterations = serviceProvider.getBulkConfig().getMaxOperations() * 2;
     int iterations = 0;
-    boolean circularReferenceDetected = false; // TODO detect such references
     while (!operations.isEmpty())
     {
       if (iterations >= maxIterations)
@@ -179,13 +178,6 @@ class BulkEndpoint
     {
       // The service returns an appropriate response status code if too many errors occurred
       httpStatus = HttpStatus.PRECONDITION_FAILED;
-    }
-    else if (circularReferenceDetected)
-    {
-      // The service provider MUST try to resolve circular cross-references
-      // between resources in a single bulk job but MAY stop after a failed
-      // attempt and instead return HTTP status code 409 (Conflict)
-      httpStatus = HttpStatus.CONFLICT;
     }
     else if (iterations >= maxIterations)
     {
