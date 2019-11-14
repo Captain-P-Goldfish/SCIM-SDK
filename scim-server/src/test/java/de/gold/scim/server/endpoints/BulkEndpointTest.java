@@ -662,8 +662,19 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(2, userHandler.getInMemoryMap().size());
     List<User> createdUsers = new ArrayList<>(userHandler.getInMemoryMap().values());
     createdUsers.forEach(createdUser -> log.warn(createdUser.toPrettyString()));
-    Assertions.assertTrue(createdUsers.get(1).getEnterpriseUser().isPresent());
-    Assertions.assertEquals(createdUsers.get(0).getId().get(),
-                            createdUsers.get(1).getEnterpriseUser().get().getManager().get().getValue().get());
+    Assertions.assertEquals(1,
+                            (int)createdUsers.stream()
+                                             .filter(jsonNodes -> jsonNodes.getEnterpriseUser().isPresent())
+                                             .count());
+    User normalUser = createdUsers.stream()
+                                      .filter(jsonNodes -> !jsonNodes.getEnterpriseUser().isPresent())
+                                      .findAny()
+                                      .get();
+    User enterpriseUser = createdUsers.stream()
+                                      .filter(jsonNodes -> jsonNodes.getEnterpriseUser().isPresent())
+                                      .findAny()
+                                      .get();
+    Assertions.assertEquals(normalUser.getId().get(),
+                            enterpriseUser.getEnterpriseUser().get().getManager().get().getValue().get());
   }
 }
