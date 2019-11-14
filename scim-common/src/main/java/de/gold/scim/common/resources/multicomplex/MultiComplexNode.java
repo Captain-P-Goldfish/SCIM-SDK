@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.resources.base.ScimObjectNode;
+import lombok.NoArgsConstructor;
 
 
 // @formatter:off
@@ -76,13 +77,9 @@ import de.gold.scim.common.resources.base.ScimObjectNode;
  * canonical values (see Section 7).
  */
 // @formatter:on
+@NoArgsConstructor
 public class MultiComplexNode extends ScimObjectNode
 {
-
-  protected MultiComplexNode()
-  {
-    super(null);
-  }
 
   public MultiComplexNode(String type, Boolean primary, String display, String value, String ref)
   {

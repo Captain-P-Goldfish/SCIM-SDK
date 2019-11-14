@@ -1,10 +1,10 @@
-package de.gold.scim.common.resources.complex;
+package de.gold.scim.common.resources.multicomplex;
 
 import java.util.Optional;
 
 import de.gold.scim.common.constants.AttributeNames;
-import de.gold.scim.common.resources.base.ScimObjectNode;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -14,13 +14,10 @@ import lombok.Builder;
  * A physical mailing address for this user. Canonical type values of "work", "home", and "other". This
  * attribute is a complex type with the following sub-attributes. All sub-attributes are OPTIONAL.
  */
-public class Address extends ScimObjectNode
+@NoArgsConstructor
+public class Address extends MultiComplexNode
 {
 
-  public Address()
-  {
-    super(null);
-  }
 
   @Builder
   public Address(String formatted,

@@ -1,5 +1,6 @@
 package de.gold.scim.common.resources.complex;
 
+import de.gold.scim.common.resources.multicomplex.Address;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
