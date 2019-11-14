@@ -11,6 +11,7 @@ import de.gold.scim.common.constants.enums.SortOrder;
 import de.gold.scim.common.exceptions.ConflictException;
 import de.gold.scim.common.exceptions.ResourceNotFoundException;
 import de.gold.scim.common.resources.User;
+import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.server.endpoints.ResourceHandler;
 import de.gold.scim.server.filter.FilterNode;
@@ -42,10 +43,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
     }
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
-    resource.getMeta().ifPresent(meta -> {
-      meta.setCreated(Instant.now());
-      meta.setLastModified(Instant.now());
-    });
+    resource.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
     return resource;
   }
 
@@ -77,7 +75,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
     {
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
-    resource.getMeta().get().setCreated(oldUser.getMeta().get().getCreated().get());
+    resource.setMeta(Meta.builder().created(oldUser.getMeta().get().getCreated().get()).build());
     inMemoryMap.put(userId, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setLastModified(Instant.now());

@@ -80,10 +80,7 @@ public class UserHandler extends ResourceHandler<User>
     }
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
-    resource.getMeta().ifPresent(meta -> {
-      meta.setCreated(Instant.now());
-      meta.setLastModified(Instant.now());
-    });
+    resource.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
     return resource;
   }
 
@@ -124,7 +121,7 @@ public class UserHandler extends ResourceHandler<User>
     {
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
-    resource.getMeta().get().setCreated(oldUser.getMeta().get().getCreated().get());
+    resource.setMeta(Meta.builder().created(oldUser.getMeta().get().getCreated().get()).build());
     inMemoryMap.put(userId, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setLastModified(Instant.now());

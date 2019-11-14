@@ -667,9 +667,9 @@ public class BulkEndpointTest extends AbstractBulkTest
                                              .filter(jsonNodes -> jsonNodes.getEnterpriseUser().isPresent())
                                              .count());
     User normalUser = createdUsers.stream()
-                                      .filter(jsonNodes -> !jsonNodes.getEnterpriseUser().isPresent())
-                                      .findAny()
-                                      .get();
+                                  .filter(jsonNodes -> !jsonNodes.getEnterpriseUser().isPresent())
+                                  .findAny()
+                                  .get();
     User enterpriseUser = createdUsers.stream()
                                       .filter(jsonNodes -> jsonNodes.getEnterpriseUser().isPresent())
                                       .findAny()
