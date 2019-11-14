@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import de.gold.scim.common.constants.ResourceTypeNames;
 import de.gold.scim.common.constants.enums.SortOrder;
 import de.gold.scim.common.exceptions.ConflictException;
 import de.gold.scim.common.exceptions.ResourceNotFoundException;
@@ -53,11 +52,7 @@ public class UserHandler extends ResourceHandler<User>
       while ((name = reader.readLine()) != null)
       {
         String id = UUID.randomUUID().toString();
-        Meta meta = Meta.builder()
-                        .created(LocalDateTime.now())
-                        .lastModified(LocalDateTime.now())
-                        .resourceType(ResourceTypeNames.USER)
-                        .build();
+        Meta meta = Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build();
         inMemoryMap.put(id, User.builder().id(id).userName(name).nickName(name).meta(meta).build());
       }
     }
@@ -121,11 +116,11 @@ public class UserHandler extends ResourceHandler<User>
     {
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
-    resource.setMeta(Meta.builder().created(oldUser.getMeta().get().getCreated().get()).build());
     inMemoryMap.put(userId, resource);
-    resource.getMeta().ifPresent(meta -> {
-      meta.setLastModified(Instant.now());
-    });
+    resource.setMeta(Meta.builder()
+                         .created(oldUser.getMeta().get().getCreated().get())
+                         .lastModified(Instant.now())
+                         .build());
     return resource;
   }
 
