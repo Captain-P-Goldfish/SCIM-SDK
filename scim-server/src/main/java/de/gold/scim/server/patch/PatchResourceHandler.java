@@ -69,6 +69,7 @@ public class PatchResourceHandler extends AbstractPatch
                                     ScimType.RFC7644.INVALID_VALUE);
     }
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
+    JsonHelper.removeAttribute(readJsonDocument, AttributeNames.RFC7643.SCHEMAS);
     readJsonDocument.fields().forEachRemaining(stringJsonNodeEntry -> {
       String key = stringJsonNodeEntry.getKey();
       JsonNode value = stringJsonNodeEntry.getValue();

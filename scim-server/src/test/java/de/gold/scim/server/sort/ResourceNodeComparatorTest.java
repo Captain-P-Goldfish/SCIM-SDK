@@ -144,9 +144,9 @@ public class ResourceNodeComparatorTest implements FileReferences
 
     JsonNode allTypesSchemaNode = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     Schema allTypesSchema = new Schema(allTypesSchemaNode);
-    AllTypes allTypes1 = new AllTypes();
+    AllTypes allTypes1 = new AllTypes(true);
     allTypes1.setNumber(1L);
-    AllTypes allTypes2 = new AllTypes();
+    AllTypes allTypes2 = new AllTypes(true);
     allTypes2.setNumber(2L);
     resourceList = Arrays.asList(allTypes1, allTypes2);
     resourceAttribute = allTypesSchema.getSchemaAttribute("number");
@@ -175,8 +175,8 @@ public class ResourceNodeComparatorTest implements FileReferences
                                                     allTypes2,
                                                     allTypes1));
 
-    allTypes1 = new AllTypes();
-    allTypes2 = new AllTypes();
+    allTypes1 = new AllTypes(true);
+    allTypes2 = new AllTypes(true);
     resourceList = Arrays.asList(allTypes1, allTypes2);
     allTypes1.setDecimal(1.0);
     allTypes2.setDecimal(1.0);

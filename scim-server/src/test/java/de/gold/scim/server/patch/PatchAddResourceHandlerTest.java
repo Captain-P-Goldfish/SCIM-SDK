@@ -110,13 +110,13 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                   new NameValuePair("bool", BooleanNode.getTrue()),
                                                   new NameValuePair("decimal", new DoubleNode(5.6))));
 
-    AllTypes allTypes = new AllTypes();
-    allTypes.setString("hello world");
-    allTypes.setNumber(Long.MAX_VALUE);
-    allTypes.setDecimal(5.8);
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("complex", allTypes)));
+    AllTypes complex = new AllTypes(false);
+    complex.setString("hello world");
+    complex.setNumber(Long.MAX_VALUE);
+    complex.setDecimal(5.8);
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("complex", complex)));
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.add(allTypes);
+    arrayNode.add(complex);
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("multiComplex", arrayNode)));
 
     return dynamicTestList;
@@ -128,17 +128,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddMultiValuedComplexType()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
     Meta meta = Meta.builder().created(LocalDateTime.now()).build();
     allTypes.setMeta(meta);
 
-    AllTypes multiComplex = new AllTypes();
+    AllTypes multiComplex = new AllTypes(false);
     multiComplex.setString("hello world");
     multiComplex.setNumber(Long.MAX_VALUE);
     multiComplex.setDecimal(5.8);
     allTypes.setMultiComplex(Collections.singletonList(multiComplex));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setMultiComplex(Collections.singletonList(multiComplex));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -148,7 +148,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(2, allTypes.getMultiComplex().size());
     Assertions.assertEquals(multiComplex, allTypes.getMultiComplex().get(0));
     Assertions.assertTrue(allTypes.getMeta().isPresent());
@@ -161,9 +161,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAttributeDoesNotExist()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.set("unknown", new TextNode("unknown"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -192,16 +192,16 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testComplexTypeAlreadyExists()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
     Meta meta = Meta.builder().created(LocalDateTime.now()).build();
     allTypes.setMeta(meta);
 
-    AllTypes complex = new AllTypes();
+    AllTypes complex = new AllTypes(false);
     complex.setNumber(Long.MAX_VALUE);
     complex.setDecimal(5.8);
     allTypes.setComplex(complex);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setComplex(complex);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -211,7 +211,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertTrue(allTypes.getComplex().isPresent());
     Assertions.assertEquals(complex, allTypes.getComplex().get());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
@@ -226,18 +226,18 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddSimpleValuesToComplexAttribute()
   {
-    AllTypes allTypes = new AllTypes();
-    AllTypes innerComplex = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes innerComplex = new AllTypes(false);
     innerComplex.setString("hello world");
     allTypes.setComplex(innerComplex);
     Meta meta = Meta.builder().created(LocalDateTime.now()).build();
     allTypes.setMeta(meta);
 
-    AllTypes complex = new AllTypes();
+    AllTypes complex = new AllTypes(false);
     complex.setNumber(Long.MAX_VALUE);
     complex.setDecimal(5.8);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setComplex(complex);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -251,7 +251,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent(),
                           allTypes.getComplex().get().toPrettyString());
     Assertions.assertEquals("hello world", allTypes.getComplex().get().getString().get());
-    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertNotEquals(complex, allTypes.getComplex().get());
     Assertions.assertEquals(3, allTypes.getComplex().get().size());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
@@ -266,10 +266,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddIdenticalSimpleValue()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hello world");
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setString("hello world");
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -291,10 +291,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddMultiValuedArrayOnExistingArray()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
     allTypes.setNumberArray(Arrays.asList(1L, 2L));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setNumberArray(Arrays.asList(3L, 4L));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -314,9 +314,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddMultiValuedArrayOnNotExistingArray()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setNumberArray(Arrays.asList(3L, 4L));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -336,14 +336,14 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddMultiValuedArrayWithUnknownAttribute()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes multicomplex = new AllTypes();
+    AllTypes multicomplex = new AllTypes(false);
     multicomplex.setString("hello world");
     multicomplex.set("unknown", new TextNode("unknown"));
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setMultiComplex(Collections.singletonList(multicomplex));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -382,8 +382,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
       }
     }
     return DynamicTest.dynamicTest(testName, () -> {
-      AllTypes allTypes = new AllTypes();
-      AllTypes allTypeChanges = new AllTypes();
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes allTypeChanges = new AllTypes(true);
       allTypeChanges.set(nameValuePair.getAttributeName(), nameValuePair.getValue());
       if (nameValuePairs != null)
       {
@@ -398,11 +398,11 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                   .build());
       PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
       PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
-      Assertions.assertTrue(allTypes.isEmpty());
+      Assertions.assertEquals(1, allTypes.size(), allTypes.toPrettyString());
       allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.assertFalse(allTypes.isEmpty());
+      Assertions.assertTrue(allTypes.size() > 1, allTypes.toPrettyString());
       // the added attribute and lastModifed have been added by patch
-      Assertions.assertEquals(2 + (nameValuePairs == null ? 0 : nameValuePairs.length), allTypes.size());
+      Assertions.assertEquals(3 + (nameValuePairs == null ? 0 : nameValuePairs.length), allTypes.size());
       Assertions.assertNotNull(allTypes.get(nameValuePair.getAttributeName()));
       Assertions.assertEquals(nameValuePair.getValue(), allTypes.get(nameValuePair.getAttributeName()));
       Assertions.assertTrue(allTypes.getMeta().isPresent());
@@ -429,7 +429,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     try
     {
-      patchHandler.patchResource(new AllTypes(), patchOpRequest);
+      patchHandler.patchResource(new AllTypes(true), patchOpRequest);
       Assertions.fail();
     }
     catch (ScimException ex)
@@ -446,7 +446,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testNoTargetSpecifiedAndTwoResourcesAreAdded()
   {
-    List<String> values = Arrays.asList(new AllTypes().toString(), new AllTypes().toString());
+    List<String> values = Arrays.asList(new AllTypes(true).toString(), new AllTypes(true).toString());
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
                                                                                 .values(values)
@@ -455,7 +455,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     try
     {
-      patchHandler.patchResource(new AllTypes(), patchOpRequest);
+      patchHandler.patchResource(new AllTypes(true), patchOpRequest);
       Assertions.fail();
     }
     catch (ScimException ex)
@@ -485,9 +485,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                        null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setString("hello world");
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -514,10 +514,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
     TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hello world");
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setString("hello world");
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -561,17 +561,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                        null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
-    AllTypes allTypes = new AllTypes();
-    AllTypes innerComplex = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes innerComplex = new AllTypes(false);
     innerComplex.setString("hello world");
     allTypes.setComplex(innerComplex);
     Meta meta = Meta.builder().created(LocalDateTime.now()).build();
     allTypes.setMeta(meta);
 
-    AllTypes complex = new AllTypes();
+    AllTypes complex = new AllTypes(false);
     complex.setString("new hello world");
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setComplex(complex);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -615,13 +615,13 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                        null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes multicomplex = new AllTypes();
+    AllTypes multicomplex = new AllTypes(false);
     multicomplex.setString("hello world");
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setMultiComplex(Collections.singletonList(multicomplex));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -665,13 +665,13 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                        null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes multicomplex = new AllTypes();
+    AllTypes multicomplex = new AllTypes(false);
     multicomplex.setString("hello world");
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setMultiComplex(Collections.singletonList(multicomplex));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -699,13 +699,13 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testSetPrimary()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes multicomplex = new AllTypes();
+    AllTypes multicomplex = new AllTypes(false);
     multicomplex.set(AttributeNames.RFC7643.PRIMARY, BooleanNode.getTrue());
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setMultiComplex(Collections.singletonList(multicomplex));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -734,13 +734,13 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testSetTwoPrimaryValues()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes multicomplex = new AllTypes();
+    AllTypes multicomplex = new AllTypes(false);
     multicomplex.set(AttributeNames.RFC7643.PRIMARY, BooleanNode.getTrue());
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setMultiComplex(Arrays.asList(multicomplex, multicomplex));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -768,9 +768,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testAddValuesWithinExtension()
   {
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.setEnterpriseUser(EnterpriseUser.builder().costCenter("something").build());
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -803,10 +803,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                 enterpriseUserSchema);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
 
-    AllTypes allTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
     allTypes.setNumber(50L);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
     enterpriseUser.set(ambiguousAttributeName, new TextNode("hello world"));
     allTypeChanges.setEnterpriseUser(enterpriseUser);
@@ -841,12 +841,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                          enterpriseUserSchema);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
 
-    AllTypes allTypes = new AllTypes();
-    AllTypes complexAllTypes = new AllTypes();
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complexAllTypes = new AllTypes(false);
     complexAllTypes.setNumber(50L);
     allTypes.setComplex(complexAllTypes);
 
-    AllTypes allTypeChanges = new AllTypes();
+    AllTypes allTypeChanges = new AllTypes(true);
     EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
     ScimObjectNode complexEnterprise = new ScimObjectNode();
     complexEnterprise.set("number", new TextNode("hello world"));
