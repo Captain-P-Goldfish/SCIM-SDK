@@ -7,7 +7,6 @@ import java.util.Optional;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.resources.base.ScimObjectNode;
-import lombok.Builder;
 
 
 /**
@@ -27,15 +26,9 @@ public class Meta extends ScimObjectNode
     super(null);
   }
 
-  @Builder
-  public Meta(String resourceType, LocalDateTime created, LocalDateTime lastModified, String location, String version)
+  public static MetaBuilder builder()
   {
-    this();
-    setResourceType(resourceType);
-    setCreated(created);
-    setLastModified(lastModified);
-    setLocation(location);
-    setVersion(version);
+    return new MetaBuilder(new Meta());
   }
 
   /**
@@ -191,6 +184,128 @@ public class Meta extends ScimObjectNode
   public void setVersion(String version)
   {
     setAttribute(AttributeNames.RFC7643.VERSION, version);
+  }
+
+  /**
+   * a builder class that is not generated with lombok because of the multiple setter-methods for created and
+   * last modified
+   */
+  public static class MetaBuilder
+  {
+
+    /**
+     * the meta object that should be built
+     */
+    private Meta meta;
+
+    public MetaBuilder(Meta meta)
+    {
+      this.meta = meta;
+    }
+
+    /**
+     * The "DateTime" that the resource was added to the service provider. This attribute MUST be a DateTime.
+     */
+    public MetaBuilder created(Instant created)
+    {
+      meta.setCreated(created);
+      return this;
+    }
+
+    /**
+     * The "DateTime" that the resource was added to the service provider. This attribute MUST be a DateTime.
+     */
+    public MetaBuilder created(LocalDateTime created)
+    {
+      meta.setCreated(created);
+      return this;
+    }
+
+    /**
+     * The "DateTime" that the resource was added to the service provider. This attribute MUST be a DateTime.
+     */
+    public MetaBuilder created(OffsetDateTime created)
+    {
+      meta.setCreated(created.toInstant());
+      return this;
+    }
+
+    /**
+     * The most recent DateTime that the details of this resource were updated at the service provider. If this
+     * resource has never been modified since its initial creation, the value MUST be the same as the value of
+     * "created".
+     */
+    public MetaBuilder lastModified(Instant lastModified)
+    {
+      meta.setLastModified(lastModified);
+      return this;
+    }
+
+    /**
+     * The most recent DateTime that the details of this resource were updated at the service provider. If this
+     * resource has never been modified since its initial creation, the value MUST be the same as the value of
+     * "created".
+     */
+    public MetaBuilder lastModified(LocalDateTime lastModified)
+    {
+      meta.setLastModified(lastModified);
+      return this;
+    }
+
+    /**
+     * The most recent DateTime that the details of this resource were updated at the service provider. If this
+     * resource has never been modified since its initial creation, the value MUST be the same as the value of
+     * "created".
+     */
+    public MetaBuilder lastModified(OffsetDateTime lastModified)
+    {
+      meta.setLastModified(lastModified.toInstant());
+      return this;
+    }
+
+    /**
+     * The URI of the resource being returned. This value MUST be the same as the "Content-Location" HTTP response
+     * header (see Section 3.1.4.2 of [RFC7231]).
+     */
+    public MetaBuilder location(String location)
+    {
+      meta.setLocation(location);
+      return this;
+    }
+
+    /**
+     * The name of the resource type of the resource. This attribute has a mutability of "readOnly" and
+     * "caseExact" as "true".
+     */
+    public MetaBuilder resourceType(String resourceType)
+    {
+      meta.setResourceType(resourceType);
+      return this;
+    }
+
+    /**
+     * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+     * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+     * provider support for this attribute is optional and subject to the service provider's support for
+     * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+     * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+     * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+     * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
+     */
+    public MetaBuilder version(String version)
+    {
+      meta.setVersion(version);
+      return this;
+    }
+
+    /**
+     * returns the built meta-object
+     */
+    public Meta build()
+    {
+      return meta;
+    }
+
   }
 
 }

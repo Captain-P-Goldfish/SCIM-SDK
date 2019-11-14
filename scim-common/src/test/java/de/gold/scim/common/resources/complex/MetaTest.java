@@ -133,4 +133,48 @@ public class MetaTest
     Assertions.assertEquals(created.toInstant(), meta.getCreated().get());
     Assertions.assertEquals(lastModified.toInstant(), meta.getLastModified().get());
   }
+
+  /**
+   * verifies that the create builder methods of {@link de.gold.scim.common.resources.complex.Meta.MetaBuilder}
+   * are correctly used
+   */
+  @Test
+  public void testCreatedBuilderMethods()
+  {
+    Meta.MetaBuilder metaBuilder = Meta.builder();
+    Instant instant = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+    metaBuilder.created(instant);
+    Assertions.assertEquals(instant, metaBuilder.build().getCreated().get());
+
+    LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
+    metaBuilder.created(localDateTime);
+    Assertions.assertEquals(localDateTime.atZone(ZoneId.systemDefault()).toInstant(),
+                            metaBuilder.build().getCreated().get());
+
+    OffsetDateTime offsetDateTime = OffsetDateTime.now().withNano(0);
+    metaBuilder.created(offsetDateTime);
+    Assertions.assertEquals(offsetDateTime.toInstant(), metaBuilder.build().getCreated().get());
+  }
+
+  /**
+   * verifies that the lastModified builder methods of
+   * {@link de.gold.scim.common.resources.complex.Meta.MetaBuilder} are correctly used
+   */
+  @Test
+  public void testLastModifiedBuilderMethods()
+  {
+    Meta.MetaBuilder metaBuilder = Meta.builder();
+    Instant instant = Instant.now().truncatedTo(ChronoUnit.SECONDS);
+    metaBuilder.lastModified(instant);
+    Assertions.assertEquals(instant, metaBuilder.build().getLastModified().get());
+
+    LocalDateTime localDateTime = LocalDateTime.now().withNano(0);
+    metaBuilder.lastModified(localDateTime);
+    Assertions.assertEquals(localDateTime.atZone(ZoneId.systemDefault()).toInstant(),
+                            metaBuilder.build().getLastModified().get());
+
+    OffsetDateTime offsetDateTime = OffsetDateTime.now().withNano(0);
+    metaBuilder.lastModified(offsetDateTime);
+    Assertions.assertEquals(offsetDateTime.toInstant(), metaBuilder.build().getLastModified().get());
+  }
 }
