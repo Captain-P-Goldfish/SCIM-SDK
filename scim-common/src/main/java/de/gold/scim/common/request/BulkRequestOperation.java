@@ -13,6 +13,8 @@ import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.resources.base.ScimObjectNode;
 import de.gold.scim.common.utils.JsonHelper;
 import lombok.Builder;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -32,6 +34,15 @@ public class BulkRequestOperation extends ScimObjectNode
                                                                         HttpMethod.PUT,
                                                                         HttpMethod.PATCH,
                                                                         HttpMethod.DELETE);
+
+  /**
+   * this identifier is exclusively used on bulk requests to be able to check if this request was already tried
+   * to handle once. If this happens and the second try fails too this operation is marked as failure within the
+   * bulk response
+   */
+  @Getter
+  @Setter
+  public String uniqueIdentifier;
 
   public BulkRequestOperation()
   {

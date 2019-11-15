@@ -234,7 +234,7 @@ public class PatchTargetHandler extends AbstractPatch
    *          and might follow with the sub-attribute of the complex type if specified. the full name contains
    *          the full resource uri
    * @param values the values that should be added to the complex type
-   * @return
+   * @return true if an effective change has been made, false else
    */
   private boolean handleComplexAttribute(SchemaAttribute schemaAttribute,
                                          ObjectNode resource,
@@ -299,6 +299,14 @@ public class PatchTargetHandler extends AbstractPatch
     }
   }
 
+  /**
+   * extracts the relevant node from the given complex node and adds a value, replaces it or removes it
+   *
+   * @param subAttribute the attribute that should be added, replaced or removed
+   * @param complexNode the parent node of the node that should be added, replaced or removed
+   * @param values the value(s) that should be added, replaced or removed
+   * @return true if an effective change was made, false else
+   */
   private boolean handleInnerComplexAttribute(SchemaAttribute subAttribute, ObjectNode complexNode, List<String> values)
   {
     if (subAttribute.isMultiValued())
@@ -333,10 +341,6 @@ public class PatchTargetHandler extends AbstractPatch
 
   /**
    * merges two object nodes into a single node
-   *
-   * @param newNode
-   * @param oldNode
-   * @return
    */
   private JsonNode mergeObjectNodes(ObjectNode newNode, JsonNode oldNode)
   {
@@ -678,7 +682,8 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private String[] getAttributeNames()
   {
-    String attributeName = path.getShortName();
+    String attributeName = path.getShortName()
+                           + (StringUtils.isBlank(path.getSubAttributeName()) ? "" : "." + path.getSubAttributeName());
     String[] attributeNames = attributeName.split("\\.");
     String resourceUri = path.getResourceUri() == null ? "" : path.getResourceUri() + ":";
     attributeNames[0] = resourceUri + attributeNames[0];
