@@ -1,7 +1,6 @@
 package de.gold.scim.common.exceptions;
 
 import de.gold.scim.common.constants.HttpStatus;
-import lombok.Builder;
 
 
 /**
@@ -12,7 +11,6 @@ import lombok.Builder;
 public class InvalidConfigException extends ScimException
 {
 
-  @Builder
   public InvalidConfigException(String message)
   {
     super(message, null, HttpStatus.INTERNAL_SERVER_ERROR, null);

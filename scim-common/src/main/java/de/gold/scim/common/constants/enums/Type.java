@@ -47,8 +47,7 @@ public enum Type
         return type;
       }
     }
-    throw UnknownValueException.builder()
-                               .message("value '" + value + "' could not be resolved to type: " + Type.class)
-                               .build();
+    throw new UnknownValueException("value '" + value + "' could not be resolved to type: " + Type.class, null, null,
+                                    null);
   }
 }

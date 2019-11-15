@@ -53,7 +53,7 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.common.exceptions.IOException.builder().message(e.getMessage()).cause(e).build();
+      throw new de.gold.scim.common.exceptions.IOException(e.getMessage(), e, null, null);
     }
   }
 
@@ -73,7 +73,7 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.common.exceptions.IOException.builder().message(e.getMessage()).cause(e).build();
+      throw new de.gold.scim.common.exceptions.IOException(e.getMessage(), e, null, null);
     }
   }
 
@@ -93,7 +93,7 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.common.exceptions.IOException.builder().message(e.getMessage()).cause(e).build();
+      throw new de.gold.scim.common.exceptions.IOException(e.getMessage(), e, null, null);
     }
   }
 
@@ -112,7 +112,7 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.common.exceptions.IOException.builder().message(e.getMessage()).cause(e).build();
+      throw new de.gold.scim.common.exceptions.IOException(e.getMessage(), e, null, null);
     }
   }
 
@@ -135,10 +135,8 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.common.exceptions.IOException.builder()
-                                                      .message("Invalid content, the document could not be parsed")
-                                                      .cause(e)
-                                                      .build();
+      throw new de.gold.scim.common.exceptions.IOException("Invalid content, the document could not be parsed", e, null,
+                                                           null);
     }
   }
 
@@ -158,10 +156,8 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
-      throw de.gold.scim.common.exceptions.IOException.builder()
-                                                      .message("Invalid content, the document could not be parsed")
-                                                      .cause(e)
-                                                      .build();
+      throw new de.gold.scim.common.exceptions.IOException("Invalid content, the document could not be parsed", e, null,
+                                                           null);
     }
   }
 
@@ -183,9 +179,8 @@ public final class JsonHelper
     {
       return Optional.of((ArrayNode)attribute);
     }
-    throw IncompatibleAttributeException.builder()
-                                        .message("attribute with name '" + name + "' is not of type array")
-                                        .build();
+    throw new IncompatibleAttributeException("attribute with name '" + name + "' is not of type array", null, null,
+                                             null);
   }
 
   /**
@@ -206,9 +201,8 @@ public final class JsonHelper
     {
       return Optional.of((ObjectNode)attribute);
     }
-    throw IncompatibleAttributeException.builder()
-                                        .message("attribute with name '" + name + "' is not of type object")
-                                        .build();
+    throw new IncompatibleAttributeException("attribute with name '" + name + "' is not of type object", null, null,
+                                             null);
   }
 
   /**
@@ -242,7 +236,7 @@ public final class JsonHelper
     if (simpleArray.isObject())
     {
       final String errorMessage = "attribute '" + attributeName + "' is not a simple array attribute";
-      throw IncompatibleAttributeException.builder().message(errorMessage).build();
+      throw new IncompatibleAttributeException(errorMessage, null, null, null);
     }
     List<T> arrayResult = new ArrayList<>();
     for ( JsonNode node : simpleArray )
@@ -285,9 +279,8 @@ public final class JsonHelper
     }
     if (attribute.isArray())
     {
-      throw IncompatibleAttributeException.builder()
-                                          .message("attribute '" + name + "' is not of type " + type.getSimpleName())
-                                          .build();
+      throw new IncompatibleAttributeException("attribute '" + name + "' is not of type " + type.getSimpleName(), null,
+                                               null, null);
     }
     return getAsAttribute(attribute, type);
   }
@@ -430,9 +423,8 @@ public final class JsonHelper
     {
       return Optional.of((T)Long.valueOf(attribute.asLong()));
     }
-    throw IncompatibleAttributeException.builder()
-                                        .message("attribute '" + attribute + "' is not of type" + type.getSimpleName())
-                                        .build();
+    throw new IncompatibleAttributeException("attribute '" + attribute + "' is not of type" + type.getSimpleName(),
+                                             null, null, null);
   }
 
   /**
