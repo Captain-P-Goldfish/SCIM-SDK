@@ -927,7 +927,7 @@ class ResourceEndpointHandler
       SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                  resourceType,
                                                  resourceNode,
-                                                 SchemaValidator.HttpMethod.PUT);
+                                                 SchemaValidator.HttpMethod.PATCH);
       resourceNode = resourceHandler.updateResource(resourceNode);
 
       final String location = getLocation(resourceType, id, baseUrlSupplier);
