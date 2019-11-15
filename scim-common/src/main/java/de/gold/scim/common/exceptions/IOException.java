@@ -1,5 +1,6 @@
 package de.gold.scim.common.exceptions;
 
+import de.gold.scim.common.constants.HttpStatus;
 import lombok.Builder;
 
 
@@ -13,8 +14,8 @@ public class IOException extends ScimException
 {
 
   @Builder
-  public IOException(String message, Throwable cause, int status, String scimType)
+  public IOException(String message, Throwable cause, Integer status, String scimType)
   {
-    super(message, cause, status, scimType);
+    super(message, cause, status == null ? HttpStatus.BAD_REQUEST : status, scimType);
   }
 }
