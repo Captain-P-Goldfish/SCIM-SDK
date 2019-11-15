@@ -377,7 +377,7 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertTrue(allTypes.getComplex().isPresent(), allTypes.toPrettyString());
     Assertions.assertEquals(value, allTypes.getComplex().get().get(attributeName).asText());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
@@ -1880,7 +1880,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies removing a whole complex type from an array with a filter works as expected
+   * verifies adding a subattribute to a complex type with a matching filter expression works correctly
    */
   @Test
   public void testAddAttributeWithFilterExpression()
@@ -1907,6 +1907,34 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
     Assertions.assertEquals(1, allTypes.getSchemas().size());
+  }
+
+  /**
+   * verifies adding a subattribute to a complex type with a none matching filter will not work
+   */
+  @Test
+  public void testAddAttributeWithFilterExpressionThatDoesNotMatch()
+  {
+    final String path = "complex[string eq \"hello world\"].number";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(Collections.singletonList("5"))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setString("jippie ay yay");
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertTrue(allTypes.getComplex().isPresent(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getComplex().get().size(), allTypes.toPrettyString());
+    Assertions.assertEquals("jippie ay yay", allTypes.getComplex().get().getString().get(), allTypes.toPrettyString());
+    Assertions.assertFalse(allTypes.getComplex().get().getNumber().isPresent(), allTypes.toPrettyString());
+    Assertions.assertFalse(allTypes.getMeta().isPresent());
   }
 
 }

@@ -29,6 +29,10 @@ public class PatchFilterResolver
    */
   public Optional<ObjectNode> isNodeMatchingFilter(ObjectNode complexNode, FilterNode path)
   {
+    if (complexNode == null)
+    {
+      return Optional.empty();
+    }
     if (AttributePathRoot.class.isAssignableFrom(path.getClass()))
     {
       AttributePathRoot attributePathRoot = (AttributePathRoot)path;

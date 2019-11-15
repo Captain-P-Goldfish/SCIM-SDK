@@ -251,6 +251,15 @@ public class PatchTargetHandler extends AbstractPatch
         complexNode = new ScimObjectNode(schemaAttribute);
         resource.set(schemaAttribute.getName(), complexNode);
       }
+      Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path);
+      if (!matchingNode.isPresent())
+      {
+        if (complexNode.isEmpty())
+        {
+          resource.remove(schemaAttribute.getName());
+        }
+        return false;
+      }
       if (handleInnerComplexAttribute(subAttribute, complexNode, values))
       {
         if (complexNode.isEmpty())
