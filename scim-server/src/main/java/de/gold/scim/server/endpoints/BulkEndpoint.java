@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -28,6 +29,8 @@ import de.gold.scim.common.exceptions.NotImplementedException;
 import de.gold.scim.common.exceptions.ScimException;
 import de.gold.scim.common.request.BulkRequest;
 import de.gold.scim.common.request.BulkRequestOperation;
+import de.gold.scim.common.request.PatchOpRequest;
+import de.gold.scim.common.request.PatchRequestOperation;
 import de.gold.scim.common.resources.ServiceProvider;
 import de.gold.scim.common.resources.base.ScimObjectNode;
 import de.gold.scim.common.resources.complex.BulkConfig;
@@ -38,6 +41,7 @@ import de.gold.scim.common.response.ScimResponse;
 import de.gold.scim.common.schemas.Schema;
 import de.gold.scim.common.schemas.SchemaAttribute;
 import de.gold.scim.common.utils.JsonHelper;
+import de.gold.scim.server.filter.AttributePathRoot;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import de.gold.scim.server.schemas.SchemaFactory;
@@ -52,6 +56,7 @@ import lombok.extern.slf4j.Slf4j;
  * author Pascal Knueppel <br>
  * created at: 07.11.2019 - 23:48 <br>
  * <br>
+ * the bulk endpoint implementation
  */
 @Slf4j
 class BulkEndpoint
@@ -157,6 +162,9 @@ class BulkEndpoint
       BulkResponseOperation bulkResponseOperation = handleSingleBulkOperation(baseUri, operation);
       if (bulkResponseOperation == null)
       {
+        // mark this operation as already handled once
+        String operationIdentifier = UUID.randomUUID().toString();
+        operation.setUniqueIdentifier(operationIdentifier);
         // the bulk operation references another operation that was not resolved yet so we move the operation for
         // another run to the end of the line
         operations.remove(0);
@@ -209,7 +217,8 @@ class BulkEndpoint
                                                                                               .location(location);
     try
     {
-      if (!resolveBulkIds(operation, operationUriInfo.getResourceType()))
+      if (!resolveBulkIds(operation, operationUriInfo.getResourceType())
+          || !resolveBulkIdInResourceId(operation, operationUriInfo))
       {
         // will cause this operation to be moved to the end of the request operations list. This happens if the
         // operation contains a bulkId-reference that has not been resolved yet
@@ -243,13 +252,58 @@ class BulkEndpoint
                    .orElse("");
       location = baseUri + operationUriInfo.getResourceEndpoint() + id;
       responseBuilder.location(location);
-
     }
     if (StringUtils.isNotBlank(id) && operation.getBulkId().isPresent())
     {
       resolvedBulkIds.put(operation.getBulkId().get(), id.substring(1));
     }
     return responseBuilder.build();
+  }
+
+  /**
+   * resolves a bulkId within the resourceUri or throws an exception if not present
+   *
+   * @param operationUriInfo the operation-uri-info that may contain a bulkId-reference within the resource uri
+   * @return false if a bulkId-reference exists that could not be resolved, true else
+   */
+  private boolean resolveBulkIdInResourceId(BulkRequestOperation operation, UriInfos operationUriInfo)
+  {
+    switch (operationUriInfo.getHttpMethod())
+    {
+      case PUT:
+      case PATCH:
+      case DELETE:
+        if (StringUtils.startsWithIgnoreCase(operationUriInfo.getResourceId(), AttributeNames.RFC7643.BULK_ID + ":"))
+        {
+          String resourceId = operationUriInfo.getResourceId();
+          String[] bulkIdParts = resourceId.split(":");
+          if (bulkIdParts.length != 2)
+          {
+            throw new BadRequestException("the value '" + resourceId + "' is not a valid bulkId reference", null,
+                                          ScimType.RFC7644.INVALID_VALUE);
+          }
+          String bulkId = bulkIdParts[1];
+          String resolvedId = resolvedBulkIds.get(bulkId);
+          if (StringUtils.isBlank(resolvedId))
+          {
+            if (StringUtils.isNotBlank(operation.getUniqueIdentifier()))
+            {
+              throw new BadRequestException("the operation could not be resolved because the following bulkId-"
+                                            + "reference could not be resolved" + " '" + resourceId + "'", null,
+                                            ScimType.RFC7644.INVALID_VALUE);
+            }
+            return false;
+          }
+          else
+          {
+            operationUriInfo.setResourceId(resolvedId);
+          }
+        }
+        break;
+      default:
+        // do nothing
+    }
+    return true;
   }
 
   /**
@@ -266,6 +320,7 @@ class BulkEndpoint
     List<JsonNode> bulkIdNodes;
     String resourceData = operation.getData().orElse(null);
     ScimObjectNode resource = null;
+    String bulkId = operation.getBulkId().orElse(null);
     if (!HttpMethod.PATCH.equals(operation.getMethod()))
     {
       if (StringUtils.isBlank(resourceData))
@@ -274,17 +329,225 @@ class BulkEndpoint
       }
       resource = JsonHelper.readJsonDocument(resourceData, ScimObjectNode.class);
       bulkIdNodes = getBulkIdNodes(resource, resourceType);
+      checkForSelfOrCircularReference(bulkId, bulkIdNodes);
+      bulkIdNodes = setBulkIds(bulkIdNodes);
     }
     else
     {
-      // TODO get bulk id nodes for patch
-      bulkIdNodes = new ArrayList<>();
+      PatchOpRequest patchOpRequest = JsonHelper.readJsonDocument(operation.getData().orElse(null),
+                                                                  PatchOpRequest.class);
+      bulkIdNodes = getBulkIdNodesForPatch(patchOpRequest, resourceType, bulkId);
+      checkForSelfOrCircularReference(bulkId, bulkIdNodes);
+      resource = patchOpRequest;
     }
-    String bulkId = operation.getBulkId().orElse(null);
+    operation.setData(resource == null ? null : resource.toString());
+    if (bulkIdNodes.isEmpty())
+    {
+      return true;
+    }
+    else
+    {
+      if (StringUtils.isNotBlank(operation.getUniqueIdentifier()))
+      {
+        throw new BadRequestException("the operation could not be resolved because the following bulkId-"
+                                      + "references could not be resolved" + " '"
+                                      + bulkIdNodes.stream()
+                                                   .map(jsonNode -> jsonNode.get(AttributeNames.RFC7643.VALUE)
+                                                                            .textValue())
+                                                   .collect(Collectors.joining(", "))
+                                      + "'", null, ScimType.RFC7644.INVALID_VALUE);
+      }
+      return false;
+    }
+  }
+
+  /**
+   * will try to get the nodes within a patch request operation that do contain bulkId-references
+   *
+   * @param patchOpRequest the patch request operation that may contain bulkId-references
+   * @param resourceType the resource type that describes the resource that should be patched
+   * @param bulkId the bulkId of the bulk operation that represents the given patch request
+   * @return a list of the nodes the contain bulkId-references within the patch request operation
+   */
+  private List<JsonNode> getBulkIdNodesForPatch(PatchOpRequest patchOpRequest, ResourceType resourceType, String bulkId)
+  {
+    List<PatchRequestOperation> operationList = patchOpRequest.getOperations();
+    for ( PatchRequestOperation operation : operationList )
+    {
+      switch (operation.getOp())
+      {
+        case ADD:
+        case REPLACE:
+          if (operation.getPath().isPresent())
+          {
+            return getBulkIdsForPatchWithPath(resourceType, operation);
+          }
+          else
+          {
+            return getBulkIdsForPatchAddOnResource(operation, resourceType, bulkId);
+          }
+        default:
+          // do nothing
+      }
+    }
+    return Collections.emptyList();
+  }
+
+  /**
+   * this method handles a patch request operation that contains a path-value which changes the way the
+   * values-attribute within the patch request operation must be handled
+   *
+   * @param resourceType the resource type that describes the resource that should be patched
+   * @param operation the patch request operation
+   * @return the nodes the contain a bulkId reference
+   */
+  private List<JsonNode> getBulkIdsForPatchWithPath(ResourceType resourceType, PatchRequestOperation operation)
+  {
+    boolean containsBulkId = operation.getValues().stream().anyMatch(s -> {
+      return StringUtils.containsIgnoreCase(s, AttributeNames.RFC7643.BULK_ID + ":");
+    });
+    if (containsBulkId)
+    {
+      AttributePathRoot pathRoot = RequestUtils.parsePatchPath(resourceType, operation.getPath().get());
+      String attributeName = pathRoot.getFullName()
+                             + (pathRoot.getSubAttributeName() == null ? "" : "." + pathRoot.getSubAttributeName());
+      SchemaAttribute attribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, attributeName);
+      if (attribute.getSchema()
+                   .getBulkIdCandidates()
+                   .contains(attribute.getParent() == null ? attribute : attribute.getParent()))
+      {
+        List<JsonNode> unresolvedAttributes = resolvePatchValuesWithPath(attributeName, operation);
+        return unresolvedAttributes;
+      }
+      else
+      {
+        return Collections.emptyList();
+      }
+    }
+    else
+    {
+      return Collections.emptyList();
+    }
+  }
+
+  /**
+   * gets the nodes that contain bulkId references in a patch request operation that has a path-attribute
+   *
+   * @param attributeName the fully qualified attribute name that is referenced e.g.: "manager" or
+   *          "manager.value"
+   * @param operation the patch request operation
+   * @return the nodes the contain a bulkId reference
+   */
+  private List<JsonNode> resolvePatchValuesWithPath(String attributeName, PatchRequestOperation operation)
+  {
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 2)
+    {
+      return resolvePatchValuesWithPathForSimpleValue(attributeNameParts[1], operation);
+    }
+    else
+    {
+      return resolvePatchValuesWithPathForComplexValue(operation);
+    }
+  }
+
+  /**
+   * gets the nodes that contain bulkId references in a patch request that has a path value with a
+   * complex-attribute reference like "manager" or "members"
+   *
+   * @param operation the patch request operation
+   * @return the nodes the contain a bulkId reference
+   */
+  private List<JsonNode> resolvePatchValuesWithPathForComplexValue(PatchRequestOperation operation)
+  {
+    List<String> bulkIdValues = operation.getValues().stream().filter(s -> {
+      return StringUtils.containsIgnoreCase(s, AttributeNames.RFC7643.BULK_ID + ":");
+    }).collect(Collectors.toList());
+    List<String> newValuesList = operation.getValues().stream().filter(s -> {
+      return !StringUtils.containsIgnoreCase(s, AttributeNames.RFC7643.BULK_ID + ":");
+    }).collect(Collectors.toList());
+    List<JsonNode> unresolvedValues = new ArrayList<>();
+    for ( String complexNode : bulkIdValues )
+    {
+      ScimObjectNode scimObjectNode = JsonHelper.readJsonDocument(complexNode, ScimObjectNode.class);
+      JsonNode valueNode = scimObjectNode.get(AttributeNames.RFC7643.VALUE);
+      String bulkId = valueNode.textValue().replaceFirst("(?i)^" + AttributeNames.RFC7643.BULK_ID + ":", "");
+      String resolvedResourceId = resolvedBulkIds.get(bulkId);
+      if (StringUtils.isBlank(resolvedResourceId))
+      {
+        unresolvedValues.add(scimObjectNode);
+        newValuesList.add(complexNode);
+      }
+      else
+      {
+        scimObjectNode.set(AttributeNames.RFC7643.VALUE, new TextNode(resolvedResourceId));
+        newValuesList.add(scimObjectNode.toString());
+      }
+    }
+    operation.setValues(newValuesList);
+    return unresolvedValues;
+  }
+
+  /**
+   * gets the nodes that contain bulkId references in a patch request that has a path value with a
+   * simple-attribute reference like "manager.value" or "members.value"
+   *
+   * @param operation the patch request operation
+   * @return the nodes the contain a bulkId reference
+   */
+  private List<JsonNode> resolvePatchValuesWithPathForSimpleValue(String attributeNamePart,
+                                                                  PatchRequestOperation operation)
+  {
+    List<String> bulkIdValues = operation.getValues().stream().filter(s -> {
+      return StringUtils.startsWithIgnoreCase(s, AttributeNames.RFC7643.BULK_ID + ":");
+    }).collect(Collectors.toList());
+    List<String> newValuesList = operation.getValues().stream().filter(s -> {
+      return !StringUtils.startsWithIgnoreCase(s, AttributeNames.RFC7643.BULK_ID + ":");
+    }).collect(Collectors.toList());
+    List<JsonNode> unresolvedValues = new ArrayList<>();
+    for ( String bulkIdValue : bulkIdValues )
+    {
+      String bulkId = bulkIdValue.replaceFirst("(?i)^" + AttributeNames.RFC7643.BULK_ID + ":", "");
+      String resolvedResourceId = resolvedBulkIds.get(bulkId);
+      if (StringUtils.isBlank(resolvedResourceId))
+      {
+        ScimObjectNode scimObjectNode = new ScimObjectNode();
+        scimObjectNode.set(attributeNamePart, new TextNode(bulkIdValue));
+        unresolvedValues.add(scimObjectNode);
+        newValuesList.add(bulkIdValue);
+      }
+      else
+      {
+        newValuesList.add(resolvedResourceId);
+      }
+    }
+    operation.setValues(newValuesList);
+    return unresolvedValues;
+  }
+
+  /**
+   * gets the nodes from a patch request that does not have a path value which means that the value of the patch
+   * request operation must be a representation of the resource itself
+   *
+   * @param operation the path request operation
+   * @param resourceType the resource type the describes the resource that should be patched
+   * @param bulkId the bulkId of the current patch request operation
+   * @return the nodes the contain a bulkId reference
+   */
+  private List<JsonNode> getBulkIdsForPatchAddOnResource(PatchRequestOperation operation,
+                                                         ResourceType resourceType,
+                                                         String bulkId)
+  {
+    if (operation.getValues().size() != 1)
+    {
+      return Collections.emptyList();
+    }
+    ScimObjectNode scimObjectNode = JsonHelper.readJsonDocument(operation.getValues().get(0), ScimObjectNode.class);
+    List<JsonNode> bulkIdNodes = getBulkIdNodes(scimObjectNode, resourceType);
     checkForSelfOrCircularReference(bulkId, bulkIdNodes);
     bulkIdNodes = setBulkIds(bulkIdNodes);
-    operation.setData(resource == null ? null : resource.toString());
-    return bulkIdNodes.isEmpty();
+    operation.setValues(Collections.singletonList(scimObjectNode.toString()));
+    return bulkIdNodes;
   }
 
   /**
@@ -303,7 +566,8 @@ class BulkEndpoint
     }
     for ( JsonNode bulkIdNode : bulkIdNodes )
     {
-      String bulkReference = bulkIdNode.get(AttributeNames.RFC7643.VALUE).textValue().replaceFirst("^bulkId:", "");
+      JsonNode jsonNode = bulkIdNode.get(AttributeNames.RFC7643.VALUE);
+      String bulkReference = jsonNode.textValue().replaceFirst("(?i)^" + AttributeNames.RFC7643.BULK_ID + ":", "");
       if (bulkReference.equals(bulkId))
       {
         throw new BadRequestException("the bulkId '" + bulkId + "' is a self-reference. Self-references will not be "
@@ -412,7 +676,7 @@ class BulkEndpoint
         {
           continue;
         }
-        if (bulkIdNode.textValue().startsWith(AttributeNames.RFC7643.BULK_ID + ":"))
+        if (StringUtils.startsWithIgnoreCase(bulkIdNode.textValue(), AttributeNames.RFC7643.BULK_ID + ":"))
         {
           bulkIdNodes.add(complexNode);
         }
@@ -425,7 +689,7 @@ class BulkEndpoint
       {
         return Collections.emptyList();
       }
-      if (bulkIdNode.textValue().startsWith(AttributeNames.RFC7643.BULK_ID + ":"))
+      if (StringUtils.startsWithIgnoreCase(bulkIdNode.textValue(), AttributeNames.RFC7643.BULK_ID + ":"))
       {
         bulkIdNodes.add(bulkCandidateNode);
       }

@@ -18,6 +18,7 @@ import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -34,11 +35,6 @@ public class UriInfos
    * the resource endpoint reference e.g. "/Users" or "/Groups"
    */
   private final String resourceEndpoint;
-
-  /**
-   * the id of the resource for PUT, DELETE, PATCH and GET requests
-   */
-  private final String resourceId;
 
   /**
    * if the given request is a query POST request
@@ -64,6 +60,12 @@ public class UriInfos
    * the http method that was used for this request
    */
   private final HttpMethod httpMethod;
+
+  /**
+   * the id of the resource for PUT, DELETE, PATCH and GET requests
+   */
+  @Setter // setter is necessary for bulkId resolving. This is not specified in SCIM but is added as a feature
+  private String resourceId;
 
   @Builder
   private UriInfos(String resourceEndpoint,
@@ -219,5 +221,11 @@ public class UriInfos
                                         ScimType.Custom.INVALID_PARAMETERS);
         }
     }
+  }
+
+  @Override
+  public String toString()
+  {
+    return baseUri + resourceEndpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
   }
 }

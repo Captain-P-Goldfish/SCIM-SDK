@@ -2,6 +2,7 @@ package de.gold.scim.server.endpoints;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -16,16 +17,20 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
+import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.EndpointPaths;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.ResourceTypeNames;
 import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.constants.enums.HttpMethod;
+import de.gold.scim.common.constants.enums.PatchOp;
 import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.exceptions.NotImplementedException;
 import de.gold.scim.common.exceptions.ResponseException;
 import de.gold.scim.common.request.BulkRequest;
 import de.gold.scim.common.request.BulkRequestOperation;
+import de.gold.scim.common.request.PatchOpRequest;
+import de.gold.scim.common.request.PatchRequestOperation;
 import de.gold.scim.common.resources.EnterpriseUser;
 import de.gold.scim.common.resources.Group;
 import de.gold.scim.common.resources.ServiceProvider;
@@ -471,7 +476,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
-    Assertions.assertEquals(1, groupHandler.getInMemoryMap().size());
+    Assertions.assertEquals(1, groupHandler.getInMemoryMap().size(), bulkResponse.toPrettyString());
     Group createGroup = groupHandler.getInMemoryMap().values().iterator().next();
     Assertions.assertEquals(1, createGroup.getMembers().size());
     User user = userHandler.getInMemoryMap().values().iterator().next();
@@ -554,7 +559,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(3, responseOperations.size());
-    Assertions.assertEquals(2, groupHandler.getInMemoryMap().size());
+    Assertions.assertEquals(2, groupHandler.getInMemoryMap().size(), bulkResponse.toPrettyString());
     Iterator<Group> groupIterator = groupHandler.getInMemoryMap().values().iterator();
     Group createGroup = groupIterator.next();
     Group createGroup2 = groupIterator.next();
@@ -564,6 +569,40 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     Assertions.assertEquals(1, createGroup2.getMembers().size());
     Assertions.assertEquals(user.getId().get(), createGroup2.getMembers().get(0).getValue().get());
+  }
+
+  /**
+   * verifies that a bulkId-reference is resolved even within the uri
+   */
+  @Test
+  public void testResolveBulkIdReferenceWithinUri()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    List<BulkRequestOperation> requestOperationList = getCreateUserBulkOperations(1);
+
+    String bulkId = requestOperationList.get(0).getBulkId().get();
+    User user = User.builder().userName(UUID.randomUUID().toString()).build();
+    String resourcePath = EndpointPaths.USERS + "/" + AttributeNames.RFC7643.BULK_ID + ":" + bulkId;
+    BulkRequestOperation requestOperation = BulkRequestOperation.builder()
+                                                                .method(HttpMethod.PUT)
+                                                                .path(resourcePath)
+                                                                .data(user.toString())
+                                                                .bulkId(UUID.randomUUID().toString())
+                                                                .build();
+    requestOperationList.add(0, requestOperation);
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(requestOperationList).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    log.debug(bulkResponse.toPrettyString());
+    List<BulkResponseOperation> responseList = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseList.size());
+    Assertions.assertEquals(HttpStatus.CREATED, responseList.get(0).getStatus(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(bulkId, responseList.get(0).getBulkId().get());
+    Assertions.assertEquals(HttpStatus.OK, responseList.get(1).getStatus());
+    Assertions.assertEquals(requestOperation.getBulkId().get(), responseList.get(1).getBulkId().get());
   }
 
   /**
@@ -609,7 +648,8 @@ public class BulkEndpointTest extends AbstractBulkTest
     ErrorResponse firstResponse = bulkResponse.getBulkResponseOperations().get(0).getResponse().get();
     Assertions.assertEquals("the bulkIds '" + bulkId2 + "' and '" + bulkId + "' do form a circular "
                             + "reference that cannot be resolved.",
-                            firstResponse.getDetail().get());
+                            firstResponse.getDetail().get(),
+                            bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.CONFLICT, firstResponse.getHttpStatus());
 
     ErrorResponse secondResponse = bulkResponse.getBulkResponseOperations().get(1).getResponse().get();
@@ -653,11 +693,12 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    log.debug(bulkRequest.toPrettyString());
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
-    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus(), bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(1).getStatus());
     Assertions.assertEquals(2, userHandler.getInMemoryMap().size());
     List<User> createdUsers = new ArrayList<>(userHandler.getInMemoryMap().values());
@@ -676,5 +717,565 @@ public class BulkEndpointTest extends AbstractBulkTest
                                       .get();
     Assertions.assertEquals(normalUser.getId().get(),
                             enterpriseUser.getEnterpriseUser().get().getManager().get().getValue().get());
+  }
+
+  /**
+   * verifies that a dedicated error message is given if the given bulkId-reference is not resolvable
+   */
+  @Test
+  public void testBulkIdReferenceDoesNotExist()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .userName(username)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .manager(Manager.builder().value("bulkId:" + bulkId).build())
+                                                  .build())
+                    .build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(user.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
+    List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            responseOperationList.get(0).getStatus(),
+                            bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertEquals("the operation could not be resolved because the following bulkId-references "
+                            + "could not be resolved 'bulkId:" + bulkId + "'",
+                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            bulkResponse.toPrettyString());
+  }
+
+  /**
+   * does the same as {@link #testBulkIdReferenceDoesNotExist()} but in this case the bulkId-reference is on the
+   * uri
+   */
+  @Test
+  public void testBulkIdReferenceDoesNotExistOnUri()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder().userName(username).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.PUT)
+                                       .path(EndpointPaths.USERS + "/" + AttributeNames.RFC7643.BULK_ID + ":" + bulkId)
+                                       .data(user.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
+    List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            responseOperationList.get(0).getStatus(),
+                            bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertEquals("the operation could not be resolved because the following bulkId-reference "
+                            + "could not be resolved 'bulkId:" + bulkId + "'",
+                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            bulkResponse.toPrettyString());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is thrown if a bulkId-reference is malformed
+   */
+  @Test
+  public void testInvalidBulkIdReference()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String invalidBulkId = AttributeNames.RFC7643.BULK_ID + ":" + bulkId + ":helloWorld";
+    User user = User.builder().userName(username).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.PUT)
+                                       .path(EndpointPaths.USERS + "/" + invalidBulkId)
+                                       .data(user.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
+    List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            responseOperationList.get(0).getStatus(),
+                            bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertEquals("the value '" + invalidBulkId + "' is not a valid bulkId reference",
+                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            bulkResponse.toPrettyString());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is thrown if a bulkId-reference is malformed on the uri
+   */
+  @Test
+  public void testInvalidBulkIdReferenceOnUri()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String invalidBulkId = "bulkId:" + bulkId + ":helloWorld";
+    User user = User.builder()
+                    .userName(username)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .manager(Manager.builder().value(invalidBulkId).build())
+                                                  .build())
+                    .build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(user.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
+    List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            responseOperationList.get(0).getStatus(),
+                            bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertEquals("the value '" + invalidBulkId + "' is not a valid bulkId reference",
+                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            bulkResponse.toPrettyString());
+  }
+
+  /**
+   * verifies that bulkIds in a patch-add operation without a path are correctly resolved
+   */
+  @Test
+  public void testBulkIdReferenceOnPatchAddNoPath()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName(username)
+                    .meta(Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build())
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    User patchUserRep = User.builder()
+                            .enterpriseUser(EnterpriseUser.builder()
+                                                          .manager(Manager.builder().value("bulkId:" + bulkId).build())
+                                                          .build())
+                            .build();
+    requestOperations.add(PatchRequestOperation.builder()
+                                               .op(PatchOp.ADD)
+                                               .values(Arrays.asList(patchUserRep.toString()))
+                                               .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.PATCH)
+                                       .path(EndpointPaths.USERS + "/" + id)
+                                       .data(patchOpRequest.toString())
+                                       .build());
+
+    User patchedUser = User.builder().userName(UUID.randomUUID().toString()).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(patchedUser.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    log.trace(bulkRequest.toPrettyString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.OK, responseOperations.get(1).getStatus());
+
+    Assertions.assertEquals(2, userHandler.getInMemoryMap().size());
+    User newCreatedUser = userHandler.getInMemoryMap()
+                                     .values()
+                                     .stream()
+                                     .filter(u -> !u.getEnterpriseUser().isPresent())
+                                     .findAny()
+                                     .get();
+    Assertions.assertEquals(newCreatedUser.getId().get(),
+                            user.getEnterpriseUser().get().getManager().get().getValue().get());
+  }
+
+  /**
+   * verifies that circular references will also cause in patch requests a conflict
+   */
+  @Test
+  public void testBulkIdReferenceOnPatchAddNoPathWithCircularReference()
+  {
+    final int maxOperations = 2;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String createBulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName(username)
+                    .meta(Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build())
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    User patchUserRep = User.builder()
+                            .enterpriseUser(EnterpriseUser.builder()
+                                                          .manager(Manager.builder()
+                                                                          .value("bulkId:" + createBulkId)
+                                                                          .build())
+                                                          .build())
+                            .build();
+    requestOperations.add(PatchRequestOperation.builder()
+                                               .op(PatchOp.ADD)
+                                               .values(Arrays.asList(patchUserRep.toString()))
+                                               .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    String patchBulkId = UUID.randomUUID().toString();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(patchBulkId)
+                                       .method(HttpMethod.PATCH)
+                                       .path(EndpointPaths.USERS + "/" + id)
+                                       .data(patchOpRequest.toString())
+                                       .build());
+
+    Group patchedGroup = Group.builder()
+                              .displayName("admin")
+                              .members(Arrays.asList(Member.builder()
+                                                           .type("User")
+                                                           .value("bulkId:" + patchBulkId)
+                                                           .build()))
+                              .build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(createBulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.GROUPS)
+                                       .data(patchedGroup.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.CONFLICT, responseOperations.get(0).getStatus());
+    Assertions.assertEquals("the bulkIds '" + createBulkId + "' and '" + patchBulkId + "' do form a circular "
+                            + "reference that cannot be resolved.",
+                            responseOperations.get(0).getResponse().get().getDetail().get());
+
+    Assertions.assertEquals(HttpStatus.CONFLICT, responseOperations.get(1).getStatus());
+    Assertions.assertEquals("the bulkIds '" + patchBulkId + "' and '" + createBulkId + "' do form a circular "
+                            + "reference that cannot be resolved.",
+                            responseOperations.get(1).getResponse().get().getDetail().get());
+    Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
+  }
+
+  /**
+   * verifies that a self references will cause a {@link BadRequestException} in case of patch
+   */
+  @Test
+  public void testBulkIdReferenceOnPatchAddNoPathWithSelfReference()
+  {
+    final int maxOperations = 1;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName(username)
+                    .meta(Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build())
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    User patchUserRep = User.builder()
+                            .enterpriseUser(EnterpriseUser.builder()
+                                                          .manager(Manager.builder().value("bulkId:" + bulkId).build())
+                                                          .build())
+                            .build();
+    requestOperations.add(PatchRequestOperation.builder()
+                                               .op(PatchOp.ADD)
+                                               .values(Arrays.asList(patchUserRep.toString()))
+                                               .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.PATCH)
+                                       .path(EndpointPaths.USERS + "/" + id)
+                                       .data(patchOpRequest.toString())
+                                       .build());
+
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responseOperations.size());
+    BulkResponseOperation responseOperation = responseOperations.get(0);
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, responseOperation.getStatus());
+    Assertions.assertTrue(responseOperation.getResponse().isPresent());
+    Assertions.assertEquals("the bulkId '" + bulkId + "' is a self-reference. Self-references will not be resolved",
+                            responseOperation.getResponse().get().getDetail().get());
+  }
+
+  /**
+   * verifies that bulkIds in a patch-add operation with a path and a subattribute are correctly resolved. The
+   * used path in this test looks like this: manager[displayname eq "chuck"].value
+   */
+  @Test
+  public void testBulkIdReferenceOnPatchAddWithPathAndSubAttribute()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName(username)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .manager(Manager.builder()
+                                                                  .value("123456")
+                                                                  .displayName("chuck")
+                                                                  .build())
+                                                  .build())
+                    .meta(Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build())
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    requestOperations.add(PatchRequestOperation.builder()
+                                               .op(PatchOp.ADD)
+                                               .path("manager[displayname eq \"chuck\"].value")
+                                               .values(Arrays.asList(AttributeNames.RFC7643.BULK_ID + ":" + bulkId))
+                                               .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.PATCH)
+                                       .path(EndpointPaths.USERS + "/" + id)
+                                       .data(patchOpRequest.toString())
+                                       .build());
+
+    User patchedUser = User.builder().userName(UUID.randomUUID().toString()).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(patchedUser.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    log.debug("{}", bulkRequest.toPrettyString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.OK, responseOperations.get(1).getStatus());
+    Assertions.assertEquals(2, userHandler.getInMemoryMap().size());
+    User patched = userHandler.getInMemoryMap().get(id);
+    User referenced = userHandler.getInMemoryMap()
+                                 .values()
+                                 .stream()
+                                 .filter(u -> !u.getId().get().equals(id))
+                                 .findAny()
+                                 .get();
+    Assertions.assertEquals(referenced.getId().get(),
+                            patched.getEnterpriseUser().get().getManager().get().getValue().get());
+  }
+
+  /**
+   * verifies that bulkIds in a patch-add operation with a path to a complex attribute are correctly resolved.
+   * The used path in this test looks like this: manager[displayname eq "chuck"]
+   */
+  @Test
+  public void testBulkIdReferenceOnPatchAddWithPathOnComplexAttribute()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName(username)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .manager(Manager.builder()
+                                                                  .value("123456")
+                                                                  .displayName("chuck")
+                                                                  .build())
+                                                  .build())
+                    .meta(Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build())
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    String bulkIdReference = AttributeNames.RFC7643.BULK_ID + ":" + bulkId;
+    Manager manager = Manager.builder().value(bulkIdReference).build();
+    requestOperations.add(PatchRequestOperation.builder()
+                                               .op(PatchOp.REPLACE)
+                                               .path("manager[displayname eq \"chuck\"]")
+                                               .values(Arrays.asList(manager.toString()))
+                                               .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.PATCH)
+                                       .path(EndpointPaths.USERS + "/" + id)
+                                       .data(patchOpRequest.toString())
+                                       .build());
+
+    User patchedUser = User.builder().userName(UUID.randomUUID().toString()).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(patchedUser.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    log.debug("{}", bulkRequest.toPrettyString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus(), bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.OK, responseOperations.get(1).getStatus());
+    Assertions.assertEquals(2, userHandler.getInMemoryMap().size());
+    User patched = userHandler.getInMemoryMap().get(id);
+    User referenced = userHandler.getInMemoryMap()
+                                 .values()
+                                 .stream()
+                                 .filter(u -> !u.getId().get().equals(id))
+                                 .findAny()
+                                 .get();
+    Assertions.assertEquals(referenced.getId().get(),
+                            patched.getEnterpriseUser().get().getManager().get().getValue().get());
+  }
+
+  /**
+   * verifies that a dedicated error message is thrown if the patch operation created an erroneous resource
+   */
+  @Test
+  public void testBulkIdReferenceOnPatchAddWithPathOnComplexAttributeWithErroneousType()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    final String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName(username)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .manager(Manager.builder()
+                                                                  .value("123456")
+                                                                  .displayName("chuck")
+                                                                  .build())
+                                                  .build())
+                    .meta(Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build())
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    EnterpriseUser enterpriseUser = EnterpriseUser.builder()
+                                                  .manager(Manager.builder()
+                                                                  .value(UUID.randomUUID().toString())
+                                                                  .build())
+                                                  .build();
+    requestOperations.add(PatchRequestOperation.builder()
+                                               .op(PatchOp.REPLACE)
+                                               .path("manager[displayname eq \"chuck\"]")
+                                               .values(Arrays.asList(enterpriseUser.toString()))
+                                               .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(UUID.randomUUID().toString())
+                                       .method(HttpMethod.PATCH)
+                                       .path(EndpointPaths.USERS + "/" + id)
+                                       .data(patchOpRequest.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            responseOperations.get(0).getStatus(),
+                            bulkResponse.toPrettyString());
+    MatcherAssert.assertThat(responseOperations.get(0).getResponse().get().getDetail().get(),
+                             Matchers.startsWith("your patch operation created a malformed resource"));
   }
 }

@@ -12,10 +12,12 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.SchemaUris;
 import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.constants.enums.SortOrder;
 import de.gold.scim.common.exceptions.BadRequestException;
+import de.gold.scim.common.exceptions.DocumentValidationException;
 import de.gold.scim.common.exceptions.IOException;
 import de.gold.scim.common.exceptions.InternalServerException;
 import de.gold.scim.common.exceptions.NotImplementedException;
@@ -924,10 +926,20 @@ class ResourceEndpointHandler
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
       PatchHandler patchHandler = new PatchHandler(resourceType);
       resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
-      SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
-                                                 resourceType,
-                                                 resourceNode,
-                                                 SchemaValidator.HttpMethod.PATCH);
+      try
+      {
+        SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
+                                                   resourceType,
+                                                   resourceNode,
+                                                   SchemaValidator.HttpMethod.PATCH);
+      }
+      catch (DocumentValidationException ex)
+      {
+        throw new DocumentValidationException("your patch operation created a malformed resource. The original message"
+                                              + " is: \n\t" + ex.getDetail() + "\nthe patched resource has the "
+                                              + "following structure: \n\t" + resourceNode.toPrettyString(), ex,
+                                              HttpStatus.BAD_REQUEST, null);
+      }
       resourceNode = resourceHandler.updateResource(resourceNode);
 
       final String location = getLocation(resourceType, id, baseUrlSupplier);
