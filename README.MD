@@ -17,7 +17,7 @@ support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is sim
 
 1. a schema definition that describes the resource you want to supply
 2. a resource type definition that describes the endpoint and the additional schema extensions that may be used within
- the shema definition  
+ the schema definition  
 
 For more detailed information take a look into the [wiki](https://github.com/Captain-P-Goldfish/SCIM/wiki)
 
@@ -25,11 +25,14 @@ The following features are supported
 
 - [x] create
 - [x] read
-- [x] list (including filtering) see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features)
+- [x] list
+  * filtering (@see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features))
+  * sorting (@see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features))
 - [x] update
-- [x] patch
+- [x] patch (@see [patching resources](https://github.com/Captain-P-Goldfish/SCIM/wiki/Patching-resources))
 - [x] delete
 - [x] bulk
+  * resolving of bulkId references (@see [bulkId reference resolving](https://github.com/Captain-P-Goldfish/SCIM/wiki/BulkId-reference-resolving))
 - [x] attributes-parameter
 - [x] excludedAttributes-parameter
 
@@ -39,7 +42,6 @@ the following features will be developed in the future:
 
 Missing features defined by SCIM
 - [ ] resource versioning
-- [ ] resolving and ordering of bulkIds
 
 Upcoming features not defined by SCIM
 - [ ] authorization for specific endpoints
