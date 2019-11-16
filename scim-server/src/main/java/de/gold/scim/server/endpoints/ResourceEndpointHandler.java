@@ -940,8 +940,10 @@ class ResourceEndpointHandler
                                               + "following structure: \n\t" + resourceNode.toPrettyString(), ex,
                                               HttpStatus.BAD_REQUEST, null);
       }
-      resourceNode = resourceHandler.updateResource(resourceNode);
-
+      if (patchHandler.isChangedResource())
+      {
+        resourceNode = resourceHandler.updateResource(resourceNode);
+      }
       final String location = getLocation(resourceType, id, baseUrlSupplier);
       resourceNode.getMeta().ifPresent(meta -> {
         meta.setResourceType(resourceType.getName());

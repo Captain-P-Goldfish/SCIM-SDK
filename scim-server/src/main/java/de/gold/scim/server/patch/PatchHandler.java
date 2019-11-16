@@ -15,6 +15,7 @@ import de.gold.scim.common.resources.ResourceNode;
 import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.schemas.ResourceType;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -32,6 +33,13 @@ public class PatchHandler
    * this resource type is used to get the attribute definitions of the values from the patch operations
    */
   private final ResourceType resourceType;
+
+  /**
+   * this attribute tells us if the resource was effectively changed meaning that an attribute did receive a new
+   * value that differs from the value before
+   */
+  @Getter
+  private boolean changedResource;
 
   public PatchHandler(ResourceType resourceType)
   {
@@ -53,6 +61,7 @@ public class PatchHandler
       changeWasMade.weakCompareAndSet(false, handlePatchOp(resource, operation));
     }
     setLastModified(resource, changeWasMade);
+    changedResource = changeWasMade.get();
     return resource;
   }
 
