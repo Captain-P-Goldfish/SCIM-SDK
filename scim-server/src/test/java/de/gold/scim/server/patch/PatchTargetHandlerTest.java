@@ -1880,14 +1880,16 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies adding a subattribute to a complex type with a matching filter expression works correctly
+   * verifies adding and replacing a subattribute to a complex type with a matching filter expression works
+   * correctly
    */
-  @Test
-  public void testAddAttributeWithFilterExpression()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddAttributeWithFilterExpression(PatchOp patchOp)
   {
     final String path = "complex[string eq \"hello world\"].number";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(Collections.singletonList("5"))
                                                                                 .build());
@@ -1910,14 +1912,15 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies adding a subattribute to a complex type with a none matching filter will not work
+   * verifies adding and replacing a subattribute to a complex type with a none matching filter will not work
    */
-  @Test
-  public void testAddAttributeWithFilterExpressionThatDoesNotMatch()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddAttributeWithFilterExpressionThatDoesNotMatch(PatchOp patchOp)
   {
     final String path = "complex[string eq \"hello world\"].number";
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
+                                                                                .op(patchOp)
                                                                                 .path(path)
                                                                                 .values(Collections.singletonList("5"))
                                                                                 .build());
