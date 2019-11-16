@@ -14,6 +14,7 @@ import org.junit.jupiter.api.TestFactory;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.gold.scim.common.constants.ClassPathReferences;
+import de.gold.scim.common.exceptions.InternalServerException;
 import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.schemas.Schema;
 import de.gold.scim.common.schemas.SchemaAttribute;
@@ -81,6 +82,7 @@ public class ResourceNodeTest implements FileReferences
     return dynamicTestList;
   }
 
+
   private DynamicTest getSortByAttributeTest(Schema userSchema, User user, String attributeName, String expectedValue)
   {
     return DynamicTest.dynamicTest(attributeName + " eq " + expectedValue, () -> {
@@ -89,6 +91,17 @@ public class ResourceNodeTest implements FileReferences
       Assertions.assertTrue(sortByAttributeOptional.isPresent());
       Assertions.assertEquals(expectedValue, sortByAttributeOptional.get().asText());
     });
+  }
+
+  /**
+   * verifies that an exception is thrown if the developer tries to resets an existing meta attribute
+   */
+  @Test
+  public void testResetMetaAttribute()
+  {
+    TestResource testResource = new TestResource();
+    Assertions.assertDoesNotThrow(() -> testResource.setMeta(Meta.builder().build()));
+    Assertions.assertThrows(InternalServerException.class, () -> testResource.setMeta(Meta.builder().build()));
   }
 
   /**

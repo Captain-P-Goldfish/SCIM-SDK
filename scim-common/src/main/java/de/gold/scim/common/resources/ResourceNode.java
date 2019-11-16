@@ -10,6 +10,7 @@ import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.constants.enums.Type;
 import de.gold.scim.common.exceptions.BadRequestException;
+import de.gold.scim.common.exceptions.InternalServerException;
 import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.schemas.SchemaAttribute;
 
@@ -132,6 +133,11 @@ public abstract class ResourceNode extends AbstractSchemasHolder
    */
   public void setMeta(Meta meta)
   {
+    if (getMeta().isPresent())
+    {
+      throw new InternalServerException("meta attribute is already present please do not override the whole meta "
+                                        + "attribute but the single values", null, null);
+    }
     setAttribute(AttributeNames.RFC7643.META, meta);
   }
 

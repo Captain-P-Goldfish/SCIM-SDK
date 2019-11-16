@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.junit.jupiter.api.Assertions;
+
+import de.gold.scim.common.constants.ResourceTypeNames;
 import de.gold.scim.common.constants.enums.SortOrder;
 import de.gold.scim.common.exceptions.ConflictException;
 import de.gold.scim.common.exceptions.ResourceNotFoundException;
@@ -36,6 +39,11 @@ public class UserHandlerImpl extends ResourceHandler<User>
   @Override
   public User createResource(User resource)
   {
+    Assertions.assertTrue(resource.getMeta().isPresent());
+    Meta meta = resource.getMeta().get();
+    Assertions.assertFalse(meta.getLocation().isPresent());
+    Assertions.assertTrue(meta.getResourceType().isPresent());
+    Assertions.assertEquals(ResourceTypeNames.USER, meta.getResourceType().get());
     final String userId = UUID.randomUUID().toString();
     if (inMemoryMap.containsKey(userId))
     {
@@ -43,7 +51,8 @@ public class UserHandlerImpl extends ResourceHandler<User>
     }
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
-    resource.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
+    meta.setCreated(Instant.now());
+    meta.setLastModified(Instant.now());
     return resource;
   }
 
@@ -69,17 +78,20 @@ public class UserHandlerImpl extends ResourceHandler<User>
   @Override
   public User updateResource(User resource)
   {
+    Assertions.assertTrue(resource.getMeta().isPresent());
+    Meta meta = resource.getMeta().get();
+    Assertions.assertTrue(meta.getLocation().isPresent());
+    Assertions.assertTrue(meta.getResourceType().isPresent());
+    Assertions.assertEquals(ResourceTypeNames.USER, meta.getResourceType().get());
     String userId = resource.getId().get();
     User oldUser = inMemoryMap.get(userId);
     if (oldUser == null)
     {
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
-    resource.setMeta(Meta.builder().created(oldUser.getMeta().get().getCreated().get()).build());
     inMemoryMap.put(userId, resource);
-    resource.getMeta().ifPresent(meta -> {
-      meta.setLastModified(Instant.now());
-    });
+    meta.setCreated(oldUser.getMeta().get().getCreated().get());
+    meta.setLastModified(Instant.now());
     return resource;
   }
 

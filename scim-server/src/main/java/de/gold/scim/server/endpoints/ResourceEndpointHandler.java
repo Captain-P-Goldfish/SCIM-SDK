@@ -200,20 +200,20 @@ class ResourceEndpointHandler
                                                             SchemaValidator.HttpMethod.POST);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
+      Meta meta = Meta.builder().resourceType(resourceType.getName()).build();
+      resourceNode.setMeta(meta);
       resourceNode = resourceHandler.createResource(resourceNode);
       if (resourceNode == null)
       {
         throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
                                           + "'");
       }
-      resourceNode.getMeta().ifPresent(meta -> meta.setResourceType(resourceType.getName()));
       Supplier<String> errorMessage = () -> "ID attribute not set on created resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
       Supplier<String> metaErrorMessage = () -> "Meta attribute not set on created resource";
-      Meta meta = resourceNode.getMeta()
-                              .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null, null));
+      meta = resourceNode.getMeta().orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null, null));
       meta.setLocation(location);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
@@ -774,6 +774,14 @@ class ResourceEndpointHandler
       }
       resourceNode.setId(id);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
+      Meta meta = resourceNode.getMeta().orElse(null);
+      if (meta == null)
+      {
+        meta = Meta.builder().build();
+        resourceNode.setMeta(meta);
+      }
+      meta.setLocation(location);
+      meta.setResourceType(resourceType.getName());
       resourceNode = resourceHandler.updateResource(resourceNode);
       if (resourceNode == null)
       {
@@ -789,10 +797,6 @@ class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
-      resourceNode.getMeta().ifPresent(meta -> {
-        meta.setResourceType(resourceType.getName());
-        meta.setLocation(location);
-      });
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -922,7 +926,15 @@ class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
-
+      Meta meta = resourceNode.getMeta().orElse(null);
+      if (meta == null)
+      {
+        meta = Meta.builder().build();
+        resourceNode.setMeta(meta);
+      }
+      final String location = getLocation(resourceType, id, baseUrlSupplier);
+      meta.setLocation(location);
+      meta.setResourceType(resourceType.getName());
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
       PatchHandler patchHandler = new PatchHandler(resourceType);
       resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
@@ -944,11 +956,6 @@ class ResourceEndpointHandler
       {
         resourceNode = resourceHandler.updateResource(resourceNode);
       }
-      final String location = getLocation(resourceType, id, baseUrlSupplier);
-      resourceNode.getMeta().ifPresent(meta -> {
-        meta.setResourceType(resourceType.getName());
-        meta.setLocation(location);
-      });
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
