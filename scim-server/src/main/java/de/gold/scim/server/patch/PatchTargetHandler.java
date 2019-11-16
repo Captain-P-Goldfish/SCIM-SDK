@@ -258,7 +258,8 @@ public class PatchTargetHandler extends AbstractPatch
         {
           resource.remove(schemaAttribute.getName());
         }
-        return false;
+        throw new BadRequestException("the path '" + path.toString() + "' did not match any nodes", null,
+                                      ScimType.RFC7644.NO_TARGET);
       }
       if (handleInnerComplexAttribute(subAttribute, complexNode, values))
       {
@@ -290,6 +291,15 @@ public class PatchTargetHandler extends AbstractPatch
         throw new BadRequestException("given value is not a complex json representation for attribute '"
                                       + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
                                       null, ScimType.RFC7644.INVALID_VALUE);
+      }
+      PatchFilterResolver filterResolver = new PatchFilterResolver();
+      ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
+      boolean hasFilterExpression = path.getChild() != null;
+      if (complexNode != null && hasFilterExpression
+          && !filterResolver.isNodeMatchingFilter(complexNode, path).isPresent())
+      {
+        throw new BadRequestException("the path '" + path.toString() + "' did not match any nodes", null,
+                                      ScimType.RFC7644.NO_TARGET);
       }
       boolean changeWasMade = false;
       if (PatchOp.ADD.equals(patchOp))
@@ -652,12 +662,12 @@ public class PatchTargetHandler extends AbstractPatch
   private void validateAddOperation(AttributePathRoot path, List<String> values)
   {
     // emails[value eq "123456"] (such an expression has no meaning in case of add)
-    if (StringUtils.isBlank(path.getSubAttributeName()) && path.getChild() != null)
-    {
-      throw new BadRequestException("the given expression is not valid for an add-operation: '" + path.toString()
-                                    + "'. Did you want an expression like this '" + path.toString()
-                                    + ".subAttributeName'?", null, ScimType.RFC7644.INVALID_PATH);
-    }
+    // if (StringUtils.isBlank(path.getSubAttributeName()) && path.getChild() != null)
+    // {
+    // throw new BadRequestException("the given expression is not valid for an add-operation: '" + path.toString()
+    // + "'. Did you want an expression like this '" + path.toString()
+    // + ".subAttributeName'?", null, ScimType.RFC7644.INVALID_PATH);
+    // }
     checkIsValidComplexJson(path, values);
   }
 

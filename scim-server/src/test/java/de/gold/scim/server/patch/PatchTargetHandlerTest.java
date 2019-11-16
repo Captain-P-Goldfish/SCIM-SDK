@@ -982,12 +982,9 @@ public class PatchTargetHandlerTest implements FileReferences
     catch (ScimException ex)
     {
       log.debug(ex.getDetail(), ex);
-      Assertions.assertEquals("the given expression is not valid for an add-operation: 'multiComplex[stringarray eq "
-                              + "\"hello world\" or stringarray eq \"goodbye world\"]'. Did you want an expression "
-                              + "like this 'multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye "
-                              + "world\"].subAttributeName'?",
+      Assertions.assertEquals("the value must be a whole complex type json structure but was: 'goldfish'",
                               ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
   }
@@ -1931,13 +1928,127 @@ public class PatchTargetHandlerTest implements FileReferences
     complex.setString("jippie ay yay");
     allTypes.setComplex(complex);
 
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals("the path '" + path + "' did not match any nodes", ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+
+    }
+  }
+
+  /**
+   * verifies adding and replacing a subattribute to a complex type with a none matching filter will not work
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddAttributeWithFilterExpressionThatDoesNotMatch__(PatchOp patchOp)
+  {
+    final String path = "complex[string eq \"hello world\"].number";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .values(Collections.singletonList("5"))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals("the path '" + path + "' did not match any nodes", ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that a bad request is returned if the filter expression does not match
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testReplaceComplexTypeValuesWithNoneMatchingFilterPath(PatchOp patchOp)
+  {
+    final String path = "complex[string eq \"hello world\"]";
+    // @formatter:off
+    List<String> values = Arrays.asList("{" +
+                                          "\"string\": \"hello world\"," +
+                                          "\"number\": 5," +
+                                          "\"boolArray\": [true, false, true]," +
+                                          "\"decimalArray\": [1.1, 2.2, 3.3]" +
+                                        "}");
+    // @formatter:on
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setString("jippie ay yay");
+    allTypes.setComplex(complex);
+
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals("the path '" + path + "' did not match any nodes", ex.getDetail());
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that the values within a complex type are added/replaced if the filter expression does match
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testReplaceComplexTypeValuesWithFilterPath(PatchOp patchOp)
+  {
+    final String path = "complex[string eq \"hello world\"]";
+    // @formatter:off
+    List<String> values = Arrays.asList("{" +
+                                          "\"string\": \"dooms day\"," +
+                                          "\"number\": 5," +
+                                          "\"boolArray\": [true, false, true]," +
+                                          "\"decimalArray\": [1.1, 2.2, 3.3]" +
+                                        "}");
+    // @formatter:on
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setString("hello world");
+    allTypes.setComplex(complex);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertTrue(allTypes.getComplex().isPresent(), allTypes.toPrettyString());
-    Assertions.assertEquals(1, allTypes.getComplex().get().size(), allTypes.toPrettyString());
-    Assertions.assertEquals("jippie ay yay", allTypes.getComplex().get().getString().get(), allTypes.toPrettyString());
-    Assertions.assertFalse(allTypes.getComplex().get().getNumber().isPresent(), allTypes.toPrettyString());
-    Assertions.assertFalse(allTypes.getMeta().isPresent());
+    Assertions.assertEquals(3, allTypes.size());
+    Assertions.assertTrue(allTypes.getComplex().isPresent());
+    Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent());
+    Assertions.assertEquals("dooms day", allTypes.getComplex().get().getString().get());
+    Assertions.assertTrue(allTypes.getComplex().get().getNumber().isPresent());
+    Assertions.assertEquals(5L, allTypes.getComplex().get().getNumber().get());
+    MatcherAssert.assertThat(allTypes.getComplex().get().getBoolArray(), Matchers.contains(true, false, true));
+    MatcherAssert.assertThat(allTypes.getComplex().get().getDecimalArray(), Matchers.contains(1.1, 2.2, 3.3));
   }
 
 }
