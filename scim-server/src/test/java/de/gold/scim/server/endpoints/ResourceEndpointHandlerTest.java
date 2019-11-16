@@ -2,6 +2,7 @@ package de.gold.scim.server.endpoints;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -190,8 +191,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
    */
   private User createUser(String endpoint)
   {
+    User u = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    u.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
     ScimResponse scimResponse = resourceEndpointHandler.createResource(endpoint,
-                                                                       readResourceFile(USER_RESOURCE),
+                                                                       u.toString(),
                                                                        getBaseUrlSupplier());
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
