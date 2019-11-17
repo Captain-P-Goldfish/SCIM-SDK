@@ -1680,7 +1680,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies an add operation will also be handled on an extension that has not been set yet
+   * verifies a remove operation will fail if values are added into the request
    */
   @Test
   public void testRemoveWithValuesSet()
