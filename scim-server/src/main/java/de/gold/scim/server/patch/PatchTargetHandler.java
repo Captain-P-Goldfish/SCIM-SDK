@@ -1,6 +1,7 @@
 package de.gold.scim.server.patch;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -126,6 +127,7 @@ public class PatchTargetHandler extends AbstractPatch
     ObjectNode currentParent = resource;
     if (isExtension)
     {
+      addExtensionToSchemas(resource, patchOp, schemaAttribute);
       currentParent = (ObjectNode)currentParent.get(schemaAttribute.getResourceUri());
       if (currentParent == null)
       {
@@ -139,46 +141,159 @@ public class PatchTargetHandler extends AbstractPatch
     if (firstAttribute == null && !Type.COMPLEX.equals(schemaAttribute.getType())
         || (firstAttribute != null && !firstAttribute.isArray() && !firstAttribute.isObject()))
     {
-      return handleSimpleNode(schemaAttribute, currentParent, values);
+      boolean changeWasMade = handleSimpleNode(schemaAttribute, currentParent, values);
+      removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
+      return changeWasMade;
     }
     else if (firstAttribute != null && firstAttribute.isArray())
     {
-      if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null
-          && path.getChild() == null)
-      {
-        boolean effectiveChangeMade;
-        effectiveChangeMade = !firstAttribute.isEmpty();
-        resource.remove(schemaAttribute.getName());
-        return effectiveChangeMade;
-      }
-      boolean changeWasMade = handleMultiValuedAttribute(schemaAttribute,
-                                                         (ArrayNode)firstAttribute,
-                                                         fullAttributeNames,
-                                                         values);
-      if (firstAttribute.isEmpty())
-      {
-        resource.remove(schemaAttribute.getName());
-      }
-      return changeWasMade;
+      return handlePatchOperationOnMultiValued(resource,
+                                               values,
+                                               fullAttributeNames,
+                                               schemaAttribute,
+                                               isExtension,
+                                               currentParent,
+                                               firstAttribute);
     }
     else if (Type.COMPLEX.equals(schemaAttribute.getType()))
     {
-      if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null)
-      {
-        if (firstAttribute == null)
-        {
-          return false;
-        }
-        else
-        {
-          resource.remove(firstAttributeName);
-          return true;
-        }
-      }
-      return handleComplexAttribute(schemaAttribute, currentParent, fullAttributeNames, values);
+      return handlePatchOperationOnComplex(resource,
+                                           values,
+                                           fullAttributeNames,
+                                           firstAttributeName,
+                                           schemaAttribute,
+                                           isExtension,
+                                           currentParent,
+                                           firstAttribute);
     }
 
     return false;
+  }
+
+  /**
+   * handles a single patch operation on a complex type
+   *
+   * @param resource the resource that is currently processed
+   * @param values the values that should be added or replaced
+   * @param fullAttributeNames the full attribute names from the top level to leaf level e.g. ["emails",
+   *          "emails.value"]
+   * @param schemaAttribute the schema attribute definition of the value that should be replaced
+   * @param isExtension if this operation is executed on an extension
+   * @param currentParent if {@code isExtension} is true this is the extension node otherwise this node is
+   *          equals to {@code resource}
+   * @param firstAttribute the attribute extracted from the {@code currentParent}
+   * @return true if an effective change was made, false else
+   */
+  private boolean handlePatchOperationOnComplex(ResourceNode resource,
+                                                List<String> values,
+                                                String[] fullAttributeNames,
+                                                String firstAttributeName,
+                                                SchemaAttribute schemaAttribute,
+                                                boolean isExtension,
+                                                ObjectNode currentParent,
+                                                JsonNode firstAttribute)
+  {
+    if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null)
+    {
+      if (firstAttribute == null)
+      {
+        return false;
+      }
+      else
+      {
+        resource.remove(firstAttributeName);
+        return true;
+      }
+    }
+    boolean changeMade = handleComplexAttribute(schemaAttribute, currentParent, fullAttributeNames, values);
+    removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
+    return changeMade;
+  }
+
+  /**
+   * handles a single patch operation on a multi valued type
+   *
+   * @param resource the resource that is currently processed
+   * @param values the values that should be added or replaced
+   * @param fullAttributeNames the full attribute names from the top level to leaf level e.g. ["emails",
+   *          "emails.value"]
+   * @param schemaAttribute the schema attribute definition of the value that should be replaced
+   * @param isExtension if this operation is executed on an extension
+   * @param currentParent if {@code isExtension} is true this is the extension node otherwise this node is
+   *          equals to {@code resource}
+   * @param firstAttribute the attribute extracted from the {@code currentParent}
+   * @return true if an effective change was made, false else
+   */
+  private boolean handlePatchOperationOnMultiValued(ResourceNode resource,
+                                                    List<String> values,
+                                                    String[] fullAttributeNames,
+                                                    SchemaAttribute schemaAttribute,
+                                                    boolean isExtension,
+                                                    ObjectNode currentParent,
+                                                    JsonNode firstAttribute)
+  {
+    if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null
+        && path.getChild() == null)
+    {
+      int sizeBefore = currentParent.size();
+      JsonNode removedNode = currentParent.remove(schemaAttribute.getName());
+      boolean effectiveChangeMade = false;
+      if (sizeBefore > currentParent.size() && !removedNode.isEmpty())
+      {
+        effectiveChangeMade = true;
+      }
+      removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
+      return effectiveChangeMade;
+    }
+    boolean changeWasMade = handleMultiValuedAttribute(schemaAttribute,
+                                                       (ArrayNode)firstAttribute,
+                                                       fullAttributeNames,
+                                                       values);
+    if (firstAttribute.isEmpty())
+    {
+      resource.remove(schemaAttribute.getName());
+      removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
+    }
+    return changeWasMade;
+  }
+
+  /**
+   * in case that an extension object is empty after a remove operation the extension will be removed from the
+   * resource
+   *
+   * @param resource the resource that owns the extension attribute
+   * @param schemaAttribute the attribute of the extension that was removed
+   * @param isExtension if the current operation is executed on an extension or not
+   * @param currentParent if the value {@code isExtension} is true this is the extension object otherwise it is
+   *          equals to {@code resource}
+   */
+  private void removeExtensionIfEmpty(ResourceNode resource,
+                                      SchemaAttribute schemaAttribute,
+                                      boolean isExtension,
+                                      ObjectNode currentParent)
+  {
+    if (isExtension && currentParent.isEmpty())
+    {
+      resource.remove(schemaAttribute.getResourceUri());
+      resource.removeSchema(schemaAttribute.getResourceUri());
+    }
+  }
+
+  /**
+   * adds an extension uri to the schemas attribute under the condition that the operation is not a remove
+   * operation and that the extension uri is not already present within the schemas
+   *
+   * @param resource the resource node to which the extension uri should be added
+   * @param patchOp the current patch operation
+   * @param schemaAttribute the schema attribute that is the target of operation
+   */
+  private void addExtensionToSchemas(ResourceNode resource, PatchOp patchOp, SchemaAttribute schemaAttribute)
+  {
+    if (patchOp.equals(PatchOp.REMOVE))
+    {
+      return;
+    }
+    resource.addSchema(schemaAttribute.getResourceUri());
   }
 
   /**
@@ -243,79 +358,108 @@ public class PatchTargetHandler extends AbstractPatch
   {
     if (fullAttributeNames.length > 1)
     {
-
-      SchemaAttribute subAttribute = getSchemaAttribute(fullAttributeNames[1]);
-      ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
-      if (complexNode == null)
-      {
-        complexNode = new ScimObjectNode(schemaAttribute);
-        resource.set(schemaAttribute.getName(), complexNode);
-      }
-      Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path);
-      if (!matchingNode.isPresent())
-      {
-        if (complexNode.isEmpty())
-        {
-          resource.remove(schemaAttribute.getName());
-        }
-        throw new BadRequestException("the path '" + path.toString() + "' did not match any nodes", null,
-                                      ScimType.RFC7644.NO_TARGET);
-      }
-      if (handleInnerComplexAttribute(subAttribute, complexNode, values))
-      {
-        if (complexNode.isEmpty())
-        {
-          resource.remove(schemaAttribute.getName());
-        }
-        return true;
-      }
-      else if (complexNode.isEmpty())
-      {
-        resource.remove(schemaAttribute.getName());
-        return false;
-      }
-      JsonNode firstAttribute = resource.get(fullAttributeNames[1]);
-      return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
+      return handleComplexSubAttributePathReference(schemaAttribute, resource, fullAttributeNames[1], values);
     }
     else
     {
-      if (values.size() != 1 || StringUtils.isBlank(values.get(0)))
-      {
-        throw new BadRequestException("found multiple or no values for non multi valued complex type '"
-                                      + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
-                                      null, ScimType.RFC7644.INVALID_VALUE);
-      }
-      JsonNode newNode = JsonHelper.readJsonDocument(values.get(0));
-      if (newNode == null || !newNode.isObject())
-      {
-        throw new BadRequestException("given value is not a complex json representation for attribute '"
-                                      + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
-                                      null, ScimType.RFC7644.INVALID_VALUE);
-      }
-      PatchFilterResolver filterResolver = new PatchFilterResolver();
-      ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
-      boolean hasFilterExpression = path.getChild() != null;
-      if (complexNode != null && hasFilterExpression
-          && !filterResolver.isNodeMatchingFilter(complexNode, path).isPresent())
-      {
-        throw new BadRequestException("the path '" + path.toString() + "' did not match any nodes", null,
-                                      ScimType.RFC7644.NO_TARGET);
-      }
-      boolean changeWasMade = false;
-      if (PatchOp.ADD.equals(patchOp))
-      {
-        JsonNode oldNode = resource.get(schemaAttribute.getName());
-        newNode = mergeObjectNodes((ObjectNode)newNode, oldNode);
-        resource.set(schemaAttribute.getName(), newNode);
-        changeWasMade = !newNode.equals(oldNode);
-      }
-      else if (PatchOp.REPLACE.equals(patchOp))
-      {
-        resource.set(schemaAttribute.getName(), newNode);
-        changeWasMade = true;
-      }
-      return changeWasMade;
+      return handleDirectComplexPathReference(schemaAttribute, resource, values);
     }
+  }
+
+  /**
+   * will handle a direct complex path reference e.g. "name"
+   *
+   * @param schemaAttribute the schema attribute definition of the complex attribute
+   * @param resource the resource that is currently processed
+   * @param values the values that will be added or replaced
+   * @return true if an effective change has been made, false else
+   */
+  private boolean handleDirectComplexPathReference(SchemaAttribute schemaAttribute,
+                                                   ObjectNode resource,
+                                                   List<String> values)
+  {
+    if (values.size() != 1 || StringUtils.isBlank(values.get(0)))
+    {
+      throw new BadRequestException("found multiple or no values for non multi valued complex type '"
+                                    + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
+                                    null, ScimType.RFC7644.INVALID_VALUE);
+    }
+    JsonNode newNode = JsonHelper.readJsonDocument(values.get(0));
+    if (newNode == null || !newNode.isObject())
+    {
+      throw new BadRequestException("given value is not a complex json representation for attribute '"
+                                    + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
+                                    null, ScimType.RFC7644.INVALID_VALUE);
+    }
+    PatchFilterResolver filterResolver = new PatchFilterResolver();
+    ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
+    boolean hasFilterExpression = path.getChild() != null;
+    if (complexNode != null && hasFilterExpression
+        && !filterResolver.isNodeMatchingFilter(complexNode, path).isPresent())
+    {
+      return false;
+    }
+    boolean changeWasMade = false;
+    if (PatchOp.ADD.equals(patchOp))
+    {
+      JsonNode oldNode = resource.get(schemaAttribute.getName());
+      newNode = mergeObjectNodes((ObjectNode)newNode, oldNode);
+      resource.set(schemaAttribute.getName(), newNode);
+      changeWasMade = !newNode.equals(oldNode);
+    }
+    else if (PatchOp.REPLACE.equals(patchOp))
+    {
+      resource.set(schemaAttribute.getName(), newNode);
+      changeWasMade = true;
+    }
+    return changeWasMade;
+  }
+
+  /**
+   * handles a complex sub attribute path reference e.g. "name.givenName"
+   *
+   * @param schemaAttribute the schema attribute definition of the sub attribute
+   * @param resource the resource that is currently processed
+   * @param fullAttributeName the attribute name e.g. name.givenName
+   * @param values the values that should be added or replaced
+   * @return true if an effective change was made on this resource false else
+   */
+  private boolean handleComplexSubAttributePathReference(SchemaAttribute schemaAttribute,
+                                                         ObjectNode resource,
+                                                         String fullAttributeName,
+                                                         List<String> values)
+  {
+    SchemaAttribute subAttribute = getSchemaAttribute(fullAttributeName);
+    ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
+    if (complexNode == null)
+    {
+      complexNode = new ScimObjectNode(schemaAttribute);
+      resource.set(schemaAttribute.getName(), complexNode);
+    }
+    Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path);
+    if (!matchingNode.isPresent())
+    {
+      if (complexNode.isEmpty())
+      {
+        resource.remove(schemaAttribute.getName());
+      }
+      return false;
+    }
+    if (handleInnerComplexAttribute(subAttribute, complexNode, values))
+    {
+      if (complexNode.isEmpty())
+      {
+        resource.remove(schemaAttribute.getName());
+      }
+      return true;
+    }
+    else if (complexNode.isEmpty())
+    {
+      resource.remove(schemaAttribute.getName());
+      return false;
+    }
+    JsonNode firstAttribute = resource.get(fullAttributeName);
+    return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
   }
 
   /**
@@ -409,75 +553,15 @@ public class PatchTargetHandler extends AbstractPatch
     {
       if (fullAttributeNames.length > 1)
       {
-        if (!PatchOp.REMOVE.equals(patchOp) && multiValued.isEmpty())
-        {
-          throw new BadRequestException("the multi valued complex type '" + schemaAttribute.getFullResourceName()
-                                        + "' is not set", null, ScimType.RFC7644.NO_TARGET);
-        }
-        SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType,
-                                                                                      fullAttributeNames[1]);
-        List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
-        AtomicBoolean changeWasMade = new AtomicBoolean(false);
-        for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
-        {
-          ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
-          changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
-          if (complexNode.isEmpty())
-          {
-            multiValued.remove(matchingComplexNodes.get(i).getIndex());
-          }
-        }
-        matchingComplexNodes.forEach(jsonNodes -> {});
-        return changeWasMade.get();
+        return handleMultiComplexSubAttributePath(multiValued, fullAttributeNames[1], values);
       }
       else if (StringUtils.isNotBlank(path.getSubAttributeName()))
       {
-        String fullName = fullAttributeNames[0] + "." + path.getSubAttributeName();
-        SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullName);
-        List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
-        AtomicBoolean changeWasMade = new AtomicBoolean(false);
-        for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
-        {
-          ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
-          changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
-          if (complexNode.isEmpty())
-          {
-            multiValued.remove(matchingComplexNodes.get(i).getIndex());
-          }
-        }
-        return changeWasMade.get();
+        return handleMultiValuedSubAttributePathWithFilter(multiValued, fullAttributeNames[0], values);
       }
       else
       {
-        if (PatchOp.REMOVE.equals(patchOp))
-        {
-          List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
-          boolean changeWasMade = false;
-          for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
-          {
-            multiValued.remove(matchingComplexNodes.get(i).getIndex());
-            changeWasMade = true;
-          }
-          return changeWasMade;
-        }
-        if (PatchOp.REPLACE.equals(patchOp))
-        {
-          multiValued.removeAll();
-        }
-        for ( String value : values )
-        {
-          try
-          {
-            JsonNode jsonNode = JsonHelper.readJsonDocument(value);
-            multiValued.add(jsonNode);
-          }
-          catch (IOException ex)
-          {
-            throw new BadRequestException("the value must be a whole complex type json structure but was: '" + value
-                                          + "'", ex, ScimType.RFC7644.INVALID_VALUE);
-          }
-        }
-        return true;
+        return handleDirectMultiValuedComplexPathReference(multiValued, values);
       }
     }
     else
@@ -492,6 +576,108 @@ public class PatchTargetHandler extends AbstractPatch
       }
       return true;
     }
+  }
+
+  /**
+   * handles a direct multi valued complex path reference e.g. "emails" or "emails[type eq "work"]"
+   *
+   * @param multiValued the multi values array node that holds the complex nodes
+   * @param values the values that should be added or replaced on all matching nodes
+   * @return true if an effective change has been made, false else
+   */
+  private boolean handleDirectMultiValuedComplexPathReference(ArrayNode multiValued, List<String> values)
+  {
+    if (PatchOp.REMOVE.equals(patchOp))
+    {
+      List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
+      boolean changeWasMade = false;
+      for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+      {
+        multiValued.remove(matchingComplexNodes.get(i).getIndex());
+        changeWasMade = true;
+      }
+      return changeWasMade;
+    }
+    if (PatchOp.REPLACE.equals(patchOp))
+    {
+      multiValued.removeAll();
+    }
+    for ( String value : values )
+    {
+      try
+      {
+        JsonNode jsonNode = JsonHelper.readJsonDocument(value);
+        multiValued.add(jsonNode);
+      }
+      catch (IOException ex)
+      {
+        throw new BadRequestException("the value must be a whole complex type json structure but was: '" + value + "'",
+                                      ex, ScimType.RFC7644.INVALID_VALUE);
+      }
+    }
+    return true;
+  }
+
+  /**
+   * handles a multi valued complex type sub attribute path reference that contains also a filter expression
+   * e.g. emails[type eq "home"].value
+   *
+   * @param multiValued the multi valued complex attribute node
+   * @param fullAttributeName the full name of the sub attribute that is referenced
+   * @param values the values that should be added or replaced
+   * @return true if an effective change has been made, false else
+   */
+  private boolean handleMultiValuedSubAttributePathWithFilter(ArrayNode multiValued,
+                                                              String fullAttributeName,
+                                                              List<String> values)
+  {
+    String fullName = fullAttributeName + "." + path.getSubAttributeName();
+    SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullName);
+    List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
+    AtomicBoolean changeWasMade = new AtomicBoolean(false);
+    for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+    {
+      ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
+      changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
+      if (complexNode.isEmpty())
+      {
+        multiValued.remove(matchingComplexNodes.get(i).getIndex());
+      }
+    }
+    return changeWasMade.get();
+  }
+
+  /**
+   * handles a multi valued complex type with a path reference that points to a sub attribute of the
+   * multi-valued complex type e.g. emails.value
+   *
+   * @param multiValued the array of the multi valued complex node
+   * @param fullAttributeName the full name of the sub attribute
+   * @param values the values that should be added or replaced
+   * @return true if an effective change has been made, false else
+   */
+  private boolean handleMultiComplexSubAttributePath(ArrayNode multiValued,
+                                                     String fullAttributeName,
+                                                     List<String> values)
+  {
+    if (!PatchOp.REMOVE.equals(patchOp) && multiValued.isEmpty())
+    {
+      return false;
+    }
+    SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullAttributeName);
+    List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
+    AtomicBoolean changeWasMade = new AtomicBoolean(false);
+    for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+    {
+      ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
+      changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
+      if (complexNode.isEmpty())
+      {
+        multiValued.remove(matchingComplexNodes.get(i).getIndex());
+      }
+    }
+    matchingComplexNodes.forEach(jsonNodes -> {});
+    return changeWasMade.get();
   }
 
   /**
@@ -516,8 +702,7 @@ public class PatchTargetHandler extends AbstractPatch
     }
     if (path.getChild() != null && matchingComplexNodes.isEmpty())
     {
-      throw new BadRequestException("the given filter expression '" + path.toString() + "' did not give any "
-                                    + "results.", null, ScimType.RFC7644.NO_TARGET);
+      return Collections.emptyList();
     }
     return matchingComplexNodes;
   }
@@ -578,7 +763,7 @@ public class PatchTargetHandler extends AbstractPatch
     switch (patchOp)
     {
       case ADD:
-        validateAddOperation(path, values);
+        checkIsValidComplexJson(path, values);
         break;
       case REPLACE:
         validateReplaceOperation(path, values);
@@ -622,7 +807,6 @@ public class PatchTargetHandler extends AbstractPatch
       throw new BadRequestException("values parameter must be set for replace operation but was empty", null,
                                     ScimType.RFC7644.INVALID_VALUE);
     }
-    // emails[value eq "123456"]
     if (StringUtils.isBlank(path.getSubAttributeName()) && path.getChild() != null
         && !values.stream().allMatch(JsonHelper::isValidJson))
     {
@@ -651,24 +835,6 @@ public class PatchTargetHandler extends AbstractPatch
                                     + String.join(",\n", values) + "'", null, ScimType.RFC7644.INVALID_PATH);
 
     }
-  }
-
-  /**
-   * will validate that the given attribute path expression is valid for an add operation
-   *
-   * @param path the attribute path expression
-   * @param values the values that should be injected
-   */
-  private void validateAddOperation(AttributePathRoot path, List<String> values)
-  {
-    // emails[value eq "123456"] (such an expression has no meaning in case of add)
-    // if (StringUtils.isBlank(path.getSubAttributeName()) && path.getChild() != null)
-    // {
-    // throw new BadRequestException("the given expression is not valid for an add-operation: '" + path.toString()
-    // + "'. Did you want an expression like this '" + path.toString()
-    // + ".subAttributeName'?", null, ScimType.RFC7644.INVALID_PATH);
-    // }
-    checkIsValidComplexJson(path, values);
   }
 
   /**

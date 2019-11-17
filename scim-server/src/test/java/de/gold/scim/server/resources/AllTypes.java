@@ -168,5 +168,11 @@ public class AllTypes extends ResourceNode
   public void setEnterpriseUser(EnterpriseUser enterpriseUser)
   {
     setAttribute(SchemaUris.ENTERPRISE_USER_URI, enterpriseUser);
+    List<String> schemas = getSchemas();
+    if (!schemas.contains(SchemaUris.ENTERPRISE_USER_URI))
+    {
+      schemas.add(SchemaUris.ENTERPRISE_USER_URI);
+      setSchemas(schemas);
+    }
   }
 }

@@ -22,6 +22,8 @@ public interface FileReferences
 
   String RESOURCE_SCHEMA_BASE_PATH = "/de/gold/scim/server/files/schemas";
 
+  String UTILS_BASE_PATH = "/de/gold/scim/server/files/utils";
+
   String USER_RESOURCE = RESOURCE_BASE_PATH + "/user/user-resource.json";
 
   String USER_RESOURCE_ENTERPRISE = RESOURCE_BASE_PATH + "/user/user-resource-with-enterprise-user.json";
@@ -59,6 +61,8 @@ public interface FileReferences
   String ALL_TYPES_JSON_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/all-types.json";
 
   String ALL_TYPES_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/all-types.json";
+
+  String EMAILS_ATTRIBUTE = UTILS_BASE_PATH + "/emails.json";
 
 
   /**

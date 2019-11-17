@@ -3,6 +3,7 @@ package de.gold.scim.server.patch;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -16,16 +17,22 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
+import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.ClassPathReferences;
 import de.gold.scim.common.constants.HttpStatus;
+import de.gold.scim.common.constants.SchemaUris;
 import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.constants.enums.PatchOp;
-import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.exceptions.ScimException;
 import de.gold.scim.common.request.PatchOpRequest;
 import de.gold.scim.common.request.PatchRequestOperation;
 import de.gold.scim.common.resources.EnterpriseUser;
+import de.gold.scim.common.resources.base.ScimArrayNode;
+import de.gold.scim.common.resources.complex.Manager;
+import de.gold.scim.common.resources.multicomplex.Email;
+import de.gold.scim.common.schemas.Schema;
 import de.gold.scim.common.utils.JsonHelper;
 import de.gold.scim.server.resources.AllTypes;
 import de.gold.scim.server.schemas.ResourceType;
@@ -786,7 +793,9 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that a {@link BadRequestException} is thrown if no results are present for the specified target
+   * verifies nothing happens to the resource if the expression did not match<br>
+   * the expression would add the stringarray attribute to all multicomplex nodes but since there is no node the
+   * stringarray attribute can neither be added nor replaced
    */
   @ParameterizedTest
   @ValueSource(strings = {"ADD", "REPLACE"})
@@ -801,21 +810,9 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      log.warn(ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      MatcherAssert.assertThat(ex.getDetail(),
-                               Matchers.equalTo("the multi valued complex type "
-                                                + "'urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex' "
-                                                + "is not set"));
-    }
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    Assertions.assertFalse(patchedResource.getMeta().isPresent());
   }
 
   /**
@@ -1328,19 +1325,8 @@ public class PatchTargetHandlerTest implements FileReferences
     multiComplex3.setStringArray(Collections.singletonList("empty world"));
 
     allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      log.debug(ex.getDetail(), ex);
-      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals("the given filter expression '" + path + "' did not give any " + "results.",
-                              ex.getDetail());
-    }
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertFalse(patchedResource.getMeta().isPresent());
   }
 
   /**
@@ -1462,6 +1448,182 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals(value, allTypes.getEnterpriseUser().get().getCostCenter().get());
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+    Assertions.assertEquals(2, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+  }
+
+  /**
+   * verifies a remove operation will successfully remove an attribute from an extension
+   */
+  @Test
+  public void testRemoveSimpleAttributeFromExtension()
+  {
+    final String path = "costCenter";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setEnterpriseUser(EnterpriseUser.builder().costCenter("humpty dumpty").department("department").build());
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
+    Assertions.assertTrue(allTypes.getEnterpriseUser().get().getDepartment().isPresent());
+    Assertions.assertFalse(allTypes.getEnterpriseUser().get().getCostCenter().isPresent());
+    Assertions.assertEquals(2, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+  }
+
+  /**
+   * verifies a remove operation will successfully remove a multi valued complex type attribute from an
+   * extension
+   */
+  @Test
+  public void testRemoveMultiValuedComplexAttributeFromExtension()
+  {
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema enterpriseUserSchema = resourceTypeFactory.getSchemaFactory()
+                                                     .getResourceSchema(SchemaUris.ENTERPRISE_USER_URI);
+    enterpriseUserSchema.addAttribute(emailsDef);
+
+
+    final String path = AttributeNames.RFC7643.EMAILS;
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setString("hello world");
+    EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
+    ScimArrayNode emailsArrayNode = new ScimArrayNode(null);
+    Email email = Email.builder().value(UUID.randomUUID().toString()).build();
+    emailsArrayNode.add(email);
+    enterpriseUser.set(AttributeNames.RFC7643.EMAILS, emailsArrayNode);
+    allTypes.setEnterpriseUser(enterpriseUser);
+
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertTrue(allTypes.getString().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+    Assertions.assertEquals("hello world", allTypes.getString().get());
+    Assertions.assertFalse(allTypes.getEnterpriseUser().isPresent());
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes"));
+  }
+
+  /**
+   * verifies adding or replacing a multivalued complex type within an extension does work as specified
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddMultiValuedComplexAttributeToExtension(PatchOp patchOp)
+  {
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema enterpriseUserSchema = resourceTypeFactory.getSchemaFactory()
+                                                     .getResourceSchema(SchemaUris.ENTERPRISE_USER_URI);
+    enterpriseUserSchema.addAttribute(emailsDef);
+
+
+    // @formatter:off
+    final List<String> values = Arrays.asList("{"
+                                                  + "\"value\": \"chuck@norris.com\","
+                                                  + "\"type\": \"work\","
+                                                  + "\"primary\": true"
+                                             + "}");
+    // @formatter:on
+    final String path = AttributeNames.RFC7643.EMAILS;
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes"));
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, patchedResource.size(), patchedResource.toPrettyString());
+    Assertions.assertTrue(patchedResource.getMeta().isPresent(), patchedResource.toPrettyString());
+    Assertions.assertTrue(patchedResource.getMeta().get().getLastModified().isPresent(),
+                          patchedResource.toPrettyString());
+    Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent(), patchedResource.toPrettyString());
+    ArrayNode emails = (ArrayNode)patchedResource.getEnterpriseUser().get().get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(emails, patchedResource.toPrettyString());
+    Assertions.assertEquals(1, emails.size(), patchedResource.toPrettyString());
+    MatcherAssert.assertThat(patchedResource.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+  }
+
+  /**
+   * verifies a remove operation will successfully remove also the extension itself if the extension is empty
+   * after the removal of the attribute
+   */
+  @Test
+  public void testRemoveSimpleAttributeFromExtensionAndExtensionItself()
+  {
+    final String path = "costCenter";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setEnterpriseUser(EnterpriseUser.builder().costCenter("humpty dumpty").build());
+
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertFalse(allTypes.getEnterpriseUser().isPresent(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes"));
+  }
+
+  /**
+   * verifies a remove operation will successfully remove also the extension itself if the extension is empty
+   * after the removal of the attribute but in this case we will at first make the manager attribute empty
+   */
+  @Test
+  public void testRemoveSimpleAttributeFromExtensionComplexAndExtensionItself()
+  {
+    final String path = "manager.value";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setEnterpriseUser(EnterpriseUser.builder().manager(Manager.builder().value("123456").build()).build());
+
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertFalse(allTypes.getEnterpriseUser().isPresent(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes"));
   }
 
   /**
@@ -1550,7 +1712,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that nothing happens if the specified path does not exist
+   * verifies that nothing happens if the target does not exist
    */
   @ParameterizedTest
   @ValueSource(strings = {"string", "stringArray", "complex", "complex.string", "complex.stringarray", "multicomplex",
@@ -1565,9 +1727,9 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(1, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    AllTypes patchedResouce = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(allTypes, patchedResouce);
+    Assertions.assertFalse(patchedResouce.getMeta().isPresent(), patchedResouce.toPrettyString());
   }
 
   /**
@@ -1729,7 +1891,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies removing a the only value from a multi complex type removes the whole type
+   * verifies removing the only value from a multi complex type removes the whole type
    */
   @Test
   public void testRemoveTheOnlyAttributeFromMulticomplex()
@@ -1909,7 +2071,8 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies adding and replacing a subattribute to a complex type with a none matching filter will not work
+   * verifies adding and replacing a subattribute to a complex type with a none matching filter will result in
+   * an unchanged resource
    */
   @ParameterizedTest
   @ValueSource(strings = {"ADD", "REPLACE"})
@@ -1928,52 +2091,15 @@ public class PatchTargetHandlerTest implements FileReferences
     complex.setString("jippie ay yay");
     allTypes.setComplex(complex);
 
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("the path '" + path + "' did not match any nodes", ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
 
-    }
+    Assertions.assertFalse(patchedResource.getMeta().isPresent());
   }
 
   /**
-   * verifies adding and replacing a subattribute to a complex type with a none matching filter will not work
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"ADD", "REPLACE"})
-  public void testAddAttributeWithFilterExpressionThatDoesNotMatch__(PatchOp patchOp)
-  {
-    final String path = "complex[string eq \"hello world\"].number";
-    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(patchOp)
-                                                                                .path(path)
-                                                                                .values(Collections.singletonList("5"))
-                                                                                .build());
-    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
-    AllTypes allTypes = new AllTypes(true);
-
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("the path '" + path + "' did not match any nodes", ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
-  }
-
-  /**
-   * verifies that a bad request is returned if the filter expression does not match
+   * verifies that nothing happens if the filter expression does not match for a complex type attribute<br>
+   * the filter here would normally add the given values or replace them if the filter matches but since the
+   * filter will not match no changes should be made
    */
   @ParameterizedTest
   @ValueSource(strings = {"ADD", "REPLACE"})
@@ -2000,17 +2126,9 @@ public class PatchTargetHandlerTest implements FileReferences
     complex.setString("jippie ay yay");
     allTypes.setComplex(complex);
 
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("the path '" + path + "' did not match any nodes", ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    Assertions.assertFalse(patchedResource.getMeta().isPresent());
   }
 
   /**

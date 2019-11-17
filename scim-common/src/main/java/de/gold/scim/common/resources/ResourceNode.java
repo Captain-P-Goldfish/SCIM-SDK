@@ -49,6 +49,33 @@ public abstract class ResourceNode extends AbstractSchemasHolder
   }
 
   /**
+   * adds a single schema to this resource node
+   *
+   * @param schemaUri the uri to add
+   */
+  public void addSchema(String schemaUri)
+  {
+    List<String> schemas = getSchemas();
+    if (!schemas.contains(schemaUri))
+    {
+      schemas.add(schemaUri);
+      setSchemas(schemas);
+    }
+  }
+
+  /**
+   * removes a single schema from this resource node
+   *
+   * @param schemaUri the uri to add
+   */
+  public void removeSchema(String schemaUri)
+  {
+    List<String> schemas = getSchemas();
+    schemas.remove(schemaUri);
+    setSchemas(schemas);
+  }
+
+  /**
    * A unique identifier for a SCIM resource as defined by the service provider. Each representation of the
    * resource MUST include a non-empty "id" value. This identifier MUST be unique across the SCIM service
    * provider's entire set of resources. It MUST be a stable, non-reassignable identifier that does not change

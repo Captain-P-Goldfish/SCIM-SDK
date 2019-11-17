@@ -172,6 +172,26 @@ public class Schema extends ResourceNode
   }
 
   /**
+   * adds a new attribute definition to this schema
+   */
+  public void addAttribute(JsonNode schemaAttribute)
+  {
+    List<SchemaAttribute> attributes = getAttributes();
+    attributes.add(new SchemaAttribute(this, getNonNullId(), null, schemaAttribute));
+    setAttributes(attributes);
+  }
+
+  /**
+   * removes an attribute definition from this schema
+   */
+  public void removeAttribute(SchemaAttribute schemaAttribute)
+  {
+    List<SchemaAttribute> attributes = getAttributes();
+    attributes.remove(schemaAttribute);
+    setAttributes(attributes);
+  }
+
+  /**
    * gets a {@link SchemaAttribute} definition by its scimNodeName e.g. "userName" or "name.givenName". <br>
    * This method is for resolving filter expressions and therefore the {@code scimNodeName} values are evaluated
    * as case insensitive.<br>
