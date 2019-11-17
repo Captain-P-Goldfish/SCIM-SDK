@@ -32,6 +32,7 @@ import de.gold.scim.server.filter.AttributePathRoot;
 import de.gold.scim.server.filter.resources.PatchFilterResolver;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.utils.RequestUtils;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -78,6 +79,7 @@ public class PatchTargetHandler extends AbstractPatch
   /**
    * the specified path where the value should be added
    */
+  @Getter(AccessLevel.PROTECTED)
   private final AttributePathRoot path;
 
   /**

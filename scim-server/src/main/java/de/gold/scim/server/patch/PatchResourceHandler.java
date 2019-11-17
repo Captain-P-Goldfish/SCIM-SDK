@@ -13,6 +13,7 @@ import de.gold.scim.common.constants.enums.Mutability;
 import de.gold.scim.common.constants.enums.PatchOp;
 import de.gold.scim.common.constants.enums.Type;
 import de.gold.scim.common.exceptions.BadRequestException;
+import de.gold.scim.common.resources.ResourceNode;
 import de.gold.scim.common.resources.base.ScimArrayNode;
 import de.gold.scim.common.resources.base.ScimObjectNode;
 import de.gold.scim.common.schemas.SchemaAttribute;
@@ -81,8 +82,9 @@ public class PatchResourceHandler extends AbstractPatch
         {
           complex = new ScimObjectNode();
           resource.set(key, complex);
+          ((ResourceNode)resource).addSchema(key);
         }
-        addResourceValues((ObjectNode)complex, value, key);
+        changeWasMade.set(addResourceValues((ObjectNode)complex, value, key));
       }
       else
       {

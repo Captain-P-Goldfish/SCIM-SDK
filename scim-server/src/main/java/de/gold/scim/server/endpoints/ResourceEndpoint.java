@@ -120,6 +120,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
         return patchResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              requestBody,
+                             uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
+                             uriInfos.getQueryParameters()
+                                     .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                              uriInfos::getBaseUri);
       default:
         return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId());

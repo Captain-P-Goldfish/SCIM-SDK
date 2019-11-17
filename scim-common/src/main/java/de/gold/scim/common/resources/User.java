@@ -6,9 +6,9 @@ import java.util.Optional;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.SchemaUris;
-import de.gold.scim.common.resources.multicomplex.Address;
 import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.resources.complex.Name;
+import de.gold.scim.common.resources.multicomplex.Address;
 import de.gold.scim.common.resources.multicomplex.Email;
 import de.gold.scim.common.resources.multicomplex.Entitlement;
 import de.gold.scim.common.resources.multicomplex.GroupNode;

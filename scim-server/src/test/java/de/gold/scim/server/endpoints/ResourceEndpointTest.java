@@ -17,10 +17,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.EndpointPaths;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.ResourceTypeNames;
+import de.gold.scim.common.constants.SchemaUris;
 import de.gold.scim.common.constants.enums.HttpMethod;
 import de.gold.scim.common.constants.enums.PatchOp;
 import de.gold.scim.common.exceptions.BadRequestException;
@@ -31,6 +34,7 @@ import de.gold.scim.common.request.BulkRequestOperation;
 import de.gold.scim.common.request.PatchOpRequest;
 import de.gold.scim.common.request.PatchRequestOperation;
 import de.gold.scim.common.request.SearchRequest;
+import de.gold.scim.common.resources.EnterpriseUser;
 import de.gold.scim.common.resources.ServiceProvider;
 import de.gold.scim.common.resources.User;
 import de.gold.scim.common.resources.complex.Meta;
@@ -785,4 +789,184 @@ public class ResourceEndpointTest extends AbstractBulkTest
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
   }
+
+  /**
+   * Verifies that only the minimal set plus the attribute is returned after the patch operation
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testPatchResourceWithAttributesParameter(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    final String path = "nickName";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .values(Arrays.asList("captain"))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").active(true).meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
+    final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", "nickName");
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+
+    Assertions.assertEquals(minimalAttributeSet.size(), updateResponse.size(), updateResponse.toPrettyString());
+    for ( String attributeName : minimalAttributeSet )
+    {
+      Assertions.assertNotNull(updateResponse.get(attributeName), updateResponse.toPrettyString());
+    }
+  }
+
+  /**
+   * Verifies that only the minimal set plus the attribute is returned after the patch operation. In this case
+   * the resource itself is used as value
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testPatchResourceWithAttributesParameterUseResourceAsValue(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    User value = User.builder().nickName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .values(Arrays.asList(value.toString()))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").active(true).meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
+    final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", "nickName");
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+
+    Assertions.assertEquals(minimalAttributeSet.size(), updateResponse.size(), updateResponse.toPrettyString());
+    for ( String attributeName : minimalAttributeSet )
+    {
+      Assertions.assertNotNull(updateResponse.get(attributeName), updateResponse.toPrettyString());
+    }
+  }
+
+  /**
+   * Verifies that only the minimal set plus the attribute is returned after the patch operation. In this case
+   * the resource itself is used as value. This test will add just the schema extension
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testPatchResourceWithAttributesParameterUseResourceAsValueWithExtension(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    User value = User.builder().enterpriseUser(EnterpriseUser.builder().costCenter("costCenter").build()).build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .values(Arrays.asList(value.toString()))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").active(true).meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
+    final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", SchemaUris.ENTERPRISE_USER_URI);
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+
+    Assertions.assertEquals(minimalAttributeSet.size(), updateResponse.size(), updateResponse.toPrettyString());
+    for ( String attributeName : minimalAttributeSet )
+    {
+      Assertions.assertNotNull(updateResponse.get(attributeName), updateResponse.toPrettyString());
+    }
+    JsonNode enterpriseUser = updateResponse.get(SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertNotNull(enterpriseUser.get(AttributeNames.RFC7643.COST_CENTER));
+  }
+
+  /**
+   * this test verifies that already existing attributes in extensions that have not been modified and were not
+   * in the attributes parameter will not be returned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testPatchResourceWithAttributesParameterUseResourceAsValueWithExtension2(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    User value = User.builder().enterpriseUser(EnterpriseUser.builder().costCenter("costCenter").build()).build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .values(Arrays.asList(value.toString()))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .id(id)
+                    .userName("goldfish")
+                    .active(true)
+                    .enterpriseUser(EnterpriseUser.builder().department("department").build())
+                    .meta(meta)
+                    .build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
+    final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", SchemaUris.ENTERPRISE_USER_URI);
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+
+    Assertions.assertEquals(minimalAttributeSet.size(), updateResponse.size(), updateResponse.toPrettyString());
+    for ( String attributeName : minimalAttributeSet )
+    {
+      Assertions.assertNotNull(updateResponse.get(attributeName), updateResponse.toPrettyString());
+    }
+    JsonNode enterpriseUser = updateResponse.get(SchemaUris.ENTERPRISE_USER_URI);
+    Assertions.assertNotNull(enterpriseUser.get(AttributeNames.RFC7643.COST_CENTER));
+    Assertions.assertNull(enterpriseUser.get(AttributeNames.RFC7643.DEPARTMENT));
+  }
+
 }

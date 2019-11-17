@@ -212,10 +212,10 @@ public class SchemaValidator
    * @param resourceType the resource type definition of the incoming document
    * @param document the document that should be validated
    * @param validatedRequest this parameter is used for attributes that have a returned value of
-   *          {@link Returned#REQUEST}. Those attributes * should only be returned if the attribute was modified
-   *          on a POST, PUT or PATCH request or in a query request * only if the attribute is present within
-   *          the {@link #attributes} parameter. So the validated request tells * us if the client tried to
-   *          write to the attribute and if this is the case the attribute should be returned
+   *          {@link Returned#REQUEST}. Those attributes should only be returned if the attribute was modified
+   *          on a POST, PUT or PATCH request or in a query request only if the attribute is present within the
+   *          {@link #attributes} parameter. So the validated request tells us if the client tried to write to
+   *          the attribute and if this is the case the attribute should be returned
    * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
    *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
    *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
@@ -241,7 +241,7 @@ public class SchemaValidator
     JsonNode validatedMainDocument = validateDocumentForResponse(resourceTypeFactory,
                                                                  resourceSchema.getMetaSchema(),
                                                                  document,
-                                                                 null,
+                                                                 validatedRequest,
                                                                  attributes,
                                                                  excludedAttributes);
     validatedForMissingRequiredExtension(resourceType, document, DirectionType.RESPONSE);
@@ -256,7 +256,8 @@ public class SchemaValidator
       JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory,
                                                             schemaExtension,
                                                             extension,
-                                                            validatedRequest,
+                                                            validatedRequest == null ? null
+                                                              : validatedRequest.get(schemaExtension.getNonNullId()),
                                                             attributes,
                                                             excludedAttributes);
       if (extensionNode == null)
@@ -325,11 +326,11 @@ public class SchemaValidator
    * @param metaSchema the json meta schema definition of the document
    * @param document the document to validate
    * @param validatedRequest this parameter is used for attributes that have a returned value of
-   *          {@link Returned#REQUEST}. Those attributes * should only be returned if the attribute was modified
-   *          on a POST, PUT or PATCH request or in a query request * only if the attribute is present within
-   *          the {@link #attributes} parameter. So the validated request tells * us if the client tried to
-   *          write to the attribute and if this is the case the attribute should be returned write to the
-   *          attribute and if this is the case the attribute should be returned
+   *          {@link Returned#REQUEST}. Those attributes should only be returned if the attribute was modified
+   *          on a POST, PUT or PATCH request or in a query request only if the attribute is present within the
+   *          {@link #attributes} parameter. So the validated request tells us if the client tried to write to
+   *          the attribute and if this is the case the attribute should be returned write to the attribute and
+   *          if this is the case the attribute should be returned
    * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
    *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
    *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
@@ -363,10 +364,10 @@ public class SchemaValidator
    * @param metaSchema the json meta schema definition of the extension
    * @param document the extension to validate
    * @param validatedRequest this parameter is used for attributes that have a returned value of
-   *          {@link Returned#REQUEST}. Those attributes * should only be returned if the attribute was modified
-   *          on a POST, PUT or PATCH request or in a query request * only if the attribute is present within
-   *          the {@link #attributes} parameter. So the validated request tells * us if the client tried to
-   *          write to the attribute and if this is the case the attribute should be returned
+   *          {@link Returned#REQUEST}. Those attributes should only be returned if the attribute was modified
+   *          on a POST, PUT or PATCH request or in a query request only if the attribute is present within the
+   *          {@link #attributes} parameter. So the validated request tells us if the client tried to write to
+   *          the attribute and if this is the case the attribute should be returned
    * @return the validated document that consists of {@link ScimNode}s
    */
   private static JsonNode validateExtensionForResponse(ResourceTypeFactory resourceTypeFactory,
@@ -995,7 +996,7 @@ public class SchemaValidator
       return false;
     }
     if (Returned.DEFAULT.equals(schemaAttribute.getReturned()) && !attributes.isEmpty()
-        && isAttributeMissingInAttributeParameter(schemaAttribute))
+        && isAttributeMissingInAttributeParameter(schemaAttribute) && !isAttributePresentInRequest(schemaAttribute))
     {
       log.trace("removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes: {}",

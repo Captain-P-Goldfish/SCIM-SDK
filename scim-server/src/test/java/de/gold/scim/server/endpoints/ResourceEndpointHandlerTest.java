@@ -193,9 +193,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     User u = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
     u.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
-    ScimResponse scimResponse = resourceEndpointHandler.createResource(endpoint,
-                                                                       u.toString(),
-                                                                       getBaseUrlSupplier());
+    ScimResponse scimResponse = resourceEndpointHandler.createResource(endpoint, u.toString(), getBaseUrlSupplier());
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
@@ -378,7 +376,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
   /**
    * will show that a {@link ScimException} is correctly handled by the
-   * {@link ResourceEndpointHandler#updateResource(String, String, String)} method
+   * {@link ResourceEndpointHandler#updateResource(String, String, String, Supplier)} method
    */
   @Test
   public void testThrowScimExceptionOnUpdateResource()
@@ -387,7 +385,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Mockito.doThrow(exception).when(userHandler).updateResource(Mockito.any());
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        "123456",
-                                                                       readResourceFile(USER_RESOURCE));
+                                                                       readResourceFile(USER_RESOURCE),
+                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -396,7 +395,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
   /**
    * will show that a {@link RuntimeException} is correctly handled by the
-   * {@link ResourceEndpointHandler#updateResource(String, String, String)} method
+   * {@link ResourceEndpointHandler#updateResource(String, String, String, Supplier)} method
    */
   @Test
   public void testThrowRuntimeExceptionOnUpdateResource()
@@ -405,7 +404,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Mockito.doThrow(exception).when(userHandler).updateResource(Mockito.any());
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        "123456",
-                                                                       readResourceFile(USER_RESOURCE));
+                                                                       readResourceFile(USER_RESOURCE),
+                                                                       null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
@@ -430,25 +430,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
   /**
    * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
-   * are set at the same time on creation request
-   */
-  @Test
-  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnCreate()
-  {
-    ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
-                                                                       readResourceFile(USER_RESOURCE),
-                                                                       "userName",
-                                                                       "name",
-                                                                       getBaseUrlSupplier());
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
-  }
-
-  /**
-   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
    * are set at the same time on get request
    */
   @Test
@@ -459,26 +440,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     "userName",
                                                                     "name",
                                                                     getBaseUrlSupplier());
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
-  }
-
-  /**
-   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
-   * are set at the same time on update request
-   */
-  @Test
-  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnUpdate()
-  {
-    ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
-                                                                       "123456",
-                                                                       readResourceFile(USER_RESOURCE),
-                                                                       "userName",
-                                                                       "name",
-                                                                       getBaseUrlSupplier());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());

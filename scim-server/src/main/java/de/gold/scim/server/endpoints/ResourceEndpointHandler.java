@@ -117,21 +117,6 @@ class ResourceEndpointHandler
    *
    * @param endpoint the resource endpoint that was called
    * @param resourceDocument the resource document
-   * @return the scim response for the client
-   */
-  protected ScimResponse createResource(String endpoint, String resourceDocument)
-  {
-    return createResource(endpoint, resourceDocument, null, null, null);
-  }
-
-  /**
-   * checks if a resource type exists under the given endpoint and validates the request if it does by the
-   * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
-   * information will be given to the developer custom implementation. The returned object for the response will
-   * be validated again and then returned as a SCIM response
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param resourceDocument the resource document
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -142,48 +127,12 @@ class ResourceEndpointHandler
    */
   protected ScimResponse createResource(String endpoint, String resourceDocument, Supplier<String> baseUrlSupplier)
   {
-    return createResource(endpoint, resourceDocument, null, null, baseUrlSupplier);
-  }
-
-  /**
-   * checks if a resource type exists under the given endpoint and validates the request if it does by the
-   * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
-   * information will be given to the developer custom implementation. The returned object for the response will
-   * be validated again and then returned as a SCIM response
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param resourceDocument the resource document
-   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
-   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
-   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
-   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
-   *          form (e.g., userName, name, emails).
-   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
-   *          attributes. Additionally, the default set of attributes minus those attributes listed in
-   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
-   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
-   *          name, emails).
-   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
-   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
-   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
-   *          If this parameter is not present the application will try to read a hardcoded URL from the service
-   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
-   *          thrown
-   * @return the scim response for the client
-   */
-  protected ScimResponse createResource(String endpoint,
-                                        String resourceDocument,
-                                        String attributes,
-                                        String excludedAttributes,
-                                        Supplier<String> baseUrlSupplier)
-  {
     try
     {
       if (StringUtils.isBlank(resourceDocument))
       {
         throw new BadRequestException("the request body is empty", null, ScimType.Custom.INVALID_PARAMETERS);
       }
-      RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
       JsonNode resource;
       try
@@ -219,8 +168,8 @@ class ResourceEndpointHandler
                                                                               resourceType,
                                                                               resourceNode,
                                                                               resource,
-                                                                              attributes,
-                                                                              excludedAttributes);
+                                                                              null,
+                                                                              null);
       return new CreateResponse(responseResource, location);
     }
     catch (ScimException ex)
@@ -673,22 +622,6 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
    * @param resourceDocument the resource document
-   * @return the scim response for the client
-   */
-  protected ScimResponse updateResource(String endpoint, String id, String resourceDocument)
-  {
-    return updateResource(endpoint, id, resourceDocument, null, null, null);
-  }
-
-  /**
-   * checks if a resource type exists under the given endpoint and validates the request if it does by the
-   * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
-   * information will be given to the developer custom implementation. The returned object for the response will
-   * be validated again and then returned as a SCIM response
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param id the id of the resource that was requested
-   * @param resourceDocument the resource document
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -700,43 +633,6 @@ class ResourceEndpointHandler
   protected ScimResponse updateResource(String endpoint,
                                         String id,
                                         String resourceDocument,
-                                        Supplier<String> baseUrlSupplier)
-  {
-    return updateResource(endpoint, id, resourceDocument, null, null, baseUrlSupplier);
-  }
-
-  /**
-   * checks if a resource type exists under the given endpoint and validates the request if it does by the
-   * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
-   * information will be given to the developer custom implementation. The returned object for the response will
-   * be validated again and then returned as a SCIM response
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param id the id of the resource that was requested
-   * @param resourceDocument the resource document
-   * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
-   *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
-   *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
-   *          comma-separated list of resource attribute names in standard attribute notation (Section 3.10)
-   *          form (e.g., userName, name, emails).
-   * @param excludedAttributes When specified, each resource returned MUST contain the minimum set of resource
-   *          attributes. Additionally, the default set of attributes minus those attributes listed in
-   *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
-   *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
-   *          name, emails).
-   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
-   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
-   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
-   *          If this parameter is not present the application will try to read a hardcoded URL from the service
-   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
-   *          thrown
-   * @return the scim response for the client
-   */
-  protected ScimResponse updateResource(String endpoint,
-                                        String id,
-                                        String resourceDocument,
-                                        String attributes,
-                                        String excludedAttributes,
                                         Supplier<String> baseUrlSupplier)
   {
     try
@@ -745,7 +641,6 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException("the request body is empty", null, ScimType.Custom.INVALID_PARAMETERS);
       }
-      RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
       JsonNode resource;
       try
@@ -801,8 +696,8 @@ class ResourceEndpointHandler
                                                                               resourceType,
                                                                               resourceNode,
                                                                               resource,
-                                                                              attributes,
-                                                                              excludedAttributes);
+                                                                              null,
+                                                                              null);
 
       return new UpdateResponse(responseResource, location);
     }
@@ -959,7 +854,7 @@ class ResourceEndpointHandler
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
-                                                                              null,
+                                                                              patchHandler.getRequestedAttributes(),
                                                                               attributes,
                                                                               excludedAttributes);
 

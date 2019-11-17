@@ -9,9 +9,9 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import de.gold.scim.common.constants.SchemaUris;
-import de.gold.scim.common.resources.multicomplex.Address;
 import de.gold.scim.common.resources.complex.Manager;
 import de.gold.scim.common.resources.complex.Name;
+import de.gold.scim.common.resources.multicomplex.Address;
 import de.gold.scim.common.resources.multicomplex.Email;
 import de.gold.scim.common.resources.multicomplex.Entitlement;
 import de.gold.scim.common.resources.multicomplex.GroupNode;

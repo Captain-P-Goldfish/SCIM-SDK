@@ -20,6 +20,7 @@ import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.EndpointPaths;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.SchemaUris;
+import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.exceptions.InternalServerException;
 import de.gold.scim.common.exceptions.InvalidResourceTypeException;
@@ -470,6 +471,24 @@ public class ResourceType extends ResourceNode
         extensions.add(Optional.ofNullable(schemaFactory.getResourceSchema(schemaUri))
                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schemaUri))));
       }
+      validateDocumentForMissingExtensionUris(schemas, resourceDocument);
+    }
+
+    /**
+     * this method will throw an error if the client added an extension into the document but did not reference it
+     * within the schemas-attribute
+     */
+    private void validateDocumentForMissingExtensionUris(List<String> schemasAttributeList, JsonNode resourceDocument)
+    {
+      getSchemaExtensions().stream().map(SchemaExtension::getSchema).forEach(schemaUri -> {
+        if (resourceDocument.get(schemaUri) != null && !schemasAttributeList.contains(schemaUri))
+        {
+          schemasAttributeList.add(0, getSchema());
+          throw new BadRequestException("the resource document contains an extension that is not referenced in the "
+                                        + "schemas-attribute:\n\tschemas: " + schemasAttributeList + "\n\textension: "
+                                        + schemaUri, null, ScimType.RFC7644.INVALID_VALUE);
+        }
+      });
     }
   }
 }
