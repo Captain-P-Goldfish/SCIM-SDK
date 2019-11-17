@@ -42,6 +42,7 @@ import de.gold.scim.common.exceptions.ScimException;
 import de.gold.scim.common.request.PatchOpRequest;
 import de.gold.scim.common.request.PatchRequestOperation;
 import de.gold.scim.common.request.SearchRequest;
+import de.gold.scim.common.resources.EnterpriseUser;
 import de.gold.scim.common.resources.ResourceNode;
 import de.gold.scim.common.resources.ServiceProvider;
 import de.gold.scim.common.resources.User;
@@ -445,6 +446,29 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+  }
+
+  /**
+   * will show that the excludedAttributes parameter is also correctly used on extensions
+   */
+  @Test
+  public void testGetResourceWithExcludedExtensionAttribute()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    user.setEnterpriseUser(EnterpriseUser.builder().costCenter("costCenter").department("department").build());
+    user.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    user.getId().get(),
+                                                                    null,
+                                                                    "costCenter",
+                                                                    getBaseUrlSupplier());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    User returnedUser = JsonHelper.copyResourceToObject(getResponse, User.class);
+    Assertions.assertTrue(returnedUser.getEnterpriseUser().isPresent());
+    Assertions.assertTrue(returnedUser.getEnterpriseUser().get().getDepartment().isPresent());
+    Assertions.assertFalse(returnedUser.getEnterpriseUser().get().getCostCenter().isPresent());
   }
 
   /**
