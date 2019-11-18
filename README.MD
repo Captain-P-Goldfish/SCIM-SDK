@@ -1,5 +1,11 @@
 # SCIM 2.0 Open Source Implementation
 
+
+|  Branch | Travis CI Status |
+| :------ | :--------------- | 
+| master  | [![Build Status](https://travis-ci.com/Captain-P-Goldfish/SCIM.svg?branch=master)](https://travis-ci.com/Captain-P-Goldfish/SCIM)
+
+
 ---
 **Note:**
 If the project does not compile within your IDE install the "lombok" plugin for your IDE and restart it.
