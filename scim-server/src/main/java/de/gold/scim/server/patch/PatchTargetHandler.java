@@ -557,10 +557,6 @@ public class PatchTargetHandler extends AbstractPatch
       {
         return handleMultiComplexSubAttributePath(multiValued, fullAttributeNames[1], values);
       }
-      else if (StringUtils.isNotBlank(path.getSubAttributeName()))
-      {
-        return handleMultiValuedSubAttributePathWithFilter(multiValued, fullAttributeNames[0], values);
-      }
       else
       {
         return handleDirectMultiValuedComplexPathReference(multiValued, values);
@@ -618,35 +614,6 @@ public class PatchTargetHandler extends AbstractPatch
       }
     }
     return true;
-  }
-
-  /**
-   * handles a multi valued complex type sub attribute path reference that contains also a filter expression
-   * e.g. emails[type eq "home"].value
-   *
-   * @param multiValued the multi valued complex attribute node
-   * @param fullAttributeName the full name of the sub attribute that is referenced
-   * @param values the values that should be added or replaced
-   * @return true if an effective change has been made, false else
-   */
-  private boolean handleMultiValuedSubAttributePathWithFilter(ArrayNode multiValued,
-                                                              String fullAttributeName,
-                                                              List<String> values)
-  {
-    String fullName = fullAttributeName + "." + path.getSubAttributeName();
-    SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullName);
-    List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
-    AtomicBoolean changeWasMade = new AtomicBoolean(false);
-    for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
-    {
-      ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
-      changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
-      if (complexNode.isEmpty())
-      {
-        multiValued.remove(matchingComplexNodes.get(i).getIndex());
-      }
-    }
-    return changeWasMade.get();
   }
 
   /**
