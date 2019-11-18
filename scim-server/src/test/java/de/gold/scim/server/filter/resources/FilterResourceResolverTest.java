@@ -1806,6 +1806,7 @@ public class FilterResourceResolverTest implements FileReferences
   {
     final String filter = attributeName + " " + comparator + toFilterStringValue(comparator, value);
     return DynamicTest.dynamicTest(filter, () -> {
+      log.debug("executing filter: {}", filter);
       if (doBefore != null)
       {
         doBefore.run();
@@ -1818,7 +1819,7 @@ public class FilterResourceResolverTest implements FileReferences
       }
       else
       {
-        Assertions.assertEquals(expectedValues.length, filteredAllTypes.size(), filteredAllTypes.toString());
+        Assertions.assertEquals(expectedValues.length, filteredAllTypes.size(), filter + "\n" + filteredAllTypes);
         MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(expectedValues));
       }
     });
