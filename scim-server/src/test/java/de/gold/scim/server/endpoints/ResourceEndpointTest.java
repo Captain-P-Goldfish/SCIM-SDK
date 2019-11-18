@@ -1,5 +1,6 @@
 package de.gold.scim.server.endpoints;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -126,6 +127,43 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + createdUser.getId().get(),
                             createdUser.getMeta().get().getLocation().get());
+  }
+
+  /**
+   * this test will verify that if a developer forgot to add an extension uri within the schemas attribute that
+   * this schema will be added automatically by the scim-server framework
+   */
+  @Test
+  public void testCreateResourceWithMissingExtensionUriInSchemas()
+  {
+    final String userName = "chuck_norris";
+    final EnterpriseUser enterpriseUser = EnterpriseUser.builder().costCenter("cost center").build();
+    final User user = User.builder()
+                          .id(UUID.randomUUID().toString())
+                          .userName(userName)
+                          .enterpriseUser(enterpriseUser)
+                          .meta(Meta.builder()
+                                    .created(Instant.now())
+                                    .lastModified(Instant.now())
+                                    .resourceType(ResourceTypeNames.USER)
+                                    .build())
+                          .build();
+    final String userRequest = user.toString();
+    final String url = BASE_URI + EndpointPaths.USERS;
+
+    user.removeSchema(SchemaUris.ENTERPRISE_USER_URI);
+    Mockito.doReturn(user).when(userHandler).createResource(Mockito.any());
+
+    MatcherAssert.assertThat(new ArrayList<>(user.getSchemas()),
+                             Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, userRequest);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+    CreateResponse createResponse = (CreateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.CREATED, createResponse.getHttpStatus());
+    User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+    Assertions.assertEquals(user.getUserName().get(), createdUser.getUserName().get());
+    MatcherAssert.assertThat(new ArrayList<>(createdUser.getSchemas()),
+                             Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI));
   }
 
   /**

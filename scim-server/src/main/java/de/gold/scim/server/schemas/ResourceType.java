@@ -4,9 +4,11 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -20,12 +22,12 @@ import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.EndpointPaths;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.SchemaUris;
-import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.exceptions.BadRequestException;
 import de.gold.scim.common.exceptions.InternalServerException;
 import de.gold.scim.common.exceptions.InvalidResourceTypeException;
 import de.gold.scim.common.exceptions.ScimException;
 import de.gold.scim.common.resources.ResourceNode;
+import de.gold.scim.common.resources.base.ScimArrayNode;
 import de.gold.scim.common.resources.base.ScimObjectNode;
 import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.schemas.Schema;
@@ -480,15 +482,25 @@ public class ResourceType extends ResourceNode
      */
     private void validateDocumentForMissingExtensionUris(List<String> schemasAttributeList, JsonNode resourceDocument)
     {
+      int originalSize = schemasAttributeList.size();
       getSchemaExtensions().stream().map(SchemaExtension::getSchema).forEach(schemaUri -> {
         if (resourceDocument.get(schemaUri) != null && !schemasAttributeList.contains(schemaUri))
         {
-          schemasAttributeList.add(0, getSchema());
-          throw new BadRequestException("the resource document contains an extension that is not referenced in the "
-                                        + "schemas-attribute:\n\tschemas: " + schemasAttributeList + "\n\textension: "
-                                        + schemaUri, null, ScimType.RFC7644.INVALID_VALUE);
+          schemasAttributeList.add(schemaUri);
         }
       });
+      int newSize = schemasAttributeList.size();
+      // this will add the missing extension-uris to the schemas-attribute if not set
+      if (originalSize != newSize)
+      {
+        Set<String> schemas = new HashSet<>(schemasAttributeList);
+        schemas.add(getSchema());
+        log.debug("missed to add extension schemaUris to schemas-attribute. Replacing schemas attribute with: {}",
+                  schemas);
+        ScimArrayNode schemasNode = new ScimArrayNode(null);
+        schemas.forEach(schemasNode::add);
+        ((ObjectNode)resourceDocument).set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
+      }
     }
   }
 }
