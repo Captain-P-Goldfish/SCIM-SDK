@@ -8,7 +8,6 @@ import java.util.Optional;
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.ResourceTypeNames;
 import de.gold.scim.common.constants.SchemaUris;
-import de.gold.scim.common.resources.complex.AuthenticationScheme;
 import de.gold.scim.common.resources.complex.BulkConfig;
 import de.gold.scim.common.resources.complex.ChangePasswordConfig;
 import de.gold.scim.common.resources.complex.ETagConfig;
@@ -16,6 +15,7 @@ import de.gold.scim.common.resources.complex.FilterConfig;
 import de.gold.scim.common.resources.complex.Meta;
 import de.gold.scim.common.resources.complex.PatchConfig;
 import de.gold.scim.common.resources.complex.SortConfig;
+import de.gold.scim.common.resources.multicomplex.AuthenticationScheme;
 import lombok.Builder;
 import lombok.extern.slf4j.Slf4j;
 

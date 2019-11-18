@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.exceptions.InvalidConfigException;
+import de.gold.scim.common.resources.multicomplex.AuthenticationScheme;
 
 
 /**
@@ -32,7 +33,7 @@ public class AuthenticationSchemeTest
     Assertions.assertEquals(3, authenticationScheme.size());
     Assertions.assertDoesNotThrow(authenticationScheme::getAttributeName);
     Assertions.assertDoesNotThrow(authenticationScheme::getDescription);
-    Assertions.assertDoesNotThrow(authenticationScheme::getType);
+    Assertions.assertDoesNotThrow(authenticationScheme::getAuthenticationType);
     Assertions.assertDoesNotThrow(authenticationScheme::getDocumentationUri);
     Assertions.assertDoesNotThrow(authenticationScheme::getSpecUri);
   }
@@ -56,7 +57,7 @@ public class AuthenticationSchemeTest
 
     Assertions.assertThrows(InvalidConfigException.class, authenticationScheme::getName);
     Assertions.assertThrows(InvalidConfigException.class, authenticationScheme::getDescription);
-    Assertions.assertThrows(InvalidConfigException.class, authenticationScheme::getType);
+    Assertions.assertThrows(InvalidConfigException.class, authenticationScheme::getAuthenticationType);
     Assertions.assertDoesNotThrow(authenticationScheme::getDocumentationUri);
     Assertions.assertDoesNotThrow(authenticationScheme::getSpecUri);
     Assertions.assertFalse(authenticationScheme.getDocumentationUri().isPresent());
@@ -82,13 +83,13 @@ public class AuthenticationSchemeTest
 
     authenticationScheme.setName(name);
     authenticationScheme.setDescription(description);
-    authenticationScheme.setType(type);
+    authenticationScheme.setAuthenticationType(type);
     authenticationScheme.setDocumentationUri(documentationUri);
     authenticationScheme.setSpecUri(specUri);
 
     Assertions.assertEquals(name, authenticationScheme.getName());
     Assertions.assertEquals(description, authenticationScheme.getDescription());
-    Assertions.assertEquals(type, authenticationScheme.getType());
+    Assertions.assertEquals(type, authenticationScheme.getAuthenticationType());
     Assertions.assertEquals(documentationUri, authenticationScheme.getDocumentationUri().get());
     Assertions.assertEquals(specUri, authenticationScheme.getSpecUri().get());
   }
@@ -114,7 +115,7 @@ public class AuthenticationSchemeTest
 
     Assertions.assertEquals(name, authenticationScheme.getName());
     Assertions.assertEquals(description, authenticationScheme.getDescription());
-    Assertions.assertEquals(type, authenticationScheme.getType());
+    Assertions.assertEquals(type, authenticationScheme.getAuthenticationType());
     Assertions.assertEquals(documentationUri, authenticationScheme.getDocumentationUri().get());
     Assertions.assertEquals(specUri, authenticationScheme.getSpecUri().get());
   }

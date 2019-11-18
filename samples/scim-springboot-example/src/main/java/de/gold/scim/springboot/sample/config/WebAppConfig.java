@@ -8,12 +8,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import de.gold.scim.common.resources.ServiceProvider;
-import de.gold.scim.common.resources.complex.AuthenticationScheme;
 import de.gold.scim.common.resources.complex.BulkConfig;
 import de.gold.scim.common.resources.complex.ChangePasswordConfig;
 import de.gold.scim.common.resources.complex.FilterConfig;
 import de.gold.scim.common.resources.complex.PatchConfig;
 import de.gold.scim.common.resources.complex.SortConfig;
+import de.gold.scim.common.resources.multicomplex.AuthenticationScheme;
 import de.gold.scim.server.endpoints.ResourceEndpoint;
 import de.gold.scim.server.endpoints.base.UserEndpointDefinition;
 import de.gold.scim.server.schemas.ResourceType;

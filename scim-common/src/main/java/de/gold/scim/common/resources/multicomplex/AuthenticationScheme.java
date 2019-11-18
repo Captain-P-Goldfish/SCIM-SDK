@@ -1,11 +1,10 @@
-package de.gold.scim.common.resources.complex;
+package de.gold.scim.common.resources.multicomplex;
 
 import java.util.Objects;
 import java.util.Optional;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.exceptions.InvalidConfigException;
-import de.gold.scim.common.resources.base.ScimObjectNode;
 import lombok.Builder;
 
 
@@ -17,18 +16,34 @@ import lombok.Builder;
  * discovery of configurations, the service provider SHOULD, with the appropriate security considerations,
  * make the authenticationSchemes attribute publicly accessible without prior authentication. REQUIRED.
  */
-public class AuthenticationScheme extends ScimObjectNode
+public class AuthenticationScheme extends MultiComplexNode
 {
 
   @Builder
-  public AuthenticationScheme(String name, String description, String type, String specUri, String documentationUri)
+  public AuthenticationScheme(String name,
+                              String description,
+                              String type,
+                              String specUri,
+                              String documentationUri,
+                              Boolean primary,
+                              String display,
+                              String value,
+                              String ref)
   {
-    super(null);
     setName(name);
     setDescription(description);
-    setType(type);
+    setAuthenticationType(type);
     setSpecUri(specUri);
     setDocumentationUri(documentationUri);
+    setPrimary(primary);
+    setDisplay(display);
+    setValue(value);
+    setRef(ref);
+  }
+
+  public AuthenticationScheme(String type, Boolean primary, String display, String value, String ref)
+  {
+    super(type, primary, display, value, ref);
   }
 
   /**
@@ -71,7 +86,7 @@ public class AuthenticationScheme extends ScimObjectNode
    * The authentication scheme. This specification defines the values "oauth", "oauth2", "oauthbearertoken",
    * "httpbasic", and "httpdigest". REQUIRED.
    */
-  public String getType()
+  public String getAuthenticationType()
   {
     return getStringAttribute(AttributeNames.RFC7643.TYPE).orElseThrow(() -> {
       return new InvalidConfigException("the 'type' attribute is required");
@@ -82,7 +97,7 @@ public class AuthenticationScheme extends ScimObjectNode
    * The authentication scheme. This specification defines the values "oauth", "oauth2", "oauthbearertoken",
    * "httpbasic", and "httpdigest". REQUIRED.
    */
-  public void setType(String type)
+  public void setAuthenticationType(String type)
   {
     setAttribute(AttributeNames.RFC7643.TYPE, Objects.requireNonNull(type));
   }
