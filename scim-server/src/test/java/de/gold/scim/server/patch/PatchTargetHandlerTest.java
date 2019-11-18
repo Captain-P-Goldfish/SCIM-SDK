@@ -2169,4 +2169,224 @@ public class PatchTargetHandlerTest implements FileReferences
     MatcherAssert.assertThat(allTypes.getComplex().get().getDecimalArray(), Matchers.contains(1.1, 2.2, 3.3));
   }
 
+  /**
+   * this test will verify that the implementation follows the defined behaviour of RFC7644 for primary types:
+   * <br>
+   *
+   * <pre>
+   *   For multi-valued attributes, a PATCH operation that sets a value's
+   *   "primary" sub-attribute to "true" SHALL cause the server to
+   *   automatically set "primary" to "false" for any other values in the
+   *   array.
+   * </pre>
+   */
+  @Test
+  public void testSetNewPrimaryValueWithAdd()
+  {
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(emailsDef);
+    List<Email> emails = Arrays.asList(Email.builder().value("1@1.de").primary(true).build(),
+                                       Email.builder().value("2@2.de").build(),
+                                       Email.builder().value("3@3.de").build());
+    AllTypes allTypes = new AllTypes(true);
+    ScimArrayNode emailArray = new ScimArrayNode(null);
+    emails.forEach(emailArray::add);
+    allTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+
+    final String path = "emails";
+    // @formatter:off
+    List<String> values = Arrays.asList("{" +
+                                          "\"value\": \"4@4.de\"," +
+                                          "\"primary\": true" +
+                                        "}");
+    // @formatter:on
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    emailArray = (ScimArrayNode)allTypes.get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(emailArray);
+    Assertions.assertEquals(4, emailArray.size());
+    for ( JsonNode email : emailArray )
+    {
+      String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+      if (emailText.equals("4@4.de"))
+      {
+        Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), allTypes.toPrettyString());
+      }
+      else
+      {
+        Assertions.assertNull(email.get(AttributeNames.RFC7643.PRIMARY), allTypes.toPrettyString());
+      }
+    }
+  }
+
+  /**
+   * this test will verify that the implementation follows the defined behaviour of RFC7644 for primary types:
+   * <br>
+   *
+   * <pre>
+   *   For multi-valued attributes, a PATCH operation that sets a value's
+   *   "primary" sub-attribute to "true" SHALL cause the server to
+   *   automatically set "primary" to "false" for any other values in the
+   *   array.
+   * </pre>
+   */
+  @Test
+  public void testSetNewPrimaryValueWithReplaceAndFilter()
+  {
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(emailsDef);
+    List<Email> emails = Arrays.asList(Email.builder().value("1@1.de").primary(true).build(),
+                                       Email.builder().value("2@2.de").build(),
+                                       Email.builder().value("3@3.de").build());
+    AllTypes allTypes = new AllTypes(true);
+    ScimArrayNode emailArray = new ScimArrayNode(null);
+    emails.forEach(emailArray::add);
+    allTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+
+    final String path = "emails[value sw \"2\"].primary";
+    List<String> values = Arrays.asList("true");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    emailArray = (ScimArrayNode)allTypes.get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(emailArray);
+    Assertions.assertEquals(3, emailArray.size());
+    for ( JsonNode email : emailArray )
+    {
+      String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+      if (emailText.equals("2@2.de"))
+      {
+        Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), allTypes.toPrettyString());
+      }
+      else
+      {
+        Assertions.assertNull(email.get(AttributeNames.RFC7643.PRIMARY), allTypes.toPrettyString());
+      }
+    }
+  }
+
+  /**
+   * this test will verify that the implementation follows the defined behaviour of RFC7644 for primary types:
+   * <br>
+   *
+   * <pre>
+   *   For multi-valued attributes, a PATCH operation that sets a value's
+   *   "primary" sub-attribute to "true" SHALL cause the server to
+   *   automatically set "primary" to "false" for any other values in the
+   *   array.
+   * </pre>
+   */
+  @Test
+  public void testSetNewPrimaryValueWithAddAndResourceValue()
+  {
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(emailsDef);
+    List<Email> emails = Arrays.asList(Email.builder().value("1@1.de").primary(true).build(),
+                                       Email.builder().value("2@2.de").build(),
+                                       Email.builder().value("3@3.de").build());
+    AllTypes originalAllTypes = new AllTypes(true);
+    ScimArrayNode emailArray = new ScimArrayNode(null);
+    emails.forEach(emailArray::add);
+    originalAllTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+
+    AllTypes patchResource = new AllTypes(true);
+    ScimArrayNode patchEmailArray = new ScimArrayNode(null);
+    patchEmailArray.add(Email.builder().value("4@4.de").primary(true).build());
+    patchResource.set(AttributeNames.RFC7643.EMAILS, patchEmailArray);
+
+    List<String> values = Collections.singletonList(patchResource.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .values(values)
+                                                                                .build());
+
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    originalAllTypes = patchHandler.patchResource(originalAllTypes, patchOpRequest);
+    Assertions.assertEquals(1, originalAllTypes.getSchemas().size(), originalAllTypes.toPrettyString());
+    emailArray = (ScimArrayNode)originalAllTypes.get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(emailArray, originalAllTypes.toPrettyString());
+    Assertions.assertEquals(4, emailArray.size(), originalAllTypes.toPrettyString());
+    for ( JsonNode email : emailArray )
+    {
+      String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+      if (emailText.equals("4@4.de"))
+      {
+        Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(),
+                              originalAllTypes.toPrettyString());
+      }
+      else
+      {
+        Assertions.assertNull(email.get(AttributeNames.RFC7643.PRIMARY), originalAllTypes.toPrettyString());
+      }
+    }
+  }
+
+  /**
+   * this test will verify that the implementation follows the defined behaviour of RFC7644 for primary types:
+   * <br>
+   *
+   * <pre>
+   *   For multi-valued attributes, a PATCH operation that sets a value's
+   *   "primary" sub-attribute to "true" SHALL cause the server to
+   *   automatically set "primary" to "false" for any other values in the
+   *   array.
+   * </pre>
+   */
+  @Test
+  public void testSetNewPrimaryValueWithReplaceAndResourceValue()
+  {
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(emailsDef);
+    List<Email> emails = Arrays.asList(Email.builder().value("1@1.de").primary(true).build(),
+                                       Email.builder().value("2@2.de").build(),
+                                       Email.builder().value("3@3.de").build());
+    AllTypes originalAllTypes = new AllTypes(true);
+    ScimArrayNode emailArray = new ScimArrayNode(null);
+    emails.forEach(emailArray::add);
+    originalAllTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+
+    AllTypes patchResource = new AllTypes(true);
+    ScimArrayNode patchEmailArray = new ScimArrayNode(null);
+    patchEmailArray.add(Email.builder().value("4@4.de").primary(true).build());
+    patchResource.set(AttributeNames.RFC7643.EMAILS, patchEmailArray);
+
+    List<String> values = Collections.singletonList(patchResource.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .values(values)
+                                                                                .build());
+
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    originalAllTypes = patchHandler.patchResource(originalAllTypes, patchOpRequest);
+    Assertions.assertEquals(1, originalAllTypes.getSchemas().size(), originalAllTypes.toPrettyString());
+    emailArray = (ScimArrayNode)originalAllTypes.get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(emailArray, originalAllTypes.toPrettyString());
+    Assertions.assertEquals(1, emailArray.size(), originalAllTypes.toPrettyString());
+    JsonNode email = emailArray.get(0);
+    String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+    Assertions.assertEquals("4@4.de", emailText);
+    Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), originalAllTypes.toPrettyString());
+  }
+
 }

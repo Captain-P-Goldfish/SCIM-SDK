@@ -240,6 +240,10 @@ public class PatchResourceHandler extends AbstractPatch
     else
     {
       arrayNode = (ArrayNode)multiValuedComplexNode;
+      if (patchOp.equals(PatchOp.REPLACE))
+      {
+        arrayNode.removeAll();
+      }
     }
     Optional<JsonNode> primaryNode = getPrimaryFromMultiComplex(arrayNode);
     AtomicBoolean newPrimaryNodeDetected = new AtomicBoolean(false);

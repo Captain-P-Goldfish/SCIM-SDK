@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.ScimType;
 import de.gold.scim.common.constants.enums.PatchOp;
 import de.gold.scim.common.constants.enums.Type;
@@ -605,6 +606,8 @@ public class PatchTargetHandler extends AbstractPatch
       try
       {
         JsonNode jsonNode = JsonHelper.readJsonDocument(value);
+        JsonNode primary = jsonNode.get(AttributeNames.RFC7643.PRIMARY);
+        checkForPrimary(multiValued, primary != null && primary.booleanValue());
         multiValued.add(jsonNode);
       }
       catch (IOException ex)
@@ -614,6 +617,24 @@ public class PatchTargetHandler extends AbstractPatch
       }
     }
     return true;
+  }
+
+  /**
+   * this method will check if the current operation adds a new primary value and will set the original primary
+   * to false if such a value exists
+   *
+   * @param multiValued the multivalued complex array that might hold any primary values
+   * @param primary if the new value is primary or not
+   */
+  private void checkForPrimary(ArrayNode multiValued, boolean primary)
+  {
+    if (!primary)
+    {
+      return;
+    }
+    multiValued.forEach(jsonNode -> {
+      ((ObjectNode)jsonNode).remove(AttributeNames.RFC7643.PRIMARY);
+    });
   }
 
   /**
@@ -636,6 +657,10 @@ public class PatchTargetHandler extends AbstractPatch
     SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullAttributeName);
     List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
+    if (AttributeNames.RFC7643.PRIMARY.equals(subAttribute.getName()))
+    {
+      checkForPrimary(multiValued, Boolean.parseBoolean(values.get(0)));
+    }
     for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
     {
       ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
@@ -645,7 +670,6 @@ public class PatchTargetHandler extends AbstractPatch
         multiValued.remove(matchingComplexNodes.get(i).getIndex());
       }
     }
-    matchingComplexNodes.forEach(jsonNodes -> {});
     return changeWasMade.get();
   }
 

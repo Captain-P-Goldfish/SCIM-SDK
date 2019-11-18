@@ -22,11 +22,13 @@ import lombok.NoArgsConstructor;
 public class AllTypes extends ResourceNode
 {
 
+  public static final String ALL_TYPES_URI = "urn:gold:params:scim:schemas:custom:2.0:AllTypes";
+
   public AllTypes(boolean withSchema)
   {
     if (withSchema)
     {
-      setSchemas(Arrays.asList("urn:gold:params:scim:schemas:custom:2.0:AllTypes"));
+      setSchemas(Arrays.asList(ALL_TYPES_URI));
     }
   }
 
