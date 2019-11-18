@@ -18,16 +18,20 @@ import lombok.NoArgsConstructor;
 public class Address extends MultiComplexNode
 {
 
-
   @Builder
-  public Address(String formatted,
+  public Address(String type,
+                 Boolean primary,
+                 String display,
+                 String value,
+                 String ref,
+                 String formatted,
                  String streetAddress,
                  String locality,
                  String region,
                  String postalCode,
                  String country)
   {
-    this();
+    super(type, primary, display, value, ref);
     setFormatted(formatted);
     setStreetAddress(streetAddress);
     setLocality(locality);
