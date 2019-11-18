@@ -849,6 +849,8 @@ class ResourceEndpointHandler
       }
       if (patchHandler.isChangedResource())
       {
+        // a security call In case that someone finds a way to manipulate the id within a patch operation
+        resourceNode.setId(id);
         resourceNode = resourceHandler.updateResource(resourceNode);
       }
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.constants.enums.Mutability;
 import de.gold.scim.common.constants.enums.PatchOp;
 import de.gold.scim.common.constants.enums.Type;
 import de.gold.scim.common.exceptions.BadRequestException;
@@ -109,6 +110,33 @@ public class PatchTargetHandler extends AbstractPatch
     this.schemaAttribute = getSchemaAttribute();
   }
 
+  /**
+   * this method will check that the referenced attribute is not a readOnly or immutable node. If the client
+   * tries to process a patch operation on such an object the current value of the resource must meet the
+   * requirements of RFC7644 <br>
+   * <br>
+   *
+   * <pre>
+   * If the attribute path is "readOnly" an exception should be thrown
+   * If the attributes mutability is "immutable" an add operation is only allowed if the value is unassigned
+   * </pre>
+   */
+  private void evaluatePatchPathOperation(SchemaAttribute schemaAttribute, JsonNode attribute)
+  {
+    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is a '"
+                                    + Mutability.READ_ONLY + "' attribute and cannot be changed", null,
+                                    ScimType.RFC7644.INVALID_PATH);
+    }
+    if (!PatchOp.REMOVE.equals(patchOp) && Mutability.IMMUTABLE.equals(schemaAttribute.getMutability())
+        && attribute != null)
+    {
+      throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is '"
+                                    + Mutability.IMMUTABLE + "' and is not unassigned. Current value is: "
+                                    + attribute.asText(), null, ScimType.RFC7644.INVALID_PATH);
+    }
+  }
 
   /**
    * will add the specified values into the specified path
@@ -198,6 +226,7 @@ public class PatchTargetHandler extends AbstractPatch
   {
     if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null)
     {
+      evaluatePatchPathOperation(schemaAttribute, firstAttribute);
       if (firstAttribute == null)
       {
         return false;
@@ -238,6 +267,7 @@ public class PatchTargetHandler extends AbstractPatch
     if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null
         && path.getChild() == null)
     {
+      evaluatePatchPathOperation(schemaAttribute, firstAttribute.isEmpty() ? null : firstAttribute);
       int sizeBefore = currentParent.size();
       JsonNode removedNode = currentParent.remove(schemaAttribute.getName());
       boolean effectiveChangeMade = false;
@@ -318,6 +348,7 @@ public class PatchTargetHandler extends AbstractPatch
     }
 
     JsonNode oldNode = objectNode.get(schemaAttribute.getName());
+    evaluatePatchPathOperation(schemaAttribute, oldNode);
     if (PatchOp.REMOVE.equals(patchOp))
     {
       if (oldNode == null)
@@ -361,6 +392,8 @@ public class PatchTargetHandler extends AbstractPatch
   {
     if (fullAttributeNames.length > 1)
     {
+      ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
+      evaluatePatchPathOperation(schemaAttribute, complexNode);
       return handleComplexSubAttributePathReference(schemaAttribute, resource, fullAttributeNames[1], values);
     }
     else
@@ -381,6 +414,8 @@ public class PatchTargetHandler extends AbstractPatch
                                                    ObjectNode resource,
                                                    List<String> values)
   {
+    ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
+    evaluatePatchPathOperation(schemaAttribute, complexNode);
     if (values.size() != 1 || StringUtils.isBlank(values.get(0)))
     {
       throw new BadRequestException("found multiple or no values for non multi valued complex type '"
@@ -395,7 +430,6 @@ public class PatchTargetHandler extends AbstractPatch
                                     null, ScimType.RFC7644.INVALID_VALUE);
     }
     PatchFilterResolver filterResolver = new PatchFilterResolver();
-    ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
     boolean hasFilterExpression = path.getChild() != null;
     if (complexNode != null && hasFilterExpression
         && !filterResolver.isNodeMatchingFilter(complexNode, path).isPresent())
@@ -560,6 +594,7 @@ public class PatchTargetHandler extends AbstractPatch
       }
       else
       {
+        evaluatePatchPathOperation(schemaAttribute, multiValued.isEmpty() ? null : multiValued);
         return handleDirectMultiValuedComplexPathReference(multiValued, values);
       }
     }

@@ -7,6 +7,17 @@
   "description": "AllTypes",
   "attributes": [
     {
+      "name": "id",
+      "type": "string",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "server",
+      "description": "test",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false
+    },
+    {
       "name": "string",
       "type": "string",
       "mutability": "readWrite",

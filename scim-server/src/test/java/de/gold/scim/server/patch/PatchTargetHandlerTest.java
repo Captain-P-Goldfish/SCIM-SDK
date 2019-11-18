@@ -24,13 +24,19 @@ import de.gold.scim.common.constants.ClassPathReferences;
 import de.gold.scim.common.constants.HttpStatus;
 import de.gold.scim.common.constants.SchemaUris;
 import de.gold.scim.common.constants.ScimType;
+import de.gold.scim.common.constants.enums.Mutability;
 import de.gold.scim.common.constants.enums.PatchOp;
+import de.gold.scim.common.constants.enums.Returned;
+import de.gold.scim.common.constants.enums.Type;
+import de.gold.scim.common.constants.enums.Uniqueness;
 import de.gold.scim.common.exceptions.ScimException;
 import de.gold.scim.common.request.PatchOpRequest;
 import de.gold.scim.common.request.PatchRequestOperation;
 import de.gold.scim.common.resources.EnterpriseUser;
+import de.gold.scim.common.resources.User;
 import de.gold.scim.common.resources.base.ScimArrayNode;
 import de.gold.scim.common.resources.complex.Manager;
+import de.gold.scim.common.resources.complex.Name;
 import de.gold.scim.common.resources.multicomplex.Email;
 import de.gold.scim.common.schemas.Schema;
 import de.gold.scim.common.utils.JsonHelper;
@@ -38,6 +44,7 @@ import de.gold.scim.server.resources.AllTypes;
 import de.gold.scim.server.schemas.ResourceType;
 import de.gold.scim.server.schemas.ResourceTypeFactory;
 import de.gold.scim.server.utils.FileReferences;
+import de.gold.scim.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -2389,4 +2396,769 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), originalAllTypes.toPrettyString());
   }
 
+  /**
+   * will verify that a readOnly attribute as the id of a resource cannot be patched
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE", "REMOVE"})
+  public void testPatchReadOnlyAttribute(PatchOp patchOp)
+  {
+    final String path = "id";
+    final String newId = "1";
+    List<String> values = PatchOp.REMOVE.equals(patchOp) ? null : Collections.singletonList(newId);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    final String resourceId = UUID.randomUUID().toString();
+    User user = User.builder().id(resourceId).userName("goldfish").build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'id' is a 'READ_ONLY' attribute and cannot be changed", ex.getDetail());
+    }
+  }
+
+  /**
+   * will verify that an immutable attribute as the username of a resource cannot be patched if already assigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testPatchAssignedImmutableAttribute(PatchOp patchOp)
+  {
+    JsonNode usernameDef = JsonHelper.readJsonDocument(TestHelper.getAttributeString("userName",
+                                                                                     Type.STRING,
+                                                                                     false,
+                                                                                     true,
+                                                                                     true,
+                                                                                     Mutability.IMMUTABLE,
+                                                                                     Returned.DEFAULT,
+                                                                                     Uniqueness.SERVER));
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(usernameDef);
+
+    final String path = "username";
+    final String newUsername = "goldfish";
+    List<String> values = PatchOp.REMOVE.equals(patchOp) ? null : Collections.singletonList(newUsername);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder().id(UUID.randomUUID().toString()).userName(username).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'userName' is 'IMMUTABLE' and is not unassigned. Current value is: "
+                              + username,
+                              ex.getDetail());
+    }
+  }
+
+  /**
+   * will verify that an immutable attribute as the username of a resource can be patched if unassigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testPatchUnassignedImmutableAttribute(PatchOp patchOp)
+  {
+    JsonNode usernameDef = JsonHelper.readJsonDocument(TestHelper.getAttributeString("userName",
+                                                                                     Type.STRING,
+                                                                                     false,
+                                                                                     true,
+                                                                                     true,
+                                                                                     Mutability.IMMUTABLE,
+                                                                                     Returned.DEFAULT,
+                                                                                     Uniqueness.SERVER));
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(usernameDef);
+
+    final String path = "username";
+    final String newUsername = "goldfish";
+    List<String> values = PatchOp.REMOVE.equals(patchOp) ? null : Collections.singletonList(newUsername);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().id(UUID.randomUUID().toString()).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertEquals(newUsername, user.getUserName().get());
+  }
+
+  /**
+   * will verify that an immutable attribute can be unassigned with the remove operation
+   */
+  @Test
+  public void testPatchUnassignedImmutableAttribute()
+  {
+    JsonNode usernameDef = JsonHelper.readJsonDocument(TestHelper.getAttributeString("userName",
+                                                                                     Type.STRING,
+                                                                                     false,
+                                                                                     true,
+                                                                                     true,
+                                                                                     Mutability.IMMUTABLE,
+                                                                                     Returned.DEFAULT,
+                                                                                     Uniqueness.SERVER));
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(usernameDef);
+
+    final String path = "username";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .build());
+
+    final String username = "goldfish";
+    User user = User.builder().id(UUID.randomUUID().toString()).userName(username).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertFalse(user.getUserName().isPresent());
+  }
+
+  /**
+   * verifies that a readOnly complex type cannot be patched
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE", "REMOVE"})
+  public void testChangeReadOnlyOnComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(READ_ONLY_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+
+
+    final String path = "name";
+    Name name = Name.builder().givenName("chuck").build();
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList(name.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'name' is a 'READ_ONLY' attribute and cannot be changed", ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies that a complex sub type cannot be patched if the complex type is readOnly
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE", "REMOVE"})
+  public void testChangeReadOnlyOnComplexSubType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(READ_ONLY_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+
+
+    final String path = "name.givenName";
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList("happy");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'name' is a 'READ_ONLY' attribute and cannot be changed", ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies that a complex sub type cannot be patched if the sub type itself is readOnly
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE", "REMOVE"})
+  public void testChangeReadOnlySubTypeOnComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(READ_ONLY_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+    TestHelper.modifyAttributeMetaData(allTypesSchema,
+                                       "name",
+                                       null,
+                                       Mutability.READ_WRITE,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+
+
+    final String path = "name.givenName";
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList("happy");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'name.givenName' is a 'READ_ONLY' attribute and cannot be changed",
+                              ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies that an immutable complex type cannot be patched if already assigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeImmutableAssignedOnComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(IMMUTABLE_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+
+
+    final String path = "name";
+    Name name = Name.builder().givenName("chuck").build();
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList(name.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().name(Name.builder().familyName("norris").build()).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      MatcherAssert.assertThat(ex.getDetail(),
+                               Matchers.startsWith("the attribute 'name' is 'IMMUTABLE' and is not unassigned. "
+                                                   + "Current value is: "));
+    }
+  }
+
+  /**
+   * verifies that a sub type of an immutable complex type cannot be patched if the complex type does already
+   * exist
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeAssignedSubTypeOnImmutableComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(IMMUTABLE_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+    TestHelper.modifyAttributeMetaData(allTypesSchema,
+                                       "name.givenName",
+                                       null,
+                                       Mutability.READ_WRITE,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+
+
+    final String path = "name.givenName";
+    List<String> values = Arrays.asList("chuck");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().name(Name.builder().givenName("norris").build()).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      MatcherAssert.assertThat(ex.getDetail(),
+                               Matchers.startsWith("the attribute 'name' is 'IMMUTABLE' and is not unassigned. "
+                                                   + "Current value is: "));
+    }
+  }
+
+  /**
+   * verifies that an immutable sub type of a readWrite complex type cannot be patched if already assigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeImmutableAssignedSubTypeOnComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(IMMUTABLE_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+    TestHelper.modifyAttributeMetaData(allTypesSchema,
+                                       "name",
+                                       null,
+                                       Mutability.READ_WRITE,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+
+
+    final String path = "name.givenName";
+    List<String> values = Arrays.asList("chuck");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().name(Name.builder().givenName("norris").build()).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      MatcherAssert.assertThat(ex.getDetail(),
+                               Matchers.startsWith("the attribute 'name.givenName' is 'IMMUTABLE' and is not "
+                                                   + "unassigned. Current value is: norris"));
+    }
+  }
+
+  /**
+   * verifies that an immutable sub type of a readWrite complex type can be patched if not assigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeImmutableUnassignedSubTypeOnComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(IMMUTABLE_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+    TestHelper.modifyAttributeMetaData(allTypesSchema,
+                                       "name",
+                                       null,
+                                       Mutability.READ_WRITE,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+
+    final String path = "name.givenName";
+    List<String> values = Arrays.asList("chuck");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().name(Name.builder().familyName("norris").build()).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertTrue(user.getNameNode().isPresent());
+    Assertions.assertTrue(user.getNameNode().get().getGivenName().isPresent());
+    Assertions.assertEquals("chuck", user.getNameNode().get().getGivenName().get());
+  }
+
+  /**
+   * verifies that an immutable complex type can be patched if unassigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeImmutableUnassignedOnComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(IMMUTABLE_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+
+
+    final String path = "name";
+    Name name = Name.builder().givenName("chuck").build();
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList(name.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().id(UUID.randomUUID().toString()).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertTrue(user.getNameNode().isPresent());
+    Assertions.assertTrue(user.getNameNode().get().getGivenName().isPresent());
+  }
+
+  /**
+   * verifies that an immutable complex type can be set to unassigned with a remove operation if set
+   */
+  @Test
+  public void testChangeImmutableUnassignedOnComplexType()
+  {
+    JsonNode readOnlyNameDef = JsonHelper.loadJsonDocument(IMMUTABLE_NAME_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyNameDef);
+
+
+    final String path = "name";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .build());
+
+    Name name = Name.builder().givenName("chuck").build();
+    User user = User.builder().id(UUID.randomUUID().toString()).name(name).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertFalse(user.getNameNode().isPresent());
+  }
+
+  /**
+   * verifies that a readOnly multi valued complex type cannot be patched
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE", "REMOVE"})
+  public void testChangeReadOnlyOnMultiValuedComplexType(PatchOp patchOp)
+  {
+    JsonNode readOnlyEmailsDef = JsonHelper.loadJsonDocument(READ_ONLY_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyEmailsDef);
+
+
+    final String path = "emails";
+    Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList(email.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'emails' is a 'READ_ONLY' attribute and cannot be changed",
+                              ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies that an immutable multi valued complex type cannot be patched if already assigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeAssignedImmutableOnMultiValuedComplexType(PatchOp patchOp)
+  {
+    JsonNode immutableEmailsDef = JsonHelper.loadJsonDocument(IMMUTABLE_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(immutableEmailsDef);
+
+
+    final String path = "emails";
+    Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList(email.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder()
+                    .emails(Arrays.asList(Email.builder().value(UUID.randomUUID().toString()).build()))
+                    .build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached\n" + user.toPrettyString());
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      MatcherAssert.assertThat(ex.getDetail(),
+                               Matchers.startsWith("the attribute 'emails' is 'IMMUTABLE' and is not unassigned. "
+                                                   + "Current value is: "));
+    }
+  }
+
+  /**
+   * verifies that an immutable multi valued complex type can be patched if unassigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeUnassignedImmutableOnMultiValuedComplexType(PatchOp patchOp)
+  {
+    JsonNode immutableEmailsDef = JsonHelper.loadJsonDocument(IMMUTABLE_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(immutableEmailsDef);
+
+
+    final String path = "emails";
+    Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
+    List<String> values = patchOp.equals(PatchOp.REMOVE) ? null : Arrays.asList(email.toString());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder().build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertEquals(1, user.getEmails().size());
+    Assertions.assertEquals(email, user.getEmails().get(0));
+  }
+
+  /**
+   * verifies that an immutable multi valued complex type can be removed if assigned
+   */
+  @Test
+  public void testRemoveAssignedImmutableOnMultiValuedComplexType()
+  {
+    JsonNode immutableEmailsDef = JsonHelper.loadJsonDocument(IMMUTABLE_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(immutableEmailsDef);
+
+    final String path = "emails";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .build());
+
+    Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
+    User user = User.builder().emails(Collections.singletonList(email)).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertEquals(0, user.getEmails().size());
+  }
+
+  /**
+   * verifies that an immutable multi valued complex sub type can be removed if assigned
+   */
+  @Test
+  public void testRemoveAssignedImmutableOnMultiValuedComplexSubType()
+  {
+    JsonNode immutableEmailsDef = JsonHelper.loadJsonDocument(IMMUTABLE_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(immutableEmailsDef);
+
+    final String path = "emails.type";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .build());
+
+    Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
+    User user = User.builder().emails(Collections.singletonList(email)).build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertEquals(1, user.getEmails().size());
+    Assertions.assertFalse(user.getEmails().get(0).getType().isPresent());
+    Assertions.assertTrue(user.getEmails().get(0).getValue().isPresent());
+  }
+
+  /**
+   * verifies that an immutable multi valued complex sub type can be patched if unassigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeUnassignedImmutableOnMultiValuedComplexSubType(PatchOp patchOp)
+  {
+    JsonNode immutableEmailsDef = JsonHelper.loadJsonDocument(IMMUTABLE_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(immutableEmailsDef);
+
+
+    final String path = "emails.type";
+    List<String> values = Arrays.asList("home");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder()
+                    .emails(Collections.singletonList(Email.builder().value(UUID.randomUUID().toString()).build()))
+                    .build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+    Assertions.assertEquals(1, user.getEmails().size());
+    Assertions.assertTrue(user.getEmails().get(0).getValue().isPresent());
+    Assertions.assertTrue(user.getEmails().get(0).getType().isPresent());
+    Assertions.assertEquals("home", user.getEmails().get(0).getType().get());
+  }
+
+  /**
+   * verifies that an immutable multi valued complex sub type cannot be patched if already assigned
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testChangeAssignedImmutableOnMultiValuedComplexSubType(PatchOp patchOp)
+  {
+    JsonNode immutableEmailsDef = JsonHelper.loadJsonDocument(IMMUTABLE_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(immutableEmailsDef);
+
+
+    final String path = "emails.type";
+    List<String> values = Arrays.asList("home");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder()
+                    .emails(Collections.singletonList(Email.builder()
+                                                           .value(UUID.randomUUID().toString())
+                                                           .type("work")
+                                                           .build()))
+                    .build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      MatcherAssert.assertThat(ex.getDetail(),
+                               Matchers.startsWith("the attribute 'emails.type' is 'IMMUTABLE' and is not unassigned. "
+                                                   + "Current value is: "));
+    }
+  }
+
+  /**
+   * verifies that a read only multi valued complex sub type cannot be patched if mutability is readOnly
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE", "REMOVE"})
+  public void testChangeReadOnlyOnMultiValuedComplexSubType(PatchOp patchOp)
+  {
+    JsonNode readOnlyEmailsDef = JsonHelper.loadJsonDocument(READ_ONLY_EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(readOnlyEmailsDef);
+
+    final String path = "emails.type";
+    List<String> values = PatchOp.REMOVE.equals(patchOp) ? null : Arrays.asList("home");
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path(path)
+                                                                                .op(patchOp)
+                                                                                .values(values)
+                                                                                .build());
+
+    User user = User.builder()
+                    .emails(Collections.singletonList(Email.builder()
+                                                           .value(UUID.randomUUID().toString())
+                                                           .type("work")
+                                                           .build()))
+                    .build();
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(user, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+      Assertions.assertEquals("the attribute 'emails.type' is a 'READ_ONLY' attribute and cannot be changed",
+                              ex.getDetail());
+    }
+  }
 }

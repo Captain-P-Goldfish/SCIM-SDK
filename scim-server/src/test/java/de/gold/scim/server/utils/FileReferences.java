@@ -64,6 +64,14 @@ public interface FileReferences
 
   String EMAILS_ATTRIBUTE = UTILS_BASE_PATH + "/emails.json";
 
+  String READ_ONLY_EMAILS_ATTRIBUTE = UTILS_BASE_PATH + "/read-only-emails.json";
+
+  String IMMUTABLE_EMAILS_ATTRIBUTE = UTILS_BASE_PATH + "/immutable-emails.json";
+
+  String READ_ONLY_NAME_ATTRIBUTE = UTILS_BASE_PATH + "/read-only-name.json";
+
+  String IMMUTABLE_NAME_ATTRIBUTE = UTILS_BASE_PATH + "/immutable-name.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content
