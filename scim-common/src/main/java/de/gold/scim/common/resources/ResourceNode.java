@@ -1,6 +1,5 @@
 package de.gold.scim.common.resources;
 
-import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,49 +30,6 @@ import de.gold.scim.common.schemas.SchemaAttribute;
  */
 public abstract class ResourceNode extends AbstractSchemasHolder
 {
-
-  /**
-   * @return the list of schemas witin this resource
-   */
-  public List<String> getSchemas()
-  {
-    return getSimpleArrayAttribute(AttributeNames.RFC7643.SCHEMAS);
-  }
-
-  /**
-   * adds a list of schemas to this resource
-   */
-  public void setSchemas(List<String> schemas)
-  {
-    setStringAttributeList(AttributeNames.RFC7643.SCHEMAS, schemas);
-  }
-
-  /**
-   * adds a single schema to this resource node
-   *
-   * @param schemaUri the uri to add
-   */
-  public void addSchema(String schemaUri)
-  {
-    List<String> schemas = getSchemas();
-    if (!schemas.contains(schemaUri))
-    {
-      schemas.add(schemaUri);
-      setSchemas(schemas);
-    }
-  }
-
-  /**
-   * removes a single schema from this resource node
-   *
-   * @param schemaUri the uri to add
-   */
-  public void removeSchema(String schemaUri)
-  {
-    List<String> schemas = getSchemas();
-    schemas.remove(schemaUri);
-    setSchemas(schemas);
-  }
 
   /**
    * A unique identifier for a SCIM resource as defined by the service provider. Each representation of the

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import de.gold.scim.common.constants.SchemaUris;
 import de.gold.scim.common.resources.EnterpriseUser;
@@ -170,7 +171,7 @@ public class AllTypes extends ResourceNode
   public void setEnterpriseUser(EnterpriseUser enterpriseUser)
   {
     setAttribute(SchemaUris.ENTERPRISE_USER_URI, enterpriseUser);
-    List<String> schemas = getSchemas();
+    Set<String> schemas = getSchemas();
     if (!schemas.contains(SchemaUris.ENTERPRISE_USER_URI))
     {
       schemas.add(SchemaUris.ENTERPRISE_USER_URI);

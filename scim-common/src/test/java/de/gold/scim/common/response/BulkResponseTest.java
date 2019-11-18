@@ -26,7 +26,7 @@ public class BulkResponseTest
   {
     BulkResponse bulkResponse = new BulkResponse();
     Assertions.assertEquals(1, bulkResponse.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.BULK_RESPONSE_URI, bulkResponse.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.BULK_RESPONSE_URI, bulkResponse.getSchemas().iterator().next());
   }
 
   /**

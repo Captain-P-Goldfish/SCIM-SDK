@@ -9,9 +9,11 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -236,6 +238,68 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
+   * extracts a simple attribute type
+   *
+   * @param attributeName the name of the array attribute
+   */
+  protected Set<String> getSimpleArrayAttributeSet(String attributeName)
+  {
+    return getSimpleArrayAttributeSet(attributeName, String.class);
+  }
+
+  /**
+   * extracts a simple attribute type
+   *
+   * @param attributeName the name of the array attribute
+   * @param type the type that should be extracted
+   * @param <T> a simple attribute type as Long, Double, String, Boolean or Instant. Other types are not allowed
+   */
+  protected <T> Set<T> getSimpleArrayAttributeSet(String attributeName, Class<T> type)
+  {
+    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class).contains(type))
+    {
+      throw new InternalServerException("the type '" + type.getSimpleName() + "' is not allowed for this method", null,
+                                        null);
+    }
+    JsonNode jsonNode = this.get(attributeName);
+    if (jsonNode == null)
+    {
+      return Collections.emptySet();
+    }
+    if (!(jsonNode instanceof ArrayNode))
+    {
+      throw new InternalServerException("tried to extract a multi valued complex node from document with attribute "
+                                        + "name '" + attributeName + "' but type is of: " + jsonNode.getNodeType(),
+                                        null, null);
+    }
+    Set<T> multiValuedSimpleTypes = new HashSet<>();
+    for ( JsonNode node : jsonNode )
+    {
+      if (Long.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)Long.valueOf(node.longValue()));
+      }
+      else if (Double.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)Double.valueOf(node.doubleValue()));
+      }
+      else if (Boolean.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)Boolean.valueOf(node.booleanValue()));
+      }
+      else if (String.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.textValue() : node.toString()));
+      }
+      else
+      {
+        multiValuedSimpleTypes.add((T)TimeUtils.parseDateTime(node.textValue()));
+      }
+    }
+    return multiValuedSimpleTypes;
+  }
+
+  /**
    * adds or removes a string type attribute
    */
   protected void setAttribute(String attributeName, String attributeValue)
@@ -376,6 +440,21 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
    * adds or removes an array type attribute
    */
   protected void setStringAttributeList(String attributeName, List<String> attributeValue)
+  {
+    if (attributeValue == null || attributeValue.isEmpty())
+    {
+      JsonHelper.removeAttribute(this, attributeName);
+      return;
+    }
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    attributeValue.forEach(arrayNode::add);
+    JsonHelper.addAttribute(this, attributeName, arrayNode);
+  }
+
+  /**
+   * adds or removes an array type attribute
+   */
+  protected void setStringAttributeList(String attributeName, Set<String> attributeValue)
   {
     if (attributeValue == null || attributeValue.isEmpty())
     {

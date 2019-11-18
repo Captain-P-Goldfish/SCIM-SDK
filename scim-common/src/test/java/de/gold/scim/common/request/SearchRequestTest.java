@@ -26,7 +26,7 @@ public class SearchRequestTest
     SearchRequest searchRequest = Assertions.assertDoesNotThrow((ThrowingSupplier<SearchRequest>)SearchRequest::new);
     Assertions.assertEquals(1, searchRequest.size());
     Assertions.assertEquals(1, searchRequest.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.SEARCH_REQUEST_URI, searchRequest.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.SEARCH_REQUEST_URI, searchRequest.getSchemas().iterator().next());
   }
 
   /**
@@ -38,7 +38,7 @@ public class SearchRequestTest
     SearchRequest searchRequest = Assertions.assertDoesNotThrow(() -> SearchRequest.builder().build());
     Assertions.assertEquals(1, searchRequest.size());
     Assertions.assertEquals(1, searchRequest.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.SEARCH_REQUEST_URI, searchRequest.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.SEARCH_REQUEST_URI, searchRequest.getSchemas().iterator().next());
   }
 
   /**

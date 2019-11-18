@@ -42,7 +42,7 @@ public class UserTest implements FileReferences
     Assertions.assertFalse(instance.isEmpty());
     Assertions.assertEquals(1, instance.size());
     Assertions.assertEquals(1, instance.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.USER_URI, instance.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.USER_URI, instance.getSchemas().iterator().next());
   }
 
   /**
@@ -55,7 +55,7 @@ public class UserTest implements FileReferences
     Assertions.assertFalse(instance.isEmpty());
     Assertions.assertEquals(1, instance.size());
     Assertions.assertEquals(1, instance.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.USER_URI, instance.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.USER_URI, instance.getSchemas().iterator().next());
   }
 
   /**

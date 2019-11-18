@@ -26,7 +26,7 @@ public class BulkRequestTest implements FileReferences
   {
     BulkRequest bulkRequest = new BulkRequest();
     Assertions.assertEquals(1, bulkRequest.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.BULK_REQUEST_URI, bulkRequest.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.BULK_REQUEST_URI, bulkRequest.getSchemas().iterator().next());
   }
 
   /**

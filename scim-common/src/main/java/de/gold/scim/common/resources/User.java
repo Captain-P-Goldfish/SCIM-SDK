@@ -3,6 +3,7 @@ package de.gold.scim.common.resources;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.constants.SchemaUris;
@@ -821,7 +822,7 @@ public class User extends ResourceNode
    */
   public void setEnterpriseUser(EnterpriseUser enterpriseUser)
   {
-    List<String> schemas = getSchemas();
+    Set<String> schemas = getSchemas();
     if (enterpriseUser == null || enterpriseUser.isEmpty())
     {
       schemas.remove(SchemaUris.ENTERPRISE_USER_URI);

@@ -1,6 +1,8 @@
 package de.gold.scim.common.resources;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import de.gold.scim.common.constants.AttributeNames;
 import de.gold.scim.common.resources.base.ScimObjectNode;
@@ -23,9 +25,17 @@ public abstract class AbstractSchemasHolder extends ScimObjectNode
   /**
    * @return the list of schemas witin this resource
    */
-  public List<String> getSchemas()
+  public Set<String> getSchemas()
   {
-    return getSimpleArrayAttribute(AttributeNames.RFC7643.SCHEMAS);
+    return getSimpleArrayAttributeSet(AttributeNames.RFC7643.SCHEMAS);
+  }
+
+  /**
+   * adds a set of schemas to this resource
+   */
+  public void setSchemas(Set<String> schemas)
+  {
+    setStringAttributeList(AttributeNames.RFC7643.SCHEMAS, schemas);
   }
 
   /**
@@ -33,6 +43,33 @@ public abstract class AbstractSchemasHolder extends ScimObjectNode
    */
   public void setSchemas(List<String> schemas)
   {
-    setStringAttributeList(AttributeNames.RFC7643.SCHEMAS, schemas);
+    setSchemas(new HashSet<>(schemas));
+  }
+
+  /**
+   * adds a single schema to this resource node
+   *
+   * @param schemaUri the uri to add
+   */
+  public void addSchema(String schemaUri)
+  {
+    Set<String> schemas = getSchemas();
+    if (!schemas.contains(schemaUri))
+    {
+      schemas.add(schemaUri);
+      setSchemas(schemas);
+    }
+  }
+
+  /**
+   * removes a single schema from this resource node
+   *
+   * @param schemaUri the uri to add
+   */
+  public void removeSchema(String schemaUri)
+  {
+    Set<String> schemas = getSchemas();
+    schemas.remove(schemaUri);
+    setSchemas(schemas);
   }
 }

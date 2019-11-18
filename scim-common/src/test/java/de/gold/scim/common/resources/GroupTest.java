@@ -29,7 +29,7 @@ public class GroupTest
     Assertions.assertFalse(instance.isEmpty());
     Assertions.assertEquals(1, instance.size());
     Assertions.assertEquals(1, instance.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.GROUP_URI, instance.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.GROUP_URI, instance.getSchemas().iterator().next());
   }
 
   /**
@@ -42,7 +42,7 @@ public class GroupTest
     Assertions.assertFalse(instance.isEmpty());
     Assertions.assertEquals(1, instance.size());
     Assertions.assertEquals(1, instance.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.GROUP_URI, instance.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.GROUP_URI, instance.getSchemas().iterator().next());
   }
 
   /**

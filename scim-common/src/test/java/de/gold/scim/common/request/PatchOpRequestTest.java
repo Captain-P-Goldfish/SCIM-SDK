@@ -25,12 +25,12 @@ public class PatchOpRequestTest
     PatchOpRequest patchOpRequest = new PatchOpRequest();
     Assertions.assertEquals(1, patchOpRequest.size());
     Assertions.assertEquals(1, patchOpRequest.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.PATCH_OP, patchOpRequest.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.PATCH_OP, patchOpRequest.getSchemas().iterator().next());
 
     patchOpRequest = PatchOpRequest.builder().build();
     Assertions.assertEquals(1, patchOpRequest.size());
     Assertions.assertEquals(1, patchOpRequest.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.PATCH_OP, patchOpRequest.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.PATCH_OP, patchOpRequest.getSchemas().iterator().next());
   }
 
   /**

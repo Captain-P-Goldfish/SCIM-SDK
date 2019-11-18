@@ -1,5 +1,6 @@
 package de.gold.scim.server.schemas;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -67,7 +68,7 @@ public class ResourceTypeTest implements FileReferences
     JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
     Assertions.assertEquals(Collections.singletonList("urn:ietf:params:scim:schemas:core:2.0:ResourceType"),
-                            resourceType.getSchemas());
+                            new ArrayList<>(resourceType.getSchemas()));
     Assertions.assertEquals("User", resourceType.getId().get());
     Assertions.assertEquals("User", resourceType.getName());
     Assertions.assertEquals("User Account", resourceType.getDescription().get());
@@ -79,7 +80,7 @@ public class ResourceTypeTest implements FileReferences
     Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
     Assertions.assertEquals(1, resourceType.getSchemas().size());
     Assertions.assertEquals(schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI),
-                            schemaFactory.getMetaSchema(resourceType.getSchemas().get(0)));
+                            schemaFactory.getMetaSchema(resourceType.getSchemas().iterator().next()));
 
     List<Schema> schemaExtensions = resourceType.getNotRequiredResourceSchemaExtensions();
     Assertions.assertEquals(1, schemaExtensions.size());
@@ -161,7 +162,7 @@ public class ResourceTypeTest implements FileReferences
 
                                                                                      roleResourceTypeNode));
     Assertions.assertEquals(1, resourceType.getSchemas().size());
-    Assertions.assertEquals(SchemaUris.RESOURCE_TYPE_URI, resourceType.getSchemas().get(0));
+    Assertions.assertEquals(SchemaUris.RESOURCE_TYPE_URI, resourceType.getSchemas().iterator().next());
   }
 
   /**
