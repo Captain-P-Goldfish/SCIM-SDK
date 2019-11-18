@@ -156,6 +156,77 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * this test will verify that no effective change is made on a multicomplex type if the replace value is
+   * identical to the previous array
+   */
+  @Test
+  public void testReplaceMultiValuedComplexTypeWithNoChange()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    Meta meta = Meta.builder().created(LocalDateTime.now()).build();
+    allTypes.setMeta(meta);
+
+    AllTypes multiComplex = new AllTypes(false);
+    multiComplex.setString("hello world");
+    multiComplex.setNumber(Long.MAX_VALUE);
+    multiComplex.setDecimal(5.8);
+    allTypes.setMultiComplex(Collections.singletonList(multiComplex));
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setMultiComplex(Collections.singletonList(multiComplex));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(multiComplex, allTypes.getMultiComplex().get(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertFalse(allTypes.getMeta().get().getLastModified().isPresent(), allTypes.toPrettyString());
+  }
+
+  /**
+   * this test will verify that a replace operation of a multicomplex node is done successfully
+   */
+  @Test
+  public void testReplaceMultiValuedComplexTypeWithChange()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    Meta meta = Meta.builder().created(LocalDateTime.now()).build();
+    allTypes.setMeta(meta);
+
+    AllTypes multiComplex = new AllTypes(false);
+    multiComplex.setString("hello world");
+    multiComplex.setNumber(Long.MAX_VALUE);
+    multiComplex.setDecimal(5.8);
+    allTypes.setMultiComplex(Collections.singletonList(multiComplex));
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    AllTypes multiComplex2 = new AllTypes(false);
+    multiComplex2.setString("happy day");
+    multiComplex2.setNumber(Long.MIN_VALUE);
+    multiComplex2.setDecimal(88454.8);
+    allTypeChanges.setMultiComplex(Collections.singletonList(multiComplex2));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
+    Assertions.assertEquals(multiComplex2, allTypes.getMultiComplex().get(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent(), allTypes.toPrettyString());
+  }
+
+  /**
    * verifies that an exception with an appropriate error message is thrown if the value path is unknown
    */
   @Test

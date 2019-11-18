@@ -233,6 +233,7 @@ public class PatchResourceHandler extends AbstractPatch
   {
     JsonNode multiValuedComplexNode = resource.get(schemaAttribute.getName());
     ArrayNode arrayNode;
+    boolean changeWasMade = true;
     if (multiValuedComplexNode == null)
     {
       arrayNode = new ScimArrayNode(schemaAttribute);
@@ -240,8 +241,12 @@ public class PatchResourceHandler extends AbstractPatch
     else
     {
       arrayNode = (ArrayNode)multiValuedComplexNode;
-      if (patchOp.equals(PatchOp.REPLACE))
+      if (PatchOp.REPLACE.equals(patchOp))
       {
+        if (arrayNode.equals(value))
+        {
+          changeWasMade = false;
+        }
         arrayNode.removeAll();
       }
     }
@@ -269,7 +274,7 @@ public class PatchResourceHandler extends AbstractPatch
       primaryNode.ifPresent(complex -> JsonHelper.removeAttribute(complex, AttributeNames.RFC7643.PRIMARY));
     }
     resource.set(schemaAttribute.getName(), arrayNode);
-    return true;
+    return changeWasMade;
   }
 
   /**
