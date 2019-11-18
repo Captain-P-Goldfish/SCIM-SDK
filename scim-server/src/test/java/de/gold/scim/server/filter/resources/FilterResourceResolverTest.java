@@ -1,6 +1,7 @@
 package de.gold.scim.server.filter.resources;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -1259,7 +1260,8 @@ public class FilterResourceResolverTest implements FileReferences
     dynamicTests.add(getAllTypesTest(allTypesList, "date", "1940-03-10T00:00:00Z", Comparator.EQ, allTypesArray));
     dynamicTests.add(getAllTypesTest(allTypesList, "date", "1940-03-10T00:00:00Z", Comparator.NE));
 
-    OffsetDateTime offsetDateTime = OffsetDateTime.now();
+    ZoneOffset zoneOffSet = ZoneOffset.of("+01:00");
+    OffsetDateTime offsetDateTime = OffsetDateTime.now(zoneOffSet);
     dynamicTests.add(getAllTypesTest(() -> allTypesArray[0].setDate(offsetDateTime.toString()),
                                      allTypesList,
                                      "date",
