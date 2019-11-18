@@ -152,7 +152,7 @@ public class UserTest implements FileReferences
     x509Certificates.add(x509Certificate);
 
     Assertions.assertEquals(userName, user.getUserName().get());
-    Assertions.assertEquals(name, user.getNameNode().get());
+    Assertions.assertEquals(name, user.getName().get());
     Assertions.assertEquals(displayName, user.getDisplayName().get());
     Assertions.assertEquals(nickName, user.getNickName().get());
     Assertions.assertEquals(profileUrl, user.getProfileUrl().get());

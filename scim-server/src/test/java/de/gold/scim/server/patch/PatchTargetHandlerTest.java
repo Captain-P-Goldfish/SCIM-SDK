@@ -2829,9 +2829,9 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
-    Assertions.assertTrue(user.getNameNode().isPresent());
-    Assertions.assertTrue(user.getNameNode().get().getGivenName().isPresent());
-    Assertions.assertEquals("chuck", user.getNameNode().get().getGivenName().get());
+    Assertions.assertTrue(user.getName().isPresent());
+    Assertions.assertTrue(user.getName().get().getGivenName().isPresent());
+    Assertions.assertEquals("chuck", user.getName().get().getGivenName().get());
   }
 
   /**
@@ -2859,8 +2859,8 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
-    Assertions.assertTrue(user.getNameNode().isPresent());
-    Assertions.assertTrue(user.getNameNode().get().getGivenName().isPresent());
+    Assertions.assertTrue(user.getName().isPresent());
+    Assertions.assertTrue(user.getName().get().getGivenName().isPresent());
   }
 
   /**
@@ -2885,7 +2885,7 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
-    Assertions.assertFalse(user.getNameNode().isPresent());
+    Assertions.assertFalse(user.getName().isPresent());
   }
 
   /**

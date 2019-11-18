@@ -67,7 +67,7 @@ public class User extends ResourceNode
     setExternalId(externalId);
     setMeta(meta);
     setUserName(userName);
-    setNameNode(name);
+    setName(name);
     setDisplayName(displayName);
     setNickName(nickName);
     setProfileUrl(profileUrl);
@@ -120,7 +120,7 @@ public class User extends ResourceNode
    * sub-attributes, or they MAY return both. If both variants are returned, they SHOULD be describing the same
    * name, with the formatted name indicating how the component attributes should be combined.
    */
-  public Optional<Name> getNameNode()
+  public Optional<Name> getName()
   {
     return getObjectAttribute(AttributeNames.RFC7643.NAME, Name.class);
   }
@@ -131,7 +131,7 @@ public class User extends ResourceNode
    * sub-attributes, or they MAY return both. If both variants are returned, they SHOULD be describing the same
    * name, with the formatted name indicating how the component attributes should be combined.
    */
-  public void setNameNode(Name name)
+  public void setName(Name name)
   {
     setAttribute(AttributeNames.RFC7643.NAME, name);
   }

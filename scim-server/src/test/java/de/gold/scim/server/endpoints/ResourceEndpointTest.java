@@ -747,7 +747,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
     User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    copiedUser.setNameNode(name);
+    copiedUser.setName(name);
     Assertions.assertEquals(copiedUser, updateResponse);
 
     GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, baseUrl);

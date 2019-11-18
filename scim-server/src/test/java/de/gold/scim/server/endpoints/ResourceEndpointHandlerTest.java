@@ -1295,7 +1295,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
     User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    copiedUser.setNameNode(name);
+    copiedUser.setName(name);
     Assertions.assertEquals(copiedUser, updateResponse);
 
     GetResponse getResponse = (GetResponse)resourceEndpointHandler.getResource(EndpointPaths.USERS, id, baseUrl);
