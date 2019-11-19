@@ -3,7 +3,7 @@
 
 |  Branch | Travis CI Status |
 | :------ | :--------------- | 
-| master  | [![Build Status](https://travis-ci.com/Captain-P-Goldfish/SCIM.svg?branch=master)](https://travis-ci.com/Captain-P-Goldfish/SCIM)
+| master  | [![Build Status](https://travis-ci.com/Captain-P-Goldfish/SCIM-SDK.svg?branch=master)](https://travis-ci.com/Captain-P-Goldfish/SCIM-SDK)
 
 
 ---
