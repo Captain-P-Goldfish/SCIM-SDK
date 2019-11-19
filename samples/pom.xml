@@ -4,16 +4,16 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.captain-p-goldfish</groupId>
-        <artifactId>scim-parent</artifactId>
+        <groupId>de.captaingoldfish</groupId>
+        <artifactId>scim-sdk-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>samples</artifactId>
+    <artifactId>scim-sdk-samples</artifactId>
 
     <packaging>pom</packaging>
 
-    <name>SCIM samples</name>
+    <name>SCIM SDK samples</name>
 
     <modules>
         <module>scim-springboot-example</module>
@@ -27,8 +27,8 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
-                <groupId>io.github.captain-p-goldfish</groupId>
-                <artifactId>scim-server</artifactId>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-sdk-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

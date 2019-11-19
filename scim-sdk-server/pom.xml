@@ -2,20 +2,20 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <groupId>io.github.captain-p-goldfish</groupId>
-        <artifactId>scim-parent</artifactId>
+        <groupId>de.captaingoldfish</groupId>
+        <artifactId>scim-sdk-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>scim-server</artifactId>
+    <artifactId>scim-sdk-server</artifactId>
 
-    <name>SCIM Server</name>
+    <name>SCIM SDK Server</name>
 
     <dependencies>
         <dependency>
-            <groupId>io.github.captain-p-goldfish</groupId>
-            <artifactId>scim-common</artifactId>
+            <groupId>de.captaingoldfish</groupId>
+            <artifactId>scim-sdk-common</artifactId>
         </dependency>
         <dependency>
             <groupId>org.antlr</groupId>

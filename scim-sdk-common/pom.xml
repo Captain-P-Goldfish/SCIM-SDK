@@ -4,14 +4,14 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>io.github.captain-p-goldfish</groupId>
-        <artifactId>scim-parent</artifactId>
+        <groupId>de.captaingoldfish</groupId>
+        <artifactId>scim-sdk-parent</artifactId>
         <version>1.0.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>scim-common</artifactId>
+    <artifactId>scim-sdk-common</artifactId>
 
-    <name>SCIM Common</name>
+    <name>SCIM SDK Common</name>
 
     <build>
         <plugins>
