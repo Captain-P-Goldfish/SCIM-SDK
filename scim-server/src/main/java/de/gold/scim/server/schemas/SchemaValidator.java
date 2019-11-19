@@ -1118,7 +1118,7 @@ public class SchemaValidator
       return;
     }
     final String value = valueNode.textValue();
-    if (!attributeDefinition.getCanonicalValues().contains(value))
+    if (attributeDefinition.getCanonicalValues().stream().noneMatch(s -> StringUtils.equalsIgnoreCase(s, value)))
     {
       final String errorMessage = "attribute with name '" + attributeDefinition.getName()
                                   + "' does not have one of the " + "canonicalValues: '"
