@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.utils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -10,6 +11,7 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
@@ -67,6 +69,11 @@ public class UriInfos
   @Setter // setter is necessary for bulkId resolving. This is not specified in SCIM but is added as a feature
   private String resourceId;
 
+  /**
+   * contains the http request headers from the client that must be validated
+   */
+  private Map<String, String> httpHeaders;
+
   @Builder
   private UriInfos(String resourceEndpoint,
                    String resourceId,
@@ -74,7 +81,8 @@ public class UriInfos
                    String baseUri,
                    String queryParameters,
                    ResourceType resourceType,
-                   HttpMethod httpMethod)
+                   HttpMethod httpMethod,
+                   Map<String, String> httpHeaders)
   {
     this.resourceEndpoint = resourceEndpoint;
     this.resourceId = resourceId;
@@ -84,19 +92,21 @@ public class UriInfos
     this.resourceType = resourceType;
     this.httpMethod = Objects.requireNonNull(httpMethod);
     validateUriInfos();
+    this.httpHeaders = validateHttpHeaders(httpHeaders);
   }
 
   /**
    * resolves the request uri to individual information's that are necessary to resolve the request
    *
    * @param requestUrl the fully qualified request url
+   * @param httpHeaders the http request headers
    * @return the individual request information's
    */
   public static UriInfos getRequestUrlInfos(ResourceTypeFactory resourceTypeFactory,
                                             String requestUrl,
-                                            HttpMethod httpMethod)
+                                            HttpMethod httpMethod,
+                                            Map<String, String> httpHeaders)
   {
-
     final URL url = toUrl(requestUrl);
     final String[] pathParts = url.getPath().split("/");
     final ResourceType resourceType = getResourceType(resourceTypeFactory, pathParts);
@@ -106,6 +116,7 @@ public class UriInfos
                      .baseUri(StringUtils.substringBeforeLast(requestUrl, EndpointPaths.BULK))
                      .resourceEndpoint(EndpointPaths.BULK)
                      .httpMethod(httpMethod)
+                     .httpHeaders(httpHeaders)
                      .build();
     }
     final boolean endsOfSearch = EndpointPaths.SEARCH.endsWith(pathParts[pathParts.length - 1]);
@@ -122,6 +133,7 @@ public class UriInfos
                                 .queryParameters(url.getQuery())
                                 .resourceType(resourceType)
                                 .httpMethod(httpMethod)
+                                .httpHeaders(httpHeaders)
                                 .build();
     return uriInfos;
   }
@@ -196,6 +208,37 @@ public class UriInfos
     {
       throw new InternalServerException(e.getMessage(), e, null);
     }
+  }
+
+  /**
+   * this method will validate the request headers sent by the client. These headers may also be used in the
+   * following processing if the service provider supports entity tags
+   *
+   * @param httpHeaders the http headers sent by the client
+   * @return the validated map
+   */
+  private Map<String, String> validateHttpHeaders(Map<String, String> httpHeaders)
+  {
+    if (httpHeaders == null)
+    {
+      throw new InternalServerException("missing http headers. This is not a client error!", null, null);
+    }
+    if (httpHeaders.size() == 1 && httpHeaders.get(EndpointPaths.BULK) != null)
+    {
+      // in this case this method was called from the bulk endpoint and further validation is skipped
+      // this is done because the original http headers have already been validated and the sub-operations of the
+      // bulk-request do not need to be validated
+      return Collections.emptyMap();
+    }
+    String contentType = httpHeaders.get(HttpHeader.CONTENT_TYPE_HEADER);
+    if ((HttpMethod.POST.equals(httpMethod) || HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod))
+        && contentType == null || !StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE))
+    {
+      throw new BadRequestException("Invalid content type. Was '" + contentType + "' but should be "
+                                    + HttpHeader.SCIM_CONTENT_TYPE, null, null);
+    }
+    // other headers do not need to be validated currently
+    return httpHeaders;
   }
 
   /**

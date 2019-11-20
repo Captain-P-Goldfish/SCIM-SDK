@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
+import java.util.Map;
+
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
@@ -46,13 +48,17 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    *
    * @param httpMethod the http method that was used by in the request
    * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
    * @return the resolved SCIM response
    */
-  public ScimResponse handleRequest(String requestUrl, HttpMethod httpMethod, String requestBody)
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders)
   {
     try
     {
-      UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod);
+      UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod, httpHeaders);
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory());
@@ -109,12 +115,19 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
         }
         else
         {
-          return getResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId(), uriInfos::getBaseUri);
+          return getResource(uriInfos.getResourceEndpoint(),
+                             uriInfos.getResourceId(),
+                             uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
+                             uriInfos.getQueryParameters()
+                                     .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
+                             uriInfos.getHttpHeaders(),
+                             uriInfos::getBaseUri);
         }
       case PUT:
         return updateResource(uriInfos.getResourceEndpoint(),
                               uriInfos.getResourceId(),
                               requestBody,
+                              uriInfos.getHttpHeaders(),
                               uriInfos::getBaseUri);
       case PATCH:
         return patchResource(uriInfos.getResourceEndpoint(),
@@ -123,6 +136,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
                              uriInfos.getQueryParameters()
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
+                             uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri);
       default:
         return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId());

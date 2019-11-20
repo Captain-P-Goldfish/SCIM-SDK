@@ -4,7 +4,9 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -22,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -86,6 +89,11 @@ public class ResourceEndpointTest extends AbstractBulkTest
   private UserHandlerImpl userHandler;
 
   /**
+   * the http header map that is validated on a request
+   */
+  private Map<String, String> httpHeaders = new HashMap<>();
+
+  /**
    * initializes this test
    */
   @BeforeEach
@@ -94,6 +102,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     serviceProvider = ServiceProvider.builder().build();
     userHandler = Mockito.spy(new UserHandlerImpl());
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
 
   /**
@@ -106,7 +115,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     final User user = User.builder().userName(userName).build();
     final String url = BASE_URI + EndpointPaths.USERS;
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     CreateResponse createResponse = (CreateResponse)scimResponse;
@@ -156,7 +165,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
 
     MatcherAssert.assertThat(new ArrayList<>(user.getSchemas()),
                              Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, userRequest);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, userRequest, httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     CreateResponse createResponse = (CreateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.CREATED, createResponse.getHttpStatus());
@@ -183,7 +192,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     userHandler.getInMemoryMap().put(id, user);
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, user.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, user.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
@@ -224,7 +233,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     User changedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
     changedUser.setUserName("ourNewName");
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PUT, changedUser.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PUT,
+                                                               changedUser.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -265,7 +277,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     userHandler.getInMemoryMap().put(id, user);
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.DELETE, user.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.DELETE, user.toString(), httpHeaders);
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
     DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
@@ -320,7 +332,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
                        + String.format("?startIndex=1&count=%d&filter=%s",
                                        maxUsers,
                                        "userName sw \"" + searchValue + "\"");
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
@@ -382,7 +394,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
                                                .count(maxUsers)
                                                .filter("userName sw \"" + searchValue + "\"")
                                                .build();
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, searchRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               searchRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
@@ -424,7 +439,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     Assertions.assertEquals(maxOperations, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
@@ -445,7 +463,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     operations.addAll(getUpdateUserBulkOperations(userHandler.getInMemoryMap().values()));
     operations.addAll(getDeleteUserBulkOperations(userHandler.getInMemoryMap().values()));
     bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
-    scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -488,7 +506,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, createOperations.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               createOperations.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -511,7 +532,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     createOperations.get(createOperations.size() - 1).setBulkId(null);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     int responseSize = bulkResponse.getBulkResponseOperations().size();
@@ -572,7 +596,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     operations.forEach(operation -> operation.setBulkId(null));
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -598,7 +625,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
                                          .bulkRequestOperation(createOperations)
                                          .build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(failOnErrors, bulkResponse.getBulkResponseOperations().size());
@@ -626,7 +656,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -647,7 +680,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations + 1);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -672,7 +708,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxPayloadSize(maxPayloadSize);
 
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -694,7 +733,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
 
     BulkRequest bulkRequest = BulkRequest.builder().build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -719,7 +761,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
@@ -741,7 +786,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, httpMethod, bulkRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, httpMethod, bulkRequest.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -780,7 +825,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -788,7 +836,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     copiedUser.setName(name);
     Assertions.assertEquals(copiedUser, updateResponse);
 
-    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, baseUrl);
+    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
   }
@@ -822,7 +870,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
@@ -858,7 +909,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
     final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", "nickName");
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -900,7 +954,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
     final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", "nickName");
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -942,7 +999,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
     final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", SchemaUris.ENTERPRISE_USER_URI);
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -992,7 +1052,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
     final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", SchemaUris.ENTERPRISE_USER_URI);
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString());
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1005,6 +1068,121 @@ public class ResourceEndpointTest extends AbstractBulkTest
     JsonNode enterpriseUser = updateResponse.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNotNull(enterpriseUser.get(AttributeNames.RFC7643.COST_CENTER));
     Assertions.assertNull(enterpriseUser.get(AttributeNames.RFC7643.DEPARTMENT));
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is returned if the client tries to access the create endpoint
+   * with the wrong content type
+   */
+  @Test
+  public void testCreateFailsWithWrongContentType()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS;
+    httpHeaders.clear();
+    final String contentType = "application/json";
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               User.builder().build().toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
+    Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                            + HttpHeader.SCIM_CONTENT_TYPE,
+                            errorResponse.getDetail().get());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is returned if the client tries to access the list-users
+   * endpoint with the wrong content type
+   */
+  @Test
+  public void testListUsersWithPostFailsWithWrongContentType()
+  {
+    final String url = BASE_URI + EndpointPaths.BULK;
+    httpHeaders.clear();
+    final String contentType = "application/json";
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               SearchRequest.builder().build().toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
+    Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                            + HttpHeader.SCIM_CONTENT_TYPE,
+                            errorResponse.getDetail().get());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is returned if the client tries to access the bulk endpoint
+   * with the wrong content type
+   */
+  @Test
+  public void testBulkFailsWithWrongContentType()
+  {
+    final String url = BASE_URI + EndpointPaths.BULK;
+    httpHeaders.clear();
+    final String contentType = "application/json";
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               BulkRequest.builder().build().toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
+    Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                            + HttpHeader.SCIM_CONTENT_TYPE,
+                            errorResponse.getDetail().get());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is returned if the client tries to access the update users
+   * endpoint with the wrong content type
+   */
+  @Test
+  public void testPutFailsWithWrongContentType()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS + "/123456";
+    httpHeaders.clear();
+    final String contentType = "application/json";
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PUT,
+                                                               User.builder().build().toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
+    Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                            + HttpHeader.SCIM_CONTENT_TYPE,
+                            errorResponse.getDetail().get());
+  }
+
+  /**
+   * verifies that a {@link BadRequestException} is returned if the client tries to access the patch users
+   * endpoint with the wrong content type
+   */
+  @Test
+  public void testPatchFailsWithWrongContentType()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS + "/123456";
+    httpHeaders.clear();
+    final String contentType = "application/json";
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               PatchOpRequest.builder().build().toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
+    Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                            + HttpHeader.SCIM_CONTENT_TYPE,
+                            errorResponse.getDetail().get());
   }
 
 }

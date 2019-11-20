@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -193,7 +194,7 @@ class ResourceEndpointHandler
    */
   protected ScimResponse getResource(String endpoint, String id)
   {
-    return getResource(endpoint, id, null, null, null);
+    return getResource(endpoint, id, null, null, null, null);
   }
 
   /**
@@ -203,6 +204,7 @@ class ResourceEndpointHandler
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
+   * @param httpHeaders the http request headers, may be null
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -211,9 +213,12 @@ class ResourceEndpointHandler
    *          thrown
    * @return the scim response for the client
    */
-  protected ScimResponse getResource(String endpoint, String id, Supplier<String> baseUrlSupplier)
+  protected ScimResponse getResource(String endpoint,
+                                     String id,
+                                     Map<String, String> httpHeaders,
+                                     Supplier<String> baseUrlSupplier)
   {
-    return getResource(endpoint, id, null, null, baseUrlSupplier);
+    return getResource(endpoint, id, null, null, httpHeaders, baseUrlSupplier);
   }
 
   /**
@@ -233,6 +238,7 @@ class ResourceEndpointHandler
    *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
    *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
    *          name, emails).
+   * @param httpHeaders the http request headers, may be null
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -245,6 +251,7 @@ class ResourceEndpointHandler
                                      String id,
                                      String attributes,
                                      String excludedAttributes,
+                                     Map<String, String> httpHeaders,
                                      Supplier<String> baseUrlSupplier)
   {
     try
@@ -409,7 +416,7 @@ class ResourceEndpointHandler
       if (resourceType.getFeatures().isSingletonEndpoint())
       {
         // feature to solve the problem with the /ServiceProviderConfiguration endpoint
-        return getResource(endpoint, null, baseUrlSupplier);
+        return getResource(endpoint, null, null, baseUrlSupplier);
       }
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
@@ -622,6 +629,7 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
    * @param resourceDocument the resource document
+   * @param httpHeaders
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -633,6 +641,7 @@ class ResourceEndpointHandler
   protected ScimResponse updateResource(String endpoint,
                                         String id,
                                         String resourceDocument,
+                                        Map<String, String> httpHeaders,
                                         Supplier<String> baseUrlSupplier)
   {
     try
@@ -757,7 +766,7 @@ class ResourceEndpointHandler
    */
   protected ScimResponse patchResource(String endpoint, String id, String requestBody, Supplier<String> baseUrlSupplier)
   {
-    return patchResource(endpoint, id, requestBody, null, null, baseUrlSupplier);
+    return patchResource(endpoint, id, requestBody, null, null, null, baseUrlSupplier);
   }
 
   /**
@@ -778,6 +787,7 @@ class ResourceEndpointHandler
    *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
    *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
    *          name, emails).
+   * @param httpHeaders
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -791,6 +801,7 @@ class ResourceEndpointHandler
                                        String requestBody,
                                        String attributes,
                                        String excludedAttributes,
+                                       Map<String, String> httpHeaders,
                                        Supplier<String> baseUrlSupplier)
   {
     try

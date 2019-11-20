@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -207,7 +208,8 @@ class BulkEndpoint
     HttpMethod httpMethod = operation.getMethod();
     UriInfos operationUriInfo = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                             baseUri + operation.getPath(),
-                                                            httpMethod);
+                                                            httpMethod,
+                                                            Collections.singletonMap(EndpointPaths.BULK, "true"));
     String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
     String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
     String bulkId = operation.getBulkId().orElse(null);

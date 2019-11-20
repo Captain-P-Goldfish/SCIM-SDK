@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.utils;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.jupiter.api.Assertions;
@@ -16,13 +17,17 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -30,6 +35,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
  * created at: 08.11.2019 - 22:44 <br>
  * <br>
  */
+@Slf4j
 public class UriInfosTest
 {
 
@@ -40,6 +46,11 @@ public class UriInfosTest
 
   private ResourceTypeFactory resourceTypeFactory;
 
+  /**
+   * contains the http request headers from the client that must be validated
+   */
+  private Map<String, String> httpHeaders = new HashMap<>();
+
   @BeforeEach
   public void initialize()
   {
@@ -49,6 +60,7 @@ public class UriInfosTest
                                              userEndpoint.getResourceType(),
                                              userEndpoint.getResourceSchema(),
                                              userEndpoint.getResourceSchemaExtensions().toArray(new JsonNode[0]));
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
 
   /**
@@ -62,7 +74,7 @@ public class UriInfosTest
     final String baseUrl = "https://localhost/management/Users/scim/v2";
     final String resourceUrl = baseUrl + resourcePath + (resourceId == null ? "" : "/" + resourceId)
                                + (query == null ? "" : "?" + query);
-    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, resourceUrl, httpMethod);
+    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, resourceUrl, httpMethod, httpHeaders);
     Assertions.assertEquals(baseUrl, uriInfos.getBaseUri());
     Assertions.assertEquals(ResourceTypeNames.USER, uriInfos.getResourceType().getName());
     Assertions.assertEquals(resourcePath.replaceFirst(EndpointPaths.SEARCH, ""), uriInfos.getResourceEndpoint());
@@ -95,7 +107,7 @@ public class UriInfosTest
                                        attributes,
                                        excludedAttributes);
     final String url = BASE_URI + EndpointPaths.USERS + "?" + query;
-    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET);
+    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders);
     Assertions.assertEquals(BASE_URI, uriInfos.getBaseUri());
     Assertions.assertEquals(EndpointPaths.USERS, uriInfos.getResourceEndpoint());
     Assertions.assertNull(uriInfos.getResourceId());
@@ -121,7 +133,7 @@ public class UriInfosTest
   {
     final String url = BASE_URI + "/Unknown";
     Assertions.assertThrows(BadRequestException.class,
-                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET));
+                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders));
   }
 
   /**
@@ -133,7 +145,7 @@ public class UriInfosTest
   {
     final String url = BASE_URI + EndpointPaths.USERS + (id == null ? "" : "/" + id);
     Assertions.assertThrows(BadRequestException.class,
-                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod));
+                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders));
   }
 
   /**
@@ -143,7 +155,10 @@ public class UriInfosTest
   public void testParseBulkRequestAsUriInfo()
   {
     final String url = BASE_URI + EndpointPaths.BULK;
-    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.POST));
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    HttpMethod.POST,
+                                                                    httpHeaders));
   }
 
   /**
@@ -156,6 +171,58 @@ public class UriInfosTest
   {
     final String url = BASE_URI + EndpointPaths.BULK;
     Assertions.assertThrows(BadRequestException.class,
-                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod));
+                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,", "POST,application/json", "PUT,", "PUT,application/json", "PATCH,", "PATCH,application/json"})
+  public void testValidationOfHttpHeader(HttpMethod httpMethod, String contentType)
+  {
+    final String url = BASE_URI + EndpointPaths.USERS + (HttpMethod.POST.equals(httpMethod) ? "" : "/123456");
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    try
+    {
+      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                              + HttpHeader.SCIM_CONTENT_TYPE,
+                              ex.getDetail());
+    }
+  }
+
+  /**
+   * will verify that calling the bulk endpoint with post and an invalid content-type results in a
+   * {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,", "POST,application/json"})
+  public void testValidationOfHttpHeaderForPostAndBulk(HttpMethod httpMethod, String contentType)
+  {
+    final String url = BASE_URI + EndpointPaths.BULK;
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    try
+    {
+      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
+                              + HttpHeader.SCIM_CONTENT_TYPE,
+                              ex.getDetail());
+    }
   }
 }

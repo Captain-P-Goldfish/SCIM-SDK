@@ -1,5 +1,9 @@
 package de.captaingoldfish.scim.sdk.springboot.sample.controller;
 
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,10 +51,30 @@ public class ScimController
                                            RequestMethod.PATCH, RequestMethod.DELETE})
   public ScimResponse handleScimRequest(HttpServletRequest request, @RequestBody(required = false) String requestBody)
   {
+    Map<String, String> httpHeaders = getHttpHeaders(request);
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
     return resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
                                           HttpMethod.valueOf(request.getMethod()),
-                                          requestBody);
+                                          requestBody,
+                                          httpHeaders);
+  }
+
+  /**
+   * extracts the http headers from the request and puts them into a map
+   *
+   * @param request the request object
+   * @return a map with the http-headers
+   */
+  private Map<String, String> getHttpHeaders(HttpServletRequest request)
+  {
+    Map<String, String> httpHeaders = new HashMap<>();
+    Enumeration<String> enumeration = request.getHeaderNames();
+    while (enumeration != null && enumeration.hasMoreElements())
+    {
+      String headerName = enumeration.nextElement();
+      httpHeaders.put(headerName, request.getHeader(headerName));
+    }
+    return httpHeaders;
   }
 
 }
