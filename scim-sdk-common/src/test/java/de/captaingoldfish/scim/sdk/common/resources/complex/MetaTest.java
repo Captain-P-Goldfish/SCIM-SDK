@@ -63,7 +63,7 @@ public class MetaTest
     Assertions.assertEquals(lastModified.atZone(ZoneId.systemDefault()).toInstant(), meta.getLastModified().get());
     Assertions.assertEquals(resourceType, meta.getResourceType().get());
     Assertions.assertEquals(location, meta.getLocation().get());
-    Assertions.assertEquals(version, meta.getVersion().get());
+    Assertions.assertEquals(version, meta.getVersion().get().getTag());
   }
 
   /**

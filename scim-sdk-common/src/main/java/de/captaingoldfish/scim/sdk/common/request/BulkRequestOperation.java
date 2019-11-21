@@ -9,6 +9,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -50,13 +51,14 @@ public class BulkRequestOperation extends ScimObjectNode
   }
 
   @Builder
-  public BulkRequestOperation(HttpMethod method, String bulkId, String path, String data)
+  public BulkRequestOperation(HttpMethod method, String bulkId, String path, String data, ETag version)
   {
     this();
     setMethod(method);
     setBulkId(bulkId);
     setPath(path);
     setData(data);
+    setVersion(version);
   }
 
   /**
@@ -149,5 +151,54 @@ public class BulkRequestOperation extends ScimObjectNode
       return;
     }
     set(AttributeNames.RFC7643.DATA, JsonHelper.readJsonDocument(data));
+  }
+
+  /**
+   * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+   * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+   * provider support for this attribute is optional and subject to the service provider's support for
+   * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+   * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+   * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+   * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
+   */
+  public Optional<ETag> getVersion()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.VERSION, ETag.class);
+  }
+
+  /**
+   * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+   * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+   * provider support for this attribute is optional and subject to the service provider's support for
+   * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+   * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+   * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+   * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
+   */
+  public void setVersion(String version)
+  {
+    setVersion(ETag.builder().weak(true).tag(version).build());
+  }
+
+  /**
+   * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+   * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+   * provider support for this attribute is optional and subject to the service provider's support for
+   * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+   * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+   * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+   * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
+   */
+  public void setVersion(ETag version)
+  {
+    if (version == null)
+    {
+      remove(AttributeNames.RFC7643.VERSION);
+    }
+    else
+    {
+      set(AttributeNames.RFC7643.VERSION, version);
+    }
   }
 }

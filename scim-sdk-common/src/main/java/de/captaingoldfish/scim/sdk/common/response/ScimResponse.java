@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.resources.AbstractSchemasHolder;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import lombok.Getter;
 
 
@@ -38,6 +39,19 @@ public abstract class ScimResponse extends AbstractSchemasHolder
     }
     this.httpHeaders = new HashMap<>();
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+  }
+
+  /**
+   * will set the entity tag into the response headers
+   *
+   * @param meta the meta attribute that might contain a version-attribute which is the entity tag
+   */
+  protected void setETag(Meta meta)
+  {
+    if (meta != null && meta.getVersion().isPresent())
+    {
+      getHttpHeaders().put(HttpHeader.E_TAG_HEADER, meta.getVersion().get().getEntityTag());
+    }
   }
 
   /**

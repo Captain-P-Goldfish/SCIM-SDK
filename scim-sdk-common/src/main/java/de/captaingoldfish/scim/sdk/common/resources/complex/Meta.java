@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.Optional;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 
 
@@ -167,9 +168,9 @@ public class Meta extends ScimObjectNode
    * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
    * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
    */
-  public Optional<String> getVersion()
+  public Optional<ETag> getVersion()
   {
-    return getStringAttribute(AttributeNames.RFC7643.VERSION);
+    return getStringAttribute(AttributeNames.RFC7643.VERSION).map(ETag::newInstance);
   }
 
   /**
@@ -181,9 +182,16 @@ public class Meta extends ScimObjectNode
    * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
    * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
    */
-  public void setVersion(String version)
+  public void setVersion(ETag version)
   {
-    setAttribute(AttributeNames.RFC7643.VERSION, version);
+    if (version == null)
+    {
+      remove(AttributeNames.RFC7643.VERSION);
+    }
+    else
+    {
+      set(AttributeNames.RFC7643.VERSION, version);
+    }
   }
 
   /**
@@ -293,6 +301,21 @@ public class Meta extends ScimObjectNode
      * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
      */
     public MetaBuilder version(String version)
+    {
+      meta.setVersion(ETag.builder().weak(true).tag(version).build());
+      return this;
+    }
+
+    /**
+     * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+     * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+     * provider support for this attribute is optional and subject to the service provider's support for
+     * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+     * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+     * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+     * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
+     */
+    public MetaBuilder version(ETag version)
     {
       meta.setVersion(version);
       return this;

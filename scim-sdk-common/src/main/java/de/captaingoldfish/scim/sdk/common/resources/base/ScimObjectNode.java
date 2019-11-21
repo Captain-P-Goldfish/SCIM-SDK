@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -106,6 +107,37 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   {
     String dateTime = JsonHelper.getSimpleAttribute(this, attributeName).orElse(null);
     return Optional.ofNullable(TimeUtils.parseDateTime(dateTime));
+  }
+
+  /**
+   * extracts a {@link TextNode} type attribute
+   */
+  protected <T extends TextNode> Optional<T> getStringAttribute(String attributeName, Class<T> type)
+  {
+    JsonNode jsonNode = this.get(attributeName);
+    if (jsonNode == null)
+    {
+      return Optional.empty();
+    }
+    if (!(jsonNode instanceof TextNode))
+    {
+      throw new InternalServerException("tried to extract a string node from document with attribute name '"
+                                        + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
+    }
+    if (type.isAssignableFrom(jsonNode.getClass()))
+    {
+      return Optional.of((T)jsonNode);
+    }
+    try
+    {
+      T t = (T)type.getMethod("newInstance", String.class).invoke(null, jsonNode.textValue());
+      this.set(attributeName, t);
+      return Optional.of(t);
+    }
+    catch (IllegalAccessException | InvocationTargetException | NoSuchMethodException e)
+    {
+      throw new InternalServerException(e.getMessage(), e, null);
+    }
   }
 
   /**

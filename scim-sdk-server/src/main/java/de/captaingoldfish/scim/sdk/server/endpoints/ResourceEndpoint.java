@@ -139,7 +139,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri);
       default:
-        return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId());
+        return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId(), uriInfos.getHttpHeaders());
     }
   }
 }

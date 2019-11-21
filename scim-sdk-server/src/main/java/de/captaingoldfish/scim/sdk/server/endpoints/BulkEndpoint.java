@@ -20,6 +20,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -133,7 +134,7 @@ class BulkEndpoint
     int errorCounter = 0;
     // this is a security switch in case a bad crafted bulk request will end in an infinite loop this switch is
     // used to break the infinite loop
-    int maxIterations = serviceProvider.getBulkConfig().getMaxOperations() * 2;
+    long maxIterations = serviceProvider.getBulkConfig().getMaxOperations() * 2L;
     int iterations = 0;
     while (!operations.isEmpty())
     {
@@ -206,10 +207,11 @@ class BulkEndpoint
   private BulkResponseOperation handleSingleBulkOperation(String baseUri, BulkRequestOperation operation)
   {
     HttpMethod httpMethod = operation.getMethod();
+    Map<String, String> httpHeaders = getHttpHeadersForBulk(operation);
     UriInfos operationUriInfo = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                             baseUri + operation.getPath(),
                                                             httpMethod,
-                                                            Collections.singletonMap(EndpointPaths.BULK, "true"));
+                                                            httpHeaders);
     String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
     String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
     String bulkId = operation.getBulkId().orElse(null);
@@ -260,6 +262,21 @@ class BulkEndpoint
       resolvedBulkIds.put(operation.getBulkId().get(), id.substring(1));
     }
     return responseBuilder.build();
+  }
+
+  /**
+   * gets the http headers for a single bulk request operation. This method is explicitly used to add the
+   * etags-value into the http request headers if present within the request
+   *
+   * @param operation the current operation for which the request headers should be built
+   * @return a map with the necessary http request headers
+   */
+  private Map<String, String> getHttpHeadersForBulk(BulkRequestOperation operation)
+  {
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(EndpointPaths.BULK, "true");
+    operation.getVersion().ifPresent(eTag -> httpHeaders.put(HttpHeader.IF_MATCH_HEADER, eTag.getEntityTag()));
+    return httpHeaders;
   }
 
   /**

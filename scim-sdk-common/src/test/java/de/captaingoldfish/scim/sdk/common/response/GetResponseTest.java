@@ -35,7 +35,7 @@ public class GetResponseTest
                                 .userName(UUID.randomUUID().toString())
                                 .build();
     final String location = "https://localhost/scim/v2/Users/123456789";
-    GetResponse getResponse = Assertions.assertDoesNotThrow(() -> new GetResponse(userResource, location));
+    GetResponse getResponse = Assertions.assertDoesNotThrow(() -> new GetResponse(userResource, location, null));
     Assertions.assertEquals(2, getResponse.getHttpHeaders().size());
     Assertions.assertEquals(location, getResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,

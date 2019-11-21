@@ -22,4 +22,8 @@ public final class HttpHeader
 
   public static final String E_TAG_HEADER = "ETag";
 
+  public static final String IF_MATCH_HEADER = "If-Match";
+
+  public static final String IF_NONE_MATCH_HEADER = "If-None-Match";
+
 }

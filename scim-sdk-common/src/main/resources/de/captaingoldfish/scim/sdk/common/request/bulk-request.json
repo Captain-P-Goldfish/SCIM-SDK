@@ -77,6 +77,17 @@
           "multiValued": false,
           "caseExact": false,
           "required": false
+        },
+        {
+          "name": "version",
+          "type": "string",
+          "description": "The current resource version. Version MAY be used if the service provider supports entity-tags (ETags) (Section 2.3 of [RFC7232]) and \"method\" is \"PUT\", \"PATCH\", or \"DELETE\".",
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": true,
+          "required": false
         }
       ]
     }

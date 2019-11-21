@@ -31,7 +31,8 @@ public class UpdateResponseTest implements FileReferences
   {
     JsonNode userResource = JsonHelper.loadJsonDocument(FileReferences.USER_RESOURCE);
     final String location = "https://localhost/scim/v2/Users/123456789";
-    UpdateResponse updateResponse = Assertions.assertDoesNotThrow(() -> new UpdateResponse(userResource, location));
+    UpdateResponse updateResponse = Assertions.assertDoesNotThrow(() -> new UpdateResponse(userResource, location,
+                                                                                           null));
     Assertions.assertEquals(2, updateResponse.getHttpHeaders().size());
     Assertions.assertEquals(location, updateResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,

@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
@@ -40,24 +41,25 @@ public class BulkResponseOperationTest implements FileReferences
                                                                                 HttpStatus.BAD_REQUEST,
                                                                                 ScimType.RFC7644.INVALID_SYNTAX));
 
+    ETag eTag = ETag.builder().tag(version).build();
     BulkResponseOperation operations = BulkResponseOperation.builder()
                                                             .method(method)
                                                             .bulkId(bulkId)
-                                                            .version(version)
+                                                            .version(eTag)
                                                             .location(location)
                                                             .status(status)
                                                             .response(response)
                                                             .build();
     Assertions.assertEquals(method, operations.getMethod());
     Assertions.assertEquals(bulkId, operations.getBulkId().get());
-    Assertions.assertEquals(version, operations.getVersion().get());
+    Assertions.assertEquals(eTag, operations.getVersion().get());
     Assertions.assertEquals(location, operations.getLocation().get());
     Assertions.assertEquals(status, operations.getStatus());
     Assertions.assertEquals(response, operations.getResponse().get());
 
     Assertions.assertEquals(method.name(), operations.get("method").textValue());
     Assertions.assertEquals(bulkId, operations.get("bulkId").textValue());
-    Assertions.assertEquals(version, operations.get("version").textValue());
+    Assertions.assertEquals(eTag.getEntityTag(), operations.get("version").textValue());
     Assertions.assertEquals(location, operations.get("location").textValue());
     Assertions.assertEquals(status, operations.get("status").intValue());
     Assertions.assertEquals(response, new ErrorResponse(operations.get("response")));

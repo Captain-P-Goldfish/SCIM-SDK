@@ -12,6 +12,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
@@ -45,10 +46,11 @@ public class BulkResponseTest
     final ErrorResponse response = new ErrorResponse(new InvalidSchemaException("invalid syntax", null,
                                                                                 HttpStatus.BAD_REQUEST,
                                                                                 ScimType.RFC7644.INVALID_SYNTAX));
+    ETag eTag = ETag.builder().tag(version).build();
     List<BulkResponseOperation> operations = Collections.singletonList(BulkResponseOperation.builder()
                                                                                             .method(method)
                                                                                             .bulkId(bulkId)
-                                                                                            .version(version)
+                                                                                            .version(eTag)
                                                                                             .location(location)
                                                                                             .status(status)
                                                                                             .response(response)

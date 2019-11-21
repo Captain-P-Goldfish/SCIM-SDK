@@ -39,15 +39,13 @@ The following features are supported
 - [x] delete
 - [x] bulk
   * resolving of bulkId references (@see [bulkId reference resolving](https://github.com/Captain-P-Goldfish/SCIM/wiki/BulkId-reference-resolving))
+- [x] resource versioning
 - [x] attributes-parameter
 - [x] excludedAttributes-parameter
 
 for any registered resource
 
 the following features will be developed in the future:
-
-Missing features defined by SCIM
-- [ ] resource versioning
 
 Upcoming features not defined by SCIM
 - [ ] authorization for specific endpoints

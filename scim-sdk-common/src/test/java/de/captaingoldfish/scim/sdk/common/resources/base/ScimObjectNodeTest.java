@@ -16,6 +16,7 @@ import org.junit.jupiter.api.Test;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
@@ -236,6 +237,23 @@ public class ScimObjectNodeTest implements FileReferences
     scimObjectNode.addAttribute(attributeName, null);
     Assertions.assertNotNull(scimObjectNode.get(attributeName));
     Assertions.assertTrue(scimObjectNode.get(attributeName).isArray());
+  }
+
+  /**
+   * will verify that a string type attribute can be extracted from {@link ScimObjectNode} if the
+   * {@link ScimTextNode} inheritance has a method with name newInstance and a single string parameter
+   */
+  @Test
+  public void testAddAndGetStringNodeAttributeByType()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+    final String tag = "123&/()";
+    scimObjectNode.set(attributeName, new TextNode("W/\"" + tag + "\""));
+    ETag eTag = scimObjectNode.getStringAttribute(attributeName, ETag.class)
+                              .orElseThrow(() -> new IllegalStateException("fail"));
+    Assertions.assertEquals(tag, eTag.getTag());
+    Assertions.assertTrue(eTag.isWeak());
   }
 
 }

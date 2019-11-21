@@ -10,6 +10,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
@@ -52,6 +53,7 @@ public class WebAppConfig
                           .bulkConfig(BulkConfig.builder().supported(true).maxOperations(10).build())
                           .patchConfig(PatchConfig.builder().supported(true).build())
                           .authenticationSchemes(Collections.singletonList(authScheme))
+                          .eTagConfig(ETagConfig.builder().supported(true).build())
                           .build();
   }
 

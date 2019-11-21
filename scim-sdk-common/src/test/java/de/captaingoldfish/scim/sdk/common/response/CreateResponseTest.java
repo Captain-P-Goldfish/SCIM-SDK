@@ -35,7 +35,8 @@ public class CreateResponseTest
                                 .userName(UUID.randomUUID().toString())
                                 .build();
     final String location = "https://localhost/scim/v2/Users/123456789";
-    CreateResponse createResponse = Assertions.assertDoesNotThrow(() -> new CreateResponse(userResource, location));
+    CreateResponse createResponse = Assertions.assertDoesNotThrow(() -> new CreateResponse(userResource, location,
+                                                                                           null));
     Assertions.assertEquals(2, createResponse.getHttpHeaders().size());
     Assertions.assertEquals(location, createResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,

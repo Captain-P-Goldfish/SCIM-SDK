@@ -3,6 +3,8 @@ package de.captaingoldfish.scim.sdk.common.response;
 import java.util.Collections;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -113,5 +115,38 @@ public class ErrorResponse extends ScimResponse
   public int getHttpStatus()
   {
     return scimException.getStatus();
+  }
+
+  /**
+   * this method will tell us if this error response is actually an error. In cases in which an exception was
+   * thrown but the status code to return is less than 400 and no details are given the response body should be
+   * empty
+   *
+   * @return true if the response body should be empty, false else
+   */
+  private boolean useEmptyBody()
+  {
+    return getHttpStatus() < HttpStatus.BAD_REQUEST && StringUtils.isBlank(getDetail().orElse(null))
+           && StringUtils.isBlank(getScimType().orElse(null));
+  }
+
+  @Override
+  public String toString()
+  {
+    if (useEmptyBody())
+    {
+      return null;
+    }
+    return super.toString();
+  }
+
+  @Override
+  public String toPrettyString()
+  {
+    if (useEmptyBody())
+    {
+      return null;
+    }
+    return super.toPrettyString();
   }
 }

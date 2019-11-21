@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 
 
 /**
@@ -15,10 +16,11 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class UpdateResponse extends ScimResponse
 {
 
-  public UpdateResponse(JsonNode responseNode, String location)
+  public UpdateResponse(JsonNode responseNode, String location, Meta meta)
   {
     super(responseNode);
     getHttpHeaders().put(HttpHeader.LOCATION_HEADER, location);
+    setETag(meta);
   }
 
   /**

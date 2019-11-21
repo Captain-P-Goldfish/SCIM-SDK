@@ -14,6 +14,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
+import de.captaingoldfish.scim.sdk.common.exceptions.NotModifiedException;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
@@ -75,5 +76,32 @@ public class ErrorResponseTest
   public void testErrorOnEmptyStatus()
   {
     Assertions.assertThrows(InternalServerException.class, () -> new ErrorResponse((JsonNode)null));
+  }
+
+  /**
+   * will verify that a conditional error response with an exception as
+   * {@link de.captaingoldfish.scim.sdk.common.exceptions.NotModifiedException} will not cause any errors and
+   * works correctly
+   */
+  @Test
+  public void testErrorResponseWithEmptyBody()
+  {
+    NotModifiedException notModifiedException = new NotModifiedException();
+    ErrorResponse errorResponse = new ErrorResponse(notModifiedException);
+
+    Assertions.assertEquals(1, errorResponse.getHttpHeaders().size());
+    Assertions.assertNull(errorResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
+    Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
+                            errorResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
+    Assertions.assertNull(errorResponse.toString());
+    Assertions.assertNull(errorResponse.toPrettyString());
+
+    Response response = errorResponse.buildResponse();
+    Assertions.assertEquals(1, response.getHeaders().size());
+    Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
+                            response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
+    Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
+    Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getStatus());
+    Assertions.assertNull(response.getEntity());
   }
 }

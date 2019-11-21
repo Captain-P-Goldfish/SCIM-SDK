@@ -7,6 +7,7 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
@@ -39,7 +40,7 @@ public class BulkResponseOperation extends ScimObjectNode
   @Builder
   public BulkResponseOperation(HttpMethod method,
                                String bulkId,
-                               String version,
+                               ETag version,
                                String location,
                                Integer status,
                                ErrorResponse response)
@@ -101,21 +102,52 @@ public class BulkResponseOperation extends ScimObjectNode
   }
 
   /**
-   * The current resource version. Version MAY be used if the service provider supports entity-tags (ETags)
-   * (Section 2.3 of [RFC7232]) and "method" is "PUT", "PATCH", or "DELETE".
+   * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+   * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+   * provider support for this attribute is optional and subject to the service provider's support for
+   * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+   * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+   * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+   * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
    */
-  public Optional<String> getVersion()
+  public Optional<ETag> getVersion()
   {
-    return getStringAttribute(AttributeNames.RFC7643.VERSION);
+    return getStringAttribute(AttributeNames.RFC7643.VERSION, ETag.class);
   }
 
   /**
-   * The current resource version. Version MAY be used if the service provider supports entity-tags (ETags)
-   * (Section 2.3 of [RFC7232]) and "method" is "PUT", "PATCH", or "DELETE".
+   * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+   * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+   * provider support for this attribute is optional and subject to the service provider's support for
+   * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+   * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+   * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+   * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
    */
   public void setVersion(String version)
   {
-    setAttribute(AttributeNames.RFC7643.VERSION, version);
+    setVersion(ETag.builder().weak(true).tag(version).build());
+  }
+
+  /**
+   * The version of the resource being returned. This value must be the same as the entity-tag (ETag) HTTP
+   * response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has "caseExact" as "true". Service
+   * provider support for this attribute is optional and subject to the service provider's support for
+   * versioning (see Section 3.14 of [RFC7644]). If a service provider provides "version" (entity-tag) for a
+   * representation and the generation of that entity-tag does not satisfy all of the characteristics of a
+   * strong validator (see Section 2.1 of [RFC7232]), then the origin server MUST mark the "version"
+   * (entity-tag) as weak by prefixing its opaque value with "W/" (case sensitive).
+   */
+  public void setVersion(ETag version)
+  {
+    if (version == null)
+    {
+      remove(AttributeNames.RFC7643.VERSION);
+    }
+    else
+    {
+      set(AttributeNames.RFC7643.VERSION, version);
+    }
   }
 
   /**

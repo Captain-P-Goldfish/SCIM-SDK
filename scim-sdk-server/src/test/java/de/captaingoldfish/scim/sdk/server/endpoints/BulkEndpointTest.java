@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,6 +25,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResponseException;
@@ -1277,5 +1279,43 @@ public class BulkEndpointTest extends AbstractBulkTest
                             bulkResponse.toPrettyString());
     MatcherAssert.assertThat(responseOperations.get(0).getResponse().get().getDetail().get(),
                              Matchers.startsWith("your patch operation created a malformed resource"));
+  }
+
+  /**
+   * will verify that the version-attribute in a
+   * {@link de.captaingoldfish.scim.sdk.common.request.BulkRequestOperation} is treated as an If-Match http
+   * header
+   */
+  @Test
+  public void testSetVersionOnBulkRequest()
+  {
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(Integer.MAX_VALUE);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getETagConfig().setSupported(true);
+
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).version("123456").build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    User newUser = JsonHelper.copyResourceToObject(user, User.class);
+    newUser.setUserType("workaholic");
+    BulkRequestOperation operation = BulkRequestOperation.builder()
+                                                         .method(HttpMethod.PUT)
+                                                         .path(EndpointPaths.USERS + "/" + id)
+                                                         .data(newUser.toString())
+                                                         .version(ETag.builder().tag("unknown").build())
+                                                         .build();
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(Collections.singletonList(operation)).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    List<BulkResponseOperation> responses = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, responses.size());
+    BulkResponseOperation responseOperation = responses.get(0);
+    Assertions.assertTrue(responseOperation.getResponse().isPresent(), bulkResponse.toPrettyString());
+    ErrorResponse errorResponse = responseOperation.getResponse().get();
+    Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getHttpStatus());
+    Assertions.assertEquals("eTag status of resource has changed. Current value is: W/\"123456\"",
+                            errorResponse.getDetail().get());
   }
 }

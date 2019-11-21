@@ -24,6 +24,8 @@ public final class HttpStatus
 
   public static final int MOVED_TEMPORARILY = 302;
 
+  public static final int NOT_MODIFIED = 304;
+
   public static final int BAD_REQUEST = 400;
 
   public static final int UNAUTHORIZED = 401;

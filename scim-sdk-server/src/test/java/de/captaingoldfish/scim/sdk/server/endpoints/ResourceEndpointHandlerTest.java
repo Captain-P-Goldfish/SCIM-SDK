@@ -8,7 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -17,7 +19,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,6 +36,7 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
@@ -172,7 +177,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
     User updatedUser = updateUser(endpoint, readUser);
     Assertions.assertEquals(userId, updatedUser.getId().get());
-    ScimResponse deleteResponse = resourceEndpointHandler.deleteResource(endpoint, userId);
+    ScimResponse deleteResponse = resourceEndpointHandler.deleteResource(endpoint, userId, Collections.emptyMap());
     MatcherAssert.assertThat(deleteResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
     Mockito.verify(userHandler, Mockito.times(1)).deleteResource(userId);
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> resourceEndpointHandler.getResource(endpoint,
@@ -427,7 +432,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     ResourceNotFoundException exception = new ResourceNotFoundException("blubb", null, null);
     Mockito.doThrow(exception).when(userHandler).deleteResource(Mockito.any());
-    ScimResponse scimResponse = resourceEndpointHandler.deleteResource("/Users", "123456");
+    ScimResponse scimResponse = resourceEndpointHandler.deleteResource("/Users", "123456", Collections.emptyMap());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -487,7 +492,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     RuntimeException exception = new RuntimeException("blubb");
     Mockito.doThrow(exception).when(userHandler).deleteResource(Mockito.any());
-    ScimResponse scimResponse = resourceEndpointHandler.deleteResource("/Users", "123456");
+    ScimResponse scimResponse = resourceEndpointHandler.deleteResource("/Users", "123456", Collections.emptyMap());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
@@ -1304,7 +1309,11 @@ public class ResourceEndpointHandlerTest implements FileReferences
     userHandler.getInMemoryMap().put(id, user);
 
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
-      return resourceEndpointHandler.patchResource(EndpointPaths.USERS, id, patchOpRequest.toString(), baseUrl);
+      return resourceEndpointHandler.patchResource(EndpointPaths.USERS,
+                                                   id,
+                                                   patchOpRequest.toString(),
+                                                   Collections.emptyMap(),
+                                                   baseUrl);
     });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
@@ -1337,7 +1346,11 @@ public class ResourceEndpointHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
-      return resourceEndpointHandler.patchResource(EndpointPaths.USERS, "123456", patchOpRequest.toString(), baseUrl);
+      return resourceEndpointHandler.patchResource(EndpointPaths.USERS,
+                                                   "123456",
+                                                   patchOpRequest.toString(),
+                                                   Collections.emptyMap(),
+                                                   baseUrl);
     });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -1422,6 +1435,275 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                resourceTypeFactory.getResourceType(EndpointPaths.SERVICE_PROVIDER_CONFIG)
                                                                   .getName(),
                                                resourceTypeFactory.getResourceType(EndpointPaths.USERS).getName()));
+  }
+
+  /**
+   * verifies that the eTag support is executed on the different endpoints
+   */
+  @TestFactory
+  public List<DynamicTest> testEtagSupportWorksCorrectlyOnAllEndpoint()
+  {
+    User createdUser;
+    {
+      resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+      resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+      User user = User.builder().userName("goldfish").build();
+      ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
+                                                                         user.toString(),
+                                                                         getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+      CreateResponse createResponse = (CreateResponse)scimResponse;
+      createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+      Assertions.assertTrue(createdUser.getMeta().isPresent());
+      Assertions.assertTrue(createdUser.getMeta().get().getVersion().isPresent());
+      Assertions.assertTrue(createdUser.getMeta().get().getVersion().get().isWeak());
+    }
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get resource with If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
+                                                                      createdUser.getId().get(),
+                                                                      httpHeaders,
+                                                                      getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+      GetResponse getResponse = (GetResponse)scimResponse;
+      User user = JsonHelper.copyResourceToObject(getResponse, User.class);
+      Assertions.assertEquals(createdUser.getMeta().get().getVersion().get(), user.getMeta().get().getVersion().get());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get resource with non matching If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
+                                                                      createdUser.getId().get(),
+                                                                      httpHeaders,
+                                                                      getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get resource with If-None-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
+                                                                      createdUser.getId().get(),
+                                                                      httpHeaders,
+                                                                      getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get resource with non matching If-None-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
+                                                                      createdUser.getId().get(),
+                                                                      httpHeaders,
+                                                                      getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+      GetResponse getResponse = (GetResponse)scimResponse;
+      Assertions.assertEquals(createdUser, getResponse);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update resource with If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      User user = User.builder().userName(createdUser.getUserName().get()).nickName("happy").build();
+      ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         user.toString(),
+                                                                         httpHeaders,
+                                                                         getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+      Assertions.assertNotEquals(createdUser, updateResponse);
+      user = JsonHelper.copyResourceToObject(updateResponse, User.class);
+      createdUser.setNickName(user.getNickName().get());
+      createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update resource with non matching If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      User user = User.builder().userName(createdUser.getUserName().get()).nickName("happy").build();
+      ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         user.toString(),
+                                                                         httpHeaders,
+                                                                         getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update resource with If-None-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      User user = User.builder().userName(createdUser.getUserName().get()).nickName("happy").build();
+      ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         user.toString(),
+                                                                         httpHeaders,
+                                                                         getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update resource with non matching If-None-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      User user = User.builder().userName(createdUser.getUserName().get()).nickName("bloody mary").build();
+      ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         user.toString(),
+                                                                         httpHeaders,
+                                                                         getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+      Assertions.assertNotEquals(createdUser, updateResponse);
+      user = JsonHelper.copyResourceToObject(updateResponse, User.class);
+      createdUser.setNickName(user.getNickName().get());
+      createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch resource with If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      PatchRequestOperation operation = PatchRequestOperation.builder().path("nickname").op(PatchOp.REMOVE).build();
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(Collections.singletonList(operation)).build();
+      ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
+                                                                        createdUser.getId().get(),
+                                                                        patchOpRequest.toString(),
+                                                                        httpHeaders,
+                                                                        getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+      Assertions.assertNotEquals(createdUser, updateResponse);
+      User user = JsonHelper.copyResourceToObject(updateResponse, User.class);
+      createdUser.setNickName(user.getNickName().orElse(null));
+      Assertions.assertFalse(createdUser.getNickName().isPresent());
+      createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch resource with non matching If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      List<String> values = Arrays.asList("chucky");
+      PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                             .path("nickname")
+                                                             .op(PatchOp.ADD)
+                                                             .values(values)
+                                                             .build();
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(Collections.singletonList(operation)).build();
+      ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
+                                                                        createdUser.getId().get(),
+                                                                        patchOpRequest.toString(),
+                                                                        httpHeaders,
+                                                                        getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch resource with If-None-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      List<String> values = Arrays.asList("chucky");
+      PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                             .path("nickname")
+                                                             .op(PatchOp.ADD)
+                                                             .values(values)
+                                                             .build();
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(Collections.singletonList(operation)).build();
+      ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
+                                                                        createdUser.getId().get(),
+                                                                        patchOpRequest.toString(),
+                                                                        httpHeaders,
+                                                                        getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch resource with non matching If-None-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      List<String> values = Arrays.asList("chucky");
+      PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                             .path("nickname")
+                                                             .op(PatchOp.ADD)
+                                                             .values(values)
+                                                             .build();
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(Collections.singletonList(operation)).build();
+      ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
+                                                                        createdUser.getId().get(),
+                                                                        patchOpRequest.toString(),
+                                                                        httpHeaders,
+                                                                        getBaseUrlSupplier());
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+      Assertions.assertNotEquals(createdUser, updateResponse);
+      User user = JsonHelper.copyResourceToObject(updateResponse, User.class);
+      createdUser.setNickName(user.getNickName().orElse(null));
+      Assertions.assertTrue(createdUser.getNickName().isPresent());
+      createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete resource with If-Match", () -> {
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+      DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete resource with non matching If-Match", () -> {
+      userHandler.getInMemoryMap().put(createdUser.getId().get(), createdUser);
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete resource with If-None-Match", () -> {
+      userHandler.getInMemoryMap().put(createdUser.getId().get(), createdUser);
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete resource with non matching If-None-Match", () -> {
+      userHandler.getInMemoryMap().put(createdUser.getId().get(), createdUser);
+      Map<String, String> httpHeaders = new HashMap<>();
+      httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
+      ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
+                                                                         createdUser.getId().get(),
+                                                                         httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+      DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
+    }));
+    /* ************************************************************************************************************/
+
+    return dynamicTests;
   }
 
   /**

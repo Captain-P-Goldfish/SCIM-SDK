@@ -2,7 +2,6 @@ package de.captaingoldfish.scim.sdk.server.utils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -21,6 +20,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -29,6 +29,7 @@ import lombok.Setter;
  * <br>
  * represents the parsed uri infos of a request
  */
+@Slf4j
 @Getter
 public class UriInfos
 {
@@ -223,16 +224,17 @@ public class UriInfos
     {
       throw new InternalServerException("missing http headers. This is not a client error!", null, null);
     }
-    if (httpHeaders.size() == 1 && httpHeaders.get(EndpointPaths.BULK) != null)
+    if (httpHeaders.get(EndpointPaths.BULK) != null && httpHeaders.size() <= 2)
     {
       // in this case this method was called from the bulk endpoint and further validation is skipped
       // this is done because the original http headers have already been validated and the sub-operations of the
       // bulk-request do not need to be validated
-      return Collections.emptyMap();
+      httpHeaders.remove(EndpointPaths.BULK);
+      return httpHeaders;
     }
     String contentType = httpHeaders.get(HttpHeader.CONTENT_TYPE_HEADER);
     if ((HttpMethod.POST.equals(httpMethod) || HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod))
-        && contentType == null || !StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE))
+        && (contentType == null || !StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE)))
     {
       throw new BadRequestException("Invalid content type. Was '" + contentType + "' but should be "
                                     + HttpHeader.SCIM_CONTENT_TYPE, null, null);

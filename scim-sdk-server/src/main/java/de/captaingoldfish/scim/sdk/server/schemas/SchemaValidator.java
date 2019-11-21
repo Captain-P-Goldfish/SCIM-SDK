@@ -1139,8 +1139,8 @@ public class SchemaValidator
                                     Function<JsonNode, Boolean> isOfType)
   {
     Type type = attributeDefinition.getType();
-    final String errorMessage = "value of field with name '" + attributeDefinition.getName() + "' is not of " + "type '"
-                                + type.getValue() + "' but of type: "
+    final String errorMessage = "value of field with name '" + attributeDefinition.getFullResourceName()
+                                + "' is not of type '" + type.getValue() + "' but of type: "
                                 + StringUtils.lowerCase(valueNode.getNodeType().toString());
     checkAttributeValidity(isOfType.apply(valueNode), errorMessage);
   }

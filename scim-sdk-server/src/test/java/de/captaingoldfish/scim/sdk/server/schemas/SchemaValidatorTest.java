@@ -1669,8 +1669,9 @@ public class SchemaValidatorTest implements FileReferences
     {
       log.debug(ex.getDetail(), ex);
       MatcherAssert.assertThat(ex.getDetail(),
-                               Matchers.containsString("value of field with name 'userName' is not of "
-                                                       + "type 'string' but of type: number"));
+                               Matchers.containsString("value of field with name "
+                                                       + "'urn:ietf:params:scim:schemas:core:2.0:User:userName' "
+                                                       + "is not of type 'string' but of type: number"));
     }
   }
 

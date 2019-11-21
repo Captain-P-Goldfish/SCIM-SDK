@@ -42,6 +42,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ResourceTypeEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.SchemaEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ServiceProviderEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.etag.ETagHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.resources.FilterResourceResolver;
 import de.captaingoldfish.scim.sdk.server.patch.PatchHandler;
@@ -163,15 +164,18 @@ class ResourceEndpointHandler
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
       Supplier<String> metaErrorMessage = () -> "Meta attribute not set on created resource";
-      meta = resourceNode.getMeta().orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null, null));
-      meta.setLocation(location);
+      Meta createdMeta = resourceNode.getMeta()
+                                     .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
+                                                                                    null));
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
+      createdMeta.setLocation(location);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
                                                                               resource,
                                                                               null,
                                                                               null);
-      return new CreateResponse(responseResource, location);
+      return new CreateResponse(responseResource, location, createdMeta);
     }
     catch (ScimException ex)
     {
@@ -194,7 +198,7 @@ class ResourceEndpointHandler
    */
   protected ScimResponse getResource(String endpoint, String id)
   {
-    return getResource(endpoint, id, null, null, null, null);
+    return getResource(endpoint, id, null, null, Collections.emptyMap(), null);
   }
 
   /**
@@ -204,7 +208,7 @@ class ResourceEndpointHandler
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
-   * @param httpHeaders the http request headers, may be null
+   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -238,7 +242,7 @@ class ResourceEndpointHandler
    *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
    *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
    *          name, emails).
-   * @param httpHeaders the http request headers, may be null
+   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -260,6 +264,7 @@ class ResourceEndpointHandler
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ResourceNode resourceNode = resourceHandler.getResource(id);
+      ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -276,6 +281,7 @@ class ResourceEndpointHandler
       resourceNode.getMeta().ifPresent(meta -> {
         meta.setResourceType(resourceType.getName());
         meta.setLocation(location);
+        ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       });
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
@@ -283,7 +289,7 @@ class ResourceEndpointHandler
                                                                               null,
                                                                               attributes,
                                                                               excludedAttributes);
-      return new GetResponse(responseResource, location);
+      return new GetResponse(responseResource, location, resourceNode.getMeta().orElse(null));
     }
     catch (ScimException ex)
     {
@@ -477,6 +483,7 @@ class ResourceEndpointHandler
         resourceNode.getMeta().ifPresent(meta -> {
           meta.setResourceType(resourceType.getName());
           meta.setLocation(location);
+          ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
         });
         JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                                  resourceType,
@@ -629,7 +636,7 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
    * @param resourceDocument the resource document
-   * @param httpHeaders
+   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -665,6 +672,7 @@ class ResourceEndpointHandler
                                                             resource,
                                                             SchemaValidator.HttpMethod.PUT);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id), httpHeaders);
       if (resource == null)
       {
         throw new BadRequestException("the request body does not contain any writable parameters", null,
@@ -687,6 +695,7 @@ class ResourceEndpointHandler
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
       resourceNode = resourceHandler.updateResource(resourceNode);
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -708,7 +717,7 @@ class ResourceEndpointHandler
                                                                               null,
                                                                               null);
 
-      return new UpdateResponse(responseResource, location);
+      return new UpdateResponse(responseResource, location, meta);
     }
     catch (ScimException ex)
     {
@@ -729,12 +738,13 @@ class ResourceEndpointHandler
    * @param id the id of the resource that was requested
    * @return an empty response that does not create a response body
    */
-  protected ScimResponse deleteResource(String endpoint, String id)
+  protected ScimResponse deleteResource(String endpoint, String id, Map<String, String> httpHeaders)
   {
     try
     {
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id), httpHeaders);
       resourceHandler.deleteResource(id);
       return new DeleteResponse();
     }
@@ -756,6 +766,7 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that should be patched
    * @param requestBody the patch request body
+   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -764,9 +775,13 @@ class ResourceEndpointHandler
    *          thrown
    * @return the updated resource or an error response
    */
-  protected ScimResponse patchResource(String endpoint, String id, String requestBody, Supplier<String> baseUrlSupplier)
+  protected ScimResponse patchResource(String endpoint,
+                                       String id,
+                                       String requestBody,
+                                       Map<String, String> httpHeaders,
+                                       Supplier<String> baseUrlSupplier)
   {
-    return patchResource(endpoint, id, requestBody, null, null, null, baseUrlSupplier);
+    return patchResource(endpoint, id, requestBody, null, null, httpHeaders, baseUrlSupplier);
   }
 
   /**
@@ -787,7 +802,7 @@ class ResourceEndpointHandler
    *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
    *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
    *          name, emails).
-   * @param httpHeaders
+   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -806,7 +821,6 @@ class ResourceEndpointHandler
   {
     try
     {
-
       if (!serviceProvider.getPatchConfig().isSupported())
       {
         throw new NotImplementedException("patch is not supported by this service provider");
@@ -822,7 +836,7 @@ class ResourceEndpointHandler
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-
+      ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
@@ -841,37 +855,38 @@ class ResourceEndpointHandler
       final String location = getLocation(resourceType, id, baseUrlSupplier);
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
       PatchHandler patchHandler = new PatchHandler(resourceType);
-      resourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
+      ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
       try
       {
         SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
                                                    resourceType,
-                                                   resourceNode,
+                                                   patchedResourceNode,
                                                    SchemaValidator.HttpMethod.PATCH);
       }
       catch (DocumentValidationException ex)
       {
         throw new DocumentValidationException("your patch operation created a malformed resource. The original message"
                                               + " is: \n\t" + ex.getDetail() + "\nthe patched resource has the "
-                                              + "following structure: \n\t" + resourceNode.toPrettyString(), ex,
+                                              + "following structure: \n\t" + patchedResourceNode.toPrettyString(), ex,
                                               HttpStatus.BAD_REQUEST, null);
       }
       if (patchHandler.isChangedResource())
       {
         // a security call In case that someone finds a way to manipulate the id within a patch operation
-        resourceNode.setId(id);
-        resourceNode = resourceHandler.updateResource(resourceNode);
+        patchedResourceNode.setId(id);
+        patchedResourceNode = resourceHandler.updateResource(patchedResourceNode);
       }
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
-                                                                              resourceNode,
+                                                                              patchedResourceNode,
                                                                               patchHandler.getRequestedAttributes(),
                                                                               attributes,
                                                                               excludedAttributes);
 
-      return new UpdateResponse(responseResource, location);
+      return new UpdateResponse(responseResource, location, meta);
     }
     catch (ScimException ex)
     {

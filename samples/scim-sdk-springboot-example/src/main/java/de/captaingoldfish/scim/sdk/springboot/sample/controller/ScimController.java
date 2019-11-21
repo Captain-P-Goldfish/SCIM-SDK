@@ -5,12 +5,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
@@ -48,15 +51,22 @@ public class ScimController
    * @return the scim response that will automatically be converted to json by spring
    */
   @RequestMapping(value = "/**", method = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT,
-                                           RequestMethod.PATCH, RequestMethod.DELETE})
-  public ScimResponse handleScimRequest(HttpServletRequest request, @RequestBody(required = false) String requestBody)
+                                           RequestMethod.PATCH,
+                                           RequestMethod.DELETE}, produces = HttpHeader.SCIM_CONTENT_TYPE)
+  public @ResponseBody String handleScimRequest(HttpServletRequest request,
+                                                HttpServletResponse response,
+                                                @RequestBody(required = false) String requestBody)
   {
     Map<String, String> httpHeaders = getHttpHeaders(request);
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
-    return resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
-                                          HttpMethod.valueOf(request.getMethod()),
-                                          requestBody,
-                                          httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
+                                                               HttpMethod.valueOf(request.getMethod()),
+                                                               requestBody,
+                                                               httpHeaders);
+    response.setContentType(HttpHeader.SCIM_CONTENT_TYPE);
+    scimResponse.getHttpHeaders().forEach(response::setHeader);
+    response.setStatus(scimResponse.getHttpStatus());
+    return scimResponse.toPrettyString();
   }
 
   /**
