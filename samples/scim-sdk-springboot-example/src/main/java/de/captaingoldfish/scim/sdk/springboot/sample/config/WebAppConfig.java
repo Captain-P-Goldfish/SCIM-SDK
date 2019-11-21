@@ -28,7 +28,7 @@ import de.captaingoldfish.scim.sdk.springboot.sample.handler.UserHandler;
  */
 @Configuration
 @EnableWebMvc
-@ComponentScan("de.gold.scim.springboot.sample")
+@ComponentScan("de.captaingoldfish.scim.sdk.springboot.sample")
 public class WebAppConfig
 {
 
