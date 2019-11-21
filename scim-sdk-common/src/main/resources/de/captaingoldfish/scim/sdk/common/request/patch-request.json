@@ -53,7 +53,7 @@
           "uniqueness": "none",
           "multiValued": true,
           "caseExact": false,
-          "required": true
+          "required": false
         }
       ]
     }
