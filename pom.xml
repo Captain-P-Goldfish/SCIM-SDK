@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.captaingoldfish</groupId>
     <artifactId>scim-sdk-parent</artifactId>
 
     <packaging>pom</packaging>
-    <version>1.0.1-SNAPSHOT</version>
+    <version>1.1.0</version>
 
     <name>SCIM SDK</name>
     <description>A full SCIM 2.0 open source implementation</description>
@@ -35,7 +34,7 @@
         <connection>scm:git:git://github.com/Captain-P-Goldfish/SCIM.git</connection>
         <developerConnection>scm:git:ssh://github.com/Captain-P-Goldfish/SCIM.git</developerConnection>
         <url>https://github.com/Captain-P-Goldfish/SCIM/tree/master</url>
-        <tag>HEAD</tag>
+        <tag>1.1.0</tag>
     </scm>
 
     <distributionManagement>
@@ -387,9 +386,9 @@
                             <onlyWhenRelease>true</onlyWhenRelease>
                         </requireReleaseDeps>
 
-                        <banDuplicatePomDependencyVersions/>
+                        <banDuplicatePomDependencyVersions />
 
-                        <dependencyConvergence/>
+                        <dependencyConvergence />
                     </rules>
                 </configuration>
             </plugin>
