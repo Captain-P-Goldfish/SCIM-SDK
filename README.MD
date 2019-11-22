@@ -39,7 +39,7 @@ The following features are supported
 - [x] delete
 - [x] bulk
   * resolving of bulkId references (@see [bulkId reference resolving](https://github.com/Captain-P-Goldfish/SCIM/wiki/BulkId-reference-resolving))
-- [x] resource versioning
+- [x] resource versioning (@see [resource versioning](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Resource-versioning))
 - [x] attributes-parameter
 - [x] excludedAttributes-parameter
 
