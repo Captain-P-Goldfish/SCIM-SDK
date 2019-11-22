@@ -20,6 +20,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
@@ -81,11 +82,6 @@ public class SchemaValidator
   private final HttpMethod httpMethod;
 
   /**
-   * used to check if a reference-type of {@link ReferenceTypes#RESOURCE} is registered or not.
-   */
-  private final ResourceTypeFactory resourceTypeFactory;
-
-  /**
    * this member is used for attributes that have a returned value of {@link Returned#REQUEST}. Those attributes
    * should only be returned if the attribute was modified on a POST, PUT or PATCH request or in a query request
    * only if the attribute is present within the {@link #attributes} parameter. So the validated request tells
@@ -120,12 +116,8 @@ public class SchemaValidator
    */
   private final List<String> excludedAttributes;
 
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
-                          DirectionType directionType,
-                          String attributes,
-                          String excludedAttributes)
+  private SchemaValidator(DirectionType directionType, String attributes, String excludedAttributes)
   {
-    this.resourceTypeFactory = resourceTypeFactory;
     this.extensionSchema = false;
     this.directionType = directionType;
     this.httpMethod = null;
@@ -134,14 +126,12 @@ public class SchemaValidator
     this.excludedAttributes = RequestUtils.getAttributes(excludedAttributes);
   }
 
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
-                          DirectionType directionType,
+  private SchemaValidator(DirectionType directionType,
                           HttpMethod httpMethod,
                           JsonNode validatedRequest,
                           String attributes,
                           String excludedAttributes)
   {
-    this.resourceTypeFactory = resourceTypeFactory;
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = false;
@@ -150,15 +140,13 @@ public class SchemaValidator
     this.excludedAttributes = RequestUtils.getAttributes(excludedAttributes);
   }
 
-  private SchemaValidator(ResourceTypeFactory resourceTypeFactory,
-                          DirectionType directionType,
+  private SchemaValidator(DirectionType directionType,
                           HttpMethod httpMethod,
                           boolean extensionSchema,
                           JsonNode validatedRequest,
                           String attributes,
                           String excludedAttributes)
   {
-    this.resourceTypeFactory = resourceTypeFactory;
     this.directionType = directionType;
     this.httpMethod = httpMethod;
     this.extensionSchema = extensionSchema;
@@ -176,11 +164,9 @@ public class SchemaValidator
    * @param schemaDocument the new schema document that should be validated
    * @return the validated schema definition
    */
-  public static JsonNode validateSchemaDocument(ResourceTypeFactory resourceTypeFactory,
-                                                Schema metaSchema,
-                                                JsonNode schemaDocument)
+  public static JsonNode validateSchemaDocument(Schema metaSchema, JsonNode schemaDocument)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, null, null, null);
+    SchemaValidator schemaValidator = new SchemaValidator(null, null, null);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
@@ -193,11 +179,9 @@ public class SchemaValidator
    * @param schemaDocument the new schema document that should be validated
    * @return the validated schema definition
    */
-  public static JsonNode validateSchemaDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
-                                                          Schema metaSchema,
-                                                          JsonNode schemaDocument)
+  public static JsonNode validateSchemaDocumentForRequest(Schema metaSchema, JsonNode schemaDocument)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, null, null);
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, null, null);
     return schemaValidator.validateDocument(metaSchema, schemaDocument);
   }
 
@@ -238,8 +222,7 @@ public class SchemaValidator
     throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
-    JsonNode validatedMainDocument = validateDocumentForResponse(resourceTypeFactory,
-                                                                 resourceSchema.getMetaSchema(),
+    JsonNode validatedMainDocument = validateDocumentForResponse(resourceSchema.getMetaSchema(),
                                                                  document,
                                                                  validatedRequest,
                                                                  attributes,
@@ -253,8 +236,7 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getId().orElse(null)))
                                    .orElseThrow(() -> new InternalServerException(message.get(), null,
                                                                                   ScimType.Custom.MISSING_EXTENSION));
-      JsonNode extensionNode = validateExtensionForResponse(resourceTypeFactory,
-                                                            schemaExtension,
+      JsonNode extensionNode = validateExtensionForResponse(schemaExtension,
                                                             extension,
                                                             validatedRequest == null ? null
                                                               : validatedRequest.get(schemaExtension.getNonNullId()),
@@ -276,8 +258,7 @@ public class SchemaValidator
     JsonNode validatedMeta;
     try
     {
-      validatedMeta = validateExtensionForResponse(resourceTypeFactory,
-                                                   metaSchema,
+      validatedMeta = validateExtensionForResponse(metaSchema,
                                                    metaNode,
                                                    validatedRequest,
                                                    attributes,
@@ -308,11 +289,9 @@ public class SchemaValidator
    * @param document the document to validate
    * @return the validated document that consists of {@link ScimNode}s
    */
-  protected static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
-                                                        Schema metaSchema,
-                                                        JsonNode document)
+  protected static JsonNode validateDocumentForResponse(Schema metaSchema, JsonNode document)
   {
-    return validateDocumentForResponse(resourceTypeFactory, metaSchema, document, null, null, null);
+    return validateDocumentForResponse(metaSchema, document, null, null, null);
   }
 
   /**
@@ -343,15 +322,14 @@ public class SchemaValidator
    *          name, emails).
    * @return the validated document that consists of {@link ScimNode}s
    */
-  protected static JsonNode validateDocumentForResponse(ResourceTypeFactory resourceTypeFactory,
-                                                        Schema metaSchema,
+  protected static JsonNode validateDocumentForResponse(Schema metaSchema,
                                                         JsonNode document,
                                                         JsonNode validatedRequest,
                                                         String attributes,
                                                         String excludedAttributes)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null,
-                                                          validatedRequest, attributes, excludedAttributes);
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, validatedRequest, attributes,
+                                                          excludedAttributes);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -370,15 +348,14 @@ public class SchemaValidator
    *          the attribute and if this is the case the attribute should be returned
    * @return the validated document that consists of {@link ScimNode}s
    */
-  private static JsonNode validateExtensionForResponse(ResourceTypeFactory resourceTypeFactory,
-                                                       Schema metaSchema,
+  private static JsonNode validateExtensionForResponse(Schema metaSchema,
                                                        JsonNode document,
                                                        JsonNode validatedRequest,
                                                        String attributes,
                                                        String excludedAttributes)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.RESPONSE, null, true,
-                                                          validatedRequest, attributes, excludedAttributes);
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, true, validatedRequest,
+                                                          attributes, excludedAttributes);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -396,17 +373,11 @@ public class SchemaValidator
    * @return the validated document that consists of {@link ScimNode}s
    * @throws DocumentValidationException if the schema validation failed
    */
-  public static JsonNode validateDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
-                                                    ResourceType resourceType,
-                                                    JsonNode document,
-                                                    HttpMethod httpMethod)
+  public static JsonNode validateDocumentForRequest(ResourceType resourceType, JsonNode document, HttpMethod httpMethod)
     throws DocumentValidationException
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
-    JsonNode validatedMainDocument = validateDocumentForRequest(resourceTypeFactory,
-                                                                resourceSchema.getMetaSchema(),
-                                                                document,
-                                                                httpMethod);
+    JsonNode validatedMainDocument = validateDocumentForRequest(resourceSchema.getMetaSchema(), document, httpMethod);
     validatedForMissingRequiredExtension(resourceType, document, DirectionType.REQUEST);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
@@ -416,7 +387,7 @@ public class SchemaValidator
       JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getNonNullId()))
                                    .orElseThrow(() -> new BadRequestException(message.get(), null,
                                                                               ScimType.Custom.MISSING_EXTENSION));
-      JsonNode extensionNode = validateExtensionForRequest(resourceTypeFactory, schemaExtension, extension, httpMethod);
+      JsonNode extensionNode = validateExtensionForRequest(schemaExtension, extension, httpMethod);
       if (extensionNode == null)
       {
         JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.RFC7643.SCHEMAS).ifPresent(arrayNode -> {
@@ -445,13 +416,9 @@ public class SchemaValidator
    *          types that are valid on POST requests but invalid on PUT requests
    * @return the validated document that consists of {@link ScimNode}s
    */
-  protected static JsonNode validateDocumentForRequest(ResourceTypeFactory resourceTypeFactory,
-                                                       Schema metaSchema,
-                                                       JsonNode document,
-                                                       HttpMethod httpMethod)
+  protected static JsonNode validateDocumentForRequest(Schema metaSchema, JsonNode document, HttpMethod httpMethod)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, null,
-                                                          null, null);
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, null, null, null);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -467,13 +434,9 @@ public class SchemaValidator
    *          types that are valid on POST requests but invalid on PUT requests
    * @return the validated document that consists of {@link ScimNode}s
    */
-  protected static JsonNode validateExtensionForRequest(ResourceTypeFactory resourceTypeFactory,
-                                                        Schema metaSchema,
-                                                        JsonNode document,
-                                                        HttpMethod httpMethod)
+  protected static JsonNode validateExtensionForRequest(Schema metaSchema, JsonNode document, HttpMethod httpMethod)
   {
-    SchemaValidator schemaValidator = new SchemaValidator(resourceTypeFactory, DirectionType.REQUEST, httpMethod, true,
-                                                          null, null, null);
+    SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, true, null, null, null);
     return schemaValidator.validateDocument(metaSchema, document);
   }
 
@@ -1269,15 +1232,6 @@ public class SchemaValidator
   private Integer getHttpStatus()
   {
     return directionType == null ? HttpStatus.INTERNAL_SERVER_ERROR : directionType.getHttpStatus();
-  }
-
-  /**
-   * tells us which request type the user has used. This is e.g. necessary for immutable types that are valid on
-   * POST requests but invalid on PUT requests
-   */
-  public enum HttpMethod
-  {
-    POST, PUT, PATCH
   }
 
   /**

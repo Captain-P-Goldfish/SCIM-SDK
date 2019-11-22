@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -251,10 +252,9 @@ public class ResourceTypeTest implements FileReferences
     ResourceType resourceType = new ResourceType(schemaFactory, userResourceTypeJson);
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(schemaFactory.getResourceTypeFactory(),
-                                                                            resourceType,
+    JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(resourceType,
                                                                             enterpriseUserDocument,
-                                                                            SchemaValidator.HttpMethod.POST);
+                                                                            HttpMethod.POST);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,

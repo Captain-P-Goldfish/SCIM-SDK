@@ -90,7 +90,7 @@ public final class SchemaFactory
     Schema metaSchema = getMetaSchema(SchemaUris.SCHEMA_URI);
     try
     {
-      SchemaValidator.validateSchemaDocument(resourceTypeFactory, metaSchema, jsonSchema);
+      SchemaValidator.validateSchemaDocument(metaSchema, jsonSchema);
       Schema schema = new Schema(jsonSchema);
       resourceSchemas.put(schema.getNonNullId(), schema);
     }

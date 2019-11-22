@@ -63,8 +63,6 @@ public class BulkResponseTest
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     SchemaFactory schemaFactory = ResourceTypeFactoryUtil.getSchemaFactory(resourceTypeFactory);
     Schema bulkResponseSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_RESPONSE_URI);
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(resourceTypeFactory,
-                                                                               bulkResponseSchema,
-                                                                               bulkResponse));
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(bulkResponseSchema, bulkResponse));
   }
 }

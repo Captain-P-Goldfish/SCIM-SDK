@@ -51,8 +51,6 @@ public class BulkRequestTest implements FileReferences
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     SchemaFactory schemaFactory = ResourceTypeFactoryUtil.getSchemaFactory(resourceTypeFactory);
     Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(resourceTypeFactory,
-                                                                               bulkRequestSchema,
-                                                                               bulkRequest));
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(bulkRequestSchema, bulkRequest));
   }
 }

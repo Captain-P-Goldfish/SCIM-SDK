@@ -79,7 +79,7 @@ public final class ResourceTypeFactory
                                            JsonNode... resourceSchemaExtensions)
   {
     Schema resourceTypeSchema = schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
-    JsonNode validatedResourceType = SchemaValidator.validateSchemaDocument(this, resourceTypeSchema, resourceType);
+    JsonNode validatedResourceType = SchemaValidator.validateSchemaDocument(resourceTypeSchema, resourceType);
     ResourceType resourceTypeObject = new ResourceType(schemaFactory, resourceType);
     addSchemaExtensions(validatedResourceType, resourceSchemaExtensions);
     checkResourceSchema(resourceTypeObject, resourceSchema);

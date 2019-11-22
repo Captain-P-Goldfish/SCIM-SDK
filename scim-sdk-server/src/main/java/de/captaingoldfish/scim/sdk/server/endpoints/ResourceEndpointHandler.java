@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
@@ -145,10 +146,7 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
-                                                            resourceType,
-                                                            resource,
-                                                            SchemaValidator.HttpMethod.POST);
+      resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.POST);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
       Meta meta = Meta.builder().resourceType(resourceType.getName()).build();
@@ -667,10 +665,7 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      resource = SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
-                                                            resourceType,
-                                                            resource,
-                                                            SchemaValidator.HttpMethod.PUT);
+      resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.PUT);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id), httpHeaders);
       if (resource == null)
@@ -829,7 +824,7 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
-      patchDocument = SchemaValidator.validateSchemaDocumentForRequest(resourceTypeFactory, patchSchema, patchDocument);
+      patchDocument = SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchDocument);
       ResourceNode resourceNode = resourceHandler.getResource(id);
       if (resourceNode == null)
       {
@@ -861,10 +856,7 @@ class ResourceEndpointHandler
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
       try
       {
-        SchemaValidator.validateDocumentForRequest(resourceTypeFactory,
-                                                   resourceType,
-                                                   patchedResourceNode,
-                                                   SchemaValidator.HttpMethod.PATCH);
+        SchemaValidator.validateDocumentForRequest(resourceType, patchedResourceNode, HttpMethod.PATCH);
       }
       catch (DocumentValidationException ex)
       {

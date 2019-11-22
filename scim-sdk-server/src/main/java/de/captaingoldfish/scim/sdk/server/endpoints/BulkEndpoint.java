@@ -762,9 +762,7 @@ class BulkEndpoint
       JsonNode jsonNode = JsonHelper.readJsonDocument(requestBody);
       SchemaFactory schemaFactory = getResourceTypeFactory().getSchemaFactory();
       Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
-      JsonNode validatedRequest = SchemaValidator.validateSchemaDocumentForRequest(getResourceTypeFactory(),
-                                                                                   bulkRequestSchema,
-                                                                                   jsonNode);
+      JsonNode validatedRequest = SchemaValidator.validateSchemaDocumentForRequest(bulkRequestSchema, jsonNode);
       BulkRequest bulkRequest = JsonHelper.copyResourceToObject(validatedRequest, BulkRequest.class);
       if (bulkConfig.getMaxOperations() < bulkRequest.getBulkRequestOperations().size())
       {
