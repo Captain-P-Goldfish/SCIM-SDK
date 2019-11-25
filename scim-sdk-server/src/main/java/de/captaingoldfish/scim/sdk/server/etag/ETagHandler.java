@@ -53,7 +53,7 @@ public class ETagHandler
     Optional<ETag> version = resourceNode.getMeta().flatMap(Meta::getVersion);
     if (version.isPresent())
     {
-      log.debug("version already set to: {}", version.get().getEntityTag());
+      log.trace("version already set to: {}", version.get().getEntityTag());
       return version;
     }
     return Optional.of(generateVersionOfResource(resourceNode));
