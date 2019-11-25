@@ -228,6 +228,17 @@
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none"
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "multiValued": false,
+          "description": "The authentication scheme. This specification defines the values \"oauth\", \"oauth2\", \"oauthbearertoken\", \"httpbasic\", and \"httpdigest\".  REQUIRED.",
+          "required": true,
+          "caseExact": false,
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none"
         }
       ]
     }
