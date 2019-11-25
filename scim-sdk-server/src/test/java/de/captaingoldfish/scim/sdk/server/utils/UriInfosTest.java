@@ -225,4 +225,18 @@ public class UriInfosTest
                               ex.getDetail());
     }
   }
+
+  /**
+   * this test will verify that the header names are read case insensitive
+   */
+  @Test
+  public void testValidateHeadersCaseInsensitive()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS;
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER.toLowerCase(), HttpHeader.SCIM_CONTENT_TYPE);
+    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.POST, httpHeaders);
+    Assertions.assertEquals(1, uriInfos.getHttpHeaders().size());
+    Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE, uriInfos.getHttpHeaders().values().iterator().next());
+  }
 }

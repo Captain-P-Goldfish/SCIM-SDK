@@ -232,7 +232,13 @@ public class UriInfos
       httpHeaders.remove(EndpointPaths.BULK);
       return httpHeaders;
     }
-    String contentType = httpHeaders.get(HttpHeader.CONTENT_TYPE_HEADER);
+    String contentType = httpHeaders.keySet()
+                                    .stream()
+                                    .filter(header -> StringUtils.equalsIgnoreCase(header,
+                                                                                   HttpHeader.CONTENT_TYPE_HEADER))
+                                    .findAny()
+                                    .map(httpHeaders::get)
+                                    .orElse(null);
     if ((HttpMethod.POST.equals(httpMethod) || HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod))
         && (contentType == null || !StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE)))
     {
