@@ -417,11 +417,6 @@ class ResourceEndpointHandler
     try
     {
       final ResourceType resourceType = getResourceType(endpoint);
-      if (resourceType.getFeatures().isSingletonEndpoint())
-      {
-        // feature to solve the problem with the /ServiceProviderConfiguration endpoint
-        return getResource(endpoint, null, null, baseUrlSupplier);
-      }
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);

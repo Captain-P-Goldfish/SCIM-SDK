@@ -98,7 +98,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
           return createResource(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri);
         }
       case GET:
-        if (uriInfos.isSearchRequest())
+        if (uriInfos.isSearchRequest() && !uriInfos.getResourceType().getFeatures().isSingletonEndpoint())
         {
           String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);

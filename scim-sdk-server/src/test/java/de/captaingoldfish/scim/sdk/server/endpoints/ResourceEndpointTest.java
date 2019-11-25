@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +42,15 @@ import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
@@ -1185,4 +1193,66 @@ public class ResourceEndpointTest extends AbstractBulkTest
                             errorResponse.getDetail().get());
   }
 
+  /**
+   * this test will verify that the service provider configuration can be accessed without any errors
+   */
+  @Test
+  public void testGetServiceProviderConfig()
+  {
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+  }
+
+  /**
+   * this test will verify that the resource types can be accessed without any errors
+   */
+  @Test
+  public void testGetResourceTypes()
+  {
+    final String url = BASE_URI + EndpointPaths.RESOURCE_TYPES;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+  }
+
+  /**
+   * this test will verify that the schemas can be accessed without any errors
+   */
+  @Test
+  public void testGetSchemas()
+  {
+    final String url = BASE_URI + EndpointPaths.SCHEMAS;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+  }
+
+
+  /**
+   * builds a fully configured service provider configuration
+   */
+  private ServiceProvider getServiceProvider()
+  {
+    AuthenticationScheme authScheme = AuthenticationScheme.builder()
+                                                          .name("OAuth Bearer Token")
+                                                          .description("Authentication scheme using the OAuth "
+                                                                       + "Bearer Token Standard")
+                                                          .specUri("http://www.rfc-editor.org/info/rfc6750")
+                                                          .type("oauthbearertoken")
+                                                          .build();
+    return ServiceProvider.builder()
+                          .filterConfig(FilterConfig.builder().supported(true).maxResults(50).build())
+                          .sortConfig(SortConfig.builder().supported(true).build())
+                          .changePasswordConfig(ChangePasswordConfig.builder().supported(true).build())
+                          .bulkConfig(BulkConfig.builder().supported(true).maxOperations(10).build())
+                          .patchConfig(PatchConfig.builder().supported(true).build())
+                          .authenticationSchemes(Collections.singletonList(authScheme))
+                          .eTagConfig(ETagConfig.builder().supported(true).build())
+                          .build();
+  }
 }
