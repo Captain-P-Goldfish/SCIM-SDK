@@ -16,9 +16,11 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.springboot.sample.handler.GroupHandler;
 import de.captaingoldfish.scim.sdk.springboot.sample.handler.UserHandler;
 
 
@@ -82,6 +84,21 @@ public class WebAppConfig
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     return userResourceType;
+  }
+
+  /**
+   * gets the group resource type that is the core object of the /Groups endpoint. We will also activate the
+   * auto-filtering extension so that filtering will work on the fly
+   *
+   * @param resourceEndpoint the resource endpoint that was previously defined
+   * @return the group resource type
+   */
+  @Bean
+  public ResourceType getGroupResourceType(ResourceEndpoint resourceEndpoint)
+  {
+    ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
+    groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+    return groupResourceType;
   }
 
 }
