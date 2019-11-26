@@ -364,6 +364,14 @@ public class ResourceType extends ResourceNode
   public void setFeatures(ResourceTypeFeatures filterExtension)
   {
     setAttribute(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI, filterExtension);
+    if (filterExtension == null)
+    {
+      removeSchema(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI);
+    }
+    else
+    {
+      addSchema(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI);
+    }
   }
 
   /**
