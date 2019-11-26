@@ -76,7 +76,7 @@ import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
-import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;

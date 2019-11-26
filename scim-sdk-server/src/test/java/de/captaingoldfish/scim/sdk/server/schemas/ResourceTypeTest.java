@@ -20,9 +20,12 @@ import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -298,4 +301,39 @@ public class ResourceTypeTest implements FileReferences
     Assertions.assertFalse(resourceType.getFeatures().isSingletonEndpoint());
   }
 
+  /**
+   * verifies that the endpoint control-feature is correctly get and set from the resource type
+   */
+  @Test
+  public void testSetEndpointControlFeature()
+  {
+    ResourceType resourceType = new ResourceType(schemaFactory,
+                                                 JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
+    Assertions.assertNotNull(resourceType.getFeatures());
+
+    EndpointControlFeature endpointControlFeature = resourceType.getFeatures().getEndpointControlFeature();
+    Assertions.assertNotNull(endpointControlFeature);
+    Assertions.assertFalse(endpointControlFeature.isCreateDisabled());
+    Assertions.assertFalse(endpointControlFeature.isGetDisabled());
+    Assertions.assertFalse(endpointControlFeature.isListDisabled());
+    Assertions.assertFalse(endpointControlFeature.isUpdateDisabled());
+    Assertions.assertFalse(endpointControlFeature.isDeleteDisabled());
+
+    endpointControlFeature.setCreateDisabled(true);
+    endpointControlFeature.setGetDisabled(true);
+    endpointControlFeature.setListDisabled(true);
+    endpointControlFeature.setUpdateDisabled(true);
+    Assertions.assertThrows(InternalServerException.class, () -> endpointControlFeature.setDeleteDisabled(true));
+
+    Assertions.assertNotNull(resourceType.getFeatures().getEndpointControlFeature());
+    Assertions.assertTrue(resourceType.getFeatures().getEndpointControlFeature().isCreateDisabled());
+    Assertions.assertTrue(resourceType.getFeatures().getEndpointControlFeature().isGetDisabled());
+    Assertions.assertTrue(resourceType.getFeatures().getEndpointControlFeature().isListDisabled());
+    Assertions.assertTrue(resourceType.getFeatures().getEndpointControlFeature().isUpdateDisabled());
+    Assertions.assertFalse(resourceType.getFeatures().getEndpointControlFeature().isDeleteDisabled());
+
+    endpointControlFeature.setUpdateDisabled(false);
+    Assertions.assertDoesNotThrow(() -> endpointControlFeature.setDeleteDisabled(true));
+    Assertions.assertTrue(resourceType.getFeatures().getEndpointControlFeature().isDeleteDisabled());
+  }
 }

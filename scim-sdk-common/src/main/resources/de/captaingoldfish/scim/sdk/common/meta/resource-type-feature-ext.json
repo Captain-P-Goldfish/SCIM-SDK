@@ -38,6 +38,74 @@
       "multiValued": false,
       "caseExact": false,
       "required": false
+    },
+    {
+      "name": "endpointControl",
+      "type": "complex",
+      "description": "a complex attribute that allows you to enable or disable specific endpoints for specific resources. An example would be to disable the create and the delete endpoint",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "disableCreate",
+          "type": "boolean",
+          "description": "disables the create endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableGet",
+          "type": "boolean",
+          "description": "disables the get endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableList",
+          "type": "boolean",
+          "description": "disables the list endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableUpdate",
+          "type": "boolean",
+          "description": "disables the update and the patch endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableDelete",
+          "type": "boolean",
+          "description": "disables the delete endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        }
+      ]
     }
   ]
 }

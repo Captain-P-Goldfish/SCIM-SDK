@@ -33,6 +33,37 @@ public final class AttributeNames
      * the attribute key for enabling automatic sorting on a specific resource
      */
     public static final String AUTO_SORTING = "autoSorting";
+
+    /**
+     * an extension attribute for resource type control that allows to disable certain endpoints for a resource
+     * type
+     */
+    public static final String ENDPOINT_CONTROL = "endpointControl";
+
+    /**
+     * this attribute will disable the create endpoint
+     */
+    public static final String DISABLE_CREATE = "disableCreate";
+
+    /**
+     * this attribute will disable the get-endpoint
+     */
+    public static final String DISABLE_GET = "disableGet";
+
+    /**
+     * this attribute will disable get list-endpoint
+     */
+    public static final String DISABLE_LIST = "disableList";
+
+    /**
+     * this attribute will disable the update endpoint
+     */
+    public static final String DISABLE_UPDATE = "disableUpdate";
+
+    /**
+     * this attribute will disable the delete endpoint
+     */
+    public static final String DISABLE_DELETE = "disableDelete";
   }
 
   /**

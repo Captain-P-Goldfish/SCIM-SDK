@@ -34,6 +34,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;

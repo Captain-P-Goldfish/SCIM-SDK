@@ -10,6 +10,8 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointFeatureHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
 
@@ -91,15 +93,18 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       case POST:
         if (uriInfos.isSearchRequest())
         {
+          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.LIST);
           return listResources(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri);
         }
         else
         {
+          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.CREATE);
           return createResource(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri);
         }
       case GET:
         if (uriInfos.isSearchRequest() && !uriInfos.getResourceType().getFeatures().isSingletonEndpoint())
         {
+          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.LIST);
           String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);
           return listResources(uriInfos.getResourceEndpoint(),
@@ -115,6 +120,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
         }
         else
         {
+          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.GET);
           return getResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
@@ -124,12 +130,14 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos::getBaseUri);
         }
       case PUT:
+        EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.UPDATE);
         return updateResource(uriInfos.getResourceEndpoint(),
                               uriInfos.getResourceId(),
                               requestBody,
                               uriInfos.getHttpHeaders(),
                               uriInfos::getBaseUri);
       case PATCH:
+        EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.UPDATE);
         return patchResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              requestBody,
@@ -139,6 +147,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri);
       default:
+        EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.DELETE);
         return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId(), uriInfos.getHttpHeaders());
     }
   }

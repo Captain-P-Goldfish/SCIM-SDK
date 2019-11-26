@@ -19,7 +19,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
-import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 

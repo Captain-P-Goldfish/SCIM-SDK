@@ -1,4 +1,6 @@
-package de.captaingoldfish.scim.sdk.server.schemas;
+package de.captaingoldfish.scim.sdk.server.schemas.custom;
+
+import java.util.Optional;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
@@ -16,7 +18,10 @@ public class ResourceTypeFeatures extends ScimObjectNode
 {
 
   @Builder
-  public ResourceTypeFeatures(boolean autoFiltering, boolean autoSorting, boolean singletonEndpoint)
+  public ResourceTypeFeatures(boolean autoFiltering,
+                              boolean autoSorting,
+                              boolean singletonEndpoint,
+                              EndpointControlFeature endpointControlFeature)
   {
     super(null);
     setAutoFiltering(autoFiltering);
@@ -76,5 +81,32 @@ public class ResourceTypeFeatures extends ScimObjectNode
   public void setAutoSorting(Boolean autoSorting)
   {
     setAttribute(AttributeNames.Custom.AUTO_SORTING, autoSorting);
+  }
+
+  /**
+   * @return returns the current values of the endpoint control feature
+   */
+  public EndpointControlFeature getEndpointControlFeature()
+  {
+    Optional<EndpointControlFeature> endpointControl = getObjectAttribute(AttributeNames.Custom.ENDPOINT_CONTROL,
+                                                                          EndpointControlFeature.class);
+    if (endpointControl.isPresent())
+    {
+      return endpointControl.get();
+    }
+    else
+    {
+      EndpointControlFeature endpointControlFeature = EndpointControlFeature.builder().build();
+      setEndpointControlFeature(endpointControlFeature);
+      return endpointControlFeature;
+    }
+  }
+
+  /**
+   * replaces the whole endpoint control feature node
+   */
+  public void setEndpointControlFeature(EndpointControlFeature endpointControlFeature)
+  {
+    setAttribute(AttributeNames.Custom.ENDPOINT_CONTROL, endpointControlFeature);
   }
 }

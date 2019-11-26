@@ -16,7 +16,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
@@ -34,6 +36,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResponseException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequestOperation;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
@@ -63,7 +66,9 @@ import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
-import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -1232,6 +1237,87 @@ public class ResourceEndpointTest extends AbstractBulkTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
   }
 
+  /**
+   * this test will verify that the different endpoint can simply be disabled by using the resource type feature
+   */
+  @TestFactory
+  public List<DynamicTest> testDisabledEndpoints()
+  {
+    final String url = BASE_URI + EndpointPaths.RESOURCE_TYPES;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+
+    ResourceType resourceType = resourceEndpoint.getResourceTypeFactory().getResourceType(EndpointPaths.RESOURCE_TYPES);
+    EndpointControlFeature endpointControlFeature = resourceType.getFeatures().getEndpointControlFeature();
+    endpointControlFeature.setGetDisabled(true);
+    endpointControlFeature.setListDisabled(true);
+    endpointControlFeature.setUpdateDisabled(true);
+    // delete is currently omitted because it is forbidden to deactivate all endpoints at once
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check create is disabled", () -> {
+      endpointControlFeature.setCreateDisabled(true);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("create is not supported for resource type '" + resourceType.getName() + "'",
+                              ex.getDetail());
+      endpointControlFeature.setCreateDisabled(false);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
+      endpointControlFeature.setListDisabled(true);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("list is not supported for resource type '" + resourceType.getName() + "'",
+                              ex.getDetail());
+      endpointControlFeature.setListDisabled(false);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check update is disabled", () -> {
+      endpointControlFeature.setUpdateDisabled(true);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PUT, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("update is not supported for resource type '" + resourceType.getName() + "'",
+                              ex.getDetail());
+      endpointControlFeature.setUpdateDisabled(false);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check patch is disabled", () -> {
+      endpointControlFeature.setUpdateDisabled(true);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PATCH, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("update is not supported for resource type '" + resourceType.getName() + "'",
+                              ex.getDetail());
+      endpointControlFeature.setUpdateDisabled(false);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check delete is disabled", () -> {
+      endpointControlFeature.setDeleteDisabled(true);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.DELETE, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("delete is not supported for resource type '" + resourceType.getName() + "'",
+                              ex.getDetail());
+      endpointControlFeature.setDeleteDisabled(false);
+    }));
+    /* ************************************************************************************************************/
+    return dynamicTests;
+  }
 
   /**
    * builds a fully configured service provider configuration
