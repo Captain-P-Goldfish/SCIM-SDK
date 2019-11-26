@@ -22,3 +22,10 @@ add the file with the name `scim-sdk-jboss-example-${project.version}.war` into 
 
 All operation types _[list, get, create, update, delete, patch, bulk, filtering, sorting]_ are available so test this
  sample to your hearts will. 
+
+---
+**tested with:**
+
+wildfly 18.0.1
+
+---
