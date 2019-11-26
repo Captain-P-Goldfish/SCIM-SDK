@@ -33,7 +33,6 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -368,10 +367,20 @@ public class ResourceType extends ResourceNode
   }
 
   /**
-   * a resource type extension for enabling application based filtering. This switch will disable developer
-   * control for filtering since the {@link FilterNode} given into the {@link ResourceHandler} implementation
-   * will be null if the switch is enabled
+   * @return true if this resource type was disabled, false else
    */
+  public boolean isDisabled()
+  {
+    return getFeatures().isResourceTypeDisabled();
+  }
+
+  /**
+   * disables or enables this resourcetype
+   */
+  public void setDisabled(Boolean disabled)
+  {
+    getFeatures().setResourceTypeDisabled(disabled);
+  }
 
   /**
    * a schema extension representation

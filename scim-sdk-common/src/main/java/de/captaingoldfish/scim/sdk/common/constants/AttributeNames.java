@@ -35,6 +35,11 @@ public final class AttributeNames
     public static final String AUTO_SORTING = "autoSorting";
 
     /**
+     * this attribute tells us if a resource type was disabled
+     */
+    public static final String RESOURCE_TYPE_DISABLED = "disabled";
+
+    /**
      * an extension attribute for resource type control that allows to disable certain endpoints for a resource
      * type
      */

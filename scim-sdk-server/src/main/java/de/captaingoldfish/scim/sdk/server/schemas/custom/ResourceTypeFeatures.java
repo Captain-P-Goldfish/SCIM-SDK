@@ -84,6 +84,23 @@ public class ResourceTypeFeatures extends ScimObjectNode
   }
 
   /**
+   * if the current resource type is disabled
+   */
+  public boolean isResourceTypeDisabled()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.RESOURCE_TYPE_DISABLED).orElse(false)
+           || getEndpointControlFeature().isResourceTypeDisabled();
+  }
+
+  /**
+   * disables or enables the current resource type
+   */
+  public void setResourceTypeDisabled(Boolean disabled)
+  {
+    setAttribute(AttributeNames.Custom.RESOURCE_TYPE_DISABLED, disabled);
+  }
+
+  /**
    * @return returns the current values of the endpoint control feature
    */
   public EndpointControlFeature getEndpointControlFeature()

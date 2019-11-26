@@ -1,9 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.schemas.custom;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
-import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
-import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import lombok.Builder;
 
 
@@ -44,7 +42,6 @@ public class EndpointControlFeature extends ScimObjectNode
   public void setCreateDisabled(Boolean createDisabled)
   {
     setAttribute(AttributeNames.Custom.DISABLE_CREATE, createDisabled);
-    validateNotAllEndpointsAreDisabled(EndpointType.CREATE);
   }
 
   /**
@@ -61,7 +58,6 @@ public class EndpointControlFeature extends ScimObjectNode
   public void setGetDisabled(Boolean getDisabled)
   {
     setAttribute(AttributeNames.Custom.DISABLE_GET, getDisabled);
-    validateNotAllEndpointsAreDisabled(EndpointType.GET);
   }
 
   /**
@@ -78,7 +74,6 @@ public class EndpointControlFeature extends ScimObjectNode
   public void setListDisabled(Boolean listDisabled)
   {
     setAttribute(AttributeNames.Custom.DISABLE_LIST, listDisabled);
-    validateNotAllEndpointsAreDisabled(EndpointType.LIST);
   }
 
   /**
@@ -95,7 +90,6 @@ public class EndpointControlFeature extends ScimObjectNode
   public void setUpdateDisabled(Boolean disableUpdate)
   {
     setAttribute(AttributeNames.Custom.DISABLE_UPDATE, disableUpdate);
-    validateNotAllEndpointsAreDisabled(EndpointType.UPDATE);
   }
 
   /**
@@ -112,36 +106,17 @@ public class EndpointControlFeature extends ScimObjectNode
   public void setDeleteDisabled(Boolean disableDelete)
   {
     setAttribute(AttributeNames.Custom.DISABLE_DELETE, disableDelete);
-    validateNotAllEndpointsAreDisabled(EndpointType.DELETE);
   }
 
   /**
-   * this method will assert that not all endpoints are disabled
+   * check if all methods are disabled
    */
-  private void validateNotAllEndpointsAreDisabled(EndpointType endpointType)
+  public boolean isResourceTypeDisabled()
   {
     if (isCreateDisabled() && isGetDisabled() && isListDisabled() && isUpdateDisabled() && isDeleteDisabled())
     {
-      switch (endpointType)
-      {
-        case CREATE:
-          setCreateDisabled(false);
-          break;
-        case GET:
-          setGetDisabled(false);
-          break;
-        case LIST:
-          setListDisabled(false);
-          break;
-        case UPDATE:
-          setUpdateDisabled(false);
-          break;
-        case DELETE:
-          setDeleteDisabled(false);
-          break;
-      }
-      throw new InternalServerException("do not disable all endpoints. Disable the resource type itself instead", null,
-                                        null);
+      return true;
     }
+    return false;
   }
 }

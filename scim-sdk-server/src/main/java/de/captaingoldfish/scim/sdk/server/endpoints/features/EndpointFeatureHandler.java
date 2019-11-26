@@ -23,6 +23,10 @@ public class EndpointFeatureHandler
    */
   public static void isEndpointEnabled(ResourceType resourceType, EndpointType endpointType)
   {
+    if (resourceType.isDisabled())
+    {
+      throw new NotImplementedException("the resource type '" + resourceType.getName() + "' is disabled");
+    }
     EndpointControlFeature endpointControlFeature = resourceType.getFeatures().getEndpointControlFeature();
     switch (endpointType)
     {
