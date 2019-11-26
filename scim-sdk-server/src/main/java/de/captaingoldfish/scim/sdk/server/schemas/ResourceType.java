@@ -478,12 +478,12 @@ public class ResourceType extends ResourceNode
                                 .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(getSchema())));
       extensions = new ArrayList<>();
       schemas.remove(getSchema());
+      validateDocumentForMissingExtensionUris(schemas, resourceDocument);
       for ( String schemaUri : schemas )
       {
         extensions.add(Optional.ofNullable(schemaFactory.getResourceSchema(schemaUri))
                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schemaUri))));
       }
-      validateDocumentForMissingExtensionUris(schemas, resourceDocument);
     }
 
     /**

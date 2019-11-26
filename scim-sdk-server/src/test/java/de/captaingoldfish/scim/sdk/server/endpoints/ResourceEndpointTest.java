@@ -186,6 +186,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(user.getUserName().get(), createdUser.getUserName().get());
     MatcherAssert.assertThat(new ArrayList<>(createdUser.getSchemas()),
                              Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI));
+    Assertions.assertTrue(createdUser.getEnterpriseUser().isPresent());
   }
 
   /**
