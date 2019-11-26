@@ -1384,12 +1384,81 @@ public class ResourceEndpointTest extends AbstractBulkTest
   @TestFactory
   public List<DynamicTest> testResourceTypeFeatureIsDisabled()
   {
-    final String url = BASE_URI + EndpointPaths.RESOURCE_TYPES;
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG;
     serviceProvider = getServiceProvider();
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
 
-    ResourceType resourceType = resourceEndpoint.getResourceTypeFactory().getResourceType(EndpointPaths.RESOURCE_TYPES);
+    ResourceType resourceType = resourceEndpoint.getResourceTypeFactory()
+                                                .getResourceType(EndpointPaths.SERVICE_PROVIDER_CONFIG);
     resourceType.getFeatures().setResourceTypeDisabled(true);
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check create is disabled", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("the resource type '" + resourceType.getName() + "' is disabled", ex.getDetail());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("the resource type '" + resourceType.getName() + "' is disabled", ex.getDetail());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check update is disabled", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PUT, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("the resource type '" + resourceType.getName() + "' is disabled", ex.getDetail());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check patch is disabled", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PATCH, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("the resource type '" + resourceType.getName() + "' is disabled", ex.getDetail());
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check delete is disabled", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.DELETE, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("the resource type '" + resourceType.getName() + "' is disabled", ex.getDetail());
+    }));
+    /* ************************************************************************************************************/
+    return dynamicTests;
+  }
+
+  /**
+   * will verify that all methods are inaccessible if all single methods have been disabled
+   */
+  @TestFactory
+  public List<DynamicTest> testResourceTypeAllSingleEndpointAreDisabled()
+  {
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+
+    ResourceType resourceType = resourceEndpoint.getResourceTypeFactory()
+                                                .getResourceType(EndpointPaths.SERVICE_PROVIDER_CONFIG);
+    resourceType.getFeatures().getEndpointControlFeature().setCreateDisabled(true);
+    resourceType.getFeatures().getEndpointControlFeature().setGetDisabled(true);
+    resourceType.getFeatures().getEndpointControlFeature().setListDisabled(true);
+    resourceType.getFeatures().getEndpointControlFeature().setUpdateDisabled(true);
+    resourceType.getFeatures().getEndpointControlFeature().setDeleteDisabled(true);
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
     /* ************************************************************************************************************/
