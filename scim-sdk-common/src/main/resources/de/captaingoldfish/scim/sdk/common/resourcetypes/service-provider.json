@@ -11,7 +11,13 @@
   "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures": {
     "singletonEndpoint": true,
     "autoFiltering": false,
-    "autoSorting": false
+    "autoSorting": false,
+    "endpointControl": {
+      "disableCreate": true,
+      "disableList": true,
+      "disableUpdate": true,
+      "disableDelete": true
+    }
   },
   "meta": {
     "resourceType": "ResourceType",

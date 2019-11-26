@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.schemas.custom;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -11,6 +12,7 @@ import lombok.Builder;
  * <br>
  * this feature extension will allow to disable specific endpoint for specific resource types
  */
+@NoArgsConstructor
 public class EndpointControlFeature extends ScimObjectNode
 {
 
@@ -21,6 +23,7 @@ public class EndpointControlFeature extends ScimObjectNode
                                 Boolean updateDisabled,
                                 Boolean deleteDisabled)
   {
+    this();
     setCreateDisabled(createDisabled);
     setGetDisabled(getDisabled);
     setListDisabled(listDisabled);
