@@ -116,12 +116,12 @@ public class BulkEndpointTest extends AbstractBulkTest
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(maxOperations, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any(), Mockito.isNull());
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -137,12 +137,12 @@ public class BulkEndpointTest extends AbstractBulkTest
     operations.addAll(getUpdateUserBulkOperations(userHandler.getInMemoryMap().values()));
     operations.addAll(getDeleteUserBulkOperations(userHandler.getInMemoryMap().values()));
     bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
-    scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any(), Mockito.isNull());
 
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     for ( BulkResponseOperation bulkResponseOperation : responseOperations.subList(0, maxOperations - 1) )
@@ -181,7 +181,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     try
     {
-      bulkEndpoint.bulk(BASE_URI, createOperations.toString());
+      bulkEndpoint.bulk(BASE_URI, createOperations.toString(), null);
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
@@ -203,7 +203,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     createOperations.get(createOperations.size() - 1).setBulkId(null);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
 
@@ -264,7 +264,7 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     operations.forEach(operation -> operation.setBulkId(null));
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -283,13 +283,13 @@ public class BulkEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
     Mockito.doThrow(new BadRequestException("something bad", null, null))
            .when(userHandler)
-           .createResource(Mockito.any());
+           .createResource(Mockito.any(), Mockito.isNull());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder()
                                          .failOnErrors(failOnErrors)
                                          .bulkRequestOperation(createOperations)
                                          .build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(failOnErrors, bulkResponse.getBulkResponseOperations().size());
@@ -319,7 +319,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     try
     {
-      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
       Assertions.fail("this point must not be reached");
     }
     catch (NotImplementedException ex)
@@ -341,7 +341,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     try
     {
-      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
@@ -368,7 +368,7 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     try
     {
-      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
@@ -392,7 +392,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     BulkRequest bulkRequest = BulkRequest.builder().build();
     try
     {
-      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+      bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
@@ -414,10 +414,10 @@ public class BulkEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
     Mockito.doThrow(new BadRequestException("something bad", null, null))
            .when(userHandler)
-           .createResource(Mockito.any());
+           .createResource(Mockito.any(), Mockito.isNull());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
@@ -435,7 +435,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
@@ -473,7 +473,7 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     log.debug(bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     log.warn(bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
@@ -508,7 +508,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                                                 .build();
     createOperations.add(requestOperation);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponse.getBulkResponseOperations().get(0).getStatus());
@@ -556,7 +556,7 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     log.debug(bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     log.warn(bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
@@ -596,7 +596,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                                                 .build();
     requestOperationList.add(0, requestOperation);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(requestOperationList).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     log.debug(bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseList = bulkResponse.getBulkResponseOperations();
@@ -644,7 +644,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     createOperations.add(requestOperation2);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     log.warn(bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());
     ErrorResponse firstResponse = bulkResponse.getBulkResponseOperations().get(0).getResponse().get();
@@ -696,7 +696,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     log.debug(bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -748,7 +748,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -787,7 +787,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -826,7 +826,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -869,7 +869,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -934,7 +934,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     log.trace(bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1011,7 +1011,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1069,7 +1069,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperations.size());
@@ -1133,7 +1133,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     log.debug("{}", bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1206,7 +1206,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     log.debug("{}", bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1270,7 +1270,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(patchOpRequest.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperations.size());
@@ -1308,7 +1308,7 @@ public class BulkEndpointTest extends AbstractBulkTest
                                                          .version(ETag.builder().tag("unknown").build())
                                                          .build();
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(Collections.singletonList(operation)).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString());
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     List<BulkResponseOperation> responses = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responses.size());
     BulkResponseOperation responseOperation = responses.get(0);

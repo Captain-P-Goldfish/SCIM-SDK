@@ -40,6 +40,7 @@ import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ResourceTypeEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.SchemaEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ServiceProviderEndpointDefinition;
@@ -126,9 +127,13 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization
    * @return the scim response for the client
    */
-  protected ScimResponse createResource(String endpoint, String resourceDocument, Supplier<String> baseUrlSupplier)
+  protected ScimResponse createResource(String endpoint,
+                                        String resourceDocument,
+                                        Supplier<String> baseUrlSupplier,
+                                        Authorization authorization)
   {
     try
     {
@@ -151,7 +156,7 @@ class ResourceEndpointHandler
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
       Meta meta = Meta.builder().resourceType(resourceType.getName()).build();
       resourceNode.setMeta(meta);
-      resourceNode = resourceHandler.createResource(resourceNode);
+      resourceNode = resourceHandler.createResource(resourceNode, authorization);
       if (resourceNode == null)
       {
         throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
@@ -196,7 +201,7 @@ class ResourceEndpointHandler
    */
   protected ScimResponse getResource(String endpoint, String id)
   {
-    return getResource(endpoint, id, null, null, Collections.emptyMap(), null);
+    return getResource(endpoint, id, null, null, Collections.emptyMap(), null, null);
   }
 
   /**
@@ -220,7 +225,7 @@ class ResourceEndpointHandler
                                      Map<String, String> httpHeaders,
                                      Supplier<String> baseUrlSupplier)
   {
-    return getResource(endpoint, id, null, null, httpHeaders, baseUrlSupplier);
+    return getResource(endpoint, id, null, null, httpHeaders, baseUrlSupplier, null);
   }
 
   /**
@@ -247,6 +252,7 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization
    * @return the scim response for the client
    */
   protected ScimResponse getResource(String endpoint,
@@ -254,14 +260,15 @@ class ResourceEndpointHandler
                                      String attributes,
                                      String excludedAttributes,
                                      Map<String, String> httpHeaders,
-                                     Supplier<String> baseUrlSupplier)
+                                     Supplier<String> baseUrlSupplier,
+                                     Authorization authorization)
   {
     try
     {
       RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = resourceHandler.getResource(id);
+      ResourceNode resourceNode = resourceHandler.getResource(id, authorization);
       ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
       if (resourceNode == null)
       {
@@ -313,11 +320,20 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
-  protected ScimResponse listResources(String endpoint, String searchRequest, Supplier<String> baseUrlSupplier)
+  protected ScimResponse listResources(String endpoint,
+                                       String searchRequest,
+                                       Supplier<String> baseUrlSupplier,
+                                       Authorization authorization)
   {
-    return listResources(endpoint, JsonHelper.readJsonDocument(searchRequest, SearchRequest.class), baseUrlSupplier);
+    return listResources(endpoint,
+                         StringUtils.isBlank(searchRequest) ? SearchRequest.builder().build()
+                           : JsonHelper.readJsonDocument(searchRequest, SearchRequest.class),
+                         baseUrlSupplier,
+                         authorization);
   }
 
   /**
@@ -334,9 +350,14 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
-  protected ScimResponse listResources(String endpoint, SearchRequest searchRequest, Supplier<String> baseUrlSupplier)
+  protected ScimResponse listResources(String endpoint,
+                                       SearchRequest searchRequest,
+                                       Supplier<String> baseUrlSupplier,
+                                       Authorization authorization)
   {
     return listResources(endpoint,
                          searchRequest.getStartIndex().orElse(null),
@@ -346,7 +367,8 @@ class ResourceEndpointHandler
                          searchRequest.getSortOrder().orElse(null),
                          searchRequest.getAttributes().orElse(null),
                          searchRequest.getExcludedAttributes().orElse(null),
-                         baseUrlSupplier);
+                         baseUrlSupplier,
+                         authorization);
   }
 
   /**
@@ -402,6 +424,7 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
   protected <T extends ResourceNode> ScimResponse listResources(String endpoint,
@@ -412,7 +435,8 @@ class ResourceEndpointHandler
                                                                 String sortOrder,
                                                                 String attributes,
                                                                 String excludedAttributes,
-                                                                Supplier<String> baseUrlSupplier)
+                                                                Supplier<String> baseUrlSupplier,
+                                                                Authorization authorization)
   {
     try
     {
@@ -434,7 +458,8 @@ class ResourceEndpointHandler
                                                                        RequestUtils.getAttributes(resourceType,
                                                                                                   attributes),
                                                                        RequestUtils.getAttributes(resourceType,
-                                                                                                  excludedAttributes));
+                                                                                                  excludedAttributes),
+                                                                       authorization);
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"
@@ -636,13 +661,15 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization
    * @return the scim response for the client
    */
   protected ScimResponse updateResource(String endpoint,
                                         String id,
                                         String resourceDocument,
                                         Map<String, String> httpHeaders,
-                                        Supplier<String> baseUrlSupplier)
+                                        Supplier<String> baseUrlSupplier,
+                                        Authorization authorization)
   {
     try
     {
@@ -662,7 +689,7 @@ class ResourceEndpointHandler
       }
       resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.PUT);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id), httpHeaders);
+      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
       if (resource == null)
       {
         throw new BadRequestException("the request body does not contain any writable parameters", null,
@@ -684,7 +711,7 @@ class ResourceEndpointHandler
       }
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
-      resourceNode = resourceHandler.updateResource(resourceNode);
+      resourceNode = resourceHandler.updateResource(resourceNode, authorization);
       ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       if (resourceNode == null)
       {
@@ -726,16 +753,20 @@ class ResourceEndpointHandler
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
+   * @param authorization
    * @return an empty response that does not create a response body
    */
-  protected ScimResponse deleteResource(String endpoint, String id, Map<String, String> httpHeaders)
+  protected ScimResponse deleteResource(String endpoint,
+                                        String id,
+                                        Map<String, String> httpHeaders,
+                                        Authorization authorization)
   {
     try
     {
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id), httpHeaders);
-      resourceHandler.deleteResource(id);
+      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+      resourceHandler.deleteResource(id, authorization);
       return new DeleteResponse();
     }
     catch (ScimException ex)
@@ -751,7 +782,7 @@ class ResourceEndpointHandler
   /**
    * gets the resource that should be patched and will inject the patch operations into the returned resource.
    * After the patch operation has been processed the patched object will be given to the
-   * {@link ResourceHandler#updateResource(ResourceNode)} method
+   * {@link ResourceHandler#updateResource(ResourceNode, Authorization)} method
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that should be patched
@@ -771,13 +802,13 @@ class ResourceEndpointHandler
                                        Map<String, String> httpHeaders,
                                        Supplier<String> baseUrlSupplier)
   {
-    return patchResource(endpoint, id, requestBody, null, null, httpHeaders, baseUrlSupplier);
+    return patchResource(endpoint, id, requestBody, null, null, httpHeaders, baseUrlSupplier, null);
   }
 
   /**
    * gets the resource that should be patched and will inject the patch operations into the returned resource.
    * After the patch operation has been processed the patched object will be given to the
-   * {@link ResourceHandler#updateResource(ResourceNode)} method
+   * {@link ResourceHandler#updateResource(ResourceNode, Authorization)} method
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that should be patched
@@ -799,6 +830,7 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
+   * @param authorization
    * @return the updated resource or an error response
    */
   protected ScimResponse patchResource(String endpoint,
@@ -807,7 +839,8 @@ class ResourceEndpointHandler
                                        String attributes,
                                        String excludedAttributes,
                                        Map<String, String> httpHeaders,
-                                       Supplier<String> baseUrlSupplier)
+                                       Supplier<String> baseUrlSupplier,
+                                       Authorization authorization)
   {
     try
     {
@@ -820,7 +853,7 @@ class ResourceEndpointHandler
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
       patchDocument = SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchDocument);
-      ResourceNode resourceNode = resourceHandler.getResource(id);
+      ResourceNode resourceNode = resourceHandler.getResource(id, authorization);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -864,7 +897,7 @@ class ResourceEndpointHandler
       {
         // a security call In case that someone finds a way to manipulate the id within a patch operation
         patchedResourceNode.setId(id);
-        patchedResourceNode = resourceHandler.updateResource(patchedResourceNode);
+        patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, authorization);
       }
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,

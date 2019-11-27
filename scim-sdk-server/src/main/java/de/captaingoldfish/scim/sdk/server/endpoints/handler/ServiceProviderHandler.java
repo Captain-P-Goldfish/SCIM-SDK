@@ -8,6 +8,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.AllArgsConstructor;
@@ -41,7 +42,7 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * creating of service provider configurations not supported
    */
   @Override
-  public ServiceProvider createResource(ServiceProvider resource)
+  public ServiceProvider createResource(ServiceProvider resource, Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("create"));
   }
@@ -50,10 +51,11 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * gets the one and only service provider configuration for this endpoint definition
    *
    * @param id the id is obsolete here should be null
+   * @param authorization
    * @return the one and only service provider configuration
    */
   @Override
-  public ServiceProvider getResource(String id)
+  public ServiceProvider getResource(String id, Authorization authorization)
   {
     return serviceProvider;
   }
@@ -68,7 +70,8 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
                                            SchemaAttribute sortBy,
                                            SortOrder sortOrder,
                                            List<SchemaAttribute> attributes,
-                                           List<SchemaAttribute> excludedAttributes)
+                                           List<SchemaAttribute> excludedAttributes,
+                                           Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("list"));
   }
@@ -77,7 +80,7 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * updating of service provider configurations not supported
    */
   @Override
-  public ServiceProvider updateResource(ServiceProvider resourceToUpdate)
+  public ServiceProvider updateResource(ServiceProvider resourceToUpdate, Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("update"));
   }
@@ -86,7 +89,7 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * deleting of service provider configurations not supported
    */
   @Override
-  public void deleteResource(String id)
+  public void deleteResource(String id, Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("delete"));
   }

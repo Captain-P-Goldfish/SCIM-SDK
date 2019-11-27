@@ -69,6 +69,41 @@ public final class AttributeNames
      * this attribute will disable the delete endpoint
      */
     public static final String DISABLE_DELETE = "disableDelete";
+
+    /**
+     * the attribute that contains the authorization rules for a resource type
+     */
+    public static final String AUTHORIZATION = "authorization";
+
+    /**
+     * this attribute defines the role-array for resource types
+     */
+    public static final String ROLES = "roles";
+
+    /**
+     * this attribute defines the role-array for the create endpoint of a specific resource type
+     */
+    public static final String ROLES_CREATE = "rolesCreate";
+
+    /**
+     * this attribute defines the role-array for the get endpoint of a specific resource type
+     */
+    public static final String ROLES_GET = "rolesGet";
+
+    /**
+     * this attribute defines the role-array for the list endpoint of a specific resource type
+     */
+    public static final String ROLES_LIST = "rolesList";
+
+    /**
+     * this attribute defines the role-array for the update endpoint of a specific resource type
+     */
+    public static final String ROLES_UPDATE = "rolesUpdate";
+
+    /**
+     * this attribute defines the role-array for the delete endpoint of a specific resource type
+     */
+    public static final String ROLES_DELETE = "rolesDelete";
   }
 
   /**

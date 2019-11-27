@@ -6,8 +6,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -64,11 +66,15 @@ import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -78,7 +84,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class ResourceEndpointTest extends AbstractBulkTest
+public class ResourceEndpointTest extends AbstractBulkTest implements FileReferences
 {
 
   /**
@@ -135,10 +141,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.CREATED, createResponse.getHttpStatus());
     User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
     Assertions.assertEquals(user.getUserName().get(), createdUser.getUserName().get());
-    Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(0))
            .listResources(Mockito.anyLong(),
                           Mockito.anyInt(),
@@ -146,7 +152,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.any(),
-                          Mockito.any());
+                          Mockito.any(),
+                          Mockito.isNull());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + createdUser.getId().get(),
                             createdUser.getMeta().get().getLocation().get());
   }
@@ -174,7 +181,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     final String url = BASE_URI + EndpointPaths.USERS;
 
     user.removeSchema(SchemaUris.ENTERPRISE_USER_URI);
-    Mockito.doReturn(user).when(userHandler).createResource(Mockito.any());
+    Mockito.doReturn(user).when(userHandler).createResource(Mockito.any(), Mockito.isNull());
 
     MatcherAssert.assertThat(new ArrayList<>(user.getSchemas()),
                              Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
@@ -212,10 +219,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
     User returnedUser = JsonHelper.copyResourceToObject(getResponse, User.class);
     Assertions.assertEquals(user.getUserName().get(), returnedUser.getUserName().get());
-    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(0))
            .listResources(Mockito.anyLong(),
                           Mockito.anyInt(),
@@ -223,7 +230,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.any(),
-                          Mockito.any());
+                          Mockito.any(),
+                          Mockito.isNull());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
                             returnedUser.getMeta().get().getLocation().get());
   }
@@ -257,10 +265,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     User returnedUser = JsonHelper.copyResourceToObject(updateResponse, User.class);
     Assertions.assertNotEquals(user.getUserName().get(), returnedUser.getUserName().get());
     Assertions.assertEquals(changedUser.getUserName().get(), returnedUser.getUserName().get());
-    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(0))
            .listResources(Mockito.anyLong(),
                           Mockito.anyInt(),
@@ -268,7 +276,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.any(),
-                          Mockito.any());
+                          Mockito.any(),
+                          Mockito.isNull());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
                             returnedUser.getMeta().get().getLocation().get());
   }
@@ -297,10 +306,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
     Assertions.assertTrue(deleteResponse.isEmpty());
     Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(0))
            .listResources(Mockito.anyLong(),
                           Mockito.anyInt(),
@@ -308,7 +317,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.any(),
-                          Mockito.any());
+                          Mockito.any(),
+                          Mockito.isNull());
   }
 
   /**
@@ -352,10 +362,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
     Assertions.assertEquals(counter, listResponse.getTotalResults());
     Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(1))
            .listResources(Mockito.eq(1L),
                           Mockito.eq(maxUsers),
@@ -363,7 +373,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.any(),
-                          Mockito.any());
+                          Mockito.any(),
+                          Mockito.isNull());
     log.warn(listResponse.getListedResources()
                          .stream()
                          .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
@@ -417,10 +428,10 @@ public class ResourceEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
     Assertions.assertEquals(counter, listResponse.getTotalResults());
     Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(1))
            .listResources(Mockito.eq(1L),
                           Mockito.eq(maxUsers),
@@ -428,7 +439,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.any(),
-                          Mockito.any());
+                          Mockito.any(),
+                          Mockito.isNull());
     log.warn(listResponse.getListedResources()
                          .stream()
                          .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
@@ -461,7 +473,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any(), Mockito.isNull());
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -481,8 +493,8 @@ public class ResourceEndpointTest extends AbstractBulkTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any(), Mockito.isNull());
 
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     for ( BulkResponseOperation bulkResponseOperation : responseOperations.subList(0, maxOperations - 1) )
@@ -632,7 +644,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
     Mockito.doThrow(new BadRequestException("something bad", null, null))
            .when(userHandler)
-           .createResource(Mockito.any());
+           .createResource(Mockito.any(), Mockito.isNull());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder()
                                          .failOnErrors(failOnErrors)
@@ -771,7 +783,7 @@ public class ResourceEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
     Mockito.doThrow(new BadRequestException("something bad", null, null))
            .when(userHandler)
-           .createResource(Mockito.any());
+           .createResource(Mockito.any(), Mockito.isNull());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
@@ -1266,6 +1278,18 @@ public class ResourceEndpointTest extends AbstractBulkTest
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
+      endpointControlFeature.setGetDisabled(true);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.GET, null, httpHeaders);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      ScimException ex = errorResponse.getScimException();
+      Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, ex.getStatus());
+      Assertions.assertEquals("get is not supported for resource type '" + resourceType.getName() + "'",
+                              ex.getDetail());
+      endpointControlFeature.setGetDisabled(false);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
       endpointControlFeature.setListDisabled(true);
       ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
@@ -1532,5 +1556,439 @@ public class ResourceEndpointTest extends AbstractBulkTest
                           .authenticationSchemes(Collections.singletonList(authScheme))
                           .eTagConfig(ETagConfig.builder().supported(true).build())
                           .build();
+  }
+
+  /**
+   * this test will verify that a client cannot accessed protected endpoints without the proper roles
+   */
+  @TestFactory
+  public List<DynamicTest> testUnauthorized()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    EndpointDefinition endpointDefinition = new UserEndpointDefinition(new UserHandlerImpl());
+    endpointDefinition.setResourceType(JsonHelper.loadJsonDocument(USER_AUTHORIZED_RESOURCE_TYPE));
+    endpointDefinition.setResourceSchemaExtensions(Collections.emptyList());
+    ResourceType resourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+    final ClientAuthorization clientAuthorization = new ClientAuthorization("goldfish", "user");
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("create unauthorized",
+                                         url,
+                                         resourceType,
+                                         HttpMethod.POST,
+                                         null,
+                                         EndpointType.CREATE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("create with roles unauthorized",
+                                         url,
+                                         resourceType,
+                                         HttpMethod.POST,
+                                         clientAuthorization,
+                                         EndpointType.CREATE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("get unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.GET,
+                                         null,
+                                         EndpointType.GET));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("get with roles unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.GET,
+                                         clientAuthorization,
+                                         EndpointType.GET));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("list unauthorized",
+                                         url,
+                                         resourceType,
+                                         HttpMethod.GET,
+                                         null,
+                                         EndpointType.LIST));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("list with roles unauthorized",
+                                         url,
+                                         resourceType,
+                                         HttpMethod.GET,
+                                         clientAuthorization,
+                                         EndpointType.LIST));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("list-post unauthorized",
+                                         url + "/.search",
+                                         resourceType,
+                                         HttpMethod.POST,
+                                         null,
+                                         EndpointType.LIST));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("list-post with roles unauthorized",
+                                         url + "/.search",
+                                         resourceType,
+                                         HttpMethod.POST,
+                                         clientAuthorization,
+                                         EndpointType.LIST));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("update unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.PUT,
+                                         null,
+                                         EndpointType.UPDATE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("update with roles unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.PUT,
+                                         clientAuthorization,
+                                         EndpointType.UPDATE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("patch unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.PATCH,
+                                         null,
+                                         EndpointType.UPDATE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("patch with roles unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.PATCH,
+                                         clientAuthorization,
+                                         EndpointType.UPDATE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("delete unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.DELETE,
+                                         null,
+                                         EndpointType.DELETE));
+    /* ************************************************************************************************************/
+    dynamicTests.add(getUnauthorizedTest("delete with roles unauthorized",
+                                         url + "/123456",
+                                         resourceType,
+                                         HttpMethod.DELETE,
+                                         clientAuthorization,
+                                         EndpointType.DELETE));
+    /* ************************************************************************************************************/
+    return dynamicTests;
+  }
+
+  /**
+   * this test will verify that a client can access protected endpoints if the proper roles are granted
+   */
+  @TestFactory
+  public List<DynamicTest> testAuthorized()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    EndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    endpointDefinition.setResourceType(JsonHelper.loadJsonDocument(USER_AUTHORIZED_RESOURCE_TYPE));
+    endpointDefinition.setResourceSchemaExtensions(Collections.emptyList());
+    resourceEndpoint.registerEndpoint(endpointDefinition);
+    final ClientAuthorization clientAuthorization = new ClientAuthorization("goldfish", "create", "get", "update",
+                                                                            "delete");
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("test").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("create authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 User.builder().userName("test").build().toString(),
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("list authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .listResources(Mockito.anyLong(),
+                            Mockito.anyInt(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("list-post authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/.search",
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .listResources(Mockito.anyLong(),
+                            Mockito.anyInt(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.PUT,
+                                                                 User.builder()
+                                                                     .userName("test")
+                                                                     .nickName("test")
+                                                                     .build()
+                                                                     .toString(),
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch authorized", () -> {
+      PatchRequestOperation operation = PatchRequestOperation.builder().path("nickname").op(PatchOp.REMOVE).build();
+      List<PatchRequestOperation> operations = Arrays.asList(operation);
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.PATCH,
+                                                                 patchOpRequest.toString(),
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any(), Mockito.eq(clientAuthorization));
+    }));
+    /* ************************************************************************************************************/
+    return dynamicTests;
+  }
+
+  /**
+   * this test will verify that a client can access protected endpoints if the proper roles are granted and the
+   * necessary roles are on the "roles" attribute in the resource type
+   */
+  @TestFactory
+  public List<DynamicTest> testAuthorizedWithAuthorizationOnResourceTypeLevel()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    EndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType resourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+    final String requiredRole = "admin";
+    resourceType.getFeatures().getAuthorization().setRoles(requiredRole);
+    ResourceTypeAuthorization resourceTypeAuthorization = resourceType.getFeatures().getAuthorization();
+    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesCreate().iterator().next());
+    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesGet().iterator().next());
+    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesUpdate().iterator().next());
+    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesDelete().iterator().next());
+    final ClientAuthorization clientAuthorization = new ClientAuthorization("goldfish", requiredRole);
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("test").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("create authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 User.builder().userName("test").build().toString(),
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("list authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .listResources(Mockito.anyLong(),
+                            Mockito.anyInt(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("list-post authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/.search",
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .listResources(Mockito.anyLong(),
+                            Mockito.anyInt(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.PUT,
+                                                                 User.builder()
+                                                                     .userName("test")
+                                                                     .nickName("test")
+                                                                     .build()
+                                                                     .toString(),
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch authorized", () -> {
+      PatchRequestOperation operation = PatchRequestOperation.builder().path("nickname").op(PatchOp.REMOVE).build();
+      List<PatchRequestOperation> operations = Arrays.asList(operation);
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.PATCH,
+                                                                 patchOpRequest.toString(),
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(clientAuthorization));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete authorized", () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any(), Mockito.eq(clientAuthorization));
+    }));
+    /* ************************************************************************************************************/
+    return dynamicTests;
+  }
+
+  /**
+   * tests if a resource type endpoint protected with authorization roles is inaccessible if the necessary roles
+   * are not present
+   */
+  private DynamicTest getUnauthorizedTest(String testName,
+                                          String url,
+                                          ResourceType resourceType,
+                                          HttpMethod method,
+                                          ClientAuthorization clientAuthorization,
+                                          EndpointType endpointType)
+  {
+    return DynamicTest.dynamicTest(testName, () -> {
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, method, null, httpHeaders, clientAuthorization);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+      ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+      Assertions.assertEquals(HttpStatus.FORBIDDEN, errorResponse.getHttpStatus());
+      Assertions.assertEquals("you are not authorized to access the '" + endpointType + "' endpoint on resource type '"
+                              + resourceType.getName() + "'",
+                              errorResponse.getDetail().get());
+    });
+  }
+
+  /**
+   * a simple class that is used to to represent and test client authorization
+   */
+  public static class ClientAuthorization implements Authorization
+  {
+
+    /**
+     * the client identification
+     */
+    private String clientId;
+
+    /**
+     * the roles the client have been granted
+     */
+    private Set<String> roles;
+
+    public ClientAuthorization(String clientId, String... roles)
+    {
+      this.clientId = clientId;
+      this.roles = new HashSet<>();
+      if (roles != null)
+      {
+        this.roles.addAll(Arrays.asList(roles));
+      }
+    }
+
+    @Override
+    public String getClientId()
+    {
+      return clientId;
+    }
+
+    @Override
+    public Set<String> getClientRoles()
+    {
+      return roles;
+    }
   }
 }

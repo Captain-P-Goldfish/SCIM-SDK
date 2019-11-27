@@ -47,7 +47,7 @@ public class ETagHandler
   {
     if (!serviceProvider.getETagConfig().isSupported())
     {
-      log.debug("not handling eTags for service provider support for eTags is set to false");
+      log.trace("not handling eTags for service provider support for eTags is set to false");
       return Optional.empty();
     }
     Optional<ETag> version = resourceNode.getMeta().flatMap(Meta::getVersion);

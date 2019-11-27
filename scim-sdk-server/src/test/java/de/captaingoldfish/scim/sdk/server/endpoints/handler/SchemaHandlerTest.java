@@ -78,7 +78,7 @@ public class SchemaHandlerTest
                           SchemaUris.USER_URI, SchemaUris.ENTERPRISE_USER_URI, SchemaUris.GROUP_URI})
   public void testGetResourceTypeByName(String name)
   {
-    Schema schema = schemaHandler.getResource(name);
+    Schema schema = schemaHandler.getResource(name, null);
     Assertions.assertEquals(name, schema.getId().get());
   }
 
@@ -94,6 +94,7 @@ public class SchemaHandlerTest
                                                                            null,
                                                                            null,
                                                                            null,
+                                                                           null,
                                                                            null);
     Assertions.assertEquals(allSchemas.size(), listResponse.getResources().size());
   }
@@ -104,7 +105,8 @@ public class SchemaHandlerTest
   @Test
   public void testGetResourceWithInvalidId()
   {
-    Assertions.assertThrows(ResourceNotFoundException.class, () -> schemaHandler.getResource("nonExistingResource"));
+    Assertions.assertThrows(ResourceNotFoundException.class,
+                            () -> schemaHandler.getResource("nonExistingResource", null));
   }
 
   /**
@@ -115,7 +117,7 @@ public class SchemaHandlerTest
   {
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     Schema schema = new Schema(userResourceTypeNode);
-    Assertions.assertThrows(NotImplementedException.class, () -> schemaHandler.createResource(schema));
+    Assertions.assertThrows(NotImplementedException.class, () -> schemaHandler.createResource(schema, null));
   }
 
   /**
@@ -126,7 +128,7 @@ public class SchemaHandlerTest
   {
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     Schema schema = new Schema(userResourceTypeNode);
-    Assertions.assertThrows(NotImplementedException.class, () -> schemaHandler.updateResource(schema));
+    Assertions.assertThrows(NotImplementedException.class, () -> schemaHandler.updateResource(schema, null));
   }
 
   /**
@@ -135,6 +137,6 @@ public class SchemaHandlerTest
   @Test
   public void testDeleteResource()
   {
-    Assertions.assertThrows(NotImplementedException.class, () -> schemaHandler.deleteResource("blubb"));
+    Assertions.assertThrows(NotImplementedException.class, () -> schemaHandler.deleteResource("blubb", null));
   }
 }

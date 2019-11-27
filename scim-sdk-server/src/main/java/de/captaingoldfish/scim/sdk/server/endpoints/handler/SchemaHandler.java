@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -43,7 +44,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * creating of schemas not supported
    */
   @Override
-  public Schema createResource(Schema resource)
+  public Schema createResource(Schema resource, Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("create"));
   }
@@ -52,7 +53,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * {@inheritDoc}
    */
   @Override
-  public Schema getResource(String id)
+  public Schema getResource(String id, Authorization authorization)
   {
     Schema schema = resourceTypeFactory.getAllResourceTypes()
                                        .stream()
@@ -79,7 +80,8 @@ public class SchemaHandler extends ResourceHandler<Schema>
                                                    SchemaAttribute sortBy,
                                                    SortOrder sortOrder,
                                                    List<SchemaAttribute> attributes,
-                                                   List<SchemaAttribute> excludedAttributes)
+                                                   List<SchemaAttribute> excludedAttributes,
+                                                   Authorization authorization)
   {
     List<Schema> allSchemas = resourceTypeFactory.getAllResourceTypes()
                                                  .stream()
@@ -94,7 +96,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * updating of schemas not supported
    */
   @Override
-  public Schema updateResource(Schema schema)
+  public Schema updateResource(Schema schema, Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("update"));
   }
@@ -103,7 +105,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * deleting of schemas not supported
    */
   @Override
-  public void deleteResource(String id)
+  public void deleteResource(String id, Authorization authorization)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("delete"));
   }

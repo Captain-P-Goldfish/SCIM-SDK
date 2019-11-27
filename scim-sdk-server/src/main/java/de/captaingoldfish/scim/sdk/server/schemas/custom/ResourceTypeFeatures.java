@@ -27,6 +27,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
     setAutoFiltering(autoFiltering);
     setAutoSorting(autoSorting);
     setSingletonEndpoint(singletonEndpoint);
+    setEndpointControlFeature(endpointControlFeature);
   }
 
   /**
@@ -101,7 +102,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
   }
 
   /**
-   * @return returns the current values of the endpoint control feature
+   * @return the current values of the endpoint control feature
    */
   public EndpointControlFeature getEndpointControlFeature()
   {
@@ -126,4 +127,34 @@ public class ResourceTypeFeatures extends ScimObjectNode
   {
     setAttribute(AttributeNames.Custom.ENDPOINT_CONTROL, endpointControlFeature);
   }
+
+
+  /**
+   * a complex attribute that tells us the which roles the client must have to access the given endpoin
+   */
+  public ResourceTypeAuthorization getAuthorization()
+  {
+    Optional<ResourceTypeAuthorization> authorization = getObjectAttribute(AttributeNames.Custom.AUTHORIZATION,
+                                                                           ResourceTypeAuthorization.class);
+    if (authorization.isPresent())
+    {
+      return authorization.get();
+    }
+    else
+    {
+      ResourceTypeAuthorization resourceTypeAuthorization = ResourceTypeAuthorization.builder().build();
+      setAuthorization(resourceTypeAuthorization);
+      return resourceTypeAuthorization;
+    }
+  }
+
+  /**
+   * a complex attribute that tells us the which roles the client must have to access the given endpoin
+   */
+  public void setAuthorization(ResourceTypeAuthorization resourceTypeAuthorization)
+  {
+    setAttribute(AttributeNames.Custom.AUTHORIZATION, resourceTypeAuthorization);
+  }
+
+
 }

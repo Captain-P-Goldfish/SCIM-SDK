@@ -106,6 +106,74 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "authorization",
+      "type": "complex",
+      "description": "a complex attribute that tells us the which roles the client must have to access the given endpoint",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "roles",
+          "type": "string",
+          "description": "the roles the client must have to access the resource endpoint. This setting defines the roles necessary for all endpoints [create, get, list, update, patch, delete]. This setting may be overridden by other attributes",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesCreate",
+          "type": "string",
+          "description": "the roles the client must have to access the create endpoint.(overrides the attribute \"roles\" the create endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesGet",
+          "type": "string",
+          "description": "the roles the client must have to access the get endpoint.(overrides the attribute \"roles\" the get endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesUpdate",
+          "type": "string",
+          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" the update endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesDelete",
+          "type": "string",
+          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" the delete endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        }
+      ]
     }
   ]
 }

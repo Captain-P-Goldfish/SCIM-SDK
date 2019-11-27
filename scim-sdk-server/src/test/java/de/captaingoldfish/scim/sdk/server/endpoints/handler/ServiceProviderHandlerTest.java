@@ -73,7 +73,7 @@ public class ServiceProviderHandlerTest
   @Test
   public void testGetServiceProvider()
   {
-    Assertions.assertEquals(serviceProviderHandler.getResource(null), serviceProvider);
+    Assertions.assertEquals(serviceProviderHandler.getResource(null, null), serviceProvider);
   }
 
   /**
@@ -99,7 +99,7 @@ public class ServiceProviderHandlerTest
   public void testListServiceProviders()
   {
     Assertions.assertThrows(NotImplementedException.class,
-                            () -> serviceProviderHandler.listResources(0, 0, null, null, null, null, null));
+                            () -> serviceProviderHandler.listResources(0, 0, null, null, null, null, null, null));
   }
 
   /**
@@ -108,7 +108,7 @@ public class ServiceProviderHandlerTest
   @Test
   public void testCreateProviders()
   {
-    Assertions.assertThrows(NotImplementedException.class, () -> serviceProviderHandler.createResource(null));
+    Assertions.assertThrows(NotImplementedException.class, () -> serviceProviderHandler.createResource(null, null));
   }
 
   /**
@@ -117,7 +117,7 @@ public class ServiceProviderHandlerTest
   @Test
   public void testUpdateProviders()
   {
-    Assertions.assertThrows(NotImplementedException.class, () -> serviceProviderHandler.updateResource(null));
+    Assertions.assertThrows(NotImplementedException.class, () -> serviceProviderHandler.updateResource(null, null));
   }
 
   /**
@@ -126,6 +126,6 @@ public class ServiceProviderHandlerTest
   @Test
   public void testDeleteProviders()
   {
-    Assertions.assertThrows(NotImplementedException.class, () -> serviceProviderHandler.deleteResource(null));
+    Assertions.assertThrows(NotImplementedException.class, () -> serviceProviderHandler.deleteResource(null, null));
   }
 }

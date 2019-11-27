@@ -72,6 +72,8 @@ public interface FileReferences
 
   String IMMUTABLE_NAME_ATTRIBUTE = UTILS_BASE_PATH + "/immutable-name.json";
 
+  String USER_AUTHORIZED_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/user-resource-type-authorized.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

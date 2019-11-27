@@ -43,6 +43,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -104,15 +105,17 @@ class BulkEndpoint
    * resolves a bulk request
    *
    * @param requestBody the bulk request body
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return the response of the bulk request
    */
-  public BulkResponse bulk(String baseUri, String requestBody)
+  public BulkResponse bulk(String baseUri, String requestBody, Authorization authorization)
   {
     BulkRequest bulkRequest = parseAndValidateBulkRequest(requestBody);
     List<BulkRequestOperation> operations = bulkRequest.getBulkRequestOperations();
     List<BulkResponseOperation> responseOperations = new ArrayList<>();
     final int failOnErrors = RequestUtils.getEffectiveFailOnErrors(bulkRequest);
-    int httpStatus = handleBulkOperationList(baseUri, operations, responseOperations, failOnErrors);
+    int httpStatus = handleBulkOperationList(baseUri, operations, responseOperations, failOnErrors, authorization);
     return BulkResponse.builder().httpStatus(httpStatus).bulkResponseOperation(responseOperations).build();
   }
 
@@ -124,12 +127,15 @@ class BulkEndpoint
    * @param responseOperations a predefined list of response operations that will get its elements from this
    *          method
    * @param failOnErrors the failOnErrors value that must not be exceeded
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return the http status code of the response
    */
   private int handleBulkOperationList(String baseUri,
                                       List<BulkRequestOperation> operations,
                                       List<BulkResponseOperation> responseOperations,
-                                      int failOnErrors)
+                                      int failOnErrors,
+                                      Authorization authorization)
   {
     int errorCounter = 0;
     // this is a security switch in case a bad crafted bulk request will end in an infinite loop this switch is
@@ -161,7 +167,7 @@ class BulkEndpoint
         operations.remove(0);
         continue;
       }
-      BulkResponseOperation bulkResponseOperation = handleSingleBulkOperation(baseUri, operation);
+      BulkResponseOperation bulkResponseOperation = handleSingleBulkOperation(baseUri, operation, authorization);
       if (bulkResponseOperation == null)
       {
         // mark this operation as already handled once
@@ -202,9 +208,13 @@ class BulkEndpoint
    *
    * @param baseUri the base uri of all SCIM endpoints
    * @param operation the operation that should be handled
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the *
+   *          handler implementation
    * @return the response for the single bulk request
    */
-  private BulkResponseOperation handleSingleBulkOperation(String baseUri, BulkRequestOperation operation)
+  private BulkResponseOperation handleSingleBulkOperation(String baseUri,
+                                                          BulkRequestOperation operation,
+                                                          Authorization authorization)
   {
     HttpMethod httpMethod = operation.getMethod();
     Map<String, String> httpHeaders = getHttpHeadersForBulk(operation);
@@ -236,7 +246,8 @@ class BulkEndpoint
     responseBuilder.bulkId(operation.getBulkId().orElse(null)).method(operation.getMethod()).location(location);
     ScimResponse scimResponse = resourceEndpoint.resolveRequest(httpMethod,
                                                                 operation.getData().orElse(null),
-                                                                operationUriInfo);
+                                                                operationUriInfo,
+                                                                authorization);
     responseBuilder.status(scimResponse.getHttpStatus())
                    .response(ErrorResponse.class.isAssignableFrom(scimResponse.getClass()) ? (ErrorResponse)scimResponse
                      : null);

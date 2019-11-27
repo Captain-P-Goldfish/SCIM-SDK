@@ -68,7 +68,7 @@ public class ResourceTypeHandlerTest
                           ResourceTypeNames.ME, ResourceTypeNames.SERVICE_PROVIDER_CONFIG, ResourceTypeNames.SCHEMA})
   public void testGetResourceTypeByName(String name)
   {
-    ResourceType resourceType = resourceTypeHandler.getResource(name);
+    ResourceType resourceType = resourceTypeHandler.getResource(name, null);
     Assertions.assertEquals(name, resourceType.getName());
     log.debug(resourceType.toPrettyString());
     Assertions.assertTrue(resourceType.getMeta().isPresent());
@@ -103,6 +103,7 @@ public class ResourceTypeHandlerTest
                                                                                        null,
                                                                                        null,
                                                                                        null,
+                                                                                       null,
                                                                                        null);
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getResources().size());
   }
@@ -114,7 +115,7 @@ public class ResourceTypeHandlerTest
   public void testGetResourceWithInvalidId()
   {
     Assertions.assertThrows(ResourceNotFoundException.class,
-                            () -> resourceTypeHandler.getResource("nonExistingResource"));
+                            () -> resourceTypeHandler.getResource("nonExistingResource", null));
   }
 
   /**
@@ -125,7 +126,8 @@ public class ResourceTypeHandlerTest
   {
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     ResourceType userResourceType = ResourceTypeFactoryUtil.getResourceType(resourceTypeFactory, userResourceTypeNode);
-    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.createResource(userResourceType));
+    Assertions.assertThrows(NotImplementedException.class,
+                            () -> resourceTypeHandler.createResource(userResourceType, null));
   }
 
   /**
@@ -136,7 +138,8 @@ public class ResourceTypeHandlerTest
   {
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     ResourceType userResourceType = ResourceTypeFactoryUtil.getResourceType(resourceTypeFactory, userResourceTypeNode);
-    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.updateResource(userResourceType));
+    Assertions.assertThrows(NotImplementedException.class,
+                            () -> resourceTypeHandler.updateResource(userResourceType, null));
   }
 
   /**
@@ -145,7 +148,7 @@ public class ResourceTypeHandlerTest
   @Test
   public void testDeleteResource()
   {
-    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.deleteResource("blubb"));
+    Assertions.assertThrows(NotImplementedException.class, () -> resourceTypeHandler.deleteResource("blubb", null));
   }
 
   /**
@@ -155,6 +158,6 @@ public class ResourceTypeHandlerTest
   public void testNoResourceTypesDoExist()
   {
     ResourceTypeFactoryUtil.clearAllResourceTypes(resourceTypeFactory);
-    Assertions.assertDoesNotThrow(() -> resourceTypeHandler.listResources(1, 0, null, null, null, null, null));
+    Assertions.assertDoesNotThrow(() -> resourceTypeHandler.listResources(1, 0, null, null, null, null, null, null));
   }
 }

@@ -19,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.Getter;
@@ -67,7 +68,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public Group createResource(Group resource)
+  public Group createResource(Group resource, Authorization authorization)
   {
     final String groupId = UUID.randomUUID().toString();
     if (inMemoryMap.containsKey(groupId))
@@ -87,7 +88,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public Group getResource(String id)
+  public Group getResource(String id, Authorization authorization)
   {
     return inMemoryMap.get(id);
   }
@@ -102,7 +103,8 @@ public class GroupHandler extends ResourceHandler<Group>
                                                   SchemaAttribute sortBy,
                                                   SortOrder sortOrder,
                                                   List<SchemaAttribute> attributes,
-                                                  List<SchemaAttribute> excludedAttributes)
+                                                  List<SchemaAttribute> excludedAttributes,
+                                                  Authorization authorization)
   {
     List<Group> resourceNodes = new ArrayList<>(inMemoryMap.values());
     return PartialListResponse.<Group> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
@@ -112,7 +114,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public Group updateResource(Group resource)
+  public Group updateResource(Group resource, Authorization authorization)
   {
     String groupId = resource.getId().get();
     Group oldGroup = inMemoryMap.get(groupId);
@@ -132,7 +134,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public void deleteResource(String id)
+  public void deleteResource(String id, Authorization authorization)
   {
     if (inMemoryMap.containsKey(id))
     {

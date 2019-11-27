@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointFeatureHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
@@ -58,15 +59,43 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     String requestBody,
                                     Map<String, String> httpHeaders)
   {
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null);
+  }
+
+  /**
+   * this method will resolve the SCIM request based on the given information
+   *
+   * @param requestUrl the fully qualified resource URL e.g.:
+   *
+   *          <pre>
+   *             https://localhost/v2/scim/Users<br>
+   *             https://localhost/v2/scim/Users/123456<br>
+   *             https://localhost/v2/scim/Users/.search<br>
+   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
+   *          </pre>
+   *
+   * @param httpMethod the http method that was used by in the request
+   * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
+   * @return the resolved SCIM response
+   */
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders,
+                                    Authorization authorization)
+  {
     try
     {
       UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod, httpHeaders);
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory());
-        return bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody);
+        return bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, authorization);
       }
-      return resolveRequest(httpMethod, requestBody, uriInfos);
+      return resolveRequest(httpMethod, requestBody, uriInfos, authorization);
     }
     catch (ScimException ex)
     {
@@ -84,27 +113,32 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param httpMethod the http method that was used by the client
    * @param requestBody the request body
    * @param uriInfos the parsed information's of the request url
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return a response for the client that is either successful or an error
    */
-  protected ScimResponse resolveRequest(HttpMethod httpMethod, String requestBody, UriInfos uriInfos)
+  protected ScimResponse resolveRequest(HttpMethod httpMethod,
+                                        String requestBody,
+                                        UriInfos uriInfos,
+                                        Authorization authorization)
   {
     switch (httpMethod)
     {
       case POST:
         if (uriInfos.isSearchRequest())
         {
-          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.LIST);
-          return listResources(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.LIST, authorization);
+          return listResources(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri, authorization);
         }
         else
         {
-          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.CREATE);
-          return createResource(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.CREATE, authorization);
+          return createResource(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri, authorization);
         }
       case GET:
         if (uriInfos.isSearchRequest() && !uriInfos.getResourceType().getFeatures().isSingletonEndpoint())
         {
-          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.LIST);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.LIST, authorization);
           String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);
           return listResources(uriInfos.getResourceEndpoint(),
@@ -116,28 +150,31 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
                                uriInfos.getQueryParameters()
                                        .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
-                               uriInfos::getBaseUri);
+                               uriInfos::getBaseUri,
+                               authorization);
         }
         else
         {
-          EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.GET);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.GET, authorization);
           return getResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
                              uriInfos.getQueryParameters()
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                              uriInfos.getHttpHeaders(),
-                             uriInfos::getBaseUri);
+                             uriInfos::getBaseUri,
+                             authorization);
         }
       case PUT:
-        EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.UPDATE);
+        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.UPDATE, authorization);
         return updateResource(uriInfos.getResourceEndpoint(),
                               uriInfos.getResourceId(),
                               requestBody,
                               uriInfos.getHttpHeaders(),
-                              uriInfos::getBaseUri);
+                              uriInfos::getBaseUri,
+                              authorization);
       case PATCH:
-        EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.UPDATE);
+        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.UPDATE, authorization);
         return patchResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              requestBody,
@@ -145,10 +182,14 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos.getQueryParameters()
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                              uriInfos.getHttpHeaders(),
-                             uriInfos::getBaseUri);
+                             uriInfos::getBaseUri,
+                             authorization);
       default:
-        EndpointFeatureHandler.isEndpointEnabled(uriInfos.getResourceType(), EndpointType.DELETE);
-        return deleteResource(uriInfos.getResourceEndpoint(), uriInfos.getResourceId(), uriInfos.getHttpHeaders());
+        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.DELETE, authorization);
+        return deleteResource(uriInfos.getResourceEndpoint(),
+                              uriInfos.getResourceId(),
+                              uriInfos.getHttpHeaders(),
+                              authorization);
     }
   }
 }
