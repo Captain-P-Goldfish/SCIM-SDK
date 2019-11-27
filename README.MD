@@ -45,10 +45,11 @@ The following features are supported
 
 for any registered resource
 
-the following features will be developed in the future:
+### Additional supported features
+
+- [x] authorization for specific endpoints (@see [endpoint authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Endpoint-authorization))
 
 Upcoming features not defined by SCIM
-- [ ] authorization for specific endpoints
 - [ ] authorization for specific attributes
 - [ ] attribute validation (e.g. array-max-length=2 or number-min-value=10)
  
