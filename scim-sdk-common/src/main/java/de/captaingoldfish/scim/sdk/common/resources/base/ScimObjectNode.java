@@ -6,7 +6,6 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -408,7 +407,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    String dateTime = attributeValue.truncatedTo(ChronoUnit.SECONDS).toString();
+    String dateTime = attributeValue.toString();
     JsonHelper.addAttribute(this, attributeName, new TextNode(dateTime));
   }
 
@@ -423,7 +422,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       return;
     }
     ZoneOffset zoneOffset = OffsetDateTime.now().getOffset();
-    setDateTimeAttribute(attributeName, attributeValue.withNano(0).atOffset(zoneOffset));
+    setDateTimeAttribute(attributeName, attributeValue.atOffset(zoneOffset));
   }
 
   /**
@@ -436,7 +435,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    String dateTime = attributeValue.withNano(0).format(DateTimeFormatter.ISO_DATE_TIME);
+    String dateTime = attributeValue.format(DateTimeFormatter.ISO_DATE_TIME);
     JsonHelper.addAttribute(this, attributeName, new TextNode(dateTime));
   }
 
