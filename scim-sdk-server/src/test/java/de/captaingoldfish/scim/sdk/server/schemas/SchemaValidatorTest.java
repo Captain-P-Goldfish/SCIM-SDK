@@ -597,6 +597,30 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * This test will make sure that no exception is thrown if a multivalued complex type contains several primary
+   * attributes where just a single node is set to primary true
+   */
+  @Test
+  public void testSucceedOnSeveralPrimaryMultivaluedComplexTypeValuesSetButJustOneSetToTrue()
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    // @formatter:off
+    final String email = "{" +
+                         "    \"value\": \"goldfish@germany.de\",\n" +
+                         "    \"type\": \"work\",\n" +
+                         "    \"primary\": false" +
+                         "}";
+    // @formatter:on
+    JsonNode emailNode = JsonHelper.readJsonDocument(email);
+    ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.EMAILS).get();
+    emailArray.add(emailNode);
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForRequest(metaSchema,
+                                                                                   userSchema,
+                                                                                   HttpMethod.POST));
+  }
+
+  /**
    * will test that an attribute with returned-value never will not be returned from the server
    */
   @Test

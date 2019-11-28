@@ -631,7 +631,8 @@ public class SchemaValidator
    */
   private int checkForPrimary(JsonNode jsonNode, SchemaAttribute schemaAttribute, int primaryCounter)
   {
-    boolean isPrimary = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.PRIMARY).isPresent();
+    boolean isPrimary = JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.RFC7643.PRIMARY, Boolean.class)
+                                  .orElse(false);
     int counter = primaryCounter + (isPrimary ? 1 : 0);
     if (counter > 1)
     {
