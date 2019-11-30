@@ -47,14 +47,15 @@ public class ErrorResponse extends ScimResponse
     if (HttpStatus.INTERNAL_SERVER_ERROR == getHttpStatus())
     {
       log.error(scimException.getMessage(), scimException);
+      setDetail("sorry but an internal error has occurred.");
     }
     else
     {
       log.debug(scimException.getMessage(), scimException);
+      setDetail(scimException.getDetail());
     }
     setSchemas(Collections.singletonList(SchemaUris.ERROR_URI));
     setStatus(scimException.getStatus());
-    setDetail(scimException.getDetail());
     setScimType(scimException.getScimType());
   }
 

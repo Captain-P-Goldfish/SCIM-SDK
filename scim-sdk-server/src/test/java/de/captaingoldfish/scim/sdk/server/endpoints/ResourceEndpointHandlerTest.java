@@ -615,10 +615,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
-    MatcherAssert.assertThat(errorResponse.getDetail().get(),
-                             Matchers.startsWith("the attribute 'urn:ietf:params:scim:schemas:core:2"
-                                                 + ".0:ServiceProviderConfig:authenticationSchemes' is "
-                                                 + "required on response"));
+    Assertions.assertEquals("sorry but an internal error has occurred.", errorResponse.getDetail().get());
     log.debug(errorResponse.toPrettyString());
   }
 
