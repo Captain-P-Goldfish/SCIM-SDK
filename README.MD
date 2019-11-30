@@ -27,7 +27,7 @@ support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is sim
 
 For more detailed information take a look into the [wiki](https://github.com/Captain-P-Goldfish/SCIM/wiki)
 
-The following features are supported
+### The following features are supported
 
 - [x] create
 - [x] read
@@ -48,8 +48,7 @@ for any registered resource
 ### Additional supported features
 
 - [x] authorization for specific endpoints (@see [endpoint authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Endpoint-authorization))
+- [x] attribute validation (@see [attribute validation]) 
 
-Upcoming features not defined by SCIM
-- [ ] authorization for specific attributes
-- [ ] attribute validation (e.g. array-max-length=2 or number-min-value=10)
+
  

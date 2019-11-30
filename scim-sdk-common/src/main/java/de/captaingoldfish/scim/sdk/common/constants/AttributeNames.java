@@ -91,11 +91,6 @@ public final class AttributeNames
     public static final String ROLES_GET = "rolesGet";
 
     /**
-     * this attribute defines the role-array for the list endpoint of a specific resource type
-     */
-    public static final String ROLES_LIST = "rolesList";
-
-    /**
      * this attribute defines the role-array for the update endpoint of a specific resource type
      */
     public static final String ROLES_UPDATE = "rolesUpdate";
@@ -104,6 +99,56 @@ public final class AttributeNames
      * this attribute defines the role-array for the delete endpoint of a specific resource type
      */
     public static final String ROLES_DELETE = "rolesDelete";
+
+    /**
+     * this attribute defines the validation attribute for integers types "multipleOf"
+     */
+    public static final String MULTIPLE_OF = "multipleOf";
+
+    /**
+     * this attribute defines the validation attribute for integer types "minimum"
+     */
+    public static final String MINIMUM = "minimum";
+
+    /**
+     * this attribute defines the validation attribute for integer types "maximum"
+     */
+    public static final String MAXIMUM = "maximum";
+
+    /**
+     * this attribute defines the validation attribute for string types "maxLength"
+     */
+    public static final String MAX_LENGTH = "maxLength";
+
+    /**
+     * this attribute defines the validation attribute for string types "minLength"
+     */
+    public static final String MIN_LENGTH = "minLength";
+
+    /**
+     * this attribute defines the validation attribute for string types "pattern"
+     */
+    public static final String PATTERN = "pattern";
+
+    /**
+     * this attribute defines the validation attribute for array types "minItems"
+     */
+    public static final String MIN_ITEMS = "minItems";
+
+    /**
+     * this attribute defines the validation attribute for array types "maxItems"
+     */
+    public static final String MAX_ITEMS = "maxItems";
+
+    /**
+     * this attribute defines the validation attribute for dateTime types 'notBefore'
+     */
+    public static final String NOT_BEFORE = "notBefore";
+
+    /**
+     * this attribute defines the validation attribute for dateTime types 'notAfter'
+     */
+    public static final String NOT_AFTER = "notAfter";
   }
 
   /**

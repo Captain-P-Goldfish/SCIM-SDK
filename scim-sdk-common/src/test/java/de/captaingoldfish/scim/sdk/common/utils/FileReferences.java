@@ -22,6 +22,8 @@ public interface FileReferences
 
   String ALL_TYPES_JSON = RESOURCE_BASE_PATH + "/miscellaneous/all-types.json";
 
+  String VALIDATION_TEST_SCHEMA = RESOURCE_BASE_PATH + "/schemas/validation-test-schema.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

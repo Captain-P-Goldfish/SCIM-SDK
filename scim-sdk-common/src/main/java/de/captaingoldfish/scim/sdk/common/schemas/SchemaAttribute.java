@@ -1,5 +1,8 @@
 package de.captaingoldfish.scim.sdk.common.schemas;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -7,6 +10,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,11 +29,13 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * holds the data of an attribute definition from a schema type document
  */
+@Slf4j
 @Getter
 @EqualsAndHashCode(exclude = {"schema", "parent"}, callSuper = true)
 public final class SchemaAttribute extends ScimObjectNode
@@ -59,6 +66,12 @@ public final class SchemaAttribute extends ScimObjectNode
    * "meta" than the attribute will be accessible by the name "meta.created" instead of just "created"
    */
   private final String namePrefix;
+
+  /**
+   * the compiled pattern attribute that is stored as a member to prevent the pattern from getting compiled
+   * again and again
+   */
+  private Pattern pattern;
 
   protected SchemaAttribute(Schema schema,
                             String resourceUri,
@@ -105,16 +118,40 @@ public final class SchemaAttribute extends ScimObjectNode
                                                        .collect(Collectors.toList()))
                                 .orElse(Type.REFERENCE.equals(type) ? Collections.singletonList(ReferenceTypes.EXTERNAL)
                                   : Collections.emptyList()));
+    setValidationAttributes(jsonNode);
     setSubAttributes(resolveSubAttributes(jsonNode));
     this.parent = parent;
     validateAttribute();
     schema.addSchemaAttribute(this);
   }
 
-
   public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
   {
     this(schema, resourceUri, parent, jsonNode, null);
+  }
+
+  /**
+   * this method will check for present validation attributes as "multipleOf", "minimum" etc. and will validate
+   * them and set them if applicable
+   *
+   * @param jsonNode the current schema attribute that might hold validation attributes
+   */
+  private void setValidationAttributes(JsonNode jsonNode)
+  {
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MINIMUM, Long.class).ifPresent(this::setMinimum);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MAXIMUM, Long.class).ifPresent(this::setMaximum);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MULTIPLE_OF, Integer.class)
+              .ifPresent(this::setMultipleOf);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MIN_LENGTH, Long.class).ifPresent(this::setMinLength);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MAX_LENGTH, Long.class).ifPresent(this::setMaxLength);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.PATTERN).ifPresent(this::setPattern);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MIN_ITEMS, Integer.class)
+              .ifPresent(this::setMinItems);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MAX_ITEMS, Integer.class)
+              .ifPresent(this::setMaxItems);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.NOT_BEFORE, String.class)
+              .ifPresent(this::setNotBefore);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.NOT_AFTER, String.class).ifPresent(this::setNotAfter);
   }
 
   /**
@@ -535,6 +572,461 @@ public final class SchemaAttribute extends ScimObjectNode
 
   // @formatter:off
   /**
+   * The value of "multipleOf" MUST be a number, strictly greater than 0.
+   *
+   * A numeric instance is valid only if division by this keyword's value
+   * results in an integer.
+   */
+  // @formatter:on
+  public Optional<Integer> getMultipleOf()
+  {
+    return getIntegerAttribute(AttributeNames.Custom.MULTIPLE_OF);
+  }
+
+  // @formatter:off
+  /**
+   * The value of "multipleOf" MUST be a number, strictly greater than 0.
+   *
+   * A numeric instance is valid only if division by this keyword's value
+   * results in an integer.
+   */
+  // @formatter:on
+  public void setMultipleOf(Integer multipleOf)
+  {
+    if (Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.MULTIPLE_OF, multipleOf);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MULTIPLE_OF
+                                       + "' is only applicable to 'integer' and 'decimal' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of "minimum" MUST be a number, representing an inclusive
+   * lower limit for a numeric instance.
+   *
+   * If the instance is a number, then this keyword validates only if the
+   * instance is greater than or exactly equal to "minimum".
+   */
+  // @formatter:on
+  public Optional<Long> getMinimum()
+  {
+    return getLongAttribute(AttributeNames.Custom.MINIMUM);
+  }
+
+  // @formatter:off
+  /**
+   * The value of "minimum" MUST be a number, representing an inclusive
+   * lower limit for a numeric instance.
+   *
+   * If the instance is a number, then this keyword validates only if the
+   * instance is greater than or exactly equal to "minimum".
+   */
+  // @formatter:on
+  public void setMinimum(Long minimum)
+  {
+    if (Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.MINIMUM, minimum);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MINIMUM + "' is only applicable to"
+                                       + " 'integer' and 'decimal' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of "maximum" MUST be a number, representing an inclusive
+   * upper limit for a numeric instance.
+   *
+   * If the instance is a number, then this keyword validates only if the
+   * instance is less than or exactly equal to "maximum".
+   */
+  // @formatter:on
+  public Optional<Long> getMaximum()
+  {
+    return getLongAttribute(AttributeNames.Custom.MAXIMUM);
+  }
+
+  // @formatter:off
+  /**
+   * The value of "maximum" MUST be a number, representing an inclusive
+   * upper limit for a numeric instance.
+   *
+   * If the instance is a number, then this keyword validates only if the
+   * instance is less than or exactly equal to "maximum".
+   */
+  // @formatter:on
+  public void setMaximum(Long maximum)
+  {
+    if (Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.MAXIMUM, maximum);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MAXIMUM + "' is only applicable to"
+                                       + " 'integer' and 'decimal' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * A string instance is valid against this keyword if its length is less
+   * than, or equal to, the value of this keyword.
+   *
+   * The length of a string instance is defined as the number of its
+   * characters as defined by RFC 8259 [RFC8259].
+   */
+  // @formatter:on
+  public Optional<Long> getMaxLength()
+  {
+    return getLongAttribute(AttributeNames.Custom.MAX_LENGTH);
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * A string instance is valid against this keyword if its length is less
+   * than, or equal to, the value of this keyword.
+   *
+   * The length of a string instance is defined as the number of its
+   * characters as defined by RFC 8259 [RFC8259].
+   */
+  // @formatter:on
+  public void setMaxLength(Long maxLength)
+  {
+    if (Type.STRING.equals(getType()) || Type.REFERENCE.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.MAX_LENGTH, maxLength);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MAX_LENGTH
+                                       + "' is only applicable to 'string' and 'reference' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * A string instance is valid against this keyword if its length is
+   * greater than, or equal to, the value of this keyword.
+   *
+   * The length of a string instance is defined as the number of its
+   * characters as defined by RFC 8259 [RFC8259].
+   *
+   * Omitting this keyword has the same behavior as a value of 0.
+   */
+  // @formatter:on
+  public Optional<Long> getMinLength()
+  {
+    return getLongAttribute(AttributeNames.Custom.MIN_LENGTH);
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * A string instance is valid against this keyword if its length is
+   * greater than, or equal to, the value of this keyword.
+   *
+   * The length of a string instance is defined as the number of its
+   * characters as defined by RFC 8259 [RFC8259].
+   *
+   * Omitting this keyword has the same behavior as a value of 0.
+   */
+  // @formatter:on
+  public void setMinLength(Long minLength)
+  {
+    if (Type.STRING.equals(getType()) || Type.REFERENCE.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.MIN_LENGTH, minLength);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MIN_LENGTH
+                                       + "' is only applicable to 'string' and 'reference' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a string.  This string SHOULD be a
+   * valid regular expression, according to the Java regular
+   * expression dialect.
+   *
+   * A string instance is considered valid if the regular expression
+   * matches the instance successfully.  Recall: regular expressions are
+   * not implicitly anchored.
+   */
+  // @formatter:on
+  public Optional<String> getPattern()
+  {
+    return getStringAttribute(AttributeNames.Custom.PATTERN);
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a string.  This string SHOULD be a
+   * valid regular expression, according to the Java regular
+   * expression dialect.
+   *
+   * A string instance is considered valid if the regular expression
+   * matches the instance successfully.  Recall: regular expressions are
+   * not implicitly anchored.
+   */
+  // @formatter:on
+  public void setPattern(String pattern)
+  {
+    if (Type.STRING.equals(getType()) || Type.REFERENCE.equals(getType()))
+    {
+      try
+      {
+        this.pattern = Pattern.compile(pattern);
+      }
+      catch (PatternSyntaxException ex)
+      {
+        log.error(ex.getMessage(), ex);
+        throw new InvalidSchemaException("the given pattern is not a valid regular expression '" + pattern + "'");
+      }
+      setAttribute(AttributeNames.Custom.PATTERN, pattern);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.PATTERN
+                                       + "' is only applicable to 'string' and 'reference' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * An array instance is valid against "minItems" if its size is greater
+   * than, or equal to, the value of this keyword.
+   *
+   * Omitting this keyword has the same behavior as a value of 0.
+   */
+  // @formatter:on
+  public Optional<Integer> getMinItems()
+  {
+    return getIntegerAttribute(AttributeNames.Custom.MIN_ITEMS);
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * An array instance is valid against "minItems" if its size is greater
+   * than, or equal to, the value of this keyword.
+   *
+   * Omitting this keyword has the same behavior as a value of 0.
+   */
+  // @formatter:on
+  public void setMinItems(Integer minItems)
+  {
+    if (isMultiValued())
+    {
+      setAttribute(AttributeNames.Custom.MIN_ITEMS, minItems);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MIN_ITEMS
+                                       + "' is only applicable to 'multivalued' types");
+    }
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * An array instance is valid against "maxItems" if its size is less
+   * than, or equal to, the value of this keyword.
+   */
+  // @formatter:on
+  public Optional<Integer> getMaxItems()
+  {
+    return getIntegerAttribute(AttributeNames.Custom.MAX_ITEMS);
+  }
+
+  // @formatter:off
+  /**
+   * The value of this keyword MUST be a non-negative integer.
+   *
+   * An array instance is valid against "maxItems" if its size is less
+   * than, or equal to, the value of this keyword.
+   */
+  // @formatter:on
+  public void setMaxItems(Integer maxItems)
+  {
+    if (isMultiValued())
+    {
+      setAttribute(AttributeNames.Custom.MAX_ITEMS, maxItems);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.MAX_ITEMS
+                                       + "' is only applicable to 'multivalued' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be before the value of this attribute
+   */
+  public Optional<Instant> getNotBefore()
+  {
+    return getDateTimeAttribute(AttributeNames.Custom.NOT_BEFORE);
+  }
+
+  /**
+   * a dateTime validation attribute that must not be before the value of this attribute
+   */
+  public void setNotBefore(String notBefore)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.NOT_BEFORE, notBefore);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_BEFORE + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be before the value of this attribute
+   */
+  public void setNotBefore(Instant notBefore)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setDateTimeAttribute(AttributeNames.Custom.NOT_BEFORE, notBefore);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_BEFORE + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be before the value of this attribute
+   */
+  public void setNotBefore(LocalDateTime notBefore)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setDateTimeAttribute(AttributeNames.Custom.NOT_BEFORE, notBefore);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_BEFORE + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be before the value of this attribute
+   */
+  public void setNotBefore(OffsetDateTime notBefore)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setDateTimeAttribute(AttributeNames.Custom.NOT_BEFORE, notBefore);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_BEFORE + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be after the value of this attribute
+   */
+  public Optional<Instant> getNotAfter()
+  {
+    return getDateTimeAttribute(AttributeNames.Custom.NOT_AFTER);
+  }
+
+  /**
+   * a dateTime validation attribute that must not be after the value of this attribute
+   */
+  public void setNotAfter(String notAfter)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setAttribute(AttributeNames.Custom.NOT_AFTER, notAfter);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_AFTER + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be after the value of this attribute
+   */
+  public void setNotAfter(Instant notAfter)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setDateTimeAttribute(AttributeNames.Custom.NOT_AFTER, notAfter);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_AFTER + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be after the value of this attribute
+   */
+  public void setNotAfter(LocalDateTime notAfter)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setDateTimeAttribute(AttributeNames.Custom.NOT_AFTER, notAfter);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_AFTER + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  /**
+   * a dateTime validation attribute that must not be after the value of this attribute
+   */
+  public void setNotAfter(OffsetDateTime notAfter)
+  {
+    if (Type.DATE_TIME.equals(getType()))
+    {
+      setDateTimeAttribute(AttributeNames.Custom.NOT_AFTER, notAfter);
+    }
+    else
+    {
+      throw new InvalidSchemaException("The attribute '" + AttributeNames.Custom.NOT_AFTER + "' is only "
+                                       + "applicable to 'dateTime' types");
+    }
+  }
+
+  // @formatter:off
+  /**
    * When an attribute is of type "complex",
    * "subAttributes" defines a set of sub-attributes.
    * "subAttributes" has the same schema sub-attributes as
@@ -654,8 +1146,8 @@ public final class SchemaAttribute extends ScimObjectNode
    * because the value is a stored hash). Note: An attribute with a mutability of "writeOnly" usually also has a
    * returned setting of "never"</li>
    * </ul>
-   * the last problem is that the an attribute attribute with the same name was declared twice. This problem
-   * will be handled in another method
+   * the last problem is that the an attribute with the same name was declared twice. This problem will be
+   * handled in another method
    */
   private void validateAttribute()
   {
