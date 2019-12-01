@@ -6,7 +6,7 @@
     <artifactId>scim-sdk-parent</artifactId>
 
     <packaging>pom</packaging>
-    <version>1.1.2-SNAPSHOT</version>
+    <version>1.2.0</version>
 
     <name>SCIM SDK</name>
     <description>A full SCIM 2.0 open source implementation</description>
@@ -34,7 +34,7 @@
         <connection>scm:git:git://github.com/Captain-P-Goldfish/SCIM.git</connection>
         <developerConnection>scm:git:ssh://github.com/Captain-P-Goldfish/SCIM.git</developerConnection>
         <url>https://github.com/Captain-P-Goldfish/SCIM/tree/master</url>
-        <tag>HEAD</tag>
+        <tag>1.2.0</tag>
     </scm>
 
     <distributionManagement>
@@ -83,7 +83,7 @@
         <version.junit.jupiter>5.5.2</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.9.11</version.reflections>
-        <version.mockito>3.1.0</version.mockito>
+        <version.mockito>3.2.0</version.mockito>
         <version.resteasy.jaxrs>3.9.3.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.1.10</version.equalsverifier>
 
