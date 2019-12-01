@@ -11,6 +11,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -2149,5 +2150,47 @@ public class SchemaValidatorTest implements FileReferences
                          .location("http://localhost")
                          .build());
     return allTypes;
+  }
+
+  /**
+   * this test will assert that an exception is thrown if the client or developer sets a multi valued complex as
+   * a simple array type.
+   */
+  @Test
+  public void testFailIfMultiValuedComplexIsMalformed()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(Instant.now())
+                    .lastModified(Instant.now())
+                    .location("http://localhost")
+                    .build();
+    User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
+    ArrayNode email = new ArrayNode(JsonNodeFactory.instance);
+    email.add("hello world");
+    user.set(AttributeNames.RFC7643.EMAILS, email);
+    try
+    {
+      SchemaValidator.validateDocumentForRequest(resourceType, user, HttpMethod.POST);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (DocumentValidationException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("the attribute 'emails' does not apply to its defined type. The received document node is"
+                              + " of type 'ARRAY' but the schema defintion is as follows: \n\tmultivalued: true\n"
+                              + "\ttype: COMPLEX\nfor schema with id urn:ietf:params:scim:schemas:core:2.0:User\n"
+                              + "[ \"hello world\" ]",
+                              ex.getDetail());
+    }
   }
 }

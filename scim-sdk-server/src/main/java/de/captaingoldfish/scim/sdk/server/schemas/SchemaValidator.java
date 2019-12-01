@@ -611,7 +611,8 @@ public class SchemaValidator
                                                         document.toPrettyString());
     if (schemaAttribute.isMultiValued())
     {
-      if (document != null && !document.isArray())
+      if (document != null && !document.isArray() || document != null && Type.COMPLEX.equals(schemaAttribute.getType())
+                                                     && !document.isEmpty() && !document.get(0).isObject())
       {
         throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
       }
