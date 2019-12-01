@@ -271,7 +271,7 @@ public class SchemaValidator
                 + resourceType.getSchema() + "]");
       throw ex;
     }
-    if (validatedMeta != null && !validatedMeta.isEmpty())
+    if (validatedMeta != null && !validatedMeta.isEmpty() && validatedMainDocument != null)
     {
       JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
     }
@@ -395,6 +395,12 @@ public class SchemaValidator
   {
     ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
     JsonNode validatedMainDocument = validateDocumentForRequest(resourceSchema.getMetaSchema(), document, httpMethod);
+    if (validatedMainDocument == null)
+    {
+      throw new DocumentValidationException("the received document is invalid and does not contain any data. The "
+                                            + "illegal document is: " + document.toString(), null,
+                                            HttpStatus.BAD_REQUEST, null);
+    }
     validatedForMissingRequiredExtension(resourceType, document, DirectionType.REQUEST);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {

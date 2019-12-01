@@ -336,7 +336,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @Test
   public void testSendUnusableResourceToUpdate()
   {
-    User user = User.builder().id(UUID.randomUUID().toString()).build();
+    User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").build();
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        UUID.randomUUID().toString(),
                                                                        user.toString(),
@@ -345,9 +345,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                        null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.Custom.UNPARSEABLE_REQUEST, errorResponse.getScimException().getScimType());
+    Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
   }
 
   /**

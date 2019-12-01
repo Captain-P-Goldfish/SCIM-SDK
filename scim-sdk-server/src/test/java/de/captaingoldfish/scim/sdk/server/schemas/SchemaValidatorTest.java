@@ -2193,4 +2193,60 @@ public class SchemaValidatorTest implements FileReferences
                               ex.getDetail());
     }
   }
+
+  /**
+   * verifies that the documentation validation fails in case of request if the document evaluates to an empty
+   * document. For example: this happens if the attributes within the document are not writable
+   */
+  @Test
+  public void testValidateReceivedDocumentToEmptyDocumentForRequest()
+  {
+    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
+    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         allTypesResourceTypeJson,
+                                                                         allTypesValidationSchema,
+                                                                         enterpriseUserValidationSchema);
+
+    AllTypes allTypes = buildAllTypesForValidation();
+    try
+    {
+      SchemaValidator.validateDocumentForRequest(resourceType, allTypes, HttpMethod.POST);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (DocumentValidationException ex)
+    {
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals("the received document is invalid and does not contain any data. The "
+                              + "illegal document is: " + allTypes.toString(),
+                              ex.getDetail());
+    }
+  }
+
+  /**
+   * verifies that the documentation does not throw any exceptions anymore if the response-document evaluates to
+   * an empty document. RFC7644 Tells us that a body SHOULD be returned but it must not
+   */
+  @Test
+  public void testValidateReceivedDocumentToEmptyDocumentForResponse()
+  {
+    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
+    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         allTypesResourceTypeJson,
+                                                                         allTypesValidationSchema,
+                                                                         enterpriseUserValidationSchema);
+
+    AllTypes allTypes = buildAllTypesForValidation();
+    Assertions.assertNull(SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                      resourceType,
+                                                                      allTypes,
+                                                                      null,
+                                                                      null,
+                                                                      null));
+  }
 }
