@@ -8,6 +8,11 @@ package de.captaingoldfish.scim.sdk.common.exceptions;
 public class DocumentValidationException extends ScimException
 {
 
+  public DocumentValidationException(String message, Integer status, String scimType)
+  {
+    super(message, null, status, scimType);
+  }
+
   public DocumentValidationException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause, status, scimType);

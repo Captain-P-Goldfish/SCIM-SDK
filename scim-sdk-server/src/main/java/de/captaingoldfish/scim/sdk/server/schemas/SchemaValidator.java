@@ -41,6 +41,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.AttributeValidator;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
@@ -330,7 +331,15 @@ public class SchemaValidator
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, validatedRequest, attributes,
                                                           excludedAttributes);
-    return schemaValidator.validateDocument(metaSchema, document);
+    try
+    {
+      return schemaValidator.validateDocument(metaSchema, document);
+    }
+    catch (ScimException ex)
+    {
+      ex.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+      throw ex;
+    }
   }
 
   /**
@@ -356,7 +365,15 @@ public class SchemaValidator
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.RESPONSE, null, true, validatedRequest,
                                                           attributes, excludedAttributes);
-    return schemaValidator.validateDocument(metaSchema, document);
+    try
+    {
+      return schemaValidator.validateDocument(metaSchema, document);
+    }
+    catch (ScimException ex)
+    {
+      ex.setStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+      throw ex;
+    }
   }
 
   /**
@@ -419,7 +436,15 @@ public class SchemaValidator
   protected static JsonNode validateDocumentForRequest(Schema metaSchema, JsonNode document, HttpMethod httpMethod)
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, null, null, null);
-    return schemaValidator.validateDocument(metaSchema, document);
+    try
+    {
+      return schemaValidator.validateDocument(metaSchema, document);
+    }
+    catch (ScimException ex)
+    {
+      ex.setStatus(HttpStatus.BAD_REQUEST);
+      throw ex;
+    }
   }
 
   /**
@@ -437,7 +462,15 @@ public class SchemaValidator
   protected static JsonNode validateExtensionForRequest(Schema metaSchema, JsonNode document, HttpMethod httpMethod)
   {
     SchemaValidator schemaValidator = new SchemaValidator(DirectionType.REQUEST, httpMethod, true, null, null, null);
-    return schemaValidator.validateDocument(metaSchema, document);
+    try
+    {
+      return schemaValidator.validateDocument(metaSchema, document);
+    }
+    catch (ScimException ex)
+    {
+      ex.setStatus(HttpStatus.BAD_REQUEST);
+      throw ex;
+    }
   }
 
   /**
@@ -672,6 +705,7 @@ public class SchemaValidator
       checkForUniqueAttribute(schemaAttribute, scimArrayNode, jsonNode);
       handleMultivaluedNode.accept(jsonNode, scimArrayNode);
     }
+    AttributeValidator.validateArrayNode(schemaAttribute, scimArrayNode);
     if (scimArrayNode.isEmpty())
     {
       validateNonPresentAttributes(schemaAttribute);
@@ -753,7 +787,8 @@ public class SchemaValidator
       case DECIMAL:
         isNodeOfExpectedType(schemaAttribute,
                              simpleDocumentNode,
-                             jsonNode -> jsonNode.isFloat() || jsonNode.isDouble() || jsonNode.isBigDecimal());
+                             jsonNode -> jsonNode.isInt() || jsonNode.isLong() || jsonNode.isFloat()
+                                         || jsonNode.isDouble() || jsonNode.isBigDecimal());
         return new ScimDoubleNode(schemaAttribute, simpleDocumentNode.doubleValue());
       case DATE_TIME:
         isNodeOfExpectedType(schemaAttribute, simpleDocumentNode, JsonNode::isTextual);

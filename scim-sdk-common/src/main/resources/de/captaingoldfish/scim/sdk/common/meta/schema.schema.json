@@ -191,7 +191,7 @@
         },
         {
           "name": "multipleOf",
-          "type": "integer",
+          "type": "decimal",
           "multiValued": false,
           "description": "The value of \"multipleOf\" MUST be a number, strictly greater than 0. A numeric instance is valid only if division by this keyword's value results in an integer.",
           "required": false,
@@ -202,7 +202,7 @@
         },
         {
           "name": "minimum",
-          "type": "integer",
+          "type": "decimal",
           "multiValued": false,
           "description": "The value of \"minimum\" MUST be a number, representing an inclusive lower limit for a numeric instance. If the instance is a number, then this keyword validates only if the instance is greater than or exactly equal to \"minimum\".",
           "required": false,
@@ -213,7 +213,7 @@
         },
         {
           "name": "maximum",
-          "type": "integer",
+          "type": "decimal",
           "multiValued": false,
           "description": "The value of \"maximum\" MUST be a number, representing an inclusive upper limit for a numeric instance. If the instance is a number, then this keyword validates only if the instance is less than or exactly equal to \"maximum\".",
           "required": false,
@@ -271,17 +271,6 @@
           "type": "integer",
           "multiValued": false,
           "description": "The value of this keyword MUST be a non-negative integer. An array instance is valid against \"maxItems\" if its size is less than, or equal to, the value of this keyword.",
-          "required": false,
-          "caseExact": false,
-          "mutability": "readOnly",
-          "returned": "default",
-          "uniqueness": "none"
-        },
-        {
-          "name": "uniqueItems",
-          "type": "boolean",
-          "multiValued": false,
-          "description": "The value of this keyword MUST be a boolean. If this keyword has boolean value false, the instance validates successfully. If it has boolean value true, the instance validates successfully if all of its elements are unique.",
           "required": false,
           "caseExact": false,
           "mutability": "readOnly",
@@ -462,7 +451,7 @@
             },
             {
               "name": "multipleOf",
-              "type": "integer",
+              "type": "decimal",
               "multiValued": false,
               "description": "The value of \"multipleOf\" MUST be a number, strictly greater than 0. A numeric instance is valid only if division by this keyword's value results in an integer.",
               "required": false,
@@ -473,7 +462,7 @@
             },
             {
               "name": "minimum",
-              "type": "integer",
+              "type": "decimal",
               "multiValued": false,
               "description": "The value of \"minimum\" MUST be a number, representing an inclusive lower limit for a numeric instance. If the instance is a number, then this keyword validates only if the instance is greater than or exactly equal to \"minimum\".",
               "required": false,
@@ -484,7 +473,7 @@
             },
             {
               "name": "maximum",
-              "type": "integer",
+              "type": "decimal",
               "multiValued": false,
               "description": "The value of \"maximum\" MUST be a number, representing an inclusive upper limit for a numeric instance. If the instance is a number, then this keyword validates only if the instance is less than or exactly equal to \"maximum\".",
               "required": false,
@@ -542,17 +531,6 @@
               "type": "integer",
               "multiValued": false,
               "description": "The value of this keyword MUST be a non-negative integer. An array instance is valid against \"maxItems\" if its size is less than, or equal to, the value of this keyword.",
-              "required": false,
-              "caseExact": false,
-              "mutability": "readOnly",
-              "returned": "default",
-              "uniqueness": "none"
-            },
-            {
-              "name": "uniqueItems",
-              "type": "boolean",
-              "multiValued": false,
-              "description": "The value of this keyword MUST be a boolean. If this keyword has boolean value false, the instance validates successfully. If it has boolean value true, the instance validates successfully if all of its elements are unique.",
               "required": false,
               "caseExact": false,
               "mutability": "readOnly",

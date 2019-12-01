@@ -24,7 +24,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/schema.schema.json
                             </file>
-                            <checksum>33f97bfe81f80a3136b4a7121ecad00a</checksum>
+                            <checksum>cfd671174b9bd6e1f5b159d16eec2049</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

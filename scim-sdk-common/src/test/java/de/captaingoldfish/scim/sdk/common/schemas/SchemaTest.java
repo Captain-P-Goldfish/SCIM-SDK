@@ -38,7 +38,7 @@ public class SchemaTest implements FileReferences
     Schema schema = Assertions.assertDoesNotThrow(() -> new Schema(validationSchema));
     Assertions.assertEquals(5, schema.getSchemaAttribute("minstring").getMinLength().get());
     Assertions.assertEquals(10, schema.getSchemaAttribute("minstring").getMaxLength().get());
-    Assertions.assertEquals("(?i)[a-z0-9]+", schema.getSchemaAttribute("minstring").getPattern().get());
+    Assertions.assertEquals("(?i)[a-z0-9]+", schema.getSchemaAttribute("minstring").getPattern().get().pattern());
 
     Assertions.assertEquals(3, schema.getSchemaAttribute("number").getMultipleOf().get());
     Assertions.assertEquals(10, schema.getSchemaAttribute("number").getMinimum().get());

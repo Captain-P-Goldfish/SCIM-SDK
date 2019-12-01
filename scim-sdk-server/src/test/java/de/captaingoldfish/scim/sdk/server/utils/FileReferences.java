@@ -60,6 +60,10 @@ public interface FileReferences
 
   String ALL_TYPES_JSON_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/all-types.json";
 
+  String ALL_TYPES_VALIDATION_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/all-types-with-validation.json";
+
+  String ENTERPRISE_USER_VALIDATION_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/enterprise-user-with-validation.json";
+
   String ALL_TYPES_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/all-types.json";
 
   String EMAILS_ATTRIBUTE = UTILS_BASE_PATH + "/emails.json";

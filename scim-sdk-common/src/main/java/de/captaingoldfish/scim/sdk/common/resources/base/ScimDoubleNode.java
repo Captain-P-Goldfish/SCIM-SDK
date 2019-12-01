@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.common.resources.base;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.AttributeValidator;
 import lombok.Getter;
 
 
@@ -21,5 +22,6 @@ public class ScimDoubleNode extends DoubleNode implements ScimNode
   {
     super(value);
     this.schemaAttribute = schemaAttribute;
+    AttributeValidator.validateNumberNode(schemaAttribute, value);
   }
 }

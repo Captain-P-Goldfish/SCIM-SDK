@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -36,6 +39,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
@@ -51,6 +55,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -1622,4 +1627,527 @@ public class SchemaValidatorTest implements FileReferences
     }
   }
 
+  /**
+   * this test will verify that the attribute validation is executed correctly
+   */
+  @TestFactory
+  public List<DynamicTest> testSchemaValidatorWithAttributeValidation()
+  {
+    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
+    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         allTypesResourceTypeJson,
+                                                                         allTypesValidationSchema,
+                                                                         enterpriseUserValidationSchema);
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple string validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setString("12345");
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setString("0123456789");
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple string validation fails (too short)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setString("1");
+      String errorMessage = "the attribute 'string' has a minimum length of 5 characters but value is '1'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple string validation fails (too long)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setString("01234567890");
+      String errorMessage = "the attribute 'string' has a maximum length of 10 characters but value is '01234567890'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple string validation fails (pattern mismatch)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setString("abcdefg");
+      String errorMessage = "the attribute 'string' must match the regular expression '[0-9]+' but value is 'abcdefg'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple number validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setNumber(2L);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setNumber(10L);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setNumber(6L);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (value too low)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setNumber(1L);
+      String errorMessage = "the attribute 'number' has a minimum value of 2.0 but value is '1.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (value too high)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setNumber(11L);
+      String errorMessage = "the attribute 'number' has a maximum value of 10.0 but value is '11.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (not multipleOf)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setNumber(7L);
+      String errorMessage = "the attribute 'number' must be multiple of 2.0 but value is '7.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDecimal(11.34);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setDecimal(147.42);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setDecimal(28.35);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation fails (too low)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDecimal(0.0);
+      String errorMessage = "the attribute 'decimal' has a minimum value of 10.8 but value is '0.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation fails (too high)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDecimal(153.09);
+      String errorMessage = "the attribute 'decimal' has a maximum value of 150.9 but value is '153.09'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation fails (not multipleOf)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDecimal(150.9);
+      String errorMessage = "the attribute 'decimal' must be multiple of 5.67 but value is '150.9'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple date validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDate(Instant.parse("2018-11-01T00:00:00Z"));
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setDate(Instant.parse("2020-12-01T00:00:00Z"));
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple date validation fails (before)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDate(Instant.parse("2018-11-01T00:00:00Z").minusSeconds(1));
+      String errorMessage = "the attribute 'date' must not be before '2018-11-01T00:00:00Z' but was "
+                            + "'2018-10-31T23:59:59Z'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("simple date validation fails (after)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setDate(Instant.parse("2020-12-01T00:00:00Z").plusSeconds(1));
+      String errorMessage = "the attribute 'date' must not be after '2020-12-01T00:00:00Z' but was "
+                            + "'2020-12-01T00:00:01Z'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("string array validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setStringArray(Arrays.asList("123456", "1234567"));
+      successfulValidationForResponse(resourceType, allTypes);
+      successfulValidationForRequest(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (not enough items)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setStringArray(Arrays.asList("123456"));
+      String errorMessage = "the multivalued attribute 'stringArray' must have at least 2 items but array has 1 items"
+                            + " and is: [\"123456\"]";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (too many items)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setStringArray(Arrays.asList("123456", "12345", "1234567", "0123456", "013654", "987654"));
+      String errorMessage = "the multivalued attribute 'stringArray' must not have more than 5 items but array has 6 "
+                            + "items and is: [\"123456\",\"12345\",\"1234567\",\"0123456\",\"013654\",\"987654\"]";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (string too short)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      allTypes.setStringArray(Arrays.asList("123", "12345", "1234567", "0123456", "013654", "987654"));
+      String errorMessage = "the attribute 'stringArray' has a minimum length of 5 characters but value is '123'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    /* *********************************************************************************************************/
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setString("12345");
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      complex.setString("0123456789");
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string validation fails (too short)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setString("1");
+      String errorMessage = "the attribute 'complex.string' has a minimum length of 5 characters but value is '1'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string validation fails (too long)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setString("01234567890");
+      String errorMessage = "the attribute 'complex.string' has a maximum length of 10 characters but value is "
+                            + "'01234567890'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string validation fails (pattern mismatch)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setString("abcdefg");
+      String errorMessage = "the attribute 'complex.string' must match the regular expression '[0-9]+' but value is "
+                            + "'abcdefg'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex number validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setNumber(2L);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      complex.setNumber(10L);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      complex.setNumber(6L);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex number validation fails (value too low)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setNumber(1L);
+      String errorMessage = "the attribute 'complex.number' has a minimum value of 2.0 but value is '1.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex number validation fails (value too high)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setNumber(11L);
+      String errorMessage = "the attribute 'complex.number' has a maximum value of 10.0 but value is '11.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex number validation fails (not multipleOf)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setNumber(7L);
+      String errorMessage = "the attribute 'complex.number' must be multiple of 2.0 but value is '7.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex decimal validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDecimal(11.34);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      complex.setDecimal(147.42);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      complex.setDecimal(28.35);
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex decimal validation fails (too low)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDecimal(0.0);
+      String errorMessage = "the attribute 'complex.decimal' has a minimum value of 10.8 but value is '0.0'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex decimal validation fails (too high)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDecimal(153.09);
+      String errorMessage = "the attribute 'complex.decimal' has a maximum value of 150.9 but value is '153.09'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex decimal validation fails (not multipleOf)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDecimal(150.9);
+      String errorMessage = "the attribute 'complex.decimal' must be multiple of 5.67 but value is '150.9'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex date validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDate(Instant.parse("2018-11-01T00:00:00Z"));
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      complex.setDate(Instant.parse("2020-12-01T00:00:00Z"));
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex date validation fails (before)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDate(Instant.parse("2018-11-01T00:00:00Z").minusSeconds(1));
+      String errorMessage = "the attribute 'complex.date' must not be before '2018-11-01T00:00:00Z' but was "
+                            + "'2018-10-31T23:59:59Z'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex date validation fails (after)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setDate(Instant.parse("2020-12-01T00:00:00Z").plusSeconds(1));
+      String errorMessage = "the attribute 'complex.date' must not be after '2020-12-01T00:00:00Z' but was "
+                            + "'2020-12-01T00:00:01Z'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string array validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setStringArray(Arrays.asList("123456", "1234567"));
+      successfulValidationForResponse(resourceType, allTypes);
+      successfulValidationForRequest(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string array validation fails (not enough items)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setStringArray(Arrays.asList("123456"));
+      String errorMessage = "the multivalued attribute 'complex.stringArray' must have at least 2 items but "
+                            + "array has 1 items and is: [\"123456\"]";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string array validation fails (too many items)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setStringArray(Arrays.asList("123456", "12345", "1234567", "0123456", "013654", "987654"));
+      String errorMessage = "the multivalued attribute 'complex.stringArray' must not have more than 5 items but "
+                            + "array has 6 items and is: [\"123456\",\"12345\",\"1234567\",\"0123456\",\"013654\","
+                            + "\"987654\"]";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("complex string array validation fails (string too short)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setStringArray(Arrays.asList("123", "12345", "1234567", "0123456", "013654", "987654"));
+      String errorMessage = "the attribute 'complex.stringArray' has a minimum length of 5 characters but value is "
+                            + "'123'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    /* *********************************************************************************************************/
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("multiComplex string validation succeeds", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      complex.setString("12345");
+      allTypes.setMultiComplex(Arrays.asList(complex, complex));
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+      allTypes.setMultiComplex(Arrays.asList(complex, complex, complex));
+      successfulValidationForRequest(resourceType, allTypes);
+      successfulValidationForResponse(resourceType, allTypes);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("multiComplex validation fails (not enough items)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      complex.setString("123456");
+      allTypes.setMultiComplex(Arrays.asList(complex));
+      String errorMessage = "the multivalued attribute 'multiComplex' must have at least 2 items but array has 1 "
+                            + "items and is: [{\"string\":\"123456\"}]";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("multiComplex validation fails (too many items)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      complex.setString("123456");
+      allTypes.setMultiComplex(Arrays.asList(complex, complex, complex, complex));
+      String errorMessage = "the multivalued attribute 'multiComplex' must not have more than 3 items but array has 4"
+                            + " items and is: [{\"string\":\"123456\"},{\"string\":\"123456\"},"
+                            + "{\"string\":\"123456\"},{\"string\":\"123456\"}]";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    /* *********************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("multiComplex string validation fails (too long)", () -> {
+      AllTypes allTypes = buildAllTypesForValidation();
+      AllTypes complex = new AllTypes();
+      allTypes.setMultiComplex(Arrays.asList(complex, complex));
+      complex.setString("01234567890");
+      String errorMessage = "the attribute 'multiComplex.string' has a maximum length of 10 characters but value is "
+                            + "'01234567890'";
+      failValidationForRequest(resourceType, allTypes, errorMessage);
+      failValidationForResponse(resourceType, allTypes, errorMessage);
+    }));
+    return dynamicTests;
+  }
+
+  /**
+   * verifies that no exception occurs if the given document is validated for request
+   */
+  private void successfulValidationForRequest(ResourceType resourceType, AllTypes allTypes)
+  {
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForRequest(resourceType,
+                                                                                   allTypes,
+                                                                                   HttpMethod.POST));
+  }
+
+  /**
+   * verifies that no exception occurs if the given document is validated for response
+   */
+  private void successfulValidationForResponse(ResourceType resourceType, AllTypes allTypes)
+  {
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                                                    resourceType,
+                                                                                    allTypes,
+                                                                                    null,
+                                                                                    null,
+                                                                                    null));
+  }
+
+  /**
+   * verifies that an exception occurs if the given document is validated for response
+   */
+  private void failValidationForResponse(ResourceType resourceType, AllTypes allTypes, String errorMessage)
+  {
+    try
+    {
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, allTypes, null, null, null);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (DocumentValidationException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(errorMessage, ex.getDetail());
+      Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatus());
+    }
+  }
+
+  /**
+   * verifies that an exception occurs if the given document is validated for request
+   */
+  private void failValidationForRequest(ResourceType resourceType, AllTypes allTypes, String errorMessage)
+  {
+    try
+    {
+      SchemaValidator.validateDocumentForRequest(resourceType, allTypes, HttpMethod.POST);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (DocumentValidationException ex)
+    {
+      log.debug(ex.getDetail(), ex);
+      Assertions.assertEquals(errorMessage, ex.getDetail());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+    }
+  }
+
+  /**
+   * builds a standard all types instance that will pass validation with its required default attributes
+   */
+  private AllTypes buildAllTypesForValidation()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setMeta(Meta.builder()
+                         .resourceType("AllTypes")
+                         .created(Instant.now())
+                         .lastModified(Instant.now())
+                         .location("http://localhost")
+                         .build());
+    return allTypes;
+  }
 }

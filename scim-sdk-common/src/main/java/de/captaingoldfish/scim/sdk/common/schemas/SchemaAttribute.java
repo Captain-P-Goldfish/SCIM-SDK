@@ -138,9 +138,9 @@ public final class SchemaAttribute extends ScimObjectNode
    */
   private void setValidationAttributes(JsonNode jsonNode)
   {
-    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MINIMUM, Long.class).ifPresent(this::setMinimum);
-    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MAXIMUM, Long.class).ifPresent(this::setMaximum);
-    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MULTIPLE_OF, Integer.class)
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MINIMUM, Double.class).ifPresent(this::setMinimum);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MAXIMUM, Double.class).ifPresent(this::setMaximum);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MULTIPLE_OF, Double.class)
               .ifPresent(this::setMultipleOf);
     JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MIN_LENGTH, Long.class).ifPresent(this::setMinLength);
     JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.MAX_LENGTH, Long.class).ifPresent(this::setMaxLength);
@@ -578,9 +578,9 @@ public final class SchemaAttribute extends ScimObjectNode
    * results in an integer.
    */
   // @formatter:on
-  public Optional<Integer> getMultipleOf()
+  public Optional<Double> getMultipleOf()
   {
-    return getIntegerAttribute(AttributeNames.Custom.MULTIPLE_OF);
+    return getDoubleAttribute(AttributeNames.Custom.MULTIPLE_OF);
   }
 
   // @formatter:off
@@ -591,7 +591,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * results in an integer.
    */
   // @formatter:on
-  public void setMultipleOf(Integer multipleOf)
+  public void setMultipleOf(double multipleOf)
   {
     if (Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()))
     {
@@ -613,9 +613,9 @@ public final class SchemaAttribute extends ScimObjectNode
    * instance is greater than or exactly equal to "minimum".
    */
   // @formatter:on
-  public Optional<Long> getMinimum()
+  public Optional<Double> getMinimum()
   {
-    return getLongAttribute(AttributeNames.Custom.MINIMUM);
+    return getDoubleAttribute(AttributeNames.Custom.MINIMUM);
   }
 
   // @formatter:off
@@ -627,7 +627,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * instance is greater than or exactly equal to "minimum".
    */
   // @formatter:on
-  public void setMinimum(Long minimum)
+  public void setMinimum(double minimum)
   {
     if (Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()))
     {
@@ -649,9 +649,9 @@ public final class SchemaAttribute extends ScimObjectNode
    * instance is less than or exactly equal to "maximum".
    */
   // @formatter:on
-  public Optional<Long> getMaximum()
+  public Optional<Double> getMaximum()
   {
-    return getLongAttribute(AttributeNames.Custom.MAXIMUM);
+    return getDoubleAttribute(AttributeNames.Custom.MAXIMUM);
   }
 
   // @formatter:off
@@ -663,7 +663,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * instance is less than or exactly equal to "maximum".
    */
   // @formatter:on
-  public void setMaximum(Long maximum)
+  public void setMaximum(double maximum)
   {
     if (Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()))
     {
@@ -771,9 +771,9 @@ public final class SchemaAttribute extends ScimObjectNode
    * not implicitly anchored.
    */
   // @formatter:on
-  public Optional<String> getPattern()
+  public Optional<Pattern> getPattern()
   {
-    return getStringAttribute(AttributeNames.Custom.PATTERN);
+    return Optional.ofNullable(pattern);
   }
 
   // @formatter:off
