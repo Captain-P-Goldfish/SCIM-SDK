@@ -478,7 +478,8 @@ public class ResourceType extends ResourceNode
                                        .orElseThrow(() -> getBadRequestException(errorMessage.get()));
       if (!schemas.contains(getSchema()))
       {
-        throw getBadRequestException("main resource schema '" + getSchema() + "' is not present in resource");
+        throw getBadRequestException("main resource schema '" + getSchema() + "' is not present in resource. Main "
+                                     + "schema is: " + getSchema());
       }
 
       Function<String, String> missingSchema = s -> "resource schema with uri '" + s + "' is not registered";
