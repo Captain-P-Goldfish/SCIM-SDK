@@ -1559,7 +1559,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
-   * this test will verify that a client cannot accessed protected endpoints without the proper roles
+   * this test will verify that a client cannot access protected endpoints without the proper roles
    */
   @TestFactory
   public List<DynamicTest> testUnauthorized()
@@ -1990,5 +1990,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     {
       return roles;
     }
+
   }
 }

@@ -1,10 +1,8 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.features;
 
-import java.util.Set;
-
-import de.captaingoldfish.scim.sdk.common.exceptions.ForbiddenException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +19,15 @@ public class EndpointFeatureHandler
 {
 
   /**
+   * a custom implementation that is used in case that the provider did not give any authorization information's
+   * about the user. This is necessary to check if the endpoint itself has defined any necessary roles to get
+   * accessed. If yes and no authorization is passed by the developer this implementation assures that the
+   * authorization is properly executed and a
+   * {@link de.captaingoldfish.scim.sdk.common.exceptions.ForbiddenException} is thrown
+   */
+  private static final DefaultAuthorization DEFAULT_AUTHORIZATION = new DefaultAuthorization();
+
+  /**
    * handles several checks for the currently accessed endpoint on the given resource type
    *
    * @param resourceType the current resource type to get access to the endpoint control settings
@@ -33,84 +40,31 @@ public class EndpointFeatureHandler
                                             Authorization authorization)
   {
     isEndpointEnabled(resourceType, endpointType);
-    isClientAuthorized(resourceType, endpointType, authorization);
+    handleAuthorization(resourceType, endpointType, authorization);
   }
 
   /**
-   * verifies if the client is authorized to access the given endpoint and will throw a forbidden except
-   *
-   * @param resourceType the resource type that might hold information's about the needed authorization on the
-   *          given endpoints
-   * @param endpointType the endpoint type the client tries to access
-   * @param authorization should give us the roles that have been granted to the currently authenticated client
+   * handles the authorization feature
+   * 
+   * @param resourceType the resource type that represents the accessed endpoint
+   * @param endpointType the endpoint type that was called e.g. create or update
+   * @param authorization the authorization implementation from the provider
    */
-  private static void isClientAuthorized(ResourceType resourceType,
-                                         EndpointType endpointType,
-                                         Authorization authorization)
+  private static void handleAuthorization(ResourceType resourceType,
+                                          EndpointType endpointType,
+                                          Authorization authorization)
   {
-    switch (endpointType)
+    if (authorization != null)
     {
-      case CREATE:
-        isAuthorized(resourceType,
-                     endpointType,
-                     authorization,
-                     resourceType.getFeatures().getAuthorization().getRolesCreate());
-        break;
-      case UPDATE:
-        isAuthorized(resourceType,
-                     endpointType,
-                     authorization,
-                     resourceType.getFeatures().getAuthorization().getRolesUpdate());
-        break;
-      case DELETE:
-        isAuthorized(resourceType,
-                     endpointType,
-                     authorization,
-                     resourceType.getFeatures().getAuthorization().getRolesDelete());
-        break;
-      default:
-        isAuthorized(resourceType,
-                     endpointType,
-                     authorization,
-                     resourceType.getFeatures().getAuthorization().getRolesGet());
+      authorization.isClientAuthorized(resourceType, endpointType);
     }
-  }
-
-  /**
-   * checks if the current client is authorized to access the given endpoint
-   *
-   * @param resourceType the resource type on which the endpoint is accessed
-   * @param endpointType the method that was called by the client
-   * @param authorization the authorization about the currently authenticated client
-   * @param roles the required roles to access the given endpoint
-   */
-  private static void isAuthorized(ResourceType resourceType,
-                                   EndpointType endpointType,
-                                   Authorization authorization,
-                                   Set<String> roles)
-  {
-    if (roles == null || roles.isEmpty())
+    else
     {
-      return;
-    }
-    if (authorization == null)
-    {
-      log.debug("the resource endpoint '{}' requires authorization but there was no authorization information "
-                + "passed. required roles: '{}'",
-                endpointType,
-                roles);
-      throw new ForbiddenException("you are not authorized to access the '" + endpointType
-                                   + "' endpoint on resource type '" + resourceType.getName() + "'");
-    }
-    if (!authorization.getClientRoles().containsAll(roles))
-    {
-      log.debug("the client '{}' tried to execute an action without proper authorization. "
-                + "Required authorization is '{}' but the client has '{}'",
-                authorization.getClientId(),
-                roles,
-                authorization.getClientRoles());
-      throw new ForbiddenException("you are not authorized to access the '" + endpointType
-                                   + "' endpoint on resource type '" + resourceType.getName() + "'");
+      log.debug("no authorization information for the current client on resource endpoint '{}' for endpoint-type "
+                + "'{}'. Using default authorization handler",
+                resourceType.getEndpoint(),
+                endpointType);
+      DEFAULT_AUTHORIZATION.isClientAuthorized(resourceType, endpointType);
     }
   }
 
