@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.client.http;
 
 import java.io.IOException;
 import java.security.KeyStore;
+import java.util.UUID;
 import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletRequest;
@@ -11,10 +12,7 @@ import org.apache.http.HttpStatus;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.entity.ContentType;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,6 +37,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
+import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;
+import de.captaingoldfish.scim.sdk.client.exceptions.SocketTimeoutRuntimeException;
+import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreSupporter;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
@@ -54,7 +56,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SpringBootInitializer.class})
-public class ScimHttpClientTest extends AbstractSpringBootWebTest
+public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
 {
 
 
@@ -139,7 +141,72 @@ public class ScimHttpClientTest extends AbstractSpringBootWebTest
    * this test will check that a socket timeout is done if the server needs more than one second to answer
    */
   @Test
-  public void provokeSocketTimeout()
+  public void testProvokeSocketTimeout()
+  {
+    int connectTimeout = 10;
+    int requestTimeout = 10;
+    int socketTimeout = 1;
+    ScimHttpClient httpClient = ScimHttpClient.builder()
+                                              .connectTimeout(connectTimeout)
+                                              .requestTimeout(requestTimeout)
+                                              .socketTimeout(socketTimeout)
+                                              .proxyHelper(null)
+                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
+                                              .truststore(tlsTruststore)
+                                              .hostnameVerifier((s, sslSession) -> true)
+                                              .build();
+    try
+    {
+      httpClient.sendRequest(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH)));
+      Assertions.fail("this point must not be reached");
+    }
+    catch (SocketTimeoutRuntimeException e)
+    {
+      Assertions.assertEquals("socket timeout after '1' seconds", e.getMessage());
+      Assertions.assertEquals("Read timed out", e.getCause().getMessage());
+    }
+  }
+
+  /**
+   * this test will check that a connection timeout occurs if the port is wrong for example
+   */
+  @Test
+  public void testProvokeConnectTimeout()
+  {
+    int connectTimeout = 1;
+    int requestTimeout = 10;
+    int socketTimeout = 10;
+    ScimHttpClient httpClient = ScimHttpClient.builder()
+                                              .connectTimeout(connectTimeout)
+                                              .requestTimeout(requestTimeout)
+                                              .socketTimeout(socketTimeout)
+                                              .proxyHelper(null)
+                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
+                                              .truststore(tlsTruststore)
+                                              .hostnameVerifier((s, sslSession) -> true)
+                                              .build();
+    String requestUrl = getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH).replaceFirst(String.valueOf(getLocalServerPort()),
+                                                                                         "connectTimeout");
+    try
+    {
+      httpClient.sendRequest(new HttpGet(requestUrl));
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ConnectTimeoutRuntimeException e)
+    {
+      log.debug(e.getMessage(), e);
+      Assertions.assertEquals("connection timeout after '1' seconds", e.getMessage());
+      Assertions.assertEquals("Connect to localhost:443 [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] "
+                              + "failed: connect timed out",
+                              e.getCause().getMessage());
+    }
+  }
+
+  /**
+   * this test will check that a connection cannot be established if the host is unknown
+   */
+  @Test
+  public void testProvokeUnknownHostException()
   {
     int connectTimeout = 1;
     int requestTimeout = 1;
@@ -153,19 +220,79 @@ public class ScimHttpClientTest extends AbstractSpringBootWebTest
                                               .truststore(tlsTruststore)
                                               .hostnameVerifier((s, sslSession) -> true)
                                               .build();
-    Assertions.assertThrows(IllegalStateException.class, () -> {
-      try (CloseableHttpClient client = httpClient.getHttpClient();
-        CloseableHttpResponse response = client.execute(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH))))
-      {
-        String responseString = IOUtils.toString(response.getEntity().getContent());
-        Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, responseString);
-        Assertions.assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
-      }
-      catch (IOException e)
-      {
-        throw new IllegalStateException(e);
-      }
-    });
+    String host = UUID.randomUUID().toString();
+    String requestUrl = getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH).replaceFirst("localhost", host);
+    try
+    {
+      httpClient.sendRequest(new HttpGet(requestUrl));
+      Assertions.fail("this point must not be reached");
+    }
+    catch (UnknownHostRuntimeException ex)
+    {
+      log.debug(ex.getMessage(), ex);
+      Assertions.assertEquals("could not find host '" + host + "'", ex.getMessage());
+      Assertions.assertEquals(host, ex.getCause().getMessage());
+    }
+  }
+
+  /**
+   * verifies that client authentication works correctly
+   */
+  @Test
+  public void testClientAuthenticationFails()
+  {
+    int connectTimeout = 1;
+    int requestTimeout = 1;
+    int socketTimeout = 1;
+    ScimHttpClient httpClient = ScimHttpClient.builder()
+                                              .connectTimeout(connectTimeout)
+                                              .requestTimeout(requestTimeout)
+                                              .socketTimeout(socketTimeout)
+                                              .proxyHelper(null)
+                                              .truststore(tlsTruststore)
+                                              .hostnameVerifier((s, sslSession) -> true)
+                                              .build();
+    try
+    {
+      httpClient.sendRequest(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH)));
+      Assertions.fail("this point must not be reached");
+    }
+    catch (SSLHandshakeRuntimeException e)
+    {
+      Assertions.assertEquals("handshake error during connection setup", e.getMessage());
+      Assertions.assertEquals("Received fatal alert: bad_certificate", e.getCause().getMessage());
+    }
+  }
+
+  /**
+   * verifies that the client does not trust the server without a proper truststore
+   */
+  @Test
+  public void testServerNotTrusted()
+  {
+    int connectTimeout = 1;
+    int requestTimeout = 1;
+    int socketTimeout = 1;
+    ScimHttpClient httpClient = ScimHttpClient.builder()
+                                              .connectTimeout(connectTimeout)
+                                              .requestTimeout(requestTimeout)
+                                              .socketTimeout(socketTimeout)
+                                              .proxyHelper(null)
+                                              .hostnameVerifier((s, sslSession) -> true)
+                                              .build();
+    try
+    {
+      httpClient.sendRequest(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH)));
+      Assertions.fail("this point must not be reached");
+    }
+    catch (SSLHandshakeRuntimeException e)
+    {
+      Assertions.assertEquals("handshake error during connection setup", e.getMessage());
+      Assertions.assertEquals("sun.security.validator.ValidatorException: PKIX path building failed: "
+                              + "sun.security.provider.certpath.SunCertPathBuilderException: "
+                              + "unable to find valid certification path to requested target",
+                              e.getCause().getMessage());
+    }
   }
 
   /**
@@ -182,142 +309,6 @@ public class ScimHttpClientTest extends AbstractSpringBootWebTest
     Assertions.assertNotNull(requestConfig.getProxy());
     Assertions.assertEquals(PROXY_HOST, requestConfig.getProxy().getHostName());
     Assertions.assertEquals(PROXY_PORT, requestConfig.getProxy().getPort());
-  }
-
-  /**
-   * tests that the method {@link ScimHttpClient#sendGet(String)} does work as expected
-   */
-  @Test
-  public void testSendHttpGetRequest()
-  {
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
-    HttpResponse httpResponse = httpClient.sendGet(getRequestUrl(TestController.GET_ENDPOINT_PATH));
-    Assertions.assertEquals(HttpStatus.SC_OK, httpResponse.getHttpStatusCode());
-    Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, httpResponse.getResponseBody());
-    MatcherAssert.assertThat(httpResponse.getResponseHeaders().size(), Matchers.greaterThan(0));
-  }
-
-  /**
-   * tests that the method {@link ScimHttpClient#sendGet(String, ParameterBuilder)} does work as expected
-   */
-  @Test
-  public void testSendHttpGetRequestWithParameters()
-  {
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
-    ParameterBuilder parameterBuilder = ParameterBuilder.builder()
-                                                        .addParameter("response_type", "code")
-                                                        .addParameter("scope", "openid");
-    TestController.validateRequest = (request, requestBody) -> {
-      Assertions.assertNull(requestBody);
-      Assertions.assertNotNull(request.getParameterValues("response_type"));
-      Assertions.assertNotNull(request.getParameterValues("scope"));
-      Assertions.assertEquals(1, request.getParameterValues("response_type").length);
-      Assertions.assertEquals(1, request.getParameterValues("scope").length);
-      Assertions.assertEquals("code", request.getParameterValues("response_type")[0]);
-      Assertions.assertEquals("openid", request.getParameterValues("scope")[0]);
-    };
-
-    HttpResponse httpResponse = httpClient.sendGet(getRequestUrl(TestController.GET_ENDPOINT_PATH), parameterBuilder);
-    Assertions.assertEquals(HttpStatus.SC_OK, httpResponse.getHttpStatusCode());
-    Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, httpResponse.getResponseBody());
-    MatcherAssert.assertThat(httpResponse.getResponseHeaders().size(), Matchers.greaterThan(0));
-  }
-
-  /**
-   * tests that the method {@link ScimHttpClient#sendGet(String, ParameterBuilder)} does work as expected
-   */
-  @Test
-  public void testSendHttpGetRequestWithParameters_2nd()
-  {
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
-    ParameterBuilder parameterBuilder = ParameterBuilder.builder().addParameter("login", null).addParameter("id", "1");
-    String additionalQuery = "?type=role";
-    TestController.validateRequest = (request, requestBody) -> {
-      Assertions.assertNull(requestBody);
-      Assertions.assertNotNull(request.getParameterValues("login"));
-      Assertions.assertNotNull(request.getParameterValues("type"));
-      Assertions.assertNotNull(request.getParameterValues("id"));
-      Assertions.assertEquals(1, request.getParameterValues("login").length);
-      Assertions.assertEquals(1, request.getParameterValues("id").length);
-      Assertions.assertEquals(1, request.getParameterValues("type").length);
-      Assertions.assertEquals("", request.getParameterValues("login")[0]);
-      Assertions.assertEquals("1", request.getParameterValues("id")[0]);
-      Assertions.assertEquals("role", request.getParameterValues("type")[0]);
-    };
-
-    HttpResponse httpResponse = httpClient.sendGet(getRequestUrl(TestController.GET_ENDPOINT_PATH) + additionalQuery,
-                                                   parameterBuilder);
-    Assertions.assertEquals(HttpStatus.SC_OK, httpResponse.getHttpStatusCode());
-    Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, httpResponse.getResponseBody());
-    MatcherAssert.assertThat(httpResponse.getResponseHeaders().size(), Matchers.greaterThan(0));
-  }
-
-  /**
-   * tests that the method {@link ScimHttpClient#sendPost(String, ParameterBuilder)} does work as expected
-   */
-  @Test
-  public void testSendHttpPostRequestWithParameters()
-  {
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
-    ParameterBuilder parameterBuilder = ParameterBuilder.builder().addParameter("login", null).addParameter("id", "1");
-    TestController.validateRequest = (request, requestBody) -> {
-      Assertions.assertEquals("POST", request.getMethod());
-      Assertions.assertEquals("id=1&login=", requestBody);
-      Assertions.assertNotNull(request.getParameterValues("login"));
-      Assertions.assertNotNull(request.getParameterValues("id"));
-      Assertions.assertEquals(1, request.getParameterValues("login").length);
-      Assertions.assertEquals(1, request.getParameterValues("id").length);
-      Assertions.assertEquals("", request.getParameterValues("login")[0]);
-      Assertions.assertEquals("1", request.getParameterValues("id")[0]);
-    };
-
-    HttpResponse httpResponse = httpClient.sendPost(getRequestUrl(TestController.POST_ENDPOINT_PATH), parameterBuilder);
-    Assertions.assertEquals(HttpStatus.SC_OK, httpResponse.getHttpStatusCode());
-    Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, httpResponse.getResponseBody());
-    MatcherAssert.assertThat(httpResponse.getResponseHeaders().size(), Matchers.greaterThan(0));
-  }
-
-  /**
-   * tests that the method {@link ScimHttpClient#sendPost(String, String, ContentType)} does work as expected
-   */
-  @Test
-  public void testSendHttpPostRequestWithBody()
-  {
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
-    final String postBody = "<root>some text</root>";
-
-    TestController.validateRequest = (request, requestBody) -> {
-      Assertions.assertEquals("POST", request.getMethod());
-      Assertions.assertEquals(postBody, requestBody);
-      Assertions.assertEquals(ContentType.APPLICATION_XML.toString(), request.getContentType());
-    };
-
-    HttpResponse httpResponse = httpClient.sendPost(getRequestUrl(TestController.POST_ENDPOINT_PATH),
-                                                    postBody,
-                                                    ContentType.APPLICATION_XML);
-    Assertions.assertEquals(HttpStatus.SC_OK, httpResponse.getHttpStatusCode());
-    Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, httpResponse.getResponseBody());
-    MatcherAssert.assertThat(httpResponse.getResponseHeaders().size(), Matchers.greaterThan(0));
   }
 
   /**

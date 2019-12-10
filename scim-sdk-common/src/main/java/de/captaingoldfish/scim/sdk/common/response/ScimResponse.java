@@ -10,7 +10,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.resources.AbstractSchemasHolder;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -19,6 +21,7 @@ import lombok.Getter;
  * <br>
  * The abstract implementation for all responses created by this framework
  */
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class ScimResponse extends AbstractSchemasHolder
 {
 
@@ -26,7 +29,7 @@ public abstract class ScimResponse extends AbstractSchemasHolder
    * contains the http header attributes for the response
    */
   @Getter
-  private Map<String, String> httpHeaders;
+  private Map<String, String> httpHeaders = new HashMap<>();
 
   public ScimResponse(JsonNode responseNode)
   {
@@ -37,7 +40,6 @@ public abstract class ScimResponse extends AbstractSchemasHolder
         this.set(childNode.getKey(), childNode.getValue());
       });
     }
-    this.httpHeaders = new HashMap<>();
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
 

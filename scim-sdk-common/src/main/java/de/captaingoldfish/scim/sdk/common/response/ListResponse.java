@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -19,27 +20,13 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
  * <br>
  * represents a list response
  */
+@NoArgsConstructor
 public class ListResponse extends ScimResponse
 {
 
   public ListResponse(String resourceJsonRepresentation)
   {
     super(JsonHelper.readJsonDocument(resourceJsonRepresentation));
-    // JsonNode responseNode = JsonHelper.readJsonDocument(resourceJsonRepresentation);
-    // setTotalResults(JsonHelper.getSimpleAttribute(responseNode, AttributeNames.RFC7643.TOTAL_RESULTS,
-    // Long.class)
-    // .orElse(null));
-    // this.itemsPerPage = JsonHelper.getSimpleAttribute(responseNode,
-    // AttributeNames.RFC7643.ITEMS_PER_PAGE,
-    // Integer.class)
-    // .orElse(null);
-    // this.startIndex = JsonHelper.getSimpleAttribute(responseNode, AttributeNames.RFC7643.START_INDEX,
-    // Long.class)
-    // .orElse(null);
-    // this.listedResources = new ArrayList<>();
-    // JsonHelper.getArrayAttribute(responseNode, AttributeNames.RFC7643.RESOURCES).ifPresent(resourceArray -> {
-    // resourceArray.forEach(listedResources::add);
-    // });
   }
 
   public ListResponse(List<JsonNode> listedResources, Long totalResults, Integer itemsPerPage, Long startIndex)

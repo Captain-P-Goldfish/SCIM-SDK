@@ -1,16 +1,11 @@
 package de.captaingoldfish.scim.sdk.client.http;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.ConnectException;
-import java.net.MalformedURLException;
 import java.net.SocketTimeoutException;
-import java.net.URL;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -18,28 +13,18 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.http.Header;
-import org.apache.http.NameValuePair;
 import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.message.BasicNameValuePair;
 
-import de.captaingoldfish.scim.sdk.client.exceptions.ConnectRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.IORuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SocketTimeoutRuntimeException;
-import de.captaingoldfish.scim.sdk.client.exceptions.UriNotValidException;
+import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
 import lombok.Builder;
 import lombok.Getter;
@@ -128,64 +113,6 @@ public class ScimHttpClient
   }
 
   /**
-   * gets an url object from the given string and throws an exception if the url is not valid
-   *
-   * @param url the url to which the request should be send
-   * @return the url object
-   */
-  private static URL getUrl(String url)
-  {
-    try
-    {
-      return new URL(url);
-    }
-    catch (MalformedURLException e)
-    {
-      throw new UriNotValidException("URL '" + url + "' is not a valid URL", e);
-    }
-  }
-
-  /**
-   * gets an url object from the given string and throws an exception if the url is not valid
-   *
-   * @param url the url to which the request should be send
-   * @param parameterBuilder adds the given parameters to the given url as query parameters
-   * @return the url object
-   */
-  private static URL getUrl(String url, ParameterBuilder parameterBuilder)
-  {
-    try
-    {
-      URL urlAddress = new URL(url);
-      if (parameterBuilder == null || parameterBuilder.build().isEmpty())
-      {
-        return urlAddress;
-      }
-      StringBuilder query = new StringBuilder();
-      parameterBuilder.build().forEach((key, value) -> {
-        query.append("&").append(key);
-        if (StringUtils.isNotBlank(value))
-        {
-          query.append("=").append(value);
-        }
-      });
-      if (StringUtils.contains(url, "?") && !StringUtils.endsWith(url, "?"))
-      {
-        urlAddress = new URL(url + query.toString());
-      }
-      else
-      {
-        urlAddress = new URL(url + "?" + query.substring(1));
-      }
-      return urlAddress;
-    }
-    catch (MalformedURLException e)
-    {
-      throw new UriNotValidException("URL '" + url + "' is not a valid URL", e);
-    }
-  }
-
-  /**
    * this method generates a http-client instance and will set the ssl-context
    *
    * @return a http-client instance
@@ -247,113 +174,6 @@ public class ScimHttpClient
   }
 
   /**
-   * this method will send a simple GET request to the given url
-   *
-   * @param url the url to send the request to
-   * @return the response from the server
-   * @throws SSLHandshakeException in case that the server represented a certificate that is not trusted
-   * @throws ConnectException happens if the server does not respond (wrong URL wrong port or something else)
-   * @throws ConnectTimeoutException if the server took too long to establish a connection
-   * @throws SocketTimeoutException if the server took too long to send the response
-   * @throws IOException base exception that represents all previous mentioned exceptions
-   */
-  public HttpResponse sendGet(String url)
-  {
-    return sendGet(url, null);
-  }
-
-  /**
-   * this method will send a simple GET request to the given url
-   *
-   * @param url the url to send the request to
-   * @return the response from the server
-   * @throws SSLHandshakeRuntimeException in case that the server represented a certificate that is not trusted
-   * @throws ConnectRuntimeException happens if the server does not respond (wrong URL wrong port or something
-   *           else)
-   * @throws ConnectTimeoutRuntimeException if the server took too long to establish a connection
-   * @throws SocketTimeoutRuntimeException if the server took too long to send the response
-   * @throws IORuntimeException base exception that represents all previous mentioned exceptions
-   */
-  public HttpResponse sendGet(String url, ParameterBuilder parameterBuilder, Header... headers)
-  {
-    URL urlAddress = getUrl(url, parameterBuilder);
-    HttpGet httpGet = new HttpGet(urlAddress.toString());
-    if (headers != null)
-    {
-      for ( Header header : headers )
-      {
-        httpGet.addHeader(header);
-      }
-    }
-    return sendRequest(httpGet);
-  }
-
-  /**
-   * sends a post request with the given body and the given content type to the given url
-   *
-   * @param url the url to which the post request should be send
-   * @param postBody the body content of the post request
-   * @param contentType the content type represented by the post body
-   * @return the response from the server
-   * @throws SSLHandshakeRuntimeException in case that the server represented a certificate that is not trusted
-   * @throws ConnectRuntimeException happens if the server does not respond (wrong URL wrong port or something
-   *           else)
-   * @throws ConnectTimeoutRuntimeException if the server took too long to establish a connection
-   * @throws SocketTimeoutRuntimeException if the server took too long to send the response
-   * @throws IORuntimeException base exception that represents all previous mentioned exceptions
-   */
-  public HttpResponse sendPost(String url, String postBody, ContentType contentType)
-  {
-    URL urlAddress = getUrl(url);
-    HttpPost httpPost = new HttpPost(urlAddress.toString());
-    if (StringUtils.isNotBlank(postBody))
-    {
-      httpPost.setEntity(new StringEntity(postBody, contentType));
-    }
-    return sendRequest(httpPost);
-  }
-
-  /**
-   * sends a post request with Content-Type 'application/x-www-form-urlencoded' and the given parameters
-   *
-   * @param url the url to which the post request should be send
-   * @param parameterBuilder the parameters to put into the post body
-   * @return the response from the server
-   * @throws SSLHandshakeRuntimeException in case that the server represented a certificate that is not trusted
-   * @throws ConnectRuntimeException happens if the server does not respond (wrong URL wrong port or something
-   *           else)
-   * @throws ConnectTimeoutRuntimeException if the server took too long to establish a connection
-   * @throws SocketTimeoutRuntimeException if the server took too long to send the response
-   * @throws IORuntimeException base exception that represents all previous mentioned exceptions
-   */
-  public HttpResponse sendPost(String url, ParameterBuilder parameterBuilder, Header... headers)
-  {
-    URL urlAddress = getUrl(url);
-    HttpPost httpPost = new HttpPost(urlAddress.toString());
-    if (headers != null)
-    {
-      for ( Header header : headers )
-      {
-        httpPost.addHeader(header);
-      }
-    }
-    if (parameterBuilder != null)
-    {
-      List<NameValuePair> params = new ArrayList<>();
-      parameterBuilder.build().forEach((name, value) -> params.add(new BasicNameValuePair(name, value)));
-      try
-      {
-        httpPost.setEntity(new UrlEncodedFormEntity(params));
-      }
-      catch (UnsupportedEncodingException e)
-      {
-        throw new IORuntimeException(e.getMessage(), e);
-      }
-    }
-    return sendRequest(httpPost);
-  }
-
-  /**
    * this method will send the request with the apache http client and will also handle {@link IOException}s and
    * wrap them into {@link IORuntimeException}s
    *
@@ -375,23 +195,23 @@ public class ScimHttpClient
     }
     catch (SSLHandshakeException ex)
     {
-      throw new SSLHandshakeRuntimeException(ex.getMessage(), ex);
-    }
-    catch (ConnectException ex)
-    {
-      throw new ConnectRuntimeException(ex.getMessage(), ex);
+      throw new SSLHandshakeRuntimeException("handshake error during connection setup", ex);
     }
     catch (ConnectTimeoutException ex)
     {
-      throw new ConnectTimeoutRuntimeException(ex.getMessage(), ex);
+      throw new ConnectTimeoutRuntimeException("connection timeout after '" + connectTimeout + "' seconds", ex);
     }
     catch (SocketTimeoutException ex)
     {
-      throw new SocketTimeoutRuntimeException(ex.getMessage(), ex);
+      throw new SocketTimeoutRuntimeException("socket timeout after '" + socketTimeout + "' seconds", ex);
+    }
+    catch (UnknownHostException ex)
+    {
+      throw new UnknownHostRuntimeException("could not find host '" + uriRequest.getURI().getHost() + "'", ex);
     }
     catch (IOException ex)
     {
-      throw new IORuntimeException(ex.getMessage(), ex);
+      throw new IORuntimeException("communication with server failed", ex);
     }
   }
 

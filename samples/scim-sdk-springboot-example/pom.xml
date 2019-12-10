@@ -42,6 +42,7 @@
                     <groupId>org.apache.logging.log4j</groupId>
                 </exclusion>
             </exclusions>
+            <scope>compile</scope>
         </dependency>
 
         <dependency>

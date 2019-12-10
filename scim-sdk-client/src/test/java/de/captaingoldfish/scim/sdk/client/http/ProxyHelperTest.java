@@ -5,12 +5,15 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import lombok.extern.slf4j.Slf4j;
+
 
 /**
  * author Pascal Knueppel <br>
  * created at: 09.12.2019 - 15:26 <br>
  * <br>
  */
+@Slf4j
 public class ProxyHelperTest
 {
 
@@ -51,6 +54,11 @@ public class ProxyHelperTest
     Assertions.assertEquals(host, requestConfig.getProxy().getHostName());
     Assertions.assertEquals(port, requestConfig.getProxy().getPort());
 
+    Assertions.assertEquals(host, proxyHelper.getSystemProxyHost());
+    Assertions.assertEquals(port, proxyHelper.getSystemProxyPort());
+    Assertions.assertEquals(proxyUsername, proxyHelper.getSystemProxyUsername());
+    Assertions.assertEquals(proxyPassword, proxyHelper.getSystemProxyPassword());
+
     if (proxyHelper.isProxySet())
     {
       HttpClientBuilder.create()
@@ -62,6 +70,48 @@ public class ProxyHelperTest
     {
       Assertions.fail("proxy was not set");
     }
+    log.warn(proxyHelper.getProxyAddress());
+  }
+
+  /**
+   * will assert that an apache http client can be build with the proxy helper in a easy way
+   */
+  @Test
+  public void testProxyHelperSetter()
+  {
+    final String host = PROXY_HOST;
+    final int port = 8888;
+    final String proxyUsername = PROXY_USERNAME;
+    final String proxyPassword = PROXY_PASSWORD;
+    ProxyHelper proxyHelper = ProxyHelper.builder().build();
+    proxyHelper.setSystemProxyHost(host);
+    proxyHelper.setSystemProxyPort(port);
+    proxyHelper.setSystemProxyUsername(proxyUsername);
+    proxyHelper.setSystemProxyPassword(proxyPassword);
+
+    RequestConfig requestConfig = proxyHelper.getProxyConfig();
+    Assertions.assertNotNull(requestConfig.getProxy());
+    Assertions.assertNotEquals(RequestConfig.DEFAULT, proxyHelper.getProxyConfig());
+    Assertions.assertEquals(host, requestConfig.getProxy().getHostName());
+    Assertions.assertEquals(port, requestConfig.getProxy().getPort());
+
+    Assertions.assertEquals(host, proxyHelper.getSystemProxyHost());
+    Assertions.assertEquals(port, proxyHelper.getSystemProxyPort());
+    Assertions.assertEquals(proxyUsername, proxyHelper.getSystemProxyUsername());
+    Assertions.assertEquals(proxyPassword, proxyHelper.getSystemProxyPassword());
+
+    if (proxyHelper.isProxySet())
+    {
+      HttpClientBuilder.create()
+                       .setDefaultRequestConfig(requestConfig)
+                       .setDefaultCredentialsProvider(proxyHelper.getProxyCredentials())
+                       .build();
+    }
+    else
+    {
+      Assertions.fail("proxy was not set");
+    }
+    log.warn(proxyHelper.getProxyAddress());
   }
 
   /**
@@ -194,6 +244,20 @@ public class ProxyHelperTest
                                              .systemProxyUsername(proxyUsername)
                                              .systemProxyPassword(proxyPassword)
                                              .build());
+  }
+
+  /**
+   * verifies that the proxy credentials will be ignored if the password has not been set
+   */
+  @Test
+  public void testSetProxyUsernameWithoutPassword()
+  {
+    ProxyHelper proxyHelper = ProxyHelper.builder()
+                                         .systemProxyHost("localhost")
+                                         .systemProxyPort(8888)
+                                         .systemProxyUsername("goldfish")
+                                         .build();
+    Assertions.assertNull(proxyHelper.getProxyCredentials());
   }
 
 }

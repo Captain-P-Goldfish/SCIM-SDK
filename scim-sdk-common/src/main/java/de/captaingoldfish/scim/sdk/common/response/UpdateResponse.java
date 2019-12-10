@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -13,6 +14,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
  * <br>
  * represents an update response object
  */
+@NoArgsConstructor
 public class UpdateResponse extends ScimResponse
 {
 

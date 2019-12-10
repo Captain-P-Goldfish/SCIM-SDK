@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.client.http;
 import java.util.Map;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
 
 /**
@@ -13,7 +13,7 @@ import lombok.Data;
  * represents a response object that will be returned by the {@link ScimHttpClient} if a response from a
  * server was received
  */
-@Data
+@Getter
 @Builder
 public class HttpResponse
 {

@@ -10,8 +10,8 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -24,9 +24,9 @@ import lombok.extern.slf4j.Slf4j;
  * @see ScimHttpClient
  */
 @Slf4j
-@Data
+@Getter
+@Setter
 @Builder
-@NoArgsConstructor
 @AllArgsConstructor
 public class ProxyHelper
 {
