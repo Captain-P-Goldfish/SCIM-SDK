@@ -53,6 +53,7 @@
         <module>scim-sdk-server</module>
         <module>scim-sdk-common</module>
         <module>samples</module>
+        <module>scim-sdk-client</module>
     </modules>
 
     <properties>
@@ -118,6 +119,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-sdk-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.apache.commons.lang3}</version>
@@ -132,6 +138,16 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${version.jackson}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
                 <version>${version.jackson}</version>
             </dependency>
             <!-- end json libraries -->
