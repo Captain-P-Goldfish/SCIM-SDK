@@ -1,12 +1,10 @@
 package de.captaingoldfish.scim.sdk.client.http;
 
 import java.io.IOException;
+import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.UUID;
-import java.util.function.BiConsumer;
-
-import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpStatus;
@@ -33,14 +31,10 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.stereotype.Controller;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
+import de.captaingoldfish.scim.sdk.client.exceptions.IORuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SocketTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException;
@@ -117,7 +111,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                               .connectTimeout(connectTimeout)
                                               .requestTimeout(requestTimeout)
                                               .socketTimeout(socketTimeout)
-                                              .proxyHelper(null)
+                                              .proxy(null)
                                               .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
                                               .truststore(tlsTruststore)
                                               .hostnameVerifier((s, sslSession) -> true)
@@ -153,7 +147,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                               .connectTimeout(connectTimeout)
                                               .requestTimeout(requestTimeout)
                                               .socketTimeout(socketTimeout)
-                                              .proxyHelper(null)
+                                              .proxy(null)
                                               .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
                                               .truststore(tlsTruststore)
                                               .hostnameVerifier((s, sslSession) -> true)
@@ -183,7 +177,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                               .connectTimeout(connectTimeout)
                                               .requestTimeout(requestTimeout)
                                               .socketTimeout(socketTimeout)
-                                              .proxyHelper(null)
+                                              .proxy(null)
                                               .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
                                               .truststore(tlsTruststore)
                                               .hostnameVerifier((s, sslSession) -> true)
@@ -195,13 +189,19 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
       httpClient.sendRequest(new HttpGet(requestUrl));
       Assertions.fail("this point must not be reached");
     }
-    catch (ConnectTimeoutRuntimeException e)
+    catch (ConnectTimeoutRuntimeException ex)
     {
-      log.debug(e.getMessage(), e);
-      Assertions.assertEquals("connection timeout after '1' seconds", e.getMessage());
+      log.debug(ex.getMessage(), ex);
+      Assertions.assertEquals("connection timeout after '1' seconds", ex.getMessage());
       Assertions.assertEquals("Connect to localhost:443 [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] "
                               + "failed: connect timed out",
-                              e.getCause().getMessage());
+                              ex.getCause().getMessage());
+    }
+    catch (IORuntimeException ex)
+    {
+      Assertions.assertEquals("communication with server failed", ex.getMessage());
+      Assertions.assertEquals(ConnectException.class, ex.getCause().getClass());
+      Assertions.assertEquals("Connection refused (Connection refused)", ex.getCause().getMessage());
     }
   }
 
@@ -218,7 +218,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                               .connectTimeout(connectTimeout)
                                               .requestTimeout(requestTimeout)
                                               .socketTimeout(socketTimeout)
-                                              .proxyHelper(null)
+                                              .proxy(null)
                                               .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
                                               .truststore(tlsTruststore)
                                               .hostnameVerifier((s, sslSession) -> true)
@@ -251,7 +251,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                               .connectTimeout(connectTimeout)
                                               .requestTimeout(requestTimeout)
                                               .socketTimeout(socketTimeout)
-                                              .proxyHelper(null)
+                                              .proxy(null)
                                               .truststore(tlsTruststore)
                                               .hostnameVerifier((s, sslSession) -> true)
                                               .build();
@@ -280,7 +280,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                               .connectTimeout(connectTimeout)
                                               .requestTimeout(requestTimeout)
                                               .socketTimeout(socketTimeout)
-                                              .proxyHelper(null)
+                                              .proxy(null)
                                               .hostnameVerifier((s, sslSession) -> true)
                                               .build();
     try
@@ -291,10 +291,8 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     catch (SSLHandshakeRuntimeException e)
     {
       Assertions.assertEquals("handshake error during connection setup", e.getMessage());
-      Assertions.assertEquals("sun.security.validator.ValidatorException: PKIX path building failed: "
-                              + "sun.security.provider.certpath.SunCertPathBuilderException: "
-                              + "unable to find valid certification path to requested target",
-                              e.getCause().getMessage());
+      MatcherAssert.assertThat(e.getCause().getMessage(),
+                               Matchers.containsString("unable to find valid certification path to requested target"));
     }
   }
 
@@ -307,86 +305,11 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     final String PROXY_HOST = "localhost";
     final int PROXY_PORT = 8888;
     ProxyHelper proxyHelper = ProxyHelper.builder().systemProxyHost(PROXY_HOST).systemProxyPort(PROXY_PORT).build();
-    ScimHttpClient httpClient = ScimHttpClient.builder().proxyHelper(proxyHelper).build();
+    ScimHttpClient httpClient = ScimHttpClient.builder().proxy(proxyHelper).build();
     RequestConfig requestConfig = httpClient.getRequestConfig();
     Assertions.assertNotNull(requestConfig.getProxy());
     Assertions.assertEquals(PROXY_HOST, requestConfig.getProxy().getHostName());
     Assertions.assertEquals(PROXY_PORT, requestConfig.getProxy().getPort());
-  }
-
-  /**
-   * a test-controller to access this test-springboot-application via the {@link ScimHttpClient}
-   */
-  @Controller
-  public static class TestController
-  {
-
-    /**
-     * the context path to the test-controller endpoint {@link #helloWorldEndpoint(HttpServletRequest)}
-     */
-    public static final String GET_ENDPOINT_PATH = "get-endpoint";
-
-    /**
-     * this endpoint is supposed to provoke an error due to a thread.sleep
-     */
-    public static final String TIMEOUT_ENDPOINT_PATH = "bad-test-endpoint";
-
-    /**
-     * this context path points to a method that will accept post requests
-     */
-    public static final String POST_ENDPOINT_PATH = "post-test-endpoint";
-
-    /**
-     * the value that is returned from the test-endpoint
-     */
-    public static final String HELLO_WORLD_RESPONSE_VALUE = "hello world";
-
-    /**
-     * this consumer can be used to validate the incoming requests on this controller
-     */
-    public static BiConsumer<HttpServletRequest, String> validateRequest;
-
-    /**
-     * a controller endpoint that will be scanned by
-     * {@link de.governikus.autent.web.utils.springboot.WebAppConfig}
-     *
-     * @return "hello world"
-     */
-    @RequestMapping(GET_ENDPOINT_PATH)
-    public @ResponseBody String helloWorldEndpoint(HttpServletRequest request)
-    {
-      if (validateRequest != null)
-      {
-        validateRequest.accept(request, null);
-      }
-      return HELLO_WORLD_RESPONSE_VALUE;
-    }
-
-    /**
-     * this endpoint accepts post requests
-     *
-     * @return "hello world"
-     */
-    @RequestMapping(value = POST_ENDPOINT_PATH, method = RequestMethod.POST)
-    public @ResponseBody String postEndpointPath(HttpServletRequest request, @RequestBody String requestBody)
-    {
-      if (validateRequest != null)
-      {
-        validateRequest.accept(request, requestBody);
-      }
-      return HELLO_WORLD_RESPONSE_VALUE;
-    }
-
-    /**
-     * this method will be used to provoke a timeout for the tests
-     */
-    @RequestMapping(TIMEOUT_ENDPOINT_PATH)
-    public @ResponseBody String blockingEndpoint() throws InterruptedException
-    {
-      final int twoSeconds = 2000;
-      Thread.sleep(twoSeconds);
-      return HELLO_WORLD_RESPONSE_VALUE;
-    }
   }
 
   /**
@@ -441,5 +364,4 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
       };
     }
   }
-
 }
