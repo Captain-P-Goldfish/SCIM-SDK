@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.client.http;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.UUID;
 import java.util.function.BiConsumer;
@@ -13,6 +14,8 @@ import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -131,7 +134,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     try (CloseableHttpClient client = httpClient.getHttpClient();
       CloseableHttpResponse response = client.execute(new HttpGet(getRequestUrl(TestController.GET_ENDPOINT_PATH))))
     {
-      String responseString = IOUtils.toString(response.getEntity().getContent());
+      String responseString = IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8);
       Assertions.assertEquals(TestController.HELLO_WORLD_RESPONSE_VALUE, responseString);
       Assertions.assertEquals(HttpStatus.SC_OK, response.getStatusLine().getStatusCode());
     }
@@ -231,7 +234,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     {
       log.debug(ex.getMessage(), ex);
       Assertions.assertEquals("could not find host '" + host + "'", ex.getMessage());
-      Assertions.assertEquals(host, ex.getCause().getMessage());
+      MatcherAssert.assertThat(ex.getCause().getMessage(), Matchers.containsString(host));
     }
   }
 
