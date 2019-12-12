@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.client;
+package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.nio.charset.StandardCharsets;
 

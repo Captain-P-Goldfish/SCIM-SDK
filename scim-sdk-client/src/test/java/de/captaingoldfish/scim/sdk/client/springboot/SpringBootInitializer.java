@@ -3,7 +3,6 @@ package de.captaingoldfish.scim.sdk.client.springboot;
 import javax.servlet.Filter;
 
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.boot.autoconfigure.thymeleaf.ThymeleafAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.context.annotation.Bean;
@@ -23,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Configuration
-@EnableAutoConfiguration(exclude = {ThymeleafAutoConfiguration.class})
+@EnableAutoConfiguration
 @Import({WebAppConfig.class})
 public class SpringBootInitializer extends SpringBootServletInitializer
 {

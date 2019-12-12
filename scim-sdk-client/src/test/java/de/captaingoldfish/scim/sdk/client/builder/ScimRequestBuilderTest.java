@@ -1,4 +1,6 @@
-package de.captaingoldfish.scim.sdk.client;
+package de.captaingoldfish.scim.sdk.client.builder;
+
+import java.util.Collections;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,9 +12,11 @@ import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 
 
 /**
@@ -42,7 +46,6 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     scimRequestBuilder = new ScimRequestBuilder(getServerUrl(), scimClientConfig);
   }
 
-
   /**
    * verifies that a create request can be successfully built and send to the scim service provider
    */
@@ -56,13 +59,36 @@ public class ScimRequestBuilderTest extends HttpServerMockup
                                                           .sendRequest();
     Assertions.assertEquals(CreateResponse.class, response.getScimResponse().getClass());
     Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
-    Assertions.assertEquals(User.class, response.getResourceType());
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
-    User returnedUser = response.getResource();
+    Assertions.assertTrue(response.getResource().isPresent());
+    User returnedUser = response.getResource().get();
     Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
     Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+  }
+
+  /**
+   * verifies that an error response is correctly parsed
+   */
+  @Test
+  public void testBuildCreateRequestWithErrorResponse()
+  {
+    User user = User.builder().userName("goldfish").build();
+    user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
+
+    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
+                                                          .setEndpoint(EndpointPaths.USERS)
+                                                          .setResource(user)
+                                                          .sendRequest();
+    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().getClass());
+    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
+    Assertions.assertEquals("main resource schema 'urn:ietf:params:scim:schemas:core:2.0:User' is not present in "
+                            + "resource. Main schema is: urn:ietf:params:scim:schemas:core:2.0:User",
+                            response.getErrorResponse().get().getDetail());
+    Assertions.assertFalse(response.getResource().isPresent());
   }
 }

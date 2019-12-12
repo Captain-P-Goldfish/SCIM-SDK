@@ -117,7 +117,7 @@ public class ErrorResponse extends ScimResponse
   @Override
   public int getHttpStatus()
   {
-    return scimException.getStatus();
+    return scimException == null ? 0 : scimException.getStatus();
   }
 
   /**

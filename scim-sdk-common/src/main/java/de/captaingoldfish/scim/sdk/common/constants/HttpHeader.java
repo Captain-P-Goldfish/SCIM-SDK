@@ -26,4 +26,5 @@ public final class HttpHeader
 
   public static final String IF_NONE_MATCH_HEADER = "If-None-Match";
 
+  public static final String AUHORIZATION = "Authorization";
 }

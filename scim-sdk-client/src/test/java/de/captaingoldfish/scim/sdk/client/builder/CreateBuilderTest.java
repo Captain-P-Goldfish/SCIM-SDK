@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.client;
+package de.captaingoldfish.scim.sdk.client.builder;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -36,11 +36,11 @@ public class CreateBuilderTest extends HttpServerMockup
                                                                        .sendRequest();
     Assertions.assertEquals(CreateResponse.class, response.getScimResponse().getClass());
     Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
-    Assertions.assertEquals(User.class, response.getResourceType());
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
-    User user = response.getResource();
+    Assertions.assertTrue(response.getResource().isPresent());
+    User user = response.getResource().get();
     Assertions.assertEquals("goldfish", user.getUserName().get());
     Assertions.assertEquals(user.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));

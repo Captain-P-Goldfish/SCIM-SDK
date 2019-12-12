@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.client;
+package de.captaingoldfish.scim.sdk.client.builder;
 
 import org.apache.http.client.methods.HttpUriRequest;
 
@@ -109,10 +109,17 @@ abstract class RequestBuilder<T extends ResourceNode>
                                                   .connectTimeout(scimClientConfig.getConnectTimeout())
                                                   .requestTimeout(scimClientConfig.getRequestTimeout())
                                                   .socketTimeout(scimClientConfig.getSocketTimeout())
-                                                  // TODO
+                                                  .proxy(scimClientConfig.getProxy())
+                                                  .hostnameVerifier(scimClientConfig.getHostnameVerifier())
+                                                  .tlsClientAuthenticatonKeystore(scimClientConfig.getClientAuth())
+                                                  .truststore(scimClientConfig.getTruststore())
                                                   .build();
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    if (scimClientConfig.getBasicAuth() != null)
+    {
+      request.setHeader(HttpHeader.AUHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
+    }
     return handleResponse(scimHttpClient.sendRequest(request));
   }
 
@@ -127,7 +134,12 @@ abstract class RequestBuilder<T extends ResourceNode>
     ScimResponse scimResponse = JsonHelper.readJsonDocument(response.getResponseBody(),
                                                             getResponseType(response.getHttpStatusCode()));
     response.getResponseHeaders().forEach(scimResponse.getHttpHeaders()::put);
-    return ScimServerResponse.<T> builder().scimResponse(scimResponse).responseEntityType(responseEntityType).build();
+    ScimServerResponse serverResponse = ScimServerResponse.<T> builder()
+                                                          .scimResponse(scimResponse)
+                                                          .responseEntityType(responseEntityType)
+                                                          .responseStatus(response.getHttpStatusCode())
+                                                          .build();
+    return serverResponse;
   }
 
   /**

@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.client;
+package de.captaingoldfish.scim.sdk.client.builder;
 
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 

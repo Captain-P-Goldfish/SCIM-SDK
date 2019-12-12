@@ -22,15 +22,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.annotation.Order;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.core.authority.AuthorityUtils;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
@@ -41,6 +34,7 @@ import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreSupporter;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
+import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
 import de.captaingoldfish.scim.sdk.client.springboot.SpringBootInitializer;
 import lombok.extern.slf4j.Slf4j;
 
@@ -50,9 +44,11 @@ import lombok.extern.slf4j.Slf4j;
  * created at: 09.12.2019 - 15:26 <br>
  * <br>
  */
+@ActiveProfiles(SecurityConstants.X509_PROFILE)
 @Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SpringBootInitializer.class})
+@TestPropertySource(properties = {"server.ssl.client-auth=need"})
 public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
 {
 
@@ -312,56 +308,4 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     Assertions.assertEquals(PROXY_PORT, requestConfig.getProxy().getPort());
   }
 
-  /**
-   * spring security configuration for this test that will enable mutual client authentication to test the http
-   * tls client authentication
-   */
-  @Order(ConfigureTestControllerWithSecurity.RANDOM_ORDER_NUMBER)
-  @Configuration
-  @EnableWebSecurity
-  public static class ConfigureTestControllerWithSecurity extends WebSecurityConfigurerAdapter
-  {
-
-    /**
-     * a order number that is given to this configuration that should not have any conflicts with other
-     * spring-security configurations
-     */
-    public static final int RANDOM_ORDER_NUMBER = 499;
-
-    /**
-     * configure the endpoints that require mutual client authentication and add the regular expression to match
-     * the username within the certificates distinguished name
-     */
-    @Override
-    protected void configure(HttpSecurity http) throws Exception
-    {
-      http.csrf()
-          .disable()
-          .authorizeRequests()
-          .antMatchers(TestController.GET_ENDPOINT_PATH, TestController.TIMEOUT_ENDPOINT_PATH)
-          .authenticated()
-          .and()
-          .x509()
-          .subjectPrincipalRegex("CN=(.*)"); // the regular expression to parse the username from the DN
-    }
-
-    /**
-     * will do the authentication if a request comes in. The CN of the certificate must match "test" to
-     * successfully authenticate
-     */
-    @Bean
-    public UserDetailsService userDetailsService()
-    {
-      return username -> {
-        if ("test".equals(username))
-        {
-          return new User(username, "", AuthorityUtils.commaSeparatedStringToAuthorityList("ROLE_USER"));
-        }
-        else
-        {
-          return null;
-        }
-      };
-    }
-  }
 }

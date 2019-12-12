@@ -13,6 +13,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -76,7 +77,7 @@ public class ScimHttpClient
   /**
    * a helper that will simplify using the proxy settings
    */
-  private ProxyHelper proxyHelper;
+  private ProxyHelper proxy;
 
   /**
    * verimi demands client authentication on the token endpoint and the user-info endpoint
@@ -120,10 +121,12 @@ public class ScimHttpClient
   public CloseableHttpClient getHttpClient()
   {
     HttpClientBuilder clientBuilder = HttpClientBuilder.create();
-    if (proxyHelper != null && proxyHelper.isProxySet())
+    CredentialsProvider credentialsProvider = null;
+    if (proxy != null && proxy.isProxySet())
     {
-      clientBuilder.setDefaultCredentialsProvider(proxyHelper.getProxyCredentials());
+      credentialsProvider = proxy.getProxyCredentials();
     }
+    clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
     if (tlsClientAuthenticatonKeystore != null || truststore != null)
     {
       clientBuilder.setSSLContext(SSLContextHelper.getSslContext(tlsClientAuthenticatonKeystore, truststore));
@@ -146,13 +149,13 @@ public class ScimHttpClient
   public RequestConfig getRequestConfig()
   {
     RequestConfig.Builder configBuilder;
-    if (proxyHelper == null)
+    if (proxy == null)
     {
       configBuilder = RequestConfig.copy(RequestConfig.DEFAULT);
     }
     else
     {
-      RequestConfig proxyConfig = proxyHelper.getProxyConfig();
+      RequestConfig proxyConfig = proxy.getProxyConfig();
       configBuilder = RequestConfig.copy(proxyConfig);
     }
     if (connectTimeout > 0)

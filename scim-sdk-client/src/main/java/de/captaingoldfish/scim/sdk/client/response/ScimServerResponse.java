@@ -1,8 +1,12 @@
 package de.captaingoldfish.scim.sdk.client.response;
 
 import java.util.Map;
+import java.util.Optional;
+
+import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResponseException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
@@ -23,13 +27,13 @@ import lombok.Getter;
  * <br>
  * holds the response from a service provider request
  */
-@Getter
 public class ScimServerResponse<T extends ResourceNode>
 {
 
   /**
    * the response send by the scim service provider
    */
+  @Getter
   private ScimResponse scimResponse;
 
   /**
@@ -45,31 +49,67 @@ public class ScimServerResponse<T extends ResourceNode>
   /**
    * the type of response the client received from the server
    */
+  @Getter
   private ResponseType responseType;
 
+  /**
+   * this exception will be parsed from the response if the response from the server was an error
+   */
+  private ResponseException responseException;
+
+  /**
+   * holds the http response status from the server
+   */
+  private Integer responseStatus;
+
   @Builder
-  public ScimServerResponse(ScimResponse scimResponse, Class<T> responseEntityType)
+  public ScimServerResponse(ScimResponse scimResponse, Class<T> responseEntityType, Integer responseStatus)
   {
-    this.scimResponse = scimResponse;
+    this.scimResponse = StringUtils.isBlank(scimResponse.toString()) ? null : scimResponse;
     this.resourceType = responseEntityType;
     this.responseType = getResponseType(scimResponse);
+    this.responseStatus = responseStatus;
   }
 
   /**
    * @return the expected resource type
    */
-  public T getResource()
+  public Optional<T> getResource()
   {
+    if (ResponseType.ERROR.equals(responseType))
+    {
+      return Optional.empty();
+    }
     if (resource != null)
     {
-      return resource;
+      return Optional.of(resource);
     }
     if (responseType == null)
     {
       throw new IllegalStateException("no response type was set cannot translate response into a resource");
     }
     this.resource = JsonHelper.copyResourceToObject(scimResponse, resourceType);
-    return resource;
+    return Optional.of(resource);
+  }
+
+  /**
+   * turns the error response into an exception type
+   * 
+   * @return the exception or an empty if the response is not an error
+   */
+  public Optional<ResponseException> getErrorResponse()
+  {
+    if (responseException != null)
+    {
+      return Optional.of(responseException);
+    }
+    if (!ResponseType.ERROR.equals(responseType))
+    {
+      return Optional.empty();
+    }
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    return Optional.of(new ResponseException(errorResponse.getDetail().orElse(null), errorResponse.getStatus(),
+                                             errorResponse.getScimType().orElse(null)));
   }
 
   /**
@@ -85,7 +125,7 @@ public class ScimServerResponse<T extends ResourceNode>
    */
   public int getHttpStatus()
   {
-    return scimResponse.getHttpStatus();
+    return responseStatus;
   }
 
   /**
