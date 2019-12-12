@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.client.http;
 
 import java.io.IOException;
-import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyStore;
 import java.util.UUID;
@@ -196,7 +195,6 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     catch (IORuntimeException ex)
     {
       Assertions.assertEquals("communication with server failed", ex.getMessage());
-      Assertions.assertEquals(ConnectException.class, ex.getCause().getClass());
       Assertions.assertEquals("Connection refused (Connection refused)", ex.getCause().getMessage());
     }
   }
