@@ -8,6 +8,26 @@ package de.captaingoldfish.scim.sdk.common.exceptions;
 public class InvalidResourceTypeException extends ScimException
 {
 
+  public InvalidResourceTypeException(String message)
+  {
+    this(message, null, null, null);
+  }
+
+  public InvalidResourceTypeException(String message, Throwable cause)
+  {
+    this(message, cause, null, null);
+  }
+
+  public InvalidResourceTypeException(String message, Throwable cause, String scimType)
+  {
+    this(message, cause, null, scimType);
+  }
+
+  public InvalidResourceTypeException(String message, Throwable cause, Integer status)
+  {
+    this(message, cause, status, null);
+  }
+
   public InvalidResourceTypeException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause, status, scimType);

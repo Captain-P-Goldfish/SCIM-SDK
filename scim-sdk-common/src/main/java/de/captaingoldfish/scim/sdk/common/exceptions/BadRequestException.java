@@ -11,8 +11,23 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class BadRequestException extends ScimException
 {
 
+  public BadRequestException(String message)
+  {
+    this(message, null, null);
+  }
+
+  public BadRequestException(String message, String scimType)
+  {
+    this(message, null, scimType);
+  }
+
   public BadRequestException(String message, Throwable cause, String scimType)
   {
     super(message, cause, HttpStatus.BAD_REQUEST, scimType);
+  }
+
+  public BadRequestException(String message, Throwable cause)
+  {
+    this(message, cause, null);
   }
 }

@@ -13,6 +13,21 @@ public class ConflictException extends ScimException
 
   public ConflictException(String message)
   {
-    super(message, null, HttpStatus.CONFLICT, null);
+    this(message, null, null);
+  }
+
+  public ConflictException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
+  public ConflictException(String message, String scimType)
+  {
+    this(message, null, scimType);
+  }
+
+  public ConflictException(String message, Throwable cause, String scimType)
+  {
+    super(message, cause, HttpStatus.CONFLICT, scimType);
   }
 }

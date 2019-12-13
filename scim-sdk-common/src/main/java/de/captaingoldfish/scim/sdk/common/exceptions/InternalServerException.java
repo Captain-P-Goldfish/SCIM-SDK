@@ -11,6 +11,21 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class InternalServerException extends ScimException
 {
 
+  public InternalServerException(String message)
+  {
+    this(message, null, null);
+  }
+
+  public InternalServerException(String message, String scimType)
+  {
+    this(message, null, scimType);
+  }
+
+  public InternalServerException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
   public InternalServerException(String message, Throwable cause, String scimType)
   {
     super(message, cause, HttpStatus.INTERNAL_SERVER_ERROR, scimType);

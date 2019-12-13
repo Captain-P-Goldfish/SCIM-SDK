@@ -11,6 +11,16 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class ResourceNotFoundException extends ScimException
 {
 
+  public ResourceNotFoundException(String message)
+  {
+    this(message, null, null);
+  }
+
+  public ResourceNotFoundException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
   public ResourceNotFoundException(String message, Throwable cause, String scimType)
   {
     super(message, cause, HttpStatus.NOT_FOUND, scimType);

@@ -13,6 +13,21 @@ public class NotImplementedException extends ScimException
 
   public NotImplementedException(String message)
   {
+    this(message, null, null);
+  }
+
+  public NotImplementedException(String message, String scimType)
+  {
+    this(message, null, scimType);
+  }
+
+  public NotImplementedException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
+  public NotImplementedException(String message, Throwable cause, String scimType)
+  {
     super(message, null, HttpStatus.NOT_IMPLEMENTED, null);
   }
 }

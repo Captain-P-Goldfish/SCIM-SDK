@@ -13,6 +13,21 @@ public class NotModifiedException extends ScimException
 
   public NotModifiedException()
   {
-    super(null, null, HttpStatus.NOT_MODIFIED, null);
+    this(null, null, null);
+  }
+
+  public NotModifiedException(String message)
+  {
+    this(message, null, null);
+  }
+
+  public NotModifiedException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
+  public NotModifiedException(String message, Throwable cause, String scimType)
+  {
+    super(message, cause, HttpStatus.NOT_MODIFIED, scimType);
   }
 }

@@ -11,6 +11,21 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class InvalidDateTimeRepresentationException extends ScimException
 {
 
+  public InvalidDateTimeRepresentationException(String message)
+  {
+    this(message, null, null, null);
+  }
+
+  public InvalidDateTimeRepresentationException(String message, String scimType)
+  {
+    this(message, null, null, scimType);
+  }
+
+  public InvalidDateTimeRepresentationException(String message, Throwable cause)
+  {
+    this(message, cause, null, null);
+  }
+
   public InvalidDateTimeRepresentationException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause, status == null ? HttpStatus.BAD_REQUEST : status, scimType);

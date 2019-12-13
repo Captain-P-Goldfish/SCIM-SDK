@@ -11,8 +11,23 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class PreconditionFailedException extends ScimException
 {
 
+  public PreconditionFailedException()
+  {
+    this(null, null, null);
+  }
+
   public PreconditionFailedException(String message)
   {
-    super(message, null, HttpStatus.PRECONDITION_FAILED, null);
+    this(message, null, null);
+  }
+
+  public PreconditionFailedException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
+  public PreconditionFailedException(String message, Throwable cause, String scimType)
+  {
+    super(message, cause, HttpStatus.PRECONDITION_FAILED, scimType);
   }
 }

@@ -12,6 +12,26 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 public class IOException extends ScimException
 {
 
+  public IOException(String message)
+  {
+    this(message, null, null, null);
+  }
+
+  public IOException(String message, Throwable cause)
+  {
+    this(message, cause, null, null);
+  }
+
+  public IOException(String message, Throwable cause, String scimType)
+  {
+    this(message, cause, null, scimType);
+  }
+
+  public IOException(String message, Throwable cause, Integer status)
+  {
+    this(message, cause, status, null);
+  }
+
   public IOException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause, status == null ? HttpStatus.BAD_REQUEST : status, scimType);

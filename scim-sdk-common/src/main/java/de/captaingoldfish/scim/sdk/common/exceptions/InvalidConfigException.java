@@ -13,6 +13,21 @@ public class InvalidConfigException extends ScimException
 
   public InvalidConfigException(String message)
   {
-    super(message, null, HttpStatus.INTERNAL_SERVER_ERROR, null);
+    this(message, null, null);
+  }
+
+  public InvalidConfigException(String message, String scimType)
+  {
+    this(message, null, scimType);
+  }
+
+  public InvalidConfigException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
+  public InvalidConfigException(String message, Throwable cause, String scimType)
+  {
+    super(message, cause, HttpStatus.INTERNAL_SERVER_ERROR, scimType);
   }
 }

@@ -10,6 +10,27 @@ package de.captaingoldfish.scim.sdk.common.exceptions;
 public class IncompatibleAttributeException extends ScimException
 {
 
+
+  public IncompatibleAttributeException(String message)
+  {
+    this(message, null, null, null);
+  }
+
+  public IncompatibleAttributeException(String message, Throwable cause)
+  {
+    this(message, cause, null, null);
+  }
+
+  public IncompatibleAttributeException(String message, Throwable cause, String scimType)
+  {
+    this(message, cause, null, scimType);
+  }
+
+  public IncompatibleAttributeException(String message, Throwable cause, Integer status)
+  {
+    this(message, cause, status, null);
+  }
+
   public IncompatibleAttributeException(String message, Throwable cause, Integer status, String scimType)
   {
     super(message, cause, status, scimType);

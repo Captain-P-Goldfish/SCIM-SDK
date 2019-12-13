@@ -13,6 +13,21 @@ public class ForbiddenException extends ScimException
 
   public ForbiddenException(String message)
   {
-    super(message, null, HttpStatus.FORBIDDEN, null);
+    this(message, null, null);
+  }
+
+  public ForbiddenException(String message, String scimType)
+  {
+    this(message, null, scimType);
+  }
+
+  public ForbiddenException(String message, Throwable cause)
+  {
+    this(message, cause, null);
+  }
+
+  public ForbiddenException(String message, Throwable cause, String scimType)
+  {
+    super(message, cause, HttpStatus.FORBIDDEN, scimType);
   }
 }
