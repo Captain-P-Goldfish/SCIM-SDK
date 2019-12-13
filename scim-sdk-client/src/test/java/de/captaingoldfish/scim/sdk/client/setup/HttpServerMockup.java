@@ -56,7 +56,7 @@ public abstract class HttpServerMockup
   /**
    * creates a new scim configuration with user and group endpoints
    */
-  private final static ScimConfig scimConfig = new ScimConfig();
+  protected final static ScimConfig scimConfig = new ScimConfig();
 
   /**
    * this port will be used by the {@link #server}

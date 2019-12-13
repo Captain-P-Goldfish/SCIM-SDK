@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -11,11 +12,13 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 
 
@@ -174,6 +177,54 @@ public class GetBuilderTest extends HttpServerMockup
                                                                   .setETagForIfNoneMatch(ETag.parseETag(version))
                                                                   .sendRequest();
     Assertions.assertTrue(wasCalled.get());
+  }
+
+  /**
+   * verifies that the response from the server can successfully be parsed if a not modified with an empty
+   * response body is returned
+   */
+  @Test
+  public void parseNotModifiedResponse()
+  {
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    final String id = UUID.randomUUID().toString();
+    final String version = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).version(version).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimServerResponse<User> response = new GetBuilder<>(getServerUrl(), scimClientConfig,
+                                                         User.class).setEndpoint(EndpointPaths.USERS)
+                                                                    .setETagForIfNoneMatch(version)
+                                                                    .setId(id)
+                                                                    .sendRequest();
+    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
+  }
+
+  /**
+   * verifies that the response from the server can successfully be parsed if a precondition failed with an
+   * empty response body is returned
+   */
+  @Test
+  public void parsePreConditionFailedResponse()
+  {
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    final String id = UUID.randomUUID().toString();
+    final String version = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).version(version).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimServerResponse<User> response = new GetBuilder<>(getServerUrl(), scimClientConfig,
+                                                         User.class).setEndpoint(EndpointPaths.USERS)
+                                                                    .setETagForIfMatch(version + "1")
+                                                                    .setId(id)
+                                                                    .sendRequest();
+    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
   }
 
 
