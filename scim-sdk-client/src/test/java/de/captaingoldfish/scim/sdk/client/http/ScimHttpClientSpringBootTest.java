@@ -195,7 +195,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     catch (IORuntimeException ex)
     {
       Assertions.assertEquals("communication with server failed", ex.getMessage());
-      Assertions.assertEquals("Connection refused (Connection refused)", ex.getCause().getMessage());
+      MatcherAssert.assertThat(ex.getCause().getMessage(), Matchers.containsString("(Connection refused)"));
     }
   }
 
