@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Consumer;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -88,6 +89,12 @@ public abstract class HttpServerMockup
   private boolean ignoreServerError = false;
 
   /**
+   * can be used to validate the request attributes
+   */
+  @Setter(AccessLevel.PUBLIC)
+  private Consumer<HttpExchange> verifyRequestAttributes = httpExchange -> {};
+
+  /**
    * here we will check if an error occurred on the mocked server and if it did we will throw the error in the
    * test context
    */
@@ -123,6 +130,7 @@ public abstract class HttpServerMockup
       Optional<String> responseBodyOptional;
       try
       {
+        verifyRequestAttributes.accept(httpExchange);
         responseBodyOptional = handleMockedServerRequest(httpExchange);
       }
       catch (Exception | AssertionError ex)

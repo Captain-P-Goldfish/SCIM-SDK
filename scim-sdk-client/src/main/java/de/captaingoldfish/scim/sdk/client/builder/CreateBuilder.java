@@ -77,7 +77,7 @@ class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint() + "?tricky=true");
+    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
     StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
     httpPost.setEntity(stringEntity);
     return httpPost;
