@@ -20,6 +20,7 @@ import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import de.captaingoldfish.scim.sdk.common.response.GetResponse;
 
 
 /**
@@ -71,7 +72,29 @@ public class GetBuilderTest extends HttpServerMockup
    * verifies simply that the request is setup correctly for simple cases
    */
   @Test
-  public void testSimpleGetRequest()
+  public void testSimpleGetRequestSuccess()
+  {
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimServerResponse<User> response = new GetBuilder<>(getServerUrl(), scimClientConfig,
+                                                         User.class).setEndpoint(EndpointPaths.USERS)
+                                                                    .setId(id)
+                                                                    .sendRequest();
+    Assertions.assertEquals(ResponseType.READ, response.getResponseType());
+    Assertions.assertEquals(GetResponse.class, response.getScimResponse().getClass());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+  }
+
+  /**
+   * verifies simply that the request is setup correctly for simple cases
+   */
+  @Test
+  public void testSimpleGetRequestFail()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimServerResponse<User> response = new GetBuilder<>(getServerUrl(), scimClientConfig,
