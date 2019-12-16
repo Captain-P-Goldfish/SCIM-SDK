@@ -50,7 +50,7 @@ class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  protected GetBuilder<T> setEndpoint(String endpoint)
+  public GetBuilder<T> setEndpoint(String endpoint)
   {
     return (GetBuilder<T>)super.setEndpoint(endpoint);
   }
@@ -95,8 +95,6 @@ class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * a get-response if a status code of 200 is returned an error response in all other cases
    * 
    * @param responseCode the response code from the SCIM service
-   * @param <T1>
-   * @return
    */
   @Override
   protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)

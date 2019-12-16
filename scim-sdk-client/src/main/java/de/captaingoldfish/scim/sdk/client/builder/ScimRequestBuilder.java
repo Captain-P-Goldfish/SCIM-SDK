@@ -32,11 +32,22 @@ public class ScimRequestBuilder
    * builds a create builder class based on the given type
    * 
    * @param type the type that should be created
-   * @return a request builder for the given resource type
+   * @return a create-request builder for the given resource type
    */
   public <T extends ResourceNode> CreateBuilder<T> create(Class<T> type)
   {
     return new CreateBuilder<>(baseUrl, scimClientConfig, type);
+  }
+
+  /**
+   * builds a get builder class based on the given type
+   * 
+   * @param type the type that should be created
+   * @return a get-request builder for the given resource type
+   */
+  public <T extends ResourceNode> GetBuilder<T> get(Class<T> type)
+  {
+    return new GetBuilder<>(baseUrl, scimClientConfig, type);
   }
 
 }

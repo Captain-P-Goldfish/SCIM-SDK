@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.time.Instant;
 import java.util.Collections;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -9,11 +11,13 @@ import org.junit.jupiter.api.Test;
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
@@ -90,5 +94,45 @@ public class ScimRequestBuilderTest extends HttpServerMockup
                             + "resource. Main schema is: urn:ietf:params:scim:schemas:core:2.0:User",
                             response.getErrorResponse().get().getDetail());
     Assertions.assertFalse(response.getResource().isPresent());
+  }
+
+  /**
+   * verifies that a get-request can successfully be built
+   */
+  @Test
+  public void testBuildGetRequest()
+  {
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimServerResponse<User> response = scimRequestBuilder.get(User.class)
+                                                          .setEndpoint(EndpointPaths.USERS)
+                                                          .setId(id)
+                                                          .sendRequest();
+
+    Assertions.assertTrue(response.getResource().isPresent());
+    Assertions.assertEquals(user.getId().get(), response.getResource().get().getId().get());
+  }
+
+  /**
+   * verifies that a response for a get-request is correctly returned if the user was not found
+   */
+  @Test
+  public void testBuildGetRequestWithUserNotFound()
+  {
+    final String id = UUID.randomUUID().toString();
+
+    ScimServerResponse<User> response = scimRequestBuilder.get(User.class)
+                                                          .setEndpoint(EndpointPaths.USERS)
+                                                          .setId(id)
+                                                          .sendRequest();
+
+    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertFalse(response.getResource().isPresent());
+    Assertions.assertTrue(response.getErrorResponse().isPresent());
   }
 }
