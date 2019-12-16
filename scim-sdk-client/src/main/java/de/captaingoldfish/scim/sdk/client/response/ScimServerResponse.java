@@ -33,7 +33,6 @@ public class ScimServerResponse<T extends ResourceNode>
   /**
    * the response send by the scim service provider
    */
-  @Getter
   private ScimResponse scimResponse;
 
   /**
@@ -65,10 +64,26 @@ public class ScimServerResponse<T extends ResourceNode>
   @Builder
   public ScimServerResponse(ScimResponse scimResponse, Class<T> responseEntityType, Integer responseStatus)
   {
-    this.scimResponse = StringUtils.isBlank(scimResponse.toString()) ? null : scimResponse;
+    this.scimResponse = StringUtils.isBlank(scimResponse.toString()) || scimResponse.isEmpty() ? null : scimResponse;
     this.resourceType = responseEntityType;
     this.responseType = getResponseType(scimResponse);
     this.responseStatus = responseStatus;
+  }
+
+  /**
+   * @see #scimResponse
+   */
+  public Optional<ScimResponse> getScimResponse()
+  {
+    return Optional.ofNullable(scimResponse);
+  }
+
+  /**
+   * @see #scimResponse
+   */
+  public void setScimResponse(ScimResponse scimResponse)
+  {
+    this.scimResponse = scimResponse;
   }
 
   /**
@@ -89,7 +104,7 @@ public class ScimServerResponse<T extends ResourceNode>
       throw new IllegalStateException("no response type was set cannot translate response into a resource");
     }
     this.resource = JsonHelper.copyResourceToObject(scimResponse, resourceType);
-    return Optional.of(resource);
+    return Optional.ofNullable(resource);
   }
 
   /**
@@ -108,8 +123,9 @@ public class ScimServerResponse<T extends ResourceNode>
       return Optional.empty();
     }
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    return Optional.of(new ResponseException(errorResponse.getDetail().orElse(null), errorResponse.getStatus(),
-                                             errorResponse.getScimType().orElse(null)));
+    this.responseException = new ResponseException(errorResponse.getDetail().orElse(null), errorResponse.getStatus(),
+                                                   errorResponse.getScimType().orElse(null));
+    return Optional.of(responseException);
   }
 
   /**

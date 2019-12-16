@@ -50,4 +50,15 @@ public class ScimRequestBuilder
     return new GetBuilder<>(baseUrl, scimClientConfig, type);
   }
 
+  /**
+   * builds a delete builder class based on the given type
+   * 
+   * @param type the type that should be created
+   * @return a get-request builder for the given resource type
+   */
+  public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type)
+  {
+    return new DeleteBuilder<>(baseUrl, scimClientConfig, type);
+  }
+
 }

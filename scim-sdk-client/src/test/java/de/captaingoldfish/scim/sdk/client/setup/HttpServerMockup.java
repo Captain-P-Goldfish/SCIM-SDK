@@ -182,7 +182,7 @@ public abstract class HttpServerMockup
     scimResponse.getHttpHeaders().forEach((key, value) -> headerMap.put(key, Collections.singletonList(value)));
     Headers responseHeaders = httpExchange.getResponseHeaders();
     responseHeaders.putAll(headerMap);
-    String responseBody = StringUtils.stripToNull(scimResponse.toString());
+    String responseBody = StringUtils.stripToNull(scimResponse.isEmpty() ? null : scimResponse.toString());
     responseBody = StringUtils.stripToNull(responseBody);
     httpExchange.sendResponseHeaders(scimResponse.getHttpStatus(), responseBody == null ? 0 : responseBody.length());
     log.trace("finished handling server request");

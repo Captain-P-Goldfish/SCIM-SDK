@@ -70,7 +70,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                           .setEndpoint(EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
-    Assertions.assertEquals(CreateResponse.class, response.getScimResponse().getClass());
+    Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
@@ -95,7 +95,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                           .setEndpoint(EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().getClass());
+    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertTrue(response.getErrorResponse().isPresent());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
@@ -128,7 +128,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                           .setEndpoint(EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
-    Assertions.assertNull(response.getScimResponse());
+    Assertions.assertFalse(response.getScimResponse().isPresent());
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
   }
@@ -157,7 +157,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                           .setEndpoint(EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().getClass());
+    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.FORBIDDEN, response.getHttpStatus());
     Assertions.assertEquals("you are not authorized to access the 'CREATE' endpoint on resource type 'User'",

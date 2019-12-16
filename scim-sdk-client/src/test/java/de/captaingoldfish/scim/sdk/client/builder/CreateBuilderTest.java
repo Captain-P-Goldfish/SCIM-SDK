@@ -34,7 +34,7 @@ public class CreateBuilderTest extends HttpServerMockup
                                                                                         .userName("goldfish")
                                                                                         .build())
                                                                        .sendRequest();
-    Assertions.assertEquals(CreateResponse.class, response.getScimResponse().getClass());
+    Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
