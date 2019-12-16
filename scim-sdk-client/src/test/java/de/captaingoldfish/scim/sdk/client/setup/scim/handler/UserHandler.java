@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
@@ -121,12 +122,14 @@ public class UserHandler extends ResourceHandler<User>
     {
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
-    inMemoryMap.put(userId, resource);
-    resource.getMeta().ifPresent(meta -> {
-      meta.setCreated(oldUser.getMeta().get().getCreated().get());
+    Optional<Meta> metaOptional = oldUser.getMeta();
+    resource.fields().forEachRemaining(entry -> oldUser.set(entry.getKey(), entry.getValue()));
+    inMemoryMap.put(userId, oldUser);
+    oldUser.getMeta().ifPresent(meta -> {
+      metaOptional.ifPresent(m -> meta.setCreated(m.getCreated().orElse(Instant.now())));
       meta.setLastModified(Instant.now());
     });
-    return resource;
+    return oldUser;
   }
 
   /**

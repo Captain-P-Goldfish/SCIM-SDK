@@ -176,4 +176,50 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertFalse(response.getResource().isPresent());
     Assertions.assertTrue(response.getErrorResponse().isPresent());
   }
+
+  /**
+   * verifies that a delete-request can successfully be built
+   */
+  @Test
+  public void testBuildUpdateRequest()
+  {
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    User updateUser = User.builder().nickName("hello world").build();
+    ScimServerResponse<User> response = scimRequestBuilder.update(User.class)
+                                                          .setEndpoint(EndpointPaths.USERS)
+                                                          .setId(id)
+                                                          .setResource(updateUser)
+                                                          .sendRequest();
+
+    Assertions.assertTrue(response.getResource().isPresent());
+    Assertions.assertFalse(response.getErrorResponse().isPresent());
+    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+  }
+
+  /**
+   * verifies that a response for a get-request is correctly returned if the user was not found
+   */
+  @Test
+  public void testBuildUpdateRequestWithUserNotFound()
+  {
+    final String id = UUID.randomUUID().toString();
+
+    User updateUser = User.builder().nickName("hello world").build();
+    ScimServerResponse<User> response = scimRequestBuilder.update(User.class)
+                                                          .setEndpoint(EndpointPaths.USERS)
+                                                          .setId(id)
+                                                          .setResource(updateUser)
+                                                          .sendRequest();
+
+    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertFalse(response.getResource().isPresent());
+    Assertions.assertTrue(response.getErrorResponse().isPresent());
+  }
 }

@@ -54,11 +54,22 @@ public class ScimRequestBuilder
    * builds a delete builder class based on the given type
    * 
    * @param type the type that should be created
-   * @return a get-request builder for the given resource type
+   * @return a delete-request builder for the given resource type
    */
   public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type)
   {
     return new DeleteBuilder<>(baseUrl, scimClientConfig, type);
+  }
+
+  /**
+   * builds an update builder class based on the given type
+   * 
+   * @param type the type that should be created
+   * @return a update-request builder for the given resource type
+   */
+  public <T extends ResourceNode> UpdateBuilder<T> update(Class<T> type)
+  {
+    return new UpdateBuilder<>(baseUrl, scimClientConfig, type);
   }
 
 }
