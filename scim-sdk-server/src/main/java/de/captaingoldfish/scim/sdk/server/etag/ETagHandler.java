@@ -18,6 +18,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotModifiedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.PreconditionFailedException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -107,6 +108,10 @@ public class ETagHandler
       return;
     }
     ResourceNode resourceNode = currentState.get();
+    if (resourceNode == null)
+    {
+      throw new ResourceNotFoundException(null, null, null);
+    }
     Optional<ETag> version = resourceNode.getMeta().flatMap(Meta::getVersion);
     ETag currentVersion = version.orElseGet(() -> generateVersionOfResource(resourceNode));
     if (ifNoneMatchEtag.isPresent())

@@ -252,7 +252,7 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @param authorization
+   * @param authorization the authorization information of the current client
    * @return the scim response for the client
    */
   protected ScimResponse getResource(String endpoint,
@@ -269,12 +269,12 @@ class ResourceEndpointHandler
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ResourceNode resourceNode = resourceHandler.getResource(id, authorization);
-      ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
+      ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
       String resourceId = resourceNode.getId().orElse(null);
       if (resourceId != null && !resourceId.equals(id))
       {
@@ -689,7 +689,15 @@ class ResourceEndpointHandler
       }
       resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.PUT);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+      try
+      {
+        ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+      }
+      catch (ResourceNotFoundException ex)
+      {
+        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                            + "not exist", ex, null);
+      }
       if (resource == null)
       {
         throw new BadRequestException("the request body does not contain any writable parameters", null,
@@ -765,7 +773,15 @@ class ResourceEndpointHandler
     {
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+      try
+      {
+        ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+      }
+      catch (ResourceNotFoundException ex)
+      {
+        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                            + "not exist", ex, null);
+      }
       resourceHandler.deleteResource(id, authorization);
       return new DeleteResponse();
     }
