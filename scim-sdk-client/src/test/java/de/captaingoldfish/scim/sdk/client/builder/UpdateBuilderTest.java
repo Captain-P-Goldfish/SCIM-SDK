@@ -83,9 +83,14 @@ public class UpdateBuilderTest extends HttpServerMockup
   @Test
   public void testIfMatchHeader()
   {
-    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
 
     final String version = "123456";
+    meta.setVersion(ETag.parseETag(version));
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     setVerifyRequestAttributes(httpExchange -> {
@@ -93,16 +98,18 @@ public class UpdateBuilderTest extends HttpServerMockup
                               httpExchange.getRequestHeaders().getFirst(HttpHeader.IF_MATCH_HEADER));
       wasCalled.set(true);
     });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), scimClientConfig,
                                                             User.class).setEndpoint(EndpointPaths.USERS)
-                                                                       .setId(UUID.randomUUID().toString())
+                                                                       .setId(id)
                                                                        .setETagForIfMatch(version)
                                                                        .setResource(updateUser)
                                                                        .sendRequest();
     Assertions.assertTrue(wasCalled.get());
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
+    Assertions.assertTrue(response.getResource().isPresent());
   }
 
   /**
@@ -111,9 +118,14 @@ public class UpdateBuilderTest extends HttpServerMockup
   @Test
   public void testIfMatchHeader2()
   {
-    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
 
     final String version = "123456";
+    meta.setVersion(ETag.parseETag(version));
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     setVerifyRequestAttributes(httpExchange -> {
@@ -122,16 +134,17 @@ public class UpdateBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), scimClientConfig,
                                                             User.class).setEndpoint(EndpointPaths.USERS)
-                                                                       .setId(UUID.randomUUID().toString())
+                                                                       .setId(id)
                                                                        .setETagForIfMatch(ETag.parseETag(version))
                                                                        .setResource(updateUser)
                                                                        .sendRequest();
     Assertions.assertTrue(wasCalled.get());
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
+    Assertions.assertTrue(response.getResource().isPresent());
   }
 
   /**
@@ -140,9 +153,14 @@ public class UpdateBuilderTest extends HttpServerMockup
   @Test
   public void testIfNoneMatchHeader()
   {
-    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
 
     final String version = "123456";
+    meta.setVersion(ETag.parseETag(version));
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     setVerifyRequestAttributes(httpExchange -> {
@@ -151,16 +169,17 @@ public class UpdateBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), scimClientConfig,
                                                             User.class).setEndpoint(EndpointPaths.USERS)
-                                                                       .setId(UUID.randomUUID().toString())
+                                                                       .setId(id)
                                                                        .setETagForIfNoneMatch(version)
                                                                        .setResource(updateUser)
                                                                        .sendRequest();
     Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
   }
 
   /**
@@ -169,9 +188,14 @@ public class UpdateBuilderTest extends HttpServerMockup
   @Test
   public void testIfNoneMatchHeader2()
   {
-    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
 
     final String version = "123456";
+    meta.setVersion(ETag.parseETag(version));
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     setVerifyRequestAttributes(httpExchange -> {
@@ -180,15 +204,16 @@ public class UpdateBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), scimClientConfig,
                                                             User.class).setEndpoint(EndpointPaths.USERS)
-                                                                       .setId(UUID.randomUUID().toString())
+                                                                       .setId(id)
                                                                        .setETagForIfNoneMatch(ETag.parseETag(version))
                                                                        .setResource(updateUser)
                                                                        .sendRequest();
     Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
   }
 }
