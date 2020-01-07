@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
-import static de.captaingoldfish.scim.sdk.common.utils.TimeUtils.DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
-
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -408,7 +406,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
    */
   protected void setDateTimeAttribute(String attributeName, Instant attributeValue)
   {
-    setDateTimeAttribute(attributeName, attributeValue, DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT);
+    setDateTimeAttribute(attributeName, attributeValue, TimeUtils.DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT);
   }
 
   /**

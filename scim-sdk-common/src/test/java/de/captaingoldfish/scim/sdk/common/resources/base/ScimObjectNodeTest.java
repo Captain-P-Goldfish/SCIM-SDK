@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
-import static de.captaingoldfish.scim.sdk.common.utils.TimeUtils.DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -203,7 +201,7 @@ public class ScimObjectNodeTest implements FileReferences
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
 
-    int fractionalDigits = DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
+    int fractionalDigits = TimeUtils.DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
     DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(fractionalDigits).toFormatter();
     Instant now = Instant.now();
     Instant instantWithZeroNanos = now.minus(now.getNano(), ChronoUnit.NANOS);
