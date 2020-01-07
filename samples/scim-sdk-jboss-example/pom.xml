@@ -18,7 +18,6 @@
         <version.cdi.api>2.0.SP1</version.cdi.api>
         <version.jboss.el.api>1.0.13.Final</version.jboss.el.api>
         <version.jboss.jaxrs.api>1.0.3.Final</version.jboss.jaxrs.api>
-        <version.javax.activation>1.1.1</version.javax.activation>
 
         <version.maven.war.plugin>3.2.3</version.maven.war.plugin>
     </properties>
@@ -39,11 +38,6 @@
                 <groupId>org.jboss.spec.javax.ws.rs</groupId>
                 <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
                 <version>${version.jboss.jaxrs.api}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${version.javax.activation}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -68,6 +62,10 @@
                 <exclusion>
                     <artifactId>taglibs-standard-spec</artifactId>
                     <groupId>org.apache.taglibs</groupId>
+                </exclusion>
+                <exclusion>
+                    <artifactId>activation</artifactId>
+                    <groupId>javax.activation</groupId>
                 </exclusion>
             </exclusions>
         </dependency>
