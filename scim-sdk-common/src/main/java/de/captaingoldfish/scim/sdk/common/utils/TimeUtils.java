@@ -98,6 +98,13 @@ public final class TimeUtils
                                                              + SECOND_FRAGMENT + "|" + END_OF_DAY_FRAGMENT + ")";
 
   /**
+   * in case of Instant values which will be stored as String in JSON, it is required to keep the fractional
+   * digits even if the nano value of Instant is set to zero @see
+   * https://stackoverflow.com/questions/33025988/java-time-iso-date-format-with-fixed-millis-digits-in-java-8-and-later
+   */
+  public static final int DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT = 3;
+
+  /**
    * the fully qualified xsd-datetime definition
    *
    * @see <a href=
