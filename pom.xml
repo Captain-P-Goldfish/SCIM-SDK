@@ -297,14 +297,6 @@
                             <version>${version.lombok}</version>
                         </path>
                     </annotationProcessorPaths>
-                    <!-- JDK 11 workaround -->
-                    <!-- this helps when getting error: file should be on source path, or on patch path for module -->
-                    <compilerArgs>
-                        <arg>-sourcepath</arg>
-                        <arg>
-                            ${project.basedir}/src/main/java${path.separator}${project.basedir}/target/generated-sources/annotations${path.separator}/
-                        </arg>
-                    </compilerArgs>
                 </configuration>
             </plugin>
 
