@@ -1,9 +1,13 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
+import static de.captaingoldfish.scim.sdk.common.utils.TimeUtils.DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
+
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Stream;
@@ -188,6 +192,52 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertNull(scimObjectNode.get(attributeName));
     Assertions.assertFalse(scimObjectNode.getLongAttribute(attributeName).isPresent());
   }
+
+  /**
+   * verifies that an Instant attribute can be set with and without nanos and keeps a strict String
+   * representation for both types format @see https://tools.ietf.org/html/rfc7643#section-2.3.5
+   */
+  @Test
+  public void testAttributeInstantStoringFractionals()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+
+    int fractionalDigits = DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
+    DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(fractionalDigits).toFormatter();
+    Instant now = Instant.now();
+    Instant instantWithZeroNanos = now.minus(now.getNano(), ChronoUnit.NANOS);
+    Instant instantWithOneFractional = instantWithZeroNanos.plusNanos(1_000_000L);
+
+    scimObjectNode.setDateTimeAttribute(attributeName, instantWithZeroNanos);
+    Assertions.assertEquals(instantWithZeroNanos, scimObjectNode.getDateTimeAttribute(attributeName).get());
+    Assertions.assertNotEquals(instantWithZeroNanos.toString(), scimObjectNode.getStringAttribute(attributeName).get());
+    Assertions.assertEquals(formatter.format(instantWithZeroNanos),
+                            scimObjectNode.getStringAttribute(attributeName).get());
+
+    scimObjectNode.setDateTimeAttribute(attributeName, instantWithOneFractional);
+    Assertions.assertEquals(instantWithOneFractional, scimObjectNode.getDateTimeAttribute(attributeName).get());
+    Assertions.assertEquals(instantWithOneFractional.toString(),
+                            scimObjectNode.getStringAttribute(attributeName).get());
+    Assertions.assertEquals(formatter.format(instantWithOneFractional),
+                            scimObjectNode.getStringAttribute(attributeName).get());
+
+    fractionalDigits = 0;
+    formatter = new DateTimeFormatterBuilder().appendInstant(fractionalDigits).toFormatter();
+    scimObjectNode.setDateTimeAttribute(attributeName, instantWithZeroNanos, fractionalDigits);
+    Assertions.assertEquals(instantWithZeroNanos, scimObjectNode.getDateTimeAttribute(attributeName).get());
+    Assertions.assertEquals(instantWithZeroNanos.toString(), scimObjectNode.getStringAttribute(attributeName).get());
+    Assertions.assertEquals(formatter.format(instantWithZeroNanos),
+                            scimObjectNode.getStringAttribute(attributeName).get());
+
+    scimObjectNode.setDateTimeAttribute(attributeName, instantWithOneFractional, fractionalDigits);
+    Assertions.assertNotEquals(instantWithOneFractional, scimObjectNode.getDateTimeAttribute(attributeName).get());
+    Assertions.assertNotEquals(instantWithOneFractional.toString(),
+                               scimObjectNode.getStringAttribute(attributeName).get());
+    Assertions.assertEquals(formatter.format(instantWithOneFractional),
+                            scimObjectNode.getStringAttribute(attributeName).get());
+  }
+
 
   /**
    * verifies that an attribute can be removed if null is given as parameter on the set-method

@@ -1,11 +1,14 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
+import static de.captaingoldfish.scim.sdk.common.utils.TimeUtils.DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT;
+
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -398,17 +401,36 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
-   * adds or removes a dateTime type attribute
+   * adds or removes a dateTime type attribute by default the JSON String representation will keep
+   * DEFAULT_FRACTIONALS_TO_KEEP fractionals i.e. 1970-01-01T00:00:00.000Z
+   *
+   * @see TimeUtils#DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT
    */
   protected void setDateTimeAttribute(String attributeName, Instant attributeValue)
+  {
+    setDateTimeAttribute(attributeName, attributeValue, DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT);
+  }
+
+  /**
+   * adds or removes a dateTime type attribute including the given fractionalDigits inside the JSON TextNode
+   *
+   * @param attributeName the given attributeName for the related Instant attributeValue
+   * @param attributeValue the attributeValue might be null to remove the attribute from the JSON document
+   * @param fractionalDigits MUST be a positive value between zero and nine i.e 0-9 default is set to 3
+   * @see TimeUtils#DEFAULT_INSTANT_FRACTIONAL_DIGITS_FORMAT
+   */
+  protected void setDateTimeAttribute(String attributeName, Instant attributeValue, int fractionalDigits)
   {
     if (attributeValue == null)
     {
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    String dateTime = attributeValue.toString();
-    JsonHelper.addAttribute(this, attributeName, new TextNode(dateTime));
+    // Keep given fractional digits in the stored JSON TextNode just in case of a zero value for the nano Instant
+    // attributeValue @see
+    // https://stackoverflow.com/questions/33025988/java-time-iso-date-format-with-fixed-millis-digits-in-java-8-and-later
+    DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(fractionalDigits).toFormatter();
+    JsonHelper.addAttribute(this, attributeName, new TextNode(formatter.format(attributeValue)));
   }
 
   /**
