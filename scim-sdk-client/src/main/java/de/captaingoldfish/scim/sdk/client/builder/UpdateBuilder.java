@@ -23,7 +23,7 @@ import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
  * created at: 16.12.2019 - 12:04 <br>
  * <br>
  */
-class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
+public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
   /**

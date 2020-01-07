@@ -18,7 +18,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
  * created at: 16.12.2019 - 11:35 <br>
  * <br>
  */
-class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
+public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
   /**

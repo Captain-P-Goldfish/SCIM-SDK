@@ -23,7 +23,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
  * created at: 07.12.2019 - 23:13 <br>
  * <br>
  */
-class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
+public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
 {
 
   public CreateBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)

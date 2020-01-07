@@ -72,4 +72,17 @@ public class ScimRequestBuilder
     return new UpdateBuilder<>(baseUrl, scimClientConfig, type);
   }
 
+  /**
+   * builds an update builder class based on the given type
+   *
+   * @param type the type that should be created
+   * @return a update-request builder for the given resource type
+   */
+  public <T extends ResourceNode> ListBuilder<T> list(Class<T> type)
+  {
+    return new ListBuilder<>(baseUrl, scimClientConfig, type);
+  }
+
+
+
 }

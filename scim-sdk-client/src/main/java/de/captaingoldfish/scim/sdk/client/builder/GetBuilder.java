@@ -18,7 +18,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
  * created at: 13.12.2019 - 08:21 <br>
  * <br>
  */
-class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
+public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
   /**

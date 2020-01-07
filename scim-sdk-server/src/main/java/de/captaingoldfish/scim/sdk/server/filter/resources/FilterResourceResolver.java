@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.LongNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
@@ -23,7 +24,6 @@ import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.NotExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.OrExpressionNode;
-import de.captaingoldfish.scim.sdk.server.filter.antlr.Comparator;
 import lombok.extern.slf4j.Slf4j;
 
 

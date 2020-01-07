@@ -14,7 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -92,7 +92,7 @@ public abstract class HttpServerMockup
    * can be used to validate the request attributes
    */
   @Setter(AccessLevel.PUBLIC)
-  private Consumer<HttpExchange> verifyRequestAttributes = httpExchange -> {};
+  private BiConsumer<HttpExchange, String> verifyRequestAttributes = (httpExchange, requestBody) -> {};
 
   /**
    * here we will check if an error occurred on the mocked server and if it did we will throw the error in the
@@ -130,8 +130,9 @@ public abstract class HttpServerMockup
       Optional<String> responseBodyOptional;
       try
       {
-        verifyRequestAttributes.accept(httpExchange);
-        responseBodyOptional = handleMockedServerRequest(httpExchange);
+        String requestBody = getRequestBody(httpExchange);
+        verifyRequestAttributes.accept(httpExchange, requestBody);
+        responseBodyOptional = handleMockedServerRequest(httpExchange, requestBody);
       }
       catch (Exception | AssertionError ex)
       {
@@ -164,7 +165,7 @@ public abstract class HttpServerMockup
    *
    * @param httpExchange the http object to handle request and response
    */
-  private Optional<String> handleMockedServerRequest(HttpExchange httpExchange) throws IOException
+  private Optional<String> handleMockedServerRequest(HttpExchange httpExchange, String requestBody) throws IOException
   {
     log.trace("handling server request");
     log.trace("http-method: {}", httpExchange.getRequestMethod());
@@ -174,7 +175,7 @@ public abstract class HttpServerMockup
     ScimResponse scimResponse = scimConfig.getResourceEndpoint()
                                           .handleRequest(getRequestUri(httpExchange),
                                                          HttpMethod.valueOf(httpExchange.getRequestMethod()),
-                                                         getRequestBody(httpExchange),
+                                                         requestBody,
                                                          requestHeaders,
                                                          null);
 
@@ -189,14 +190,14 @@ public abstract class HttpServerMockup
     return Optional.ofNullable(responseBody);
   }
 
-  private String getRequestUri(HttpExchange httpExchange)
+  protected String getRequestUri(HttpExchange httpExchange)
   {
     return "http:/" + httpExchange.getLocalAddress().toString() + httpExchange.getRequestURI().toString();
   }
 
   /**
    * extracts the request headers from the http request and puts them into a hash map
-   * 
+   *
    * @param httpExchange the server request and response object
    * @return the map with the request headers
    */
@@ -256,7 +257,7 @@ public abstract class HttpServerMockup
 
   /**
    * gets the query parameter of the given URI as a map
-   * 
+   *
    * @param uri the uri that should be decoded
    * @return a map of the decoded parameters
    */
@@ -283,7 +284,7 @@ public abstract class HttpServerMockup
 
   /**
    * reads the request body from the given http exchange object
-   * 
+   *
    * @param httpExchange the http request object from the server
    * @return the request body
    */

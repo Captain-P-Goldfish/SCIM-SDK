@@ -22,7 +22,7 @@ import lombok.Getter;
  * <br>
  * an abstract request builder implementation
  */
-abstract class RequestBuilder<T extends ResourceNode>
+public abstract class RequestBuilder<T extends ResourceNode>
 {
 
   /**
@@ -64,7 +64,7 @@ abstract class RequestBuilder<T extends ResourceNode>
   /**
    * @param endpoint the resource endpoint path e.g. /Users or /Groups
    */
-  protected RequestBuilder setEndpoint(String endpoint)
+  protected RequestBuilder<T> setEndpoint(String endpoint)
   {
     this.endpoint = endpoint;
     return this;
@@ -73,7 +73,7 @@ abstract class RequestBuilder<T extends ResourceNode>
   /**
    * @param resource sets the resource that should be sent to the service provider
    */
-  protected RequestBuilder setResource(String resource)
+  protected RequestBuilder<T> setResource(String resource)
   {
     this.resource = resource;
     return this;
@@ -82,7 +82,7 @@ abstract class RequestBuilder<T extends ResourceNode>
   /**
    * @param resource sets the resource that should be sent to the service provider
    */
-  protected RequestBuilder setResource(JsonNode resource)
+  protected RequestBuilder<T> setResource(JsonNode resource)
   {
     this.resource = resource.toString();
     return this;
@@ -125,7 +125,7 @@ abstract class RequestBuilder<T extends ResourceNode>
 
   /**
    * translates the response into a {@link ScimResponse}
-   * 
+   *
    * @param response the response from the scim server
    * @return the parsed scim response object
    */
@@ -134,12 +134,11 @@ abstract class RequestBuilder<T extends ResourceNode>
     ScimResponse scimResponse = JsonHelper.readJsonDocument(response.getResponseBody(),
                                                             getResponseType(response.getHttpStatusCode()));
     response.getResponseHeaders().forEach(scimResponse.getHttpHeaders()::put);
-    ScimServerResponse serverResponse = ScimServerResponse.<T> builder()
-                                                          .scimResponse(scimResponse)
-                                                          .responseEntityType(responseEntityType)
-                                                          .responseStatus(response.getHttpStatusCode())
-                                                          .build();
-    return serverResponse;
+    return ScimServerResponse.<T> builder()
+                             .scimResponse(scimResponse)
+                             .responseEntityType(responseEntityType)
+                             .responseStatus(response.getHttpStatusCode())
+                             .build();
   }
 
   /**

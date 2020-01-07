@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.server.filter.antlr;
+package de.captaingoldfish.scim.sdk.common.constants.enums;
 
 /**
  * author Pascal Knueppel <br>

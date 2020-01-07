@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.common.response;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -11,7 +13,6 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -20,13 +21,23 @@ import lombok.NoArgsConstructor;
  * <br>
  * represents a list response
  */
-@NoArgsConstructor
-public class ListResponse extends ScimResponse
+public class ListResponse<T extends ScimObjectNode> extends ScimResponse
 {
+
+  /**
+   * the generic type of this class
+   */
+  private final Class<T> type;
+
+  public ListResponse()
+  {
+    this.type = getGenericType();
+  }
 
   public ListResponse(String resourceJsonRepresentation)
   {
     super(JsonHelper.readJsonDocument(resourceJsonRepresentation));
+    this.type = getGenericType();
   }
 
   public ListResponse(List<JsonNode> listedResources, Long totalResults, Integer itemsPerPage, Long startIndex)
@@ -37,6 +48,24 @@ public class ListResponse extends ScimResponse
     setItemsPerPage(itemsPerPage);
     setStartIndex(startIndex);
     setListedResources(listedResources);
+    this.type = getGenericType();
+  }
+
+  /**
+   * tries to get the generic type of this response class
+   */
+  private Class<T> getGenericType()
+  {
+    Type type = getClass().getGenericSuperclass();
+    if (type instanceof ParameterizedType)
+    {
+      ParameterizedType parameterizedType = (ParameterizedType)type;
+      return (Class<T>)parameterizedType.getActualTypeArguments()[0];
+    }
+    else
+    {
+      return (Class<T>)ScimObjectNode.class;
+    }
   }
 
   /**
@@ -100,9 +129,9 @@ public class ListResponse extends ScimResponse
   /**
    * the resources that have been extracted
    */
-  public List<ScimObjectNode> getListedResources()
+  public List<T> getListedResources()
   {
-    return getArrayAttribute(AttributeNames.RFC7643.RESOURCES, ScimObjectNode.class);
+    return getArrayAttribute(AttributeNames.RFC7643.RESOURCES, type);
   }
 
   /**

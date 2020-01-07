@@ -512,7 +512,8 @@ class ResourceEndpointHandler
         validatedResourceList.add(validatedResource);
       }
 
-      return new ListResponse(validatedResourceList, totalResults, validatedResourceList.size(), effectiveStartIndex);
+      return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(),
+                                 effectiveStartIndex);
     }
     catch (ScimException ex)
     {

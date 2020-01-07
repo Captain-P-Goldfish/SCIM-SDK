@@ -117,7 +117,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     final String version = "123456";
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
-    setVerifyRequestAttributes(httpExchange -> {
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
       Assertions.assertEquals(ETag.parseETag(version).toString(),
                               httpExchange.getRequestHeaders().getFirst(HttpHeader.IF_MATCH_HEADER));
       wasCalled.set(true);
@@ -141,7 +141,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     final String version = "123456";
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
-    setVerifyRequestAttributes(httpExchange -> {
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
       Assertions.assertEquals(ETag.parseETag(version).toString(),
                               httpExchange.getRequestHeaders().getFirst(HttpHeader.IF_MATCH_HEADER));
       wasCalled.set(true);
@@ -165,7 +165,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     final String version = "123456";
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
-    setVerifyRequestAttributes(httpExchange -> {
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
       Assertions.assertEquals(ETag.parseETag(version).toString(),
                               httpExchange.getRequestHeaders().getFirst(HttpHeader.IF_NONE_MATCH_HEADER));
       wasCalled.set(true);
@@ -189,7 +189,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     final String version = "123456";
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
-    setVerifyRequestAttributes(httpExchange -> {
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
       Assertions.assertEquals(ETag.parseETag(version).toString(),
                               httpExchange.getRequestHeaders().getFirst(HttpHeader.IF_NONE_MATCH_HEADER));
       wasCalled.set(true);
