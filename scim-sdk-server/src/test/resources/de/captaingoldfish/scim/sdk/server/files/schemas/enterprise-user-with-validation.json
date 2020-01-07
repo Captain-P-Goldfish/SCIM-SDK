@@ -1,0 +1,144 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+  "name": "EnterpriseUser",
+  "description": "Enterprise User",
+  "attributes": [
+    {
+      "name": "employeeNumber",
+      "type": "string",
+      "description": "Numeric or alphanumeric identifier assigned to a person, typically based on order of hire or association with an organization.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "minLength": 5,
+      "maxLength": 5,
+      "pattern": "[a-z]+"
+    },
+    {
+      "name": "costCenter",
+      "description": "Identifies the name of a cost center.",
+      "type": "string",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "minLength": 5,
+      "maxLength": 5,
+      "pattern": "[a-z]+"
+    },
+    {
+      "name": "organization",
+      "description": "Identifies the name of an organization.",
+      "type": "string",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "minLength": 5,
+      "maxLength": 5,
+      "pattern": "[a-z]+"
+    },
+    {
+      "name": "division",
+      "description": "Identifies the name of a division.",
+      "type": "string",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "minLength": 5,
+      "maxLength": 5,
+      "pattern": "[a-z]+"
+    },
+    {
+      "name": "department",
+      "description": "Identifies the name of a department.",
+      "type": "string",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "minLength": 5,
+      "maxLength": 5,
+      "pattern": "[a-z]+"
+    },
+    {
+      "name": "manager",
+      "description": "The User's manager.  A complex type that optionally allows service providers to represent organizational hierarchy by referencing the 'id' attribute of another User.",
+      "type": "complex",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "description": "The id of the SCIM resource representing the User's manager.  REQUIRED.",
+          "type": "string",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": true,
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "[a-z]+"
+        },
+        {
+          "name": "$ref",
+          "description": "The URI of the SCIM resource representing the User's manager.  REQUIRED.",
+          "type": "reference",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false,
+          "referenceTypes": [
+            "resource"
+          ],
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "[a-z]+"
+        },
+        {
+          "name": "displayName",
+          "description": "The displayName of the User's manager. OPTIONAL and READ-ONLY.",
+          "type": "string",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false,
+          "minLength": 5,
+          "maxLength": 5,
+          "pattern": "[a-z]+"
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/Schemas/EnterpriseUser"
+  }
+}

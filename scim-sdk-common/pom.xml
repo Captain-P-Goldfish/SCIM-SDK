@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.captaingoldfish</groupId>
+        <artifactId>scim-sdk-parent</artifactId>
+        <version>1.2.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scim-sdk-common</artifactId>
+
+    <name>SCIM SDK Common</name>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <version>${version.maven.enforcer.plugin}</version>
+                <configuration>
+                    <rules>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/schema.schema.json
+                            </file>
+                            <checksum>cfd671174b9bd6e1f5b159d16eec2049</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/resource-type.schema.json
+                            </file>
+                            <checksum>eb3f49ab90010b93d695f8f9d6a6d7af</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
+                            </file>
+                            <checksum>89f25699ed83a15458293f0733da626b</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                    </rules>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

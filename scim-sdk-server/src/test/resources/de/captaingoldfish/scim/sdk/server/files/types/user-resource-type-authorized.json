@@ -1,0 +1,29 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+  ],
+  "id": "User",
+  "name": "User",
+  "description": "User Account",
+  "schema": "urn:ietf:params:scim:schemas:core:2.0:User",
+  "endpoint": "/Users",
+  "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures": {
+    "authorization": {
+      "roles": [
+        "admin"
+      ],
+      "rolesCreate": [
+        "create"
+      ],
+      "rolesGet": [
+        "get"
+      ],
+      "rolesUpdate": [
+        "update"
+      ],
+      "rolesDelete": [
+        "delete"
+      ]
+    }
+  }
+}

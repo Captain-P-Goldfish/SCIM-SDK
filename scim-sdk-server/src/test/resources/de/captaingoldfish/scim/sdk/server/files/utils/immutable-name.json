@@ -1,0 +1,79 @@
+{
+  "name": "name",
+  "type": "complex",
+  "description": "The components of the user's real name.Providers MAY return just the full name as a single string in the\nformatted sub-attribute, or they MAY return just the individual component attributes using the other sub-attributes, or they MAY\nreturn both.  If both variants are returned, they SHOULD be describing the same name, with the formatted name indicating how the\ncomponent attributes should be combined.",
+  "mutability": "immutable",
+  "returned": "default",
+  "uniqueness": "none",
+  "multiValued": false,
+  "required": false,
+  "caseExact": false,
+  "subAttributes": [
+    {
+      "name": "formatted",
+      "type": "string",
+      "description": "The full name, including all middle names, titles, and suffixes as appropriate, formatted for display\n(e.g., 'Ms. Barbara J Jensen, III').",
+      "mutability": "immutable",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    },
+    {
+      "name": "familyName",
+      "type": "string",
+      "description": "The family name of the User, or last name in most Western languages (e.g., 'Jensen' given the full\nname 'Ms. Barbara J Jensen, III').",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    },
+    {
+      "name": "givenName",
+      "type": "string",
+      "description": "The given name of the User, or first name in most Western languages (e.g., 'Barbara' given the\nfull name 'Ms. Barbara J Jensen, III').",
+      "mutability": "immutable",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    },
+    {
+      "name": "middleName",
+      "type": "string",
+      "description": "The middle name(s) of the User (e.g., 'Jane' given the full name 'Ms. Barbara J Jensen, III').",
+      "mutability": "immutable",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    },
+    {
+      "name": "honorificPrefix",
+      "type": "string",
+      "description": "The honorific prefix(es) of the User, or title in most Western languages (e.g., 'Ms.' given the full name\n'Ms. Barbara J Jensen, III').",
+      "mutability": "immutable",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    },
+    {
+      "name": "honorificSuffix",
+      "type": "string",
+      "description": "The honorific suffix(es) of the User, or suffix in most Western languages (e.g., 'III' given the full name\n'Ms. Barbara J Jensen, III').",
+      "mutability": "immutable",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    }
+  ]
+}

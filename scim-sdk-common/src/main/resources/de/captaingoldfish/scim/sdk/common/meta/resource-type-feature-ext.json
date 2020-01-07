@@ -1,0 +1,179 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures",
+  "name": "ResourceTypeFilter",
+  "description": "An extension that enables additional features for single resource types",
+  "attributes": [
+    {
+      "name": "singletonEndpoint",
+      "type": "boolean",
+      "description": "a boolean that tells us if the endpoint is used as singleton endpoint. This feature may be used e.g. for the /ServiceProviderConfig endpoint to delegate a list-request to a simple get-request.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
+    {
+      "name": "autoFiltering",
+      "type": "boolean",
+      "description": "a boolean that will enable automatic filtering on the given resource. If enabled the developer will not receive any filter information's anymore.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
+    {
+      "name": "autoSorting",
+      "type": "boolean",
+      "description": "a boolean that will enable automatic sorting on the given resource. If enabled the developer will not receive any sorting information's anymore.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
+    {
+      "name": "endpointControl",
+      "type": "complex",
+      "description": "a complex attribute that allows you to enable or disable specific endpoints for specific resources. An example would be to disable the create and the delete endpoint",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "disableCreate",
+          "type": "boolean",
+          "description": "disables the create endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableGet",
+          "type": "boolean",
+          "description": "disables the get endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableList",
+          "type": "boolean",
+          "description": "disables the list endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableUpdate",
+          "type": "boolean",
+          "description": "disables the update and the patch endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "disableDelete",
+          "type": "boolean",
+          "description": "disables the delete endpoint if set to true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "authorization",
+      "type": "complex",
+      "description": "a complex attribute that tells us the which roles the client must have to access the given endpoint",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "roles",
+          "type": "string",
+          "description": "the roles the client must have to access the resource endpoint. This setting defines the roles necessary for all endpoints [create, get, list, update, patch, delete]. This setting may be overridden by other attributes",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesCreate",
+          "type": "string",
+          "description": "the roles the client must have to access the create endpoint.(overrides the attribute \"roles\" the create endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesGet",
+          "type": "string",
+          "description": "the roles the client must have to access the get endpoint.(overrides the attribute \"roles\" the get endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesUpdate",
+          "type": "string",
+          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" the update endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesDelete",
+          "type": "string",
+          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" the delete endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        }
+      ]
+    }
+  ]
+}
