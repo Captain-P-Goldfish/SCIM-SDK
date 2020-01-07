@@ -25,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 
 
 /**
- * project: autent-key-utils <br>
  * author: Pascal Knueppel <br>
  * created at: 02.03.2017 <br>
  * <br>
@@ -38,7 +37,7 @@ public class KeyReader
 
   /**
    * will read a private rsa key from a given byte-array of a {@link PKCS8EncodedKeySpec}
-   * 
+   *
    * @param privateKey the bytes of the rsa key
    * @return the private-key interface implementation of rsa
    * @throws KeyGenerationException if the private key could not be created from the given byte-array
@@ -103,7 +102,7 @@ public class KeyReader
 
   /**
    * should read a X509 certificate from the given byte-array
-   * 
+   *
    * @param certificateBytes the bytes of the certificate
    * @return the X509 certificate
    * @throws CertificateCreationException if the certificate could not be created from the given data.

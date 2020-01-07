@@ -75,7 +75,7 @@ public abstract class AbstractSpringBootWebTest
 
   /**
    * this method will create a request url with the given path
-   * 
+   *
    * @param path the context path to the method that should be used
    * @return the complete server-url with the given context path to the method that should be used
    */
@@ -171,8 +171,7 @@ public abstract class AbstractSpringBootWebTest
     }
 
     /**
-     * a controller endpoint that will be scanned by
-     * {@link de.governikus.autent.web.utils.springboot.WebAppConfig}
+     * a controller endpoint that will be scanned by {@link WebAppConfig}
      *
      * @return "hello world"
      */

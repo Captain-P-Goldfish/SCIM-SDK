@@ -118,7 +118,7 @@ public class KeyStoreWrapperTest
 
   /**
    * checks that the private key can be accessed with the keystore password if no
-   * {@link de.governikus.autent.key.utils.KeyStoreWrapper.AliasPasswordPair} pair is entered
+   * {@link de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper.AliasPasswordPair} pair is entered
    */
   @Test
   public void testReadPrivateKeyByAliasAndPassword() throws URISyntaxException, IOException
@@ -131,7 +131,7 @@ public class KeyStoreWrapperTest
 
   /**
    * does the JUnit assertions for the given keystoreWrapper
-   * 
+   *
    * @param keyStoreWrapper the keystore wrapper to check
    */
   private void checkKeystoreWrapper(KeyStoreWrapper keyStoreWrapper)

@@ -36,7 +36,6 @@ public final class SSLContextHelper
   /**
    * this method will build the {@link SSLContext} that will be used to access the eid-webservice. This
    * {@link SSLContext} must hold all important informations like the keystore for mutual client authentication
-   * if it is desired and the truststore that is used to trust the autent server
    *
    * @return the {@link SSLContext} that configured the TLS connection
    */
