@@ -51,6 +51,7 @@ import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
@@ -1446,7 +1447,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                           Mockito.isNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
-    ListResponse listResponse = (ListResponse)scimResponse;
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(5, listResponse.getListedResources().size(), listResponse.toPrettyString());
     MatcherAssert.assertThat(listResponse.getListedResources()
                                          .stream()

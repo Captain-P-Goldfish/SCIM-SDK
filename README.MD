@@ -17,6 +17,8 @@ This is an open source implementation of the SCIM (System for Cross-domain Ident
 
 A simple description of SCIM can be found here http://www.simplecloud.info/
 
+## Server implementation
+
 This API is highly generic and allows the definition of your own schema representations for resources. You will even be
 able to override the default User or Group core schemata if you want to. This might be useful if you do not want to 
 support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is simply to write two json documents.
@@ -50,5 +52,17 @@ for any registered resource
 - [x] authorization for specific endpoints (@see [endpoint authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Endpoint-authorization))
 - [x] attribute validation (@see [attribute validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation)) 
 
+## Client implementation
 
+The client implementation supports the following SCIM requests
+
+- [x] create
+- [x] read
+- [x] list
+- [x] update
+- [x] delete
+- [ ] patch
+
+there is also direct native support for easy use of basic authentication and X509 client authentication. All other
+authentication types must be implemented manually.
  

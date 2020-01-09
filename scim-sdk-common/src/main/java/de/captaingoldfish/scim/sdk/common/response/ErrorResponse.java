@@ -14,6 +14,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResponseException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
  * represents a SCIM error response
  */
 @Slf4j
+@NoArgsConstructor
 public class ErrorResponse extends ScimResponse
 {
 
@@ -115,7 +117,7 @@ public class ErrorResponse extends ScimResponse
   @Override
   public int getHttpStatus()
   {
-    return scimException.getStatus();
+    return scimException == null ? 0 : scimException.getStatus();
   }
 
   /**

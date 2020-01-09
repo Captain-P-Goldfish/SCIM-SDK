@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.common.response;
 
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -19,27 +21,23 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
  * <br>
  * represents a list response
  */
-public class ListResponse extends ScimResponse
+public class ListResponse<T extends ScimObjectNode> extends ScimResponse
 {
+
+  /**
+   * the generic type of this class
+   */
+  private final Class<T> type;
+
+  public ListResponse()
+  {
+    this.type = getGenericType();
+  }
 
   public ListResponse(String resourceJsonRepresentation)
   {
     super(JsonHelper.readJsonDocument(resourceJsonRepresentation));
-    // JsonNode responseNode = JsonHelper.readJsonDocument(resourceJsonRepresentation);
-    // setTotalResults(JsonHelper.getSimpleAttribute(responseNode, AttributeNames.RFC7643.TOTAL_RESULTS,
-    // Long.class)
-    // .orElse(null));
-    // this.itemsPerPage = JsonHelper.getSimpleAttribute(responseNode,
-    // AttributeNames.RFC7643.ITEMS_PER_PAGE,
-    // Integer.class)
-    // .orElse(null);
-    // this.startIndex = JsonHelper.getSimpleAttribute(responseNode, AttributeNames.RFC7643.START_INDEX,
-    // Long.class)
-    // .orElse(null);
-    // this.listedResources = new ArrayList<>();
-    // JsonHelper.getArrayAttribute(responseNode, AttributeNames.RFC7643.RESOURCES).ifPresent(resourceArray -> {
-    // resourceArray.forEach(listedResources::add);
-    // });
+    this.type = getGenericType();
   }
 
   public ListResponse(List<JsonNode> listedResources, Long totalResults, Integer itemsPerPage, Long startIndex)
@@ -50,6 +48,24 @@ public class ListResponse extends ScimResponse
     setItemsPerPage(itemsPerPage);
     setStartIndex(startIndex);
     setListedResources(listedResources);
+    this.type = getGenericType();
+  }
+
+  /**
+   * tries to get the generic type of this response class
+   */
+  private Class<T> getGenericType()
+  {
+    Type type = getClass().getGenericSuperclass();
+    if (type instanceof ParameterizedType)
+    {
+      ParameterizedType parameterizedType = (ParameterizedType)type;
+      return (Class<T>)parameterizedType.getActualTypeArguments()[0];
+    }
+    else
+    {
+      return (Class<T>)ScimObjectNode.class;
+    }
   }
 
   /**
@@ -113,9 +129,9 @@ public class ListResponse extends ScimResponse
   /**
    * the resources that have been extracted
    */
-  public List<ScimObjectNode> getListedResources()
+  public List<T> getListedResources()
   {
-    return getArrayAttribute(AttributeNames.RFC7643.RESOURCES, ScimObjectNode.class);
+    return getArrayAttribute(AttributeNames.RFC7643.RESOURCES, type);
   }
 
   /**
