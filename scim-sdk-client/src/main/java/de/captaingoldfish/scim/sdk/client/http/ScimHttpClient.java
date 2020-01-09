@@ -95,6 +95,11 @@ public class ScimHttpClient
   private HostnameVerifier hostnameVerifier;
 
   /**
+   * may be used to manipulate the apache configuration before the http client is created
+   */
+  private ConfigManipulator configManipulator;
+
+  /**
    * translates an apache {@link CloseableHttpResponse} to an {@link HttpResponse} object
    *
    * @param response the apache http response
@@ -132,11 +137,15 @@ public class ScimHttpClient
       clientBuilder.setSSLContext(SSLContextHelper.getSslContext(tlsClientAuthenticatonKeystore, truststore));
     }
 
-    clientBuilder.setDefaultRequestConfig(getRequestConfig());
     clientBuilder.setConnectionReuseStrategy((response, context) -> false);
     if (hostnameVerifier != null)
     {
       clientBuilder.setSSLHostnameVerifier(hostnameVerifier);
+    }
+    clientBuilder.setDefaultRequestConfig(getRequestConfig());
+    if (configManipulator != null)
+    {
+      configManipulator.modifyHttpClientConfig(clientBuilder);
     }
     return clientBuilder.build();
   }
@@ -172,6 +181,11 @@ public class ScimHttpClient
     {
       configBuilder.setConnectionRequestTimeout(requestTimeout * TIMEOUT_MILLIS);
       log.debug("request timeout '{}' seconds", requestTimeout);
+    }
+
+    if (configManipulator != null)
+    {
+      configManipulator.modifyRequestConfig(configBuilder);
     }
     return configBuilder.build();
   }

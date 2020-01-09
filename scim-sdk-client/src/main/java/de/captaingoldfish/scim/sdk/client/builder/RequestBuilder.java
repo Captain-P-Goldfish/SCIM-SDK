@@ -113,6 +113,7 @@ public abstract class RequestBuilder<T extends ResourceNode>
                                                   .hostnameVerifier(scimClientConfig.getHostnameVerifier())
                                                   .tlsClientAuthenticatonKeystore(scimClientConfig.getClientAuth())
                                                   .truststore(scimClientConfig.getTruststore())
+                                                  .configManipulator(scimClientConfig.getConfigManipulator())
                                                   .build();
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);

@@ -5,6 +5,7 @@ import java.util.Map;
 import javax.net.ssl.HostnameVerifier;
 
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
+import de.captaingoldfish.scim.sdk.client.http.ConfigManipulator;
 import de.captaingoldfish.scim.sdk.client.http.ProxyHelper;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
 import lombok.Builder;
@@ -74,6 +75,11 @@ public class ScimClientConfig
    */
   private BasicAuth basicAuth;
 
+  /**
+   * may be used to manipulate the apache configuration before the http client is created
+   */
+  private ConfigManipulator configManipulator;
+
   @Builder
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
@@ -83,7 +89,8 @@ public class ScimClientConfig
                           KeyStoreWrapper clientAuth,
                           KeyStoreWrapper truststore,
                           Map<String, String> httpHeaders,
-                          BasicAuth basicAuth)
+                          BasicAuth basicAuth,
+                          ConfigManipulator configManipulator)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -94,6 +101,7 @@ public class ScimClientConfig
     this.truststore = truststore;
     this.httpHeaders = httpHeaders;
     this.basicAuth = basicAuth;
+    this.configManipulator = configManipulator;
   }
 
   /**
