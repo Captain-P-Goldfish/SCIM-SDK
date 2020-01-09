@@ -11,6 +11,10 @@
 
     <name>SCIM SDK Server</name>
 
+    <properties>
+        <module.name>de.captaingoldfish.scim.sdk.server</module.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>de.captaingoldfish</groupId>

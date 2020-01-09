@@ -12,6 +12,10 @@
 
     <name>SCIM SDK Common</name>
 
+    <properties>
+        <module.name>de.captaingoldfish.scim.sdk.common</module.name>
+    </properties>
+
     <build>
         <plugins>
             <plugin>

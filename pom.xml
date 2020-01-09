@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.captaingoldfish</groupId>
@@ -106,6 +107,8 @@
         <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
         <version.maven.versions.plugin>2.7</version.maven.versions.plugin>
+        <version.maven.jar.plugin>3.2.0</version.maven.jar.plugin>
+        <version.gmaven.plugin>1.5</version.gmaven.plugin>
     </properties>
 
     <dependencyManagement>
@@ -467,9 +470,9 @@
                             <onlyWhenRelease>true</onlyWhenRelease>
                         </requireReleaseDeps>
 
-                        <banDuplicatePomDependencyVersions />
+                        <banDuplicatePomDependencyVersions/>
 
-                        <dependencyConvergence />
+                        <dependencyConvergence/>
                     </rules>
                 </configuration>
             </plugin>
@@ -479,11 +482,26 @@
                 <artifactId>versions-maven-plugin</artifactId>
                 <version>${version.maven.versions.plugin}</version>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>${version.maven.jar.plugin}</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <!--suppress UnresolvedMavenProperty -->
+                            <Automatic-Module-Name>${module.name}</Automatic-Module-Name>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
-        <profile>
+
+    <profile>
             <id>release-only</id>
             <activation>
                 <property>

@@ -12,6 +12,10 @@
 
     <name>SCIM SDK Client</name>
 
+    <properties>
+        <module.name>de.captaingoldfish.scim.sdk.client</module.name>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>de.captaingoldfish</groupId>
