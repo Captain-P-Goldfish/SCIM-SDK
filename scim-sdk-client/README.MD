@@ -1,3 +1,0 @@
-# SCIM Client implementation
-
-

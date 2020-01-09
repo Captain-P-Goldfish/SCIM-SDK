@@ -54,7 +54,15 @@ for any registered resource
 
 ## Client implementation
 
-under construction
+The client implementation supports the following SCIM requests
 
+- [x] create
+- [x] read
+- [x] list
+- [x] update
+- [x] delete
+- [ ] patch
 
+there is also direct native support for easy use of basic authentication and X509 client authentication. All other
+authentication types must be implemented manually.
  
