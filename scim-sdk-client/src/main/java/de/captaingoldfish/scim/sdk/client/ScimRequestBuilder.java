@@ -1,6 +1,13 @@
-package de.captaingoldfish.scim.sdk.client.builder;
+package de.captaingoldfish.scim.sdk.client;
 
+import de.captaingoldfish.scim.sdk.client.builder.CreateBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.DeleteBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.GetBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.ListBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
+import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import lombok.Getter;
 
 
 /**
@@ -20,6 +27,7 @@ public class ScimRequestBuilder
   /**
    * the configuration for the client that should be used
    */
+  @Getter
   private final ScimClientConfig scimClientConfig;
 
   public ScimRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig)
@@ -30,7 +38,7 @@ public class ScimRequestBuilder
 
   /**
    * builds a create builder class based on the given type
-   * 
+   *
    * @param type the type that should be created
    * @return a create-request builder for the given resource type
    */
@@ -41,7 +49,7 @@ public class ScimRequestBuilder
 
   /**
    * builds a get builder class based on the given type
-   * 
+   *
    * @param type the type that should be created
    * @return a get-request builder for the given resource type
    */
@@ -52,7 +60,7 @@ public class ScimRequestBuilder
 
   /**
    * builds a delete builder class based on the given type
-   * 
+   *
    * @param type the type that should be created
    * @return a delete-request builder for the given resource type
    */
@@ -63,7 +71,7 @@ public class ScimRequestBuilder
 
   /**
    * builds an update builder class based on the given type
-   * 
+   *
    * @param type the type that should be created
    * @return a update-request builder for the given resource type
    */

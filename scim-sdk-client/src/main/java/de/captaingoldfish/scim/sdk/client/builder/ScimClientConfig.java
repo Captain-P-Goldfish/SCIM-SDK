@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 
 /**
@@ -18,6 +19,7 @@ import lombok.NoArgsConstructor;
  * <br>
  */
 @Getter
+@Setter
 @NoArgsConstructor
 public class ScimClientConfig
 {

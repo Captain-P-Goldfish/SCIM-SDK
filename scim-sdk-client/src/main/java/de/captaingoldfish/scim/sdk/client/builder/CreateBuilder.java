@@ -44,7 +44,7 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * @param resource sets the resource that should be sent to the service provider
    */
   @Override
-  protected CreateBuilder<T> setResource(String resource)
+  public CreateBuilder<T> setResource(String resource)
   {
     return (CreateBuilder<T>)super.setResource(resource);
   }
@@ -53,7 +53,7 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * @param resource sets the resource that should be sent to the service provider
    */
   @Override
-  protected CreateBuilder<T> setResource(JsonNode resource)
+  public CreateBuilder<T> setResource(JsonNode resource)
   {
     return (CreateBuilder<T>)super.setResource(resource);
   }
