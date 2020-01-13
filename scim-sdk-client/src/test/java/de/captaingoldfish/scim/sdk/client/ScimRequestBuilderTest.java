@@ -2,7 +2,11 @@ package de.captaingoldfish.scim.sdk.client;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,6 +26,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -29,6 +34,7 @@ import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
  * created at: 11.12.2019 - 10:50 <br>
  * <br>
  */
+@Slf4j
 public class ScimRequestBuilderTest extends HttpServerMockup
 {
 
@@ -222,5 +228,35 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     Assertions.assertFalse(response.getResource().isPresent());
     Assertions.assertTrue(response.getErrorResponse().isPresent());
+  }
+
+  /**
+   * verifies that it is possible to add additional http headers to the request
+   */
+  @Test
+  public void testSendAdditionalHeaders()
+  {
+    final Map<String, String[]> httpHeaders = new HashMap<>();
+    final String token = UUID.randomUUID().toString();
+    httpHeaders.put(HttpHeader.AUHORIZATION, new String[]{"Bearer " + token, "hello world"});
+    httpHeaders.put(HttpHeader.IF_MATCH_HEADER, new String[]{token});
+
+    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      List<String> authHeaders = httpExchange.getRequestHeaders().get(HttpHeader.AUHORIZATION);
+      Assertions.assertEquals(2, authHeaders.size(), authHeaders.toString());
+      Assertions.assertEquals("Bearer " + token, authHeaders.get(0), authHeaders.toString());
+      Assertions.assertEquals("hello world", authHeaders.get(1), authHeaders.toString());
+
+      List<String> ifMatchHeaders = httpExchange.getRequestHeaders().get(HttpHeader.IF_MATCH_HEADER);
+      Assertions.assertEquals(1, ifMatchHeaders.size(), ifMatchHeaders.toString());
+      Assertions.assertEquals(token, ifMatchHeaders.get(0), ifMatchHeaders.toString());
+      wasCalled.set(true);
+    });
+
+    scimRequestBuilder.create(User.class).setEndpoint(EndpointPaths.USERS).setResource(user).sendRequest(httpHeaders);
+    Assertions.assertTrue(wasCalled.get());
   }
 }

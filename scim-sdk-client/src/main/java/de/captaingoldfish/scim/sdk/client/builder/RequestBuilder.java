@@ -1,5 +1,8 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.Collections;
+import java.util.Map;
+
 import org.apache.http.client.methods.HttpUriRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -105,6 +108,18 @@ public abstract class RequestBuilder<T extends ResourceNode>
    */
   public ScimServerResponse<T> sendRequest()
   {
+    return this.sendRequest(Collections.emptyMap());
+  }
+
+  /**
+   * sends the defined request to the service provider
+   *
+   * @param httpHeaders allows the user to add additional http headers to the request
+   * @return the response from the given request. A response must not be returned in any case from the service
+   *         provider so the returned type is still optional
+   */
+  public ScimServerResponse<T> sendRequest(Map<String, String[]> httpHeaders)
+  {
     ScimHttpClient scimHttpClient = ScimHttpClient.builder()
                                                   .connectTimeout(scimClientConfig.getConnectTimeout())
                                                   .requestTimeout(scimClientConfig.getRequestTimeout())
@@ -117,6 +132,15 @@ public abstract class RequestBuilder<T extends ResourceNode>
                                                   .build();
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    if (httpHeaders != null)
+    {
+      httpHeaders.forEach((key, values) -> {
+        for ( String value : values )
+        {
+          request.addHeader(key, value);
+        }
+      });
+    }
     if (scimClientConfig.getBasicAuth() != null)
     {
       request.setHeader(HttpHeader.AUHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
