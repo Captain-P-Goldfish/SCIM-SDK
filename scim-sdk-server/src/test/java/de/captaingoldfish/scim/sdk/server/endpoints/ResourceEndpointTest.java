@@ -47,6 +47,7 @@ import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
@@ -358,7 +359,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                        "userName sw \"" + searchValue + "\"");
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
-    ListResponse listResponse = (ListResponse)scimResponse;
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
     Assertions.assertEquals(counter, listResponse.getTotalResults());
     Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
@@ -424,7 +425,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                searchRequest.toString(),
                                                                httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
-    ListResponse listResponse = (ListResponse)scimResponse;
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
     Assertions.assertEquals(counter, listResponse.getTotalResults());
     Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());

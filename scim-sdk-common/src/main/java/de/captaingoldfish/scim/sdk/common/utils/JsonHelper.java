@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Reader;
 import java.io.StringReader;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -450,7 +451,7 @@ public final class JsonHelper
     {
       return (T)resource;
     }
-    T newInstance = getNewInstance(type);
+    T newInstance = getNewInstance(type, resource);
     resource.fields().forEachRemaining(stringJsonNodeEntry -> {
       JsonHelper.addAttribute(newInstance, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
     });
@@ -460,14 +461,30 @@ public final class JsonHelper
   /**
    * creates a new instance of the given type
    *
-   * @param type the type from which a new instance will be created
    * @param <T> the type must define a noArgs constructor
+   * @param type the type from which a new instance will be created
+   * @param resource
    * @return the newly created instance
    */
-  private static <T extends JsonNode> T getNewInstance(Class<T> type)
+  private static <T extends JsonNode> T getNewInstance(Class<T> type, JsonNode resource)
   {
     try
     {
+      if (resource != null && !resource.isEmpty())
+      {
+        try
+        {
+          Constructor<T> constructor = type.getConstructor(JsonNode.class);
+          return constructor.newInstance(resource);
+        }
+        catch (NoSuchMethodException e)
+        {}
+        catch (InvocationTargetException e)
+        {
+          throw new InternalServerException("could not create instance of type '" + type + "': " + e.getMessage(), e,
+                                            null);
+        }
+      }
       return type.getConstructor().newInstance();
     }
     catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)

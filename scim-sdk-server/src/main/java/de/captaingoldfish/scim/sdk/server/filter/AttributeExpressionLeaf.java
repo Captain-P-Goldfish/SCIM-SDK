@@ -8,13 +8,13 @@ import java.util.Optional;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.StringUtils;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
-import de.captaingoldfish.scim.sdk.server.filter.antlr.Comparator;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.CompareValue;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.FilterAttributeName;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterParser;
