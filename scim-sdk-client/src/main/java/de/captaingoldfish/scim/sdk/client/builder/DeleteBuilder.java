@@ -34,7 +34,7 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 
 
   /**
-   * @param resource sets the resource id of the resource that should be delete from the server
+   * @param id sets the resource id of the resource that should be delete from the server
    */
   public DeleteBuilder<T> setId(String id)
   {
@@ -93,7 +93,7 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 
   /**
    * a delete-response if a status code of 204 is returned an error response in all other cases
-   * 
+   *
    * @param responseCode the response code from the SCIM service
    */
   @Override

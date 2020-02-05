@@ -34,7 +34,7 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 
 
   /**
-   * @param resource sets the resource id of the resource that should be returned from the server
+   * @param id sets the resource id of the resource that should be returned from the server
    */
   public GetBuilder<T> setId(String id)
   {
@@ -93,7 +93,7 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 
   /**
    * a get-response if a status code of 200 is returned an error response in all other cases
-   * 
+   *
    * @param responseCode the response code from the SCIM service
    */
   @Override

@@ -37,7 +37,7 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   }
 
   /**
-   * @param resource sets the resource id of the resource that should be updated on the server
+   * @param id sets the resource id of the resource that should be updated on the server
    */
   public UpdateBuilder<T> setId(String id)
   {
