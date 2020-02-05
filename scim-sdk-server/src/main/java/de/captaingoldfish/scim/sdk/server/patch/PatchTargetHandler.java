@@ -267,11 +267,11 @@ public class PatchTargetHandler extends AbstractPatch
     if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null
         && path.getChild() == null)
     {
-      evaluatePatchPathOperation(schemaAttribute, firstAttribute.isEmpty() ? null : firstAttribute);
+      evaluatePatchPathOperation(schemaAttribute, firstAttribute.size() == 0 ? null : firstAttribute);
       int sizeBefore = currentParent.size();
       JsonNode removedNode = currentParent.remove(schemaAttribute.getName());
       boolean effectiveChangeMade = false;
-      if (sizeBefore > currentParent.size() && !removedNode.isEmpty())
+      if (sizeBefore > currentParent.size() && removedNode.size() != 0)
       {
         effectiveChangeMade = true;
       }
@@ -282,7 +282,7 @@ public class PatchTargetHandler extends AbstractPatch
                                                        (ArrayNode)firstAttribute,
                                                        fullAttributeNames,
                                                        values);
-    if (firstAttribute.isEmpty())
+    if (firstAttribute.size() == 0)
     {
       resource.remove(schemaAttribute.getName());
       removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
@@ -305,7 +305,7 @@ public class PatchTargetHandler extends AbstractPatch
                                       boolean isExtension,
                                       ObjectNode currentParent)
   {
-    if (isExtension && currentParent.isEmpty())
+    if (isExtension && currentParent.size() == 0)
     {
       resource.remove(schemaAttribute.getResourceUri());
       resource.removeSchema(schemaAttribute.getResourceUri());
@@ -476,7 +476,7 @@ public class PatchTargetHandler extends AbstractPatch
     Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path);
     if (!matchingNode.isPresent())
     {
-      if (complexNode.isEmpty())
+      if (complexNode.size() == 0)
       {
         resource.remove(schemaAttribute.getName());
       }
@@ -484,13 +484,13 @@ public class PatchTargetHandler extends AbstractPatch
     }
     if (handleInnerComplexAttribute(subAttribute, complexNode, values))
     {
-      if (complexNode.isEmpty())
+      if (complexNode.size() == 0)
       {
         resource.remove(schemaAttribute.getName());
       }
       return true;
     }
-    else if (complexNode.isEmpty())
+    else if (complexNode.size() == 0)
     {
       resource.remove(schemaAttribute.getName());
       return false;
@@ -523,7 +523,7 @@ public class PatchTargetHandler extends AbstractPatch
       }
       if (PatchOp.REMOVE.equals(patchOp))
       {
-        boolean effectiveChange = !complexNode.get(subAttribute.getName()).isEmpty();
+        boolean effectiveChange = complexNode.get(subAttribute.getName()).size() != 0;
         complexNode.remove(subAttribute.getName());
         return effectiveChange;
       }
@@ -594,7 +594,7 @@ public class PatchTargetHandler extends AbstractPatch
       }
       else
       {
-        evaluatePatchPathOperation(schemaAttribute, multiValued.isEmpty() ? null : multiValued);
+        evaluatePatchPathOperation(schemaAttribute, multiValued.size() == 0 ? null : multiValued);
         return handleDirectMultiValuedComplexPathReference(multiValued, values);
       }
     }
@@ -685,7 +685,7 @@ public class PatchTargetHandler extends AbstractPatch
                                                      String fullAttributeName,
                                                      List<String> values)
   {
-    if (!PatchOp.REMOVE.equals(patchOp) && multiValued.isEmpty())
+    if (!PatchOp.REMOVE.equals(patchOp) && multiValued.size() == 0)
     {
       return false;
     }
@@ -700,7 +700,7 @@ public class PatchTargetHandler extends AbstractPatch
     {
       ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
       changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
-      if (complexNode.isEmpty())
+      if (complexNode.size() == 0)
       {
         multiValued.remove(matchingComplexNodes.get(i).getIndex());
       }
@@ -728,7 +728,7 @@ public class PatchTargetHandler extends AbstractPatch
         matchingComplexNodes.add(new IndexNode(i, filteredNode.get()));
       }
     }
-    if (path.getChild() != null && matchingComplexNodes.isEmpty())
+    if (path.getChild() != null && matchingComplexNodes.size() == 0)
     {
       return Collections.emptyList();
     }
@@ -830,7 +830,7 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private void validateReplaceOperation(AttributePathRoot path, List<String> values)
   {
-    if (values == null || values.isEmpty())
+    if (values == null || values.size() == 0)
     {
       throw new BadRequestException("values parameter must be set for replace operation but was empty", null,
                                     ScimType.RFC7644.INVALID_VALUE);

@@ -184,7 +184,7 @@ public abstract class ResourceNode extends AbstractSchemasHolder
     {
       return Optional.empty();
     }
-    if (parent.isEmpty())
+    if (parent.size() == 0)
     {
       return Optional.empty();
     }

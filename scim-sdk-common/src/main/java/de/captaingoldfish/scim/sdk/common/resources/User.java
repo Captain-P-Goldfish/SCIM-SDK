@@ -823,7 +823,7 @@ public class User extends ResourceNode
   public void setEnterpriseUser(EnterpriseUser enterpriseUser)
   {
     Set<String> schemas = getSchemas();
-    if (enterpriseUser == null || enterpriseUser.isEmpty())
+    if (enterpriseUser == null || enterpriseUser.size() == 0)
     {
       schemas.remove(SchemaUris.ENTERPRISE_USER_URI);
     }

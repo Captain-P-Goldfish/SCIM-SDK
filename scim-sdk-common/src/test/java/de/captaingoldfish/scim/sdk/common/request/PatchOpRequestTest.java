@@ -43,7 +43,7 @@ public class PatchOpRequestTest
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(Collections.singletonList(operation)).build();
     Assertions.assertEquals(2, patchOpRequest.size());
     Assertions.assertEquals(1, patchOpRequest.getOperations().size());
-    Assertions.assertTrue(patchOpRequest.getOperations().get(0).isEmpty(),
+    Assertions.assertTrue(patchOpRequest.getOperations().get(0).size() == 0,
                           patchOpRequest.getOperations().get(0).toPrettyString());
   }
 }

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.captaingoldfish</groupId>
@@ -71,7 +72,7 @@
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.9</version.apache.commons.lang3>
         <version.commons.io>2.6</version.commons.io>
-        <version.jackson>2.10.1</version.jackson>
+        <version.jackson>2.10.2</version.jackson>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.antlr>4.7.2</version.antlr>
         <version.apache.http.client>4.5.10</version.apache.http.client>
@@ -472,9 +473,9 @@
                             <onlyWhenRelease>true</onlyWhenRelease>
                         </requireReleaseDeps>
 
-                        <banDuplicatePomDependencyVersions />
+                        <banDuplicatePomDependencyVersions/>
 
-                        <dependencyConvergence />
+                        <dependencyConvergence/>
                     </rules>
                 </configuration>
             </plugin>
@@ -503,7 +504,7 @@
 
     <profiles>
 
-    <profile>
+        <profile>
             <id>release-only</id>
             <activation>
                 <property>

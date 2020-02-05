@@ -210,7 +210,7 @@ public final class ResourceTypeFactory
 
   private Set<String> getExtensionIds(ArrayNode arrayNode)
   {
-    if (arrayNode == null || arrayNode.isEmpty())
+    if (arrayNode == null || arrayNode.size() == 0)
     {
       return Collections.emptySet();
     }

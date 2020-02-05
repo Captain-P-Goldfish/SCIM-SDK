@@ -472,8 +472,8 @@ public class ResourceType extends ResourceNode
     public ResourceSchema(JsonNode resourceDocument)
     {
       Supplier<String> errorMessage = () -> missingAttrMessage(AttributeNames.RFC7643.SCHEMAS) + " in resource "
-                                            + "document: \n"
-                                            + (resourceDocument == null ? null : resourceDocument.toPrettyString());
+                                            + "document: \n" + (resourceDocument == null ? null
+                                              : JsonHelper.toPrettyJsonString(resourceDocument));
       List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.RFC7643.SCHEMAS)
                                        .orElseThrow(() -> getBadRequestException(errorMessage.get()));
       if (!schemas.contains(getSchema()))

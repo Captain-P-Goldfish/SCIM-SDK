@@ -271,7 +271,7 @@ public class SchemaValidator
                 + resourceType.getSchema() + "]");
       throw ex;
     }
-    if (validatedMeta != null && !validatedMeta.isEmpty() && validatedMainDocument != null)
+    if (validatedMeta != null && validatedMeta.size() != 0 && validatedMainDocument != null)
     {
       JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
     }
@@ -550,13 +550,13 @@ public class SchemaValidator
         continue;
       }
       checkMetaAttributeOnDocument(document, metaAttribute).ifPresent(childNode -> {
-        if (!(childNode.isArray() && childNode.isEmpty()))
+        if (!(childNode.isArray() && childNode.size() == 0))
         {
           JsonHelper.addAttribute(scimNode, metaAttribute.getName(), childNode);
         }
       });
     }
-    if (scimNode.isEmpty())
+    if (scimNode.size() == 0)
     {
       return null;
     }
@@ -614,11 +614,11 @@ public class SchemaValidator
                                                         schemaAttribute.isMultiValued(),
                                                         schemaAttribute.getType(),
                                                         schemaAttribute.getSchema().getId().orElse(null),
-                                                        document.toPrettyString());
+                                                        document.toString());
     if (schemaAttribute.isMultiValued())
     {
       if (document != null && !document.isArray() || document != null && Type.COMPLEX.equals(schemaAttribute.getType())
-                                                     && !document.isEmpty() && !document.get(0).isObject())
+                                                     && document.size() != 0 && !document.get(0).isObject())
       {
         throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
       }
@@ -713,7 +713,7 @@ public class SchemaValidator
       handleMultivaluedNode.accept(jsonNode, scimArrayNode);
     }
     AttributeValidator.validateArrayNode(schemaAttribute, scimArrayNode);
-    if (scimArrayNode.isEmpty())
+    if (scimArrayNode.size() == 0)
     {
       validateNonPresentAttributes(schemaAttribute);
       return Optional.empty();
