@@ -172,6 +172,7 @@ class ResourceEndpointHandler
                                                                                     null));
       ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
       createdMeta.setLocation(location);
+      createdMeta.setResourceType(resourceType.getName());
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -721,12 +722,18 @@ class ResourceEndpointHandler
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
       resourceNode = resourceHandler.updateResource(resourceNode, authorization);
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
+      Supplier<String> metaErrorMessage = () -> "Meta attribute not set on created resource";
+      Meta createdMeta = resourceNode.getMeta()
+                                     .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
+                                                                                    null));
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
+      createdMeta.setLocation(location);
+      createdMeta.setResourceType(resourceType.getName());
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
@@ -736,6 +743,7 @@ class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
+
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
