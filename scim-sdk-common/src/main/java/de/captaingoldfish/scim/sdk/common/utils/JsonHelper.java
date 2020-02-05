@@ -13,10 +13,10 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -486,11 +486,17 @@ public final class JsonHelper
                                             null);
         }
       }
-      return type.newInstance();
+      Constructor<T> constructor = type.getConstructor();
+      return constructor.newInstance();
     }
-    catch (InstantiationException | IllegalAccessException e)
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
     {
       throw new InternalServerException("could not create instance of type '" + type + "': " + e.getMessage(), e, null);
+    }
+    catch (NoSuchMethodException e)
+    {
+      throw new InternalServerException("missing no args constructor for type '" + type + "': " + e.getMessage(), e,
+                                        null);
     }
   }
 
