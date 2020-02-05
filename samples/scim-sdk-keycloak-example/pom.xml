@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>scim-sdk-parent</artifactId>
+        <groupId>de.captaingoldfish</groupId>
+        <version>1.3.2-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scim-sdk-keycloak-example</artifactId>
+    <name>SCIM SDK keycloak example parent</name>
+
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>keycloak-scim</module>
+        <module>keycloak-scim-ear</module>
+        <module>keycloak-scim-client</module>
+    </modules>
+
+    <properties>
+        <!--suppress UnresolvedMavenProperty -->
+        <formatter-path>../../../</formatter-path>
+
+        <version.keycloak>8.0.1</version.keycloak>
+
+        <version.sun.javax.activation>1.2.0</version.sun.javax.activation>
+        <version.javax.activation>1.1.1</version.javax.activation>
+
+        <!-- plugin versions -->
+        <version.maven.ear.plugin>3.0.2</version.maven.ear.plugin>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-parent</artifactId>
+                <version>${version.keycloak}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>keycloak-scim</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-sdk-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>javax.activation</artifactId>
+                <version>${version.sun.javax.activation}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${version.javax.activation}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+</project>

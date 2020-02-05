@@ -18,6 +18,7 @@
     <modules>
         <module>scim-sdk-springboot-example</module>
         <module>scim-sdk-jboss-example</module>
+        <module>scim-sdk-keycloak-example</module>
     </modules>
 
     <properties>

@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.captaingoldfish</groupId>
+        <artifactId>scim-sdk-keycloak-example</artifactId>
+        <version>1.3.2-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>keycloak-scim</artifactId>
+    <name>SCIM SDK keycloak</name>
+
+    <properties>
+        <module.name>de.captaingoldfish.scim.sdk.keycloak.scim</module.name>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-server-spi-private</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-services</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>de.captaingoldfish</groupId>
+            <artifactId>scim-sdk-server</artifactId>
+            <exclusions>
+                <exclusion>
+                    <artifactId>javax.ws.rs-api</artifactId>
+                    <groupId>javax.ws.rs</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>${project.artifactId}</finalName>
+    </build>
+
+</project>
