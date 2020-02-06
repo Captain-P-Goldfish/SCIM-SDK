@@ -16,6 +16,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -75,20 +76,22 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  protected HttpUriRequest getHttpUriRequest()
+  protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
   {
-    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
-    StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
-    httpPost.setEntity(stringEntity);
-    return httpPost;
+    Class<T1> type = httpResponseCode == HttpStatus.CREATED ? (Class<T1>)CreateResponse.class
+      : (Class<T1>)ErrorResponse.class;
+    return JsonHelper.readJsonDocument(responseBody, type);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  protected <T extends ScimResponse> Class<T> getResponseType(int responseCode)
+  protected HttpUriRequest getHttpUriRequest()
   {
-    return responseCode == HttpStatus.CREATED ? (Class<T>)CreateResponse.class : (Class<T>)ErrorResponse.class;
+    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
+    httpPost.setEntity(stringEntity);
+    return httpPost;
   }
 }

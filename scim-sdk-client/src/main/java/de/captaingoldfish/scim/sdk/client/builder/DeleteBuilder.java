@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -59,6 +60,17 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
+  protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+  {
+    Class<T1> type = HttpStatus.NO_CONTENT == httpResponseCode ? (Class<T1>)DeleteResponse.class
+      : (Class<T1>)ErrorResponse.class;
+    return JsonHelper.readJsonDocument(responseBody, type);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   public DeleteBuilder<T> setETagForIfMatch(String version)
   {
     return (DeleteBuilder<T>)super.setETagForIfMatch(version);
@@ -89,17 +101,6 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   public DeleteBuilder<T> setETagForIfNoneMatch(ETag version)
   {
     return (DeleteBuilder<T>)super.setETagForIfNoneMatch(version);
-  }
-
-  /**
-   * a delete-response if a status code of 204 is returned an error response in all other cases
-   *
-   * @param responseCode the response code from the SCIM service
-   */
-  @Override
-  protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)
-  {
-    return HttpStatus.NO_CONTENT == responseCode ? (Class<T1>)DeleteResponse.class : (Class<T1>)ErrorResponse.class;
   }
 
   /**

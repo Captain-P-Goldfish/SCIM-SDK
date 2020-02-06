@@ -177,6 +177,12 @@ public class ETagRequestBuilderTest
     }
 
     @Override
+    protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+    {
+      return null;
+    }
+
+    @Override
     public MyRequestBuilder<T> setETagForIfMatch(String version)
     {
       return (MyRequestBuilder<T>)super.setETagForIfMatch(version);
@@ -200,11 +206,7 @@ public class ETagRequestBuilderTest
       return (MyRequestBuilder<T>)super.setETagForIfNoneMatch(version);
     }
 
-    @Override
-    protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)
-    {
-      return null;
-    }
+
 
     @Override
     protected HttpUriRequest getHttpUriRequest()

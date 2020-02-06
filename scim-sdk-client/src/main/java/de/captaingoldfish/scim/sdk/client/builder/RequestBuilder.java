@@ -12,9 +12,7 @@ import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
-import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -92,15 +90,6 @@ public abstract class RequestBuilder<T extends ResourceNode>
   }
 
   /**
-   * each SCIM endpoint must respond with specific response codes in order to acknowledge a request as
-   * successful
-   *
-   * @param responseCode the response code from the SCIM service
-   * @return the success response type or an {@link ErrorResponse}
-   */
-  protected abstract <T extends ScimResponse> Class<T> getResponseType(int responseCode);
-
-  /**
    * sends the defined request to the service provider
    *
    * @return the response from the given request. A response must not be returned in any case from the service
@@ -149,6 +138,15 @@ public abstract class RequestBuilder<T extends ResourceNode>
   }
 
   /**
+   * builds the scim response from the response body
+   * 
+   * @param httpResponseCode the response code of the response
+   * @param responseBody the response body of the server
+   * @return the response object
+   */
+  protected abstract <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody);
+
+  /**
    * translates the response into a {@link ScimResponse}
    *
    * @param response the response from the scim server
@@ -156,8 +154,7 @@ public abstract class RequestBuilder<T extends ResourceNode>
    */
   private ScimServerResponse<T> handleResponse(HttpResponse response)
   {
-    ScimResponse scimResponse = JsonHelper.readJsonDocument(response.getResponseBody(),
-                                                            getResponseType(response.getHttpStatusCode()));
+    ScimResponse scimResponse = buildScimResponse(response.getHttpStatusCode(), response.getResponseBody());
     response.getResponseHeaders().forEach(scimResponse.getHttpHeaders()::put);
     return ScimServerResponse.<T> builder()
                              .scimResponse(scimResponse)

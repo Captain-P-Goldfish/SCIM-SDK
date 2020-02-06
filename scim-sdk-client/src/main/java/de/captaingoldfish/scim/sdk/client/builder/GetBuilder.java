@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.GetResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -92,14 +93,13 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   }
 
   /**
-   * a get-response if a status code of 200 is returned an error response in all other cases
-   *
-   * @param responseCode the response code from the SCIM service
+   * {@inheritDoc}
    */
   @Override
-  protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)
+  protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
   {
-    return HttpStatus.OK == responseCode ? (Class<T1>)GetResponse.class : (Class<T1>)ErrorResponse.class;
+    Class<T1> type = HttpStatus.OK == httpResponseCode ? (Class<T1>)GetResponse.class : (Class<T1>)ErrorResponse.class;
+    return JsonHelper.readJsonDocument(responseBody, type);
   }
 
   /**

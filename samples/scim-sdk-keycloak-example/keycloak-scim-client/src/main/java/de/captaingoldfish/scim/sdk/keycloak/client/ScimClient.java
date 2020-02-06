@@ -20,7 +20,6 @@ import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
@@ -81,7 +80,7 @@ public class ScimClient
                                                           .get()
                                                           .setEndpoint(EndpointPaths.USERS)
                                                           .sendRequest();
-    ListResponse<ScimObjectNode> listResponse = (ListResponse)response.getScimResponse().get();
+    ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
     while (listResponse.getTotalResults() > 0)
     {
       listResponse.getListedResources().stream().parallel().forEach(user -> {
@@ -201,7 +200,7 @@ public class ScimClient
                                                           .get()
                                                           .setEndpoint(EndpointPaths.USERS)
                                                           .sendRequest();
-    ListResponse<ScimObjectNode> listResponse = (ListResponse)response.getScimResponse().get();
+    ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
     return listResponse.getListedResources()
                        .stream()
                        .map(user -> JsonHelper.copyResourceToObject(user, User.class))
