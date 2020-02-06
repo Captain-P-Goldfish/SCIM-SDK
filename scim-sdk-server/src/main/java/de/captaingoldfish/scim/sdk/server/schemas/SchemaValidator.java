@@ -254,13 +254,12 @@ public class SchemaValidator
         JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getNonNullId(), extensionNode);
       }
     }
-    JsonNode metaNode = document.get(AttributeNames.RFC7643.META);
     Schema metaSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.META);
     JsonNode validatedMeta;
     try
     {
       validatedMeta = validateExtensionForResponse(metaSchema,
-                                                   metaNode,
+                                                   document,
                                                    validatedRequest,
                                                    attributes,
                                                    excludedAttributes);
@@ -273,7 +272,9 @@ public class SchemaValidator
     }
     if (validatedMeta != null && validatedMeta.size() != 0 && validatedMainDocument != null)
     {
-      JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
+      JsonHelper.addAttribute(validatedMainDocument,
+                              AttributeNames.RFC7643.META,
+                              validatedMeta.get(AttributeNames.RFC7643.META));
     }
     return validatedMainDocument;
   }
