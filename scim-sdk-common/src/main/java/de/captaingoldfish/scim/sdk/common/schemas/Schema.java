@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.common.schemas;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -170,6 +171,18 @@ public class Schema extends ResourceNode
   private void setAttributes(List<SchemaAttribute> attributes)
   {
     setAttribute(AttributeNames.RFC7643.ATTRIBUTES, attributes);
+  }
+
+  /**
+   * gets the all schema-attributes of this schema.<br>
+   * <br>
+   * <b>Note:</b>:<br>
+   * this collection contains even the subAttributes of the schema-attributes. You cannot tell instantly if the
+   * given attribute is a direct attribute of this schema or a sub-attribute of a schema-attribute
+   */
+  public Collection<SchemaAttribute> getAllSchemaAttributes()
+  {
+    return attributeRegister.values();
   }
 
   /**
