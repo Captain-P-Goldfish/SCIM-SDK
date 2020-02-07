@@ -49,6 +49,7 @@ public final class SchemaFactory
   {
     this.resourceTypeFactory = resourceTypeFactory;
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
+    registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPES_FEATURE_EXT_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SERVICE_PROVIDER_JSON));
     registerMetaSchema(JsonHelper.loadJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
@@ -62,7 +63,7 @@ public final class SchemaFactory
    *
    * @param jsonSchema the schema as json node
    */
-  private void registerMetaSchema(JsonNode jsonSchema)
+  protected void registerMetaSchema(JsonNode jsonSchema)
   {
     Schema schema = new Schema(jsonSchema);
     metaSchemas.put(schema.getNonNullId(), schema);
@@ -80,7 +81,15 @@ public final class SchemaFactory
     {
       SchemaValidator.validateSchemaDocument(metaSchema, jsonSchema);
       Schema schema = new Schema(jsonSchema);
-      resourceSchemas.put(schema.getNonNullId(), schema);
+      // a schema that is already within the meta schemas should not be set as duplicate within the resource schemas
+      if (metaSchemas.get(schema.getNonNullId()) == null)
+      {
+        resourceSchemas.put(schema.getNonNullId(), schema);
+      }
+      else
+      {
+        metaSchemas.put(schema.getNonNullId(), schema);
+      }
     }
     catch (DocumentValidationException ex)
     {
@@ -108,7 +117,12 @@ public final class SchemaFactory
    */
   public Schema getResourceSchema(String id)
   {
-    return resourceSchemas.get(id);
+    Schema schema = resourceSchemas.get(id);
+    if (schema != null)
+    {
+      return schema;
+    }
+    return metaSchemas.get(id);
   }
 
 }

@@ -30,7 +30,7 @@ public class ResourceTypeEndpointDefinition extends EndpointDefinition
   {
     super(JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPE_RESOURCE_TYPE_JSON),
           JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON),
-          Collections.singletonList(JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPES_FILTER_EXT_JSON)),
+          Collections.singletonList(JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPES_FEATURE_EXT_JSON)),
           resourceHandler);
   }
 

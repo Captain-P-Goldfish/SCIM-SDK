@@ -123,7 +123,7 @@ public final class ResourceTypeFactory
   }
 
   /**
-   * reads the extensions defined withing the resource type document and validates them against the given
+   * reads the extensions defined within the resource type document and validates them against the given
    * extension schemata and will register the extension schemata in the {@link SchemaFactory} if the validation
    * succeeds
    *

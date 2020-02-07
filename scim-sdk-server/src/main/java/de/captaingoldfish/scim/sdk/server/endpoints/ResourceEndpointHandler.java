@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -111,6 +112,25 @@ class ResourceEndpointHandler
                                                     endpointDefinition.getResourceSchema(),
                                                     endpointDefinition.getResourceSchemaExtensions()
                                                                       .toArray(new JsonNode[0]));
+  }
+
+  /**
+   * will get a resource type definition by its name
+   *
+   * @param name the name of the resource type e.g. User, Group, ServiceProviderConfig, ResourceType, Schema
+   * @return the resource type if one is registered under the given id
+   */
+  public Optional<ResourceType> getResourceTypeByName(String name)
+  {
+    return resourceTypeFactory.getResourceTypeByName(name);
+  }
+
+  /**
+   * @return the names of all resource types that have been registered
+   */
+  public Set<String> getRegisteredResourceTypeNames()
+  {
+    return resourceTypeFactory.getAllResourceTypes().stream().map(ResourceType::getName).collect(Collectors.toSet());
   }
 
   /**

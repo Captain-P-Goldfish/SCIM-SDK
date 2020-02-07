@@ -17,7 +17,7 @@ public final class ClassPathReferences
 
   public static final String META_RESOURCE_TYPES_JSON = "/de/captaingoldfish/scim/sdk/common/meta/resource-type.schema.json";
 
-  public static final String RESOURCE_TYPES_FILTER_EXT_JSON = "/de/captaingoldfish/scim/sdk/common/meta/resource-type-feature-ext.json";
+  public static final String RESOURCE_TYPES_FEATURE_EXT_JSON = "/de/captaingoldfish/scim/sdk/common/meta/resource-type-feature-ext.json";
 
   public static final String META_SERVICE_PROVIDER_JSON = "/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json";
 
