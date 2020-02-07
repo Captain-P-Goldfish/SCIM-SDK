@@ -194,6 +194,7 @@ public class Schema extends ResourceNode
 
   /**
    * gets a {@link SchemaAttribute} definition by its scimNodeName e.g. "userName" or "name.givenName". <br>
+   * <br>
    * This method is for resolving filter expressions and therefore the {@code scimNodeName} values are evaluated
    * as case insensitive.<br>
    *

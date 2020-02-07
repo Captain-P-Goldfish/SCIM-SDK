@@ -141,6 +141,14 @@ public class ResourceType extends ResourceNode
   }
 
   /**
+   * @return the main schema that represents this resource type
+   */
+  public Schema getMainSchema()
+  {
+    return schemaFactory.getResourceSchema(getSchema());
+  }
+
+  /**
    * @return the required resource schema extensions that represents this resource type
    */
   public List<Schema> getRequiredResourceSchemaExtensions()
