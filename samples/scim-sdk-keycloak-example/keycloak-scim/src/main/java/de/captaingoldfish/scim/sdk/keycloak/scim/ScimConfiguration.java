@@ -6,6 +6,7 @@ import java.util.Map;
 
 import org.keycloak.models.RealmModel;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
@@ -67,11 +68,23 @@ public final class ScimConfiguration
 
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+    setUserAttributeRestrictions(userResourceType);
 
     ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
 
+
     return resourceEndpoint;
+  }
+
+  /**
+   * sets attribute validation on the user attribute "username"
+   *
+   * @param userResourceType the resource type to access the username attribute
+   */
+  private static void setUserAttributeRestrictions(ResourceType userResourceType)
+  {
+    userResourceType.getMainSchema().getSchemaAttribute(AttributeNames.RFC7643.USER_NAME).setPattern("[a-z\\-_ ]+");
   }
 
   /**
