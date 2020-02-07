@@ -10,6 +10,10 @@ This is an open source implementation of the SCIM (System for Cross-domain Ident
 
 A simple description of SCIM can be found here http://www.simplecloud.info/
 
+### Documentation
+
+for a documentation take a look into the [wiki](https://github.com/Captain-P-Goldfish/SCIM/wiki)
+
 ---
 **This project requires JDK 8 or higher**
 
@@ -30,8 +34,6 @@ support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is sim
 1. a schema definition that describes the resource you want to supply
 2. a resource type definition that describes the endpoint and the additional schema extensions that may be used within
  the schema definition  
-
-For more detailed information take a look into the [wiki](https://github.com/Captain-P-Goldfish/SCIM/wiki)
 
 ### The following features are supported
 
