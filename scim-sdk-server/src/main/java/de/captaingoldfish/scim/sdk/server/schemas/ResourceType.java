@@ -61,7 +61,7 @@ public class ResourceType extends ResourceNode
    * the resource handler implementation that is able to handle this kind of resource
    */
   @Getter(AccessLevel.PUBLIC)
-  @Setter(AccessLevel.PROTECTED)
+  @Setter(AccessLevel.PUBLIC)
   private ResourceHandler resourceHandlerImpl;
 
   protected ResourceType(SchemaFactory schemaFactory, String resourceDocument)
