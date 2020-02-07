@@ -867,11 +867,28 @@ public class SchemaValidator
   private void validateIsRequiredForResponse(JsonNode document, SchemaAttribute schemaAttribute)
   {
     boolean isNodeNull = document == null || document.isNull();
-    Supplier<String> errorMessage = () -> String.format("the attribute '%s' is required on response.\n\tmutability: "
-                                                        + "'%s'\n\treturned: '%s'",
+    // @formatter:off
+    Supplier<String> errorMessage = () -> String.format("the attribute '%s' is required on response." +
+                                                          "\n\t\tname: '%s'" +
+                                                          "\n\t\ttype: '%s'" +
+                                                          "\n\t\tdescription: '%s'" +
+                                                          "\n\t\tmutability: '%s'" +
+                                                          "\n\t\treturned: '%s'" +
+                                                          "\n\t\tuniqueness: '%s'" +
+                                                          "\n\t\tmultivalued: '%s'" +
+                                                          "\n\t\trequired: '%s'" +
+                                                          "\n\t\tcaseExact: '%s'",
                                                         schemaAttribute.getFullResourceName(),
+                                                        schemaAttribute.getName(),
+                                                        schemaAttribute.getType().toString(),
+                                                        schemaAttribute.getDescription(),
                                                         schemaAttribute.getMutability(),
-                                                        schemaAttribute.getReturned());
+                                                        schemaAttribute.getReturned(),
+                                                        schemaAttribute.getUniqueness().toString(),
+                                                        schemaAttribute.isMultiValued(),
+                                                        schemaAttribute.isRequired(),
+                                                        schemaAttribute.isCaseExact());
+    // @formatter:on
     if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
     {
       throw getException(errorMessage.get(), null);
