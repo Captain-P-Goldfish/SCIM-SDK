@@ -20,6 +20,7 @@
         <version.jboss.el.api>1.0.13.Final</version.jboss.el.api>
         <version.jboss.jaxrs.api>1.0.3.Final</version.jboss.jaxrs.api>
         <version.javax.activation>1.1.1</version.javax.activation>
+        <version.jboss.annotations.api>2.0.1.Final</version.jboss.annotations.api>
 
         <version.maven.war.plugin>3.2.3</version.maven.war.plugin>
     </properties>
@@ -40,6 +41,11 @@
                 <groupId>org.jboss.spec.javax.ws.rs</groupId>
                 <artifactId>jboss-jaxrs-api_2.1_spec</artifactId>
                 <version>${version.jboss.jaxrs.api}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jboss.spec.javax.annotation</groupId>
+                <artifactId>jboss-annotations-api_1.3_spec</artifactId>
+                <version>${version.jboss.annotations.api}</version>
             </dependency>
             <dependency>
                 <groupId>javax.activation</groupId>
