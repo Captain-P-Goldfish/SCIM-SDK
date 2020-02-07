@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import de.captaingoldfish.scim.sdk.client.ScimRequestBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
@@ -84,7 +86,7 @@ public class ScimClient
     while (listResponse.getTotalResults() > 0)
     {
       listResponse.getListedResources().stream().parallel().forEach(user -> {
-        final String username = user.get(AttributeNames.RFC7643.USER_NAME).textValue();
+        final String username = StringUtils.lowerCase(user.get(AttributeNames.RFC7643.USER_NAME).textValue());
         ScimServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class)
                                                                     .setEndpoint(EndpointPaths.USERS)
                                                                     .setId(user.get(AttributeNames.RFC7643.ID)
