@@ -69,18 +69,6 @@ public final class SchemaFactory
   }
 
   /**
-   * will register a new schema
-   *
-   * @param jsonSchema the schema as json node
-   * @param overrideNamePrefix a name that as prepended to the attribute names of the attributes to this schema
-   */
-  private void registerMetaSubSchema(JsonNode jsonSchema, String overrideNamePrefix)
-  {
-    Schema schema = new Schema(jsonSchema, overrideNamePrefix);
-    metaSchemas.put(schema.getNonNullId(), schema);
-  }
-
-  /**
    * will register a new resource schema
    *
    * @param jsonSchema the schema as json node
