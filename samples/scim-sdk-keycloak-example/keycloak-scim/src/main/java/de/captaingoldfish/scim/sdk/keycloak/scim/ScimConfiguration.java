@@ -15,6 +15,8 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.GroupHandler;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
@@ -84,7 +86,9 @@ public final class ScimConfiguration
    */
   private static void setUserAttributeRestrictions(ResourceType userResourceType)
   {
-    userResourceType.getMainSchema().getSchemaAttribute(AttributeNames.RFC7643.USER_NAME).setPattern("[a-z\\-_ ]+");
+    Schema user = userResourceType.getMainSchema();
+    SchemaAttribute username = user.getSchemaAttribute(AttributeNames.RFC7643.USER_NAME);
+    username.setPattern("[a-z\\-_ ]+");
   }
 
   /**
