@@ -943,6 +943,11 @@ class ResourceEndpointHandler
         // a security call In case that someone finds a way to manipulate the id within a patch operation
         patchedResourceNode.setId(id);
         patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, authorization);
+        meta = patchedResourceNode.getMeta().orElseThrow(() -> {
+          return new InternalServerException("The meta-attribute was not added to the updated resource");
+        });
+        meta.setResourceType(resourceType.getName());
+        meta.setLocation(location);
       }
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
