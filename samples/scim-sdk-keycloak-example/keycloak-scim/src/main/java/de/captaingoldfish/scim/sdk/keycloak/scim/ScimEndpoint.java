@@ -24,6 +24,8 @@ import org.keycloak.models.RealmModel;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
@@ -83,6 +85,15 @@ public class ScimEndpoint
                                                                getRequestBody(request),
                                                                getHttpHeaders(request),
                                                                new ScimAuthorization(keycloakSession));
+    try
+    {
+      keycloakSession.getTransactionManager().commit();
+    }
+    catch (Exception ex)
+    {
+      final boolean useDetailMessage = true;
+      return new ErrorResponse(new InternalServerException(ex.getMessage()), useDetailMessage).buildResponse();
+    }
     return scimResponse.buildResponse();
   }
 

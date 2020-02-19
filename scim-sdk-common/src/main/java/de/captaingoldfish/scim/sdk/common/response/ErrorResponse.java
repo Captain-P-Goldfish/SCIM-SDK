@@ -44,9 +44,14 @@ public class ErrorResponse extends ScimResponse
 
   public ErrorResponse(ScimException scimException)
   {
+    this(scimException, false);
+  }
+
+  public ErrorResponse(ScimException scimException, boolean useDetailMessage)
+  {
     super(null);
     this.scimException = scimException;
-    if (HttpStatus.INTERNAL_SERVER_ERROR == getHttpStatus())
+    if (HttpStatus.INTERNAL_SERVER_ERROR == getHttpStatus() && !useDetailMessage)
     {
       log.error(scimException.getMessage(), scimException);
       setDetail("sorry but an internal error has occurred.");
