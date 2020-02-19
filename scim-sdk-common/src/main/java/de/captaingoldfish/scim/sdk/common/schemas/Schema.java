@@ -188,6 +188,7 @@ public class Schema extends ResourceNode
   public void removeAttribute(SchemaAttribute schemaAttribute)
   {
     List<SchemaAttribute> attributes = getAttributes();
+    attributeRegister.remove(schemaAttribute.getScimNodeName());
     attributes.remove(schemaAttribute);
     setAttributes(attributes);
   }
