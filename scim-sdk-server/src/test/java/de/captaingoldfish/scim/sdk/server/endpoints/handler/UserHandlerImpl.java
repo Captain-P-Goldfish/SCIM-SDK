@@ -9,6 +9,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
@@ -52,15 +53,26 @@ public class UserHandlerImpl extends ResourceHandler<User>
     }
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
-    meta.setCreated(Instant.now());
-    meta.setLastModified(Instant.now());
+    resource.remove(AttributeNames.RFC7643.META);
+    resource.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
     return resource;
   }
 
   @Override
   public User getResource(String id, Authorization authorization)
   {
-    return inMemoryMap.get(id);
+    User user = inMemoryMap.get(id);
+    if (user != null)
+    {
+      Meta meta = user.getMeta().get();
+      user.remove(AttributeNames.RFC7643.META);
+      user.setMeta(Meta.builder()
+                       .created(meta.getCreated().get())
+                       .lastModified(meta.getLastModified().get())
+                       .version(meta.getVersion().orElse(null))
+                       .build());
+    }
+    return user;
   }
 
   @Override
@@ -74,6 +86,15 @@ public class UserHandlerImpl extends ResourceHandler<User>
                                                  Authorization authorization)
   {
     List<User> resourceNodes = new ArrayList<>(inMemoryMap.values());
+    resourceNodes.forEach(user -> {
+      Meta meta = user.getMeta().get();
+      user.remove(AttributeNames.RFC7643.META);
+      user.setMeta(Meta.builder()
+                       .created(meta.getCreated().get())
+                       .lastModified(meta.getLastModified().get())
+                       .version(meta.getVersion().orElse(null))
+                       .build());
+    });
     return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
   }
 
@@ -92,8 +113,13 @@ public class UserHandlerImpl extends ResourceHandler<User>
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
     inMemoryMap.put(userId, resource);
-    meta.setCreated(oldUser.getMeta().get().getCreated().get());
-    meta.setLastModified(Instant.now());
+    Meta oldMeta = oldUser.getMeta().get();
+    resource.remove(AttributeNames.RFC7643.META);
+    resource.setMeta(Meta.builder()
+                         .created(oldMeta.getCreated().get())
+                         .lastModified(Instant.now())
+                         .version(oldMeta.getVersion().orElse(null))
+                         .build());
     return resource;
   }
 

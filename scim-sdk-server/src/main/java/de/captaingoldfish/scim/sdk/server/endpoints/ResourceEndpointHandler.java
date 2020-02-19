@@ -944,7 +944,7 @@ class ResourceEndpointHandler
         patchedResourceNode.setId(id);
         patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, authorization);
         meta = patchedResourceNode.getMeta().orElseThrow(() -> {
-          return new InternalServerException("The meta-attribute was not added to the updated resource");
+          return new InternalServerException("The mandatory meta attribute is missing in the updated user");
         });
         meta.setResourceType(resourceType.getName());
         meta.setLocation(location);
