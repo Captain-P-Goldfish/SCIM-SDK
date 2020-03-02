@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -39,6 +40,15 @@ public class UserHandler extends ResourceHandler<User>
    * an attribute that is added to users created by the scim protocol
    */
   private static final String SCIM_USER = "scim-user";
+
+  private static final String SCIM_TITLE = "scim-title";
+
+  private static final String SCIM_DEPARTMENT = "scim-department";
+
+  private static final String SCIM_DIVISION = "scim-division";
+
+  private static final String SCIM_ORGANIZATION = "scim-organization";
+
 
   /**
    * {@inheritDoc}
@@ -151,6 +161,29 @@ public class UserHandler extends ResourceHandler<User>
         .ifPresent(userModel::setEmail);
     user.isActive().ifPresent(userModel::setEnabled);
     userModel.setSingleAttribute(SCIM_USER, String.valueOf(true));
+    if (user.getTitle().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_TITLE, user.getTitle().get());
+    }
+    if (user.getEnterpriseUser().isPresent())
+    {
+      EnterpriseUser enterpriseUser = user.getEnterpriseUser().get();
+      if (enterpriseUser.getDepartment().isPresent())
+      {
+        userModel.setSingleAttribute(SCIM_DEPARTMENT, enterpriseUser.getDepartment().get());
+      }
+      if (enterpriseUser.getDivision().isPresent())
+      {
+        userModel.setSingleAttribute(SCIM_DIVISION, enterpriseUser.getDivision().get());
+      }
+      if (enterpriseUser.getOrganization().isPresent())
+      {
+        userModel.setSingleAttribute(SCIM_ORGANIZATION, enterpriseUser.getOrganization().get());
+      }
+    }
+    // user.getPhotos().stream().findAny()
+    // .flatMap(MultiComplexNode::getValue)
+    // .ifPresent(userModel::setSingleAttribute);
     return userModel;
   }
 
@@ -162,12 +195,25 @@ public class UserHandler extends ResourceHandler<User>
    */
   private User modelToUser(UserModel userModel)
   {
+    EnterpriseUser enterpriseUser = null;
+    String department = userModel.getFirstAttribute(SCIM_DEPARTMENT);
+    String division = userModel.getFirstAttribute(SCIM_DIVISION);
+    String organization = userModel.getFirstAttribute(SCIM_ORGANIZATION);
+    if (department != null || division != null || organization != null)
+    {
+      enterpriseUser = new EnterpriseUser();
+      enterpriseUser.setDepartment(department);
+      enterpriseUser.setDivision(division);
+      enterpriseUser.setOrganization(organization);
+    }
+
     return User.builder()
                .id(userModel.getId())
                .userName(userModel.getUsername())
                .active(userModel.isEnabled())
                .emails(Collections.singletonList(Email.builder().value(userModel.getEmail()).primary(true).build()))
                .name(Name.builder().givenName(userModel.getFirstName()).familyName(userModel.getLastName()).build())
+               .enterpriseUser(enterpriseUser)
                .meta(Meta.builder()
                          .created(Instant.ofEpochMilli(userModel.getCreatedTimestamp()))
                          .lastModified(getLastModified(userModel))
