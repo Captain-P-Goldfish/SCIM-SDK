@@ -88,7 +88,7 @@ public final class ScimConfiguration
   {
     Schema user = userResourceType.getMainSchema();
     SchemaAttribute username = user.getSchemaAttribute(AttributeNames.RFC7643.USER_NAME);
-    username.setPattern("[a-z\\-_ ]+");
+    username.setPattern("[a-zA-Z0-9._%+-]+(@[a-zA-Z0-9.-]+.[a-zA-Z]{2,4})?");
   }
 
   /**
