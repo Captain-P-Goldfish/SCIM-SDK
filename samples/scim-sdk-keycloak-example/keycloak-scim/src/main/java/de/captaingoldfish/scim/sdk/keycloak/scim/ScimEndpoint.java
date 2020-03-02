@@ -50,7 +50,7 @@ public class ScimEndpoint
   /**
    * the authentication and authorization details of the current user
    */
-  // private final AdminAuth authResult;
+  private final AdminAuth authResult;
 
   /**
    * standard constructor
@@ -58,7 +58,7 @@ public class ScimEndpoint
   public ScimEndpoint(KeycloakSession keycloakSession)
   {
     this.keycloakSession = keycloakSession;
-    // authResult = Authentication.authenticate(keycloakSession);
+    authResult = Authentication.authenticate(keycloakSession);
   }
 
   /**
