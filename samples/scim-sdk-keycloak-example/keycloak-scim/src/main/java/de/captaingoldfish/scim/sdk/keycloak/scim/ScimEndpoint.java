@@ -18,6 +18,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
 
+import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
 import org.apache.commons.io.IOUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
@@ -30,6 +31,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.extern.slf4j.Slf4j;
+import org.keycloak.services.resources.admin.AdminAuth;
 
 
 /**
