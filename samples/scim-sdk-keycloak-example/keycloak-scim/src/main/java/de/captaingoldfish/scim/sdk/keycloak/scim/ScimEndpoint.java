@@ -33,7 +33,6 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.extern.slf4j.Slf4j;
 import org.keycloak.services.resources.admin.AdminAuth;
 
-
 /**
  * author Pascal Knueppel <br>
  * created at: 04.02.2020 <br>
