@@ -36,18 +36,26 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 public class UserHandler extends ResourceHandler<User>
 {
 
-  /**
-   * an attribute that is added to users created by the scim protocol
-   */
-  private static final String SCIM_USER = "scim-user";
-
-  private static final String SCIM_TITLE = "scim-title";
-
   private static final String SCIM_DEPARTMENT = "scim-department";
 
   private static final String SCIM_DIVISION = "scim-division";
 
+  private static final String SCIM_FORMATTED_NAME = "scim-formatted-name";
+
+  private static final String SCIM_HONORIC_PREFIX = "scim-honoric-prefix";
+
+  private static final String SCIM_HONORIC_SUFFIX = "scim-honoric-suffix";
+
+  private static final String SCIM_MIDDLE_NAME = "scim-middle-name";
+
   private static final String SCIM_ORGANIZATION = "scim-organization";
+
+  private static final String SCIM_TITLE = "scim-title";
+
+  /**
+   * an attribute that is added to users created by the scim protocol
+   */
+  private static final String SCIM_USER = "scim-user";
 
 
   /**
@@ -165,6 +173,26 @@ public class UserHandler extends ResourceHandler<User>
     {
       userModel.setSingleAttribute(SCIM_TITLE, user.getTitle().get());
     }
+    if (user.getName().get().getFormatted().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_FORMATTED_NAME, user.getName().get().getFormatted().get());
+    }
+
+    if (user.getName().get().getHonorificPrefix().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_HONORIC_PREFIX, user.getName().get().getHonorificPrefix().get());
+    }
+
+    if (user.getName().get().getHonorificSuffix().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_HONORIC_SUFFIX, user.getName().get().getHonorificSuffix().get());
+    }
+
+    if (user.getName().get().getMiddleName().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_MIDDLE_NAME, user.getName().get().getMiddleName().get());
+    }
+
     if (user.getEnterpriseUser().isPresent())
     {
       EnterpriseUser enterpriseUser = user.getEnterpriseUser().get();
@@ -211,8 +239,15 @@ public class UserHandler extends ResourceHandler<User>
                .id(userModel.getId())
                .userName(userModel.getUsername())
                .active(userModel.isEnabled())
+               .title(userModel.getFirstAttribute(SCIM_TITLE))
                .emails(Collections.singletonList(Email.builder().value(userModel.getEmail()).primary(true).build()))
-               .name(Name.builder().givenName(userModel.getFirstName()).familyName(userModel.getLastName()).build())
+               .name(Name.builder()
+                         .givenName(userModel.getFirstName())
+                         .familyName(userModel.getLastName())
+                         .middlename(userModel.getFirstAttribute(SCIM_MIDDLE_NAME))
+                         .honorificPrefix(userModel.getFirstAttribute(SCIM_HONORIC_PREFIX))
+                         .honorificSuffix(userModel.getFirstAttribute(SCIM_HONORIC_SUFFIX))
+                         .build())
                .enterpriseUser(enterpriseUser)
                .meta(Meta.builder()
                          .created(Instant.ofEpochMilli(userModel.getCreatedTimestamp()))
