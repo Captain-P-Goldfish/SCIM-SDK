@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -180,6 +181,20 @@ public class Schema extends ResourceNode
     List<SchemaAttribute> attributes = getAttributes();
     attributes.add(new SchemaAttribute(this, getNonNullId(), null, schemaAttribute));
     setAttributes(attributes);
+  }
+
+  /**
+   * the names of the attributes of this schema inclusive the subattribute names. Subattributes will be
+   * displayed in their scimNodeName notation separated with a dot e.g. "name.givenName"
+   *
+   * @return a set of attributes that belongs to this schema
+   */
+  public Set<String> getAttributeNames()
+  {
+    return getAttributes().stream()
+                          .flatMap(attribute -> attribute.getSubAttributes().stream())
+                          .map(SchemaAttribute::getScimNodeName)
+                          .collect(Collectors.toSet());
   }
 
   /**
