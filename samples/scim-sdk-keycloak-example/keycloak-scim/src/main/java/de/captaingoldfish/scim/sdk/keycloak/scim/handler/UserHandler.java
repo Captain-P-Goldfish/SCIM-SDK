@@ -1,12 +1,18 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim.handler;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.Group;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.GroupNode;
 import org.apache.commons.lang3.StringUtils;
+import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
@@ -71,8 +77,8 @@ public class UserHandler extends ResourceHandler<User>
       throw new ConflictException("the username '" + username + "' is already taken");
     }
     UserModel userModel = keycloakSession.users().addUser(keycloakSession.getContext().getRealm(), username);
-    userModel = userToModel(user, userModel);
-    return modelToUser(userModel);
+    userModel = userToModel(user, userModel, keycloakSession);
+    return modelToUser(userModel, keycloakSession);
   }
 
   /**
@@ -83,11 +89,12 @@ public class UserHandler extends ResourceHandler<User>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users().getUserById(id, keycloakSession.getContext().getRealm());
+
     if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
-    return modelToUser(userModel);
+    return modelToUser(userModel, keycloakSession);
   }
 
   /**
@@ -108,10 +115,19 @@ public class UserHandler extends ResourceHandler<User>
     // api should be used
     RealmModel realmModel = keycloakSession.getContext().getRealm();
     List<UserModel> userModels = keycloakSession.users().getUsers(realmModel);
-    List<User> userList = userModels.stream()
-                                    .filter(userModel -> Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
-                                    .map(this::modelToUser)
-                                    .collect(Collectors.toList());
+    List<User> userList = new ArrayList<>();
+
+    for ( UserModel userModel : userModels )
+    {
+      if (Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
+      {
+        userList.add(modelToUser(userModel, keycloakSession));
+      }
+    }
+    // List<User> userList = userModels.stream()
+    // .filter(userModel -> Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
+    // .map(this::modelToUser)
+    // .collect(Collectors.toList());
     return PartialListResponse.<User> builder().totalResults(userList.size()).resources(userList).build();
   }
 
@@ -125,12 +141,13 @@ public class UserHandler extends ResourceHandler<User>
     UserModel userModel = keycloakSession.users()
                                          .getUserById(userToUpdate.getId().get(),
                                                       keycloakSession.getContext().getRealm());
+
     if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
-    userModel = userToModel(userToUpdate, userModel);
-    return modelToUser(userModel);
+    userModel = userToModel(userToUpdate, userModel, keycloakSession);
+    return modelToUser(userModel, keycloakSession);
   }
 
   /**
@@ -153,14 +170,67 @@ public class UserHandler extends ResourceHandler<User>
    *
    * @param user the scim user instance
    * @param userModel the keycloak user instance
+   * @param keycloakSession keycloak session
    * @return the updated keycloak user instance
    */
-  private UserModel userToModel(User user, UserModel userModel)
+  private UserModel userToModel(User user, UserModel userModel, KeycloakSession keycloakSession)
   {
     user.getName().ifPresent(name -> {
       name.getGivenName().ifPresent(userModel::setFirstName);
       name.getFamilyName().ifPresent(userModel::setLastName);
     });
+    List<GroupNode> newGroups = user.getGroups();
+    Set<GroupModel> groupModelSet = userModel.getGroups();
+    // Gruppen verlassen
+    for ( GroupModel groupModel : groupModelSet )
+    {
+      String name = groupModel.getName();
+      boolean found = false;
+      for ( GroupNode newGroup : newGroups )
+      {
+        if (name.equals(newGroup.getDisplay().get()))
+        {
+          found = true;
+          break;
+        }
+      }
+      if (!found)
+      {
+        userModel.leaveGroup(groupModel);
+      }
+    }
+    // Neue Gruppen joinen
+    for ( GroupNode newGroup : newGroups )
+    {
+      String name = newGroup.getDisplay().orElseThrow(() -> new BadRequestException("Groupname must be set"));
+      String id = newGroup.getValue().orElseThrow(() -> new BadRequestException("Group ID must be set"));
+      boolean found = false;
+      for ( GroupModel groupModel : groupModelSet )
+      {
+        if (groupModel.getName().equals(name))
+        {
+          found = true;
+          break;
+        }
+      }
+      if (!found)
+      {
+        List<GroupModel> lg = keycloakSession.realms()
+                                             .searchForGroupByName(keycloakSession.getContext().getRealm(),
+                                                                   name,
+                                                                   null,
+                                                                   null);
+        if (lg.size() > 0)
+        {
+          userModel.joinGroup(lg.get(0));
+        }
+        else
+        {
+          GroupModel group = keycloakSession.getContext().getRealm().createGroup(name);
+          userModel.joinGroup(group);
+        }
+      }
+    }
     user.getEmails()
         .stream()
         .filter(MultiComplexNode::isPrimary)
@@ -219,9 +289,10 @@ public class UserHandler extends ResourceHandler<User>
    * converts a keycloak {@link UserModel} into a SCIM representation of {@link User}
    *
    * @param userModel the keycloak user representation
+   * @param keycloakSession the keycloak session
    * @return the SCIM user representation
    */
-  private User modelToUser(UserModel userModel)
+  private User modelToUser(UserModel userModel, KeycloakSession keycloakSession)
   {
     EnterpriseUser enterpriseUser = null;
     String department = userModel.getFirstAttribute(SCIM_DEPARTMENT);
@@ -235,9 +306,22 @@ public class UserHandler extends ResourceHandler<User>
       enterpriseUser.setOrganization(organization);
     }
 
+    List<GroupNode> groups = new ArrayList<GroupNode>();
+    Set<GroupModel> groupsOfUser = userModel.getGroups();
+    for ( GroupModel groupModel : groupsOfUser )
+    {
+      Group g = GroupHandler.modelToGroup(keycloakSession, groupModel);
+      GroupNode gn = GroupNode.builder()
+                              .value(g.getId().orElse(""))
+                              .display(g.getDisplayName().get())
+                              .type("Group")
+                              .build();
+      groups.add(gn);
+    }
     return User.builder()
                .id(userModel.getId())
                .userName(userModel.getUsername())
+               .groups(groups)
                .active(userModel.isEnabled())
                .title(userModel.getFirstAttribute(SCIM_TITLE))
                .emails(Collections.singletonList(Email.builder().value(userModel.getEmail()).primary(true).build()))

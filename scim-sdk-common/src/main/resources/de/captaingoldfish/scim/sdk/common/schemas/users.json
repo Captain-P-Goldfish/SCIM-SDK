@@ -566,8 +566,8 @@
     {
       "name": "groups",
       "type": "complex",
-      "description": "A list of groups to which the user belongs,\neither through direct membership, through nested groups, or dynamically calculated.",
-      "mutability": "readOnly",
+      "description": "A writeable list of groups to which the user belongs,\neither through direct membership, through nested groups, or dynamically calculated.",
+      "mutability": "readWrite",
       "returned": "default",
       "uniqueness": "none",
       "multiValued": true,

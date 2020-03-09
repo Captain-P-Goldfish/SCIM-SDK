@@ -169,7 +169,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * @param groupModel the keycloak group representation
    * @return the SCIM group representation
    */
-  private Group modelToGroup(KeycloakSession keycloakSession, GroupModel groupModel)
+  public static Group modelToGroup(KeycloakSession keycloakSession, GroupModel groupModel)
   {
     return Group.builder()
                 .id(groupModel.getId())
@@ -185,7 +185,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * @param groupModel the group from which the members should be extracted
    * @return a list of the group members
    */
-  private List<Member> getMembers(KeycloakSession keycloakSession, GroupModel groupModel)
+  private static List<Member> getMembers(KeycloakSession keycloakSession, GroupModel groupModel)
   {
     List<Member> members = new ArrayList<>();
 
@@ -209,7 +209,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * @param groupModel the group model from which the created value should be extracted
    * @return the created value of the given group
    */
-  private Instant getCreated(GroupModel groupModel)
+  public static Instant getCreated(GroupModel groupModel)
   {
     String createdString = groupModel.getFirstAttribute(AttributeNames.RFC7643.CREATED);
     if (StringUtils.isNotBlank(createdString))
@@ -228,7 +228,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * @param groupModel the group model from which the last modified value should be extracted
    * @return the last modified value of the given group
    */
-  private Instant getLastModified(GroupModel groupModel)
+  public static Instant getLastModified(GroupModel groupModel)
   {
     String lastModifiedString = groupModel.getFirstAttribute(AttributeNames.RFC7643.LAST_MODIFIED);
     if (StringUtils.isNotBlank(lastModifiedString))
