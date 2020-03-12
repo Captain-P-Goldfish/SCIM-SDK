@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -31,6 +32,7 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
  * created at: 04.02.2020 <br>
  * <br>
  */
+@Slf4j
 public class GroupHandler extends ResourceHandler<Group>
 {
 

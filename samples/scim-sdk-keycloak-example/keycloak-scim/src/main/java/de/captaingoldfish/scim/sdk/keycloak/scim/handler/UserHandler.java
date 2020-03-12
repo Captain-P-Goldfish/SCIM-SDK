@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.GroupNode;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.models.GroupModel;
 import org.keycloak.models.KeycloakSession;
@@ -39,12 +40,15 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
  * created at: 04.02.2020 <br>
  * <br>
  */
+@Slf4j
 public class UserHandler extends ResourceHandler<User>
 {
 
   private static final String SCIM_DEPARTMENT = "scim-department";
 
   private static final String SCIM_DIVISION = "scim-division";
+
+  private static final String SCIM_DISPLAY_NAME = "scim-display-name";
 
   private static final String SCIM_FORMATTED_NAME = "scim-formatted-name";
 
@@ -72,6 +76,7 @@ public class UserHandler extends ResourceHandler<User>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     final String username = user.getUserName().get();
+    log.info(this.getClass().getName() + " createResource: " + username);
     if (keycloakSession.users().getUserByUsername(username, keycloakSession.getContext().getRealm()) != null)
     {
       throw new ConflictException("the username '" + username + "' is already taken");
@@ -87,6 +92,8 @@ public class UserHandler extends ResourceHandler<User>
   @Override
   public User getResource(String id, Authorization authorization)
   {
+    log.info(this.getClass().getName() + " getResource: " + id);
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users().getUserById(id, keycloakSession.getContext().getRealm());
 
@@ -110,6 +117,8 @@ public class UserHandler extends ResourceHandler<User>
                                                  List<SchemaAttribute> excludedAttributes,
                                                  Authorization authorization)
   {
+    log.info(this.getClass().getName() + " listResources");
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     // TODO in order to filter on database level the feature "autoFiltering" must be disabled and the JPA criteria
     // api should be used
@@ -137,6 +146,8 @@ public class UserHandler extends ResourceHandler<User>
   @Override
   public User updateResource(User userToUpdate, Authorization authorization)
   {
+    log.info(this.getClass().getName() + " updateResource " + userToUpdate.getName());
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users()
                                          .getUserById(userToUpdate.getId().get(),
@@ -156,6 +167,8 @@ public class UserHandler extends ResourceHandler<User>
   @Override
   public void deleteResource(String id, Authorization authorization)
   {
+    log.info(this.getClass().getName() + " deleteResource " + id);
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users().getUserById(id, keycloakSession.getContext().getRealm());
     if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
@@ -179,6 +192,10 @@ public class UserHandler extends ResourceHandler<User>
       name.getGivenName().ifPresent(userModel::setFirstName);
       name.getFamilyName().ifPresent(userModel::setLastName);
     });
+    if (user.isActive().isPresent())
+    {
+      userModel.setEnabled(user.isActive().get());
+    }
     List<GroupNode> newGroups = user.getGroups();
     Set<GroupModel> groupModelSet = userModel.getGroups();
     // Gruppen verlassen
@@ -247,7 +264,10 @@ public class UserHandler extends ResourceHandler<User>
     {
       userModel.setSingleAttribute(SCIM_FORMATTED_NAME, user.getName().get().getFormatted().get());
     }
-
+    if (user.getDisplayName().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_DISPLAY_NAME, user.getDisplayName().get());
+    }
     if (user.getName().get().getHonorificPrefix().isPresent())
     {
       userModel.setSingleAttribute(SCIM_HONORIC_PREFIX, user.getName().get().getHonorificPrefix().get());
@@ -331,7 +351,9 @@ public class UserHandler extends ResourceHandler<User>
                          .middlename(userModel.getFirstAttribute(SCIM_MIDDLE_NAME))
                          .honorificPrefix(userModel.getFirstAttribute(SCIM_HONORIC_PREFIX))
                          .honorificSuffix(userModel.getFirstAttribute(SCIM_HONORIC_SUFFIX))
+                         .formatted(userModel.getFirstAttribute(SCIM_FORMATTED_NAME))
                          .build())
+               .displayName(userModel.getFirstAttribute(SCIM_DISPLAY_NAME))
                .enterpriseUser(enterpriseUser)
                .meta(Meta.builder()
                          .created(Instant.ofEpochMilli(userModel.getCreatedTimestamp()))
