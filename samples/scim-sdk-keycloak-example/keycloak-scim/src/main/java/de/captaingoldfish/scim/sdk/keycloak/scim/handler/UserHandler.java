@@ -80,6 +80,10 @@ public class UserHandler extends ResourceHandler<User>
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     final String username = user.getUserName().get();
     log.info(this.getClass().getName() + " createResource: " + username + "\n" + user.toPrettyString());
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " createResource input: " + user.toPrettyString());
+    }
     if (keycloakSession.users().getUserByUsername(username, keycloakSession.getContext().getRealm()) != null)
     {
       throw new ConflictException("the username '" + username + "' is already taken");
@@ -165,7 +169,10 @@ public class UserHandler extends ResourceHandler<User>
   public User updateResource(User userToUpdate, Authorization authorization)
   {
     log.info(this.getClass().getName() + " updateResource " + userToUpdate.getName());
-
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " updateResource input: " + userToUpdate.toPrettyString());
+    }
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users()
                                          .getUserById(userToUpdate.getId().get(),

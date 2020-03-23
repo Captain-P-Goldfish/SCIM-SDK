@@ -53,6 +53,10 @@ public class GroupHandler extends ResourceHandler<Group>
 
     final String groupName = group.getDisplayName().get();
     log.info(this.getClass().getName() + " createResource: " + groupName);
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " createResource input: " + group.toPrettyString());
+    }
     if (!keycloakSession.realms()
                         .searchForGroupByName(keycloakSession.getContext().getRealm(), groupName, null, null)
                         .isEmpty())
@@ -127,7 +131,10 @@ public class GroupHandler extends ResourceHandler<Group>
   public Group updateResource(Group groupToUpdate, Authorization authorization)
   {
     log.info(this.getClass().getName() + " updateResource: " + groupToUpdate.getDisplayName().orElse(""));
-
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " updateResource input: " + groupToUpdate.toPrettyString());
+    }
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(groupToUpdate.getId().get());
     if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
