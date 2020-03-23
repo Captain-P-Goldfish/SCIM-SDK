@@ -41,6 +41,8 @@ public class GroupHandler extends ResourceHandler<Group>
    */
   private static final String SCIM_GROUP = "scim-group";
 
+  private static String KEYCLOAK_DEBUG = System.getProperty("keycloak.debug");
+
   /**
    * {@inheritDoc}
    */
@@ -48,7 +50,9 @@ public class GroupHandler extends ResourceHandler<Group>
   public Group createResource(Group group, Authorization authorization)
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+
     final String groupName = group.getDisplayName().get();
+    log.info(this.getClass().getName() + " createResource: " + groupName);
     if (!keycloakSession.realms()
                         .searchForGroupByName(keycloakSession.getContext().getRealm(), groupName, null, null)
                         .isEmpty())
@@ -57,7 +61,12 @@ public class GroupHandler extends ResourceHandler<Group>
     }
     GroupModel groupModel = keycloakSession.getContext().getRealm().createGroup(groupName);
     groupModel = groupToModel(keycloakSession, group, groupModel);
-    return modelToGroup(keycloakSession, groupModel);
+    Group ret = modelToGroup(keycloakSession, groupModel);
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " createResource returns: " + ret.toPrettyString());
+    }
+    return ret;
   }
 
   /**
@@ -66,13 +75,20 @@ public class GroupHandler extends ResourceHandler<Group>
   @Override
   public Group getResource(String id, Authorization authorization)
   {
+    log.info(this.getClass().getName() + " getResource: " + id);
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(id);
     if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
-    return modelToGroup(keycloakSession, groupModel);
+    Group ret = modelToGroup(keycloakSession, groupModel);
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " getResource returns: " + ret.toPrettyString());
+    }
+    return ret;
   }
 
   /**
@@ -88,6 +104,8 @@ public class GroupHandler extends ResourceHandler<Group>
                                                   List<SchemaAttribute> excludedAttributes,
                                                   Authorization authorization)
   {
+    log.info(this.getClass().getName() + " listResources");
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     // TODO in order to filter on database level the feature "autoFiltering" must be disabled and the JPA criteria
     // api should be used
@@ -108,6 +126,8 @@ public class GroupHandler extends ResourceHandler<Group>
   @Override
   public Group updateResource(Group groupToUpdate, Authorization authorization)
   {
+    log.info(this.getClass().getName() + " updateResource: " + groupToUpdate.getDisplayName().orElse(""));
+
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(groupToUpdate.getId().get());
     if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
@@ -115,7 +135,12 @@ public class GroupHandler extends ResourceHandler<Group>
       return null; // causes a resource not found exception you may also throw it manually
     }
     groupModel = groupToModel(keycloakSession, groupToUpdate, groupModel);
-    return modelToGroup(keycloakSession, groupModel);
+    Group ret = modelToGroup(keycloakSession, groupModel);
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " updateResource returns: " + ret.toPrettyString());
+    }
+    return ret;
   }
 
   /**

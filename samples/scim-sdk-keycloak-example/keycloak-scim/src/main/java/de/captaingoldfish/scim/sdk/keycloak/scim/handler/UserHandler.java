@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
@@ -44,29 +43,33 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 public class UserHandler extends ResourceHandler<User>
 {
 
-  private static final String SCIM_DEPARTMENT = "scim-department";
+  private static final String SCIM_DEPARTMENT = "department";
 
-  private static final String SCIM_DIVISION = "scim-division";
+  private static final String SCIM_DIVISION = "division";
 
-  private static final String SCIM_DISPLAY_NAME = "scim-display-name";
+  private static final String SCIM_DISPLAY_NAME = "displayName";
 
-  private static final String SCIM_FORMATTED_NAME = "scim-formatted-name";
+  private static final String SCIM_FORMATTED_NAME = "formattedName";
 
-  private static final String SCIM_HONORIC_PREFIX = "scim-honoric-prefix";
+  private static final String SCIM_HONORIC_PREFIX = "honoricPrefix";
 
-  private static final String SCIM_HONORIC_SUFFIX = "scim-honoric-suffix";
+  private static final String SCIM_HONORIC_SUFFIX = "honoricSuffix";
 
-  private static final String SCIM_MIDDLE_NAME = "scim-middle-name";
+  private static final String SCIM_LDAP_ID = "LDAP_ID";
 
-  private static final String SCIM_ORGANIZATION = "scim-organization";
+  private static final String SCIM_MIDDLE_NAME = "middleName";
 
-  private static final String SCIM_TITLE = "scim-title";
+  private static final String SCIM_ORGANIZATION = "company";
+
+  private static final String SCIM_TITLE = "title";
 
   /**
    * an attribute that is added to users created by the scim protocol
    */
   private static final String SCIM_USER = "scim-user";
 
+
+  private static String KEYCLOAK_DEBUG = System.getProperty("keycloak.debug");
 
   /**
    * {@inheritDoc}
@@ -76,14 +79,19 @@ public class UserHandler extends ResourceHandler<User>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     final String username = user.getUserName().get();
-    log.info(this.getClass().getName() + " createResource: " + username);
+    log.info(this.getClass().getName() + " createResource: " + username + "\n" + user.toPrettyString());
     if (keycloakSession.users().getUserByUsername(username, keycloakSession.getContext().getRealm()) != null)
     {
       throw new ConflictException("the username '" + username + "' is already taken");
     }
     UserModel userModel = keycloakSession.users().addUser(keycloakSession.getContext().getRealm(), username);
     userModel = userToModel(user, userModel, keycloakSession);
-    return modelToUser(userModel, keycloakSession);
+    User ret = modelToUser(userModel, keycloakSession);
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " createResource returns: " + ret.toPrettyString());
+    }
+    return ret;
   }
 
   /**
@@ -101,7 +109,12 @@ public class UserHandler extends ResourceHandler<User>
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
-    return modelToUser(userModel, keycloakSession);
+    User ret = modelToUser(userModel, keycloakSession);
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " getResource returns: " + ret.toPrettyString());
+    }
+    return ret;
   }
 
   /**
@@ -130,7 +143,12 @@ public class UserHandler extends ResourceHandler<User>
     {
       if (Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
       {
-        userList.add(modelToUser(userModel, keycloakSession));
+        User add = modelToUser(userModel, keycloakSession);
+        if (KEYCLOAK_DEBUG != null)
+        {
+          log.info(this.getClass().getName() + " listResources User " + add.toPrettyString());
+        }
+        userList.add(add);
       }
     }
     // List<User> userList = userModels.stream()
@@ -158,7 +176,9 @@ public class UserHandler extends ResourceHandler<User>
       return null; // causes a resource not found exception you may also throw it manually
     }
     userModel = userToModel(userToUpdate, userModel, keycloakSession);
-    return modelToUser(userModel, keycloakSession);
+    User ret = modelToUser(userModel, keycloakSession);
+    log.info(this.getClass().getName() + " updateResource returns: " + ret.toPrettyString());
+    return ret;
   }
 
   /**
@@ -174,6 +194,10 @@ public class UserHandler extends ResourceHandler<User>
     if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
     {
       throw new ResourceNotFoundException("resource with id '" + id + "' does not exist");
+    }
+    if (KEYCLOAK_DEBUG != null)
+    {
+      log.info(this.getClass().getName() + " deleteResource " + userModel.toString());
     }
     keycloakSession.users().removeUser(keycloakSession.getContext().getRealm(), userModel);
   }
@@ -195,6 +219,10 @@ public class UserHandler extends ResourceHandler<User>
     if (user.isActive().isPresent())
     {
       userModel.setEnabled(user.isActive().get());
+    }
+    if (user.getLdapId().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_LDAP_ID, user.getLdapId().get());
     }
     List<GroupNode> newGroups = user.getGroups();
     Set<GroupModel> groupModelSet = userModel.getGroups();
@@ -340,6 +368,7 @@ public class UserHandler extends ResourceHandler<User>
     }
     return User.builder()
                .id(userModel.getId())
+               .ldapId(userModel.getFirstAttribute(SCIM_LDAP_ID))
                .userName(userModel.getUsername())
                .groups(groups)
                .active(userModel.isEnabled())

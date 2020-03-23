@@ -79,6 +79,11 @@ public abstract class ResourceNode extends AbstractSchemasHolder
     return getStringAttribute(AttributeNames.RFC7643.EXTERNAL_ID);
   }
 
+  public Optional<String> getLdapId()
+  {
+    return getStringAttribute("LDAP_ID");
+  }
+
   /**
    * A String that is an identifier for the resource as defined by the provisioning client. The "externalId" may
    * simplify identification of a resource between the provisioning client and the service provider by allowing
@@ -95,6 +100,11 @@ public abstract class ResourceNode extends AbstractSchemasHolder
   public void setExternalId(String externalId)
   {
     setAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId);
+  }
+
+  public void setLdapId(String ldapId)
+  {
+    setAttribute("LDAP_ID", ldapId);
   }
 
   /**

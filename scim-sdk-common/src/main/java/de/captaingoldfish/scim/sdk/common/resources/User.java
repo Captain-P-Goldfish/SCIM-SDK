@@ -39,6 +39,7 @@ public class User extends ResourceNode
   @Builder
   private User(String id,
                String externalId,
+               String ldapId,
                Meta meta,
                String userName,
                Name name,
@@ -66,6 +67,7 @@ public class User extends ResourceNode
     this();
     setId(id);
     setExternalId(externalId);
+    setLdapId(ldapId);
     setMeta(meta);
     setUserName(userName);
     setName(name);
@@ -317,6 +319,16 @@ public class User extends ResourceNode
   public void setLocale(String locale)
   {
     setAttribute(AttributeNames.RFC7643.LOCALE, locale);
+  }
+
+  public Optional<String> getLdapId()
+  {
+    return getStringAttribute("ldapId");
+  }
+
+  public void setLdapId(String ldapId)
+  {
+    setAttribute("ldapId", ldapId);
   }
 
   /**
