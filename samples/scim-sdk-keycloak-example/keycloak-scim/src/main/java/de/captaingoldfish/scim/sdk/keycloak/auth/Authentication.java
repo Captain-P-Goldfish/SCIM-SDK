@@ -29,7 +29,7 @@ public class Authentication
   /**
    * used to authenticate the user
    */
-  private static final AppAuthManager APP_AUTH_MANAGER = new AppAuthManager();
+  private static final AppAuthManager APP_AUTH_MANAGER = new ScimAppAuthManager();
 
   /**
    * Authenticates the calling user and client according to the Bearer Token in the HTTP header.
