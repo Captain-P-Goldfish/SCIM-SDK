@@ -8,6 +8,7 @@ import java.net.ServerSocket;
 import java.net.URI;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -93,6 +95,24 @@ public abstract class HttpServerMockup
    */
   @Setter(AccessLevel.PUBLIC)
   private BiConsumer<HttpExchange, String> verifyRequestAttributes = (httpExchange, requestBody) -> {};
+
+  /**
+   * used to create the response status for the server
+   */
+  @Setter(AccessLevel.PUBLIC)
+  private Supplier<Integer> getResponseStatus;
+
+  /**
+   * used to create the response body for the server
+   */
+  @Setter(AccessLevel.PUBLIC)
+  private Supplier<String> getResponseBody;
+
+  /**
+   * used to add or override http headers in the response
+   */
+  @Setter(AccessLevel.PUBLIC)
+  private Supplier<Map<String, String>> getResponseHeaders;
 
   /**
    * here we will check if an error occurred on the mocked server and if it did we will throw the error in the
@@ -182,12 +202,41 @@ public abstract class HttpServerMockup
     Map<String, List<String>> headerMap = new HashMap<>();
     scimResponse.getHttpHeaders().forEach((key, value) -> headerMap.put(key, Collections.singletonList(value)));
     Headers responseHeaders = httpExchange.getResponseHeaders();
-    responseHeaders.putAll(headerMap);
     String responseBody = StringUtils.stripToNull(scimResponse.isEmpty() ? null : scimResponse.toString());
     responseBody = StringUtils.stripToNull(responseBody);
-    httpExchange.sendResponseHeaders(scimResponse.getHttpStatus(), responseBody == null ? 0 : responseBody.length());
-    log.trace("finished handling server request");
-    return Optional.ofNullable(responseBody);
+    if (getResponseHeaders != null)
+    {
+      getResponseHeaders.get().forEach((key, value) -> headerMap.put(key, Arrays.asList(value)));
+    }
+    responseHeaders.putAll(headerMap);
+    if (getResponseStatus == null)
+    {
+      httpExchange.sendResponseHeaders(scimResponse.getHttpStatus(), responseBody == null ? 0 : responseBody.length());
+      if (getResponseBody == null)
+      {
+        log.trace("finished handling server request");
+        return Optional.ofNullable(responseBody);
+      }
+      else
+      {
+        log.trace("finished handling server request");
+        return Optional.ofNullable(getResponseBody.get());
+      }
+    }
+    else
+    {
+      httpExchange.sendResponseHeaders(getResponseStatus.get(), 0);
+      if (getResponseBody == null)
+      {
+        log.trace("finished handling server request");
+        return Optional.ofNullable(responseBody);
+      }
+      else
+      {
+        log.trace("finished handling server request");
+        return Optional.ofNullable(getResponseBody.get());
+      }
+    }
   }
 
   protected String getRequestUri(HttpExchange httpExchange)
