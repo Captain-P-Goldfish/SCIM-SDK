@@ -16,7 +16,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
-import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -51,12 +50,8 @@ public class ListBuilder<T extends ResourceNode>
   private final String endpoint;
 
   /**
-   * the http client configuration to access the scim endpoint
-   */
-  private final ScimClientConfig scimClientConfig;
-
-  /**
-   * the entity type that should be returned
+   * the entity type that should be returned. Has actually no usage but is only here to setup the generic type
+   * of this instance
    */
   private final Class<T> responseEntityType;
 
@@ -71,15 +66,10 @@ public class ListBuilder<T extends ResourceNode>
    */
   private final ScimHttpClient scimHttpClient;
 
-  public ListBuilder(String baseUrl,
-                     String endpoint,
-                     ScimClientConfig scimClientConfig,
-                     Class<T> responseEntityType,
-                     ScimHttpClient scimHttpClient)
+  public ListBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
     this.endpoint = endpoint;
-    this.scimClientConfig = scimClientConfig;
     this.responseEntityType = responseEntityType;
     this.scimHttpClient = scimHttpClient;
   }

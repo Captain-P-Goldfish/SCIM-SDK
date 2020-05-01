@@ -4,7 +4,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpUriRequest;
 
-import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -26,13 +25,9 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   private String id;
 
 
-  public DeleteBuilder(String baseUrl,
-                       String endpoint,
-                       ScimClientConfig scimClientConfig,
-                       Class<T> responseEntityType,
-                       ScimHttpClient scimHttpClient)
+  public DeleteBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
   }
 
 

@@ -9,7 +9,6 @@ import org.apache.http.entity.StringEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.exceptions.InvalidRequestException;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
@@ -25,11 +24,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
 {
 
-  public CreateBuilder(String baseUrl,
-                       String endpoint,
-                       ScimClientConfig scimClientConfig,
-                       Class<T> responseEntityType,
-                       ScimHttpClient scimHttpClient)
+  public CreateBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     super(baseUrl, endpoint, responseEntityType, scimHttpClient);
   }

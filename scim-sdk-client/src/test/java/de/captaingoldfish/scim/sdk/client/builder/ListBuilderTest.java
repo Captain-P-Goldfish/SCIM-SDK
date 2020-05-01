@@ -143,8 +143,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                      scimHttpClient);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -164,8 +163,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                      scimHttpClient);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -187,8 +185,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                      scimHttpClient);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -209,8 +206,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                      scimHttpClient);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -231,8 +227,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                      scimHttpClient);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -254,8 +249,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                scimHttpClient);
+    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     Instant instant = Instant.now();
     listBuilder.filter(true, "username", Comparator.SW, "hello_world")
                .or(true, "nickname", Comparator.CO, "hello")
@@ -286,7 +280,7 @@ public class ListBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
                                                       scimHttpClient).sortBy(sortBy)
                                                                      .count(count)
                                                                      .startIndex(startIndex)
@@ -340,7 +334,7 @@ public class ListBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
                                                       scimHttpClient).sortBy(sortBy)
                                                                      .count(count)
                                                                      .startIndex(startIndex)
@@ -382,8 +376,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                scimHttpClient);
+    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     try
     {
       listBuilder.filter("username", Comparator.SW, "hello_world").closeParenthesis().build();
@@ -405,8 +398,7 @@ public class ListBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
-                                                scimHttpClient);
+    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     try
     {
       listBuilder.filter(true, "username", Comparator.SW, "hello_world").build();

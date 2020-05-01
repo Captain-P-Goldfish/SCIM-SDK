@@ -32,7 +32,7 @@ public class ETagRequestBuilderTest
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig, User.class,
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
                              scimHttpClient).setETagForIfMatch("123456").setETagForIfNoneMatch("123456");
       Assertions.fail("this point must not be reached");
     }
@@ -54,7 +54,7 @@ public class ETagRequestBuilderTest
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig, User.class,
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
                              scimHttpClient).setETagForIfNoneMatch("123456").setETagForIfMatch("123456");
       Assertions.fail("this point must not be reached");
     }
@@ -76,7 +76,7 @@ public class ETagRequestBuilderTest
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig, User.class,
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
                              scimHttpClient).setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build())
                                             .setETagForIfMatch(ETag.builder().weak(false).tag("123456").build());
       Assertions.fail("this point must not be reached");
@@ -99,7 +99,7 @@ public class ETagRequestBuilderTest
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig, User.class,
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
                              scimHttpClient).setETagForIfMatch(ETag.builder().weak(false).tag("123456").build())
                                             .setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build());
       Assertions.fail("this point must not be reached");
@@ -120,12 +120,8 @@ public class ETagRequestBuilderTest
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig,
-                                                      User.class, scimHttpClient)
-                                                                                 .setETagForIfMatch(ETag.builder()
-                                                                                                        .weak(false)
-                                                                                                        .tag("123456")
-                                                                                                        .build());
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfMatch(ETag.builder().weak(false).tag("123456").build());
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfMatch());
     Assertions.assertFalse(builder.isUseIfNoneMatch());
@@ -139,8 +135,8 @@ public class ETagRequestBuilderTest
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig,
-                                                      User.class, scimHttpClient).setETagForIfMatch("123456");
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfMatch("123456");
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfMatch());
     Assertions.assertFalse(builder.isUseIfNoneMatch());
@@ -154,12 +150,8 @@ public class ETagRequestBuilderTest
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig,
-                                                      User.class, scimHttpClient)
-                                                                                 .setETagForIfNoneMatch(ETag.builder()
-                                                                                                            .weak(false)
-                                                                                                            .tag("123456")
-                                                                                                            .build());
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build());
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfNoneMatch());
     Assertions.assertFalse(builder.isUseIfMatch());
@@ -173,8 +165,8 @@ public class ETagRequestBuilderTest
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, scimClientConfig,
-                                                      User.class, scimHttpClient).setETagForIfNoneMatch("123456");
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfNoneMatch("123456");
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfNoneMatch());
     Assertions.assertFalse(builder.isUseIfMatch());
@@ -186,13 +178,9 @@ public class ETagRequestBuilderTest
   public static class MyRequestBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   {
 
-    public MyRequestBuilder(String baseUrl,
-                            String endpoint,
-                            ScimClientConfig scimClientConfig,
-                            Class<T> responseEntityType,
-                            ScimHttpClient scimHttpClient)
+    public MyRequestBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
     {
-      super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
+      super(baseUrl, endpoint, responseEntityType, scimHttpClient);
     }
 
     @Override
