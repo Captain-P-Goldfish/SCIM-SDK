@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.ScimRequestBuilder;
-import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;

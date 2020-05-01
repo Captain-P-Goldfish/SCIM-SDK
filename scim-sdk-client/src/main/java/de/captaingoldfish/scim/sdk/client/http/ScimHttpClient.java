@@ -21,7 +21,7 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.IORuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;

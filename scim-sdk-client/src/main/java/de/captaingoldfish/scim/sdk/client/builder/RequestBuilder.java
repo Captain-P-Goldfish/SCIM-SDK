@@ -7,6 +7,7 @@ import org.apache.http.client.methods.HttpUriRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
@@ -126,7 +127,8 @@ public abstract class RequestBuilder<T extends ResourceNode>
     {
       request.setHeader(HttpHeader.AUHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
     }
-    return handleResponse(scimHttpClient.sendRequest(request));
+    HttpResponse response = scimHttpClient.sendRequest(request);
+    return handleResponse(response);
   }
 
   /**

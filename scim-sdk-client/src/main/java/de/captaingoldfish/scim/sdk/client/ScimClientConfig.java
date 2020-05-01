@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.client.builder;
+package de.captaingoldfish.scim.sdk.client;
 
 import java.util.Map;
 
@@ -28,7 +28,7 @@ public class ScimClientConfig
   /**
    * the default timeout value to use in seconds
    */
-  protected static final int DEFAULT_TIMEOUT = 10;
+  public static final int DEFAULT_TIMEOUT = 10;
 
   /**
    * request timeout in seconds

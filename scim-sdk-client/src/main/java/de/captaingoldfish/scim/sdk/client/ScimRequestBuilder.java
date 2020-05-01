@@ -4,7 +4,6 @@ import de.captaingoldfish.scim.sdk.client.builder.CreateBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.DeleteBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.GetBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.ListBuilder;
-import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;

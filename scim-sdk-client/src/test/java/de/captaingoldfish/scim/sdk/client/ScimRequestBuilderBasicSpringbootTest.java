@@ -15,7 +15,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;

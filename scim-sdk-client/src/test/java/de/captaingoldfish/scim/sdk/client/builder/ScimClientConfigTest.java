@@ -3,6 +3,8 @@ package de.captaingoldfish.scim.sdk.client.builder;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
+
 
 /**
  * author Pascal Knueppel <br>
