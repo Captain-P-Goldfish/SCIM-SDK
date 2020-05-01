@@ -49,9 +49,9 @@ public class ScimRequestBuilder implements AutoCloseable
    * @param type the type that should be created
    * @return a create-request builder for the given resource type
    */
-  public <T extends ResourceNode> CreateBuilder<T> create(Class<T> type)
+  public <T extends ResourceNode> CreateBuilder<T> create(Class<T> type, String endpoint)
   {
-    return new CreateBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
+    return new CreateBuilder<>(baseUrl, endpoint, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -60,9 +60,9 @@ public class ScimRequestBuilder implements AutoCloseable
    * @param type the type that should be created
    * @return a get-request builder for the given resource type
    */
-  public <T extends ResourceNode> GetBuilder<T> get(Class<T> type)
+  public <T extends ResourceNode> GetBuilder<T> get(Class<T> type, String endpoint)
   {
-    return new GetBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
+    return new GetBuilder<>(baseUrl, endpoint, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -71,9 +71,9 @@ public class ScimRequestBuilder implements AutoCloseable
    * @param type the type that should be created
    * @return a delete-request builder for the given resource type
    */
-  public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type)
+  public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type, String endpoint)
   {
-    return new DeleteBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
+    return new DeleteBuilder<>(baseUrl, endpoint, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -82,9 +82,9 @@ public class ScimRequestBuilder implements AutoCloseable
    * @param type the type that should be created
    * @return a update-request builder for the given resource type
    */
-  public <T extends ResourceNode> UpdateBuilder<T> update(Class<T> type)
+  public <T extends ResourceNode> UpdateBuilder<T> update(Class<T> type, String endpoint)
   {
-    return new UpdateBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
+    return new UpdateBuilder<>(baseUrl, endpoint, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -93,9 +93,9 @@ public class ScimRequestBuilder implements AutoCloseable
    * @param type the type that should be created
    * @return a update-request builder for the given resource type
    */
-  public <T extends ResourceNode> ListBuilder<T> list(Class<T> type)
+  public <T extends ResourceNode> ListBuilder<T> list(Class<T> type, String endpoint)
   {
-    return new ListBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
+    return new ListBuilder<>(baseUrl, endpoint, scimClientConfig, type, scimHttpClient);
   }
 
   /**

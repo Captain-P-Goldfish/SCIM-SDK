@@ -46,6 +46,11 @@ public class ListBuilder<T extends ResourceNode>
   private final String baseUrl;
 
   /**
+   * the endpoint path of the resource e.g. /Users or /Groups
+   */
+  private final String endpoint;
+
+  /**
    * the http client configuration to access the scim endpoint
    */
   private final ScimClientConfig scimClientConfig;
@@ -67,11 +72,13 @@ public class ListBuilder<T extends ResourceNode>
   private final ScimHttpClient scimHttpClient;
 
   public ListBuilder(String baseUrl,
+                     String endpoint,
                      ScimClientConfig scimClientConfig,
                      Class<T> responseEntityType,
                      ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
+    this.endpoint = endpoint;
     this.scimClientConfig = scimClientConfig;
     this.responseEntityType = responseEntityType;
     this.scimHttpClient = scimHttpClient;
@@ -220,18 +227,9 @@ public class ListBuilder<T extends ResourceNode>
 
     public GetRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType,
+      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig, listBuilder.responseEntityType,
             listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public RequestBuilder<T> setEndpoint(String endpoint)
-    {
-      return super.setEndpoint(endpoint);
     }
 
     /**
@@ -297,18 +295,9 @@ public class ListBuilder<T extends ResourceNode>
 
     public PostRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType,
+      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig, listBuilder.responseEntityType,
             listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public RequestBuilder<T> setEndpoint(String endpoint)
-    {
-      return super.setEndpoint(endpoint);
     }
 
     /**

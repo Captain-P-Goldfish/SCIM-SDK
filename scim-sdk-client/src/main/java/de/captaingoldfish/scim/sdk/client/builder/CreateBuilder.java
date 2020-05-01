@@ -29,20 +29,12 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
 {
 
   public CreateBuilder(String baseUrl,
+                       String endpoint,
                        ScimClientConfig scimClientConfig,
                        Class<T> responseEntityType,
                        ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType, scimHttpClient);
-  }
-
-  /**
-   * @param endpoint the resource endpoint path e.g. /Users or /Groups
-   */
-  @Override
-  public CreateBuilder<T> setEndpoint(String endpoint)
-  {
-    return (CreateBuilder<T>)super.setEndpoint(endpoint);
+    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
   }
 
   /**

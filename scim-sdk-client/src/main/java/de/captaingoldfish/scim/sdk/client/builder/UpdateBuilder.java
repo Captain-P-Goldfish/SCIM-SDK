@@ -34,11 +34,12 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   private String id;
 
   public UpdateBuilder(String baseUrl,
+                       String endpoint,
                        ScimClientConfig scimClientConfig,
                        Class<T> responseEntityType,
                        ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
   }
 
   /**
@@ -70,15 +71,6 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   public UpdateBuilder<T> setResource(JsonNode resource)
   {
     return (UpdateBuilder<T>)super.setResource(resource);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public UpdateBuilder<T> setEndpoint(String endpoint)
-  {
-    return (UpdateBuilder<T>)super.setEndpoint(endpoint);
   }
 
   /**

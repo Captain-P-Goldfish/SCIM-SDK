@@ -34,11 +34,12 @@ public abstract class ETagRequestBuilder<T extends ResourceNode> extends Request
   private boolean useIfNoneMatch;
 
   public ETagRequestBuilder(String baseUrl,
+                            String endpoint,
                             ScimClientConfig scimClientConfig,
                             Class<T> responseEntityType,
                             ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
   }
 
   /**

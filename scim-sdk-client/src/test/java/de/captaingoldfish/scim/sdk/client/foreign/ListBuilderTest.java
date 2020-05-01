@@ -48,10 +48,7 @@ public class ListBuilderTest extends HttpServerMockup
   @Test
   public void testListRequest()
   {
-    ScimServerResponse<User> response = scimRequestBuilder.list(User.class)
-                                                          .get()
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .sendRequest();
+    ScimServerResponse<User> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS).get().sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertEquals(ResponseType.LIST, response.getResponseType());
     Assertions.assertTrue(response.getScimResponse().isPresent());

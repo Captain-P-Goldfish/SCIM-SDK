@@ -30,12 +30,12 @@ public class CreateBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new CreateBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                                                            scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                           .setResource(User.builder()
-                                                                                            .userName("goldfish")
-                                                                                            .build())
-                                                                           .sendRequest();
+    ScimServerResponse<User> response = new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                            User.class, scimHttpClient)
+                                                                                       .setResource(User.builder()
+                                                                                                        .userName("goldfish")
+                                                                                                        .build())
+                                                                                       .sendRequest();
     Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());

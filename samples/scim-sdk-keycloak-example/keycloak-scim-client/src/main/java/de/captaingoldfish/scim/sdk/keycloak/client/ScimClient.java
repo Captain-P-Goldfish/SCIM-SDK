@@ -57,8 +57,7 @@ public class ScimClient
   private static void createUsers(ScimRequestBuilder scimRequestBuilder)
   {
     getUserList().forEach(user -> {
-      ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                            .setEndpoint(EndpointPaths.USERS)
+      ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                             .setResource(user)
                                                             .sendRequest();
       if (response.getResponseType().equals(ResponseType.CREATE))
@@ -78,17 +77,13 @@ public class ScimClient
    */
   private static void deleteAllUsers(ScimRequestBuilder scimRequestBuilder)
   {
-    ScimServerResponse<User> response = scimRequestBuilder.list(User.class)
-                                                          .get()
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .sendRequest();
+    ScimServerResponse<User> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS).get().sendRequest();
     ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
     while (listResponse.getTotalResults() > 0)
     {
       listResponse.getListedResources().stream().parallel().forEach(user -> {
         final String username = StringUtils.lowerCase(user.get(AttributeNames.RFC7643.USER_NAME).textValue());
-        ScimServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class)
-                                                                    .setEndpoint(EndpointPaths.USERS)
+        ScimServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class, EndpointPaths.USERS)
                                                                     .setId(user.get(AttributeNames.RFC7643.ID)
                                                                                .textValue())
                                                                     .sendRequest();
@@ -101,11 +96,10 @@ public class ScimClient
           log.error("user with name {} could not be deleted", username);
         }
       });
-      response = scimRequestBuilder.list(User.class)
+      response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
                                    .filter("username", Comparator.NE, "admin")
                                    .build()
                                    .get()
-                                   .setEndpoint(EndpointPaths.USERS)
                                    .sendRequest();
       listResponse = (ListResponse)response.getScimResponse().get();
     }
@@ -143,8 +137,7 @@ public class ScimClient
   {
     List<Group> groups = getGroupsList(scimRequestBuilder);
     groups.stream().parallel().forEach(group -> {
-      ScimServerResponse<Group> response = scimRequestBuilder.create(Group.class)
-                                                             .setEndpoint(EndpointPaths.GROUPS)
+      ScimServerResponse<Group> response = scimRequestBuilder.create(Group.class, EndpointPaths.GROUPS)
                                                              .setResource(group)
                                                              .sendRequest();
       if (response.getResponseType().equals(ResponseType.CREATE))
@@ -196,11 +189,10 @@ public class ScimClient
   private static List<User> getRandomUsers(ScimRequestBuilder scimRequestBuilder)
   {
     Random random = new Random();
-    ScimServerResponse<User> response = scimRequestBuilder.list(User.class)
+    ScimServerResponse<User> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
                                                           .startIndex(random.nextInt(4500))
                                                           .count(10)
                                                           .get()
-                                                          .setEndpoint(EndpointPaths.USERS)
                                                           .sendRequest();
     ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
     return listResponse.getListedResources()

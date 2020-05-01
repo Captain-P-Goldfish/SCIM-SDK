@@ -41,8 +41,8 @@ public class DeleteBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                                       .sendRequest();
+      new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+                          scimHttpClient).sendRequest();
       Assertions.fail("this point must not be reached");
     }
     catch (IllegalStateException ex)
@@ -62,8 +62,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                                       .setId(id);
+      new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class, scimHttpClient).setId(id);
       Assertions.fail("this point must not be reached");
     }
     catch (IllegalStateException ex)
@@ -86,10 +85,8 @@ public class DeleteBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                                                            scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                           .setId(id)
-                                                                           .sendRequest();
+    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                            User.class, scimHttpClient).setId(id).sendRequest();
     Assertions.assertFalse(response.getResource().isPresent());
     Assertions.assertEquals(ResponseType.DELETE, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
@@ -104,10 +101,11 @@ public class DeleteBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                                                            scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                           .setId(UUID.randomUUID().toString())
-                                                                           .sendRequest();
+    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                            User.class, scimHttpClient)
+                                                                                       .setId(UUID.randomUUID()
+                                                                                                  .toString())
+                                                                                       .sendRequest();
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
@@ -131,11 +129,8 @@ public class DeleteBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                                     .setId(UUID.randomUUID()
-                                                                                                .toString())
-                                                                                     .setETagForIfMatch(version)
-                                                                                     .sendRequest();
+    new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+                        scimHttpClient).setId(UUID.randomUUID().toString()).setETagForIfMatch(version).sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -157,9 +152,8 @@ public class DeleteBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                        scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                       .setId(UUID.randomUUID().toString())
+    new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+                        scimHttpClient).setId(UUID.randomUUID().toString())
                                        .setETagForIfMatch(ETag.parseETag(version))
                                        .sendRequest();
     Assertions.assertTrue(wasCalled.get());
@@ -183,11 +177,10 @@ public class DeleteBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                                     .setId(UUID.randomUUID()
-                                                                                                .toString())
-                                                                                     .setETagForIfNoneMatch(version)
-                                                                                     .sendRequest();
+    new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+                        scimHttpClient).setId(UUID.randomUUID().toString())
+                                       .setETagForIfNoneMatch(version)
+                                       .sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -209,9 +202,8 @@ public class DeleteBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                        scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                       .setId(UUID.randomUUID().toString())
+    new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig, User.class,
+                        scimHttpClient).setId(UUID.randomUUID().toString())
                                        .setETagForIfNoneMatch(ETag.parseETag(version))
                                        .sendRequest();
     Assertions.assertTrue(wasCalled.get());
@@ -233,11 +225,10 @@ public class DeleteBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                                                            scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                           .setETagForIfNoneMatch(version)
-                                                                           .setId(id)
-                                                                           .sendRequest();
+    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                            User.class, scimHttpClient).setETagForIfNoneMatch(version)
+                                                                                       .setId(id)
+                                                                                       .sendRequest();
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
   }
@@ -258,11 +249,10 @@ public class DeleteBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), scimClientConfig, User.class,
-                                                            scimHttpClient).setEndpoint(EndpointPaths.USERS)
-                                                                           .setETagForIfMatch(version + "1")
-                                                                           .setId(id)
-                                                                           .sendRequest();
+    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                            User.class, scimHttpClient).setETagForIfMatch(version + "1")
+                                                                                       .setId(id)
+                                                                                       .sendRequest();
     Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
   }

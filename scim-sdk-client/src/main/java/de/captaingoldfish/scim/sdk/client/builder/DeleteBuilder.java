@@ -30,11 +30,12 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 
 
   public DeleteBuilder(String baseUrl,
+                       String endpoint,
                        ScimClientConfig scimClientConfig,
                        Class<T> responseEntityType,
                        ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
   }
 
 
@@ -49,15 +50,6 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     }
     this.id = id;
     return this;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public DeleteBuilder<T> setEndpoint(String endpoint)
-  {
-    return (DeleteBuilder<T>)super.setEndpoint(endpoint);
   }
 
   /**

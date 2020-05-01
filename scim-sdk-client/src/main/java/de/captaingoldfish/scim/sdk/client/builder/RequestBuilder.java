@@ -61,23 +61,16 @@ public abstract class RequestBuilder<T extends ResourceNode>
   private ScimHttpClient scimHttpClient;
 
   public RequestBuilder(String baseUrl,
+                        String endpoint,
                         ScimClientConfig scimClientConfig,
                         Class<T> responseEntityType,
                         ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
+    this.endpoint = endpoint;
     this.scimClientConfig = scimClientConfig;
     this.responseEntityType = responseEntityType;
     this.scimHttpClient = scimHttpClient;
-  }
-
-  /**
-   * @param endpoint the resource endpoint path e.g. /Users or /Groups
-   */
-  protected RequestBuilder<T> setEndpoint(String endpoint)
-  {
-    this.endpoint = endpoint;
-    return this;
   }
 
   /**

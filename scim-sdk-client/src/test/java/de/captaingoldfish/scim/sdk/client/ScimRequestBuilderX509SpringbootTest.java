@@ -67,8 +67,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
   public void testBuildCreateRequest()
   {
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
+    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
     Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
@@ -92,8 +91,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     User user = User.builder().userName("goldfish").build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
+    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
     Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
@@ -125,8 +123,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     User user = User.builder().userName("goldfish").build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
+    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
     Assertions.assertFalse(response.getScimResponse().isPresent());
@@ -154,8 +151,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     User user = User.builder().userName("goldfish").build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
+    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                           .setResource(user)
                                                           .sendRequest();
     Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
