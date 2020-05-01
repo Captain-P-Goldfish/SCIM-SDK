@@ -525,6 +525,10 @@ public final class JsonHelper
    */
   public static boolean isValidJson(final String json)
   {
+    if (StringUtils.isBlank(json))
+    {
+      return false;
+    }
     try
     {
       final JsonParser parser = new ObjectMapper().getFactory().createParser(json);

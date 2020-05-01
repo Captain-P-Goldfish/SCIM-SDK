@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.apache.http.client.methods.HttpUriRequest;
 
@@ -111,6 +112,15 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   protected abstract boolean isExpectedResponseCode(int httpStatus);
 
   /**
+   * an optional method that might be used by a builder to verify if the response can be parsed into the
+   * expected resource type
+   */
+  protected Function<HttpResponse, Boolean> isResponseParseable()
+  {
+    return httpResponse -> false;
+  }
+
+  /**
    * sends the defined request to the service provider
    *
    * @param httpHeaders allows the user to add additional http headers to the request
@@ -135,7 +145,8 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
       request.setHeader(HttpHeader.AUHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
-    return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType);
+    return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType,
+                                isResponseParseable());
   }
 
   /**

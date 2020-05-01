@@ -2,12 +2,18 @@ package de.captaingoldfish.scim.sdk.client.response;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
+import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -57,11 +63,21 @@ public class ServerResponse<T extends ScimObjectNode>
    */
   private Class<T> type;
 
-  public ServerResponse(HttpResponse httpResponse, boolean expectedResponseCode, Class<T> type)
+  /**
+   * an implementation provided by a request builder that tells this response if the response body may be parsed
+   * into a resource object
+   */
+  private Function<HttpResponse, Boolean> isResponseParseable;
+
+  public ServerResponse(HttpResponse httpResponse,
+                        boolean expectedResponseCode,
+                        Class<T> type,
+                        Function<HttpResponse, Boolean> isResponseParseable)
   {
     this.httpResponse = httpResponse;
     this.success = expectedResponseCode && isValidScimResponse();
     this.type = type;
+    this.isResponseParseable = isResponseParseable;
   }
 
   /**
@@ -73,7 +89,11 @@ public class ServerResponse<T extends ScimObjectNode>
    */
   public T getResource()
   {
-    if (resource == null && success && StringUtils.isNotBlank(getResponseBody()) && isValidScimResponse())
+    boolean isSuccessResponse = resource == null && success && StringUtils.isNotBlank(getResponseBody())
+                                && isValidScimResponse();
+    Boolean result = isResponseParseable.apply(httpResponse);
+    boolean isParseable = result != null && result;
+    if (isParseable || isSuccessResponse)
     {
       resource = getResource(type);
     }
@@ -112,11 +132,13 @@ public class ServerResponse<T extends ScimObjectNode>
   }
 
   /**
-   * will be instantiated if the field {@link #success} is false and {@link #isValidScimResponse()} is true
+   * will be instantiated if the response contains a scim json structure with a schemas-element that contains
+   * the value {@link SchemaUris#ERROR_URI}
    */
   public ErrorResponse getErrorResponse()
   {
-    if (errorResponse == null && !success && StringUtils.isNotBlank(getResponseBody()) && isValidScimResponse())
+    if (errorResponse == null && !success && StringUtils.isNotBlank(getResponseBody()) && isValidScimResponse()
+        && isUriInSchemasElement(SchemaUris.ERROR_URI))
     {
       errorResponse = JsonHelper.readJsonDocument(getResponseBody(), ErrorResponse.class);
     }
@@ -169,5 +191,33 @@ public class ServerResponse<T extends ScimObjectNode>
     }
     return headerNameList.size() == 1
            && StringUtils.startsWithIgnoreCase(getHttpHeaders().get(headerNameList.get(0)), expectedValue);
+  }
+
+  /**
+   * checks if the given uri is in the schemas element of the current http response body
+   *
+   * @param uri the schema uri that should be present within the body
+   * @return true, if the uri is present false else
+   */
+  private boolean isUriInSchemasElement(String uri)
+  {
+    if (!isValidScimResponse() || StringUtils.isBlank(getResponseBody()))
+    {
+      return false;
+    }
+    ScimObjectNode scimObjectNode = JsonHelper.readJsonDocument(getResponseBody(), ScimObjectNode.class);
+    ArrayNode schemasNode = (ArrayNode)scimObjectNode.get(AttributeNames.RFC7643.SCHEMAS);
+    if (schemasNode == null || schemasNode.isEmpty())
+    {
+      return false;
+    }
+    for ( JsonNode jsonNode : schemasNode )
+    {
+      if (uri.equals(jsonNode.textValue()))
+      {
+        return true;
+      }
+    }
+    return false;
   }
 }

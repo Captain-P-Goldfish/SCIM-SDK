@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.client;
 
+import de.captaingoldfish.scim.sdk.client.builder.BulkRequestBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.CreateBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.DeleteBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.GetBuilder;
@@ -95,6 +96,16 @@ public class ScimRequestBuilder implements AutoCloseable
   public <T extends ResourceNode> ListBuilder<T> list(Class<T> type, String endpoint)
   {
     return new ListBuilder<>(baseUrl, endpoint, scimClientConfig, type, scimHttpClient);
+  }
+
+  /**
+   * builds an bulk request builder
+   *
+   * @return a bulk-request builder
+   */
+  public BulkRequestBuilder bulk()
+  {
+    return new BulkRequestBuilder(baseUrl, scimClientConfig, scimHttpClient);
   }
 
   /**

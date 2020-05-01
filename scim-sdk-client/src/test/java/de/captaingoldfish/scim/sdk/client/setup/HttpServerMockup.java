@@ -99,12 +99,14 @@ public abstract class HttpServerMockup
   /**
    * used to create the response status for the server
    */
+  @Getter(AccessLevel.PUBLIC)
   @Setter(AccessLevel.PUBLIC)
   private Supplier<Integer> getResponseStatus;
 
   /**
    * used to create the response body for the server
    */
+  @Getter(AccessLevel.PUBLIC)
   @Setter(AccessLevel.PUBLIC)
   private Supplier<String> getResponseBody;
 

@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.client;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import de.captaingoldfish.scim.sdk.client.builder.BulkRequestBuilder;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
@@ -17,9 +20,16 @@ import de.captaingoldfish.scim.sdk.client.springboot.SpringBootInitializer;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -27,6 +37,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
  * created at: 11.12.2019 - 10:50 <br>
  * <br>
  */
+@Slf4j
 @ActiveProfiles(SecurityConstants.X509_PROFILE)
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SpringBootInitializer.class})
@@ -156,6 +167,47 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     Assertions.assertNotNull(response.getErrorResponse());
     Assertions.assertEquals("you are not authorized to access the 'CREATE' endpoint on resource type 'User'",
                             response.getErrorResponse().getDetail().get());
+  }
+
+  /**
+   * verifies that the bulk request builder can be used as expected
+   */
+  @Test
+  public void testBulkRequest()
+  {
+    final String bulkId = UUID.randomUUID().toString();
+    BulkRequestBuilder builder = scimRequestBuilder.bulk();
+    ServerResponse<BulkResponse> response = builder.bulkRequestOperation(EndpointPaths.USERS)
+                                                   .data(User.builder().userName("goldfish").build())
+                                                   .method(HttpMethod.POST)
+                                                   .bulkId(bulkId)
+                                                   .next()
+                                                   .bulkRequestOperation(EndpointPaths.GROUPS)
+                                                   .method(HttpMethod.POST)
+                                                   .bulkId(UUID.randomUUID().toString())
+                                                   .data(Group.builder()
+                                                              .displayName("admin")
+                                                              .members(Arrays.asList(Member.builder()
+                                                                                           .value("bulkId:" + bulkId)
+                                                                                           .type(ResourceTypeNames.USER)
+                                                                                           .build()))
+                                                              .build())
+                                                   .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertNotNull(response.getResource());
+    BulkResponse bulkResponse = response.getResource();
+    Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());
+
+    BulkResponseOperation createUserOperation = bulkResponse.getBulkResponseOperations().get(0);
+    Assertions.assertEquals(HttpStatus.CREATED, createUserOperation.getStatus());
+    Assertions.assertEquals(bulkId, createUserOperation.getBulkId().get());
+
+
+    BulkResponseOperation createGroupOperation = bulkResponse.getBulkResponseOperations().get(1);
+    Assertions.assertEquals(HttpStatus.CREATED, createGroupOperation.getStatus());
+    Assertions.assertTrue(createGroupOperation.getBulkId().isPresent());
+
+    log.warn(bulkResponse.toPrettyString());
   }
 
 }

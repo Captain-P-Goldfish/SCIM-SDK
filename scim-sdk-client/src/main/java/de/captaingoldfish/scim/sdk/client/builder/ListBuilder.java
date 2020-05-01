@@ -8,16 +8,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
+import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
@@ -262,6 +266,23 @@ public class ListBuilder<T extends ResourceNode>
       }
       return new HttpGet(getBaseUrl() + getEndpoint() + queryBuilder.toString());
     }
+
+    /**
+     * checks if the response contains a schema-uri that matches the value of
+     * {@link de.captaingoldfish.scim.sdk.common.constants.SchemaUris#LIST_RESPONSE_URI}
+     */
+    @Override
+    protected Function<HttpResponse, Boolean> isResponseParseable()
+    {
+      return httpResponse -> {
+        String responseBody = httpResponse.getResponseBody();
+        if (StringUtils.isNotBlank(responseBody) && responseBody.contains(SchemaUris.LIST_RESPONSE_URI))
+        {
+          return true;
+        }
+        return false;
+      };
+    }
   }
 
   /**
@@ -307,6 +328,23 @@ public class ListBuilder<T extends ResourceNode>
         httpPost.setEntity(stringEntity);
       }
       return httpPost;
+    }
+
+    /**
+     * checks if the response contains a schema-uri that matches the value of
+     * {@link de.captaingoldfish.scim.sdk.common.constants.SchemaUris#LIST_RESPONSE_URI}
+     */
+    @Override
+    protected Function<HttpResponse, Boolean> isResponseParseable()
+    {
+      return httpResponse -> {
+        String responseBody = httpResponse.getResponseBody();
+        if (StringUtils.isNotBlank(responseBody) && responseBody.contains(SchemaUris.LIST_RESPONSE_URI))
+        {
+          return true;
+        }
+        return false;
+      };
     }
   }
 
