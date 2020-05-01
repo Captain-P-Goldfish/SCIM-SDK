@@ -45,10 +45,10 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
-                                                              .method(HttpMethod.POST)
-                                                              .bulkId(UUID.randomUUID().toString())
-                                                              .data(User.builder().userName("goldfish").build())
-                                                              .sendRequest();
+                                                       .method(HttpMethod.POST)
+                                                       .bulkId(UUID.randomUUID().toString())
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
@@ -65,10 +65,10 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
-                                                              .bulkRequestOperation(EndpointPaths.USERS)
-                                                              .method(HttpMethod.POST)
-                                                              .data(User.builder().userName("goldfish").build())
-                                                              .sendRequest();
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .sendRequest();
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
@@ -86,10 +86,10 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
-                                                              .bulkRequestOperation(EndpointPaths.USERS)
-                                                              .method(HttpMethod.POST)
-                                                              .data(User.builder().userName("goldfish").build())
-                                                              .sendRequest();
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .sendRequest();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
@@ -107,10 +107,10 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
-                                                              .bulkRequestOperation(EndpointPaths.USERS)
-                                                              .method(HttpMethod.POST)
-                                                              .data(User.builder().userName("goldfish").build())
-                                                              .sendRequest();
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .sendRequest();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
@@ -135,10 +135,10 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
-                                                              .bulkRequestOperation(EndpointPaths.USERS)
-                                                              .method(HttpMethod.POST)
-                                                              .data(User.builder().userName("goldfish").build())
-                                                              .sendRequest();
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .sendRequest();
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());

@@ -40,7 +40,7 @@ public abstract class ETagRequestBuilder<T extends ResourceNode> extends Request
                             Class<T> responseEntityType,
                             ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
   }
 
   /**

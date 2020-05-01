@@ -31,7 +31,7 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
                        Class<T> responseEntityType,
                        ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint, scimClientConfig, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
   }
 
   /**

@@ -8,7 +8,6 @@ import org.apache.http.client.methods.HttpUriRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
@@ -34,11 +33,6 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   private final String baseUrl;
 
   /**
-   * the http client configuration
-   */
-  private final ScimClientConfig scimClientConfig;
-
-  /**
    * the resource endpoint path e.g. /Users or /Groups
    */
   @Getter(AccessLevel.PROTECTED)
@@ -61,15 +55,10 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
    */
   private ScimHttpClient scimHttpClient;
 
-  public RequestBuilder(String baseUrl,
-                        String endpoint,
-                        ScimClientConfig scimClientConfig,
-                        Class<T> responseEntityType,
-                        ScimHttpClient scimHttpClient)
+  public RequestBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
     this.endpoint = endpoint;
-    this.scimClientConfig = scimClientConfig;
     this.responseEntityType = responseEntityType;
     this.scimHttpClient = scimHttpClient;
   }
@@ -140,9 +129,10 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
         }
       });
     }
-    if (scimClientConfig.getBasicAuth() != null)
+    if (scimHttpClient.getScimClientConfig().getBasicAuth() != null)
     {
-      request.setHeader(HttpHeader.AUHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
+      request.setHeader(HttpHeader.AUHORIZATION,
+                        scimHttpClient.getScimClientConfig().getBasicAuth().getAuthorizationHeaderValue());
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
     return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType,

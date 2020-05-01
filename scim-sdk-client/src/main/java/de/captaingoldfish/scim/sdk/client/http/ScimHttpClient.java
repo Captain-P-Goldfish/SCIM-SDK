@@ -58,6 +58,7 @@ public class ScimHttpClient implements Closeable
    * reads the timeout in seconds for setting up a connection<br>
    * <b>default: </b>3
    */
+  @Getter
   private ScimClientConfig scimClientConfig;
 
   /**

@@ -49,7 +49,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
 
   public BulkBuilder(String baseUrl, ScimClientConfig scimClientConfig, ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, EndpointPaths.BULK, scimClientConfig, BulkResponse.class, scimHttpClient);
+    super(baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
 
     builder = BulkRequest.builder();
     bulkRequestOperationList = new ArrayList<>();

@@ -227,8 +227,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public GetRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig,
-            (Class<ListResponse<T>>)new ListResponse<T>().getClass(), listBuilder.scimHttpClient);
+      super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
+            listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
@@ -298,8 +298,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public PostRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig,
-            (Class<ListResponse<T>>)new ListResponse<T>().getClass(), listBuilder.scimHttpClient);
+      super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
+            listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
