@@ -16,6 +16,7 @@ import org.apache.http.entity.StringEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
@@ -60,11 +61,20 @@ public class ListBuilder<T extends ResourceNode>
   @Getter(AccessLevel.PROTECTED)
   private final Map<String, String> requestParameters = new HashMap<>();
 
-  public ListBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  /**
+   * an apache http client wrapper that offers some convenience methods
+   */
+  private final ScimHttpClient scimHttpClient;
+
+  public ListBuilder(String baseUrl,
+                     ScimClientConfig scimClientConfig,
+                     Class<T> responseEntityType,
+                     ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
     this.scimClientConfig = scimClientConfig;
     this.responseEntityType = responseEntityType;
+    this.scimHttpClient = scimHttpClient;
   }
 
   /**
@@ -210,7 +220,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public GetRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType);
+      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType,
+            listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
@@ -286,7 +297,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public PostRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType);
+      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType,
+            listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 

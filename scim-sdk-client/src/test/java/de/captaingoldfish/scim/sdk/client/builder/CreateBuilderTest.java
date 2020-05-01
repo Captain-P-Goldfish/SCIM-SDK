@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -28,12 +29,13 @@ public class CreateBuilderTest extends HttpServerMockup
   public void testCreateBuilderTest()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ScimServerResponse<User> response = new CreateBuilder<>(getServerUrl(), scimClientConfig,
-                                                            User.class).setEndpoint(EndpointPaths.USERS)
-                                                                       .setResource(User.builder()
-                                                                                        .userName("goldfish")
-                                                                                        .build())
-                                                                       .sendRequest();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ScimServerResponse<User> response = new CreateBuilder<>(getServerUrl(), scimClientConfig, User.class,
+                                                            scimHttpClient).setEndpoint(EndpointPaths.USERS)
+                                                                           .setResource(User.builder()
+                                                                                            .userName("goldfish")
+                                                                                            .build())
+                                                                           .sendRequest();
     Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
     Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());

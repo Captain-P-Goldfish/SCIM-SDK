@@ -14,6 +14,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -141,7 +142,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithStrings(String attributeName, Comparator comparator, String value)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -160,7 +162,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithIntegers(String attributeName, Comparator comparator, Integer value)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -181,7 +184,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithLongs(String attributeName, Comparator comparator, Long value)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -201,7 +205,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithDoubles(String attributeName, Comparator comparator, Double value)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -221,7 +226,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithBooleans(String attributeName, Comparator comparator, Boolean value)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     listBuilder.filter("username", Comparator.SW, "hello_world")
                .or(attributeName, comparator, value)
                .or(true, attributeName, comparator, value)
@@ -242,7 +248,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildComplexFilter()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     Instant instant = Instant.now();
     listBuilder.filter(true, "username", Comparator.SW, "hello_world")
                .or(true, "nickname", Comparator.CO, "hello")
@@ -272,14 +279,15 @@ public class ListBuilderTest extends HttpServerMockup
     final String[] attributes = new String[]{"username", "meta.created"};
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig,
-                                                      User.class).sortBy(sortBy)
-                                                                 .count(count)
-                                                                 .startIndex(startIndex)
-                                                                 .sortOrder(sortOrder)
-                                                                 .excludedAttributes(attributes)
-                                                                 .filter("username", Comparator.SW, "a")
-                                                                 .build();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class,
+                                                      scimHttpClient).sortBy(sortBy)
+                                                                     .count(count)
+                                                                     .startIndex(startIndex)
+                                                                     .sortOrder(sortOrder)
+                                                                     .excludedAttributes(attributes)
+                                                                     .filter("username", Comparator.SW, "a")
+                                                                     .build();
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
@@ -324,14 +332,15 @@ public class ListBuilderTest extends HttpServerMockup
     final String[] attributes = new String[]{"username", "meta.created"};
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig,
-                                                      User.class).sortBy(sortBy)
-                                                                 .count(count)
-                                                                 .startIndex(startIndex)
-                                                                 .sortOrder(sortOrder)
-                                                                 .attributes(attributes)
-                                                                 .filter("username", Comparator.SW, "a")
-                                                                 .build();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class,
+                                                      scimHttpClient).sortBy(sortBy)
+                                                                     .count(count)
+                                                                     .startIndex(startIndex)
+                                                                     .sortOrder(sortOrder)
+                                                                     .attributes(attributes)
+                                                                     .filter("username", Comparator.SW, "a")
+                                                                     .build();
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
@@ -365,7 +374,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithErroneousClosedParenthesis()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     try
     {
       listBuilder.filter("username", Comparator.SW, "hello_world").closeParenthesis().build();
@@ -386,7 +396,8 @@ public class ListBuilderTest extends HttpServerMockup
   public void testBuildFilterWithErroneousOpenedParenthesis()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class);
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder listBuilder = new ListBuilder<>(getServerUrl(), scimClientConfig, User.class, scimHttpClient);
     try
     {
       listBuilder.filter(true, "username", Comparator.SW, "hello_world").build();

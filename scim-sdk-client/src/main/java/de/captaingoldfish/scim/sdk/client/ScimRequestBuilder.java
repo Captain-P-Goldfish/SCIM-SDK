@@ -6,6 +6,7 @@ import de.captaingoldfish.scim.sdk.client.builder.GetBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.ListBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import lombok.Getter;
 
@@ -16,7 +17,7 @@ import lombok.Getter;
  * <br>
  * this class can be used to build any type of request for SCIM
  */
-public class ScimRequestBuilder
+public class ScimRequestBuilder implements AutoCloseable
 {
 
   /**
@@ -30,10 +31,16 @@ public class ScimRequestBuilder
   @Getter
   private final ScimClientConfig scimClientConfig;
 
+  /**
+   * a convenience implementation that wraps the apache http client
+   */
+  private ScimHttpClient scimHttpClient;
+
   public ScimRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig)
   {
     this.baseUrl = baseUrl.replaceFirst("/$", "");
     this.scimClientConfig = scimClientConfig;
+    this.scimHttpClient = new ScimHttpClient(scimClientConfig);
   }
 
   /**
@@ -44,7 +51,7 @@ public class ScimRequestBuilder
    */
   public <T extends ResourceNode> CreateBuilder<T> create(Class<T> type)
   {
-    return new CreateBuilder<>(baseUrl, scimClientConfig, type);
+    return new CreateBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -55,7 +62,7 @@ public class ScimRequestBuilder
    */
   public <T extends ResourceNode> GetBuilder<T> get(Class<T> type)
   {
-    return new GetBuilder<>(baseUrl, scimClientConfig, type);
+    return new GetBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -66,7 +73,7 @@ public class ScimRequestBuilder
    */
   public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type)
   {
-    return new DeleteBuilder<>(baseUrl, scimClientConfig, type);
+    return new DeleteBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -77,7 +84,7 @@ public class ScimRequestBuilder
    */
   public <T extends ResourceNode> UpdateBuilder<T> update(Class<T> type)
   {
-    return new UpdateBuilder<>(baseUrl, scimClientConfig, type);
+    return new UpdateBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
   }
 
   /**
@@ -88,9 +95,16 @@ public class ScimRequestBuilder
    */
   public <T extends ResourceNode> ListBuilder<T> list(Class<T> type)
   {
-    return new ListBuilder<>(baseUrl, scimClientConfig, type);
+    return new ListBuilder<>(baseUrl, scimClientConfig, type, scimHttpClient);
   }
 
-
-
+  /**
+   * closes the underlying apache http client. If the http client is closed this request builder is still
+   * usable. The next request will simply be executed with a new http client instance
+   */
+  @Override
+  public void close()
+  {
+    scimHttpClient.close();
+  }
 }

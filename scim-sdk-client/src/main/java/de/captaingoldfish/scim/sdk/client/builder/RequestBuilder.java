@@ -55,11 +55,20 @@ public abstract class RequestBuilder<T extends ResourceNode>
   @Getter(AccessLevel.PROTECTED)
   private Class<T> responseEntityType;
 
-  public RequestBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  /**
+   * an apache http client wrapper that offers some convenience methods
+   */
+  private ScimHttpClient scimHttpClient;
+
+  public RequestBuilder(String baseUrl,
+                        ScimClientConfig scimClientConfig,
+                        Class<T> responseEntityType,
+                        ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
     this.scimClientConfig = scimClientConfig;
     this.responseEntityType = responseEntityType;
+    this.scimHttpClient = scimHttpClient;
   }
 
   /**
@@ -109,16 +118,6 @@ public abstract class RequestBuilder<T extends ResourceNode>
    */
   public ScimServerResponse<T> sendRequest(Map<String, String[]> httpHeaders)
   {
-    ScimHttpClient scimHttpClient = ScimHttpClient.builder()
-                                                  .connectTimeout(scimClientConfig.getConnectTimeout())
-                                                  .requestTimeout(scimClientConfig.getRequestTimeout())
-                                                  .socketTimeout(scimClientConfig.getSocketTimeout())
-                                                  .proxy(scimClientConfig.getProxy())
-                                                  .hostnameVerifier(scimClientConfig.getHostnameVerifier())
-                                                  .tlsClientAuthenticatonKeystore(scimClientConfig.getClientAuth())
-                                                  .truststore(scimClientConfig.getTruststore())
-                                                  .configManipulator(scimClientConfig.getConfigManipulator())
-                                                  .build();
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
     if (httpHeaders != null)
@@ -139,7 +138,7 @@ public abstract class RequestBuilder<T extends ResourceNode>
 
   /**
    * builds the scim response from the response body
-   * 
+   *
    * @param httpResponseCode the response code of the response
    * @param responseBody the response body of the server
    * @return the response object

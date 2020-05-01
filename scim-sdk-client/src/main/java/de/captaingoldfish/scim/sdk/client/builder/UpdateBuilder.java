@@ -9,6 +9,7 @@ import org.apache.http.entity.StringEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
@@ -32,9 +33,12 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    */
   private String id;
 
-  public UpdateBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  public UpdateBuilder(String baseUrl,
+                       ScimClientConfig scimClientConfig,
+                       Class<T> responseEntityType,
+                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType);
+    super(baseUrl, scimClientConfig, responseEntityType, scimHttpClient);
   }
 
   /**
