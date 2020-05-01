@@ -33,7 +33,7 @@ import lombok.Getter;
  * created at: 08.03.2020 <br>
  * <br>
  */
-public class BulkRequestBuilder extends RequestBuilder<BulkResponse>
+public class BulkBuilder extends RequestBuilder<BulkResponse>
 {
 
   /**
@@ -47,7 +47,7 @@ public class BulkRequestBuilder extends RequestBuilder<BulkResponse>
   @Getter(AccessLevel.PROTECTED)
   private final List<BulkRequestOperation> bulkRequestOperationList;
 
-  public BulkRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig, ScimHttpClient scimHttpClient)
+  public BulkBuilder(String baseUrl, ScimClientConfig scimClientConfig, ScimHttpClient scimHttpClient)
   {
     super(baseUrl, EndpointPaths.BULK, scimClientConfig, BulkResponse.class, scimHttpClient);
 
@@ -109,7 +109,7 @@ public class BulkRequestBuilder extends RequestBuilder<BulkResponse>
    *
    * @param failOnErrors the number of errors that are accepted on the server side
    */
-  public BulkRequestBuilder failOnErrors(Integer failOnErrors)
+  public BulkBuilder failOnErrors(Integer failOnErrors)
   {
     builder.failOnErrors(failOnErrors);
     return this;
@@ -144,16 +144,16 @@ public class BulkRequestBuilder extends RequestBuilder<BulkResponse>
     /**
      * the owning top level class reference
      */
-    private final BulkRequestBuilder bulkRequestBuilder;
+    private final BulkBuilder bulkBuilder;
 
     /**
      * the builder object that is used to build the operation
      */
     private final BulkRequestOperation.BulkRequestOperationBuilder builder = BulkRequestOperation.builder();
 
-    public BulkRequestOperationCreator(BulkRequestBuilder bulkRequestBuilder, String path)
+    public BulkRequestOperationCreator(BulkBuilder bulkBuilder, String path)
     {
-      this.bulkRequestBuilder = bulkRequestBuilder;
+      this.bulkBuilder = bulkBuilder;
       builder.path(path);
     }
 
@@ -205,10 +205,10 @@ public class BulkRequestBuilder extends RequestBuilder<BulkResponse>
     /**
      * @return builds the operation object and returns to the owning top level instance
      */
-    public BulkRequestBuilder next()
+    public BulkBuilder next()
     {
-      bulkRequestBuilder.getBulkRequestOperationList().add(builder.build());
-      return bulkRequestBuilder;
+      bulkBuilder.getBulkRequestOperationList().add(builder.build());
+      return bulkBuilder;
     }
 
     /**

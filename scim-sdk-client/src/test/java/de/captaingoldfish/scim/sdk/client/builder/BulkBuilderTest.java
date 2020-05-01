@@ -21,7 +21,7 @@ import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 
 
-public class BulkRequestBuilderTest extends HttpServerMockup
+public class BulkBuilderTest extends HttpServerMockup
 {
 
   /**
@@ -43,8 +43,8 @@ public class BulkRequestBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkRequestBuilder bulkRequestBuilder = new BulkRequestBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
-    ServerResponse<BulkResponse> response = bulkRequestBuilder.bulkRequestOperation(EndpointPaths.USERS)
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    ServerResponse<BulkResponse> response = bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
                                                               .method(HttpMethod.POST)
                                                               .bulkId(UUID.randomUUID().toString())
                                                               .data(User.builder().userName("goldfish").build())
@@ -63,8 +63,8 @@ public class BulkRequestBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkRequestBuilder bulkRequestBuilder = new BulkRequestBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
-    ServerResponse<BulkResponse> response = bulkRequestBuilder.failOnErrors(0)
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                               .bulkRequestOperation(EndpointPaths.USERS)
                                                               .method(HttpMethod.POST)
                                                               .data(User.builder().userName("goldfish").build())
@@ -84,8 +84,8 @@ public class BulkRequestBuilderTest extends HttpServerMockup
     scimConfig.getServiceProvider().getBulkConfig().setMaxPayloadSize(1L);
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkRequestBuilder bulkRequestBuilder = new BulkRequestBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
-    ServerResponse<BulkResponse> response = bulkRequestBuilder.failOnErrors(0)
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                               .bulkRequestOperation(EndpointPaths.USERS)
                                                               .method(HttpMethod.POST)
                                                               .data(User.builder().userName("goldfish").build())
@@ -105,8 +105,8 @@ public class BulkRequestBuilderTest extends HttpServerMockup
     scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(0);
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkRequestBuilder bulkRequestBuilder = new BulkRequestBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
-    ServerResponse<BulkResponse> response = bulkRequestBuilder.failOnErrors(0)
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                               .bulkRequestOperation(EndpointPaths.USERS)
                                                               .method(HttpMethod.POST)
                                                               .data(User.builder().userName("goldfish").build())
@@ -133,8 +133,8 @@ public class BulkRequestBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkRequestBuilder bulkRequestBuilder = new BulkRequestBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
-    ServerResponse<BulkResponse> response = bulkRequestBuilder.failOnErrors(0)
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                               .bulkRequestOperation(EndpointPaths.USERS)
                                                               .method(HttpMethod.POST)
                                                               .data(User.builder().userName("goldfish").build())

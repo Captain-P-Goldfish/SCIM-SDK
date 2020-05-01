@@ -12,7 +12,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import de.captaingoldfish.scim.sdk.client.builder.BulkRequestBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.BulkBuilder;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
@@ -176,7 +176,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
   public void testBulkRequest()
   {
     final String bulkId = UUID.randomUUID().toString();
-    BulkRequestBuilder builder = scimRequestBuilder.bulk();
+    BulkBuilder builder = scimRequestBuilder.bulk();
     ServerResponse<BulkResponse> response = builder.bulkRequestOperation(EndpointPaths.USERS)
                                                    .data(User.builder().userName("goldfish").build())
                                                    .method(HttpMethod.POST)
