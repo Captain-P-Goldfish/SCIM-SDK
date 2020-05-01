@@ -1,10 +1,15 @@
 package de.captaingoldfish.scim.sdk.client;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -12,6 +17,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
+import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
 import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
@@ -66,23 +72,61 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
   /**
    * verifies that a create request can be successfully built and send to the scim service provider
    */
-  @Test
-  public void testBuildCreateRequest()
+  @TestFactory
+  public List<DynamicTest> testBuildCreateRequest()
   {
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
-    Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
-    Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
-    Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    dynamicTests.add(sendAuthorizationRequest(true));
+    dynamicTests.add(sendAuthorizationRequest(false));
+    return dynamicTests;
+  }
 
-    Assertions.assertTrue(response.getResource().isPresent());
-    User returnedUser = response.getResource().get();
-    Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
-    Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
-                            response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+  /**
+   * sends a request to the server either with basic authentication or without
+   */
+  private DynamicTest sendAuthorizationRequest(boolean withBasicAuth)
+  {
+    final String descriptionString = (withBasicAuth ? "enabled" : "disabled");
+    return DynamicTest.dynamicTest("basic auth: " + descriptionString, () -> {
+      AtomicBoolean wasConsumerExecuted = new AtomicBoolean(false);
+      if (withBasicAuth)
+      {
+        scimRequestBuilder.getScimClientConfig()
+                          .setBasicAuth(BasicAuth.builder()
+                                                 .username(SecurityConstants.AUTHORIZED_USERNAME)
+                                                 .password(SecurityConstants.PASSWORD)
+                                                 .build());
+        AbstractSpringBootWebTest.headerValidator = headers -> {
+          Assertions.assertTrue(headers.containsKey(HttpHeader.AUHORIZATION.toLowerCase()));
+          Assertions.assertFalse(headers.containsKey("cookie"));
+          wasConsumerExecuted.set(true);
+        };
+      }
+      else
+      {
+        scimRequestBuilder.getScimClientConfig().setBasicAuth(null);
+        AbstractSpringBootWebTest.headerValidator = headers -> {
+          Assertions.assertFalse(headers.containsKey(HttpHeader.AUHORIZATION.toLowerCase()));
+          Assertions.assertTrue(headers.containsKey("cookie"));
+          wasConsumerExecuted.set(true);
+        };
+      }
+      User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+      ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                            .setResource(user)
+                                                            .sendRequest();
+      Assertions.assertTrue(wasConsumerExecuted.get());
+      Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
+      Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
+      Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
+      Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+
+      Assertions.assertTrue(response.getResource().isPresent());
+      User returnedUser = response.getResource().get();
+      Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
+      Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
+                              response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+    });
   }
 
   /**
