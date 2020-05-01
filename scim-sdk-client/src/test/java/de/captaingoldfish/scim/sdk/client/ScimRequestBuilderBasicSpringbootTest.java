@@ -15,9 +15,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
 import de.captaingoldfish.scim.sdk.client.springboot.SpringBootInitializer;
@@ -27,8 +26,6 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
-import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -111,17 +108,17 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
         };
       }
       User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-      ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                            .setResource(user)
-                                                            .sendRequest();
+      ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                        .setResource(user)
+                                                        .sendRequest();
       Assertions.assertTrue(wasConsumerExecuted.get());
-      Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
-      Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
       Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
+      Assertions.assertTrue(response.isSuccess());
+      Assertions.assertNotNull(response.getResource());
+      Assertions.assertNull(response.getErrorResponse());
       Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
-      Assertions.assertTrue(response.getResource().isPresent());
-      User returnedUser = response.getResource().get();
+      User returnedUser = response.getResource();
       Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
       Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
                               response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
@@ -145,11 +142,13 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertFalse(response.getScimResponse().isPresent());
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
     Assertions.assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -170,11 +169,13 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
     Assertions.assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -196,13 +197,15 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
     Assertions.assertEquals(HttpStatus.FORBIDDEN, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
     Assertions.assertEquals("you are not authorized to access the 'CREATE' endpoint on resource type 'User'",
-                            response.getErrorResponse().get().getDetail());
+                            response.getErrorResponse().getDetail().get());
   }
 
   /**
@@ -214,17 +217,16 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
     User user = User.builder().userName("goldfish").build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
     Assertions.assertEquals("main resource schema 'urn:ietf:params:scim:schemas:core:2.0:User' is not present in "
                             + "resource. Main schema is: urn:ietf:params:scim:schemas:core:2.0:User",
-                            response.getErrorResponse().get().getDetail());
-    Assertions.assertFalse(response.getResource().isPresent());
+                            response.getErrorResponse().getDetail().get());
   }
 
 }

@@ -8,10 +8,10 @@ import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.User;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 
 
 /**
@@ -196,9 +196,9 @@ public class ETagRequestBuilderTest
     }
 
     @Override
-    protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+    protected boolean isExpectedResponseCode(int httpStatus)
     {
-      return null;
+      return HttpStatus.OK == httpStatus;
     }
 
     @Override

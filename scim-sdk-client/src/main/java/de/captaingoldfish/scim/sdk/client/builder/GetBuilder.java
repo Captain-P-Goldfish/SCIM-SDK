@@ -10,10 +10,6 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.common.response.GetResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
-import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -93,10 +89,9 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+  protected boolean isExpectedResponseCode(int httpStatus)
   {
-    Class<T1> type = HttpStatus.OK == httpResponseCode ? (Class<T1>)GetResponse.class : (Class<T1>)ErrorResponse.class;
-    return JsonHelper.readJsonDocument(responseBody, type);
+    return HttpStatus.OK == httpStatus;
   }
 
   /**

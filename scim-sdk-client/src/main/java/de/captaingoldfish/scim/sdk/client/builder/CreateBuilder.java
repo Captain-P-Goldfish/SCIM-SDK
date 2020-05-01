@@ -12,13 +12,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.exceptions.InvalidRequestException;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
-import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -60,7 +56,7 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  public ScimServerResponse<T> sendRequest()
+  public ServerResponse<T> sendRequest()
   {
     if (StringUtils.isBlank(getResource()))
     {
@@ -73,11 +69,9 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+  protected boolean isExpectedResponseCode(int httpStatus)
   {
-    Class<T1> type = httpResponseCode == HttpStatus.CREATED ? (Class<T1>)CreateResponse.class
-      : (Class<T1>)ErrorResponse.class;
-    return JsonHelper.readJsonDocument(responseBody, type);
+    return HttpStatus.CREATED == httpStatus;
   }
 
   /**

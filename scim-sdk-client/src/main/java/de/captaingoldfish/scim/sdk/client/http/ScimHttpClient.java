@@ -83,7 +83,7 @@ public class ScimHttpClient implements Closeable
     Arrays.stream(response.getAllHeaders()).forEach(header -> headers.put(header.getName(), header.getValue()));
     return HttpResponse.builder()
                        .httpStatusCode(response.getStatusLine().getStatusCode())
-                       .responseBody(response.getEntity() == null ? ""
+                       .responseBody(response.getEntity() == null ? null
                          : IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8))
                        .responseHeaders(headers)
                        .build();

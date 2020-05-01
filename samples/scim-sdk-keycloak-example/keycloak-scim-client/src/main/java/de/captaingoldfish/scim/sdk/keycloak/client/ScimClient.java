@@ -14,8 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.ScimRequestBuilder;
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
@@ -57,12 +56,12 @@ public class ScimClient
   private static void createUsers(ScimRequestBuilder scimRequestBuilder)
   {
     getUserList().forEach(user -> {
-      ScimServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                            .setResource(user)
-                                                            .sendRequest();
-      if (response.getResponseType().equals(ResponseType.CREATE))
+      ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                        .setResource(user)
+                                                        .sendRequest();
+      if (response.isSuccess())
       {
-        User createdUser = response.getResource().get();
+        User createdUser = response.getResource();
         log.info("created user with id: {} and name: {}", createdUser.getId().get(), createdUser.getUserName().get());
       }
       else
@@ -77,17 +76,18 @@ public class ScimClient
    */
   private static void deleteAllUsers(ScimRequestBuilder scimRequestBuilder)
   {
-    ScimServerResponse<User> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS).get().sendRequest();
-    ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
+    ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
+                                                                    .get()
+                                                                    .sendRequest();
+    ListResponse<User> listResponse = response.getResource();
     while (listResponse.getTotalResults() > 0)
     {
       listResponse.getListedResources().stream().parallel().forEach(user -> {
         final String username = StringUtils.lowerCase(user.get(AttributeNames.RFC7643.USER_NAME).textValue());
-        ScimServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class, EndpointPaths.USERS)
-                                                                    .setId(user.get(AttributeNames.RFC7643.ID)
-                                                                               .textValue())
-                                                                    .sendRequest();
-        if (deleteResponse.getResponseType().equals(ResponseType.DELETE))
+        ServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class, EndpointPaths.USERS)
+                                                                .setId(user.get(AttributeNames.RFC7643.ID).textValue())
+                                                                .sendRequest();
+        if (deleteResponse.isSuccess())
         {
           log.trace("user with name {} was successfully deleted", username);
         }
@@ -101,7 +101,7 @@ public class ScimClient
                                    .build()
                                    .get()
                                    .sendRequest();
-      listResponse = (ListResponse)response.getScimResponse().get();
+      listResponse = response.getResource();
     }
   }
 
@@ -137,10 +137,10 @@ public class ScimClient
   {
     List<Group> groups = getGroupsList(scimRequestBuilder);
     groups.stream().parallel().forEach(group -> {
-      ScimServerResponse<Group> response = scimRequestBuilder.create(Group.class, EndpointPaths.GROUPS)
-                                                             .setResource(group)
-                                                             .sendRequest();
-      if (response.getResponseType().equals(ResponseType.CREATE))
+      ServerResponse<Group> response = scimRequestBuilder.create(Group.class, EndpointPaths.GROUPS)
+                                                         .setResource(group)
+                                                         .sendRequest();
+      if (response.isSuccess())
       {
         log.trace("group with name {} was successfully created", group.getDisplayName().get());
       }
@@ -189,12 +189,12 @@ public class ScimClient
   private static List<User> getRandomUsers(ScimRequestBuilder scimRequestBuilder)
   {
     Random random = new Random();
-    ScimServerResponse<User> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
-                                                          .startIndex(random.nextInt(4500))
-                                                          .count(10)
-                                                          .get()
-                                                          .sendRequest();
-    ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
+    ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
+                                                                    .startIndex(random.nextInt(4500))
+                                                                    .count(10)
+                                                                    .get()
+                                                                    .sendRequest();
+    ListResponse<User> listResponse = response.getResource();
     return listResponse.getListedResources()
                        .stream()
                        .map(user -> JsonHelper.copyResourceToObject(user, User.class))

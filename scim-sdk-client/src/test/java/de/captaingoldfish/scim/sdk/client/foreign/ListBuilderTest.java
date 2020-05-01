@@ -6,8 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.ScimRequestBuilder;
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -48,10 +47,12 @@ public class ListBuilderTest extends HttpServerMockup
   @Test
   public void testListRequest()
   {
-    ScimServerResponse<User> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS).get().sendRequest();
+    ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
+                                                                    .get()
+                                                                    .sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
-    Assertions.assertEquals(ResponseType.LIST, response.getResponseType());
-    Assertions.assertTrue(response.getScimResponse().isPresent());
-    Assertions.assertEquals(ListResponse.class, response.getScimResponse().get().getClass());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 }

@@ -14,9 +14,8 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -313,12 +312,13 @@ public class ListBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    ScimServerResponse<User> response = listBuilder.get().sendRequest();
+    ServerResponse<ListResponse<User>> response = listBuilder.get().sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
-    Assertions.assertEquals(ResponseType.LIST, response.getResponseType());
-    Assertions.assertTrue(response.getScimResponse().isPresent());
-    Assertions.assertEquals(ListResponse.class, response.getScimResponse().get().getClass());
-    ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+
+    ListResponse<User> listResponse = response.getResource();
     Assertions.assertEquals(count, listResponse.getItemsPerPage());
     Assertions.assertEquals(startIndex, listResponse.getStartIndex());
     Assertions.assertEquals(count, listResponse.getListedResources().size());
@@ -361,12 +361,12 @@ public class ListBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    ScimServerResponse<User> response = listBuilder.post().sendRequest();
+    ServerResponse<ListResponse<User>> response = listBuilder.post().sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
-    Assertions.assertEquals(ResponseType.LIST, response.getResponseType());
-    Assertions.assertTrue(response.getScimResponse().isPresent());
-    Assertions.assertEquals(ListResponse.class, response.getScimResponse().get().getClass());
-    ListResponse<User> listResponse = (ListResponse)response.getScimResponse().get();
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    ListResponse<User> listResponse = response.getResource();
     Assertions.assertEquals(count, listResponse.getItemsPerPage());
     Assertions.assertEquals(startIndex, listResponse.getStartIndex());
     Assertions.assertEquals(count, listResponse.getListedResources().size());

@@ -10,10 +10,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
-import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -24,7 +23,7 @@ import lombok.Getter;
  * <br>
  * an abstract request builder implementation
  */
-public abstract class RequestBuilder<T extends ResourceNode>
+public abstract class RequestBuilder<T extends ScimObjectNode>
 {
 
   /**
@@ -98,10 +97,18 @@ public abstract class RequestBuilder<T extends ResourceNode>
    * @return the response from the given request. A response must not be returned in any case from the service
    *         provider so the returned type is still optional
    */
-  public ScimServerResponse<T> sendRequest()
+  public ServerResponse<T> sendRequest()
   {
     return this.sendRequest(Collections.emptyMap());
   }
+
+  /**
+   * tells this abstract class if the http status from the server is the expected success status
+   *
+   * @param httpStatus the http status from the server
+   * @return true if the response status shows success
+   */
+  protected abstract boolean isExpectedResponseCode(int httpStatus);
 
   /**
    * sends the defined request to the service provider
@@ -110,7 +117,7 @@ public abstract class RequestBuilder<T extends ResourceNode>
    * @return the response from the given request. A response must not be returned in any case from the service
    *         provider so the returned type is still optional
    */
-  public ScimServerResponse<T> sendRequest(Map<String, String[]> httpHeaders)
+  public ServerResponse<T> sendRequest(Map<String, String[]> httpHeaders)
   {
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
@@ -128,33 +135,7 @@ public abstract class RequestBuilder<T extends ResourceNode>
       request.setHeader(HttpHeader.AUHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
-    return handleResponse(response);
-  }
-
-  /**
-   * builds the scim response from the response body
-   *
-   * @param httpResponseCode the response code of the response
-   * @param responseBody the response body of the server
-   * @return the response object
-   */
-  protected abstract <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody);
-
-  /**
-   * translates the response into a {@link ScimResponse}
-   *
-   * @param response the response from the scim server
-   * @return the parsed scim response object
-   */
-  private ScimServerResponse<T> handleResponse(HttpResponse response)
-  {
-    ScimResponse scimResponse = buildScimResponse(response.getHttpStatusCode(), response.getResponseBody());
-    response.getResponseHeaders().forEach(scimResponse.getHttpHeaders()::put);
-    return ScimServerResponse.<T> builder()
-                             .scimResponse(scimResponse)
-                             .responseEntityType(responseEntityType)
-                             .responseStatus(response.getHttpStatusCode())
-                             .build();
+    return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType);
   }
 
   /**

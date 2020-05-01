@@ -14,8 +14,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -24,10 +22,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
-import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -218,7 +213,7 @@ public class ListBuilder<T extends ResourceNode>
   /**
    * a request builder that builds the list-request as a http-get request
    */
-  public static class GetRequestBuilder<T extends ResourceNode> extends RequestBuilder<T>
+  public static class GetRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
   {
 
     /**
@@ -228,8 +223,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public GetRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig, listBuilder.responseEntityType,
-            listBuilder.scimHttpClient);
+      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig,
+            (Class<ListResponse<T>>)new ListResponse<T>().getClass(), listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
@@ -237,23 +232,9 @@ public class ListBuilder<T extends ResourceNode>
      * {@inheritDoc}
      */
     @Override
-    protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+    protected boolean isExpectedResponseCode(int httpStatus)
     {
-      Class<T1> type = httpResponseCode == HttpStatus.OK ? (Class<T1>)ListResponse.class
-        : (Class<T1>)ErrorResponse.class;
-      if (ListResponse.class.equals(type))
-      {
-        ListResponse<T> listResponse = new ListResponse<>(getResponseEntityType());
-        JsonNode jsonNode = JsonHelper.readJsonDocument(responseBody);
-        jsonNode.fields().forEachRemaining(stringJsonNodeEntry -> {
-          listResponse.set(stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
-        });
-        return (T1)listResponse;
-      }
-      else
-      {
-        return JsonHelper.readJsonDocument(responseBody, type);
-      }
+      return HttpStatus.OK == httpStatus;
     }
 
     /**
@@ -286,7 +267,7 @@ public class ListBuilder<T extends ResourceNode>
   /**
    * a request builder that builds the list-request as a http-post request
    */
-  public static class PostRequestBuilder<T extends ResourceNode> extends RequestBuilder<T>
+  public static class PostRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
   {
 
     /**
@@ -296,8 +277,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public PostRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig, listBuilder.responseEntityType,
-            listBuilder.scimHttpClient);
+      super(listBuilder.baseUrl, listBuilder.endpoint, listBuilder.scimClientConfig,
+            (Class<ListResponse<T>>)new ListResponse<T>().getClass(), listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
@@ -305,23 +286,9 @@ public class ListBuilder<T extends ResourceNode>
      * {@inheritDoc}
      */
     @Override
-    protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+    protected boolean isExpectedResponseCode(int httpStatus)
     {
-      Class<T1> type = httpResponseCode == HttpStatus.OK ? (Class<T1>)ListResponse.class
-        : (Class<T1>)ErrorResponse.class;
-      if (ListResponse.class.equals(type))
-      {
-        ListResponse<T> listResponse = new ListResponse<>(getResponseEntityType());
-        JsonNode jsonNode = JsonHelper.readJsonDocument(responseBody);
-        jsonNode.fields().forEachRemaining(stringJsonNodeEntry -> {
-          listResponse.set(stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
-        });
-        return (T1)listResponse;
-      }
-      else
-      {
-        return JsonHelper.readJsonDocument(responseBody, type);
-      }
+      return HttpStatus.OK == httpStatus;
     }
 
     /**

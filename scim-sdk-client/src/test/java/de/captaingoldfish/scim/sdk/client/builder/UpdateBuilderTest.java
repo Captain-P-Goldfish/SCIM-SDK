@@ -8,9 +8,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -45,17 +44,14 @@ public class UpdateBuilderTest extends HttpServerMockup
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id)
-                                                                                       .setResource(updateUser)
-                                                                                       .sendRequest();
-
-    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id)
+                                                                                   .setResource(updateUser)
+                                                                                   .sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
-    Assertions.assertTrue(response.getResource().isPresent());
-    Assertions.assertTrue(response.getResource().get().getName().isPresent());
-    Assertions.assertTrue(response.getResource().get().getName().get().getGivenName().isPresent());
-    Assertions.assertEquals("goldfish", response.getResource().get().getName().get().getGivenName().get());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -68,19 +64,19 @@ public class UpdateBuilderTest extends HttpServerMockup
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id)
-                                                                                       .setResource(updateUser)
-                                                                                       .sendRequest();
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id)
+                                                                                   .setResource(updateUser)
+                                                                                   .sendRequest();
 
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
-    Assertions.assertFalse(response.getResource().isPresent());
-    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
   }
 
   /**
-   * sets the if-match-header in the request
+   * sets the if-match-header in the request and expects a successful update
    */
   @Test
   public void testIfMatchHeader()
@@ -104,18 +100,20 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id)
-                                                                                       .setETagForIfMatch(version)
-                                                                                       .setResource(updateUser)
-                                                                                       .sendRequest();
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id)
+                                                                                   .setETagForIfMatch(version)
+                                                                                   .setResource(updateUser)
+                                                                                   .sendRequest();
     Assertions.assertTrue(wasCalled.get());
-    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
-    Assertions.assertTrue(response.getResource().isPresent());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
-   * sets the if-match-header in the request
+   * sets the if-match-header in the request and expects a successful update.
    */
   @Test
   public void testIfMatchHeader2()
@@ -139,14 +137,16 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id)
-                                                                                       .setETagForIfMatch(ETag.parseETag(version))
-                                                                                       .setResource(updateUser)
-                                                                                       .sendRequest();
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id)
+                                                                                   .setETagForIfMatch(ETag.parseETag(version))
+                                                                                   .setResource(updateUser)
+                                                                                   .sendRequest();
     Assertions.assertTrue(wasCalled.get());
-    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
-    Assertions.assertTrue(response.getResource().isPresent());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -174,14 +174,16 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id)
-                                                                                       .setETagForIfNoneMatch(version)
-                                                                                       .setResource(updateUser)
-                                                                                       .sendRequest();
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id)
+                                                                                   .setETagForIfNoneMatch(version)
+                                                                                   .setResource(updateUser)
+                                                                                   .sendRequest();
     Assertions.assertTrue(wasCalled.get());
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -209,13 +211,15 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id)
-                                                                                       .setETagForIfNoneMatch(ETag.parseETag(version))
-                                                                                       .setResource(updateUser)
-                                                                                       .sendRequest();
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id)
+                                                                                   .setETagForIfNoneMatch(ETag.parseETag(version))
+                                                                                   .setResource(updateUser)
+                                                                                   .sendRequest();
     Assertions.assertTrue(wasCalled.get());
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 }

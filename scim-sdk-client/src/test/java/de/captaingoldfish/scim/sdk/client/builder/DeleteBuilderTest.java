@@ -10,9 +10,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -21,7 +20,6 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 
 
 /**
@@ -86,11 +84,12 @@ public class DeleteBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setId(id).sendRequest();
-    Assertions.assertFalse(response.getResource().isPresent());
-    Assertions.assertEquals(ResponseType.DELETE, response.getResponseType());
+    ServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(id).sendRequest();
     Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
 
@@ -102,14 +101,13 @@ public class DeleteBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient)
-                                                                                       .setId(UUID.randomUUID()
-                                                                                                  .toString())
-                                                                                       .sendRequest();
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
+    ServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setId(UUID.randomUUID().toString())
+                                                                                   .sendRequest();
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
+    Assertions.assertNotNull(response.getResponseBody());
   }
 
   /**
@@ -226,12 +224,15 @@ public class DeleteBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setETagForIfNoneMatch(version)
-                                                                                       .setId(id)
-                                                                                       .sendRequest();
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    ServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setETagForIfNoneMatch(version)
+                                                                                   .setId(id)
+                                                                                   .sendRequest();
+    Assertions.assertFalse(response.isSuccess());
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getResponseBody());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -250,12 +251,15 @@ public class DeleteBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ScimServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
-                                                            User.class, scimHttpClient).setETagForIfMatch(version + "1")
-                                                                                       .setId(id)
-                                                                                       .sendRequest();
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
+    ServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, scimClientConfig,
+                                                        User.class, scimHttpClient).setETagForIfMatch(version + "1")
+                                                                                   .setId(id)
+                                                                                   .sendRequest();
+    Assertions.assertFalse(response.isSuccess());
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getResponseBody());
+    Assertions.assertNotNull(response.getErrorResponse());
   }
 
 
