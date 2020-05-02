@@ -5,6 +5,7 @@ import de.captaingoldfish.scim.sdk.client.builder.CreateBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.DeleteBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.GetBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.ListBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.PatchBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -106,6 +107,16 @@ public class ScimRequestBuilder implements AutoCloseable
   public BulkBuilder bulk()
   {
     return new BulkBuilder(baseUrl, scimClientConfig, scimHttpClient);
+  }
+
+  /**
+   * builds a patch request builder
+   *
+   * @return a patch-request builder
+   */
+  public <T extends ResourceNode> PatchBuilder<T> patch(Class<T> type, String endpoint, String id)
+  {
+    return new PatchBuilder<>(baseUrl, endpoint, id, type, scimHttpClient);
   }
 
   /**

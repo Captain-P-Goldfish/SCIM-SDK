@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,6 +62,7 @@ public class ServerResponse<T extends ScimObjectNode>
   /**
    * the expected response type
    */
+  @Getter(AccessLevel.PROTECTED)
   private Class<T> type;
 
   /**
