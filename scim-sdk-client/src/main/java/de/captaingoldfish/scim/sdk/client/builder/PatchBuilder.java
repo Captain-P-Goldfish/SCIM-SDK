@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
@@ -40,7 +41,8 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
                       Class<T> responseEntityType,
                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint + "/" + resourceId, responseEntityType, scimHttpClient);
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
+          scimHttpClient);
     operations = new ArrayList<>();
   }
 

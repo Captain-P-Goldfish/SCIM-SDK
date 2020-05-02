@@ -24,27 +24,14 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
-  /**
-   * the resource id that should be updated
-   */
-  private String id;
-
-  public UpdateBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  public UpdateBuilder(String baseUrl,
+                       String endpoint,
+                       String resourceId,
+                       Class<T> responseEntityType,
+                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
-  }
-
-  /**
-   * @param id sets the resource id of the resource that should be updated on the server
-   */
-  public UpdateBuilder<T> setId(String id)
-  {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for update-requests");
-    }
-    this.id = id;
-    return this;
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
+          scimHttpClient);
   }
 
   /**
@@ -113,11 +100,7 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for get-requests");
-    }
-    HttpPut httpPut = new HttpPut(getBaseUrl() + getEndpoint() + "/" + id);
+    HttpPut httpPut = new HttpPut(getBaseUrl() + getEndpoint());
     if (StringUtils.isBlank(getResource()))
     {
       throw new IllegalArgumentException("resource for delete request must not be empty");

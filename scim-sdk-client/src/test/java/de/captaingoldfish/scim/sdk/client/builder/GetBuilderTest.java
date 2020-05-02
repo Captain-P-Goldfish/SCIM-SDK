@@ -6,8 +6,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
@@ -34,45 +32,6 @@ public class GetBuilderTest extends HttpServerMockup
    * verifies simply that the request is setup correctly for simple cases
    */
   @Test
-  public void testGetRequestWithMissingId()
-  {
-    ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    try
-    {
-      new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient).sendRequest();
-      Assertions.fail("this point must not be reached");
-    }
-    catch (IllegalStateException ex)
-    {
-      Assertions.assertEquals("id must not be blank for get-requests", ex.getMessage());
-    }
-  }
-
-  /**
-   * verifies simply that the request is setup correctly for simple cases
-   */
-  @ParameterizedTest
-  @ValueSource(strings = {"", " "})
-  public void testSetEmptyId(String id)
-  {
-    ScimClientConfig scimClientConfig = new ScimClientConfig();
-    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    try
-    {
-      new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient).setId(id);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (IllegalStateException ex)
-    {
-      Assertions.assertEquals("id must not be blank for get-requests", ex.getMessage());
-    }
-  }
-
-  /**
-   * verifies simply that the request is setup correctly for simple cases
-   */
-  @Test
   public void testSimpleGetRequestSuccess()
   {
     final String id = UUID.randomUUID().toString();
@@ -83,8 +42,8 @@ public class GetBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                                                     scimHttpClient).setId(id).sendRequest();
+    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                                     scimHttpClient).sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
@@ -99,8 +58,8 @@ public class GetBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                                                     scimHttpClient).setId(UUID.randomUUID().toString()).sendRequest();
+    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, UUID.randomUUID().toString(),
+                                                     User.class, scimHttpClient).sendRequest();
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
@@ -125,11 +84,10 @@ public class GetBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient)
-                                                                                     .setId(UUID.randomUUID()
-                                                                                                .toString())
-                                                                                     .setETagForIfMatch(version)
-                                                                                     .sendRequest();
+    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, UUID.randomUUID().toString(), User.class, scimHttpClient)
+
+                                                                                                                   .setETagForIfMatch(version)
+                                                                                                                   .sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -151,10 +109,8 @@ public class GetBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                     scimHttpClient).setId(UUID.randomUUID().toString())
-                                    .setETagForIfMatch(ETag.parseETag(version))
-                                    .sendRequest();
+    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, UUID.randomUUID().toString(), User.class,
+                     scimHttpClient).setETagForIfMatch(ETag.parseETag(version)).sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -176,11 +132,8 @@ public class GetBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient)
-                                                                                     .setId(UUID.randomUUID()
-                                                                                                .toString())
-                                                                                     .setETagForIfNoneMatch(version)
-                                                                                     .sendRequest();
+    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, UUID.randomUUID().toString(), User.class,
+                     scimHttpClient).setETagForIfNoneMatch(version).sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -202,10 +155,8 @@ public class GetBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                     scimHttpClient).setId(UUID.randomUUID().toString())
-                                    .setETagForIfNoneMatch(ETag.parseETag(version))
-                                    .sendRequest();
+    new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, UUID.randomUUID().toString(), User.class,
+                     scimHttpClient).setETagForIfNoneMatch(ETag.parseETag(version)).sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -225,10 +176,8 @@ public class GetBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                                                     scimHttpClient).setETagForIfNoneMatch(version)
-                                                                    .setId(id)
-                                                                    .sendRequest();
+    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                                     scimHttpClient).setETagForIfNoneMatch(version).sendRequest();
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
@@ -251,10 +200,8 @@ public class GetBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                                                     scimHttpClient).setETagForIfMatch(version + "1")
-                                                                    .setId(id)
-                                                                    .sendRequest();
+    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                                     scimHttpClient).setETagForIfMatch(version + "1").sendRequest();
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());

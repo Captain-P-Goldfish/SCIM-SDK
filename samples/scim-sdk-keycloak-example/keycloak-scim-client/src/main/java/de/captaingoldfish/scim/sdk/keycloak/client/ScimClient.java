@@ -84,8 +84,9 @@ public class ScimClient
     {
       listResponse.getListedResources().stream().parallel().forEach(user -> {
         final String username = StringUtils.lowerCase(user.get(AttributeNames.RFC7643.USER_NAME).textValue());
-        ServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class, EndpointPaths.USERS)
-                                                                .setId(user.get(AttributeNames.RFC7643.ID).textValue())
+        ServerResponse<User> deleteResponse = scimRequestBuilder.delete(User.class,
+                                                                        EndpointPaths.USERS,
+                                                                        user.get(AttributeNames.RFC7643.ID).textValue())
                                                                 .sendRequest();
         if (deleteResponse.isSuccess())
         {

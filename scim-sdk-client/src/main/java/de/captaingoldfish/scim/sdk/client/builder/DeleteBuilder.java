@@ -19,29 +19,15 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
-  /**
-   * the resource id that should be returned
-   */
-  private String id;
 
-
-  public DeleteBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  public DeleteBuilder(String baseUrl,
+                       String endpoint,
+                       String resourceId,
+                       Class<T> responseEntityType,
+                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
-  }
-
-
-  /**
-   * @param id sets the resource id of the resource that should be delete from the server
-   */
-  public DeleteBuilder<T> setId(String id)
-  {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for delete-requests");
-    }
-    this.id = id;
-    return this;
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
+          scimHttpClient);
   }
 
   /**
@@ -95,11 +81,7 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for delete-requests");
-    }
-    HttpDelete httpDelete = new HttpDelete(getBaseUrl() + getEndpoint() + "/" + id);
+    HttpDelete httpDelete = new HttpDelete(getBaseUrl() + getEndpoint());
     if (isUseIfMatch())
     {
       httpDelete.setHeader(HttpHeader.IF_MATCH_HEADER, getVersion().toString());
