@@ -539,6 +539,7 @@
                         </executions>
                         <configuration>
                             <additionalOptions>-Xdoclint:none</additionalOptions>
+                            <source>8</source>
                         </configuration>
                     </plugin>
 
