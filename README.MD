@@ -27,6 +27,8 @@ be understood by other libraries in other languages that implement the SCIM stan
 
 for a documentation take a look into the github wiki https://github.com/Captain-P-Goldfish/SCIM/wiki
 
+You will find a pretty detailed explanation on how to use the server implementation here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-server-implementation
+
 ---
 **This project requires JDK 8 or higher**
 
