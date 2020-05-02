@@ -99,7 +99,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * @return the resource that will be sent to the server
    */
   @Override
-  protected String getResource()
+  public final String getResource()
   {
     return new PatchOpRequest(operations).toString();
   }
