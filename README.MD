@@ -68,8 +68,8 @@ The client implementation supports the following SCIM requests
 - [x] update
 - [x] delete
 - [x] bulk
-- [ ] patch
-- [ ] patch on bulk support
+- [x] patch
+- [ ] patch on bulk
 
 there is also direct native support for easy use of basic authentication and X509 client authentication. All other
 authentication types must be implemented manually.
