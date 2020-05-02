@@ -135,6 +135,14 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
                         scimHttpClient.getScimClientConfig().getBasicAuth().getAuthorizationHeaderValue());
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
+    return toResponse(response);
+  }
+
+  /**
+   * moved into its own method to override the returned class in the list-builder that has a sub-generic type
+   */
+  protected ServerResponse<T> toResponse(HttpResponse response)
+  {
     return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType,
                                 isResponseParseable());
   }

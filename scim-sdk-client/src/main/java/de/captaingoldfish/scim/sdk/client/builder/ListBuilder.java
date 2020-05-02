@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
@@ -18,6 +19,7 @@ import org.apache.http.entity.StringEntity;
 
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -25,7 +27,9 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -273,6 +277,16 @@ public class ListBuilder<T extends ResourceNode>
         return false;
       };
     }
+
+    /**
+     * uses a custom response type that overrides the translation of the returned resource
+     */
+    @Override
+    protected ServerResponse<ListResponse<T>> toResponse(HttpResponse response)
+    {
+      return new ListServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()),
+                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable());
+    }
   }
 
   /**
@@ -335,6 +349,62 @@ public class ListBuilder<T extends ResourceNode>
         }
         return false;
       };
+    }
+
+    /**
+     * uses a custom response type that overrides the translation of the returned resource
+     */
+    @Override
+    protected ServerResponse<ListResponse<T>> toResponse(HttpResponse response)
+    {
+      return new ListServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()),
+                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable());
+    }
+  }
+
+  /**
+   * overrides the translation of the returned resource from the server
+   */
+  public static class ListServerResponse<T extends ResourceNode> extends ServerResponse<ListResponse<T>>
+  {
+
+    /**
+     * the generic type of the resources within the list response
+     */
+    private Class<T> responseEntityType;
+
+    public ListServerResponse(HttpResponse httpResponse,
+                              boolean expectedResponseCode,
+                              Class<ListResponse<T>> type,
+                              Class<T> responseEntityType,
+                              Function<HttpResponse, Boolean> isResponseParseable)
+    {
+      super(httpResponse, expectedResponseCode, type, isResponseParseable);
+      this.responseEntityType = responseEntityType;
+    }
+
+    /**
+     * translates the response body into a list response and parses then all json nodes within the resource into
+     * objects of the given resource node type
+     *
+     * @param responseType the type of the node which might be of type
+     *          {@link de.captaingoldfish.scim.sdk.common.resources.User},
+     *          {@link de.captaingoldfish.scim.sdk.common.resources.Group}
+     * @return a list response with resources of type R
+     */
+    @Override
+    public <R extends ScimObjectNode> R getResource(Class<R> responseType)
+    {
+      ListResponse<ScimObjectNode> listResponse = JsonHelper.readJsonDocument(getResponseBody(), ListResponse.class);
+      List<T> typedResources = listResponse.getListedResources().parallelStream().map(scimObjectNode -> {
+        return JsonHelper.readJsonDocument(scimObjectNode.toString(), responseEntityType);
+      }).collect(Collectors.toList());
+      ListResponse typedListResponse = new ListResponse<>(responseEntityType);
+      typedListResponse.setItemsPerPage(listResponse.getItemsPerPage());
+      typedListResponse.setStartIndex(listResponse.getStartIndex());
+      typedListResponse.setTotalResults(listResponse.getTotalResults());
+      typedListResponse.setListedResources(typedResources);
+      return (R)typedListResponse;
     }
   }
 

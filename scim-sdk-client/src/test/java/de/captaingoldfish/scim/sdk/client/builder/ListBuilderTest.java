@@ -366,6 +366,8 @@ public class ListBuilderTest extends HttpServerMockup
     Assertions.assertEquals(count, listResponse.getListedResources().size());
 
     Assertions.assertTrue(wasCalled.get());
+
+    Assertions.assertDoesNotThrow(() -> response.getResource().getListedResources().get(0));
   }
 
   /**
