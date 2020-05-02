@@ -2,7 +2,9 @@ package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
@@ -216,7 +218,15 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
      */
     public ServerResponse<BulkResponse> sendRequest()
     {
-      return next().sendRequest();
+      return sendRequest(Collections.emptyMap());
+    }
+
+    /**
+     * builds the operation and directly sends the request to the server
+     */
+    public ServerResponse<BulkResponse> sendRequest(Map<String, String[]> httpHeaders)
+    {
+      return next().sendRequest(httpHeaders);
     }
   }
 }
