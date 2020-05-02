@@ -10,9 +10,22 @@ This is an open source implementation of the SCIM (System for Cross-domain Ident
 
 A simple description of SCIM can be found here http://www.simplecloud.info/
 
+### Why and when you should use this library
+
+The SCIM specification is well suited for designing resource management servers where the resources need to be
+regularly updated by other remote applications.
+ 
+**For example:**
+
+If you create an application that uses a database configuration that might be updated by different clients or even by
+just a single remote application this library is what you are looking for. It uses a standard protocol that should also
+be understood by other libraries in other languages that implement the SCIM standard.
+
+**This lib supports the full feature set of both client and server side of the SCIM specification.** 
+
 ### Documentation
 
-for a documentation take a look into the [wiki](https://github.com/Captain-P-Goldfish/SCIM/wiki)
+for a documentation take a look into the github wiki https://github.com/Captain-P-Goldfish/SCIM/wiki
 
 ---
 **This project requires JDK 8 or higher**
@@ -69,7 +82,6 @@ The client implementation supports the following SCIM requests
 - [x] delete
 - [x] bulk
 - [x] patch
-- [ ] patch on bulk
 
 there is also direct native support for easy use of basic authentication and X509 client authentication. All other
 authentication types must be implemented manually.
