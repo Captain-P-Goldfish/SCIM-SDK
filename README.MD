@@ -29,6 +29,8 @@ for a documentation take a look into the github wiki https://github.com/Captain-
 
 You will find a pretty detailed explanation on how to use the server implementation here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-server-implementation
 
+And a pretty detailed explanation on how to use the client can be found here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-client-implementation
+
 ---
 **This project requires JDK 8 or higher**
 
