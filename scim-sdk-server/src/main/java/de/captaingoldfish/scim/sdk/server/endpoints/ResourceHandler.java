@@ -34,13 +34,25 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   public ResourceHandler()
   {
-    Type type = getClass().getGenericSuperclass();
-    if (type instanceof ParameterizedType)
+    Class clazz = getClass();
+    Type type = clazz.getGenericSuperclass();
+    boolean isParametrizedType;
+    do
     {
-      ParameterizedType parameterizedType = (ParameterizedType)type;
-      this.type = (Class<T>)parameterizedType.getActualTypeArguments()[0];
+      isParametrizedType = type instanceof ParameterizedType;
+      if (isParametrizedType)
+      {
+        ParameterizedType parameterizedType = (ParameterizedType)type;
+        this.type = (Class<T>)parameterizedType.getActualTypeArguments()[0];
+      }
+      else
+      {
+        clazz = clazz.getSuperclass();
+        type = clazz.getGenericSuperclass();
+      }
     }
-    else
+    while (!isParametrizedType && !ResourceHandler.class.getName().equals(clazz.getName()));
+    if (this.type == null)
     {
       throw new InternalServerException("ResourceHandler implementations must be generified!", null, null);
     }
