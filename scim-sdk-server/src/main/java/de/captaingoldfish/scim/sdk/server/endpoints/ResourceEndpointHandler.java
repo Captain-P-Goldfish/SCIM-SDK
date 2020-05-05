@@ -53,6 +53,7 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -299,9 +300,13 @@ class ResourceEndpointHandler
       String resourceId = resourceNode.getId().orElse(null);
       if (resourceId != null && !resourceId.equals(id))
       {
-        throw new InternalServerException("the id of the returned resource does not match the "
-                                          + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
-                                          null, null);
+        ResourceTypeFeatures resourceTypeFeatures = resourceType.getFeatures();
+        if (resourceTypeFeatures != null && !resourceTypeFeatures.isSingletonEndpoint())
+        {
+          throw new InternalServerException("the id of the returned resource does not match the "
+                                            + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId
+                                            + "'", null, null);
+        }
       }
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
       resourceNode.getMeta().ifPresent(meta -> {
