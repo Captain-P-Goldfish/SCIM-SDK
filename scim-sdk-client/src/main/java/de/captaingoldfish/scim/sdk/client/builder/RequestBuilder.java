@@ -1,7 +1,9 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import org.apache.http.client.methods.HttpUriRequest;
@@ -82,17 +84,6 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   }
 
   /**
-   * sends the defined request to the service provider
-   *
-   * @return the response from the given request. A response must not be returned in any case from the service
-   *         provider so the returned type is still optional
-   */
-  public ServerResponse<T> sendRequest()
-  {
-    return this.sendRequest(Collections.emptyMap());
-  }
-
-  /**
    * tells this abstract class if the http status from the server is the expected success status
    *
    * @param httpStatus the http status from the server
@@ -112,23 +103,26 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   /**
    * sends the defined request to the service provider
    *
+   * @return the response from the given request. A response must not be returned in any case from the service
+   *         provider so the returned type is still optional
+   */
+  public ServerResponse<T> sendRequest()
+  {
+    return this.sendRequestWithMultiHeaders(Collections.emptyMap());
+  }
+
+  /**
+   * sends the defined request to the service provider
+   *
    * @param httpHeaders allows the user to add additional http headers to the request
    * @return the response from the given request. A response must not be returned in any case from the service
    *         provider so the returned type is still optional
    */
-  public ServerResponse<T> sendRequest(Map<String, String[]> httpHeaders)
+  public ServerResponse<T> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
   {
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
-    if (httpHeaders != null)
-    {
-      httpHeaders.forEach((key, values) -> {
-        for ( String value : values )
-        {
-          request.addHeader(key, value);
-        }
-      });
-    }
+    addHeaderToRequest(scimHttpClient.getScimClientConfig().getHttpHeaders(), httpHeaders, request);
     if (scimHttpClient.getScimClientConfig().getBasicAuth() != null)
     {
       request.setHeader(HttpHeader.AUHORIZATION,
@@ -136,6 +130,50 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
     return toResponse(response);
+  }
+
+  /**
+   * adds the http headers to the current request
+   *
+   * @param defaultHeaders the default http headers from the
+   *          {@link de.captaingoldfish.scim.sdk.client.ScimClientConfig}. these headers will be overridden by
+   *          the map from {@link #sendRequest(Map)} if duplicate keys are present
+   * @param preferredHeaders the http headers that have been added to the {@link #sendRequest(Map)} method. This
+   *          map takes precedence for the default headers set in the
+   *          {@link de.captaingoldfish.scim.sdk.client.ScimClientConfig}
+   * @param request the request object to which these http headers will be added
+   */
+  protected void addHeaderToRequest(Map<String, String[]> defaultHeaders,
+                                    Map<String, String[]> preferredHeaders,
+                                    HttpUriRequest request)
+  {
+    Consumer<Map<String, String[]>> addHeaders = headerMap -> {
+      if (headerMap == null)
+      {
+        return;
+      }
+      headerMap.forEach((key, values) -> {
+        for ( String value : values )
+        {
+          request.setHeader(key, value);
+        }
+      });
+    };
+    addHeaders.accept(defaultHeaders);
+    addHeaders.accept(preferredHeaders);
+  }
+
+  /**
+   * sends the defined request to the service provider
+   *
+   * @return the response from the given request. A response must not be returned in any case from the service
+   *         provider so the returned type is still optional
+   */
+  public ServerResponse<T> sendRequest(Map<String, String> headers)
+  {
+    Map<String, String[]> multiHeader = new HashMap<>();
+    headers.forEach((key, value) -> multiHeader.put(key, new String[]{value}));
+    return this.sendRequestWithMultiHeaders(multiHeader);
   }
 
   /**

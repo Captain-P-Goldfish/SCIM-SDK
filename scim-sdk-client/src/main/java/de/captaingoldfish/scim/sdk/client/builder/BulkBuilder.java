@@ -224,9 +224,17 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     /**
      * builds the operation and directly sends the request to the server
      */
-    public ServerResponse<BulkResponse> sendRequest(Map<String, String[]> httpHeaders)
+    public ServerResponse<BulkResponse> sendRequest(Map<String, String> httpHeaders)
     {
       return next().sendRequest(httpHeaders);
+    }
+
+    /**
+     * builds the operation and directly sends the request to the server
+     */
+    public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
+    {
+      return next().sendRequestWithMultiHeaders(httpHeaders);
     }
   }
 }

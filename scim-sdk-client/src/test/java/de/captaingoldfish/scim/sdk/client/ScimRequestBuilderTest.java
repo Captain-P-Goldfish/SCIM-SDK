@@ -237,7 +237,9 @@ public class ScimRequestBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    scimRequestBuilder.create(User.class, EndpointPaths.USERS).setResource(user).sendRequest(httpHeaders);
+    scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                      .setResource(user)
+                      .sendRequestWithMultiHeaders(httpHeaders);
     Assertions.assertTrue(wasCalled.get());
   }
 }

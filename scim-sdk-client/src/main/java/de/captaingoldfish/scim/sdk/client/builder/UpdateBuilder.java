@@ -103,7 +103,7 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     HttpPut httpPut = new HttpPut(getBaseUrl() + getEndpoint());
     if (StringUtils.isBlank(getResource()))
     {
-      throw new IllegalArgumentException("resource for delete request must not be empty");
+      throw new IllegalArgumentException("resource for update request must not be empty");
     }
     StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
     httpPut.setEntity(stringEntity);
