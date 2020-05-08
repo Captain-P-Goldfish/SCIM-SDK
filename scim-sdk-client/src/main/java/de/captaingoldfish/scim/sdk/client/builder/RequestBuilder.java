@@ -153,9 +153,10 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
         return;
       }
       headerMap.forEach((key, values) -> {
+        request.removeHeaders(key);
         for ( String value : values )
         {
-          request.setHeader(key, value);
+          request.addHeader(key, value);
         }
       });
     };
