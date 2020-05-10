@@ -202,7 +202,6 @@
                 <version>${version.bouncy.castle}</version>
             </dependency>
 
-
             <!-- logging dependencies -->
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
@@ -356,10 +355,6 @@
         <dependency>
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.sun.activation</groupId>
-            <artifactId>javax.activation</artifactId>
         </dependency>
 
         <!-- logging dependencies -->
@@ -518,25 +513,10 @@
                 <artifactId>versions-maven-plugin</artifactId>
                 <version>${version.maven.versions.plugin}</version>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${version.maven.jar.plugin}</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <Automatic-Module-Name>${module.name}</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
-
         <profile>
             <id>release-only</id>
             <activation>

@@ -25,9 +25,6 @@
 
         <version.keycloak>8.0.1</version.keycloak>
 
-        <version.sun.javax.activation>1.2.0</version.sun.javax.activation>
-        <version.javax.activation>1.1.1</version.javax.activation>
-
         <!-- plugin versions -->
         <version.maven.ear.plugin>3.0.2</version.maven.ear.plugin>
     </properties>
@@ -51,17 +48,6 @@
                 <groupId>de.captaingoldfish</groupId>
                 <artifactId>scim-sdk-client</artifactId>
                 <version>${project.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.sun.activation</groupId>
-                <artifactId>javax.activation</artifactId>
-                <version>${version.sun.javax.activation}</version>
-            </dependency>
-            <dependency>
-                <groupId>javax.activation</groupId>
-                <artifactId>activation</artifactId>
-                <version>${version.javax.activation}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -16,6 +16,13 @@
         <module.name>de.captaingoldfish.scim.sdk.common</module.name>
     </properties>
 
+    <dependencies>
+        <dependency>
+            <groupId>com.sun.activation</groupId>
+            <artifactId>javax.activation</artifactId>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>

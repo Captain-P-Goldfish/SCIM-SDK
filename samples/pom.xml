@@ -33,6 +33,10 @@
                 <artifactId>scim-sdk-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>javax.activation</artifactId>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
