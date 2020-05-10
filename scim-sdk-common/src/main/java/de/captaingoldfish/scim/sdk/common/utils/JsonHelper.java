@@ -16,6 +16,7 @@ import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -470,7 +471,7 @@ public final class JsonHelper
   {
     try
     {
-      if (resource != null && !resource.isEmpty())
+      if (resource != null && resource.size() != 0)
       {
         try
         {
@@ -485,11 +486,17 @@ public final class JsonHelper
                                             null);
         }
       }
-      return type.getConstructor().newInstance();
+      Constructor<T> constructor = type.getConstructor();
+      return constructor.newInstance();
     }
-    catch (InstantiationException | IllegalAccessException | NoSuchMethodException | InvocationTargetException e)
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
     {
       throw new InternalServerException("could not create instance of type '" + type + "': " + e.getMessage(), e, null);
+    }
+    catch (NoSuchMethodException e)
+    {
+      throw new InternalServerException("missing no args constructor for type '" + type + "': " + e.getMessage(), e,
+                                        null);
     }
   }
 
@@ -518,6 +525,10 @@ public final class JsonHelper
    */
   public static boolean isValidJson(final String json)
   {
+    if (StringUtils.isBlank(json))
+    {
+      return false;
+    }
     try
     {
       final JsonParser parser = new ObjectMapper().getFactory().createParser(json);
@@ -530,5 +541,46 @@ public final class JsonHelper
       log.trace(ex.getMessage());
       return false;
     }
+  }
+
+  /**
+   * creates a json string from the given json node
+   */
+  /**
+   * override method for usage with wildfly 18 that still uses jackson 2.9.x
+   */
+  public static String toJsonString(JsonNode jsonNode)
+  {
+    try
+    {
+      return new ObjectMapper().writeValueAsString(jsonNode);
+    }
+    catch (JsonProcessingException e)
+    {
+      throw new InternalServerException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * override method for usage with wildfly 18 that still uses jackson 2.9.x
+   */
+  public static String toPrettyJsonString(JsonNode jsonNode)
+  {
+    try
+    {
+      return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+    }
+    catch (JsonProcessingException e)
+    {
+      throw new InternalServerException(e.getMessage(), e);
+    }
+  }
+
+  /**
+   * override method for usage with wildfly 18 that still uses jackson 2.9.x
+   */
+  public static boolean isEmpty(JsonNode jsonNode)
+  {
+    return jsonNode.size() == 0;
   }
 }

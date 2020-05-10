@@ -64,7 +64,7 @@ public class PatchResourceHandler extends AbstractPatch
    */
   public boolean addResourceValues(ObjectNode resource, JsonNode readJsonDocument, String extensionUri)
   {
-    if (readJsonDocument == null || readJsonDocument.isEmpty())
+    if (readJsonDocument == null || readJsonDocument.size() == 0)
     {
       throw new BadRequestException("no attributes present in value-resource in patch operation", null,
                                     ScimType.RFC7644.INVALID_VALUE);
@@ -119,8 +119,9 @@ public class PatchResourceHandler extends AbstractPatch
         || jsonNode.get(schemaAttribute.getName()) != null
            && Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()))
     {
-      throw new BadRequestException("attribute cannot be written it has a mutability of '"
-                                    + schemaAttribute.getMutability() + "'", null, ScimType.RFC7644.MUTABILITY);
+      throw new BadRequestException("attribute with name '" + schemaAttribute.getFullResourceName()
+                                    + "' cannot be written it has a mutability of '" + schemaAttribute.getMutability()
+                                    + "'", null, ScimType.RFC7644.MUTABILITY);
     }
   }
 

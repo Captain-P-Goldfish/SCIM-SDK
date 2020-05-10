@@ -273,7 +273,7 @@ public class ResourceTypeTest implements FileReferences
   {
     JsonNode resourceTypeResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPE_RESOURCE_TYPE_JSON);
     JsonNode resourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_TYPES_JSON);
-    JsonNode resourceTypeFilterExt = JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPES_FILTER_EXT_JSON);
+    JsonNode resourceTypeFilterExt = JsonHelper.loadJsonDocument(ClassPathReferences.RESOURCE_TYPES_FEATURE_EXT_JSON);
     schemaFactory.registerResourceSchema(resourceTypeSchema);
     schemaFactory.registerResourceSchema(resourceTypeFilterExt);
     ResourceType resourceType = new ResourceType(schemaFactory, resourceTypeResourceType);

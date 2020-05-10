@@ -4,13 +4,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpUriRequest;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 
 
 /**
@@ -21,38 +19,24 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
-  /**
-   * the resource id that should be returned
-   */
-  private String id;
 
-
-  public DeleteBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  public DeleteBuilder(String baseUrl,
+                       String endpoint,
+                       String resourceId,
+                       Class<T> responseEntityType,
+                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType);
-  }
-
-
-  /**
-   * @param resource sets the resource id of the resource that should be delete from the server
-   */
-  public DeleteBuilder<T> setId(String id)
-  {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for delete-requests");
-    }
-    this.id = id;
-    return this;
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
+          scimHttpClient);
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  public DeleteBuilder<T> setEndpoint(String endpoint)
+  protected boolean isExpectedResponseCode(int httpStatus)
   {
-    return (DeleteBuilder<T>)super.setEndpoint(endpoint);
+    return HttpStatus.NO_CONTENT == httpStatus;
   }
 
   /**
@@ -92,27 +76,12 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   }
 
   /**
-   * a delete-response if a status code of 204 is returned an error response in all other cases
-   * 
-   * @param responseCode the response code from the SCIM service
-   */
-  @Override
-  protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)
-  {
-    return HttpStatus.NO_CONTENT == responseCode ? (Class<T1>)DeleteResponse.class : (Class<T1>)ErrorResponse.class;
-  }
-
-  /**
    * @return a delete request to the desired resource
    */
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for delete-requests");
-    }
-    HttpDelete httpDelete = new HttpDelete(getBaseUrl() + getEndpoint() + "/" + id);
+    HttpDelete httpDelete = new HttpDelete(getBaseUrl() + getEndpoint());
     if (isUseIfMatch())
     {
       httpDelete.setHeader(HttpHeader.IF_MATCH_HEADER, getVersion().toString());

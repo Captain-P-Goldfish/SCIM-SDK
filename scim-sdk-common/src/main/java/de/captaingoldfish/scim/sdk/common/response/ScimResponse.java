@@ -65,7 +65,7 @@ public abstract class ScimResponse extends AbstractSchemasHolder
   {
     Response.ResponseBuilder responseBuilder = Response.status(getHttpStatus());
     httpHeaders.forEach(responseBuilder::header);
-    if (!this.isEmpty())
+    if (this.size() != 0)
     {
       responseBuilder.entity(toString());
     }

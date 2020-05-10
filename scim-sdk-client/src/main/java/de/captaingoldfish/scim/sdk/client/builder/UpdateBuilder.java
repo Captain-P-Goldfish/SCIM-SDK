@@ -9,13 +9,11 @@ import org.apache.http.entity.StringEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
-import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 
 
 /**
@@ -26,27 +24,14 @@ import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
-  /**
-   * the resource id that should be updated
-   */
-  private String id;
-
-  public UpdateBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  public UpdateBuilder(String baseUrl,
+                       String endpoint,
+                       String resourceId,
+                       Class<T> responseEntityType,
+                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType);
-  }
-
-  /**
-   * @param resource sets the resource id of the resource that should be updated on the server
-   */
-  public UpdateBuilder<T> setId(String id)
-  {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for update-requests");
-    }
-    this.id = id;
-    return this;
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
+          scimHttpClient);
   }
 
   /**
@@ -65,15 +50,6 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   public UpdateBuilder<T> setResource(JsonNode resource)
   {
     return (UpdateBuilder<T>)super.setResource(resource);
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public UpdateBuilder<T> setEndpoint(String endpoint)
-  {
-    return (UpdateBuilder<T>)super.setEndpoint(endpoint);
   }
 
   /**
@@ -113,27 +89,21 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   }
 
   /**
-   * a get-response if a status code of 200 is returned an error response in all other cases
-   *
-   * @param responseCode the response code from the SCIM service
+   * {@inheritDoc}
    */
   @Override
-  protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)
+  protected boolean isExpectedResponseCode(int httpStatus)
   {
-    return HttpStatus.OK == responseCode ? (Class<T1>)UpdateResponse.class : (Class<T1>)ErrorResponse.class;
+    return HttpStatus.OK == httpStatus;
   }
 
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for get-requests");
-    }
-    HttpPut httpPut = new HttpPut(getBaseUrl() + getEndpoint() + "/" + id);
+    HttpPut httpPut = new HttpPut(getBaseUrl() + getEndpoint());
     if (StringUtils.isBlank(getResource()))
     {
-      throw new IllegalArgumentException("resource for delete request must not be empty");
+      throw new IllegalArgumentException("resource for update request must not be empty");
     }
     StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
     httpPut.setEntity(stringEntity);

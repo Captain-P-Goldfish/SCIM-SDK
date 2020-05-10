@@ -951,10 +951,6 @@ public final class KeyStoreSupporter
 
   /**
    * convenience method to read a certificate entry from a keystore
-   *
-   * @param keyStore
-   * @param alias
-   * @return
    */
   public static Optional<Certificate> getCertificate(KeyStore keyStore, String alias)
   {

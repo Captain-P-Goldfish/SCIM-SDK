@@ -34,6 +34,11 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
     this.type = getGenericType();
   }
 
+  public ListResponse(Class<T> type)
+  {
+    this.type = type;
+  }
+
   public ListResponse(String resourceJsonRepresentation)
   {
     super(JsonHelper.readJsonDocument(resourceJsonRepresentation));

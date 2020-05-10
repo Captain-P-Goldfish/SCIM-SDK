@@ -86,10 +86,6 @@ public class ProxyHelper
    * will give back a request-config with the proxy settings based on the configuration-poperties
    *
    * @return a new config with the configured proxy or the default-config
-   * @see #getSystemProxyHost()
-   * @see #getSystemProxyPort()
-   * @see #getSystemProxyUsername()
-   * @see #getSystemProxyPassword()
    */
   public RequestConfig getProxyConfig()
   {

@@ -6,6 +6,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,7 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -114,6 +116,25 @@ class ResourceEndpointHandler
   }
 
   /**
+   * will get a resource type definition by its name
+   *
+   * @param name the name of the resource type e.g. User, Group, ServiceProviderConfig, ResourceType, Schema
+   * @return the resource type if one is registered under the given id
+   */
+  public Optional<ResourceType> getResourceTypeByName(String name)
+  {
+    return resourceTypeFactory.getResourceTypeByName(name);
+  }
+
+  /**
+   * @return the names of all resource types that have been registered
+   */
+  public Set<String> getRegisteredResourceTypeNames()
+  {
+    return resourceTypeFactory.getAllResourceTypes().stream().map(ResourceType::getName).collect(Collectors.toSet());
+  }
+
+  /**
    * checks if a resource type exists under the given endpoint and validates the request if it does by the
    * corresponding meta schema. If the validation succeeds the single json nodes expanded with its meta
    * information will be given to the developer custom implementation. The returned object for the response will
@@ -172,6 +193,7 @@ class ResourceEndpointHandler
                                                                                     null));
       ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
       createdMeta.setLocation(location);
+      createdMeta.setResourceType(resourceType.getName());
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -278,9 +300,13 @@ class ResourceEndpointHandler
       String resourceId = resourceNode.getId().orElse(null);
       if (resourceId != null && !resourceId.equals(id))
       {
-        throw new InternalServerException("the id of the returned resource does not match the "
-                                          + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
-                                          null, null);
+        ResourceTypeFeatures resourceTypeFeatures = resourceType.getFeatures();
+        if (resourceTypeFeatures != null && !resourceTypeFeatures.isSingletonEndpoint())
+        {
+          throw new InternalServerException("the id of the returned resource does not match the "
+                                            + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId
+                                            + "'", null, null);
+        }
       }
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
       resourceNode.getMeta().ifPresent(meta -> {
@@ -721,12 +747,18 @@ class ResourceEndpointHandler
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
       resourceNode = resourceHandler.updateResource(resourceNode, authorization);
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
+      Supplier<String> metaErrorMessage = () -> "Meta attribute not set on created resource";
+      Meta createdMeta = resourceNode.getMeta()
+                                     .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
+                                                                                    null));
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
+      createdMeta.setLocation(location);
+      createdMeta.setResourceType(resourceType.getName());
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
@@ -736,6 +768,7 @@ class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
+
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -915,6 +948,11 @@ class ResourceEndpointHandler
         // a security call In case that someone finds a way to manipulate the id within a patch operation
         patchedResourceNode.setId(id);
         patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, authorization);
+        meta = patchedResourceNode.getMeta().orElseThrow(() -> {
+          return new InternalServerException("The mandatory meta attribute is missing in the updated user");
+        });
+        meta.setResourceType(resourceType.getName());
+        meta.setLocation(location);
       }
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,

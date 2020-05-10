@@ -61,7 +61,7 @@ public class ResourceType extends ResourceNode
    * the resource handler implementation that is able to handle this kind of resource
    */
   @Getter(AccessLevel.PUBLIC)
-  @Setter(AccessLevel.PROTECTED)
+  @Setter(AccessLevel.PUBLIC)
   private ResourceHandler resourceHandlerImpl;
 
   protected ResourceType(SchemaFactory schemaFactory, String resourceDocument)
@@ -138,6 +138,14 @@ public class ResourceType extends ResourceNode
                  .build();
     }
     return meta;
+  }
+
+  /**
+   * @return the main schema that represents this resource type
+   */
+  public Schema getMainSchema()
+  {
+    return schemaFactory.getResourceSchema(getSchema());
   }
 
   /**
@@ -472,8 +480,8 @@ public class ResourceType extends ResourceNode
     public ResourceSchema(JsonNode resourceDocument)
     {
       Supplier<String> errorMessage = () -> missingAttrMessage(AttributeNames.RFC7643.SCHEMAS) + " in resource "
-                                            + "document: \n"
-                                            + (resourceDocument == null ? null : resourceDocument.toPrettyString());
+                                            + "document: \n" + (resourceDocument == null ? null
+                                              : JsonHelper.toPrettyJsonString(resourceDocument));
       List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.RFC7643.SCHEMAS)
                                        .orElseThrow(() -> getBadRequestException(errorMessage.get()));
       if (!schemas.contains(getSchema()))

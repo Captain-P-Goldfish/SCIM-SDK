@@ -568,4 +568,27 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     JsonHelper.addAttribute(this, attributeName, arrayNode);
   }
 
+  /**
+   * override method for usage with wildfly 18 that still uses jackson 2.9.x
+   */
+  public String toString()
+  {
+    return JsonHelper.toJsonString(this);
+  }
+
+  /**
+   * override method for usage with wildfly 18 that still uses jackson 2.9.x
+   */
+  public String toPrettyString()
+  {
+    return JsonHelper.toPrettyJsonString(this);
+  }
+
+  /**
+   * override method for usage with wildfly 18 that still uses jackson 2.9.x
+   */
+  public boolean isEmpty()
+  {
+    return JsonHelper.isEmpty(this);
+  }
 }

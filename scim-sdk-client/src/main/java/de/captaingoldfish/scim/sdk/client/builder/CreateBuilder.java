@@ -10,12 +10,10 @@ import org.apache.http.entity.StringEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.client.exceptions.InvalidRequestException;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 
 
 /**
@@ -26,18 +24,9 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
 {
 
-  public CreateBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  public CreateBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType);
-  }
-
-  /**
-   * @param endpoint the resource endpoint path e.g. /Users or /Groups
-   */
-  @Override
-  public CreateBuilder<T> setEndpoint(String endpoint)
-  {
-    return (CreateBuilder<T>)super.setEndpoint(endpoint);
+    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
   }
 
   /**
@@ -62,7 +51,7 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  public ScimServerResponse<T> sendRequest()
+  public ServerResponse<T> sendRequest()
   {
     if (StringUtils.isBlank(getResource()))
     {
@@ -75,20 +64,20 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  protected HttpUriRequest getHttpUriRequest()
+  protected boolean isExpectedResponseCode(int httpStatus)
   {
-    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
-    StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
-    httpPost.setEntity(stringEntity);
-    return httpPost;
+    return HttpStatus.CREATED == httpStatus;
   }
 
   /**
    * {@inheritDoc}
    */
   @Override
-  protected <T extends ScimResponse> Class<T> getResponseType(int responseCode)
+  protected HttpUriRequest getHttpUriRequest()
   {
-    return responseCode == HttpStatus.CREATED ? (Class<T>)CreateResponse.class : (Class<T>)ErrorResponse.class;
+    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
+    httpPost.setEntity(stringEntity);
+    return httpPost;
   }
 }

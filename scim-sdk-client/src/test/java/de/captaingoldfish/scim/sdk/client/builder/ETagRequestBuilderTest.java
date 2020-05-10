@@ -4,11 +4,14 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.User;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 
 
 /**
@@ -26,11 +29,11 @@ public class ETagRequestBuilderTest
   public void testSetETagsForBothHeaders()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", scimClientConfig, User.class).setETagForIfMatch("123456")
-                                                                             .setETagForIfNoneMatch("123456");
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                             scimHttpClient).setETagForIfMatch("123456").setETagForIfNoneMatch("123456");
       Assertions.fail("this point must not be reached");
     }
     catch (IllegalStateException ex)
@@ -48,11 +51,11 @@ public class ETagRequestBuilderTest
   public void testSetETagsForBothHeaders2()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", scimClientConfig, User.class).setETagForIfNoneMatch("123456")
-                                                                             .setETagForIfMatch("123456");
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                             scimHttpClient).setETagForIfNoneMatch("123456").setETagForIfMatch("123456");
       Assertions.fail("this point must not be reached");
     }
     catch (IllegalStateException ex)
@@ -70,12 +73,12 @@ public class ETagRequestBuilderTest
   public void testSetETagsForBothHeaders3()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", scimClientConfig,
-                             User.class).setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build())
-                                        .setETagForIfMatch(ETag.builder().weak(false).tag("123456").build());
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                             scimHttpClient).setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build())
+                                            .setETagForIfMatch(ETag.builder().weak(false).tag("123456").build());
       Assertions.fail("this point must not be reached");
     }
     catch (IllegalStateException ex)
@@ -93,12 +96,12 @@ public class ETagRequestBuilderTest
   public void testSetETagsForBothHeaders4()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     try
     {
-      new MyRequestBuilder<>("http://locahost", scimClientConfig,
-                             User.class).setETagForIfMatch(ETag.builder().weak(false).tag("123456").build())
-                                        .setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build());
+      new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                             scimHttpClient).setETagForIfMatch(ETag.builder().weak(false).tag("123456").build())
+                                            .setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build());
       Assertions.fail("this point must not be reached");
     }
     catch (IllegalStateException ex)
@@ -116,8 +119,9 @@ public class ETagRequestBuilderTest
   public void testGetETagWithUserIfMatch()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", scimClientConfig,
-                                                      User.class).setETagForIfMatch(ETag.builder().weak(false).tag("123456").build());
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfMatch(ETag.builder().weak(false).tag("123456").build());
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfMatch());
     Assertions.assertFalse(builder.isUseIfNoneMatch());
@@ -130,8 +134,9 @@ public class ETagRequestBuilderTest
   public void testGetETagWithUserIfMatch2()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", scimClientConfig,
-                                                      User.class).setETagForIfMatch("123456");
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfMatch("123456");
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfMatch());
     Assertions.assertFalse(builder.isUseIfNoneMatch());
@@ -144,8 +149,9 @@ public class ETagRequestBuilderTest
   public void testGetETagWithUserIfNoneMatch()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", scimClientConfig,
-                                                      User.class).setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build());
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfNoneMatch(ETag.builder().weak(false).tag("123456").build());
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfNoneMatch());
     Assertions.assertFalse(builder.isUseIfMatch());
@@ -158,8 +164,9 @@ public class ETagRequestBuilderTest
   public void testGetETagWithUserIfNoneMatch2()
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
-    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", scimClientConfig,
-                                                      User.class).setETagForIfNoneMatch("123456");
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    MyRequestBuilder builder = new MyRequestBuilder<>("http://locahost", EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).setETagForIfNoneMatch("123456");
     Assertions.assertEquals("123456", builder.getVersion().getTag());
     Assertions.assertTrue(builder.isUseIfNoneMatch());
     Assertions.assertFalse(builder.isUseIfMatch());
@@ -171,9 +178,15 @@ public class ETagRequestBuilderTest
   public static class MyRequestBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   {
 
-    public MyRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+    public MyRequestBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
     {
-      super(baseUrl, scimClientConfig, responseEntityType);
+      super(baseUrl, endpoint, responseEntityType, scimHttpClient);
+    }
+
+    @Override
+    protected boolean isExpectedResponseCode(int httpStatus)
+    {
+      return HttpStatus.OK == httpStatus;
     }
 
     @Override
@@ -200,11 +213,7 @@ public class ETagRequestBuilderTest
       return (MyRequestBuilder<T>)super.setETagForIfNoneMatch(version);
     }
 
-    @Override
-    protected <T1 extends ScimResponse> Class<T1> getResponseType(int responseCode)
-    {
-      return null;
-    }
+
 
     @Override
     protected HttpUriRequest getHttpUriRequest()

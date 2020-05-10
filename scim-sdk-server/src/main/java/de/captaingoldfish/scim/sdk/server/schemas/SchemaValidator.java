@@ -254,13 +254,12 @@ public class SchemaValidator
         JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getNonNullId(), extensionNode);
       }
     }
-    JsonNode metaNode = document.get(AttributeNames.RFC7643.META);
     Schema metaSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.META);
     JsonNode validatedMeta;
     try
     {
       validatedMeta = validateExtensionForResponse(metaSchema,
-                                                   metaNode,
+                                                   document,
                                                    validatedRequest,
                                                    attributes,
                                                    excludedAttributes);
@@ -271,9 +270,11 @@ public class SchemaValidator
                 + resourceType.getSchema() + "]");
       throw ex;
     }
-    if (validatedMeta != null && !validatedMeta.isEmpty() && validatedMainDocument != null)
+    if (validatedMeta != null && validatedMeta.size() != 0 && validatedMainDocument != null)
     {
-      JsonHelper.addAttribute(validatedMainDocument, AttributeNames.RFC7643.META, validatedMeta);
+      JsonHelper.addAttribute(validatedMainDocument,
+                              AttributeNames.RFC7643.META,
+                              validatedMeta.get(AttributeNames.RFC7643.META));
     }
     return validatedMainDocument;
   }
@@ -550,13 +551,13 @@ public class SchemaValidator
         continue;
       }
       checkMetaAttributeOnDocument(document, metaAttribute).ifPresent(childNode -> {
-        if (!(childNode.isArray() && childNode.isEmpty()))
+        if (!(childNode.isArray() && childNode.size() == 0))
         {
           JsonHelper.addAttribute(scimNode, metaAttribute.getName(), childNode);
         }
       });
     }
-    if (scimNode.isEmpty())
+    if (scimNode.size() == 0)
     {
       return null;
     }
@@ -614,11 +615,11 @@ public class SchemaValidator
                                                         schemaAttribute.isMultiValued(),
                                                         schemaAttribute.getType(),
                                                         schemaAttribute.getSchema().getId().orElse(null),
-                                                        document.toPrettyString());
+                                                        document.toString());
     if (schemaAttribute.isMultiValued())
     {
       if (document != null && !document.isArray() || document != null && Type.COMPLEX.equals(schemaAttribute.getType())
-                                                     && !document.isEmpty() && !document.get(0).isObject())
+                                                     && document.size() != 0 && !document.get(0).isObject())
       {
         throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
       }
@@ -713,7 +714,7 @@ public class SchemaValidator
       handleMultivaluedNode.accept(jsonNode, scimArrayNode);
     }
     AttributeValidator.validateArrayNode(schemaAttribute, scimArrayNode);
-    if (scimArrayNode.isEmpty())
+    if (scimArrayNode.size() == 0)
     {
       validateNonPresentAttributes(schemaAttribute);
       return Optional.empty();
@@ -866,11 +867,28 @@ public class SchemaValidator
   private void validateIsRequiredForResponse(JsonNode document, SchemaAttribute schemaAttribute)
   {
     boolean isNodeNull = document == null || document.isNull();
-    Supplier<String> errorMessage = () -> String.format("the attribute '%s' is required on response.\n\tmutability: "
-                                                        + "'%s'\n\treturned: '%s'",
+    // @formatter:off
+    Supplier<String> errorMessage = () -> String.format("the attribute '%s' is required on response." +
+                                                          "\n\t\tname: '%s'" +
+                                                          "\n\t\ttype: '%s'" +
+                                                          "\n\t\tdescription: '%s'" +
+                                                          "\n\t\tmutability: '%s'" +
+                                                          "\n\t\treturned: '%s'" +
+                                                          "\n\t\tuniqueness: '%s'" +
+                                                          "\n\t\tmultivalued: '%s'" +
+                                                          "\n\t\trequired: '%s'" +
+                                                          "\n\t\tcaseExact: '%s'",
                                                         schemaAttribute.getFullResourceName(),
+                                                        schemaAttribute.getName(),
+                                                        schemaAttribute.getType().toString(),
+                                                        schemaAttribute.getDescription(),
                                                         schemaAttribute.getMutability(),
-                                                        schemaAttribute.getReturned());
+                                                        schemaAttribute.getReturned(),
+                                                        schemaAttribute.getUniqueness().toString(),
+                                                        schemaAttribute.isMultiValued(),
+                                                        schemaAttribute.isRequired(),
+                                                        schemaAttribute.isCaseExact());
+    // @formatter:on
     if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
     {
       throw getException(errorMessage.get(), null);

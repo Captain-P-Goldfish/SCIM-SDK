@@ -1,5 +1,9 @@
-package de.captaingoldfish.scim.sdk.client.builder;
+package de.captaingoldfish.scim.sdk.client;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HostnameVerifier;
@@ -28,7 +32,7 @@ public class ScimClientConfig
   /**
    * the default timeout value to use in seconds
    */
-  protected static final int DEFAULT_TIMEOUT = 10;
+  public static final int DEFAULT_TIMEOUT = 10;
 
   /**
    * request timeout in seconds
@@ -68,7 +72,7 @@ public class ScimClientConfig
   /**
    * additional http headers that may be used to authorize at the scim server
    */
-  private Map<String, String> httpHeaders;
+  private Map<String, String[]> httpHeaders;
 
   /**
    * an optional basic authentication object
@@ -89,6 +93,7 @@ public class ScimClientConfig
                           KeyStoreWrapper clientAuth,
                           KeyStoreWrapper truststore,
                           Map<String, String> httpHeaders,
+                          Map<String, String[]> httpMultiHeaders,
                           BasicAuth basicAuth,
                           ConfigManipulator configManipulator)
   {
@@ -99,9 +104,37 @@ public class ScimClientConfig
     this.proxy = proxy;
     this.clientAuth = clientAuth;
     this.truststore = truststore;
-    this.httpHeaders = httpHeaders;
+    setHeaders(httpHeaders, httpMultiHeaders);
     this.basicAuth = basicAuth;
     this.configManipulator = configManipulator;
+  }
+
+  /**
+   * merges the values of the single headers map and the multi-headers map into a single map
+   */
+  private void setHeaders(Map<String, String> httpSingleHeaders, Map<String, String[]> httpMultiHeaders)
+  {
+    this.httpHeaders = new HashMap<>();
+    if (httpSingleHeaders != null)
+    {
+      httpSingleHeaders.forEach((key, value) -> this.httpHeaders.put(key, new String[]{value}));
+    }
+    if (httpMultiHeaders != null)
+    {
+      httpMultiHeaders.forEach((key, valueArray) -> {
+        String[] multiValues = this.httpHeaders.get(key);
+        if (multiValues == null)
+        {
+          this.httpHeaders.put(key, valueArray);
+        }
+        else
+        {
+          List<String> headerList = new ArrayList<>(Arrays.asList(multiValues));
+          headerList.addAll(Arrays.asList(valueArray));
+          this.httpHeaders.put(key, headerList.toArray(new String[0]));
+        }
+      });
+    }
   }
 
   /**

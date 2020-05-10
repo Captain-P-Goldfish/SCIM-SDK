@@ -12,9 +12,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import de.captaingoldfish.scim.sdk.client.builder.ScimClientConfig;
-import de.captaingoldfish.scim.sdk.client.constants.ResponseType;
-import de.captaingoldfish.scim.sdk.client.response.ScimServerResponse;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -24,8 +22,6 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
-import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -64,17 +60,16 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   public void testBuildCreateRequest()
   {
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertEquals(CreateResponse.class, response.getScimResponse().get().getClass());
-    Assertions.assertEquals(ResponseType.CREATE, response.getResponseType());
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
-    Assertions.assertTrue(response.getResource().isPresent());
-    User returnedUser = response.getResource().get();
+    User returnedUser = response.getResource();
     Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
     Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
@@ -89,18 +84,16 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     User user = User.builder().userName("goldfish").build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
-    ScimServerResponse<User> response = scimRequestBuilder.create(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setResource(user)
-                                                          .sendRequest();
-    Assertions.assertEquals(ErrorResponse.class, response.getScimResponse().get().getClass());
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
-    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
     Assertions.assertEquals("main resource schema 'urn:ietf:params:scim:schemas:core:2.0:User' is not present in "
                             + "resource. Main schema is: urn:ietf:params:scim:schemas:core:2.0:User",
-                            response.getErrorResponse().get().getDetail());
-    Assertions.assertFalse(response.getResource().isPresent());
+                            response.getErrorResponse().getDetail().get());
   }
 
   /**
@@ -115,13 +108,13 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
-    ScimServerResponse<User> response = scimRequestBuilder.get(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setId(id)
-                                                          .sendRequest();
+    ServerResponse<User> response = scimRequestBuilder.get(User.class, EndpointPaths.USERS, id).sendRequest();
 
-    Assertions.assertTrue(response.getResource().isPresent());
-    Assertions.assertEquals(user.getId().get(), response.getResource().get().getId().get());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -132,15 +125,12 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
 
-    ScimServerResponse<User> response = scimRequestBuilder.get(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setId(id)
-                                                          .sendRequest();
+    ServerResponse<User> response = scimRequestBuilder.get(User.class, EndpointPaths.USERS, id).sendRequest();
 
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
-    Assertions.assertFalse(response.getResource().isPresent());
-    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
   }
 
   /**
@@ -155,14 +145,12 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
-    ScimServerResponse<User> response = scimRequestBuilder.delete(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setId(id)
-                                                          .sendRequest();
+    ServerResponse<User> response = scimRequestBuilder.delete(User.class, EndpointPaths.USERS, id).sendRequest();
 
-    Assertions.assertFalse(response.getResource().isPresent());
-    Assertions.assertFalse(response.getErrorResponse().isPresent());
-    Assertions.assertEquals(ResponseType.DELETE, response.getResponseType());
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -173,15 +161,12 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
 
-    ScimServerResponse<User> response = scimRequestBuilder.delete(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setId(id)
-                                                          .sendRequest();
+    ServerResponse<User> response = scimRequestBuilder.delete(User.class, EndpointPaths.USERS, id).sendRequest();
 
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
-    Assertions.assertFalse(response.getResource().isPresent());
-    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
   }
 
   /**
@@ -197,16 +182,14 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     userHandler.getInMemoryMap().put(id, user);
 
     User updateUser = User.builder().nickName("hello world").build();
-    ScimServerResponse<User> response = scimRequestBuilder.update(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setId(id)
-                                                          .setResource(updateUser)
-                                                          .sendRequest();
+    ServerResponse<User> response = scimRequestBuilder.update(User.class, EndpointPaths.USERS, id)
+                                                      .setResource(updateUser)
+                                                      .sendRequest();
 
-    Assertions.assertTrue(response.getResource().isPresent());
-    Assertions.assertFalse(response.getErrorResponse().isPresent());
-    Assertions.assertEquals(ResponseType.UPDATE, response.getResponseType());
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
   }
 
   /**
@@ -218,16 +201,14 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     final String id = UUID.randomUUID().toString();
 
     User updateUser = User.builder().nickName("hello world").build();
-    ScimServerResponse<User> response = scimRequestBuilder.update(User.class)
-                                                          .setEndpoint(EndpointPaths.USERS)
-                                                          .setId(id)
-                                                          .setResource(updateUser)
-                                                          .sendRequest();
+    ServerResponse<User> response = scimRequestBuilder.update(User.class, EndpointPaths.USERS, id)
+                                                      .setResource(updateUser)
+                                                      .sendRequest();
 
-    Assertions.assertEquals(ResponseType.ERROR, response.getResponseType());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
-    Assertions.assertFalse(response.getResource().isPresent());
-    Assertions.assertTrue(response.getErrorResponse().isPresent());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNotNull(response.getErrorResponse());
   }
 
   /**
@@ -256,7 +237,9 @@ public class ScimRequestBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    scimRequestBuilder.create(User.class).setEndpoint(EndpointPaths.USERS).setResource(user).sendRequest(httpHeaders);
+    scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                      .setResource(user)
+                      .sendRequestWithMultiHeaders(httpHeaders);
     Assertions.assertTrue(wasCalled.get());
   }
 }

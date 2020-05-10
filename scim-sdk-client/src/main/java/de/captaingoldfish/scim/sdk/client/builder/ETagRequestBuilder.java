@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -32,9 +33,9 @@ public abstract class ETagRequestBuilder<T extends ResourceNode> extends Request
    */
   private boolean useIfNoneMatch;
 
-  public ETagRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  public ETagRequestBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType);
+    super(baseUrl, endpoint, responseEntityType, scimHttpClient);
   }
 
   /**

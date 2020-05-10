@@ -7,12 +7,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.web.server.LocalServerPort;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
@@ -53,6 +55,11 @@ public abstract class AbstractSpringBootWebTest
   private static final String KEYSTORE_MASTER_PASSWORD = "123456";
 
   /**
+   * may be used to validate the incoming http headers
+   */
+  public static Consumer<Map<String, String>> headerValidator;
+
+  /**
    * if spring boot test uses a random port the port will be injected into this variable
    */
   @Getter
@@ -71,6 +78,15 @@ public abstract class AbstractSpringBootWebTest
   public void initializeUrl()
   {
     defaultUrl = "https://localhost:" + localServerPort;
+  }
+
+  /**
+   * returns static set variables to null
+   */
+  @AfterEach
+  public void resetStaticContext()
+  {
+    headerValidator = null;
   }
 
   /**
@@ -229,6 +245,10 @@ public abstract class AbstractSpringBootWebTest
         return null;
       }
       Map<String, String> httpHeaders = getHttpHeaders(request);
+      if (headerValidator != null)
+      {
+        headerValidator.accept(httpHeaders);
+      }
       String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
       ResourceEndpoint resourceEndpoint = scimConfig.getResourceEndpoint();
       ScimResponse scimResponse = resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,

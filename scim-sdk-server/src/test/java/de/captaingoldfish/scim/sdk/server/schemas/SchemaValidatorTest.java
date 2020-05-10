@@ -2189,7 +2189,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals("the attribute 'emails' does not apply to its defined type. The received document node is"
                               + " of type 'ARRAY' but the schema defintion is as follows: \n\tmultivalued: true\n"
                               + "\ttype: COMPLEX\nfor schema with id urn:ietf:params:scim:schemas:core:2.0:User\n"
-                              + "[ \"hello world\" ]",
+                              + "[\"hello world\"]",
                               ex.getDetail());
     }
   }

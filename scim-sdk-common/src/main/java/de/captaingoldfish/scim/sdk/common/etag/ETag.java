@@ -108,7 +108,6 @@ public class ETag extends ScimTextNode
     return getEntityTag();
   }
 
-  @Override
   public String toPrettyString()
   {
     return getEntityTag();

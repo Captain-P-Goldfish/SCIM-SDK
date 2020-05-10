@@ -1694,7 +1694,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                             "delete");
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("test").meta(meta).build();
+    User user = User.builder().id(id).userName("test").nickName("test").meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
