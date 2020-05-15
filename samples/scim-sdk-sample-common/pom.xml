@@ -9,6 +9,7 @@
     </parent>
 
     <artifactId>scim-sdk-sample-common</artifactId>
+    <name>SCIM SDK sample common</name>
 
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.sample.common</module.name>
