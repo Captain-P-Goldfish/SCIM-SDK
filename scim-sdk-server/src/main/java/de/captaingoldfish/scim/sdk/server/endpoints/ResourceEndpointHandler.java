@@ -474,6 +474,8 @@ class ResourceEndpointHandler
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
       final SortOrder sortOrdering = getSortOrdering(sortOrder, sortByAttribute);
       final boolean autoSorting = resourceType.getFeatures().isAutoSorting();
+      final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
+      final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
 
       ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
       PartialListResponse<T> resources = resourceHandler.listResources(effectiveStartIndex,
@@ -481,10 +483,8 @@ class ResourceEndpointHandler
                                                                        autoFiltering ? null : filterNode,
                                                                        autoSorting ? null : sortByAttribute,
                                                                        autoSorting ? null : sortOrdering,
-                                                                       RequestUtils.getAttributes(resourceType,
-                                                                                                  attributes),
-                                                                       RequestUtils.getAttributes(resourceType,
-                                                                                                  excludedAttributes),
+                                                                       attributesList,
+                                                                       excludedAttributesList,
                                                                        authorization);
       if (resources == null)
       {
