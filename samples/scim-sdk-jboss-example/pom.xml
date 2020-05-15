@@ -78,6 +78,10 @@
                     <artifactId>javax.mail</artifactId>
                     <groupId>com.sun.mail</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+                    <groupId>org.jboss.spec.javax.xml.bind</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>
