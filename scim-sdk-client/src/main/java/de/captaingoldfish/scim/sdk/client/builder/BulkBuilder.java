@@ -14,7 +14,6 @@ import org.apache.http.entity.StringEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
@@ -49,7 +48,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   @Getter(AccessLevel.PROTECTED)
   private final List<BulkRequestOperation> bulkRequestOperationList;
 
-  public BulkBuilder(String baseUrl, ScimClientConfig scimClientConfig, ScimHttpClient scimHttpClient)
+  public BulkBuilder(String baseUrl, ScimHttpClient scimHttpClient)
   {
     super(baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
 

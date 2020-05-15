@@ -117,7 +117,7 @@ public class ScimRequestBuilder implements AutoCloseable
    */
   public BulkBuilder bulk()
   {
-    return new BulkBuilder(baseUrl, scimClientConfig, scimHttpClient);
+    return new BulkBuilder(baseUrl, scimHttpClient);
   }
 
   /**

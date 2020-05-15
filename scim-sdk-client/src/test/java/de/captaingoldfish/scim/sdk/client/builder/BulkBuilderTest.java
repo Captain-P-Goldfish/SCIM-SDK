@@ -43,7 +43,7 @@ public class BulkBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
                                                        .bulkId(UUID.randomUUID().toString())
@@ -63,7 +63,7 @@ public class BulkBuilderTest extends HttpServerMockup
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
@@ -84,7 +84,7 @@ public class BulkBuilderTest extends HttpServerMockup
     scimConfig.getServiceProvider().getBulkConfig().setMaxPayloadSize(1L);
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
@@ -105,7 +105,7 @@ public class BulkBuilderTest extends HttpServerMockup
     scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(0);
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
@@ -133,7 +133,7 @@ public class BulkBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimClientConfig, scimHttpClient);
+    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
