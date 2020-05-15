@@ -23,7 +23,7 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>../../../</formatter-path>
 
-        <version.keycloak>8.0.1</version.keycloak>
+        <version.keycloak>10.0.1</version.keycloak>
 
         <version.sun.javax.activation>1.2.0</version.sun.javax.activation>
         <version.javax.activation>1.1.1</version.javax.activation>
