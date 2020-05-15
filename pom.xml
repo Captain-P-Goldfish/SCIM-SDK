@@ -67,6 +67,7 @@
         <formatter-path>${project.parent.basedir}</formatter-path>
 
         <version.lombok>1.18.12</version.lombok>
+        <version.mapstruct>1.3.1.Final</version.mapstruct>
 
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.10</version.apache.commons.lang3>
@@ -119,6 +120,12 @@
                 <artifactId>lombok</artifactId>
                 <scope>provided</scope>
                 <version>${version.lombok}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <scope>provided</scope>
+                <version>${version.mapstruct}</version>
             </dependency>
 
             <!-- application dependencies -->
@@ -333,6 +340,10 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
         </dependency>
 
         <!-- application dependencies -->
