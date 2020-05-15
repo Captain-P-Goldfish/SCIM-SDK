@@ -111,7 +111,7 @@ public class DistinguishedName
 
   /**
    * constructor with the most common field.
-   * 
+   *
    * @param commonName mandatory field. {@link #commonName}
    * @param countryName may be null
    * @param stateOrProvince may be null
@@ -326,7 +326,7 @@ public class DistinguishedName
   /**
    * gets the organizational unit name
    *
-   * @return the organizational unit name as ;-seperated string
+   * @return the organizational unit name as ;-separated string
    */
   public String getOrganizationalUnitAsString()
   {
@@ -356,7 +356,7 @@ public class DistinguishedName
   /**
    * gets the domain component
    *
-   * @return the domain component name as ;-seperated string
+   * @return the domain component name as ;-separated string
    */
   public String getDomainComponentAsString()
   {
@@ -375,7 +375,7 @@ public class DistinguishedName
 
   /**
    * builds a DN string from the given list with the given prefix
-   * 
+   *
    * @param list the list that should be converted to a DN-string
    * @param prefix the prefix to identify the dn-string value
    * @return the dn string of the list
