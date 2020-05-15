@@ -90,12 +90,3 @@ The client implementation supports the following SCIM requests
 there is also direct native support for easy use of basic authentication and X509 client authentication. All other
 authentication types must be implemented manually.
  
- 
----
-**Automatic-Module-Names for Jigsaw:**
-
-de.captaingoldfish.scim.sdk.common  
-de.captaingoldfish.scim.sdk.server  
-de.captaingoldfish.scim.sdk.client
-
----
