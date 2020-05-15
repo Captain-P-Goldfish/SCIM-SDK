@@ -11,7 +11,6 @@ module de.captaingoldfish.scim.sdk.common {
   requires org.apache.commons.lang3;
   requires com.fasterxml.jackson.databind;
   requires java.ws.rs;
-  requires java.xml.bind;
   requires java.activation;
 
   exports de.captaingoldfish.scim.sdk.common.constants;
