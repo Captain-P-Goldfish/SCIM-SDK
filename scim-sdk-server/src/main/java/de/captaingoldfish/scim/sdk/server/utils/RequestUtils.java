@@ -88,7 +88,7 @@ public final class RequestUtils
     {
       return Optional.empty();
     }
-    if (!attributes.matches("(^[a-zA-Z0-9][:a-zA-Z0-9.,]+[a-zA-Z0-9]$)*"))
+    if (!attributes.matches("(^[a-zA-Z0-9]([:a-zA-Z0-9.,]+)?[a-zA-Z0-9]$)*"))
     {
       String errorMessage = "the attributes or excludedAttributes parameter '" + attributes + "' is malformed please "
                             + "check your syntax and please note that whitespaces are not allowed.";
