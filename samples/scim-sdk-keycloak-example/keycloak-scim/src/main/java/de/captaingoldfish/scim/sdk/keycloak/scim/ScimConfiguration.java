@@ -107,7 +107,7 @@ public final class ScimConfiguration
                           .filterConfig(FilterConfig.builder().supported(true).maxResults(50).build())
                           .sortConfig(SortConfig.builder().supported(true).build())
                           .changePasswordConfig(ChangePasswordConfig.builder().supported(true).build())
-                          .bulkConfig(BulkConfig.builder().supported(true).maxOperations(10).build())
+                          .bulkConfig(BulkConfig.builder().supported(true).maxOperations(50).build())
                           .patchConfig(PatchConfig.builder().supported(true).build())
                           .authenticationSchemes(Collections.singletonList(authScheme))
                           .eTagConfig(ETagConfig.builder().supported(true).build())
