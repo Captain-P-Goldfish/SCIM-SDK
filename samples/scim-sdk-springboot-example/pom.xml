@@ -13,8 +13,6 @@
     <name>SCIM SDK springboot example</name>
 
     <properties>
-        <module.name>de.captaingoldfish.scim.sdk.springboot.sample</module.name>
-
         <version.spring.boot>2.2.0.RELEASE</version.spring.boot>
     </properties>
 

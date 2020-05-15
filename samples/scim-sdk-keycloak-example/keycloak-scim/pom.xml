@@ -11,10 +11,6 @@
     <artifactId>keycloak-scim</artifactId>
     <name>SCIM SDK keycloak</name>
 
-    <properties>
-        <module.name>de.captaingoldfish.scim.sdk.keycloak.scim</module.name>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.keycloak</groupId>

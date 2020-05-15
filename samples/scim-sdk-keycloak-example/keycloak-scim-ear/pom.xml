@@ -13,10 +13,6 @@
 
     <packaging>ear</packaging>
 
-    <properties>
-        <module.name>de.captaingoldfish.scim.sdk.keycloak.scim.ear</module.name>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>de.captaingoldfish</groupId>

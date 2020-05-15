@@ -10,10 +10,6 @@
 
     <artifactId>scim-sdk-sample-common</artifactId>
 
-    <properties>
-        <module.name>de.captaingoldfish.scim.sdk.sample.common</module.name>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>de.captaingoldfish</groupId>
