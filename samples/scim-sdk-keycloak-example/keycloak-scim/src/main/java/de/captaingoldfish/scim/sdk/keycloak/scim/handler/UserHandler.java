@@ -25,6 +25,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -32,6 +33,7 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
  * created at: 04.02.2020 <br>
  * <br>
  */
+@Slf4j
 public class UserHandler extends ResourceHandler<User>
 {
 
@@ -54,6 +56,7 @@ public class UserHandler extends ResourceHandler<User>
     }
     UserModel userModel = keycloakSession.users().addUser(keycloakSession.getContext().getRealm(), username);
     userModel = userToModel(user, userModel);
+    log.info("created user with username: {}", userModel.getUsername());
     return modelToUser(userModel);
   }
 
@@ -112,6 +115,7 @@ public class UserHandler extends ResourceHandler<User>
       return null; // causes a resource not found exception you may also throw it manually
     }
     userModel = userToModel(userToUpdate, userModel);
+    log.info("updated user with username: {}", userModel.getUsername());
     return modelToUser(userModel);
   }
 
@@ -128,6 +132,7 @@ public class UserHandler extends ResourceHandler<User>
       throw new ResourceNotFoundException("resource with id '" + id + "' does not exist");
     }
     keycloakSession.users().removeUser(keycloakSession.getContext().getRealm(), userModel);
+    log.info("deleted user with username: {}", userModel.getUsername());
   }
 
   /**
