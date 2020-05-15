@@ -23,7 +23,7 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>../../../</formatter-path>
 
-        <version.keycloak>8.0.1</version.keycloak>
+        <version.keycloak>10.0.1</version.keycloak>
 
         <!-- plugin versions -->
         <version.maven.ear.plugin>3.0.2</version.maven.ear.plugin>
