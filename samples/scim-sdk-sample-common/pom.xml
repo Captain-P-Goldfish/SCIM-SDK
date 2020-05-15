@@ -9,6 +9,7 @@
     </parent>
 
     <artifactId>scim-sdk-sample-common</artifactId>
+    <name>SCIM SDK sample common</name>
 
     <dependencies>
         <dependency>
