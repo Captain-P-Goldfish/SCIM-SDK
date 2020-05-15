@@ -8,21 +8,26 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.ScimRequestBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.BulkBuilder;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -43,9 +48,18 @@ public class ScimClient
   public static void main(String[] args)
   {
     final String baseUrl = "http://localhost:8080/auth/realms/master/scim/v2";
-    ScimRequestBuilder scimRequestBuilder = new ScimRequestBuilder(baseUrl, ScimClientConfig.builder().build());
+    ScimRequestBuilder scimRequestBuilder = new ScimRequestBuilder(baseUrl,
+                                                                   ScimClientConfig.builder()
+                                                                                   .socketTimeout(120)
+                                                                                   .requestTimeout(120)
+                                                                                   .build());
+    ServerResponse<ServiceProvider> response = scimRequestBuilder.get(ServiceProvider.class,
+                                                                      EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                                                                      null)
+                                                                 .sendRequest();
+    ServiceProvider serviceProviderConfig = response.getResource();
 
-    createUsers(scimRequestBuilder);
+    createUsers(scimRequestBuilder, serviceProviderConfig);
     createGroups(scimRequestBuilder);
     // deleteAllUsers(scimRequestBuilder);
   }
@@ -53,20 +67,26 @@ public class ScimClient
   /**
    * create almost 5000 users on keycloak
    */
-  private static void createUsers(ScimRequestBuilder scimRequestBuilder)
+  private static void createUsers(ScimRequestBuilder scimRequestBuilder, ServiceProvider serviceProviderConfig)
   {
-    getUserList().forEach(user -> {
-      ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                        .setResource(user)
-                                                        .sendRequest();
+    int maxOperations = serviceProviderConfig.getBulkConfig().getMaxOperations();
+    getUserList(maxOperations).parallelStream().forEach(bulkUserList -> {
+      BulkBuilder bulkBuilder = scimRequestBuilder.bulk();
+      bulkUserList.parallelStream().forEach(user -> {
+        bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
+                   .bulkId(UUID.randomUUID().toString())
+                   .method(HttpMethod.POST)
+                   .data(user)
+                   .next();
+      });
+      ServerResponse<BulkResponse> response = bulkBuilder.sendRequest();
       if (response.isSuccess())
       {
-        User createdUser = response.getResource();
-        log.info("created user with id: {} and name: {}", createdUser.getId().get(), createdUser.getUserName().get());
+        log.info("bulk request succeeded with response: {}", response.getResponseBody());
       }
       else
       {
-        log.error("creating of users failed");
+        log.error("creating of users failed: " + response.getErrorResponse().getDetail().orElse(null));
       }
     });
   }
@@ -77,9 +97,12 @@ public class ScimClient
   private static void deleteAllUsers(ScimRequestBuilder scimRequestBuilder)
   {
     ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
+                                                                    .attributes(AttributeNames.RFC7643.ID,
+                                                                                AttributeNames.RFC7643.USER_NAME)
                                                                     .get()
                                                                     .sendRequest();
     ListResponse<User> listResponse = response.getResource();
+
     while (listResponse.getTotalResults() > 0)
     {
       listResponse.getListedResources().stream().parallel().forEach(user -> {
@@ -108,27 +131,35 @@ public class ScimClient
 
   /**
    * reads a lot of users and returns them as SCIM user instances
+   *
+   * @param maxOperations
    */
-  private static List<User> getUserList()
+  private static List<List<User>> getUserList(int maxOperations)
   {
+    List<List<User>> bulkOperationList = new ArrayList<>();
     List<User> userList = new ArrayList<>();
     try (InputStream inputStream = ScimClient.class.getResourceAsStream("/firstnames.txt");
       InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
       BufferedReader reader = new BufferedReader(inputStreamReader))
     {
-
       String name;
       while ((name = reader.readLine()) != null)
       {
+        name = name.toLowerCase();
         Meta meta = Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build();
         userList.add(User.builder().userName(name).nickName(name).meta(meta).build());
+        if (userList.size() == maxOperations)
+        {
+          bulkOperationList.add(userList);
+          userList = new ArrayList<>();
+        }
       }
     }
     catch (IOException e)
     {
       throw new IllegalStateException(e.getMessage(), e);
     }
-    return userList;
+    return bulkOperationList;
   }
 
   /**
