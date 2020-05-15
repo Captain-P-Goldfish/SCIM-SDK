@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -32,6 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  * configuration resource.
  */
 @Slf4j
+@NoArgsConstructor
 public class ServiceProvider extends ResourceNode
 {
 
