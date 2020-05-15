@@ -3,7 +3,7 @@
  * created at: 02.11.2019 - 22:43 <br>
  * <br>
  */
-module de.captaingoldfish.palace.scim.server {
+module de.captaingoldfish.scim.sdk.server {
 
   requires static lombok;
 
