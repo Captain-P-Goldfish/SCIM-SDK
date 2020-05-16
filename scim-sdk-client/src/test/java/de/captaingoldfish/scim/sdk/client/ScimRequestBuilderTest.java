@@ -19,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
@@ -241,5 +242,27 @@ public class ScimRequestBuilderTest extends HttpServerMockup
                       .setResource(user)
                       .sendRequestWithMultiHeaders(httpHeaders);
     Assertions.assertTrue(wasCalled.get());
+  }
+
+  /**
+   * verifies that a service provider configuration can successfully be read without any problems
+   */
+  @Test
+  public void testGetServiceProviderAndReadDetails()
+  {
+    ServerResponse<ServiceProvider> response = scimRequestBuilder.get(ServiceProvider.class,
+                                                                      EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                                                                      null)
+                                                                 .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    ServiceProvider serviceProvider = response.getResource();
+    Assertions.assertNotNull(serviceProvider);
+    Assertions.assertDoesNotThrow(serviceProvider::getBulkConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getFilterConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getPatchConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getSortConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getETagConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getChangePasswordConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getAuthenticationSchemes);
   }
 }
