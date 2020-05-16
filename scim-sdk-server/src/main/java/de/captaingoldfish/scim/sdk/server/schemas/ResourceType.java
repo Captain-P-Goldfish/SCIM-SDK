@@ -307,15 +307,6 @@ public class ResourceType extends ResourceNode
   }
 
   /**
-   * The resource type's human-readable description. When applicable, service providers MUST specify the
-   * description. OPTIONAL.
-   */
-  private void setResourceTypeDescription(String description)
-  {
-    setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
-  }
-
-  /**
    * The resource type's primary/base schema URI, e.g., "urn:ietf:params:scim:schemas:core:2.0:User". This MUST
    * be equal to the "id" attribute of the associated "Schema" resource. REQUIRED.
    */
