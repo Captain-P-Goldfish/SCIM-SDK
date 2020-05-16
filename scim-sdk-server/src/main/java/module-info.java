@@ -11,12 +11,11 @@ module de.captaingoldfish.scim.sdk.server {
 
   exports de.captaingoldfish.scim.sdk.server.endpoints;
   exports de.captaingoldfish.scim.sdk.server.endpoints.base;
+  exports de.captaingoldfish.scim.sdk.server.endpoints.authorize;
   exports de.captaingoldfish.scim.sdk.server.filter;
   exports de.captaingoldfish.scim.sdk.server.response;
   exports de.captaingoldfish.scim.sdk.server.schemas;
   exports de.captaingoldfish.scim.sdk.server.schemas.custom;
-  exports de.captaingoldfish.scim.sdk.server.endpoints.authorize;
-
 
   requires org.slf4j;
   requires org.apache.commons.lang3;
