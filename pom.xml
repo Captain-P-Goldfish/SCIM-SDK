@@ -54,6 +54,7 @@
         <module>scim-sdk-client</module>
         <module>scim-sdk-common</module>
         <module>samples</module>
+        <module>integration-tests</module>
     </modules>
 
     <properties>
