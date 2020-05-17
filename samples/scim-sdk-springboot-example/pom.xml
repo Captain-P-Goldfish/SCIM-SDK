@@ -12,16 +12,12 @@
 
     <name>SCIM SDK springboot example</name>
 
-    <properties>
-        <version.spring.boot>2.2.0.RELEASE</version.spring.boot>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>${version.spring.boot}</version>
+                <version>${version.springboot}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -72,7 +68,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${version.spring.boot}</version>
+                <version>${version.springboot}</version>
                 <executions>
                     <execution>
                         <goals>
