@@ -53,8 +53,8 @@
         <module>scim-sdk-server</module>
         <module>scim-sdk-client</module>
         <module>scim-sdk-common</module>
-        <module>samples</module>
         <module>integration-tests</module>
+        <module>samples</module>
     </modules>
 
     <properties>
@@ -308,13 +308,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-security</artifactId>
                 <version>${version.springboot}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <version>${version.springboot}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
