@@ -2,9 +2,11 @@ package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.util.Collections;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
@@ -17,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -37,29 +40,53 @@ public class PatchBuilderTest extends HttpServerMockup
   private User currentUser;
 
   /**
-   * the patch builder that is used to perform patch-updates on the currentUser
+   * the scim http client that should be used in the builder
    */
-  private PatchBuilder<User> patchBuilder;
+  private ScimHttpClient scimHttpClient;
 
+  /**
+   * gets a user from the current userhandler
+   */
   @BeforeEach
   public void initializeTest()
   {
     ScimClientConfig scimClientConfig = ScimClientConfig.builder().build();
-    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    scimHttpClient = new ScimHttpClient(scimClientConfig);
 
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     // get the id of an existing user
     final String userId = userHandler.getInMemoryMap().keySet().iterator().next();
-    currentUser = userHandler.getInMemoryMap().get(userId);
-    patchBuilder = new PatchBuilder<>(getServerUrl(), EndpointPaths.USERS, userId, User.class, scimHttpClient);
+    currentUser = JsonHelper.copyResourceToObject(userHandler.getInMemoryMap().get(userId).deepCopy(), User.class);
+  }
+
+  /**
+   * resets the patched user in the userhandler into its original state
+   */
+  @AfterEach
+  public void resetUser()
+  {
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(currentUser.getId().get(), currentUser);
   }
 
   /**
    * verifies that a patch operation can successfully be applied to the current user
    */
-  @Test
-  public void testBuildPatchOperation()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildPatchOperation(boolean useFullUrl)
   {
+    final String userId = currentUser.getId().get();
+    PatchBuilder<User> patchBuilder;
+    if (useFullUrl)
+    {
+      patchBuilder = new PatchBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + userId, User.class,
+                                        scimHttpClient);
+    }
+    else
+    {
+      patchBuilder = new PatchBuilder<>(getServerUrl(), EndpointPaths.USERS, userId, User.class, scimHttpClient);
+    }
     final String emailValue = "happy.day@scim-sdk.de";
     final String emailType = "fun";
     final boolean emailPrimary = true;
@@ -91,7 +118,7 @@ public class PatchBuilderTest extends HttpServerMockup
     User patchedUser = response.getResource();
     Assertions.assertEquals(givenName, patchedUser.getName().flatMap(Name::getGivenName).orElse(null));
     Assertions.assertEquals(locale, patchedUser.getLocale().orElse(null));
-    Assertions.assertEquals(1, patchedUser.getEmails().size());
+    Assertions.assertEquals(1, patchedUser.getEmails().size(), patchedUser.toPrettyString());
     Assertions.assertEquals(emailValue, patchedUser.getEmails().get(0).getValue().orElse(null));
     Assertions.assertEquals(emailType, patchedUser.getEmails().get(0).getType().orElse(null));
     Assertions.assertEquals(emailPrimary, patchedUser.getEmails().get(0).isPrimary());

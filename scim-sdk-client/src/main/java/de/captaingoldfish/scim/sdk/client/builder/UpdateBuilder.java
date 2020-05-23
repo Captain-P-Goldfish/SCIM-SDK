@@ -24,6 +24,24 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
+  /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param fullUrl the fully qualified url to the required resource
+   * @param responseEntityType the type of the resource that should be returned
+   * @param scimHttpClient the http client instance
+   */
+  public UpdateBuilder(String fullUrl, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  {
+    super(responseEntityType, scimHttpClient);
+    this.fullUrl = fullUrl;
+  }
+
   public UpdateBuilder(String baseUrl,
                        String endpoint,
                        String resourceId,
@@ -32,6 +50,7 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   {
     super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
           scimHttpClient);
+    this.fullUrl = null;
   }
 
   /**
@@ -100,7 +119,15 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpPut httpPut = new HttpPut(getBaseUrl() + getEndpoint());
+    HttpPut httpPut;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpPut = new HttpPut(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpPut = new HttpPut(fullUrl);
+    }
     if (StringUtils.isBlank(getResource()))
     {
       throw new IllegalArgumentException("resource for update request must not be empty");

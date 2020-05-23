@@ -19,6 +19,23 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
+  /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param fullUrl the fully qualified url to the required resource
+   * @param responseEntityType the type of the resource that should be returned
+   * @param scimHttpClient the http client instance
+   */
+  public DeleteBuilder(String fullUrl, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  {
+    super(responseEntityType, scimHttpClient);
+    this.fullUrl = fullUrl;
+  }
 
   public DeleteBuilder(String baseUrl,
                        String endpoint,
@@ -28,6 +45,7 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   {
     super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
           scimHttpClient);
+    this.fullUrl = null;
   }
 
   /**
@@ -81,7 +99,15 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpDelete httpDelete = new HttpDelete(getBaseUrl() + getEndpoint());
+    HttpDelete httpDelete;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpDelete = new HttpDelete(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpDelete = new HttpDelete(fullUrl);
+    }
     if (isUseIfMatch())
     {
       httpDelete.setHeader(HttpHeader.IF_MATCH_HEADER, getVersion().toString());

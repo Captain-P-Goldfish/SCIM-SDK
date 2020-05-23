@@ -24,9 +24,28 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
 {
 
+  /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param fullUrl the fully qualified url to the required resource
+   * @param responseEntityType the type of the resource that should be returned
+   * @param scimHttpClient the http client instance
+   */
+  public CreateBuilder(String fullUrl, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  {
+    super(null, null, responseEntityType, scimHttpClient);
+    this.fullUrl = fullUrl;
+  }
+
   public CreateBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     super(baseUrl, endpoint, responseEntityType, scimHttpClient);
+    this.fullUrl = null;
   }
 
   /**
@@ -75,7 +94,15 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    HttpPost httpPost;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpPost = new HttpPost(fullUrl);
+    }
     StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
     httpPost.setEntity(stringEntity);
     return httpPost;

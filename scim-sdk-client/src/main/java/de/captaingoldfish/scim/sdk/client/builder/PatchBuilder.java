@@ -31,9 +31,28 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
   /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
    * the patch request operations that will be filled in this builders execution
    */
   private List<PatchRequestOperation> operations;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param fullUrl the fully qualified url to the required resource
+   * @param responseEntityType the type of the resource that should be returned
+   * @param scimHttpClient the http client instance
+   */
+  public PatchBuilder(String fullUrl, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  {
+    super(responseEntityType, scimHttpClient);
+    operations = new ArrayList<>();
+    this.fullUrl = fullUrl;
+  }
 
   public PatchBuilder(String baseUrl,
                       String endpoint,
@@ -44,6 +63,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
           scimHttpClient);
     operations = new ArrayList<>();
+    this.fullUrl = null;
   }
 
   /**
@@ -89,7 +109,15 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpPatch httpPatch = new HttpPatch(getBaseUrl() + getEndpoint());
+    HttpPatch httpPatch;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpPatch = new HttpPatch(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpPatch = new HttpPatch(fullUrl);
+    }
     StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
     httpPatch.setEntity(stringEntity);
     return httpPatch;

@@ -157,6 +157,29 @@ public class ListBuilderTest extends HttpServerMockup
     parseFilterWithAntlr(filter);
   }
 
+  /**
+   * verifies that using the full url does also work with get
+   */
+  @ParameterizedTest
+  @MethodSource("filterBuilderParamsString")
+  public void testBuildFilterWithStringsWithFullUrl(String attributeName, Comparator comparator, String value)
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl() + EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.filter("username", Comparator.SW, "hello_world")
+               .or(attributeName, comparator, value)
+               .or(true, attributeName, comparator, value)
+               .closeParenthesis()
+               .build();
+    final String filter = listBuilder.getRequestParameters().get(AttributeNames.RFC7643.FILTER);
+    String val = Comparator.PR.equals(comparator) ? "" : " \"" + value + "\"";
+    Assertions.assertEquals("username SW \"hello_world\" or " + attributeName + " " + comparator + val + " or ("
+                            + attributeName + " " + comparator + val + ")",
+                            filter);
+    parseFilterWithAntlr(filter);
+  }
+
   @ParameterizedTest
   @MethodSource("filterBuilderParamsInteger")
   public void testBuildFilterWithIntegers(String attributeName, Comparator comparator, Integer value)
@@ -335,6 +358,107 @@ public class ListBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).sortBy(sortBy)
+                                                                     .count(count)
+                                                                     .startIndex(startIndex)
+                                                                     .sortOrder(sortOrder)
+                                                                     .attributes(attributes)
+                                                                     .filter("username", Comparator.SW, "a")
+                                                                     .build();
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      SearchRequest searchRequest = JsonHelper.readJsonDocument(requestBody, SearchRequest.class);
+      Assertions.assertEquals(sortBy, searchRequest.getSortBy().get());
+      Assertions.assertEquals(count, searchRequest.getCount().get());
+      Assertions.assertEquals(startIndex, searchRequest.getStartIndex().get());
+      Assertions.assertEquals("username SW \"a\"", searchRequest.getFilter().get());
+      Assertions.assertEquals(sortOrder.name().toLowerCase(), searchRequest.getSortOrder().get());
+      Assertions.assertEquals(String.join(",", attributes), searchRequest.getAttributes().get());
+      wasCalled.set(true);
+    });
+
+    ServerResponse<ListResponse<User>> response = listBuilder.post().sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    ListResponse<User> listResponse = response.getResource();
+    Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    Assertions.assertEquals(startIndex, listResponse.getStartIndex());
+    Assertions.assertEquals(count, listResponse.getListedResources().size());
+
+    Assertions.assertTrue(wasCalled.get());
+
+    Assertions.assertDoesNotThrow(() -> response.getResource().getListedResources().get(0));
+  }
+
+  /**
+   * verifies that a list request does also work if the fully qualified url is used
+   */
+  @Test
+  public void testSendListPostRequestWithFullUrl()
+  {
+    final String sortBy = "username";
+    final Integer count = 15;
+    final Long startIndex = 15L;
+    final SortOrder sortOrder = SortOrder.DESCENDING;
+    final String[] attributes = new String[]{"username", "meta.created"};
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl() + EndpointPaths.USERS + "/.search", User.class,
+                                                      scimHttpClient).sortBy(sortBy)
+                                                                     .count(count)
+                                                                     .startIndex(startIndex)
+                                                                     .sortOrder(sortOrder)
+                                                                     .attributes(attributes)
+                                                                     .filter("username", Comparator.SW, "a")
+                                                                     .build();
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      SearchRequest searchRequest = JsonHelper.readJsonDocument(requestBody, SearchRequest.class);
+      Assertions.assertEquals(sortBy, searchRequest.getSortBy().get());
+      Assertions.assertEquals(count, searchRequest.getCount().get());
+      Assertions.assertEquals(startIndex, searchRequest.getStartIndex().get());
+      Assertions.assertEquals("username SW \"a\"", searchRequest.getFilter().get());
+      Assertions.assertEquals(sortOrder.name().toLowerCase(), searchRequest.getSortOrder().get());
+      Assertions.assertEquals(String.join(",", attributes), searchRequest.getAttributes().get());
+      wasCalled.set(true);
+    });
+
+    ServerResponse<ListResponse<User>> response = listBuilder.post().sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    ListResponse<User> listResponse = response.getResource();
+    Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    Assertions.assertEquals(startIndex, listResponse.getStartIndex());
+    Assertions.assertEquals(count, listResponse.getListedResources().size());
+
+    Assertions.assertTrue(wasCalled.get());
+
+    Assertions.assertDoesNotThrow(() -> response.getResource().getListedResources().get(0));
+  }
+
+  /**
+   * verifies that a list request does also work if the fully qualified url is used that is still missing the "/
+   * .search" path at the end of the url
+   */
+  @Test
+  public void testSendListPostRequestWithFullUrlWithoutSearchValue()
+  {
+    final String sortBy = "username";
+    final Integer count = 15;
+    final Long startIndex = 15L;
+    final SortOrder sortOrder = SortOrder.DESCENDING;
+    final String[] attributes = new String[]{"username", "meta.created"};
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl() + EndpointPaths.USERS, User.class,
                                                       scimHttpClient).sortBy(sortBy)
                                                                      .count(count)
                                                                      .startIndex(startIndex)
