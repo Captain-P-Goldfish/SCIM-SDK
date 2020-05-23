@@ -235,7 +235,8 @@ public class ResourceTypeTest implements FileReferences
                                                                              enterpriseUserDocument,
                                                                              null,
                                                                              null,
-                                                                             null);
+                                                                             null,
+                                                                             () -> "http://localhost:8080/scim/v2");
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,

@@ -199,7 +199,8 @@ class ResourceEndpointHandler
                                                                               resourceNode,
                                                                               resource,
                                                                               null,
-                                                                              null);
+                                                                              null,
+                                                                              baseUrlSupplier);
       return new CreateResponse(responseResource, location, createdMeta);
     }
     catch (ScimException ex)
@@ -319,7 +320,8 @@ class ResourceEndpointHandler
                                                                               resourceNode,
                                                                               null,
                                                                               attributes,
-                                                                              excludedAttributes);
+                                                                              excludedAttributes,
+                                                                              baseUrlSupplier);
       return new GetResponse(responseResource, location, resourceNode.getMeta().orElse(null));
     }
     catch (ScimException ex)
@@ -534,7 +536,8 @@ class ResourceEndpointHandler
                                                                                  resourceNode,
                                                                                  null,
                                                                                  attributes,
-                                                                                 excludedAttributes);
+                                                                                 excludedAttributes,
+                                                                                 baseUrlSupplier);
         validatedResourceList.add(validatedResource);
       }
 
@@ -774,7 +777,8 @@ class ResourceEndpointHandler
                                                                               resourceNode,
                                                                               resource,
                                                                               null,
-                                                                              null);
+                                                                              null,
+                                                                              baseUrlSupplier);
 
       return new UpdateResponse(responseResource, location, meta);
     }
@@ -959,7 +963,8 @@ class ResourceEndpointHandler
                                                                               patchedResourceNode,
                                                                               patchHandler.getRequestedAttributes(),
                                                                               attributes,
-                                                                              excludedAttributes);
+                                                                              excludedAttributes,
+                                                                              baseUrlSupplier);
 
       return new UpdateResponse(responseResource, location, meta);
     }

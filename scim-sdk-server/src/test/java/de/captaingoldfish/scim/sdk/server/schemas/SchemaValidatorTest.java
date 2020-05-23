@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
@@ -40,6 +41,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
+import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -50,12 +52,16 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
+import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
@@ -71,6 +77,14 @@ import lombok.extern.slf4j.Slf4j;
 public class SchemaValidatorTest implements FileReferences
 {
 
+  /**
+   * a url supplier that may be used in special cases during schema validation
+   */
+  private Supplier<String> baseUrlSupplier = () -> "http://localhost:8080/scim/v2";
+
+  /**
+   * the factory that builds and holds all registered resource-types
+   */
   private ResourceTypeFactory resourceTypeFactory;
 
   /**
@@ -189,7 +203,10 @@ public class SchemaValidatorTest implements FileReferences
   {
     log.trace(testName);
     Schema metaSchema = new Schema(metaSchemaNode);
-    JsonNode jsonNode = SchemaValidator.validateDocumentForResponse(metaSchema, jsonDocument);
+    JsonNode jsonNode = SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                    jsonDocument,
+                                                                    baseUrlSupplier,
+                                                                    resourceTypeFactory);
     Assertions.assertTrue(JsonHelper.getArrayAttribute(jsonNode, AttributeNames.RFC7643.SCHEMAS).isPresent(),
                           "the schemas attribute must not be removed from the document");
     ArrayNode documentSchemas = JsonHelper.getArrayAttribute(jsonDocument, AttributeNames.RFC7643.SCHEMAS).get();
@@ -210,7 +227,10 @@ public class SchemaValidatorTest implements FileReferences
 
     JsonHelper.removeAttribute(userSchema, attributeName);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -229,7 +249,10 @@ public class SchemaValidatorTest implements FileReferences
     JsonHelper.removeAttribute(firstAttribute, attributeName);
 
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -247,7 +270,10 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.writeValue(firstAttribute, attributeName, "unknown_value");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -264,7 +290,10 @@ public class SchemaValidatorTest implements FileReferences
     arrayNode.add("bla");
     JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -279,7 +308,10 @@ public class SchemaValidatorTest implements FileReferences
     IntNode idNode = new IntNode(new Random().nextInt());
     JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, idNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -296,7 +328,9 @@ public class SchemaValidatorTest implements FileReferences
     JsonHelper.writeValue(userResourceTypeSchema, attributeName, "oh happy day");
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
-                                                                              userResourceTypeSchema));
+                                                                              userResourceTypeSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -313,7 +347,9 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(resourceTypeSchema);
     Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(metaSchema,
-                                                                                    userResourceTypeSchema));
+                                                                                    userResourceTypeSchema,
+                                                                                    baseUrlSupplier,
+                                                                                    resourceTypeFactory));
   }
 
   /**
@@ -331,7 +367,10 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(resourceTypeSchema);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userResourceTypeSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userResourceTypeSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -372,7 +411,10 @@ public class SchemaValidatorTest implements FileReferences
     final String helloWorldKey = "helloWorld";
     JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
 
-    JsonNode validatedSchema = SchemaValidator.validateDocumentForResponse(resourceTypeSchema, userResourceTypeSchema);
+    JsonNode validatedSchema = SchemaValidator.validateDocumentForResponse(resourceTypeSchema,
+                                                                           userResourceTypeSchema,
+                                                                           baseUrlSupplier,
+                                                                           resourceTypeFactory);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());
     ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(validatedSchema, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
                                            .orElseThrow(() -> new IllegalStateException("the document does not contain "
@@ -401,7 +443,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(documentLocation);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema, baseUrlSupplier, resourceTypeFactory);
     });
     Assertions.assertNotNull(validatedDocument);
     validateJsonNodeIsScimNode(validatedDocument);
@@ -420,7 +462,7 @@ public class SchemaValidatorTest implements FileReferences
 
     JsonHelper.removeAttribute(resourceSchema, AttributeNames.RFC7643.ID);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      SchemaValidator.validateDocumentForResponse(metaSchema, resourceSchema);
+      SchemaValidator.validateDocumentForResponse(metaSchema, resourceSchema, baseUrlSupplier, resourceTypeFactory);
     });
   }
 
@@ -451,11 +493,58 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema, baseUrlSupplier, resourceTypeFactory);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
     Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.PASSWORD));
+  }
+
+
+  /**
+   * this test will verify that reference attributes are added on response automatically if enough information
+   * is present
+   */
+  @Test
+  public void testAddReferenceValueAutomatically()
+  {
+    resourceTypeFactory.registerResourceType(new UserHandlerImpl(),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
+    resourceTypeFactory.registerResourceType(new GroupHandlerImpl(),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON),
+                                             JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON));
+
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON));
+    String userId = UUID.randomUUID().toString();
+    String groupId = UUID.randomUUID().toString();
+    String groupResourceString = readResourceFile(GROUP_RESOURCE_TWO_MEMBERS,
+                                                  s -> s.replace("${userId}", userId).replace("${groupId}", groupId));
+    Group groupResource = JsonHelper.readJsonDocument(groupResourceString, Group.class);
+    groupResource.setId(UUID.randomUUID().toString());
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                         groupResource,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
+    });
+    Group group = JsonHelper.copyResourceToObject(validatedDocument, Group.class);
+    String expectedUserUrl = baseUrlSupplier.get() + EndpointPaths.USERS + "/" + userId;
+    String expectedGroupUrl = baseUrlSupplier.get() + EndpointPaths.GROUPS + "/" + groupId;
+    Member userMember = group.getMembers()
+                             .stream()
+                             .filter(member -> member.getType().get().equals(ResourceTypeNames.USER))
+                             .findAny()
+                             .get();
+    Member groupMember = group.getMembers()
+                              .stream()
+                              .filter(member -> member.getType().get().equals(ResourceTypeNames.GROUPS))
+                              .findAny()
+                              .get();
+    Assertions.assertEquals(expectedUserUrl, userMember.getRef().get());
+    Assertions.assertEquals(expectedGroupUrl, groupMember.getRef().get());
   }
 
   /**
@@ -647,7 +736,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema);
+      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema, baseUrlSupplier, resourceTypeFactory);
     });
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.RFC7643.EXTERNAL_ID)
                                      .isPresent());
@@ -795,7 +884,10 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, HttpMethod.POST));
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForResponse(metaSchema, userSchema));
+                            () -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                              userSchema,
+                                                                              baseUrlSupplier,
+                                                                              resourceTypeFactory));
   }
 
   /**
@@ -875,7 +967,9 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          AttributeNames.RFC7643.NICK_NAME,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
 
     JsonNode nickName = validatedDocument.get(AttributeNames.RFC7643.NICK_NAME);
@@ -927,7 +1021,13 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema, null, null, null);
+      return SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                         userSchema,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
     String[] attributeNameParts = attributeName.split("\\.");
     if (attributeNameParts.length == 1)
@@ -978,7 +1078,13 @@ public class SchemaValidatorTest implements FileReferences
     });
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForResponse(metaSchema, userSchema, validatedRequestDocument, null, null);
+      return SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                         userSchema,
+                                                         validatedRequestDocument,
+                                                         null,
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
 
     Assertions.assertNotNull(validatedDocument.get(attributeName));
@@ -1040,7 +1146,9 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          validatedRequestDocument,
                                                          fullName,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
 
     Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.META));
@@ -1107,7 +1215,9 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          validatedRequestDocument,
                                                          fullName,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
 
     String[] attributeNameParts = attributeName.split("\\.");
@@ -1172,7 +1282,9 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          validatedRequestDocument,
                                                          fullName,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
 
     String[] attributeNameParts = attributeName.split("\\.");
@@ -1232,7 +1344,9 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          validatedRequestDocument,
                                                          SchemaUris.USER_URI,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier,
+                                                         resourceTypeFactory);
     });
 
     Assertions.assertNotNull(validatedDocument.get(attributeName));
@@ -1274,7 +1388,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          null,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNotNull(enterpriseUser);
@@ -1317,7 +1432,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          attributeName,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNotNull(enterpriseUser);
@@ -1367,7 +1483,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          null,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNull(enterpriseUser);
@@ -1403,7 +1520,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          null,
-                                                         excluded);
+                                                         excluded,
+                                                         baseUrlSupplier);
     });
     for ( String attributeName : excludedList )
     {
@@ -1442,7 +1560,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          null,
-                                                         AttributeNames.RFC7643.NAME);
+                                                         AttributeNames.RFC7643.NAME,
+                                                         baseUrlSupplier);
     });
     Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
   }
@@ -1468,7 +1587,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          AttributeNames.RFC7643.NAME,
-                                                         null);
+                                                         null,
+                                                         baseUrlSupplier);
     });
     Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
     JsonNode meta = validatedDocument.get(AttributeNames.RFC7643.META);
@@ -1503,7 +1623,8 @@ public class SchemaValidatorTest implements FileReferences
                                                          userSchema,
                                                          null,
                                                          null,
-                                                         excluded);
+                                                         excluded,
+                                                         baseUrlSupplier);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
     Assertions.assertNull(enterpriseUser);
@@ -1541,7 +1662,13 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNotNull(resourceType);
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, userSchema, null, null, null);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                  resourceType,
+                                                  userSchema,
+                                                  null,
+                                                  null,
+                                                  null,
+                                                  baseUrlSupplier);
       Assertions.fail("the schema validation must fail. The name attribute is not of type object!");
     }
     catch (DocumentValidationException ex)
@@ -1578,7 +1705,13 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNotNull(resourceType);
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, userSchema, null, null, null);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                  resourceType,
+                                                  userSchema,
+                                                  null,
+                                                  null,
+                                                  null,
+                                                  baseUrlSupplier);
       Assertions.fail("the schema validation must fail. The emails attribute is not of type array!");
     }
     catch (DocumentValidationException ex)
@@ -1615,7 +1748,13 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNotNull(resourceType);
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, userSchema, null, null, null);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                  resourceType,
+                                                  userSchema,
+                                                  null,
+                                                  null,
+                                                  null,
+                                                  baseUrlSupplier);
       Assertions.fail("the schema validation must fail. The userName attribute is not of type string!");
     }
     catch (DocumentValidationException ex)
@@ -2098,7 +2237,8 @@ public class SchemaValidatorTest implements FileReferences
                                                                                     allTypes,
                                                                                     null,
                                                                                     null,
-                                                                                    null));
+                                                                                    null,
+                                                                                    baseUrlSupplier));
   }
 
   /**
@@ -2108,7 +2248,13 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory, resourceType, allTypes, null, null, null);
+      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
+                                                  resourceType,
+                                                  allTypes,
+                                                  null,
+                                                  null,
+                                                  null,
+                                                  baseUrlSupplier);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
@@ -2247,6 +2393,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                       allTypes,
                                                                       null,
                                                                       null,
-                                                                      null));
+                                                                      null,
+                                                                      baseUrlSupplier));
   }
 }
