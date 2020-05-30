@@ -723,7 +723,7 @@ class ResourceEndpointHandler
       {
         ETagHandler.validateVersion(serviceProvider,
                                     resourceType,
-                                    () -> resourceHandler.getResource(id, null),
+                                    () -> resourceHandler.getResource(id, authorization),
                                     httpHeaders);
       }
       catch (ResourceNotFoundException ex)
@@ -818,7 +818,7 @@ class ResourceEndpointHandler
       {
         ETagHandler.validateVersion(serviceProvider,
                                     resourceType,
-                                    () -> resourceHandler.getResource(id, null),
+                                    () -> resourceHandler.getResource(id, authorization),
                                     httpHeaders);
       }
       catch (ResourceNotFoundException ex)
