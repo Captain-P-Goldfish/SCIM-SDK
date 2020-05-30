@@ -461,6 +461,10 @@ public class SchemaValidator
         JsonHelper.addAttribute(validatedMainDocument, schemaExtension.getNonNullId(), extensionNode);
       }
     }
+    if (document.has(AttributeNames.RFC7643.META))
+    {
+      ((ObjectNode)validatedMainDocument).set(AttributeNames.RFC7643.META, document.get(AttributeNames.RFC7643.META));
+    }
     return validatedMainDocument;
   }
 

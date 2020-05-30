@@ -14,6 +14,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -175,7 +176,9 @@ class ResourceEndpointHandler
       resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.POST);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
-      Meta meta = Meta.builder().resourceType(resourceType.getName()).build();
+      Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
+      meta.setResourceType(resourceType.getName());
+      resourceNode.remove(AttributeNames.RFC7643.META);
       resourceNode.setMeta(meta);
       resourceNode = resourceHandler.createResource(resourceNode, authorization);
       if (resourceNode == null)
@@ -744,14 +747,11 @@ class ResourceEndpointHandler
       }
       resourceNode.setId(id);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
-      Meta meta = resourceNode.getMeta().orElse(null);
-      if (meta == null)
-      {
-        meta = Meta.builder().build();
-        resourceNode.setMeta(meta);
-      }
+      Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
+      resourceNode.remove(AttributeNames.RFC7643.META);
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
+      resourceNode.setMeta(meta);
       resourceNode = resourceHandler.updateResource(resourceNode, authorization);
       if (resourceNode == null)
       {
@@ -929,15 +929,12 @@ class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
-      Meta meta = resourceNode.getMeta().orElse(null);
-      if (meta == null)
-      {
-        meta = Meta.builder().build();
-        resourceNode.setMeta(meta);
-      }
+      Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
+      resourceNode.remove(AttributeNames.RFC7643.META);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
+      resourceNode.setMeta(meta);
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
       PatchHandler patchHandler = new PatchHandler(resourceType);
