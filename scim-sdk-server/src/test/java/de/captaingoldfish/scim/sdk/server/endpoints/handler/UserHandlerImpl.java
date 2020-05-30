@@ -22,6 +22,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -32,8 +33,11 @@ import lombok.extern.slf4j.Slf4j;
  * a simple user resource handler for testing
  */
 @Slf4j
+@RequiredArgsConstructor
 public class UserHandlerImpl extends ResourceHandler<User>
 {
+
+  private final boolean returnETags;
 
   @Getter
   private Map<String, User> inMemoryMap = new HashMap<>();
@@ -64,12 +68,12 @@ public class UserHandlerImpl extends ResourceHandler<User>
     User user = inMemoryMap.get(id);
     if (user != null)
     {
-      Meta meta = user.getMeta().get();
+      Meta meta = user.getMeta().orElse(Meta.builder().build());
       user.remove(AttributeNames.RFC7643.META);
       user.setMeta(Meta.builder()
-                       .created(meta.getCreated().get())
-                       .lastModified(meta.getLastModified().get())
-                       .version(meta.getVersion().orElse(null))
+                       .created(meta.getCreated().orElse(null))
+                       .lastModified(meta.getLastModified().orElse(null))
+                       .version(returnETags ? meta.getVersion().orElse(null) : null)
                        .build());
     }
     return user;
@@ -92,7 +96,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
       user.setMeta(Meta.builder()
                        .created(meta.getCreated().get())
                        .lastModified(meta.getLastModified().get())
-                       .version(meta.getVersion().orElse(null))
+                       .version(returnETags ? meta.getVersion().orElse(null) : null)
                        .build());
     });
     return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
@@ -114,11 +118,12 @@ public class UserHandlerImpl extends ResourceHandler<User>
     }
     inMemoryMap.put(userId, resource);
     Meta oldMeta = oldUser.getMeta().get();
+    Instant lastModified = resource.equals(inMemoryMap.get(userId)) ? oldMeta.getCreated().get() : Instant.now();
     resource.remove(AttributeNames.RFC7643.META);
     resource.setMeta(Meta.builder()
                          .created(oldMeta.getCreated().get())
-                         .lastModified(Instant.now())
-                         .version(oldMeta.getVersion().orElse(null))
+                         .lastModified(lastModified)
+                         .version(returnETags ? oldMeta.getVersion().orElse(null) : null)
                          .build());
     return resource;
   }

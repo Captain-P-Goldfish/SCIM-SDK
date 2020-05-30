@@ -508,7 +508,7 @@ public class SchemaValidatorTest implements FileReferences
   @Test
   public void testAddReferenceValueAutomatically()
   {
-    resourceTypeFactory.registerResourceType(new UserHandlerImpl(),
+    resourceTypeFactory.registerResourceType(new UserHandlerImpl(true),
                                              JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
                                              JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
                                              JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));

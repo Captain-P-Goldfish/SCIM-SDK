@@ -135,7 +135,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    userHandler = Mockito.spy(new UserHandlerImpl());
+    userHandler = Mockito.spy(new UserHandlerImpl(true));
     groupHandler = Mockito.spy(new GroupHandlerImpl());
     UserEndpointDefinition userEndpoint = new UserEndpointDefinition(userHandler);
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);

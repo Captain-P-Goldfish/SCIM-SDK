@@ -120,7 +120,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   public void initialize()
   {
     serviceProvider = ServiceProvider.builder().build();
-    userHandler = Mockito.spy(new UserHandlerImpl());
+    userHandler = Mockito.spy(new UserHandlerImpl(true));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
@@ -1568,7 +1568,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String url = BASE_URI + EndpointPaths.USERS;
     serviceProvider = getServiceProvider();
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
-    EndpointDefinition endpointDefinition = new UserEndpointDefinition(new UserHandlerImpl());
+    EndpointDefinition endpointDefinition = new UserEndpointDefinition(new UserHandlerImpl(true));
     endpointDefinition.setResourceType(JsonHelper.loadJsonDocument(USER_AUTHORIZED_RESOURCE_TYPE));
     endpointDefinition.setResourceSchemaExtensions(Collections.emptyList());
     ResourceType resourceType = resourceEndpoint.registerEndpoint(endpointDefinition);

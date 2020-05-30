@@ -14,6 +14,11 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 public class UserSingletonHandlerImpl extends UserHandlerImpl
 {
 
+  public UserSingletonHandlerImpl()
+  {
+    super(true);
+  }
+
   /**
    * handles the user endpoint as singleton endpoint
    *

@@ -191,9 +191,9 @@ class ResourceEndpointHandler
       Meta createdMeta = resourceNode.getMeta()
                                      .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
                                                                                     null));
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -311,8 +311,8 @@ class ResourceEndpointHandler
       }
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
       resourceNode.getMeta().ifPresent(meta -> {
-        meta.setResourceType(resourceType.getName());
         meta.setLocation(location);
+        meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
       });
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
@@ -527,8 +527,8 @@ class ResourceEndpointHandler
       {
         final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
         resourceNode.getMeta().ifPresent(meta -> {
-          meta.setResourceType(resourceType.getName());
           meta.setLocation(location);
+          meta.setResourceType(resourceType.getName());
           ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
         });
         JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
@@ -759,9 +759,9 @@ class ResourceEndpointHandler
       Meta createdMeta = resourceNode.getMeta()
                                      .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
                                                                                     null));
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
+      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));

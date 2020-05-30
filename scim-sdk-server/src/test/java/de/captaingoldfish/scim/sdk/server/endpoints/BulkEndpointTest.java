@@ -93,7 +93,7 @@ public class BulkEndpointTest extends AbstractBulkTest
   public void initialize()
   {
     serviceProvider = ServiceProvider.builder().build();
-    userHandler = Mockito.spy(new UserHandlerImpl());
+    userHandler = Mockito.spy(new UserHandlerImpl(true));
     groupHandler = Mockito.spy(new GroupHandlerImpl());
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
                                                              new GroupEndpointDefinition(groupHandler));
