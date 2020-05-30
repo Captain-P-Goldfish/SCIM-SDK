@@ -84,6 +84,18 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
+   * builds a get builder that is used to access a singleton resource from the provider
+   *
+   * @param type the type that should be created
+   * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
+   * @return a get-request builder for the given resource type
+   */
+  public <T extends ResourceNode> GetBuilder<T> get(Class<T> type, String endpoint)
+  {
+    return new GetBuilder<>(baseUrl, endpoint, null, type, scimHttpClient);
+  }
+
+  /**
    * builds a get builder class based on the given type
    *
    * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
