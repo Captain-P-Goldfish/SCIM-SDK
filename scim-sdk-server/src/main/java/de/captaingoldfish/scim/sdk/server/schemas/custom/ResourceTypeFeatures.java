@@ -21,13 +21,41 @@ public class ResourceTypeFeatures extends ScimObjectNode
   public ResourceTypeFeatures(boolean autoFiltering,
                               boolean autoSorting,
                               boolean singletonEndpoint,
-                              EndpointControlFeature endpointControlFeature)
+                              EndpointControlFeature endpointControlFeature,
+                              ETagFeature eTagFeature)
   {
     super(null);
     setAutoFiltering(autoFiltering);
     setAutoSorting(autoSorting);
     setSingletonEndpoint(singletonEndpoint);
     setEndpointControlFeature(endpointControlFeature);
+    setETagFeature(eTagFeature);
+  }
+
+  /**
+   * a complex type configuration for eTags that describes how the automatic API handling should use ETags
+   */
+  public ETagFeature getETagFeature()
+  {
+    Optional<ETagFeature> optionalETagFeature = getObjectAttribute(AttributeNames.RFC7643.ETAG, ETagFeature.class);
+    if (optionalETagFeature.isPresent())
+    {
+      return optionalETagFeature.get();
+    }
+    else
+    {
+      ETagFeature eTagFeature = ETagFeature.builder().build();
+      setETagFeature(eTagFeature);
+      return eTagFeature;
+    }
+  }
+
+  /**
+   * a complex type configuration for eTags that describes how the automatic API handling should use ETags
+   */
+  public void setETagFeature(ETagFeature eTagFeature)
+  {
+    setAttribute(AttributeNames.RFC7643.ETAG, eTagFeature);
   }
 
   /**

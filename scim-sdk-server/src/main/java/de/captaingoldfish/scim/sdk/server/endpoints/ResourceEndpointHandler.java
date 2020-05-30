@@ -193,7 +193,7 @@ class ResourceEndpointHandler
                                                                                     null));
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
+      ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
                                                                               resourceNode,
@@ -297,7 +297,7 @@ class ResourceEndpointHandler
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-      ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
+      ETagHandler.validateVersion(serviceProvider, resourceType, () -> resourceNode, httpHeaders);
       String resourceId = resourceNode.getId().orElse(null);
       if (resourceId != null && !resourceId.equals(id))
       {
@@ -313,7 +313,7 @@ class ResourceEndpointHandler
       resourceNode.getMeta().ifPresent(meta -> {
         meta.setLocation(location);
         meta.setResourceType(resourceType.getName());
-        ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
+        ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       });
       JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                               resourceType,
@@ -529,7 +529,7 @@ class ResourceEndpointHandler
         resourceNode.getMeta().ifPresent(meta -> {
           meta.setLocation(location);
           meta.setResourceType(resourceType.getName());
-          ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
+          ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
         });
         JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
                                                                                  resourceType,
@@ -721,7 +721,10 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       try
       {
-        ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+        ETagHandler.validateVersion(serviceProvider,
+                                    resourceType,
+                                    () -> resourceHandler.getResource(id, null),
+                                    httpHeaders);
       }
       catch (ResourceNotFoundException ex)
       {
@@ -761,7 +764,7 @@ class ResourceEndpointHandler
                                                                                     null));
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(createdMeta::setVersion);
+      ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
@@ -813,7 +816,10 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       try
       {
-        ETagHandler.validateVersion(serviceProvider, () -> resourceHandler.getResource(id, null), httpHeaders);
+        ETagHandler.validateVersion(serviceProvider,
+                                    resourceType,
+                                    () -> resourceHandler.getResource(id, null),
+                                    httpHeaders);
       }
       catch (ResourceNotFoundException ex)
       {
@@ -913,7 +919,7 @@ class ResourceEndpointHandler
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-      ETagHandler.validateVersion(serviceProvider, () -> resourceNode, httpHeaders);
+      ETagHandler.validateVersion(serviceProvider, resourceType, () -> resourceNode, httpHeaders);
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
@@ -932,7 +938,7 @@ class ResourceEndpointHandler
       final String location = getLocation(resourceType, id, baseUrlSupplier);
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
-      ETagHandler.getResourceVersion(serviceProvider, resourceNode).ifPresent(meta::setVersion);
+      ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
       PatchHandler patchHandler = new PatchHandler(resourceType);
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);

@@ -12,10 +12,12 @@ import java.util.UUID;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
@@ -26,6 +28,9 @@ import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 
 
 /**
@@ -37,6 +42,29 @@ public class ETagHandlerTest
 {
 
   /**
+   * a unit test schema factory instance
+   */
+  private ResourceTypeFactory resourceTypeFactory;
+
+  /**
+   * the user resource type declaration
+   */
+  private ResourceType userResourceType;
+
+  /**
+   * initializes the schema factory instance for unit tests
+   */
+  @BeforeEach
+  public void initialize()
+  {
+    resourceTypeFactory = new ResourceTypeFactory();
+    userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
+                                                                JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
+                                                                JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
+  }
+
+  /**
    * verifies that no etag is build if the service provider does not support etags
    */
   @Test
@@ -46,7 +74,7 @@ public class ETagHandlerTest
                                                      .eTagConfig(ETagConfig.builder().supported(false).build())
                                                      .build();
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").build();
-    Assertions.assertFalse(ETagHandler.getResourceVersion(serviceProvider, user).isPresent());
+    Assertions.assertFalse(ETagHandler.getResourceVersion(serviceProvider, userResourceType, user).isPresent());
   }
 
   /**
@@ -59,7 +87,7 @@ public class ETagHandlerTest
                                                      .eTagConfig(ETagConfig.builder().supported(true).build())
                                                      .build();
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").build();
-    Optional<ETag> version = ETagHandler.getResourceVersion(serviceProvider, user);
+    Optional<ETag> version = ETagHandler.getResourceVersion(serviceProvider, userResourceType, user);
     Assertions.assertTrue(version.isPresent());
     ETag eTag = version.get();
     MessageDigest messageDigest = MessageDigest.getInstance("SHA-1");
@@ -81,7 +109,7 @@ public class ETagHandlerTest
     final String versionTag = "123456";
     Meta meta = Meta.builder().version(versionTag).build();
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
-    Optional<ETag> version = ETagHandler.getResourceVersion(serviceProvider, user);
+    Optional<ETag> version = ETagHandler.getResourceVersion(serviceProvider, userResourceType, user);
     Assertions.assertTrue(version.isPresent());
     ETag eTag = version.get();
     Assertions.assertTrue(eTag.isWeak(), "such an etag must definitely be a weak entity tag");
@@ -215,7 +243,7 @@ public class ETagHandlerTest
     ServiceProvider serviceProvider = ServiceProvider.builder()
                                                      .eTagConfig(ETagConfig.builder().supported(false).build())
                                                      .build();
-    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider, null, null));
+    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider, userResourceType, null, null));
   }
 
   /**
@@ -233,7 +261,10 @@ public class ETagHandlerTest
     httpHeaders.put(HttpHeader.IF_MATCH_HEADER, eTag.toString());
     Meta meta = Meta.builder().version(eTag).build();
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
-    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider, () -> user, httpHeaders));
+    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider,
+                                                                    userResourceType,
+                                                                    () -> user,
+                                                                    httpHeaders));
   }
 
   /**
@@ -254,7 +285,7 @@ public class ETagHandlerTest
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
     try
     {
-      ETagHandler.validateVersion(serviceProvider, () -> user, httpHeaders);
+      ETagHandler.validateVersion(serviceProvider, userResourceType, () -> user, httpHeaders);
       Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
@@ -282,7 +313,10 @@ public class ETagHandlerTest
     ETag metaETag = ETag.builder().tag(UUID.randomUUID().toString()).build();
     Meta meta = Meta.builder().version(metaETag).build();
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
-    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider, () -> user, httpHeaders));
+    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider,
+                                                                    userResourceType,
+                                                                    () -> user,
+                                                                    httpHeaders));
   }
 
   /**
@@ -301,7 +335,7 @@ public class ETagHandlerTest
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
     try
     {
-      ETagHandler.validateVersion(serviceProvider, () -> user, httpHeaders);
+      ETagHandler.validateVersion(serviceProvider, userResourceType, () -> user, httpHeaders);
       Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
@@ -323,6 +357,48 @@ public class ETagHandlerTest
                                                      .build();
     Meta meta = Meta.builder().version(ETag.builder().tag(UUID.randomUUID().toString()).build()).build();
     User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
-    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider, () -> user, new HashMap<>()));
+    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider,
+                                                                    userResourceType,
+                                                                    () -> user,
+                                                                    new HashMap<>()));
+  }
+
+  /**
+   * verifies etag validation is not executed if disabled on the resource type
+   */
+  @Test
+  public void testETagValidationDoesNotFailIfDisabledOnResourceType()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .eTagConfig(ETagConfig.builder().supported(true).build())
+                                                     .build();
+    userResourceType.getFeatures().getETagFeature().setEnabled(false);
+
+    Map<String, String> httpHeaders = new HashMap<>();
+    ETag eTag = ETag.builder().tag(UUID.randomUUID().toString()).build();
+    httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, "something-wrong");
+
+    Meta meta = Meta.builder().version(eTag).build();
+    User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
+    Assertions.assertDoesNotThrow(() -> ETagHandler.validateVersion(serviceProvider,
+                                                                    userResourceType,
+                                                                    () -> user,
+                                                                    httpHeaders));
+  }
+
+  /**
+   * verifies etag validation is not executed if disabled on the resource type
+   */
+  @Test
+  public void testETagGenerationNotExecutedIfDisabledOnResourceType()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .eTagConfig(ETagConfig.builder().supported(true).build())
+                                                     .build();
+    userResourceType.getFeatures().getETagFeature().setEnabled(false);
+    ETag eTag = ETag.builder().tag(UUID.randomUUID().toString()).build();
+    Meta meta = Meta.builder().version(eTag).build();
+    User user = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").meta(meta).build();
+    Assertions.assertFalse(ETagHandler.getResourceVersion(serviceProvider, userResourceType, user).isPresent());
   }
 }

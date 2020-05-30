@@ -40,6 +40,30 @@
       "required": false
     },
     {
+      "name": "etag",
+      "type": "complex",
+      "description": "a complex type configuration for eTags that describes how the automatic API handling should use ETags",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "description": "a boolean if set to false ETags will not be generated automatically on this resource endpoint. Default is true.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        }
+      ]
+    },
+    {
       "name": "endpointControl",
       "type": "complex",
       "description": "a complex attribute that allows you to enable or disable specific endpoints for specific resources. An example would be to disable the create and the delete endpoint",
