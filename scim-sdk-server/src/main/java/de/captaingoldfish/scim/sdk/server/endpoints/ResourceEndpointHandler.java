@@ -194,6 +194,10 @@ class ResourceEndpointHandler
       Meta createdMeta = resourceNode.getMeta()
                                      .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
                                                                                     null));
+      if (!createdMeta.getLastModified().isPresent())
+      {
+        createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
+      }
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
@@ -314,6 +318,10 @@ class ResourceEndpointHandler
       }
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
       resourceNode.getMeta().ifPresent(meta -> {
+        if (!meta.getLastModified().isPresent())
+        {
+          meta.setLastModified(meta.getCreated().orElse(null));
+        }
         meta.setLocation(location);
         meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
@@ -530,6 +538,10 @@ class ResourceEndpointHandler
       {
         final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
         resourceNode.getMeta().ifPresent(meta -> {
+          if (!meta.getLastModified().isPresent())
+          {
+            meta.setLastModified(meta.getCreated().orElse(null));
+          }
           meta.setLocation(location);
           meta.setResourceType(resourceType.getName());
           ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
@@ -762,6 +774,10 @@ class ResourceEndpointHandler
       Meta createdMeta = resourceNode.getMeta()
                                      .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
                                                                                     null));
+      if (!createdMeta.getLastModified().isPresent())
+      {
+        createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
+      }
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
@@ -958,6 +974,10 @@ class ResourceEndpointHandler
         meta = patchedResourceNode.getMeta().orElseThrow(() -> {
           return new InternalServerException("The mandatory meta attribute is missing in the updated user");
         });
+        if (!meta.getLastModified().isPresent())
+        {
+          meta.setLastModified(meta.getCreated().orElse(null));
+        }
         meta.setResourceType(resourceType.getName());
         meta.setLocation(location);
       }

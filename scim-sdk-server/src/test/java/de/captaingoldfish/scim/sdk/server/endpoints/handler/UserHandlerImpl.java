@@ -58,7 +58,8 @@ public class UserHandlerImpl extends ResourceHandler<User>
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
     resource.remove(AttributeNames.RFC7643.META);
-    resource.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
+    Instant created = Instant.now();
+    resource.setMeta(Meta.builder().created(created).build());
     return resource;
   }
 
@@ -118,8 +119,15 @@ public class UserHandlerImpl extends ResourceHandler<User>
     }
     inMemoryMap.put(userId, resource);
     Meta oldMeta = oldUser.getMeta().get();
-    Instant lastModified = resource.equals(inMemoryMap.get(userId)) ? oldMeta.getCreated().get() : Instant.now();
+
+    oldUser.remove(AttributeNames.RFC7643.META);
     resource.remove(AttributeNames.RFC7643.META);
+
+    Instant lastModified = null;
+    if (!oldUser.equals(resource))
+    {
+      lastModified = Instant.now();
+    }
     resource.setMeta(Meta.builder()
                          .created(oldMeta.getCreated().get())
                          .lastModified(lastModified)
