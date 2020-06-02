@@ -618,6 +618,11 @@ public class SchemaValidator
   private Optional<JsonNode> checkMetaAttributeOnDocument(JsonNode document, SchemaAttribute schemaAttribute)
   {
     JsonNode documentNode = document.get(schemaAttribute.getName());
+    log.trace("validating attribute '{}' with value '{}'",
+              schemaAttribute.getName(),
+              Optional.ofNullable(documentNode)
+                      .map(JsonNode::textValue)
+                      .orElse(Optional.ofNullable(documentNode).map(JsonNode::toString).orElse(null)));
     validateIsRequired(documentNode, schemaAttribute);
     if (directionType != null && directionType.equals(DirectionType.RESPONSE) && documentNode == null
         && schemaAttribute.getReferenceTypes().contains(ReferenceTypes.RESOURCE))
