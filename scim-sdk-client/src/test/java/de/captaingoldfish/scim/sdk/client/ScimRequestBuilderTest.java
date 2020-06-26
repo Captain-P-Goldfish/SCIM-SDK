@@ -294,14 +294,14 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final Map<String, String[]> httpHeaders = new HashMap<>();
     final String token = UUID.randomUUID().toString();
-    httpHeaders.put(HttpHeader.AUHORIZATION, new String[]{"Bearer " + token, "hello world"});
+    httpHeaders.put(HttpHeader.AUTHORIZATION, new String[]{"Bearer " + token, "hello world"});
     httpHeaders.put(HttpHeader.IF_MATCH_HEADER, new String[]{token});
 
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
-      List<String> authHeaders = httpExchange.getRequestHeaders().get(HttpHeader.AUHORIZATION);
+      List<String> authHeaders = httpExchange.getRequestHeaders().get(HttpHeader.AUTHORIZATION);
       Assertions.assertEquals(2, authHeaders.size(), authHeaders.toString());
       Assertions.assertEquals("Bearer " + token, authHeaders.get(0), authHeaders.toString());
       Assertions.assertEquals("hello world", authHeaders.get(1), authHeaders.toString());

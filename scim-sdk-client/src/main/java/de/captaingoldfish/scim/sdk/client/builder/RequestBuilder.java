@@ -125,7 +125,7 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
     addHeaderToRequest(scimHttpClient.getScimClientConfig().getHttpHeaders(), httpHeaders, request);
     if (scimHttpClient.getScimClientConfig().getBasicAuth() != null)
     {
-      request.setHeader(HttpHeader.AUHORIZATION,
+      request.setHeader(HttpHeader.AUTHORIZATION,
                         scimHttpClient.getScimClientConfig().getBasicAuth().getAuthorizationHeaderValue());
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
