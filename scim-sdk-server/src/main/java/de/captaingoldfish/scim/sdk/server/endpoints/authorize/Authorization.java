@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.authorize;
 
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -72,7 +73,7 @@ public interface Authorization
     {
       return;
     }
-    if (!getClientRoles().containsAll(roles))
+    if (!Optional.ofNullable(getClientRoles()).map(clientRoles -> clientRoles.containsAll(roles)).orElse(false))
     {
       log.debug("the client '{}' tried to execute an action without proper authorization. "
                 + "Required authorization is '{}' but the client has '{}'",
