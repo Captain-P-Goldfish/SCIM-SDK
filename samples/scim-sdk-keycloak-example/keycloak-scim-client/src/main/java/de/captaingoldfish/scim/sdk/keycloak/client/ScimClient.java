@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
@@ -26,7 +27,11 @@ import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Address;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PhoneNumber;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -59,9 +64,9 @@ public class ScimClient
                                                                  .sendRequest();
     ServiceProvider serviceProviderConfig = response.getResource();
 
+    deleteAllUsers(scimRequestBuilder);
     createUsers(scimRequestBuilder, serviceProviderConfig);
-    createGroups(scimRequestBuilder);
-    // deleteAllUsers(scimRequestBuilder);
+    // createGroups(scimRequestBuilder);
   }
 
   /**
@@ -70,7 +75,7 @@ public class ScimClient
   private static void createUsers(ScimRequestBuilder scimRequestBuilder, ServiceProvider serviceProviderConfig)
   {
     int maxOperations = serviceProviderConfig.getBulkConfig().getMaxOperations();
-    getUserList(maxOperations).parallelStream().forEach(bulkUserList -> {
+    getUserList(maxOperations).forEach(bulkUserList -> {
       BulkBuilder bulkBuilder = scimRequestBuilder.bulk();
       bulkUserList.parallelStream().forEach(user -> {
         bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
@@ -142,12 +147,60 @@ public class ScimClient
       InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
       BufferedReader reader = new BufferedReader(inputStreamReader))
     {
+      Random random = new Random();
       String name;
       while ((name = reader.readLine()) != null)
       {
         name = name.toLowerCase();
         Meta meta = Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build();
-        userList.add(User.builder().userName(name).nickName(name).meta(meta).build());
+        userList.add(User.builder()
+                         .userName(name)
+                         .name(Name.builder()
+                                   .givenName(name)
+                                   .middlename(UUID.randomUUID().toString())
+                                   .familyName("Mustermann")
+                                   .honorificPrefix(random.nextInt(20) == 0 ? "Mr." : "Ms.")
+                                   .honorificSuffix(random.nextInt(20) == 0 ? "sama" : null)
+                                   .formatted(name)
+                                   .build())
+                         .active(random.nextBoolean())
+                         .nickName(name)
+                         .title("Dr.")
+                         .displayName(name)
+                         .userType(random.nextInt(50) == 0 ? "admin" : "user")
+                         .locale(random.nextBoolean() ? "de-DE" : "en-US")
+                         .preferredLanguage(random.nextBoolean() ? "de" : "en")
+                         .timeZone(random.nextBoolean() ? "Europe/Berlin" : "America/Los_Angeles")
+                         .profileUrl("http://localhost/" + name)
+                         .emails(Arrays.asList(Email.builder()
+                                                    .value(name + "@test.de")
+                                                    .primary(random.nextInt(20) == 0)
+                                                    .build(),
+                                               Email.builder().value(name + "_the_second@test.de").build()))
+                         .phoneNumbers(Arrays.asList(PhoneNumber.builder()
+                                                                .value(String.valueOf(random.nextLong()
+                                                                                      + Integer.MAX_VALUE))
+                                                                .primary(random.nextInt(20) == 0)
+                                                                .build(),
+                                                     PhoneNumber.builder()
+                                                                .value(String.valueOf(random.nextLong()
+                                                                                      + Integer.MAX_VALUE))
+                                                                .build()))
+                         .addresses(Arrays.asList(Address.builder()
+                                                         .streetAddress(name + " street " + random.nextInt(500))
+                                                         .country(random.nextBoolean() ? "germany" : "united states")
+                                                         .postalCode(String.valueOf(random.nextLong()
+                                                                                    + Integer.MAX_VALUE))
+                                                         .primary(random.nextInt(20) == 0)
+                                                         .build(),
+                                                  Address.builder()
+                                                         .streetAddress(name + " second street " + random.nextInt(500))
+                                                         .country(random.nextBoolean() ? "germany" : "united states")
+                                                         .postalCode(String.valueOf(random.nextLong()
+                                                                                    + Integer.MAX_VALUE))
+                                                         .build()))
+                         .meta(meta)
+                         .build());
         if (userList.size() == maxOperations)
         {
           bulkOperationList.add(userList);
