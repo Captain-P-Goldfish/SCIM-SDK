@@ -80,7 +80,7 @@
 
 
         <!-- logging dependencies -->
-        <version.log4j2>2.13.2</version.log4j2>
+        <version.log4j2>2.13.3</version.log4j2>
         <version.slf4j>1.7.30</version.slf4j>
 
         <!-- test dependencies -->
