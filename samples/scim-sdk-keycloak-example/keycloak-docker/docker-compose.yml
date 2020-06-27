@@ -13,7 +13,7 @@ services:
       keycloak:
         aliases:
           - mysql
-  iam:
+  keycloak:
     image: keycloak-scim-sdk:latest
     depends_on:
       - mysql
