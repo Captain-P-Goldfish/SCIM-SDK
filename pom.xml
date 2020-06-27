@@ -97,7 +97,7 @@
         <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.10.0</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.0.0-M2</version.maven.enforcer.plugin>
-        <version.maven.surefire.plugin>3.0.0-M3</version.maven.surefire.plugin>
+        <version.maven.surefire.plugin>3.0.0-M5</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.1.0</version.maven.source.plugin>
         <version.maven.javadoc.plugin>3.1.1</version.maven.javadoc.plugin>
         <version.maven.gpg.plugin>1.6</version.maven.gpg.plugin>
