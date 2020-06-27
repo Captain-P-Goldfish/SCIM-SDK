@@ -90,7 +90,7 @@
         <version.mockito>3.3.3</version.mockito>
         <version.resteasy.jaxrs>3.11.2.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.4.1</version.equalsverifier>
-        <version.springboot>2.2.6.RELEASE</version.springboot>
+        <version.springboot>2.3.1.RELEASE</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
 
         <!-- plugins -->
