@@ -1,3 +1,16 @@
+# Use keycloak example with docker
+
+execute `mvn clean package -P docker`. The build will create a docker image and installs it into your local docker
+registry with the name `keycloak-scim-sdk-${project.version}`.
+ 
+I added also a docker-compose.yml in the directory "keycloak-docker" that can be used to start a setup with mysql and
+keycloak that has the `keycloak-scim-ear` module deployed.
+
+If you look for the `Dockerfile` of the image `keycloak-scim-sdk` you can find it in 
+"keycloak-scim-ear/src/main/docker". it uses the latest keycloak docker build as base image.
+
+Now simply start the docker-compose setup and you will be able to access the below listed urls for each created realm.
+
 # How to use Keycloak example
 
 1. execute `mvn clean install` on the parent project
