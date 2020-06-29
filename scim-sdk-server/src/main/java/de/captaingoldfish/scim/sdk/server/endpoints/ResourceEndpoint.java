@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Consumer;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -13,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointFeatureHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,7 +62,35 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     String requestBody,
                                     Map<String, String> httpHeaders)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null);
+  }
+
+  /**
+   * this method will resolve the SCIM request based on the given information
+   *
+   * @param requestUrl the fully qualified resource URL e.g.:
+   *
+   *          <pre>
+   *             https://localhost/v2/scim/Users<br>
+   *             https://localhost/v2/scim/Users/123456<br>
+   *             https://localhost/v2/scim/Users/.search<br>
+   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
+   *          </pre>
+   *
+   * @param httpMethod the http method that was used by in the request
+   * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
+   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
+   *          to execute authentication on dedicated resource types
+   * @return the resolved SCIM response
+   */
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders,
+                                    Consumer<ResourceType> doBeforeExecution)
+  {
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doBeforeExecution);
   }
 
   /**
@@ -87,15 +118,47 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     Map<String, String> httpHeaders,
                                     Authorization authorization)
   {
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, authorization, null);
+  }
+
+  /**
+   * this method will resolve the SCIM request based on the given information
+   *
+   * @param requestUrl the fully qualified resource URL e.g.:
+   *
+   *          <pre>
+   *             https://localhost/v2/scim/Users<br>
+   *             https://localhost/v2/scim/Users/123456<br>
+   *             https://localhost/v2/scim/Users/.search<br>
+   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
+   *          </pre>
+   *
+   * @param httpMethod the http method that was used by in the request
+   * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
+   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
+   *          to execute authentication on dedicated resource types
+   * @return the resolved SCIM response
+   */
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders,
+                                    Authorization authorization,
+                                    Consumer<ResourceType> doBeforeExecution)
+  {
     try
     {
       UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod, httpHeaders);
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
-        BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory());
+        BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),
+                                                     doBeforeExecution);
         return bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, authorization);
       }
-      return resolveRequest(httpMethod, requestBody, uriInfos, authorization);
+      return resolveRequest(httpMethod, requestBody, uriInfos, authorization, doBeforeExecution);
     }
     catch (ScimException ex)
     {
@@ -115,13 +178,17 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param uriInfos the parsed information's of the request url
    * @param authorization should return the roles of an user and may contain arbitrary data needed in the
    *          handler implementation
+   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
+   *          to execute authentication on dedicated resource types
    * @return a response for the client that is either successful or an error
    */
   protected ScimResponse resolveRequest(HttpMethod httpMethod,
                                         String requestBody,
                                         UriInfos uriInfos,
-                                        Authorization authorization)
+                                        Authorization authorization,
+                                        Consumer<ResourceType> doBeforeExecution)
   {
+    Optional.ofNullable(doBeforeExecution).ifPresent(consumer -> consumer.accept(uriInfos.getResourceType()));
     switch (httpMethod)
     {
       case POST:

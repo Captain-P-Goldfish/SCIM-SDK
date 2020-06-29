@@ -7,7 +7,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -49,6 +51,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -87,6 +90,11 @@ public class BulkEndpointTest extends AbstractBulkTest
   private GroupHandlerImpl groupHandler;
 
   /**
+   * a resource type consumer that can be dynamically changed during the test execution
+   */
+  private Consumer<ResourceType> dynamicResourceTypeConsumer;
+
+  /**
    * initializes this test
    */
   @BeforeEach
@@ -97,7 +105,9 @@ public class BulkEndpointTest extends AbstractBulkTest
     groupHandler = Mockito.spy(new GroupHandlerImpl());
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
                                                              new GroupEndpointDefinition(groupHandler));
-    bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory());
+    bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory(),
+                                    resourceType -> Optional.ofNullable(dynamicResourceTypeConsumer)
+                                                            .ifPresent(consumer -> consumer.accept(resourceType)));
   }
 
   /**
@@ -106,6 +116,12 @@ public class BulkEndpointTest extends AbstractBulkTest
   @Test
   public void testSendBulkRequest()
   {
+    int[] executionCounter = new int[]{0};
+    dynamicResourceTypeConsumer = resourceType -> {
+      executionCounter[0]++;
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+
     final int maxOperations = 10;
     serviceProvider.getBulkConfig().setSupported(true);
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations * 3);
@@ -122,6 +138,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any(), Mockito.isNull());
+    Assertions.assertEquals(bulkResponse.getBulkResponseOperations().size(), executionCounter[0]);
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {

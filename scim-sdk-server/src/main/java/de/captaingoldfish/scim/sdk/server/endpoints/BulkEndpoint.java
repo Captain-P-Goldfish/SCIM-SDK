@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -83,6 +84,12 @@ class BulkEndpoint
   private final ResourceTypeFactory resourceTypeFactory;
 
   /**
+   * arbitary code that is executed before the endpoint is called. This might be used to execute authentication
+   * on dedicated resource types
+   */
+  private final Consumer<ResourceType> doBeforeExecution;
+
+  /**
    * this map is used to map the ids of newly created resources to bulkIds
    */
   private final Map<String, String> resolvedBulkIds = new HashMap<>();
@@ -96,9 +103,18 @@ class BulkEndpoint
                       ServiceProvider serviceProvider,
                       ResourceTypeFactory resourceTypeFactory)
   {
+    this(resourceEndpoint, serviceProvider, resourceTypeFactory, null);
+  }
+
+  public BulkEndpoint(ResourceEndpoint resourceEndpoint,
+                      ServiceProvider serviceProvider,
+                      ResourceTypeFactory resourceTypeFactory,
+                      Consumer<ResourceType> doBeforeExecution)
+  {
     this.resourceEndpoint = resourceEndpoint;
     this.serviceProvider = serviceProvider;
     this.resourceTypeFactory = resourceTypeFactory;
+    this.doBeforeExecution = doBeforeExecution;
   }
 
   /**
@@ -247,7 +263,8 @@ class BulkEndpoint
     ScimResponse scimResponse = resourceEndpoint.resolveRequest(httpMethod,
                                                                 operation.getData().orElse(null),
                                                                 operationUriInfo,
-                                                                authorization);
+                                                                authorization,
+                                                                doBeforeExecution);
     responseBuilder.status(scimResponse.getHttpStatus())
                    .response(ErrorResponse.class.isAssignableFrom(scimResponse.getClass()) ? (ErrorResponse)scimResponse
                      : null);

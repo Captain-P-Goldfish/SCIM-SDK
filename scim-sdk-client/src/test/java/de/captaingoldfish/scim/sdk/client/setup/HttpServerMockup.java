@@ -199,6 +199,7 @@ public abstract class HttpServerMockup
                                                          HttpMethod.valueOf(httpExchange.getRequestMethod()),
                                                          requestBody,
                                                          requestHeaders,
+                                                         null,
                                                          null);
 
     Map<String, List<String>> headerMap = new HashMap<>();
