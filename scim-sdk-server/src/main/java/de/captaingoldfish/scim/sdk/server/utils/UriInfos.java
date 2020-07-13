@@ -178,8 +178,9 @@ public class UriInfos
     }
     for ( ResourceType resourceType : resourceTypeFactory.getAllResourceTypes() )
     {
-      if (StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 1])
-          || (urlParts.length > 1 && StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 2])))
+      if (StringUtils.equals(resourceType.getEndpoint(), "/" + urlParts[urlParts.length - 1])
+          || (urlParts.length > 1
+              && StringUtils.equals(resourceType.getEndpoint(), "/" + urlParts[urlParts.length - 2])))
       {
         return resourceType;
       }
