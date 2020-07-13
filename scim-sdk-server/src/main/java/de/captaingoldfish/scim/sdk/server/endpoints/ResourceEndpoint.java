@@ -156,6 +156,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),
+                                                     uriInfos.getHttpHeaders(), uriInfos.getQueryParameters(),
                                                      doBeforeExecution);
         return bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, authorization);
       }
@@ -265,20 +266,23 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   /**
    * will authenticate the client that is currently accessing the resource server
    *
-   * @param uriInfos the current uri information
    * @param authorization the authorization object that will handle the authentication
    */
   private void authenticateClient(UriInfos uriInfos, Authorization authorization)
   {
+    ResourceType resourceType = uriInfos.getResourceType();
+    if (!resourceType.getFeatures().getAuthorization().isAuthenticated())
+    {
+      // no authentication required for this endpoint
+      return;
+    }
     Optional.ofNullable(authorization).ifPresent(auth -> {
-      boolean isAuthenticated = auth.authenticate(uriInfos.getResourceType(),
-                                                  uriInfos.getHttpMethod(),
-                                                  uriInfos.getHttpHeaders(),
-                                                  uriInfos.getQueryParameters());
+      boolean isAuthenticated = auth.authenticate(uriInfos.getHttpHeaders(), uriInfos.getQueryParameters());
       if (!isAuthenticated)
       {
-        log.error("authentication for request '{}' has failed", uriInfos.toString());
-        throw new UnauthenticatedException("not authenticated");
+        log.error("authentication has failed");
+        throw new UnauthenticatedException("not authenticated", getServiceProvider().getAuthenticationSchemes(),
+                                           auth.getRealm());
       }
     });
   }

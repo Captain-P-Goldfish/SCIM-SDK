@@ -7,7 +7,6 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.ForbiddenException;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -30,7 +29,10 @@ public interface Authorization
    * this is just a marker for error messages that will be printed into the log for debug purposes to be able to
    * identify the client that tried to do a forbidden action
    */
-  public String getClientId();
+  default String getClientId()
+  {
+    return null;
+  }
 
   /**
    * @return the roles that an authenticated client possesses
@@ -91,14 +93,23 @@ public interface Authorization
    * this method can be used to authenticate a client or user for a specific resource type on a specific
    * operation
    * 
+   * @param httpHeaders in case that the authentication details are sent in the http headers
+   * @param queryParams in case that authentication identifier are used in the query
    * @return true if the user / client was successfully be authenticated, false else
    */
-  default boolean authenticate(ResourceType resourceType,
-                               HttpMethod httpMethod,
-                               Map<String, String> httpHeaders,
-                               Map<String, String> queryParameters)
+  default boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams)
   {
     return true;
+  }
+
+  /**
+   * the current realm for which the authentication should be executed. This value will be present in the
+   * WWW-Authenticate response header of the {@link de.captaingoldfish.scim.sdk.common.response.ErrorResponse}
+   * object if the authentication has failed
+   */
+  default String getRealm()
+  {
+    return "SCIM";
   }
 
 }

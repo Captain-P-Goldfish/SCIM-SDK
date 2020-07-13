@@ -17,6 +17,9 @@
       "disableList": true,
       "disableUpdate": true,
       "disableDelete": true
+    },
+    "authorization": {
+      "authenticated": false
     }
   },
   "meta": {

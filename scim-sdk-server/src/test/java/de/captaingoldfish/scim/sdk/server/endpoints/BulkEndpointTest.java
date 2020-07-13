@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -106,6 +107,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
                                                              new GroupEndpointDefinition(groupHandler));
     bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory(),
+                                    new HashMap<>(), new HashMap<>(),
                                     resourceType -> Optional.ofNullable(dynamicResourceTypeConsumer)
                                                             .ifPresent(consumer -> consumer.accept(resourceType)));
   }

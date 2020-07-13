@@ -36,18 +36,13 @@ please note that filtering is done by the `autoFiltering` feature and not on dat
  
  ### Authentication
  
- authentication is disabled for this example but is easily enabled by uncommenting the following lines in class
-  `ScimEndpoint`
+ authentication is disabled for this example but is easily enabled by uncommenting the following line in class
+  `ScimAuthorization`
 ```  
- /**
-    * the authentication and authorization details of the current user
-    */
-   // private final AdminAuth authResult;
- 
-   public ScimEndpoint(KeycloakSession keycloakSession)
+   try
    {
-     this.keycloakSession = keycloakSession;
      // authResult = Authentication.authenticate(keycloakSession);
+     return true;
    }
 ```
 

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
@@ -48,17 +49,11 @@ public class ScimEndpoint
   private final KeycloakSession keycloakSession;
 
   /**
-   * the authentication and authorization details of the current user
-   */
-  // private final AdminAuth authResult;
-
-  /**
    * standard constructor
    */
   public ScimEndpoint(KeycloakSession keycloakSession)
   {
     this.keycloakSession = keycloakSession;
-    // authResult = Authentication.authenticate(keycloakSession);
   }
 
   /**
@@ -74,7 +69,7 @@ public class ScimEndpoint
   @DELETE
   @Path("/v2/{s:.*}")
   @Produces(HttpHeader.SCIM_CONTENT_TYPE)
-  public Response get(@Context HttpServletRequest request)
+  public Response get(@Context HttpServletRequest request, @Context HttpServletResponse response)
   {
     RealmModel realmModel = keycloakSession.getContext().getRealm();
     ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(realmModel);
@@ -94,6 +89,7 @@ public class ScimEndpoint
       final boolean useDetailMessage = true;
       return new ErrorResponse(new InternalServerException(ex.getMessage()), useDetailMessage).buildResponse();
     }
+    scimResponse.getHttpHeaders().forEach(response::addHeader);
     return scimResponse.buildResponse();
   }
 

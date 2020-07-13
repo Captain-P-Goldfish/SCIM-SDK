@@ -155,6 +155,12 @@ public final class AttributeNames
      * true.
      */
     public static final String ETAG_ENABLED = "enabled";
+
+    /**
+     * used in resource type definitions to tell us if access to a specific endpoint requires authentication or
+     * not
+     */
+    public static final String AUTHENTICATED = "authenticated";
   }
 
   /**

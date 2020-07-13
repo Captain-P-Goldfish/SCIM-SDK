@@ -143,6 +143,17 @@
       "required": false,
       "subAttributes": [
         {
+          "name": "authenticated",
+          "type": "boolean",
+          "description": "tells us if access to this endpoint will require authentication. Default is true",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
           "name": "roles",
           "type": "string",
           "description": "the roles the client must have to access the resource endpoint. This setting defines the roles necessary for all endpoints [create, get, list, update, patch, delete]. This setting may be overridden by other attributes",

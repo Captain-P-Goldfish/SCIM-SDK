@@ -64,7 +64,7 @@ public class ScimClient
                                                                  .sendRequest();
     ServiceProvider serviceProviderConfig = response.getResource();
 
-    deleteAllUsers(scimRequestBuilder);
+    // deleteAllUsers(scimRequestBuilder);
     createUsers(scimRequestBuilder, serviceProviderConfig);
     // createGroups(scimRequestBuilder);
   }

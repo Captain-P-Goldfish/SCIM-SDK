@@ -99,21 +99,22 @@ class BulkEndpoint
    */
   private final Map<String, Set<String>> circularReferenceDetectorMap = new HashMap<>();
 
-  public BulkEndpoint(ResourceEndpoint resourceEndpoint,
-                      ServiceProvider serviceProvider,
-                      ResourceTypeFactory resourceTypeFactory)
-  {
-    this(resourceEndpoint, serviceProvider, resourceTypeFactory, null);
-  }
+  private final Map<String, String> originalHttpHeaders;
+
+  private final Map<String, String> originalQueryParams;
 
   public BulkEndpoint(ResourceEndpoint resourceEndpoint,
                       ServiceProvider serviceProvider,
                       ResourceTypeFactory resourceTypeFactory,
+                      Map<String, String> originalHttpHeaders,
+                      Map<String, String> originalQueryParams,
                       Consumer<ResourceType> doBeforeExecution)
   {
     this.resourceEndpoint = resourceEndpoint;
     this.serviceProvider = serviceProvider;
     this.resourceTypeFactory = resourceTypeFactory;
+    this.originalHttpHeaders = originalHttpHeaders;
+    this.originalQueryParams = originalQueryParams;
     this.doBeforeExecution = doBeforeExecution;
   }
 
@@ -238,6 +239,7 @@ class BulkEndpoint
                                                             baseUri + operation.getPath(),
                                                             httpMethod,
                                                             httpHeaders);
+    operationUriInfo.getQueryParameters().putAll(originalQueryParams);
     String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
     String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
     String bulkId = operation.getBulkId().orElse(null);
@@ -301,7 +303,7 @@ class BulkEndpoint
    */
   private Map<String, String> getHttpHeadersForBulk(BulkRequestOperation operation)
   {
-    Map<String, String> httpHeaders = new HashMap<>();
+    Map<String, String> httpHeaders = new HashMap<>(originalHttpHeaders);
     httpHeaders.put(EndpointPaths.BULK, "true");
     operation.getVersion().ifPresent(eTag -> httpHeaders.put(HttpHeader.IF_MATCH_HEADER, eTag.getEntityTag()));
     return httpHeaders;

@@ -101,7 +101,8 @@ public final class ScimConfiguration
                                                           .description("Authentication scheme using the OAuth "
                                                                        + "Bearer Token Standard")
                                                           .specUri("http://www.rfc-editor.org/info/rfc6750")
-                                                          .type("oauthbearertoken")
+                                                          // http://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
+                                                          .type("Bearer")
                                                           .build();
     return ServiceProvider.builder()
                           .filterConfig(FilterConfig.builder().supported(true).maxResults(50).build())
