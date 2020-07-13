@@ -9,6 +9,7 @@ import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
+import de.captaingoldfish.scim.sdk.common.exceptions.UnauthenticatedException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
@@ -189,11 +190,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                         Consumer<ResourceType> doBeforeExecution)
   {
     Optional.ofNullable(doBeforeExecution).ifPresent(consumer -> consumer.accept(uriInfos.getResourceType()));
-    Optional.ofNullable(authorization)
-            .ifPresent(auth -> auth.authenticate(uriInfos.getResourceType(),
-                                                 uriInfos.getHttpMethod(),
-                                                 uriInfos.getHttpHeaders(),
-                                                 uriInfos.getQueryParameters()));
+    authenticateClient(uriInfos, authorization);
     switch (httpMethod)
     {
       case POST:
@@ -263,5 +260,26 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                               uriInfos.getHttpHeaders(),
                               authorization);
     }
+  }
+
+  /**
+   * will authenticate the client that is currently accessing the resource server
+   *
+   * @param uriInfos the current uri information
+   * @param authorization the authorization object that will handle the authentication
+   */
+  private void authenticateClient(UriInfos uriInfos, Authorization authorization)
+  {
+    Optional.ofNullable(authorization).ifPresent(auth -> {
+      boolean isAuthenticated = auth.authenticate(uriInfos.getResourceType(),
+                                                  uriInfos.getHttpMethod(),
+                                                  uriInfos.getHttpHeaders(),
+                                                  uriInfos.getQueryParameters());
+      if (!isAuthenticated)
+      {
+        log.error("authentication for request '{}' has failed", uriInfos.toString());
+        throw new UnauthenticatedException("not authenticated");
+      }
+    });
   }
 }
