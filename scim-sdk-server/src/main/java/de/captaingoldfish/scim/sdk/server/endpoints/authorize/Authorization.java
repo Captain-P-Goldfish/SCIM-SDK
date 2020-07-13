@@ -1,11 +1,13 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.authorize;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.ForbiddenException;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -83,6 +85,20 @@ public interface Authorization
       throw new ForbiddenException("you are not authorized to access the '" + endpointType
                                    + "' endpoint on resource type '" + resourceType.getName() + "'");
     }
+  }
+
+  /**
+   * this method can be used to authenticate a client or user for a specific resource type on a specific
+   * operation
+   * 
+   * @return true if the user / client was successfully be authenticated, false else
+   */
+  default boolean authenticate(ResourceType resourceType,
+                               HttpMethod httpMethod,
+                               Map<String, String> httpHeaders,
+                               Map<String, String> queryParameters)
+  {
+    return true;
   }
 
 }

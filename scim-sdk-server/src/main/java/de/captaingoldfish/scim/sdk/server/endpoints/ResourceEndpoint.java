@@ -189,6 +189,11 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                         Consumer<ResourceType> doBeforeExecution)
   {
     Optional.ofNullable(doBeforeExecution).ifPresent(consumer -> consumer.accept(uriInfos.getResourceType()));
+    Optional.ofNullable(authorization)
+            .ifPresent(auth -> auth.authenticate(uriInfos.getResourceType(),
+                                                 uriInfos.getHttpMethod(),
+                                                 uriInfos.getHttpHeaders(),
+                                                 uriInfos.getQueryParameters()));
     switch (httpMethod)
     {
       case POST:
