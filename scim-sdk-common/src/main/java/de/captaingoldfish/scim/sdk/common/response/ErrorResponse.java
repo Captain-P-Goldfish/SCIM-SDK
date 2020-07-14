@@ -64,7 +64,7 @@ public class ErrorResponse extends ScimResponse
     setSchemas(Collections.singletonList(SchemaUris.ERROR_URI));
     setStatus(scimException.getStatus());
     setScimType(scimException.getScimType());
-    scimException.getResponseHeaders().forEach(getHttpHeaders()::put);
+    Optional.ofNullable(scimException.getResponseHeaders()).ifPresent(getHttpHeaders()::putAll);
   }
 
   /**

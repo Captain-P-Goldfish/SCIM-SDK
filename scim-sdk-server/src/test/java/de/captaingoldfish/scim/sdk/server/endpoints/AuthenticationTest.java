@@ -1,6 +1,5 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -18,21 +17,8 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
-import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
-import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
-import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
-import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
-import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
-import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
-import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,23 +29,8 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class AuthenticationTest extends AbstractBulkTest implements FileReferences
+public class AuthenticationTest extends AbstractEndpointTest
 {
-
-  /**
-   * a simple basic uri used in these tests
-   */
-  private static final String BASE_URI = "https://localhost/scim/v2";
-
-  /**
-   * the resource endpoint under test
-   */
-  private ResourceEndpoint resourceEndpoint;
-
-  /**
-   * the service provider configuration
-   */
-  private ServiceProvider serviceProvider;
 
   /**
    * the http header map that is validated on a request and contains authentication details
@@ -72,46 +43,12 @@ public class AuthenticationTest extends AbstractBulkTest implements FileReferenc
   private Map<String, String> unauthorizedHttpHeaders = new HashMap<>();
 
   /**
-   * create the service provider configuration
-   */
-  private ServiceProvider getServiceProviderConfig()
-  {
-    AuthenticationScheme authScheme = AuthenticationScheme.builder()
-                                                          .name("Basic Auth")
-                                                          .description("Username Password authentication challenge")
-                                                          .specUri("https://tools.ietf.org/html/rfc7617")
-                                                          .type("Basic")
-                                                          .build();
-    AuthenticationScheme authScheme2 = AuthenticationScheme.builder()
-                                                           .name("OAuth Bearer Token")
-                                                           .description("Authentication scheme using the OAuth "
-                                                                        + "Bearer Token Standard")
-                                                           .specUri("http://www.rfc-editor.org/info/rfc6750")
-                                                           .type("Bearer")
-                                                           .build();
-    return ServiceProvider.builder()
-                          .filterConfig(FilterConfig.builder().supported(true).maxResults(50).build())
-                          .sortConfig(SortConfig.builder().supported(true).build())
-                          .changePasswordConfig(ChangePasswordConfig.builder().supported(true).build())
-                          .bulkConfig(BulkConfig.builder().supported(true).maxOperations(50).build())
-                          .patchConfig(PatchConfig.builder().supported(true).build())
-                          .authenticationSchemes(Arrays.asList(authScheme, authScheme2))
-                          .eTagConfig(ETagConfig.builder().supported(true).build())
-                          .build();
-  }
-
-  /**
    * initializes this test
    */
   @BeforeEach
   public void initialize()
   {
-    serviceProvider = getServiceProviderConfig();
-    UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true));
-    GroupHandlerImpl groupHandler = Mockito.spy(new GroupHandlerImpl());
-    resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
-                                            new GroupEndpointDefinition(groupHandler));
-
+    super.initialize();
     {
       unauthorizedHttpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
     }
@@ -238,16 +175,6 @@ public class AuthenticationTest extends AbstractBulkTest implements FileReferenc
 
     String authenticateHeader = scimResponse.getHttpHeaders().get(HttpHeader.WWW_AUTHENTICATE);
     Assertions.assertNull(authenticateHeader);
-  }
-
-  /**
-   * gets the whole url of the scim provider
-   * 
-   * @param endpoint the current endpoint that should be accessed
-   */
-  private String getUrl(String endpoint)
-  {
-    return BASE_URI + "/" + endpoint;
   }
 
   /**

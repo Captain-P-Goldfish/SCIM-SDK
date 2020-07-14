@@ -2,15 +2,18 @@ package de.captaingoldfish.scim.sdk.server.endpoints;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.exceptions.UnauthenticatedException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
@@ -63,7 +66,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     String requestBody,
                                     Map<String, String> httpHeaders)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null, null);
   }
 
   /**
@@ -91,7 +94,68 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     Map<String, String> httpHeaders,
                                     Consumer<ResourceType> doBeforeExecution)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doBeforeExecution);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doBeforeExecution, null);
+  }
+
+  /**
+   * this method will resolve the SCIM request based on the given information
+   *
+   * @param requestUrl the fully qualified resource URL e.g.:
+   *
+   *          <pre>
+   *             https://localhost/v2/scim/Users<br>
+   *             https://localhost/v2/scim/Users/123456<br>
+   *             https://localhost/v2/scim/Users/.search<br>
+   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
+   *          </pre>
+   *
+   * @param httpMethod the http method that was used by in the request
+   * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
+   * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
+   *          execution of the request has been finished. First parameter is the response object second is a
+   *          boolean that tells if the request failed or succeeded.
+   * @return the resolved SCIM response
+   */
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders,
+                                    BiConsumer<ScimResponse, Boolean> doAfterExecution)
+  {
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null, doAfterExecution);
+  }
+
+  /**
+   * this method will resolve the SCIM request based on the given information
+   *
+   * @param requestUrl the fully qualified resource URL e.g.:
+   *
+   *          <pre>
+   *             https://localhost/v2/scim/Users<br>
+   *             https://localhost/v2/scim/Users/123456<br>
+   *             https://localhost/v2/scim/Users/.search<br>
+   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
+   *          </pre>
+   *
+   * @param httpMethod the http method that was used by in the request
+   * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
+   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
+   *          to execute authentication on dedicated resource types
+   * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
+   *          execution of the request has been finished. First parameter is the response object second is a
+   *          boolean that tells if the request failed or succeeded.
+   * @return the resolved SCIM response
+   */
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders,
+                                    Consumer<ResourceType> doBeforeExecution,
+                                    BiConsumer<ScimResponse, Boolean> doAfterExecution)
+  {
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doBeforeExecution, doAfterExecution);
   }
 
   /**
@@ -119,7 +183,38 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     Map<String, String> httpHeaders,
                                     Authorization authorization)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, authorization, null);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, authorization, null, null);
+  }
+
+  /**
+   * this method will resolve the SCIM request based on the given information
+   *
+   * @param requestUrl the fully qualified resource URL e.g.:
+   *
+   *          <pre>
+   *             https://localhost/v2/scim/Users<br>
+   *             https://localhost/v2/scim/Users/123456<br>
+   *             https://localhost/v2/scim/Users/.search<br>
+   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
+   *          </pre>
+   *
+   * @param httpMethod the http method that was used by in the request
+   * @param requestBody the request body of the request, may be null
+   * @param httpHeaders the http request headers, may be null
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
+   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used *
+   *          to execute authentication on dedicated resource types
+   * @return the resolved SCIM response
+   */
+  public ScimResponse handleRequest(String requestUrl,
+                                    HttpMethod httpMethod,
+                                    String requestBody,
+                                    Map<String, String> httpHeaders,
+                                    Authorization authorization,
+                                    Consumer<ResourceType> doBeforeExecution)
+  {
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, authorization, doBeforeExecution, null);
   }
 
   /**
@@ -141,6 +236,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    *          handler implementation
    * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
    *          to execute authentication on dedicated resource types
+   * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
+   *          execution of the request has been finished. First parameter is the response object second is a
+   *          boolean that tells if the request failed or succeeded.
    * @return the resolved SCIM response
    */
   public ScimResponse handleRequest(String requestUrl,
@@ -148,9 +246,12 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     String requestBody,
                                     Map<String, String> httpHeaders,
                                     Authorization authorization,
-                                    Consumer<ResourceType> doBeforeExecution)
+                                    Consumer<ResourceType> doBeforeExecution,
+                                    BiConsumer<ScimResponse, Boolean> doAfterExecution)
   {
-    try
+    ScimResponse scimResponse;
+
+    handleScimRequest: try
     {
       UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod, httpHeaders);
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
@@ -158,18 +259,26 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),
                                                      uriInfos.getHttpHeaders(), uriInfos.getQueryParameters(),
                                                      doBeforeExecution);
-        return bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, authorization);
+        scimResponse = bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, authorization);
+        break handleScimRequest;
       }
-      return resolveRequest(httpMethod, requestBody, uriInfos, authorization, doBeforeExecution);
+      scimResponse = resolveRequest(httpMethod, requestBody, uriInfos, authorization, doBeforeExecution);
     }
     catch (ScimException ex)
     {
-      return new ErrorResponse(ex);
+      scimResponse = new ErrorResponse(ex);
     }
     catch (Exception ex)
     {
-      return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
+      scimResponse = new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+
+    if (doAfterExecution != null)
+    {
+      doAfterExecution.accept(scimResponse, isErrorResponse(scimResponse));
+    }
+
+    return scimResponse;
   }
 
   /**
@@ -261,6 +370,18 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                               uriInfos.getHttpHeaders(),
                               authorization);
     }
+  }
+
+  /**
+   * checks if the given response is an error response or a successful response
+   * 
+   * @return true if the result is an error, false else
+   */
+  private boolean isErrorResponse(ScimResponse scimResponse)
+  {
+    return ErrorResponse.class.isAssignableFrom(scimResponse.getClass())
+           || (BulkResponse.class.isAssignableFrom(scimResponse.getClass())
+               && scimResponse.getHttpStatus() != HttpStatus.OK);
   }
 
   /**
