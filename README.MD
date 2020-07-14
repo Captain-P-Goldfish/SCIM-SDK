@@ -72,7 +72,10 @@ for any registered resource
 
 ### Additional supported features
 
-- [x] authorization for specific endpoints (@see [endpoint authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Endpoint-authorization))
+- [x] authentication for specific endpoints 
+(@see [authentication](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authentication))
+- [x] authorization for specific endpoints 
+(@see [authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authorization))
 - [x] attribute validation (@see [attribute validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation)) 
 
 ## Client implementation
