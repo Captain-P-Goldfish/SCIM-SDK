@@ -9,236 +9,265 @@
     {
       "name": "documentationUri",
       "type": "reference",
-      "referenceTypes": [
-        "external"
-      ],
-      "multiValued": false,
       "description": "An HTTP-addressable URL pointing to the service provider's human-consumable help documentation.",
-      "required": false,
-      "caseExact": false,
       "mutability": "readOnly",
       "returned": "default",
-      "uniqueness": "none"
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false,
+      "referenceTypes": [
+        "external"
+      ]
     },
     {
       "name": "patch",
       "type": "complex",
-      "multiValued": false,
       "description": "A complex type that specifies PATCH configuration options.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "supported",
           "type": "boolean",
-          "multiValued": false,
           "description": "A Boolean value specifying whether or not the operation is supported.",
-          "required": true,
           "mutability": "readOnly",
-          "returned": "default"
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     },
     {
       "name": "etag",
       "type": "complex",
-      "multiValued": false,
       "description": "A complex type that specifies ETag configuration options.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "supported",
           "type": "boolean",
-          "multiValued": false,
           "description": "A Boolean value specifying whether or not the operation is supported.",
-          "required": true,
           "mutability": "readOnly",
-          "returned": "default"
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     },
     {
       "name": "bulk",
       "type": "complex",
-      "multiValued": false,
       "description": "A complex type that specifies bulk configuration options.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "supported",
           "type": "boolean",
-          "multiValued": false,
           "description": "A Boolean value specifying whether or not the operation is supported.",
-          "required": true,
           "mutability": "readOnly",
-          "returned": "default"
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         },
         {
           "name": "maxOperations",
           "type": "integer",
-          "multiValued": false,
           "description": "An integer value specifying the maximum number of operations.",
-          "required": true,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         },
         {
           "name": "maxPayloadSize",
           "type": "integer",
-          "multiValued": false,
           "description": "An integer value specifying the maximum payload size in bytes.",
-          "required": true,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     },
     {
       "name": "filter",
       "type": "complex",
-      "multiValued": false,
       "description": "A complex type that specifies FILTER options.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "supported",
           "type": "boolean",
-          "multiValued": false,
           "description": "A Boolean value specifying whether or not the operation is supported.",
-          "required": true,
           "mutability": "readOnly",
-          "returned": "default"
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         },
         {
           "name": "maxResults",
           "type": "integer",
-          "multiValued": false,
           "description": "An integer value specifying the maximum number of resources returned in a response.",
-          "required": true,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     },
     {
       "name": "changePassword",
       "type": "complex",
-      "multiValued": false,
       "description": "A complex type that specifies configuration options related to changing a password.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "supported",
           "type": "boolean",
-          "multiValued": false,
           "description": "A Boolean value specifying whether or not the operation is supported.",
-          "required": true,
           "mutability": "readOnly",
-          "returned": "default"
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     },
     {
       "name": "sort",
       "type": "complex",
-      "multiValued": false,
       "description": "A complex type that specifies sort result options.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "supported",
           "type": "boolean",
-          "multiValued": false,
           "description": "A Boolean value specifying whether or not the operation is supported.",
-          "required": true,
           "mutability": "readOnly",
-          "returned": "default"
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     },
     {
       "name": "authenticationSchemes",
       "type": "complex",
-      "multiValued": true,
       "description": "A complex type that specifies supported authentication scheme properties.",
-      "required": true,
-      "returned": "default",
       "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": true,
+      "required": true,
+      "caseExact": false,
       "subAttributes": [
         {
           "name": "name",
           "type": "string",
-          "multiValued": false,
           "description": "The common authentication scheme name, e.g., HTTP Basic.",
-          "required": true,
-          "caseExact": false,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         },
         {
           "name": "description",
           "type": "string",
-          "multiValued": false,
           "description": "A description of the authentication scheme.",
-          "required": true,
-          "caseExact": false,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         },
         {
           "name": "specUri",
           "type": "reference",
-          "referenceTypes": [
-            "external"
-          ],
-          "multiValued": false,
           "description": "An HTTP-addressable URL pointing to the authentication scheme's specification.",
-          "required": false,
-          "caseExact": false,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "external"
+          ]
         },
         {
           "name": "documentationUri",
           "type": "reference",
-          "referenceTypes": [
-            "external"
-          ],
-          "multiValued": false,
           "description": "An HTTP-addressable URL pointing to the authentication scheme's usage documentation.",
-          "required": false,
-          "caseExact": false,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "external"
+          ]
         },
         {
           "name": "type",
           "type": "string",
-          "multiValued": false,
           "description": "The authentication scheme. This specification defines the values \"oauth\", \"oauth2\", \"oauthbearertoken\", \"httpbasic\", and \"httpdigest\".  REQUIRED.",
-          "required": true,
-          "caseExact": false,
           "mutability": "readOnly",
           "returned": "default",
-          "uniqueness": "none"
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
         }
       ]
     }
@@ -250,5 +279,3 @@
     "location": "/Schemas/ServiceProviderConfig"
   }
 }
-
-

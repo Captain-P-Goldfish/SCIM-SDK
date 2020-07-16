@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -28,21 +29,119 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/schema.schema.json
                             </file>
-                            <checksum>cfd671174b9bd6e1f5b159d16eec2049</checksum>
+                            <checksum>38e0c477dabf7d8bb62e3d4f44f79d1d</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/resource-type.schema.json
                             </file>
-                            <checksum>eb3f49ab90010b93d695f8f9d6a6d7af</checksum>
+                            <checksum>c6745a21fd79a4efc2183504287830a3</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
                             </file>
-                            <checksum>89f25699ed83a15458293f0733da626b</checksum>
+                            <checksum>ac6e391fc0daf4d00892b39c372edcea</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/meta.schema.json
+                            </file>
+                            <checksum>2d2abde15f6b156d6f17d12a9eb0c3e7</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/resource-type-feature-ext.json
+                            </file>
+                            <checksum>4ed58f793ab24a7d89039c9f949e78cb</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/resourcetypes/group.json
+                            </file>
+                            <checksum>7102ded389c3f938aec124b70dde4a06</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/resourcetypes/user.json
+                            </file>
+                            <checksum>6ff0ff815144ad29e81eb057397b1bc7</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/resourcetypes/me.json
+                            </file>
+                            <checksum>fbc9724be3fd879e8a75a1efc297f048</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/resourcetypes/resource-type.json
+                            </file>
+                            <checksum>9b7f88e6d03429d2e43f0581b77587ca</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/resourcetypes/schema.json
+                            </file>
+                            <checksum>cfbc8dbc7dbbf044e1a105630a464b72</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/resourcetypes/service-provider.json
+                            </file>
+                            <checksum>02da110bf3d39ae835c00e3c0a7950ec</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/bulk-request.json
+                            </file>
+                            <checksum>26f925f7c412690e0e83a402ea298e1c</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/patch-request.json
+                            </file>
+                            <checksum>a59458d2fabb45ef77ee5ce748458d1b</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/response/bulk-response.json
+                            </file>
+                            <checksum>242ed6f72eb8d88c07039d1c646b87eb</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/enterprise-user.json
+                            </file>
+                            <checksum>b80d00d637b51c3e4ff7a2c63eb9e374</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/groups.json
+                            </file>
+                            <checksum>d86aa995184143b366b66472d4466290</checksum>
+                            <type>md5</type>
+                        </requireFileChecksum>
+                        <requireFileChecksum>
+                            <file>
+                                ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/users.json
+                            </file>
+                            <checksum>67f2eb8f6ede11b5c7e15d16a750e3d9</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                     </rules>
