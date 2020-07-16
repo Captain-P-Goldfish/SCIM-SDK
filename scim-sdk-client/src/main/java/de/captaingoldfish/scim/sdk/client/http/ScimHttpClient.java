@@ -75,7 +75,7 @@ public class ScimHttpClient implements Closeable
    * translates an apache {@link CloseableHttpResponse} to an {@link HttpResponse} object
    *
    * @param response the apache http response
-   * @return the governikus {@link HttpResponse} representation
+   * @return the {@link HttpResponse} representation
    * @throws IOException if the inputstream of the response body could not be read
    */
   private static HttpResponse toResponse(CloseableHttpResponse response) throws IOException
@@ -181,6 +181,10 @@ public class ScimHttpClient implements Closeable
     if (httpClient == null)
     {
       httpClient = getHttpClient();
+    }
+    if (log.isTraceEnabled())
+    {
+      log.trace("sending http request: \n\tmethod: {}\n\turi", uriRequest.getMethod(), uriRequest.getURI().toString());
     }
     try (CloseableHttpResponse response = httpClient.execute(uriRequest))
     {

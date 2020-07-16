@@ -101,7 +101,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
    */
   @ParameterizedTest // NOPMD
   @CsvSource({"0,0,0", "1,10,10", "10,1,10", "10,10,1", "0,1,0", "0,10,10", "10,10,0", "10,0,10"})
-  public void testGovernikusHttpClientTest(int connectTimeout, int requestTimeout, int socketTimeout) throws IOException
+  public void testHttpClientTest(int connectTimeout, int requestTimeout, int socketTimeout) throws IOException
   {
     ScimClientConfig clientConfig = ScimClientConfig.builder()
                                                     .connectTimeout(connectTimeout)
@@ -198,6 +198,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     }
     catch (IORuntimeException ex)
     {
+      log.debug(ex.getMessage(), ex);
       Assertions.assertEquals("communication with server failed", ex.getMessage());
       MatcherAssert.assertThat(ex.getCause().getMessage(), Matchers.containsString("(Connection refused)"));
     }
