@@ -184,7 +184,9 @@ public class ScimHttpClient implements Closeable
     }
     if (log.isTraceEnabled())
     {
-      log.trace("sending http request: \n\tmethod: {}\n\turi", uriRequest.getMethod(), uriRequest.getURI().toString());
+      log.trace("sending http request: \n\tmethod: {}\n\turi: {}",
+                uriRequest.getMethod(),
+                uriRequest.getURI().toString());
     }
     try (CloseableHttpResponse response = httpClient.execute(uriRequest))
     {

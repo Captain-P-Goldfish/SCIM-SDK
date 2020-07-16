@@ -117,6 +117,27 @@ public abstract class HttpServerMockup
   private Supplier<Map<String, String>> getResponseHeaders;
 
   /**
+   * gets a port on the current machine that is unused
+   *
+   * @return an unused port
+   */
+  public static int getFreeLocalPort()
+  {
+    ServerSocket serverSocket;
+    try
+    {
+      serverSocket = new ServerSocket(0);
+      serverSocket.close();
+    }
+    catch (IOException e)
+    {
+      throw new IllegalStateException(e.getMessage(), e);
+    }
+    int localPort = serverSocket.getLocalPort();
+    return localPort;
+  }
+
+  /**
    * here we will check if an error occurred on the mocked server and if it did we will throw the error in the
    * test context
    */
@@ -284,19 +305,6 @@ public abstract class HttpServerMockup
     responseHeaders.putAll(headerMap);
     log.trace("finished handling server error");
     return Optional.ofNullable(message);
-  }
-
-  /**
-   * gets a port on the current machine that is unused
-   *
-   * @return an unused port
-   */
-  protected int getFreeLocalPort() throws IOException
-  {
-    ServerSocket serverSocket = new ServerSocket(0);
-    int localPort = serverSocket.getLocalPort();
-    serverSocket.close();
-    return localPort;
   }
 
   /**
