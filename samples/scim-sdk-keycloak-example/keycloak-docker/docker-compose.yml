@@ -1,27 +1,36 @@
 version: '3'
 services:
-  mysql:
-    image: mysql:5.7
+  mariadb:
+    image: mariadb:10.5.4
     environment:
       - MYSQL_ROOT_PASSWORD=123456
       - MYSQL_USER=root
       - MYSQL_DATABASE=keycloak
-      - MYSQL_PASSWORD=123456
     ports:
       - "3306:3306"
     networks:
       keycloak:
         aliases:
-          - mysql
+          - mariadb
+    volumes:
+      - mariadb
   keycloak:
     image: keycloak-scim-sdk:latest
     depends_on:
-      - mysql
+      - mariadb
     ports:
       - "8080:8080"
     networks:
       keycloak:
         aliases:
           - keycloak
+    volumes:
+      - keycloak
+      - ./wait-for-it.sh:/opt/jboss/scripts/wait-for-it.sh
+    entrypoint: ["/opt/jboss/scripts/wait-for-it.sh", "mariadb:3306", "-s", "-t", "60", "--",
+                 "/opt/jboss/tools/docker-entrypoint.sh"]
 networks:
   keycloak:
+volumes:
+  keycloak:
+  mariadb:
