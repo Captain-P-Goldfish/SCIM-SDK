@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,14 +22,13 @@ import javax.ws.rs.core.Response;
 
 import org.apache.commons.io.IOUtils;
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
+import de.captaingoldfish.scim.sdk.keycloak.constants.ContextPaths;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.extern.slf4j.Slf4j;
 
@@ -39,21 +39,22 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class ScimEndpoint
+public class ScimEndpoint extends AbstractEndpoint
 {
 
-  /**
-   * the keycloak session holds information about the current authentication and the realm that we are currently
-   * in
-   */
-  private final KeycloakSession keycloakSession;
 
-  /**
-   * standard constructor
-   */
   public ScimEndpoint(KeycloakSession keycloakSession)
   {
-    this.keycloakSession = keycloakSession;
+    super(keycloakSession);
+  }
+
+  /**
+   * provides functionality to configure the SCIM endpoints
+   */
+  @Path(ContextPaths.ADMIN)
+  public AdminstrationResource administration()
+  {
+    return new AdminstrationResource(getKeycloakSession());
   }
 
   /**
@@ -67,30 +68,48 @@ public class ScimEndpoint
   @PUT
   @PATCH
   @DELETE
-  @Path("/v2/{s:.*}")
+  @Path(ContextPaths.SCIM_ENDPOINT_PATH + "/{s:.*}")
   @Produces(HttpHeader.SCIM_CONTENT_TYPE)
   public Response get(@Context HttpServletRequest request, @Context HttpServletResponse response)
   {
-    RealmModel realmModel = keycloakSession.getContext().getRealm();
-    ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(realmModel);
+    ResourceEndpoint resourceEndpoint = getResourceEndpoint();
 
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
     ScimResponse scimResponse = resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
                                                                HttpMethod.valueOf(request.getMethod()),
                                                                getRequestBody(request),
                                                                getHttpHeaders(request),
-                                                               new ScimAuthorization(keycloakSession));
-    try
-    {
-      keycloakSession.getTransactionManager().commit();
-    }
-    catch (Exception ex)
-    {
-      final boolean useDetailMessage = true;
-      return new ErrorResponse(new InternalServerException(ex.getMessage()), useDetailMessage).buildResponse();
-    }
+                                                               new ScimAuthorization(getKeycloakSession()),
+                                                               null,
+                                                               commitOrRollback());
     scimResponse.getHttpHeaders().forEach(response::addHeader);
     return scimResponse.buildResponse();
+  }
+
+  /**
+   * commit or rollback the transaction
+   */
+  protected BiConsumer<ScimResponse, Boolean> commitOrRollback()
+  {
+    return (scimResponse, isError) -> {
+      try
+      {
+        if (isError)
+        {
+          // if the request has failed roll the transaction back
+          getKeycloakSession().getTransactionManager().setRollbackOnly();
+        }
+        else
+        {
+          // if the request succeeded commit the transaction
+          getKeycloakSession().getTransactionManager().commit();
+        }
+      }
+      catch (Exception ex)
+      {
+        throw new InternalServerException(ex.getMessage());
+      }
+    };
   }
 
   /**

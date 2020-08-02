@@ -55,10 +55,13 @@ public class ScimEndpointProviderFactory implements RealmResourceProviderFactory
     // do nothing
   }
 
+  /**
+   * initialize the keycloak-scim environment
+   */
   @Override
   public void postInit(KeycloakSessionFactory factory)
   {
-    // do nothing
+    RealmRoleInitializer.initializeRoles(factory);
   }
 
   @Override

@@ -24,4 +24,9 @@ public final class ContextPaths
    * provider factory id
    */
   public static final String SCIM_ENDPOINT_PATH = "/v2";
+
+  /**
+   * context path to the SCIM administration
+   */
+  public static final String ADMIN = "/admin";
 }

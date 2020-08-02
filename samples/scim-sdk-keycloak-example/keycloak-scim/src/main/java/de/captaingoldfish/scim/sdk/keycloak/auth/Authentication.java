@@ -8,10 +8,12 @@ import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleModel;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
+import de.captaingoldfish.scim.sdk.keycloak.provider.RealmRoleInitializer;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -59,6 +61,26 @@ public class Authentication
       throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
     }
     return createAdminAuth(keycloakSession, result);
+  }
+
+  /**
+   * checks if the just logged in user was granted the {@link RealmRoleInitializer#SCIM_ADMIN_ROLE} to access
+   * the SCIM administration
+   * 
+   * @param keycloakSession the current request context
+   */
+  public static void authenticateAsScimAdmin(KeycloakSession keycloakSession)
+  {
+    AdminAuth adminAuth = Authentication.authenticate(keycloakSession);
+    RoleModel roleModel = keycloakSession.getContext()
+                                         .getRealm()
+                                         .getMasterAdminClient()
+                                         .getRole(RealmRoleInitializer.SCIM_ADMIN_ROLE);
+    boolean accessGranted = adminAuth.getUser().hasRole(roleModel);
+    if (!accessGranted)
+    {
+      throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
+    }
   }
 
   /**

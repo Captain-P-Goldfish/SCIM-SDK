@@ -1,0 +1,64 @@
+package de.captaingoldfish.scim.sdk.keycloak.scim;
+
+import java.time.Instant;
+
+import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import org.keycloak.models.KeycloakSession;
+
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
+import lombok.extern.slf4j.Slf4j;
+
+
+/**
+ * this endpoint is used to change the SCIM configuration. It requires the role
+ * {@link de.captaingoldfish.scim.sdk.keycloak.provider.RealmRoleInitializer#SCIM_ADMIN_ROLE} to get access to
+ * the endpoints
+ * 
+ * @author Pascal Knueppel
+ * @since 27.07.2020
+ */
+@Slf4j
+public class AdminstrationResource extends AbstractEndpoint
+{
+
+
+  public AdminstrationResource(KeycloakSession keycloakSession)
+  {
+    super(keycloakSession);
+    Authentication.authenticateAsScimAdmin(keycloakSession);
+  }
+
+  /**
+   * updates the current service provider configuration
+   * 
+   * @param content the request body from the admin-console
+   * @return changes the service provider configuration of the current realm
+   */
+  @PUT
+  @Path("/serviceProviderConfig")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response overrideServiceProviderConfig(final String content)
+  {
+    ServiceProvider newServiceProvider = JsonHelper.readJsonDocument(content, ServiceProvider.class);
+    ServiceProvider serviceProvider = getResourceEndpoint().getServiceProvider();
+    serviceProvider.setAuthenticationSchemes(newServiceProvider.getAuthenticationSchemes());
+    serviceProvider.setBulkConfig(newServiceProvider.getBulkConfig());
+    serviceProvider.setChangePasswordConfig(newServiceProvider.getChangePasswordConfig());
+    serviceProvider.setDocumentationUri(newServiceProvider.getDocumentationUri().orElse(null));
+    serviceProvider.setETagConfig(newServiceProvider.getETagConfig());
+    serviceProvider.setFilterConfig(newServiceProvider.getFilterConfig());
+    serviceProvider.setPatchConfig(newServiceProvider.getPatchConfig());
+    serviceProvider.setSortConfig(newServiceProvider.getSortConfig());
+    serviceProvider.getMeta().ifPresent(meta -> {
+      meta.setLastModified(Instant.now());
+    });
+    return Response.ok().entity(serviceProvider.toString()).build();
+  }
+}

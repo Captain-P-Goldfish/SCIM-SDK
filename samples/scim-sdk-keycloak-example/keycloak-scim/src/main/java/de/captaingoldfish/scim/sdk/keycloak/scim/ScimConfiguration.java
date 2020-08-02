@@ -111,7 +111,7 @@ public final class ScimConfiguration
                           .bulkConfig(BulkConfig.builder().supported(true).maxOperations(50).build())
                           .patchConfig(PatchConfig.builder().supported(true).build())
                           .authenticationSchemes(Collections.singletonList(authScheme))
-                          .eTagConfig(ETagConfig.builder().supported(true).build())
+                          .eTagConfig(ETagConfig.builder().supported(false).build())
                           .build();
   }
 
