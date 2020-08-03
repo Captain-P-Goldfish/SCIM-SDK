@@ -11,9 +11,11 @@ import javax.persistence.NoResultException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
@@ -80,6 +82,7 @@ public class ScimServiceProviderService extends AbstractService
     scimServiceProviderEntity.setFilterMaxResults(serviceProvider.getFilterConfig().getMaxResults());
     scimServiceProviderEntity.setSortSupported(serviceProvider.getSortConfig().isSupported());
     scimServiceProviderEntity.setPatchSupported(serviceProvider.getPatchConfig().isSupported());
+    scimServiceProviderEntity.setEtagSupported(serviceProvider.getETagConfig().isSupported());
     scimServiceProviderEntity.setChangePasswordSupported(serviceProvider.getChangePasswordConfig().isSupported());
     scimServiceProviderEntity.setBulkSupported(serviceProvider.getBulkConfig().isSupported());
     scimServiceProviderEntity.setBulkMaxOperations(serviceProvider.getBulkConfig().getMaxOperations());
@@ -135,6 +138,9 @@ public class ScimServiceProviderService extends AbstractService
                                                      .patchConfig(PatchConfig.builder()
                                                                              .supported(entity.isPatchSupported())
                                                                              .build())
+                                                     .eTagConfig(ETagConfig.builder()
+                                                                           .supported(entity.isEtagSupported())
+                                                                           .build())
                                                      .changePasswordConfig(ChangePasswordConfig.builder()
                                                                                                .supported(entity.isChangePasswordSupported())
                                                                                                .build())
@@ -148,6 +154,7 @@ public class ScimServiceProviderService extends AbstractService
       // meta is definitely present
       meta.setCreated(entity.getCreated());
       meta.setLastModified(Optional.ofNullable(entity.getLastModified()).orElse(entity.getCreated()));
+      meta.setVersion(ETag.builder().tag(String.valueOf(entity.getVersion())).build());
     });
     return serviceProvider;
   }

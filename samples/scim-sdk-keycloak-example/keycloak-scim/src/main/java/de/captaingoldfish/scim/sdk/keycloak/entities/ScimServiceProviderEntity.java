@@ -11,6 +11,7 @@ import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
 import javax.persistence.Table;
+import javax.persistence.Version;
 
 import org.keycloak.models.utils.KeycloakModelUtils;
 
@@ -44,6 +45,13 @@ public class ScimServiceProviderEntity implements Serializable
                                // SQL
   @Setter(AccessLevel.PROTECTED)
   private String id = KeycloakModelUtils.generateId();
+
+  /**
+   * JPA version column that is used as ETag on SCIM
+   */
+  @Version
+  @Column(name = "VERSION")
+  private long version;
 
   /**
    * id of the owning realm<br>
@@ -84,6 +92,12 @@ public class ScimServiceProviderEntity implements Serializable
   private boolean changePasswordSupported;
 
   /**
+   * if ETags are supported or not
+   */
+  @Column(name = "ETAG_SUPPORTED")
+  private boolean etagSupported;
+
+  /**
    * if bulk requests should be supported or not
    */
   @Column(name = "BULK_SUPPORTED")
@@ -119,6 +133,7 @@ public class ScimServiceProviderEntity implements Serializable
                                    int filterMaxResults,
                                    boolean sortSupported,
                                    boolean patchSupported,
+                                   boolean etagSupported,
                                    boolean changePasswordSupported,
                                    boolean bulkSupported,
                                    int bulkMaxOperations,
@@ -131,6 +146,7 @@ public class ScimServiceProviderEntity implements Serializable
     this.filterMaxResults = filterMaxResults;
     this.sortSupported = sortSupported;
     this.patchSupported = patchSupported;
+    this.etagSupported = etagSupported;
     this.changePasswordSupported = changePasswordSupported;
     this.bulkSupported = bulkSupported;
     this.bulkMaxOperations = bulkMaxOperations;

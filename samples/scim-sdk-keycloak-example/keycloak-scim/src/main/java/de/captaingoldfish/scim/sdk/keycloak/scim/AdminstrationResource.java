@@ -11,6 +11,7 @@ import javax.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
 
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -61,13 +62,16 @@ public class AdminstrationResource extends AbstractEndpoint
       oldServiceProvider.setFilterConfig(newServiceProvider.getFilterConfig());
       oldServiceProvider.setSortConfig(newServiceProvider.getSortConfig());
       oldServiceProvider.setPatchConfig(newServiceProvider.getPatchConfig());
+      oldServiceProvider.setETagConfig(newServiceProvider.getETagConfig());
       oldServiceProvider.setChangePasswordConfig(newServiceProvider.getChangePasswordConfig());
       oldServiceProvider.setBulkConfig(newServiceProvider.getBulkConfig());
       final Instant lastModified = newServiceProvider.getMeta().flatMap(Meta::getLastModified).orElse(null);
+      final ETag version = newServiceProvider.getMeta().flatMap(Meta::getVersion).orElse(null);
       Optional<Meta> metaOptional = oldServiceProvider.getMeta();
       metaOptional.ifPresent(meta -> {
         // lastModified will never be null
         meta.setLastModified(lastModified);
+        meta.setVersion(version);
       });
     }
 
