@@ -2,6 +2,9 @@ package de.captaingoldfish.scim.sdk.keycloak.provider;
 
 import java.util.List;
 
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+
 import org.keycloak.Config;
 import org.keycloak.models.AdminRoles;
 import org.keycloak.models.ClientModel;
@@ -40,8 +43,15 @@ public class RealmRoleInitializer
    */
   public static void initializeRoles(KeycloakSessionFactory factory)
   {
-    log.info("initializing scim-sdk-server");
-    KeycloakModelUtils.runJobInTransaction(factory, RealmRoleInitializer::setupRealmAccess);
+    if (isHotDeploying())
+    {
+      log.info("initializing scim-sdk-server");
+      KeycloakModelUtils.runJobInTransaction(factory, RealmRoleInitializer::setupRealmAccess);
+    }
+    else
+    {
+      log.debug("Server startup, waiting for PostMigrationEvent");
+    }
 
     factory.register((ProviderEvent event) -> {
       if (event instanceof RealmModel.RealmPostCreateEvent)
@@ -53,6 +63,27 @@ public class RealmRoleInitializer
         KeycloakModelUtils.runJobInTransaction(factory, RealmRoleInitializer::setupRealmAccess);
       }
     });
+  }
+
+  private static boolean isHotDeploying()
+  {
+    /*
+     * At the moment there's no standard way to determine if we are being cold or hot deployed. One of the ad-hoc
+     * methods is to check for JNDI presence/absence. Another methods include querying current thread name and
+     * RESTEasy features. See discussion: http://lists.jboss.org/pipermail/keycloak-dev/2017-July/009639.html
+     */
+
+    try
+    {
+      // JNDI present, we're invoked from an application thread, that means cold deployment
+      new InitialContext().lookup("java:comp");
+      return false;
+    }
+    catch (NamingException ex)
+    {
+      // JNDI absent, server thread, hot deployment
+      return true;
+    }
   }
 
   /**

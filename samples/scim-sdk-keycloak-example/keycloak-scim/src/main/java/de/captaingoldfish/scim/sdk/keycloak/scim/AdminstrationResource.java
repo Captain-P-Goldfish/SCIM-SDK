@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -11,8 +12,11 @@ import javax.ws.rs.core.Response;
 import org.keycloak.models.KeycloakSession;
 
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -47,18 +51,28 @@ public class AdminstrationResource extends AbstractEndpoint
   public Response overrideServiceProviderConfig(final String content)
   {
     ServiceProvider newServiceProvider = JsonHelper.readJsonDocument(content, ServiceProvider.class);
-    ServiceProvider serviceProvider = getResourceEndpoint().getServiceProvider();
-    serviceProvider.setAuthenticationSchemes(newServiceProvider.getAuthenticationSchemes());
-    serviceProvider.setBulkConfig(newServiceProvider.getBulkConfig());
-    serviceProvider.setChangePasswordConfig(newServiceProvider.getChangePasswordConfig());
-    serviceProvider.setDocumentationUri(newServiceProvider.getDocumentationUri().orElse(null));
-    serviceProvider.setETagConfig(newServiceProvider.getETagConfig());
-    serviceProvider.setFilterConfig(newServiceProvider.getFilterConfig());
-    serviceProvider.setPatchConfig(newServiceProvider.getPatchConfig());
-    serviceProvider.setSortConfig(newServiceProvider.getSortConfig());
-    serviceProvider.getMeta().ifPresent(meta -> {
-      meta.setLastModified(Instant.now());
-    });
-    return Response.ok().entity(serviceProvider.toString()).build();
+    ScimServiceProviderService scimServiceProviderService = new ScimServiceProviderService(getKeycloakSession());
+    newServiceProvider = scimServiceProviderService.updateServiceProvider(newServiceProvider);
+
+    // now override the current service provider configuration
+    {
+      ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(getKeycloakSession());
+      ServiceProvider oldServiceProvider = resourceEndpoint.getServiceProvider();
+      oldServiceProvider.setFilterConfig(newServiceProvider.getFilterConfig());
+      oldServiceProvider.setSortConfig(newServiceProvider.getSortConfig());
+      oldServiceProvider.setPatchConfig(newServiceProvider.getPatchConfig());
+      oldServiceProvider.setChangePasswordConfig(newServiceProvider.getChangePasswordConfig());
+      oldServiceProvider.setBulkConfig(newServiceProvider.getBulkConfig());
+      final Instant lastModified = newServiceProvider.getMeta().flatMap(Meta::getLastModified).orElse(null);
+      Optional<Meta> metaOptional = oldServiceProvider.getMeta();
+      metaOptional.ifPresent(meta -> {
+        // lastModified will never be null
+        meta.setLastModified(lastModified);
+      });
+    }
+
+    return Response.ok().entity(newServiceProvider.toString()).build();
   }
+
+
 }

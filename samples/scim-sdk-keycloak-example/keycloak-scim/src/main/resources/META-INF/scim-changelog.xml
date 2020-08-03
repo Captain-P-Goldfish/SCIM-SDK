@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+
+<databaseChangeLog xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+                   xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+                                       http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.9.xsd">
+
+    <changeSet author="pascal knueppel" id="scim-sdk-1.0">
+
+        <createTable tableName="SCIM_SERVICE_PROVIDER">
+
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SCIM_SERVICE_PROVIDER_ID"/>
+            </column>
+            <column name="REALM_ID" type="VARCHAR(36)">
+                <constraints unique="true" uniqueConstraintName="SCIM_SP_REALM_UNIQUE"/>
+            </column>
+            <column name="FILTER_SUPPORTED" type="BOOLEAN"/>
+            <column name="FILTER_MAX_RESULTS" type="INTEGER"/>
+            <column name="SORT_SUPPORTED" type="BOOLEAN"/>
+            <column name="PATCH_SUPPORTED" type="BOOLEAN"/>
+            <column name="CHANGE_PASSWORD_SUPPORTED" type="BOOLEAN"/>
+            <column name="BULK_SUPPORTED" type="BOOLEAN"/>
+            <column name="BULK_MAX_OPERATIONS" type="INTEGER"/>
+            <column name="BULK_MAX_PAYLOAD_SIZE" type="BIGINT"/>
+            <column name="CREATED" type="DATETIME"/>
+            <column name="LAST_MODIFIED" type="DATETIME"/>
+
+        </createTable>
+
+    </changeSet>
+
+</databaseChangeLog>

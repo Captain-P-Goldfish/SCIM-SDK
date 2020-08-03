@@ -1,24 +1,18 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
-import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
-import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.GroupHandler;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.UserHandler;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
@@ -29,9 +23,8 @@ import lombok.NoArgsConstructor;
 
 
 /**
- * author Pascal Knueppel <br>
- * created at: 04.02.2020 <br>
- * <br>
+ * @author Pascal Knueppel
+ * @since 04.02.2020
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ScimConfiguration
@@ -47,15 +40,16 @@ public final class ScimConfiguration
   /**
    * gets the SCIM resource endpoint for the given realm
    *
-   * @param realm the for which the resource endpoint should be returned
+   * @param keycloakSession used to check for existing {@link ServiceProvider}s in the database
    * @return the SCIM resource endpoint for the given realm
    */
-  public static ResourceEndpoint getScimEndpoint(RealmModel realm)
+  public static ResourceEndpoint getScimEndpoint(KeycloakSession keycloakSession)
   {
+    RealmModel realm = keycloakSession.getContext().getRealm();
     ResourceEndpoint resourceEndpoint = RESOURCE_ENDPOINT_MAP.get(realm.getName());
     if (resourceEndpoint == null)
     {
-      resourceEndpoint = createNewResourceEndpoint();
+      resourceEndpoint = createNewResourceEndpoint(keycloakSession);
       RESOURCE_ENDPOINT_MAP.put(realm.getName(), resourceEndpoint);
     }
     return resourceEndpoint;
@@ -64,9 +58,11 @@ public final class ScimConfiguration
   /**
    * creates a new resource endpoint for the current realm
    */
-  private static ResourceEndpoint createNewResourceEndpoint()
+  private static ResourceEndpoint createNewResourceEndpoint(KeycloakSession keycloakSession)
   {
-    ResourceEndpoint resourceEndpoint = new ResourceEndpoint(getServiceProviderConfig());
+    ScimServiceProviderService scimServiceProviderService = new ScimServiceProviderService(keycloakSession);
+    ServiceProvider serviceProvider = scimServiceProviderService.getServiceProvider();
+    ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider);
 
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
@@ -75,44 +71,24 @@ public final class ScimConfiguration
     ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
 
-
     return resourceEndpoint;
   }
 
   /**
-   * sets attribute validation on the user attribute "username"
+   * sets attribute validation on the user attribute "username"<br>
+   * <br>
+   * <b>NOTE:</b><br>
+   * This method is simply an example to show what else the SCIM-SDK API can do for you
    *
    * @param userResourceType the resource type to access the username attribute
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation">
+   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation </a>
    */
   private static void setUserAttributeRestrictions(ResourceType userResourceType)
   {
     Schema user = userResourceType.getMainSchema();
     SchemaAttribute username = user.getSchemaAttribute(AttributeNames.RFC7643.USER_NAME);
     username.setPattern("[a-z\\-_ ]+");
-  }
-
-  /**
-   * create the service provider configuration
-   */
-  private static ServiceProvider getServiceProviderConfig()
-  {
-    AuthenticationScheme authScheme = AuthenticationScheme.builder()
-                                                          .name("OAuth Bearer Token")
-                                                          .description("Authentication scheme using the OAuth "
-                                                                       + "Bearer Token Standard")
-                                                          .specUri("http://www.rfc-editor.org/info/rfc6750")
-                                                          // http://www.iana.org/assignments/http-authschemes/http-authschemes.xhtml
-                                                          .type("Bearer")
-                                                          .build();
-    return ServiceProvider.builder()
-                          .filterConfig(FilterConfig.builder().supported(true).maxResults(50).build())
-                          .sortConfig(SortConfig.builder().supported(true).build())
-                          .changePasswordConfig(ChangePasswordConfig.builder().supported(true).build())
-                          .bulkConfig(BulkConfig.builder().supported(true).maxOperations(50).build())
-                          .patchConfig(PatchConfig.builder().supported(true).build())
-                          .authenticationSchemes(Collections.singletonList(authScheme))
-                          .eTagConfig(ETagConfig.builder().supported(false).build())
-                          .build();
   }
 
 }

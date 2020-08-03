@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim;
 
 import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.AccessLevel;
@@ -32,7 +31,6 @@ public abstract class AbstractEndpoint
   public AbstractEndpoint(KeycloakSession keycloakSession)
   {
     this.keycloakSession = keycloakSession;
-    RealmModel realmModel = keycloakSession.getContext().getRealm();
-    this.resourceEndpoint = ScimConfiguration.getScimEndpoint(realmModel);
+    this.resourceEndpoint = ScimConfiguration.getScimEndpoint(keycloakSession);
   }
 }
