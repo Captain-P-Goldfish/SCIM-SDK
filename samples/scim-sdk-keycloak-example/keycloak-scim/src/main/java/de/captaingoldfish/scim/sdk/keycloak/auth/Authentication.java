@@ -4,13 +4,18 @@ import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
 
+import org.keycloak.Config;
+import org.keycloak.jose.jws.JWSInput;
+import org.keycloak.jose.jws.JWSInputException;
 import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
+import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 import de.captaingoldfish.scim.sdk.keycloak.provider.RealmRoleInitializer;
@@ -71,7 +76,7 @@ public class Authentication
    */
   public static void authenticateAsScimAdmin(KeycloakSession keycloakSession)
   {
-    AdminAuth adminAuth = Authentication.authenticate(keycloakSession);
+    AdminAuth adminAuth = authenticateOnRealm(keycloakSession);
     RoleModel roleModel = keycloakSession.getContext()
                                          .getRealm()
                                          .getMasterAdminClient()
@@ -81,6 +86,76 @@ public class Authentication
     {
       throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
     }
+  }
+
+  /**
+   * allows a user from a different realm to authenticate on the current realm. Lets assume you create a new
+   * realm with name "SCIM". If you now try to update the SCIM-configuration in this realm you are doing this
+   * probably with the "admin"-user from the master realm. But this user cannot authenticate on the "SCIM" realm
+   * because it has no relation to it. So we need to execute the authentication on the "master" realm by
+   * manipulating the current context.
+   * 
+   * @param keycloakSession the current request context
+   * @return the authentication result of the user that tried to authenticate
+   * @see <a href="https://github.com/dteleguin/beercloak">https://github.com/dteleguin/beercloak</a>
+   */
+  private static AdminAuth authenticateOnRealm(KeycloakSession keycloakSession)
+  {
+    KeycloakContext context = keycloakSession.getContext();
+    RealmModel originalRealm = context.getRealm();
+    AppAuthManager authManager = new AppAuthManager();
+    String tokenString = authManager.extractAuthorizationHeaderToken(context.getRequestHeaders());
+
+    if (tokenString == null)
+    {
+      throw new NotAuthorizedException("Bearer");
+    }
+
+    AccessToken token;
+
+    try
+    {
+      JWSInput input = new JWSInput(tokenString);
+      token = input.readJsonContent(AccessToken.class);
+    }
+    catch (JWSInputException e)
+    {
+      throw new NotAuthorizedException("Bearer token format error");
+    }
+
+    String realmName = token.getIssuer().substring(token.getIssuer().lastIndexOf('/') + 1);
+    RealmManager realmManager = new RealmManager(keycloakSession);
+    RealmModel authenticationRealm = realmManager.getRealmByName(realmName);
+
+    if (authenticationRealm == null)
+    {
+      throw new NotAuthorizedException("Unknown realm in token");
+    }
+    context.setRealm(authenticationRealm);
+    AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(keycloakSession,
+                                                                                      authenticationRealm,
+                                                                                      keycloakSession.getContext()
+                                                                                                     .getUri(),
+                                                                                      context.getConnection(),
+                                                                                      context.getRequestHeaders());
+    if (authResult == null)
+    {
+      throw new NotAuthorizedException("Bearer");
+    }
+    context.setRealm(originalRealm);
+
+    // @formatter:off
+    ClientModel client 
+      = authenticationRealm.getName().equals(Config.getAdminRealm()) 
+      ? originalRealm.getMasterAdminClient()
+      : originalRealm.getClientByClientId(realmManager.getRealmAdminClientId(originalRealm));
+    // @formatter:on
+
+    if (client == null)
+    {
+      throw new NotFoundException("Could not find client for authorization");
+    }
+    return createAdminAuth(keycloakSession, authResult);
   }
 
   /**
