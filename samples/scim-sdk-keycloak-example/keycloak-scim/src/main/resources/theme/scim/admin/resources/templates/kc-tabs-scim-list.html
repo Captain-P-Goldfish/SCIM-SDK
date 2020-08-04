@@ -1,0 +1,13 @@
+<div data-ng-controller="GroupTabCtrl">
+    <h1>
+        <span>{{:: 'scim.configuration' | translate}}</span>
+    </h1>
+
+    <ul class="nav nav-tabs">
+        <li data-ng-class="{active: path[3] == 'service-provider'}">
+            <a href="#/realms/{{realm.realm}}/scim/service-provider">
+                {{:: 'service.provider.tab.menu' | translate}}
+            </a>
+        </li>
+    </ul>
+</div>
