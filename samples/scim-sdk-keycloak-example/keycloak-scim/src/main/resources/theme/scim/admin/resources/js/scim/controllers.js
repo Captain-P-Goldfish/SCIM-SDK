@@ -39,3 +39,11 @@ module.controller('ServiceProviderController', function ($modal, $scope, realm, 
     };
 
 });
+
+module.controller('ResourceTypeController', function ($scope, realm, ResourceType, listResponse) {
+
+    $scope.realm = realm;
+    $scope.resourceTypeList = listResponse.Resources;
+    $scope.featureKey = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
+
+});

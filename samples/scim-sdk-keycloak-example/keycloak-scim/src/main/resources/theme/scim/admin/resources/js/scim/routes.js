@@ -14,5 +14,17 @@ module.config(['$routeProvider', function ($routeProvider) {
                 }
             },
             controller: 'ServiceProviderController'
+        })
+        .when('/realms/:realm/scim/resource-type-list', {
+            templateUrl: resourceUrl + '/partials/resource-type-list.html',
+            resolve: {
+                realm: function (RealmLoader) {
+                    return RealmLoader();
+                },
+                listResponse: function (ResourceTypeLoader) {
+                    return ResourceTypeLoader();
+                }
+            },
+            controller: 'ResourceTypeController'
         });
 }]);
