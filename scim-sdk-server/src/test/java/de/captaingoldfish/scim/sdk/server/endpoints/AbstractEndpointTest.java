@@ -111,6 +111,6 @@ public class AbstractEndpointTest extends AbstractBulkTest implements FileRefere
    */
   protected String getUrl(String endpoint)
   {
-    return BASE_URI + "/" + endpoint;
+    return BASE_URI + endpoint;
   }
 }
