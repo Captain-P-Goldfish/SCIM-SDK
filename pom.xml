@@ -72,7 +72,7 @@
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.11</version.apache.commons.lang3>
         <version.commons.io>2.7</version.commons.io>
-        <version.jackson>2.11.1</version.jackson>
+        <version.jackson>2.11.2</version.jackson>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.antlr>4.8-1</version.antlr>
         <version.apache.http.client>4.5.12</version.apache.http.client>
@@ -90,7 +90,7 @@
         <version.junit.jupiter>5.6.2</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.9.12</version.reflections>
-        <version.mockito>3.4.4</version.mockito>
+        <version.mockito>3.4.6</version.mockito>
         <version.resteasy.jaxrs>3.11.2.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.4.1</version.equalsverifier>
         <version.springboot>2.3.2.RELEASE</version.springboot>
