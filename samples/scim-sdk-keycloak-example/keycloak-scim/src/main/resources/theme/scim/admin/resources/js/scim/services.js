@@ -23,7 +23,7 @@ module.factory('ServiceProviderLoader', function (Loader, ServiceProvider, $rout
 /* ***************************************************************************************************** */
 
 module.factory('ResourceType', function ($resource) {
-    return $resource(authUrl + '/realms/:realm/scim/v2/ResourceTypes?sortBy=name',
+    return $resource(authUrl + '/realms/:realm/scim/v2/ResourceTypes/:name?sortBy=name',
         {},
         {});
 });
@@ -31,7 +31,8 @@ module.factory('ResourceType', function ($resource) {
 module.factory('ResourceTypeLoader', function (Loader, ResourceType, $route, $q) {
     return Loader.get(ResourceType, function () {
         return {
-            realm: $route.current.params.realm
+            realm: $route.current.params.realm,
+            name: $route.current.params.name
         };
     });
 });

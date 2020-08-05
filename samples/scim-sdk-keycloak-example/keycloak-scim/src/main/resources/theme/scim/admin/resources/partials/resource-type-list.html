@@ -17,14 +17,18 @@
         </tr>
         </thead>
         <tbody>
-        <tr ng-repeat="resourceType in resourceTypeList">
-            <td class="clip">{{resourceType.name}}</td>
+        <tr ng-repeat="resourceType in resource.Resources">
             <td class="clip">
-                <a href="{{authUrl + '/realms/' + realm.realm + '/scim/v2' + resourceType.endpoint}}">
+                <a href="#/realms/{{realm.realm}}/scim/resource-type/{{resourceType.name}}">
+                    {{resourceType.name}}
+                </a>
+            </td>
+            <td class="clip">
+                <a href="{{authUrl + '/realms/' + realm.realm + '/scim/v2' + resourceType.endpoint}}" target="_blank">
                     {{resourceType.endpoint}}
                 </a>
             </td>
-            <td class="clip">{{!resourceType[featureKey].disabled}}</td>
+            <td class="clip">{{!resourceType[RESOURCE_TYPE_FEATURE_KEY].disabled}}</td>
             <td class="kc-action-cell"
                 kc-open="/realms/{{realm.realm}}/scim/resource-type/{{resourceType.name}}">
                 {{:: 'edit' | translate}}

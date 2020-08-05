@@ -21,7 +21,19 @@ module.config(['$routeProvider', function ($routeProvider) {
                 realm: function (RealmLoader) {
                     return RealmLoader();
                 },
-                listResponse: function (ResourceTypeLoader) {
+                resource: function (ResourceTypeLoader) {
+                    return ResourceTypeLoader();
+                }
+            },
+            controller: 'ResourceTypeListController'
+        })
+        .when('/realms/:realm/scim/resource-type/:name', {
+            templateUrl: resourceUrl + '/partials/resource-type.html',
+            resolve: {
+                realm: function (RealmLoader) {
+                    return RealmLoader();
+                },
+                resource: function (ResourceTypeLoader) {
                     return ResourceTypeLoader();
                 }
             },

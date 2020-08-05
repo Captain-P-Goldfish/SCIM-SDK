@@ -40,10 +40,32 @@ module.controller('ServiceProviderController', function ($modal, $scope, realm, 
 
 });
 
-module.controller('ResourceTypeController', function ($scope, realm, ResourceType, listResponse) {
-
+module.controller('ResourceTypeListController', function ($scope, realm, ResourceType, resource) {
+    $scope.RESOURCE_TYPE_FEATURE_KEY = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
     $scope.realm = realm;
-    $scope.resourceTypeList = listResponse.Resources;
-    $scope.featureKey = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
+    $scope.resource = resource;
+    $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+});
 
+module.controller('ResourceTypeController', function ($scope, realm, ResourceType, resource) {
+    $scope.RESOURCE_TYPE_FEATURE_KEY = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
+    $scope.realm = realm;
+    $scope.resource = resource;
+    $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+
+    $scope.requiresAuthentication =
+        !$scope.features.hasOwnProperty('authorization') ||
+        !$scope.features.authorization.hasOwnProperty('authenticated') ||
+        $scope.features.authorization.authenticated;
+
+    $scope.$watch('requiresAuthentication', function (requiresAuthentication) {
+        if (!$scope.features.hasOwnProperty('authorization')) {
+            $scope.features.authorization = {};
+        }
+        if (requiresAuthentication) {
+            $scope.features.authorization.authenticated = true;
+        } else {
+            $scope.features.authorization.authenticated = false;
+        }
+    }, true);
 });
