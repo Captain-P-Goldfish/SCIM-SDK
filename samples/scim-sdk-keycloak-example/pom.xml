@@ -28,8 +28,12 @@
         <version.sun.javax.activation>1.2.0</version.sun.javax.activation>
         <version.javax.activation>1.1.1</version.javax.activation>
 
+        <!-- test dependencies -->
+        <version.h2>1.4.200</version.h2>
+
         <!-- plugin versions -->
         <version.maven.ear.plugin>3.0.2</version.maven.ear.plugin>
+
     </properties>
 
     <dependencyManagement>
@@ -62,6 +66,14 @@
                 <groupId>javax.activation</groupId>
                 <artifactId>activation</artifactId>
                 <version>${version.javax.activation}</version>
+            </dependency>
+
+            <!-- test dependencies -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.h2}</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

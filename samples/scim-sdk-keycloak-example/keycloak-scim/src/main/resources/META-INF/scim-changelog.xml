@@ -8,7 +8,6 @@
     <changeSet author="pascal knueppel" id="scim-sdk-1.0">
 
         <createTable tableName="SCIM_SERVICE_PROVIDER">
-
             <column name="ID" type="VARCHAR(36)">
                 <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SCIM_SERVICE_PROVIDER_ID"/>
             </column>
@@ -27,8 +26,48 @@
             <column name="ETAG_SUPPORTED" type="BOOLEAN"/>
             <column name="CREATED" type="DATETIME"/>
             <column name="LAST_MODIFIED" type="DATETIME"/>
-
         </createTable>
+
+        <createTable tableName="SCIM_RESOURCE_TYPE">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SCIM_RESOURCE_TYPE_ID"/>
+            </column>
+            <column name="VERSION" type="BIGINT"/>
+            <column name="REALM_ID" type="VARCHAR(36)"/>
+            <column name="RESOURCE_TYPE_ID" type="VARCHAR(50)"/>
+            <column name="NAME" type="VARCHAR(50)"/>
+            <column name="DESCRIPTION" type="VARCHAR(255)"/>
+            <column name="SCHEMA" type="VARCHAR(255)"/>
+            <column name="ENDPOINT" type="VARCHAR(25)"/>
+            <column name="ENABLED" type="BOOLEAN"/>
+            <column name="SINGLETON_ENDPOINT" type="BOOLEAN"/>
+            <column name="AUTO_FILTERING" type="BOOLEAN"/>
+            <column name="AUTO_SORTING" type="BOOLEAN"/>
+            <column name="DISABLE_CREATE" type="BOOLEAN"/>
+            <column name="DISABLE_GET" type="BOOLEAN"/>
+            <column name="DISABLE_UPDATE" type="BOOLEAN"/>
+            <column name="DISABLE_DELETE" type="BOOLEAN"/>
+            <column name="REQUIRE_AUTHENTICATION" type="BOOLEAN"/>
+            <column name="CREATED" type="DATETIME"/>
+            <column name="LAST_MODIFIED" type="DATETIME"/>
+        </createTable>
+
+        <createTable tableName="SCIM_SCHEMA_EXTENSIONS">
+            <column name="ID" type="VARCHAR(36)">
+                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SCIM_SCHEMA_EXTENSION_ID"/>
+            </column>
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCHEMA_EXTENSION_FK"
+                             referencedTableName="SCIM_RESOURCE_TYPE"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="SCHEMA" type="VARCHAR(255)"/>
+            <column name="REQUIRED" type="BOOLEAN"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_SCHEMA_EXTENSIONS" indexName="SCHEMA_EXTENSIONS_IDX">
+            <column name="SCIM_RESOURCE_TYPE_ID"/>
+        </createIndex>
 
     </changeSet>
 
