@@ -395,6 +395,13 @@ public class ResourceType extends ResourceNode
   public class SchemaExtension extends ScimObjectNode
   {
 
+    public SchemaExtension(String schema, boolean required)
+    {
+      super(null);
+      setSchema(schema);
+      setRequired(required);
+    }
+
     public SchemaExtension(JsonNode jsonNode)
     {
       super(null);

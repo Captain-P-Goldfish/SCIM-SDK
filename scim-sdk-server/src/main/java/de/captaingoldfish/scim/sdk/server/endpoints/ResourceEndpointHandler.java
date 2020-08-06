@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.endpoints;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -133,6 +134,22 @@ class ResourceEndpointHandler
   public Set<String> getRegisteredResourceTypeNames()
   {
     return resourceTypeFactory.getAllResourceTypes().stream().map(ResourceType::getName).collect(Collectors.toSet());
+  }
+
+  /**
+   * @return all registered resource types
+   */
+  public Set<ResourceType> getRegisteredResourceTypes()
+  {
+    return new HashSet<>(resourceTypeFactory.getAllResourceTypes());
+  }
+
+  /**
+   * @return all resource schemata that have been registered on this SCIM provider
+   */
+  public Set<Schema> getRegisteredSchemas()
+  {
+    return resourceTypeFactory.getSchemaFactory().getAllResourceSchemas();
   }
 
   /**
