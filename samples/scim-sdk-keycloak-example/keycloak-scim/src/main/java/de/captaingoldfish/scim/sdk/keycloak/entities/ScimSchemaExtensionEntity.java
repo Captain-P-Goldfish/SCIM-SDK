@@ -49,7 +49,7 @@ public class ScimSchemaExtensionEntity
   /**
    * the schema extension uri reference
    */
-  @Column(name = "SCHEMA")
+  @Column(name = "SCHEMA_URI")
   private String schema;
 
   /**

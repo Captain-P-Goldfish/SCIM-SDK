@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.keycloak.entities;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,6 +11,8 @@ import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Version;
@@ -31,6 +34,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @Entity
 @Table(name = "SCIM_RESOURCE_TYPE")
+@NamedQueries({@NamedQuery(name = "getScimResourceType", query = "SELECT rt FROM ScimResourceTypeEntity rt WHERE "
+                                                                 + "rt.realmId = :realmId and rt.name = :name")})
 public class ScimResourceTypeEntity
 {
 
@@ -80,7 +85,7 @@ public class ScimResourceTypeEntity
   /**
    * the main schema that represents this resource type
    */
-  @Column(name = "SCHEMA")
+  @Column(name = "SCHEMA_URI")
   private String schema;
 
   /**
@@ -95,7 +100,7 @@ public class ScimResourceTypeEntity
    * the schema extensions of this resource type
    */
   @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "scimResourceTypeEntity")
-  private List<ScimSchemaExtensionEntity> schemaExtensions;
+  private List<ScimSchemaExtensionEntity> schemaExtensions = new ArrayList<>();
 
   /**
    * if this resource type is enabled or disabled
@@ -122,6 +127,12 @@ public class ScimResourceTypeEntity
   private boolean autoSorting;
 
   /**
+   * activates the automatic calculation of eTags for this resource type if no version attribute has been set
+   */
+  @Column(name = "ETAG_ENABLED")
+  private boolean etagEnabled;
+
+  /**
    * disables creation for resources of this resource type
    */
   @Column(name = "DISABLE_CREATE")
@@ -132,6 +143,12 @@ public class ScimResourceTypeEntity
    */
   @Column(name = "DISABLE_GET")
   private boolean disableGet;
+
+  /**
+   * disables listing of resources for this resource type
+   */
+  @Column(name = "DISABLE_LIST")
+  private boolean disableList;
 
   /**
    * disables update and patch for resources of this resource type
@@ -175,8 +192,10 @@ public class ScimResourceTypeEntity
                                 boolean singletonEndpoint,
                                 boolean autoFiltering,
                                 boolean autoSorting,
+                                boolean etagEnabled,
                                 boolean disableCreate,
                                 boolean disableGet,
+                                boolean disableList,
                                 boolean disableUpdate,
                                 boolean disableDelete,
                                 Boolean requireAuthentication,
@@ -189,13 +208,15 @@ public class ScimResourceTypeEntity
     this.description = description;
     this.schema = schema;
     this.endpoint = endpoint;
-    this.schemaExtensions = schemaExtensions;
+    this.schemaExtensions = Optional.ofNullable(schemaExtensions).orElse(new ArrayList<>());
     this.enabled = Optional.ofNullable(enabled).orElse(true);
     this.singletonEndpoint = singletonEndpoint;
     this.autoFiltering = autoFiltering;
     this.autoSorting = autoSorting;
+    this.etagEnabled = etagEnabled;
     this.disableCreate = disableCreate;
     this.disableGet = disableGet;
+    this.disableList = disableList;
     this.disableUpdate = disableUpdate;
     this.disableDelete = disableDelete;
     this.requireAuthentication = Optional.ofNullable(requireAuthentication).orElse(true);
