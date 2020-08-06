@@ -10,8 +10,10 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.GroupHandler;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.UserHandler;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimResourceTypeService;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
@@ -64,12 +66,18 @@ public final class ScimConfiguration
     ServiceProvider serviceProvider = scimServiceProviderService.getServiceProvider();
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider);
 
+    ScimResourceTypeService resourceTypeService = new ScimResourceTypeService(keycloakSession);
+
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     setUserAttributeRestrictions(userResourceType);
+    ScimResourceTypeEntity userResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(userResourceType);
+    resourceTypeService.updateResourceType(userResourceType, userResourceTypeEntity);
 
     ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+    ScimResourceTypeEntity groupResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(groupResourceType);
+    resourceTypeService.updateResourceType(groupResourceType, groupResourceTypeEntity);
 
     return resourceEndpoint;
   }

@@ -6,7 +6,6 @@ import java.util.List;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
-import de.captaingoldfish.scim.sdk.keycloak.entities.ScimSchemaExtensionEntity;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,9 +21,7 @@ public class ScimJpaEntityProvider implements JpaEntityProvider
   @Override
   public List<Class<?>> getEntities()
   {
-    return Arrays.asList(ScimServiceProviderEntity.class,
-                         ScimResourceTypeEntity.class,
-                         ScimSchemaExtensionEntity.class);
+    return Arrays.asList(ScimServiceProviderEntity.class, ScimResourceTypeEntity.class);
   }
 
   @Override

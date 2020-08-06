@@ -24,7 +24,7 @@
                            class="form-control"
                            id="resourceTypeId"
                            name="resourceTypeId"
-                           data-ng-model="resource.id"
+                           data-ng-value="resource.id"
                            disabled
                            type="text">
                 </div>
@@ -37,7 +37,7 @@
                 </label>
                 <div class="col-md-6">
                     <input class="form-control"
-                           data-ng-model="resource.name"
+                           data-ng-value="resource.name"
                            id="resourceTypeName"
                            name="resourceTypeName"
                            disabled
@@ -66,7 +66,7 @@
                 </label>
                 <div class="col-md-6">
                     <input class="form-control"
-                           data-ng-model="resource.schema"
+                           data-ng-value="resource.schema"
                            id="resourceTypeSchema"
                            name="resourceTypeSchema"
                            disabled
@@ -81,10 +81,10 @@
                 </label>
                 <div class="col-md-6">
                     <input class="form-control"
-                           data-ng-model="resource.endpoint"
+                           data-ng-value="resource.endpoint"
                            id="resourceTypeEndpoint"
                            name="resourceTypeEndpoint"
-                           data-ng-pattern="/^/\w+/"
+                           disabled
                            type="text">
                 </div>
             </div>
@@ -100,21 +100,8 @@
                     <table class="table table-striped table-bordered" id="schemaExtensionsTable">
                         <thead>
                         <tr>
-                            <th colspan="3">
-                                <div class="pull-right">
-                                    <a class="btn btn-default"
-                                       href="#"
-                                       id="addExtension">
-                                        {{:: 'add' | translate}}
-                                    </a>
-                                </div>
-                            </th>
-                        </tr>
-                        <tr>
-                        <tr>
                             <th class="w-40">{{:: 'schema' | translate}}</th>
                             <th class="w-15">{{:: 'required' | translate}}</th>
-                            <th class="w-10">{{:: 'actions' | translate}}</th>
                         </tr>
                         </thead>
                         <tbody>
@@ -122,6 +109,7 @@
                             <td class="clip">
                                 <input class="form-control"
                                        id="schemaReference"
+                                       disabled
                                        data-ng-model="extension.schema"
                                        name="schemaReference">
                             </td>
@@ -131,11 +119,12 @@
                                        name="extensionRequired"
                                        off-text="{{:: 'offText' | translate}}"
                                        on-text="{{:: 'onText' | translate}}"
+                                       data-ng-disabled="true"
                                        onoffswitch/>
                             </td>
-                            <td class="kc-action-cell">
-                                {{:: 'remove' | translate}}
-                            </td>
+                        </tr>
+                        <tr data-ng-show="!resource.schemaExtensions || resource.schemaExtensions.length == 0">
+                            <td class="text-muted" data-ng-show="!users">{{:: 'no-results' | translate}}</td>
                         </tr>
                         </tbody>
                     </table>
@@ -171,6 +160,7 @@
                                name="singletonEndpoint"
                                off-text="{{:: 'offText' | translate}}"
                                on-text="{{:: 'onText' | translate}}"
+                               data-ng-disabled="true"
                                onoffswitch/>
                     </div>
                     <kc-tooltip>{{:: 'resource.type.features.singleton.endpoint.tooltip' | translate}}</kc-tooltip>

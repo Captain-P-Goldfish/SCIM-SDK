@@ -1,19 +1,15 @@
 package de.captaingoldfish.scim.sdk.keycloak.entities;
 
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
-import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
-import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
@@ -65,15 +61,9 @@ public class ScimResourceTypeEntity
   private String realmId;
 
   /**
-   * the ID attribute of the resource type json structure
-   */
-  @Column(name = "RESOURCE_TYPE_ID")
-  private String resourceTypeId;
-
-  /**
    * the NAME attribute is actually the main attribute for resource types not the ID attribute
    */
-  @Column(name = "NAME")
+  @Column(name = "NAME", unique = true)
   private String name;
 
   /**
@@ -81,26 +71,6 @@ public class ScimResourceTypeEntity
    */
   @Column(name = "DESCRIPTION")
   private String description;
-
-  /**
-   * the main schema that represents this resource type
-   */
-  @Column(name = "SCHEMA_URI")
-  private String schema;
-
-  /**
-   * the endpoint path under which this resourceType is reachable. Only a single path part is allowed <br>
-   * <b>/Users</b>: correct <br>
-   * <b>/Users/Resource</b>: error
-   */
-  @Column(name = "ENDPOINT")
-  private String endpoint;
-
-  /**
-   * the schema extensions of this resource type
-   */
-  @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, mappedBy = "scimResourceTypeEntity")
-  private List<ScimSchemaExtensionEntity> schemaExtensions = new ArrayList<>();
 
   /**
    * if this resource type is enabled or disabled
@@ -182,12 +152,8 @@ public class ScimResourceTypeEntity
 
   @Builder
   public ScimResourceTypeEntity(String realmId,
-                                String resourceTypeId,
                                 String name,
                                 String description,
-                                String schema,
-                                String endpoint,
-                                List<ScimSchemaExtensionEntity> schemaExtensions,
                                 Boolean enabled,
                                 boolean singletonEndpoint,
                                 boolean autoFiltering,
@@ -203,12 +169,8 @@ public class ScimResourceTypeEntity
                                 Instant lastModified)
   {
     this.realmId = realmId;
-    this.resourceTypeId = resourceTypeId;
     this.name = name;
     this.description = description;
-    this.schema = schema;
-    this.endpoint = endpoint;
-    this.schemaExtensions = Optional.ofNullable(schemaExtensions).orElse(new ArrayList<>());
     this.enabled = Optional.ofNullable(enabled).orElse(true);
     this.singletonEndpoint = singletonEndpoint;
     this.autoFiltering = autoFiltering;

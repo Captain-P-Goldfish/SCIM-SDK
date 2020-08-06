@@ -301,7 +301,7 @@ public class ResourceType extends ResourceNode
    * The resource type's human-readable description. When applicable, service providers MUST specify the
    * description. OPTIONAL.
    */
-  private void setDescription(String description)
+  public void setDescription(String description)
   {
     setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
   }

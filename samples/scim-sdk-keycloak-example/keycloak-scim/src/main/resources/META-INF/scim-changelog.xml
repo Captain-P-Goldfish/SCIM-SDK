@@ -34,11 +34,10 @@
             </column>
             <column name="VERSION" type="BIGINT"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
-            <column name="RESOURCE_TYPE_ID" type="VARCHAR(50)"/>
-            <column name="NAME" type="VARCHAR(50)"/>
+            <column name="NAME" type="VARCHAR(50)">
+                <constraints unique="true" uniqueConstraintName="SCIM_RESOURCE_TYPE_NAME_UQ"/>
+            </column>
             <column name="DESCRIPTION" type="VARCHAR(255)"/>
-            <column name="SCHEMA_URI" type="VARCHAR(255)"/>
-            <column name="ENDPOINT" type="VARCHAR(25)"/>
             <column name="ENABLED" type="BOOLEAN"/>
             <column name="SINGLETON_ENDPOINT" type="BOOLEAN"/>
             <column name="AUTO_FILTERING" type="BOOLEAN"/>
@@ -53,23 +52,6 @@
             <column name="CREATED" type="DATETIME"/>
             <column name="LAST_MODIFIED" type="DATETIME"/>
         </createTable>
-
-        <createTable tableName="SCIM_SCHEMA_EXTENSIONS">
-            <column name="ID" type="VARCHAR(36)">
-                <constraints nullable="false" primaryKey="true" primaryKeyName="PK_SCIM_SCHEMA_EXTENSION_ID"/>
-            </column>
-            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
-                <constraints foreignKeyName="SCHEMA_EXTENSION_FK"
-                             referencedTableName="SCIM_RESOURCE_TYPE"
-                             referencedColumnNames="ID"/>
-            </column>
-            <column name="SCHEMA_URI" type="VARCHAR(255)"/>
-            <column name="REQUIRED" type="BOOLEAN"/>
-        </createTable>
-
-        <createIndex tableName="SCIM_SCHEMA_EXTENSIONS" indexName="SCHEMA_EXTENSIONS_IDX">
-            <column name="SCIM_RESOURCE_TYPE_ID"/>
-        </createIndex>
 
     </changeSet>
 

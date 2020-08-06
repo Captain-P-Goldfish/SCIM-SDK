@@ -18,8 +18,12 @@ import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
+import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
+import de.captaingoldfish.scim.sdk.keycloak.scim.resources.ParseableResourceType;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimResourceTypeService;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -92,7 +96,24 @@ public class AdminstrationResource extends AbstractEndpoint
   @Produces(MediaType.APPLICATION_JSON)
   public Response updateResourceType(@PathParam("name") String resourceTypeName, final String content)
   {
-    return Response.status(HttpStatus.NOT_IMPLEMENTED).build();
+    Optional<ResourceType> resourceTypeOptional = getResourceEndpoint().getResourceTypeByName(resourceTypeName);
+    if (!resourceTypeOptional.isPresent())
+    {
+      return Response.status(HttpStatus.BAD_REQUEST).entity("resource type cannot be updated").build();
+    }
+
+    ScimResourceTypeService resourceTypeService = new ScimResourceTypeService(getKeycloakSession());
+    ParseableResourceType parseableResourceType = JsonHelper.readJsonDocument(content, ParseableResourceType.class);
+
+    Optional<ScimResourceTypeEntity> scimResourceTypeEntity = resourceTypeService.updateDatabaseEntry(parseableResourceType);
+    if (!scimResourceTypeEntity.isPresent())
+    {
+      return Response.status(HttpStatus.BAD_REQUEST).entity("resource type cannot be updated").build();
+    }
+
+    ResourceType resourceType = resourceTypeOptional.get();
+    resourceTypeService.updateResourceType(resourceType, scimResourceTypeEntity.get());
+    return Response.status(HttpStatus.OK).entity(resourceType.toString()).build();
   }
 
 

@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.keycloak.entities;
 
-import java.util.Arrays;
-
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -49,19 +47,10 @@ public class ScimResourceTypeEntityTest extends KeycloakTest
   @Test
   public void testScimResourceTypeEntityTest()
   {
-    final String enterpriseUserSchema = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User";
-    ScimSchemaExtensionEntity schemaExtension = ScimSchemaExtensionEntity.builder()
-                                                                         .schema(enterpriseUserSchema)
-                                                                         .required(false)
-                                                                         .build();
     ScimResourceTypeEntity resourceType = ScimResourceTypeEntity.builder()
                                                                 .realmId(getRealmModel().getId())
-                                                                .resourceTypeId("User")
                                                                 .name("User")
                                                                 .description("User Account")
-                                                                .schema("urn:ietf:params:scim:schemas:core:2.0:User")
-                                                                .endpoint("/Users")
-                                                                .schemaExtensions(Arrays.asList(schemaExtension))
                                                                 .enabled(false)
                                                                 .singletonEndpoint(false)
                                                                 .autoFiltering(true)
@@ -74,6 +63,5 @@ public class ScimResourceTypeEntityTest extends KeycloakTest
                                                                 .build();
     persist(resourceType);
     Assertions.assertEquals(1, countEntriesInTable(ScimResourceTypeEntity.class));
-    Assertions.assertEquals(1, countEntriesInTable(ScimSchemaExtensionEntity.class));
   }
 }
