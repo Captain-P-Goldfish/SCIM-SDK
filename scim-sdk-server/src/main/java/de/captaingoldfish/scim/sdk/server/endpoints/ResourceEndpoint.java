@@ -36,8 +36,11 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
 {
 
   /**
-   * this constructor was introduced for unit tests to add a specific resourceTypeFactory instance which will
-   * prevent application context pollution within unit tests
+   * create a resource endpoint with default meta-endpoints
+   * 
+   * @param serviceProvider the service provider configuration of this SCIM provider setup
+   * @param endpointDefinitions the endpoint definitions that should be registered additionally to the meta
+   *          endpoint "/ServiceProviderConfig, /ResourceTypes, /Schemas"
    */
   public ResourceEndpoint(ServiceProvider serviceProvider, EndpointDefinition... endpointDefinitions)
   {
