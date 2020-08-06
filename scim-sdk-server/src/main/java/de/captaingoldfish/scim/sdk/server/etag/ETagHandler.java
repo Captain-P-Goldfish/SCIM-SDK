@@ -56,7 +56,7 @@ public class ETagHandler
     }
     else if (!resourceType.getFeatures().getETagFeature().isEnabled())
     {
-      log.trace("not handling eTags for for support on resource type {} is disabled", resourceType.getName());
+      log.trace("not handling eTags for support on resource type {} is disabled", resourceType.getName());
       return Optional.empty();
     }
     Optional<ETag> version = resourceNode.getMeta().flatMap(Meta::getVersion);
