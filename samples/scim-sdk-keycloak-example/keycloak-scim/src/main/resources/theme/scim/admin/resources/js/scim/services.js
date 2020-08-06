@@ -25,7 +25,12 @@ module.factory('ServiceProviderLoader', function (Loader, ServiceProvider, $rout
 module.factory('ResourceType', function ($resource) {
     return $resource(authUrl + '/realms/:realm/scim/v2/ResourceTypes/:name?sortBy=name',
         {},
-        {});
+        {
+            update: {
+                method: 'PUT',
+                url: authUrl + '/realms/:realm/scim/admin/resourceType/:name'
+            }
+        });
 });
 
 module.factory('ResourceTypeLoader', function (Loader, ResourceType, $route, $q) {

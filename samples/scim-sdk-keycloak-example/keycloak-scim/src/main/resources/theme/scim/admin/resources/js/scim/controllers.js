@@ -47,11 +47,24 @@ module.controller('ResourceTypeListController', function ($scope, realm, Resourc
     $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
 });
 
-module.controller('ResourceTypeController', function ($scope, realm, ResourceType, resource) {
+module.controller('ResourceTypeController', function ($scope, Notifications, realm, ResourceType, resource) {
     $scope.RESOURCE_TYPE_FEATURE_KEY = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
     $scope.realm = realm;
     $scope.resource = resource;
+    $scope.copy = angular.copy(resource);
     $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+
+    $scope.isEqual = function () {
+        return angular.equals($scope.copy, resource);
+    }
+
+    $scope.$watch('resource', function (resource) {
+        if (!angular.equals($scope.copy, resource)) {
+            $scope.changed = true;
+        } else {
+            $scope.changed = false;
+        }
+    }, true);
 
     $scope.requiresAuthentication =
         !$scope.features.hasOwnProperty('authorization') ||
@@ -68,4 +81,21 @@ module.controller('ResourceTypeController', function ($scope, realm, ResourceTyp
             $scope.features.authorization.authenticated = false;
         }
     }, true);
+
+    $scope.save = function () {
+        ResourceType.update(
+            {
+                realm: realm.realm,
+                name: $scope.resource.name
+            },
+            $scope.resource,
+            function (response) {
+                $scope.changed = false;
+                $scope.resource = response;
+                $scope.features = $scope.resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+                $scope.copy = angular.copy(response);
+                Notifications.success("Your changes have been saved to resource type.");
+            }
+        );
+    };
 });
