@@ -5,12 +5,14 @@ import java.util.Optional;
 
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
 
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -49,7 +51,7 @@ public class AdminstrationResource extends AbstractEndpoint
   @PUT
   @Path("/serviceProviderConfig")
   @Produces(MediaType.APPLICATION_JSON)
-  public Response overrideServiceProviderConfig(final String content)
+  public Response updateServiceProviderConfig(final String content)
   {
     ServiceProvider newServiceProvider = JsonHelper.readJsonDocument(content, ServiceProvider.class);
     ScimServiceProviderService scimServiceProviderService = new ScimServiceProviderService(getKeycloakSession());
@@ -76,6 +78,21 @@ public class AdminstrationResource extends AbstractEndpoint
     }
 
     return Response.ok().entity(newServiceProvider.toString()).build();
+  }
+
+  /**
+   * updates the resource type with the given name
+   * 
+   * @param resourceTypeName the name of the resource type that should be updated
+   * @param content the new representation of the resource type
+   * @return the updates resource type representation
+   */
+  @PUT
+  @Path("/resourceType/{name}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response updateResourceType(@PathParam("name") String resourceTypeName, final String content)
+  {
+    return Response.status(HttpStatus.NOT_IMPLEMENTED).build();
   }
 
 
