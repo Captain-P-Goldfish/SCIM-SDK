@@ -126,7 +126,7 @@ public class ScimEndpoint extends AbstractEndpoint
    * @param request the request object
    * @return the request body as string
    */
-  private String getRequestBody(HttpServletRequest request)
+  public String getRequestBody(HttpServletRequest request)
   {
     try (InputStream inputStream = request.getInputStream())
     {
@@ -144,7 +144,7 @@ public class ScimEndpoint extends AbstractEndpoint
    * @param request the request object
    * @return a map with the http-headers
    */
-  private Map<String, String> getHttpHeaders(HttpServletRequest request)
+  public Map<String, String> getHttpHeaders(HttpServletRequest request)
   {
     Map<String, String> httpHeaders = new HashMap<>();
     Enumeration<String> enumeration = request.getHeaderNames();

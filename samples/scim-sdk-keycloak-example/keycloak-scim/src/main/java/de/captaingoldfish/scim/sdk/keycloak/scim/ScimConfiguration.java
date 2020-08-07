@@ -22,6 +22,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 
@@ -38,6 +39,7 @@ public final class ScimConfiguration
    * <br />
    * the key of the map is the name of the realm
    */
+  @Getter(AccessLevel.PROTECTED) // used for unit tests
   private static final Map<String, ResourceEndpoint> RESOURCE_ENDPOINT_MAP = new HashMap<>();
 
   /**
@@ -68,7 +70,6 @@ public final class ScimConfiguration
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider);
 
     ScimResourceTypeService resourceTypeService = new ScimResourceTypeService(keycloakSession);
-
 
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     ResourceTypeAuthorization userAuthorization = ResourceTypeAuthorization.builder().authenticated(false).build();
