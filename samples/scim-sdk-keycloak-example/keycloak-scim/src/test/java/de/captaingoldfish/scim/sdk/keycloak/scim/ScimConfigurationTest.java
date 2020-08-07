@@ -12,6 +12,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimResourceTypeService;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderServiceBridge;
 import de.captaingoldfish.scim.sdk.keycloak.setup.KeycloakScimManagementTest;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -113,8 +114,11 @@ public class ScimConfigurationTest extends KeycloakScimManagementTest
   @Test
   public void testInitialServiceProviderConfiguration()
   {
-    ServiceProvider serviceProvider = verifyActualServiceProviderConfigurationOnInitialSetup();
+    ServiceProvider serviceProvider = verifyDefaultServiceProviderConfig();
     verifyDatabaseServiceProviderConfigurationOnInitialSetup(serviceProvider);
+    // verifies the current active configuration. If this configuration does match too the configurations must be
+    // equal
+    verifyDatabaseServiceProviderConfigurationOnInitialSetup(resourceEndpoint.getServiceProvider());
   }
 
   /**
@@ -131,6 +135,7 @@ public class ScimConfigurationTest extends KeycloakScimManagementTest
     Assertions.assertEquals(sp.getFilterConfig().getMaxResults(), serviceProvider.getFilterMaxResults());
     Assertions.assertEquals(sp.getSortConfig().isSupported(), serviceProvider.isSortSupported());
     Assertions.assertEquals(sp.getPatchConfig().isSupported(), serviceProvider.isPatchSupported());
+    Assertions.assertEquals(sp.getETagConfig().isSupported(), serviceProvider.isEtagSupported());
     Assertions.assertEquals(sp.getChangePasswordConfig().isSupported(), serviceProvider.isChangePasswordSupported());
     Assertions.assertEquals(sp.getBulkConfig().isSupported(), serviceProvider.isBulkSupported());
     Assertions.assertEquals(sp.getBulkConfig().getMaxOperations(), serviceProvider.getBulkMaxOperations());
@@ -143,13 +148,14 @@ public class ScimConfigurationTest extends KeycloakScimManagementTest
   /**
    * verifies that the data of the initial setup matches the expected data
    */
-  private ServiceProvider verifyActualServiceProviderConfigurationOnInitialSetup()
+  private ServiceProvider verifyDefaultServiceProviderConfig()
   {
-    ServiceProvider serviceProvider = resourceEndpoint.getServiceProvider();
+    ServiceProvider serviceProvider = ScimServiceProviderServiceBridge.getDefaultServiceProvider(getKeycloakSession());
     Assertions.assertTrue(serviceProvider.getFilterConfig().isSupported());
     Assertions.assertEquals(50, serviceProvider.getFilterConfig().getMaxResults());
     Assertions.assertTrue(serviceProvider.getSortConfig().isSupported());
     Assertions.assertTrue(serviceProvider.getPatchConfig().isSupported());
+    Assertions.assertTrue(serviceProvider.getETagConfig().isSupported());
     Assertions.assertFalse(serviceProvider.getChangePasswordConfig().isSupported());
     Assertions.assertTrue(serviceProvider.getBulkConfig().isSupported());
     Assertions.assertEquals(15, serviceProvider.getBulkConfig().getMaxOperations());

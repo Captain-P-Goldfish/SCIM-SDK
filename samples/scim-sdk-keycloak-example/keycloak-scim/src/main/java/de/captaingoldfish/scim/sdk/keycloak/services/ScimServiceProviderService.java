@@ -42,7 +42,7 @@ public class ScimServiceProviderService extends AbstractService
   /**
    * @return the default {@link ScimServiceProviderEntity} configuration for the current realm
    */
-  private ScimServiceProviderEntity getDefaultServiceProviderConfiguration()
+  protected ScimServiceProviderEntity getDefaultServiceProviderConfiguration()
   {
     return ScimServiceProviderEntity.builder()
                                     .realmId(getKeycloakSession().getContext().getRealm().getId())
@@ -50,6 +50,7 @@ public class ScimServiceProviderService extends AbstractService
                                     .filterMaxResults(50)
                                     .sortSupported(true)
                                     .patchSupported(true)
+                                    .etagSupported(true)
                                     .changePasswordSupported(false)
                                     .bulkSupported(true)
                                     .bulkMaxOperations(15)
@@ -124,7 +125,7 @@ public class ScimServiceProviderService extends AbstractService
    * 
    * @param entity the entity representation of a {@link ServiceProvider}
    */
-  private ServiceProvider toScimRepresentation(ScimServiceProviderEntity entity)
+  protected ServiceProvider toScimRepresentation(ScimServiceProviderEntity entity)
   {
     ServiceProvider serviceProvider = ServiceProvider.builder()
                                                      .authenticationSchemes(getAuthenticationSchemes())
