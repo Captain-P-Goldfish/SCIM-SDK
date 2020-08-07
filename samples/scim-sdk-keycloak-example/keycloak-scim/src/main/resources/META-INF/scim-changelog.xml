@@ -35,9 +35,7 @@
             </column>
             <column name="VERSION" type="BIGINT"/>
             <column name="REALM_ID" type="VARCHAR(36)"/>
-            <column name="NAME" type="VARCHAR(50)">
-                <constraints unique="true" uniqueConstraintName="SCIM_RESOURCE_TYPE_NAME_UQ"/>
-            </column>
+            <column name="NAME" type="VARCHAR(50)"/>
             <column name="DESCRIPTION" type="VARCHAR(255)"/>
             <column name="ENABLED" type="BOOLEAN"/>
             <column name="SINGLETON_ENDPOINT" type="BOOLEAN"/>
@@ -53,6 +51,9 @@
             <column name="CREATED" type="DATETIME"/>
             <column name="LAST_MODIFIED" type="DATETIME"/>
         </createTable>
+
+        <addUniqueConstraint tableName="SCIM_RESOURCE_TYPE" columnNames="REALM_ID,NAME"
+                             constraintName="SCIM_RESOURCE_TYPE_UQ"/>
 
     </changeSet>
 
