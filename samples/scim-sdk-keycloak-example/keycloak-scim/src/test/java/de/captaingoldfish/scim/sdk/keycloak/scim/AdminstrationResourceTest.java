@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim;
 
+import java.time.temporal.ChronoUnit;
+
 import javax.ws.rs.core.Response;
 
 import org.junit.jupiter.api.Assertions;
@@ -107,10 +109,16 @@ public class AdminstrationResourceTest extends KeycloakScimManagementTest
     Assertions.assertNotEquals(sp.getBulkConfig().isSupported(), serviceProvider.isBulkSupported());
     Assertions.assertNotEquals(sp.getBulkConfig().getMaxOperations(), serviceProvider.getBulkMaxOperations());
     Assertions.assertNotEquals(sp.getBulkConfig().getMaxPayloadSize(), serviceProvider.getBulkMaxPayloadSize());
-    Assertions.assertNotEquals(sp.getMeta().flatMap(Meta::getCreated).orElseThrow(IllegalStateException::new),
-                               serviceProvider.getCreated());
-    Assertions.assertNotEquals(sp.getMeta().flatMap(Meta::getLastModified).orElseThrow(IllegalStateException::new),
-                               serviceProvider.getLastModified());
+    Assertions.assertNotEquals(sp.getMeta()
+                                 .flatMap(Meta::getCreated)
+                                 .orElseThrow(IllegalStateException::new)
+                                 .truncatedTo(ChronoUnit.MILLIS),
+                               serviceProvider.getCreated().truncatedTo(ChronoUnit.MILLIS));
+    Assertions.assertNotEquals(sp.getMeta()
+                                 .flatMap(Meta::getLastModified)
+                                 .orElseThrow(IllegalStateException::new)
+                                 .truncatedTo(ChronoUnit.MILLIS),
+                               serviceProvider.getLastModified().truncatedTo(ChronoUnit.MILLIS));
   }
 
   /**
@@ -132,10 +140,16 @@ public class AdminstrationResourceTest extends KeycloakScimManagementTest
     Assertions.assertEquals(sp.getBulkConfig().isSupported(), serviceProvider.isBulkSupported());
     Assertions.assertEquals(sp.getBulkConfig().getMaxOperations(), serviceProvider.getBulkMaxOperations());
     Assertions.assertEquals(sp.getBulkConfig().getMaxPayloadSize(), serviceProvider.getBulkMaxPayloadSize());
-    Assertions.assertEquals(sp.getMeta().flatMap(Meta::getCreated).orElseThrow(IllegalStateException::new),
-                            serviceProvider.getCreated());
-    Assertions.assertEquals(sp.getMeta().flatMap(Meta::getLastModified).orElseThrow(IllegalStateException::new),
-                            serviceProvider.getLastModified());
+    Assertions.assertEquals(sp.getMeta()
+                              .flatMap(Meta::getCreated)
+                              .orElseThrow(IllegalStateException::new)
+                              .truncatedTo(ChronoUnit.MILLIS),
+                            serviceProvider.getCreated().truncatedTo(ChronoUnit.MILLIS));
+    Assertions.assertEquals(sp.getMeta()
+                              .flatMap(Meta::getLastModified)
+                              .orElseThrow(IllegalStateException::new)
+                              .truncatedTo(ChronoUnit.MILLIS),
+                            serviceProvider.getLastModified().truncatedTo(ChronoUnit.MILLIS));
   }
 
   /**
