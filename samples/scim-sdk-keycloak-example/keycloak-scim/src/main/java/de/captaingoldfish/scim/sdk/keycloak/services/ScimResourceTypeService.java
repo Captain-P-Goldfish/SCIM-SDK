@@ -86,6 +86,7 @@ public class ScimResourceTypeService extends AbstractService
     ScimResourceTypeEntity scimResourceTypeEntity = ScimResourceTypeEntity.builder()
                                                                           .realmId(realmModel.getId())
                                                                           .name(resourceType.getName())
+                                                                          .created(Instant.now())
                                                                           .build();
     getEntityManager().persist(scimResourceTypeEntity);
     setValuesOfEntity(scimResourceTypeEntity, resourceType);
@@ -166,7 +167,6 @@ public class ScimResourceTypeService extends AbstractService
     scimResourceTypeEntity.setDisableDelete(features.getEndpointControlFeature().isDeleteDisabled());
 
     scimResourceTypeEntity.setRequireAuthentication(features.getAuthorization().isAuthenticated());
-    scimResourceTypeEntity.setCreated(resourceType.getMeta().flatMap(Meta::getCreated).orElse(Instant.now()));
     scimResourceTypeEntity.setLastModified(resourceType.getMeta().flatMap(Meta::getLastModified).orElse(Instant.now()));
   }
 
@@ -191,7 +191,6 @@ public class ScimResourceTypeService extends AbstractService
     scimResourceTypeEntity.setDisableDelete(features.getEndpointControlFeature().isDeleteDisabled());
 
     scimResourceTypeEntity.setRequireAuthentication(features.getAuthorization().isAuthenticated());
-    scimResourceTypeEntity.setCreated(resourceType.getMeta().flatMap(Meta::getCreated).orElse(Instant.now()));
     scimResourceTypeEntity.setLastModified(Instant.now());
   }
 }
