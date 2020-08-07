@@ -1474,6 +1474,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
       resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
       resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+      ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+      userResourceType.getFeatures().getETagFeature().setEnabled(true);
+
       User user = User.builder().userName("goldfish").build();
       ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
                                                                          user.toString(),

@@ -22,16 +22,16 @@ public class ETagFeature extends ScimObjectNode
   @Builder
   public ETagFeature(Boolean enabled)
   {
-    setEnabled(Optional.ofNullable(enabled).orElse(true));
+    setEnabled(Optional.ofNullable(enabled).orElse(false));
   }
 
   /**
    * a boolean if set to false ETags will not be generated automatically on this resource endpoint. Default is
-   * true.
+   * false.
    */
   public boolean isEnabled()
   {
-    return getBooleanAttribute(AttributeNames.Custom.ETAG_ENABLED).orElse(true);
+    return getBooleanAttribute(AttributeNames.Custom.ETAG_ENABLED).orElse(false);
   }
 
   /**

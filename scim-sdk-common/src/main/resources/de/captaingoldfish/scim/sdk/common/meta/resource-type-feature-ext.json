@@ -53,7 +53,7 @@
         {
           "name": "enabled",
           "type": "boolean",
-          "description": "a boolean if set to false ETags will not be generated automatically on this resource endpoint. Default is true.",
+          "description": "a boolean if set to false ETags will not be generated automatically on this resource endpoint. Default is false.",
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none",

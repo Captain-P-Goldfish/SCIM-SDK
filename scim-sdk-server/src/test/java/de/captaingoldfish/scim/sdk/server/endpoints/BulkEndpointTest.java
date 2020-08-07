@@ -1312,6 +1312,10 @@ public class BulkEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxOperations(Integer.MAX_VALUE);
     serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
     serviceProvider.getETagConfig().setSupported(true);
+    ResourceType userResourceType = bulkEndpoint.getResourceTypeFactory()
+                                                .getResourceTypeByName(ResourceTypeNames.USER)
+                                                .get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
 
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).version("123456").build();
     String id = UUID.randomUUID().toString();

@@ -62,6 +62,7 @@ public class ETagHandlerTest
                                                                 JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON),
                                                                 JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON),
                                                                 JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
   }
 
   /**

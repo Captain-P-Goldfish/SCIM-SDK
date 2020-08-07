@@ -15,6 +15,7 @@ import org.mockito.Mockito;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -29,6 +30,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 
 
 /**
@@ -74,7 +76,8 @@ public class ETagRequestTests
   {
     resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
     resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
-
+    ResourceType userResourceType = resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
     User createdUser;
     {
       User user = User.builder().userName("goldfish").nickName("goldfish").build();
