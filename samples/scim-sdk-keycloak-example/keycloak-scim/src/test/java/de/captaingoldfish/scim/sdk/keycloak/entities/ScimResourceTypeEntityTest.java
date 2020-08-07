@@ -47,6 +47,8 @@ public class ScimResourceTypeEntityTest extends KeycloakScimManagementTest
   @Test
   public void testScimResourceTypeEntityTest()
   {
+    clearTables();
+    beginTransaction();
     ScimResourceTypeEntity resourceType = ScimResourceTypeEntity.builder()
                                                                 .realmId(getRealmModel().getId())
                                                                 .name("User")
