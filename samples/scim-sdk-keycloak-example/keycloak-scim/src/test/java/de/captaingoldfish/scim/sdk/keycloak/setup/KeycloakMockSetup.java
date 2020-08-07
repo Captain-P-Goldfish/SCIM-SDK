@@ -103,6 +103,7 @@ class KeycloakMockSetup
   {
     entityManager.getTransaction().begin();
     user = keycloakSession.users().addUser(realmModel, "admin");
+    user.setSingleAttribute("scim-user", String.valueOf(true));
     entityManager.getTransaction().commit();
   }
 
