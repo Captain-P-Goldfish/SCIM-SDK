@@ -140,8 +140,7 @@ public class ScimConfigurationTest extends KeycloakScimManagementTest
     Assertions.assertEquals(sp.getBulkConfig().isSupported(), serviceProvider.isBulkSupported());
     Assertions.assertEquals(sp.getBulkConfig().getMaxOperations(), serviceProvider.getBulkMaxOperations());
     Assertions.assertEquals(sp.getBulkConfig().getMaxPayloadSize(), serviceProvider.getBulkMaxPayloadSize());
-    Assertions.assertEquals(sp.getMeta().flatMap(Meta::getCreated).orElseThrow(IllegalStateException::new),
-                            serviceProvider.getCreated());
+    Assertions.assertNotNull(sp.getMeta().flatMap(Meta::getCreated).orElse(null));
     Assertions.assertNull(serviceProvider.getLastModified());
   }
 

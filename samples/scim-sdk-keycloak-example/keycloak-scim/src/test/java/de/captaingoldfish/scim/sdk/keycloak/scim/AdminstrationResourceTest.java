@@ -73,6 +73,7 @@ public class AdminstrationResourceTest extends KeycloakScimManagementTest
     verifyDatabaseSetupIsNotEqual(ScimServiceProviderServiceBridge.getDefaultServiceProvider(getKeycloakSession()));
     ServiceProvider updatedProvider = JsonHelper.readJsonDocument((String)response.getEntity(), ServiceProvider.class);
     verifyServiceProviderMatchesDatabaseEntry(updatedProvider);
+    verifyServiceProviderMatchesDatabaseEntry(adminstrationResource.getResourceEndpoint().getServiceProvider());
   }
 
   /**

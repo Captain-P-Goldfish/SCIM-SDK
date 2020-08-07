@@ -17,7 +17,6 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
-import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
@@ -88,7 +87,6 @@ public class ScimServiceProviderService extends AbstractService
     scimServiceProviderEntity.setBulkSupported(serviceProvider.getBulkConfig().isSupported());
     scimServiceProviderEntity.setBulkMaxOperations(serviceProvider.getBulkConfig().getMaxOperations());
     scimServiceProviderEntity.setBulkMaxPayloadSize(serviceProvider.getBulkConfig().getMaxPayloadSize());
-    scimServiceProviderEntity.setCreated(serviceProvider.getMeta().flatMap(Meta::getCreated).orElse(Instant.now()));
     scimServiceProviderEntity.setLastModified(Instant.now());
     getEntityManager().flush();
     return toScimRepresentation(scimServiceProviderEntity);
