@@ -11,7 +11,6 @@ import org.keycloak.services.resources.admin.AdminAuth;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -23,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Data
-@RequiredArgsConstructor
 public class ScimAuthorization implements Authorization
 {
 
@@ -36,6 +34,17 @@ public class ScimAuthorization implements Authorization
    * the current authentication of the client / user
    */
   private AdminAuth authResult;
+
+  /**
+   * this object is used for authentication
+   */
+  private Authentication authentication;
+
+  public ScimAuthorization(KeycloakSession keycloakSession, Authentication authentication)
+  {
+    this.keycloakSession = keycloakSession;
+    this.authentication = authentication;
+  }
 
   /**
    * only used for dedicated error messages
@@ -66,7 +75,7 @@ public class ScimAuthorization implements Authorization
 
       try
       {
-        // authResult = Authentication.authenticate(keycloakSession);
+        authResult = authentication.authenticate(keycloakSession);
         return true;
       }
       catch (NotAuthorizedException ex)

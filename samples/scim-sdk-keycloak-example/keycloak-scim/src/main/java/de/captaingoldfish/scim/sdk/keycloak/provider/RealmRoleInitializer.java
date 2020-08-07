@@ -41,31 +41,39 @@ public class RealmRoleInitializer
    * initializes the {@link #SCIM_ADMIN_ROLE} on all existing realms if not present and makes sure that the role
    * will also be added to all new created realms
    */
-  public static void initializeRoles(KeycloakSessionFactory factory)
+  public static void initializeRoles(KeycloakSessionFactory keycloakSessionFactory)
   {
     if (isHotDeploying())
     {
       log.info("initializing scim-sdk-server");
-      KeycloakModelUtils.runJobInTransaction(factory, RealmRoleInitializer::setupRealmAccess);
+      KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, RealmRoleInitializer::setupRealmAccess);
     }
     else
     {
       log.debug("Server startup, waiting for PostMigrationEvent");
     }
 
-    factory.register((ProviderEvent event) -> {
+    registerEventListener(keycloakSessionFactory);
+  }
+
+  /**
+   * registers the event listener after deployment
+   */
+  protected static void registerEventListener(KeycloakSessionFactory keycloakSessionFactory)
+  {
+    keycloakSessionFactory.register((ProviderEvent event) -> {
       if (event instanceof RealmModel.RealmPostCreateEvent)
       {
         realmPostCreate((RealmModel.RealmPostCreateEvent)event);
       }
       else if (event instanceof PostMigrationEvent)
       {
-        KeycloakModelUtils.runJobInTransaction(factory, RealmRoleInitializer::setupRealmAccess);
+        KeycloakModelUtils.runJobInTransaction(keycloakSessionFactory, RealmRoleInitializer::setupRealmAccess);
       }
     });
   }
 
-  private static boolean isHotDeploying()
+  protected static boolean isHotDeploying()
   {
     /*
      * At the moment there's no standard way to determine if we are being cold or hot deployed. One of the ad-hoc

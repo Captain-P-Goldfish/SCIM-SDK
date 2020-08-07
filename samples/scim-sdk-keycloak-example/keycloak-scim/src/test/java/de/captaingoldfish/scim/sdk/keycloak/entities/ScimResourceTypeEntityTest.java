@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.keycloak.entities;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import de.captaingoldfish.scim.sdk.keycloak.setup.KeycloakTest;
+import de.captaingoldfish.scim.sdk.keycloak.setup.KeycloakScimManagementTest;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 05.08.2020
  */
 @Slf4j
-public class ScimResourceTypeEntityTest extends KeycloakTest
+public class ScimResourceTypeEntityTest extends KeycloakScimManagementTest
 {
 
   /**

@@ -5,6 +5,7 @@ import javax.persistence.EntityManager;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.jpa.entities.ClientScopeAttributeEntity;
@@ -22,7 +23,11 @@ import org.keycloak.models.jpa.entities.UserAttributeEntity;
 import org.keycloak.models.jpa.entities.UserEntity;
 import org.keycloak.models.jpa.entities.UserGroupMembershipEntity;
 import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
+import org.mockito.Mockito;
 
+import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
+import de.captaingoldfish.scim.sdk.keycloak.scim.ScimEndpoint;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -31,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 05.08.2020
  */
 @Slf4j
-public abstract class KeycloakTest
+public abstract class KeycloakScimManagementTest
 {
 
   /**
@@ -44,6 +49,18 @@ public abstract class KeycloakTest
    */
   private static final KeycloakMockSetup KEYCLOAK_MOCK_SETUP = new KeycloakMockSetup(DATABASE_SETUP.getKeycloakSession(),
                                                                                      DATABASE_SETUP.getEntityManager());
+
+  /**
+   * the custom endpoint that is under test
+   */
+  @Getter
+  private ScimEndpoint scimEndpoint;
+
+  /**
+   * the mocked authentication object that is used by the {@link #scimEndpoint}
+   */
+  @Getter
+  private Authentication authentication;
 
   /**
    * the custom realm for our unit tests
@@ -59,6 +76,11 @@ public abstract class KeycloakTest
   public KeycloakSession getKeycloakSession()
   {
     return DATABASE_SETUP.getKeycloakSession();
+  }
+
+  public KeycloakSessionFactory getKeycloakSessionFactory()
+  {
+    return KEYCLOAK_MOCK_SETUP.getKeycloakSessionFactory();
   }
 
   /**
@@ -87,6 +109,18 @@ public abstract class KeycloakTest
     clearTables();
     KEYCLOAK_MOCK_SETUP.createRealm();
     beginTransaction();
+    initializeEndpoint();
+  }
+
+  /**
+   * initializes the endpoint under test
+   */
+  public void initializeEndpoint()
+  {
+    this.authentication = Mockito.spy(new Authentication());
+    Mockito.doNothing().when(authentication).authenticate(getKeycloakSession());
+    Mockito.doNothing().when(authentication).authenticateAsScimAdmin(getKeycloakSession());
+    scimEndpoint = new ScimEndpoint(getKeycloakSession(), authentication);
   }
 
   /**

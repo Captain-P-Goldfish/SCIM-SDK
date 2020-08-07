@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.keycloak.setup;
 
-import static org.mockito.Mockito.when;
-
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,9 +13,11 @@ import org.hibernate.internal.SessionImpl;
 import org.keycloak.connections.jpa.DefaultJpaConnectionProvider;
 import org.keycloak.connections.jpa.JpaConnectionProvider;
 import org.keycloak.connections.jpa.updater.liquibase.ThreadLocalSessionContext;
+import org.keycloak.models.ClientProvider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.jpa.JpaRealmProvider;
 import org.keycloak.models.jpa.JpaUserProvider;
+import org.keycloak.storage.ClientStorageManager;
 import org.keycloak.storage.UserStorageManager;
 import org.mockito.Mockito;
 
@@ -124,11 +124,16 @@ class DatabaseSetup
     EntityManager newEntityManager = ENTITY_MANAGER_FACTORY.createEntityManager();
     JpaUserProvider jpaUserProvider = new JpaUserProvider(keycloakSession, newEntityManager);
     JpaRealmProvider jpaRealmProvider = new JpaRealmProvider(keycloakSession, newEntityManager);
-    when(keycloakSession.users()).thenReturn(new UserStorageManager(keycloakSession));
-    when(keycloakSession.userLocalStorage()).thenReturn(jpaUserProvider);
-    when(keycloakSession.realms()).thenReturn(jpaRealmProvider);
-    when(keycloakSession.realmLocalStorage()).thenReturn(jpaRealmProvider);
-    when(keycloakSession.getProvider(JpaConnectionProvider.class)).thenReturn(new DefaultJpaConnectionProvider(newEntityManager));
+    Mockito.doReturn(new UserStorageManager(keycloakSession)).when(keycloakSession).users();
+    Mockito.doReturn(jpaUserProvider).when(keycloakSession).userLocalStorage();
+    Mockito.doReturn(jpaRealmProvider).when(keycloakSession).realms();
+    Mockito.doReturn(jpaRealmProvider).when(keycloakSession).realmLocalStorage();
+    ClientProvider clientProvider = Mockito.spy(new ClientStorageManager(keycloakSession));
+    Mockito.doReturn(jpaRealmProvider).when(keycloakSession).clients();
+    Mockito.doReturn(clientProvider).when(keycloakSession).clientLocalStorage();
+    Mockito.doReturn(new DefaultJpaConnectionProvider(newEntityManager))
+           .when(keycloakSession)
+           .getProvider(JpaConnectionProvider.class);
     return newEntityManager;
   }
 

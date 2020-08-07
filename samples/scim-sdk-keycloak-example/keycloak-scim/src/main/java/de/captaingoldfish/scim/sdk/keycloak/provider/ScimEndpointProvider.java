@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.keycloak.provider;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.services.resource.RealmResourceProvider;
 
+import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
 import de.captaingoldfish.scim.sdk.keycloak.scim.ScimEndpoint;
 
 
@@ -36,7 +37,7 @@ public class ScimEndpointProvider implements RealmResourceProvider
   @Override
   public Object getResource()
   {
-    return new ScimEndpoint(keycloakSession);
+    return new ScimEndpoint(keycloakSession, new Authentication());
   }
 
   @Override

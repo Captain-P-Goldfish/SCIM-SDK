@@ -9,8 +9,10 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.DefaultKeycloakContext;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
+import org.keycloak.services.DefaultKeycloakTransactionManager;
 import org.mockito.Mockito;
 
 import lombok.Getter;
@@ -48,15 +50,35 @@ class KeycloakMockSetup
   @Getter
   private RealmModel realmModel;
 
+  /**
+   * the user that is used for unit testing
+   */
+  @Getter
+  private UserModel user;
+
+  /**
+   * the keycloak session factory
+   */
+  @Getter
+  private KeycloakSessionFactory keycloakSessionFactory;
+
+  /**
+   * the transaction manager that is used by keycloak
+   */
+  @Getter
+  private DefaultKeycloakTransactionManager keycloakTransactionManager;
+
   public KeycloakMockSetup(KeycloakSession keycloakSession, EntityManager entityManager)
   {
     this.keycloakSession = keycloakSession;
     this.entityManager = entityManager;
     this.keycloakContext = Mockito.spy(new DefaultKeycloakContext(keycloakSession));
     Mockito.doReturn(keycloakContext).when(this.keycloakSession).getContext();
-    Mockito.doReturn(keycloakContext).when(this.keycloakSession).getContext();
-    KeycloakSessionFactory sessionFactory = Mockito.spy(new DefaultKeycloakSessionFactory());
-    Mockito.doReturn(sessionFactory).when(this.keycloakSession).getKeycloakSessionFactory();
+    this.keycloakSessionFactory = Mockito.spy(new DefaultKeycloakSessionFactory());
+    Mockito.doReturn(keycloakSessionFactory).when(this.keycloakSession).getKeycloakSessionFactory();
+    keycloakTransactionManager = Mockito.spy(new DefaultKeycloakTransactionManager(keycloakSession));
+    Mockito.doReturn(keycloakTransactionManager).when(keycloakSession).getTransactionManager();
+    Mockito.doReturn(keycloakSession).when(keycloakSessionFactory).create();
   }
 
   /**
@@ -71,6 +93,17 @@ class KeycloakMockSetup
     Mockito.doReturn(realmModel).when(keycloakContext).getRealm();
     Assertions.assertEquals(1, keycloakSession.realms().getRealms().size());
     log.debug("test-realm successfully created: {} - {}", realmModel.getId(), realmModel.getName());
+    createUser();
+  }
+
+  /**
+   * creates a user for the current realm
+   */
+  private void createUser()
+  {
+    entityManager.getTransaction().begin();
+    user = keycloakSession.users().addUser(realmModel, "admin");
+    entityManager.getTransaction().commit();
   }
 
 

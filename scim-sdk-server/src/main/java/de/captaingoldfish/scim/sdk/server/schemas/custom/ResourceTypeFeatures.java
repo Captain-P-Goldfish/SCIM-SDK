@@ -22,6 +22,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
                               boolean autoSorting,
                               boolean singletonEndpoint,
                               EndpointControlFeature endpointControlFeature,
+                              ResourceTypeAuthorization authorization,
                               ETagFeature eTagFeature)
   {
     super(null);
@@ -29,6 +30,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
     setAutoSorting(autoSorting);
     setSingletonEndpoint(singletonEndpoint);
     setEndpointControlFeature(endpointControlFeature);
+    setAuthorization(authorization);
     setETagFeature(eTagFeature);
   }
 

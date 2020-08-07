@@ -9,7 +9,6 @@ import java.util.Map;
 import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.PATCH;
@@ -27,6 +26,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
 import de.captaingoldfish.scim.sdk.keycloak.constants.ContextPaths;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
@@ -42,19 +42,27 @@ import lombok.extern.slf4j.Slf4j;
 public class ScimEndpoint extends AbstractEndpoint
 {
 
+  /**
+   * the authentication implementation
+   */
+  private Authentication authentication;
 
-  public ScimEndpoint(KeycloakSession keycloakSession)
+  /**
+   * @param authentication used as constructor param to pass a mockito mock during unit testing
+   */
+  public ScimEndpoint(KeycloakSession keycloakSession, Authentication authentication)
   {
     super(keycloakSession);
+    this.authentication = authentication;
   }
 
   /**
    * provides functionality to configure the SCIM endpoints
    */
   @Path(ContextPaths.ADMIN)
-  public AdminstrationResource administration()
+  public AdminstrationResource administerResources()
   {
-    return new AdminstrationResource(getKeycloakSession());
+    return new AdminstrationResource(getKeycloakSession(), authentication);
   }
 
   /**
@@ -70,7 +78,7 @@ public class ScimEndpoint extends AbstractEndpoint
   @DELETE
   @Path(ContextPaths.SCIM_ENDPOINT_PATH + "/{s:.*}")
   @Produces(HttpHeader.SCIM_CONTENT_TYPE)
-  public Response get(@Context HttpServletRequest request, @Context HttpServletResponse response)
+  public Response handleScimRequest(@Context HttpServletRequest request)
   {
     ResourceEndpoint resourceEndpoint = getResourceEndpoint();
 
@@ -79,17 +87,17 @@ public class ScimEndpoint extends AbstractEndpoint
                                                                HttpMethod.valueOf(request.getMethod()),
                                                                getRequestBody(request),
                                                                getHttpHeaders(request),
-                                                               new ScimAuthorization(getKeycloakSession()),
+                                                               new ScimAuthorization(getKeycloakSession(),
+                                                                                     authentication),
                                                                null,
                                                                commitOrRollback());
-    scimResponse.getHttpHeaders().forEach(response::addHeader);
     return scimResponse.buildResponse();
   }
 
   /**
    * commit or rollback the transaction
    */
-  protected BiConsumer<ScimResponse, Boolean> commitOrRollback()
+  private BiConsumer<ScimResponse, Boolean> commitOrRollback()
   {
     return (scimResponse, isError) -> {
       try

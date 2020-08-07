@@ -39,11 +39,10 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminstrationResource extends AbstractEndpoint
 {
 
-
-  public AdminstrationResource(KeycloakSession keycloakSession)
+  public AdminstrationResource(KeycloakSession keycloakSession, Authentication authentication)
   {
     super(keycloakSession);
-    Authentication.authenticateAsScimAdmin(keycloakSession);
+    authentication.authenticateAsScimAdmin(keycloakSession);
   }
 
   /**

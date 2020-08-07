@@ -44,7 +44,7 @@ public class Authentication
    * @return authentication result object
    * @throws ClientErrorException on authentication errors
    */
-  public static AdminAuth authenticate(KeycloakSession keycloakSession)
+  public AdminAuth authenticate(KeycloakSession keycloakSession)
   {
     KeycloakContext context = keycloakSession.getContext();
     String accessToken = APP_AUTH_MANAGER.extractAuthorizationHeaderToken(context.getRequestHeaders());
@@ -74,7 +74,7 @@ public class Authentication
    * 
    * @param keycloakSession the current request context
    */
-  public static void authenticateAsScimAdmin(KeycloakSession keycloakSession)
+  public void authenticateAsScimAdmin(KeycloakSession keycloakSession)
   {
     AdminAuth adminAuth = authenticateOnRealm(keycloakSession);
     RoleModel roleModel = keycloakSession.getContext()
@@ -99,7 +99,7 @@ public class Authentication
    * @return the authentication result of the user that tried to authenticate
    * @see <a href="https://github.com/dteleguin/beercloak">https://github.com/dteleguin/beercloak</a>
    */
-  private static AdminAuth authenticateOnRealm(KeycloakSession keycloakSession)
+  private AdminAuth authenticateOnRealm(KeycloakSession keycloakSession)
   {
     KeycloakContext context = keycloakSession.getContext();
     RealmModel originalRealm = context.getRealm();
@@ -164,7 +164,7 @@ public class Authentication
    * @param result the result of the users authentication
    * @return the authentication object for the user
    */
-  private static AdminAuth createAdminAuth(KeycloakSession keycloakSession, AuthenticationManager.AuthResult result)
+  private AdminAuth createAdminAuth(KeycloakSession keycloakSession, AuthenticationManager.AuthResult result)
   {
     KeycloakContext context = keycloakSession.getContext();
     RealmModel realm = context.getRealm();
