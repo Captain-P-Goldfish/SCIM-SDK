@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.keycloak.setup;
 
-import java.util.Map;
-
 import javax.persistence.EntityManager;
 
 import org.junit.jupiter.api.AfterEach;
@@ -29,17 +27,11 @@ import org.keycloak.models.jpa.entities.UserRoleMappingEntity;
 import org.keycloak.services.resources.admin.AdminAuth;
 import org.mockito.Mockito;
 
-import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import de.captaingoldfish.scim.sdk.keycloak.scim.ScimConfigurationBridge;
 import de.captaingoldfish.scim.sdk.keycloak.scim.ScimEndpoint;
-import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
-import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
-import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
-import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
-import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -139,54 +131,10 @@ public abstract class KeycloakScimManagementTest
     Assertions.assertEquals(0, countEntriesInTable(ScimServiceProviderEntity.class));
     Assertions.assertEquals(0, countEntriesInTable(ScimResourceTypeEntity.class));
     scimEndpoint = Mockito.spy(new ScimEndpoint(getKeycloakSession(), authentication));
-    verifyInitialSetup();
-  }
-
-  /**
-   * checks that the initial setup after endpoint creation has the correct values
-   */
-  private void verifyInitialSetup()
-  {
     // after creation the endpoint must create the service provider configuration
     Assertions.assertEquals(1, countEntriesInTable(ScimServiceProviderEntity.class));
     // the database entries for the resource types User and Group must be directly initialized
     Assertions.assertEquals(2, countEntriesInTable(ScimResourceTypeEntity.class));
-    Map<String, ResourceEndpoint> endpointMap = ScimConfigurationBridge.getScimResourceEndpoints();
-    Assertions.assertEquals(1, endpointMap.size());
-    ResourceEndpoint resourceEndpoint = endpointMap.values().iterator().next();
-    ResourceType userResourceType = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.USER).get();
-    verifyInitialResourceTypeSetup(userResourceType);
-    ResourceType groupResourceType = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.GROUPS).get();
-    verifyInitialResourceTypeSetup(groupResourceType);
-  }
-
-  /**
-   * checks that the configuration of the given resource type conforms to the default configuration
-   */
-  private void verifyInitialResourceTypeSetup(ResourceType resourceType)
-  {
-    Assertions.assertFalse(resourceType.isDisabled());
-
-    ResourceTypeFeatures features = resourceType.getFeatures();
-    Assertions.assertTrue(features.isAutoFiltering());
-    Assertions.assertTrue(features.isAutoSorting());
-    Assertions.assertFalse(features.isSingletonEndpoint());
-    Assertions.assertFalse(features.getETagFeature().isEnabled());
-
-    EndpointControlFeature endpointControl = features.getEndpointControlFeature();
-    Assertions.assertFalse(endpointControl.isCreateDisabled());
-    Assertions.assertFalse(endpointControl.isGetDisabled());
-    Assertions.assertFalse(endpointControl.isListDisabled());
-    Assertions.assertFalse(endpointControl.isUpdateDisabled());
-    Assertions.assertFalse(endpointControl.isDeleteDisabled());
-
-    ResourceTypeAuthorization authorization = features.getAuthorization();
-    Assertions.assertFalse(authorization.isAuthenticated());
-    Assertions.assertTrue(authorization.getRoles().isEmpty());
-    Assertions.assertTrue(authorization.getRolesCreate().isEmpty());
-    Assertions.assertTrue(authorization.getRolesGet().isEmpty());
-    Assertions.assertTrue(authorization.getRolesUpdate().isEmpty());
-    Assertions.assertTrue(authorization.getRolesDelete().isEmpty());
   }
 
   /**
