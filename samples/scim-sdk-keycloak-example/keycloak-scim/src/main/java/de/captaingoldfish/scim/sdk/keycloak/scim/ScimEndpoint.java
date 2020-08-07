@@ -6,11 +6,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
+import javax.ws.rs.NotFoundException;
 import javax.ws.rs.PATCH;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -29,6 +31,8 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
 import de.captaingoldfish.scim.sdk.keycloak.constants.ContextPaths;
+import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.extern.slf4j.Slf4j;
 
@@ -80,6 +84,12 @@ public class ScimEndpoint extends AbstractEndpoint
   @Produces(HttpHeader.SCIM_CONTENT_TYPE)
   public Response handleScimRequest(@Context HttpServletRequest request)
   {
+    ScimServiceProviderService scimServiceProviderService = new ScimServiceProviderService(getKeycloakSession());
+    Optional<ScimServiceProviderEntity> serviceProviderEntity = scimServiceProviderService.getServiceProviderEntity();
+    if (serviceProviderEntity.isPresent() && !serviceProviderEntity.get().isEnabled())
+    {
+      throw new NotFoundException();
+    }
     ResourceEndpoint resourceEndpoint = getResourceEndpoint();
 
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();

@@ -9,6 +9,7 @@ module.controller('ServiceProviderController', function ($modal, $scope, realm, 
     $scope.copy = angular.copy(serviceProvider);
 
     $scope.changed = false;
+    $scope.disableSCIM = !$scope.serviceProvider.enabled;
 
     $scope.$watch('serviceProvider', function (serviceProvider) {
         if (!angular.equals($scope.copy, serviceProvider)) {
@@ -28,6 +29,7 @@ module.controller('ServiceProviderController', function ($modal, $scope, realm, 
                 $scope.changed = false;
                 $scope.serviceProvider = response;
                 $scope.copy = angular.copy($scope.serviceProvider);
+                $scope.disableSCIM = !$scope.serviceProvider.enabled;
                 Notifications.success("Your changes have been saved to ServiceProvider.");
             }
         );
@@ -35,6 +37,7 @@ module.controller('ServiceProviderController', function ($modal, $scope, realm, 
 
     $scope.reset = function () {
         $scope.serviceProvider = angular.copy($scope.copy);
+        $scope.disableSCIM = !$scope.serviceProvider.enabled;
         $scope.changed = false;
     };
 

@@ -15,6 +15,7 @@
             <column name="REALM_ID" type="VARCHAR(36)">
                 <constraints unique="true" uniqueConstraintName="SCIM_SP_REALM_UNIQUE"/>
             </column>
+            <column name="ENABLED" type="BOOLEAN"/>
             <column name="FILTER_SUPPORTED" type="BOOLEAN"/>
             <column name="FILTER_MAX_RESULTS" type="INTEGER"/>
             <column name="SORT_SUPPORTED" type="BOOLEAN"/>

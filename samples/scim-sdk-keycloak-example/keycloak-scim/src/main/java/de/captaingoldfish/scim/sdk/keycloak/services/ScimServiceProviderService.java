@@ -11,6 +11,9 @@ import javax.persistence.NoResultException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
@@ -45,6 +48,7 @@ public class ScimServiceProviderService extends AbstractService
   {
     return ScimServiceProviderEntity.builder()
                                     .realmId(getKeycloakSession().getContext().getRealm().getId())
+                                    .enabled(true)
                                     .filterSupported(true)
                                     .filterMaxResults(50)
                                     .sortSupported(true)
@@ -66,7 +70,9 @@ public class ScimServiceProviderService extends AbstractService
    */
   public ServiceProvider getServiceProvider()
   {
-    ScimServiceProviderEntity scimServiceProviderEntity = getServiceProviderEntity();
+    Optional<ScimServiceProviderEntity> scimServiceProviderEntityOptional = getServiceProviderEntity();
+    ScimServiceProviderEntity scimServiceProviderEntity;
+    scimServiceProviderEntity = scimServiceProviderEntityOptional.orElseGet(this::createServiceProviderEntity);
     return toScimRepresentation(scimServiceProviderEntity);
   }
 
@@ -77,7 +83,13 @@ public class ScimServiceProviderService extends AbstractService
    */
   public ServiceProvider updateServiceProvider(ServiceProvider serviceProvider)
   {
-    ScimServiceProviderEntity scimServiceProviderEntity = getServiceProviderEntity();
+    Optional<ScimServiceProviderEntity> scimServiceProviderEntityOptional = getServiceProviderEntity();
+    ScimServiceProviderEntity scimServiceProviderEntity;
+    scimServiceProviderEntity = scimServiceProviderEntityOptional.orElseGet(this::createServiceProviderEntity);
+
+    scimServiceProviderEntity.setEnabled(Optional.ofNullable(serviceProvider.get("enabled"))
+                                                 .map(JsonNode::booleanValue)
+                                                 .orElse(true));
     scimServiceProviderEntity.setFilterSupported(serviceProvider.getFilterConfig().isSupported());
     scimServiceProviderEntity.setFilterMaxResults(serviceProvider.getFilterConfig().getMaxResults());
     scimServiceProviderEntity.setSortSupported(serviceProvider.getSortConfig().isSupported());
@@ -93,10 +105,9 @@ public class ScimServiceProviderService extends AbstractService
   }
 
   /**
-   * @return either an existing representation from the database or a new default representation that will
-   *         immediately be stored in the database
+   * @return either an existing representation from the database or an empty
    */
-  private ScimServiceProviderEntity getServiceProviderEntity()
+  public Optional<ScimServiceProviderEntity> getServiceProviderEntity()
   {
     RealmModel realmModel = getKeycloakSession().getContext().getRealm();
     EntityManager entityManager = getEntityManager();
@@ -106,15 +117,23 @@ public class ScimServiceProviderService extends AbstractService
       scimServiceProvider = entityManager.createNamedQuery("getScimServiceProvider", ScimServiceProviderEntity.class)
                                          .setParameter("realmId", realmModel.getId())
                                          .getSingleResult();
-      scimServiceProvider = entityManager.merge(scimServiceProvider);
+      return Optional.of(entityManager.merge(scimServiceProvider));
     }
     catch (NoResultException ex)
     {
-      scimServiceProvider = getDefaultServiceProviderConfiguration();
-      entityManager.merge(scimServiceProvider);
-      entityManager.flush();
-
+      return Optional.empty();
     }
+  }
+
+  /**
+   * @return a new service provider instance that was just stored within the database
+   */
+  private ScimServiceProviderEntity createServiceProviderEntity()
+  {
+    EntityManager entityManager = getEntityManager();
+    ScimServiceProviderEntity scimServiceProvider = getDefaultServiceProviderConfiguration();
+    entityManager.merge(scimServiceProvider);
+    entityManager.flush();
     return scimServiceProvider;
   }
 
@@ -155,6 +174,7 @@ public class ScimServiceProviderService extends AbstractService
       meta.setLastModified(Optional.ofNullable(entity.getLastModified()).orElse(entity.getCreated()));
       meta.setVersion(ETag.builder().tag(String.valueOf(entity.getVersion())).build());
     });
+    serviceProvider.set("enabled", BooleanNode.valueOf(entity.isEnabled()));
     return serviceProvider;
   }
 

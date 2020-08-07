@@ -62,6 +62,12 @@ public class ScimServiceProviderEntity implements Serializable
   private String realmId;
 
   /**
+   * if scim is enabled for this realm
+   */
+  @Column(name = "ENABLED")
+  private boolean enabled;
+
+  /**
    * if filtering should be supported
    */
   @Column(name = "FILTER_SUPPORTED")
@@ -129,6 +135,7 @@ public class ScimServiceProviderEntity implements Serializable
 
   @Builder
   public ScimServiceProviderEntity(String realmId,
+                                   boolean enabled,
                                    boolean filterSupported,
                                    int filterMaxResults,
                                    boolean sortSupported,
@@ -142,6 +149,7 @@ public class ScimServiceProviderEntity implements Serializable
                                    Instant lastModified)
   {
     this.realmId = realmId;
+    this.enabled = enabled;
     this.filterSupported = filterSupported;
     this.filterMaxResults = filterMaxResults;
     this.sortSupported = sortSupported;

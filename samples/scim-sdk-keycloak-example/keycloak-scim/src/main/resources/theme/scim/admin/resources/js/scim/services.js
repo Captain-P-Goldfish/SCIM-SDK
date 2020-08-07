@@ -2,7 +2,7 @@
  * inspired by beercloak: https://github.com/dteleguin/beercloak
  */
 module.factory('ServiceProvider', function ($resource) {
-    return $resource(authUrl + '/realms/:realm/scim/v2/ServiceProviderConfig',
+    return $resource(authUrl + '/realms/:realm/scim/admin/serviceProviderConfig',
         {},
         {
             update: {

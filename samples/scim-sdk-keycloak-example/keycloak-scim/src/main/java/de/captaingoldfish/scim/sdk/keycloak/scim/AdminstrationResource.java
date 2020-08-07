@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.keycloak.scim;
 import java.time.Instant;
 import java.util.Optional;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -43,6 +44,22 @@ public class AdminstrationResource extends AbstractEndpoint
   {
     super(keycloakSession);
     authentication.authenticateAsScimAdmin(keycloakSession);
+  }
+
+  /**
+   * retrieves the current service provider configuration. This must be done over the administration resource
+   * because the configuration could not be read anymore if the SCIM service would be disabled
+   * 
+   * @return the current service provider configuration with an additional enabled attribute
+   */
+  @GET
+  @Path("/serviceProviderConfig")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getServiceProviderConfig()
+  {
+    ScimServiceProviderService scimServiceProviderService = new ScimServiceProviderService(getKeycloakSession());
+    ServiceProvider currentServiceProvider = scimServiceProviderService.getServiceProvider();
+    return Response.ok().entity(currentServiceProvider.toString()).build();
   }
 
   /**

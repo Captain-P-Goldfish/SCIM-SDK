@@ -7,6 +7,22 @@
 
         <form class="form-horizontal" name="serviceProviderForm" novalidate>
 
+            <fieldset class="border-top">
+                <div class="form-group clearfix block">
+                    <label class="col-md-2 control-label"
+                           for="enabled">{{:: 'service.provider.enabled' | translate }}</label>
+                    <div class="col-md-6">
+                        <input data-ng-model="serviceProvider.enabled"
+                               id="enabled"
+                               name="enabled"
+                               off-text="{{:: 'offText' | translate}}"
+                               on-text="{{:: 'onText' | translate}}"
+                               onoffswitch/>
+                    </div>
+                    <kc-tooltip>{{:: 'service.provider.enabled.tooltip' | translate}}</kc-tooltip>
+                </div>
+            </fieldset>
+
             <div class="form-group">
                 <label class="col-md-2 control-label ng-binding ng-scope"
                        for="filterMaxResults">
@@ -15,6 +31,7 @@
                 <div class="col-md-6 time-selector">
                     <input class="form-control ng-pristine ng-valid ng-not-empty ng-valid-min ng-valid-max ng-valid-required ng-touched"
                            data-ng-model="serviceProvider.filter.maxResults"
+                           data-ng-disabled="disableSCIM"
                            id="filterMaxResults"
                            max="31536000"
                            min="1"
@@ -31,6 +48,7 @@
                            for="filterSupported">{{:: 'filter.supported' | translate }}</label>
                     <div class="col-md-6">
                         <input data-ng-model="serviceProvider.filter.supported"
+                               data-ng-disabled="disableSCIM"
                                id="filterSupported"
                                name="filterSupported"
                                off-text="{{:: 'offText' | translate}}"
@@ -47,6 +65,7 @@
                            for="sortSupported">{{:: 'sort.supported' | translate }}</label>
                     <div class="col-md-6">
                         <input data-ng-model="serviceProvider.sort.supported"
+                               data-ng-disabled="disableSCIM"
                                id="sortSupported"
                                name="sortSupported"
                                off-text="{{:: 'offText' | translate}}"
@@ -63,6 +82,7 @@
                            for="patchSupported">{{:: 'patch.supported' | translate }}</label>
                     <div class="col-md-6">
                         <input data-ng-model="serviceProvider.patch.supported"
+                               data-ng-disabled="disableSCIM"
                                id="patchSupported"
                                name="patchSupported"
                                off-text="{{:: 'offText' | translate}}"
@@ -79,6 +99,7 @@
                            for="etagSupported">{{:: 'etag.supported' | translate}}</label>
                     <div class="col-md-6">
                         <input data-ng-model="serviceProvider.etag.supported"
+                               data-ng-disabled="disableSCIM"
                                id="etagSupported"
                                name="etagSupported"
                                off-text="{{:: 'offText' | translate}}"
@@ -97,6 +118,7 @@
                     </label>
                     <div class="col-md-6">
                         <input data-ng-model="serviceProvider.changePassword.supported"
+                               data-ng-disabled="disableSCIM"
                                id="changePasswordSupported"
                                name="changePasswordSupported"
                                off-text="{{:: 'offText' | translate}}"
@@ -124,6 +146,7 @@
                         </label>
                         <div class="col-md-6">
                             <input data-ng-model="serviceProvider.bulk.supported"
+                                   data-ng-disabled="disableSCIM"
                                    id="bulkSupported"
                                    name="bulkSupported"
                                    off-text="{{:: 'offText' | translate}}"
@@ -140,7 +163,7 @@
                         </label>
                         <div class="col-md-6">
                             <input class="form-control"
-                                   data-ng-disabled="!serviceProvider.bulk.supported"
+                                   data-ng-disabled="!serviceProvider.bulk.supported || disableSCIM"
                                    data-ng-model="serviceProvider.bulk.maxOperations"
                                    id="bulkMaxOperations"
                                    max="31536000"
@@ -159,7 +182,7 @@
                         </label>
                         <div class="col-md-6">
                             <input class="form-control"
-                                   data-ng-disabled="!serviceProvider.bulk.supported"
+                                   data-ng-disabled="!serviceProvider.bulk.supported || disableSCIM"
                                    data-ng-model="serviceProvider.bulk.maxPayloadSize"
                                    id="maxPayloadSize"
                                    max="31536000"

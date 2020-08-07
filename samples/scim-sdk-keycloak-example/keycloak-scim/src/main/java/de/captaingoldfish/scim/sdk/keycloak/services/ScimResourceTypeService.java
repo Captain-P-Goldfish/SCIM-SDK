@@ -8,6 +8,8 @@ import javax.persistence.NoResultException;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.scim.resources.ParseableResourceType;
@@ -175,6 +177,9 @@ public class ScimResourceTypeService extends AbstractService
    */
   private void setValuesOfEntity(ScimResourceTypeEntity scimResourceTypeEntity, ParseableResourceType resourceType)
   {
+    boolean enabled = Optional.ofNullable(resourceType.get("enabled")).map(JsonNode::booleanValue).orElse(true);
+    scimResourceTypeEntity.setEnabled(enabled);
+
     scimResourceTypeEntity.setDescription(resourceType.getDescription().orElse(null));
 
     ResourceTypeFeatures features = resourceType.getFeatures();

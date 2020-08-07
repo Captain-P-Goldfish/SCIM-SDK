@@ -9,7 +9,7 @@
                 {{:: 'service.provider.tab.menu' | translate}}
             </a>
         </li>
-        <li data-ng-class="{active: path[3] == 'resource-type-list'}">
+        <li data-ng-class="{active: path[3] == 'resource-type-list'}" data-ng-show="!disableSCIM">
             <a href="#/realms/{{realm.realm}}/scim/resource-type-list">
                 {{:: 'resource.type.tab.menu' | translate}}
             </a>
