@@ -31,7 +31,9 @@ import lombok.Setter;
 @Entity
 @Table(name = "SCIM_RESOURCE_TYPE")
 @NamedQueries({@NamedQuery(name = "getScimResourceType", query = "SELECT rt FROM ScimResourceTypeEntity rt WHERE "
-                                                                 + "rt.realmId = :realmId and rt.name = :name")})
+                                                                 + "rt.realmId = :realmId and rt.name = :name"),
+               @NamedQuery(name = "removeScimResourceTypes", query = "DELETE FROM ScimResourceTypeEntity rt WHERE "
+                                                                     + "rt.realmId = :realmId")})
 public class ScimResourceTypeEntity
 {
 

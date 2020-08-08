@@ -30,7 +30,10 @@ import lombok.Setter;
 @Data
 @Entity
 @Table(name = "SCIM_SERVICE_PROVIDER")
-@NamedQueries({@NamedQuery(name = "getScimServiceProvider", query = "SELECT sp FROM ScimServiceProviderEntity sp WHERE sp.realmId = :realmId")})
+@NamedQueries({@NamedQuery(name = "getScimServiceProvider", query = "SELECT sp FROM ScimServiceProviderEntity sp "
+                                                                    + "WHERE sp.realmId = :realmId"),
+               @NamedQuery(name = "removeScimServiceProvider", query = "DELETE FROM ScimServiceProviderEntity sp "
+                                                                       + "WHERE sp.realmId = :realmId")})
 public class ScimServiceProviderEntity implements Serializable
 {
 

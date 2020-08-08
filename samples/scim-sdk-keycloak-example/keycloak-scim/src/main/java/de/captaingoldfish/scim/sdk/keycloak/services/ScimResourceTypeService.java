@@ -198,4 +198,15 @@ public class ScimResourceTypeService extends AbstractService
     scimResourceTypeEntity.setRequireAuthentication(features.getAuthorization().isAuthenticated());
     scimResourceTypeEntity.setLastModified(Instant.now());
   }
+
+  /**
+   * deletes the resource types that are associated with the current realm
+   */
+  public void deleteResourceTypes()
+  {
+    RealmModel realmModel = getKeycloakSession().getContext().getRealm();
+    getEntityManager().createNamedQuery("removeScimResourceTypes")
+                      .setParameter("realmId", realmModel.getId())
+                      .executeUpdate();
+  }
 }

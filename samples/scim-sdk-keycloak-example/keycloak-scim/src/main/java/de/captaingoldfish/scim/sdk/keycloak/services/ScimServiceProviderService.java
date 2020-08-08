@@ -194,4 +194,15 @@ public class ScimServiceProviderService extends AbstractService
                                                          .type("Bearer")
                                                          .build());
   }
+
+  /**
+   * deletes the provider for the current realm
+   */
+  public void deleteProvider()
+  {
+    RealmModel realmModel = getKeycloakSession().getContext().getRealm();
+    getEntityManager().createNamedQuery("removeScimServiceProvider")
+                      .setParameter("realmId", realmModel.getId())
+                      .executeUpdate();
+  }
 }

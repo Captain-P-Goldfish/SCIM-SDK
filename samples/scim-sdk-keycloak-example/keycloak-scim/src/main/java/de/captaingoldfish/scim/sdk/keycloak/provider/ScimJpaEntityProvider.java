@@ -39,6 +39,6 @@ public class ScimJpaEntityProvider implements JpaEntityProvider
   @Override
   public void close()
   {
-    log.warn("ScimJpaEntityProvider closed");
+
   }
 }
