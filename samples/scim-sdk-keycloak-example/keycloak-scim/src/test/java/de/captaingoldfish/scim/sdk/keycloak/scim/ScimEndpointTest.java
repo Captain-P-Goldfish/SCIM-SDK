@@ -19,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
+import de.captaingoldfish.scim.sdk.keycloak.scim.administration.ServiceProviderResource;
 import de.captaingoldfish.scim.sdk.keycloak.setup.KeycloakScimManagementTest;
 import de.captaingoldfish.scim.sdk.keycloak.setup.RequestBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +67,9 @@ public class ScimEndpointTest extends KeycloakScimManagementTest
   {
     ServiceProvider serviceProvider = getScimEndpoint().getResourceEndpoint().getServiceProvider();
     serviceProvider.set("enabled", BooleanNode.valueOf(false));
-    AdminstrationResource adminstrationResource = getScimEndpoint().administerResources();
-    adminstrationResource.updateServiceProviderConfig(serviceProvider.toString());
+    ServiceProviderResource serviceProviderResource = getScimEndpoint().administerResources()
+                                                                       .getServiceProviderResource();
+    serviceProviderResource.updateServiceProviderConfig(serviceProvider.toString());
 
     ScimEndpoint scimEndpoint = getScimEndpoint();
     HttpServletRequest request = RequestBuilder.builder(scimEndpoint).endpoint(EndpointPaths.USERS).build();
@@ -144,8 +146,9 @@ public class ScimEndpointTest extends KeycloakScimManagementTest
     {
       ServiceProvider serviceProvider = getScimEndpoint().getResourceEndpoint().getServiceProvider();
       serviceProvider.set("enabled", BooleanNode.valueOf(false));
-      AdminstrationResource adminstrationResource = getScimEndpoint().administerResources();
-      adminstrationResource.updateServiceProviderConfig(serviceProvider.toString());
+      ServiceProviderResource serviceProviderResource = getScimEndpoint().administerResources()
+                                                                         .getServiceProviderResource();
+      serviceProviderResource.updateServiceProviderConfig(serviceProvider.toString());
     }
 
     // try to load the users from the default realm. An exception should be thrown

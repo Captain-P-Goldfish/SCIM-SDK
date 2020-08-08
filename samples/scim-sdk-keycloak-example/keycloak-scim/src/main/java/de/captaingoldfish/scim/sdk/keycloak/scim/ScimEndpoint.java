@@ -32,6 +32,7 @@ import de.captaingoldfish.scim.sdk.keycloak.auth.Authentication;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
 import de.captaingoldfish.scim.sdk.keycloak.constants.ContextPaths;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
+import de.captaingoldfish.scim.sdk.keycloak.scim.administration.AdminstrationResource;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import lombok.extern.slf4j.Slf4j;
