@@ -38,5 +38,17 @@ module.config(['$routeProvider', function ($routeProvider) {
                 }
             },
             controller: 'ResourceTypeController'
+        })
+        .when('/realms/:realm/scim/resource-type/roles/:name', {
+            templateUrl: resourceUrl + '/partials/resource-type-role-mappings.html',
+            resolve: {
+                realm: function (RealmLoader) {
+                    return RealmLoader();
+                },
+                resource: function (ResourceTypeLoader) {
+                    return ResourceTypeLoader();
+                }
+            },
+            controller: 'ResourceTypeRoleController'
         });
 }]);

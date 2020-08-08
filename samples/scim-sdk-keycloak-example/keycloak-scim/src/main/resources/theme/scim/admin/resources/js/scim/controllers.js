@@ -102,3 +102,15 @@ module.controller('ResourceTypeController', function ($scope, Notifications, rea
         );
     };
 });
+
+module.controller('ResourceTypeRoleController', function ($scope, Notifications, realm, ResourceType, resource) {
+    $scope.RESOURCE_TYPE_FEATURE_KEY = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
+    $scope.AUTHORIZATION_FEATURE_KEY = 'authorization';
+    $scope.realm = realm;
+    $scope.resource = resource;
+    $scope.copy = angular.copy(resource);
+    $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+    $scope.featureAuth = $scope.features[$scope.AUTHORIZATION_FEATURE_KEY]
+
+
+});

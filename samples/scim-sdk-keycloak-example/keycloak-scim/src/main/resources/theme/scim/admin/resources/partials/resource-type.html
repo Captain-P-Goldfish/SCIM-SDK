@@ -1,17 +1,18 @@
-<script src="../js/scim/controllers.js"></script>
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
 
     <ol class="breadcrumb">
         <li><a href="#/realms/{{realm.realm}}/scim/resource-type-list">
             {{:: 'resource.type.tab.menu' | translate}}</a></li>
         <li>{{resource.name}}</li>
-        <li>{{:: 'edit' | translate}}</li>
     </ol>
 
     <kc-tabs-scim-list></kc-tabs-scim-list>
 
     <div class="col-md-push-2">
         <h1>{{:: 'Resource Type Configuration' | translate }}</h1>
+
+        <kc-tabs-resource-type></kc-tabs-resource-type>
 
         <form class="form-horizontal" name="serviceProviderForm" novalidate>
 

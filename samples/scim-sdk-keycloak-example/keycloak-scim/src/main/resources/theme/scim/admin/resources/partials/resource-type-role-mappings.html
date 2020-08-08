@@ -1,0 +1,51 @@
+<div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
+
+
+    <ol class="breadcrumb">
+        <li><a href="#/realms/{{realm.realm}}/scim/resource-type-list">
+            {{:: 'resource.type.tab.menu' | translate}}</a></li>
+        <li>{{resource.name}}</li>
+    </ol>
+
+    <kc-tabs-scim-list></kc-tabs-scim-list>
+
+
+    <div class="col-md-push-2">
+        <h1>{{:: 'Resource Type Configuration' | translate }}</h1>
+
+        <kc-tabs-resource-type></kc-tabs-resource-type>
+
+        <form class="form-horizontal" name="serviceProviderForm" novalidate>
+
+            <fieldset class="border-top">
+                <div class="form-group clearfix block">
+                    <label class="col-md-2 control-label"
+                           for="authenticated">
+                        {{:: 'resource.type.features.authorization.authenticated' | translate }}</label>
+                    <div class="col-md-6">
+                        <input data-ng-model="requiresAuthentication"
+                               id="authenticated"
+                               name="authenticated"
+                               off-text="{{:: 'offText' | translate}}"
+                               on-text="{{:: 'onText' | translate}}"
+                               onoffswitch/>
+                    </div>
+                    <kc-tooltip>{{:: 'resource.type.features.authorization.authenticated.tooltip' | translate}}
+                    </kc-tooltip>
+                </div>
+            </fieldset>
+
+
+            <div class="form-group">
+                <div class="col-md-10 col-md-offset-2" data-ng-show="access.viewScim">
+                    <button data-ng-disabled="!changed" kc-save>{{:: 'save' | translate}}</button>
+                    <button data-ng-disabled="!changed" kc-reset>{{:: 'cancel' | translate}}
+                    </button>
+                </div>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<kc-menu></kc-menu>
