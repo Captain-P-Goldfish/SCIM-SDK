@@ -2227,10 +2227,10 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String requiredRole = "admin";
     resourceType.getFeatures().getAuthorization().setRoles(requiredRole);
     ResourceTypeAuthorization resourceTypeAuthorization = resourceType.getFeatures().getAuthorization();
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesCreate().iterator().next());
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesGet().iterator().next());
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesUpdate().iterator().next());
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesDelete().iterator().next());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesCreate().isEmpty());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesGet().isEmpty());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesUpdate().isEmpty());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesDelete().isEmpty());
     final ClientAuthorization clientAuthorization = new ClientAuthorization("goldfish", requiredRole);
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();

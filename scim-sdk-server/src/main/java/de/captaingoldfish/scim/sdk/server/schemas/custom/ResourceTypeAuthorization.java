@@ -90,12 +90,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesCreate()
   {
-    Set<String> rolesCreate = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_CREATE);
-    if (rolesCreate.isEmpty())
-    {
-      rolesCreate = getRoles();
-    }
-    return rolesCreate;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_CREATE);
   }
 
   /**
@@ -122,12 +117,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesGet()
   {
-    Set<String> rolesGet = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_GET);
-    if (rolesGet.isEmpty())
-    {
-      rolesGet = getRoles();
-    }
-    return rolesGet;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_GET);
   }
 
   /**
@@ -154,12 +144,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesUpdate()
   {
-    Set<String> rolesUpdate = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_UPDATE);
-    if (rolesUpdate.isEmpty())
-    {
-      rolesUpdate = getRoles();
-    }
-    return rolesUpdate;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_UPDATE);
   }
 
   /**
@@ -186,12 +171,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesDelete()
   {
-    Set<String> rolesDelete = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_DELETE);
-    if (rolesDelete.isEmpty())
-    {
-      rolesDelete = getRoles();
-    }
-    return rolesDelete;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_DELETE);
   }
 
   /**

@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.authorize;
 
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -48,19 +49,32 @@ public interface Authorization
    */
   default void isClientAuthorized(ResourceType resourceType, EndpointType endpointType)
   {
+    Set<String> defaultRoles = resourceType.getFeatures().getAuthorization().getRoles();
     switch (endpointType)
     {
       case CREATE:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesCreate());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesCreate(),
+                     defaultRoles);
         break;
       case UPDATE:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesUpdate());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesUpdate(),
+                     defaultRoles);
         break;
       case DELETE:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesDelete());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesDelete(),
+                     defaultRoles);
         break;
       default:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesGet());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesGet(),
+                     defaultRoles);
     }
   }
 
@@ -71,18 +85,28 @@ public interface Authorization
    * @param endpointType the method that was called by the client
    * @param roles the required roles to access the given endpoint
    */
-  default void isAuthorized(ResourceType resourceType, EndpointType endpointType, Set<String> roles)
+  default void isAuthorized(ResourceType resourceType,
+                            EndpointType endpointType,
+                            Set<String> roles,
+                            Set<String> defaultRoles)
   {
-    if (roles == null || roles.isEmpty())
+    final Set<String> effectiveRoles = new HashSet<>(Optional.ofNullable(roles).orElse(new HashSet<>()));
+    if (effectiveRoles.isEmpty())
+    {
+      effectiveRoles.addAll(defaultRoles);
+    }
+    if (effectiveRoles.isEmpty())
     {
       return;
     }
-    if (!Optional.ofNullable(getClientRoles()).map(clientRoles -> clientRoles.containsAll(roles)).orElse(false))
+    if (!Optional.ofNullable(getClientRoles())
+                 .map(clientRoles -> clientRoles.containsAll(effectiveRoles))
+                 .orElse(false))
     {
       log.debug("the client '{}' tried to execute an action without proper authorization. "
                 + "Required authorization is '{}' but the client has '{}'",
                 getClientId(),
-                roles,
+                effectiveRoles,
                 getClientRoles());
       throw new ForbiddenException("you are not authorized to access the '" + endpointType
                                    + "' endpoint on resource type '" + resourceType.getName() + "'");
