@@ -49,6 +49,6 @@ module.config(['$routeProvider', function ($routeProvider) {
                     return ResourceTypeLoader();
                 }
             },
-            controller: 'ResourceTypeRoleController'
+            controller: 'ResourceTypeAuthController'
         });
 }]);

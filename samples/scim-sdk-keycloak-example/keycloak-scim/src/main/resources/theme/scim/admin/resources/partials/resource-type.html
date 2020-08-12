@@ -154,28 +154,11 @@
             <fieldset class="border-top">
                 <div class="form-group clearfix block">
                     <label class="col-md-2 control-label"
-                           for="singletonEndpoint">
-                        {{:: 'resource.type.features.singleton.endpoint' | translate }}</label>
-                    <div class="col-md-6">
-                        <input data-ng-model="features.singletonEndpoint"
-                               id="singletonEndpoint"
-                               name="singletonEndpoint"
-                               off-text="{{:: 'offText' | translate}}"
-                               on-text="{{:: 'onText' | translate}}"
-                               data-ng-disabled="true"
-                               onoffswitch/>
-                    </div>
-                    <kc-tooltip>{{:: 'resource.type.features.singleton.endpoint.tooltip' | translate}}</kc-tooltip>
-                </div>
-            </fieldset>
-
-            <fieldset class="border-top">
-                <div class="form-group clearfix block">
-                    <label class="col-md-2 control-label"
                            for="autoFiltering">
                         {{:: 'resource.type.features.auto.filtering' | translate }}</label>
                     <div class="col-md-6">
                         <input data-ng-model="features.autoFiltering"
+                               data-ng-disabled="features.disabled"
                                id="autoFiltering"
                                name="autoFiltering"
                                off-text="{{:: 'offText' | translate}}"
@@ -193,6 +176,7 @@
                         {{:: 'resource.type.features.auto.sorting' | translate }}</label>
                     <div class="col-md-6">
                         <input data-ng-model="features.autoSorting"
+                               data-ng-disabled="features.disabled"
                                id="autoSorting"
                                name="autoSorting"
                                off-text="{{:: 'offText' | translate}}"
@@ -210,6 +194,7 @@
                         {{:: 'resource.type.features.etag.enabled' | translate }}</label>
                     <div class="col-md-6">
                         <input data-ng-model="features.etag.enabled"
+                               data-ng-disabled="features.disabled"
                                id="etagEnabled"
                                name="etagEnabled"
                                off-text="{{:: 'offText' | translate}}"
@@ -235,6 +220,7 @@
                         </label>
                         <div class="col-md-6">
                             <input data-ng-model="features.endpointControl.disableCreate"
+                                   data-ng-disabled="features.disabled"
                                    id="disableCreate"
                                    name="disableCreate"
                                    off-text="{{:: 'offText' | translate}}"
@@ -253,6 +239,7 @@
                         </label>
                         <div class="col-md-6">
                             <input data-ng-model="features.endpointControl.disableGet"
+                                   data-ng-disabled="features.disabled"
                                    id="disableGet"
                                    name="disableGet"
                                    off-text="{{:: 'offText' | translate}}"
@@ -271,6 +258,7 @@
                         </label>
                         <div class="col-md-6">
                             <input data-ng-model="features.endpointControl.disableList"
+                                   data-ng-disabled="features.disabled"
                                    id="disableList"
                                    name="disableList"
                                    off-text="{{:: 'offText' | translate}}"
@@ -289,6 +277,7 @@
                         </label>
                         <div class="col-md-6">
                             <input data-ng-model="features.endpointControl.disableUpdate"
+                                   data-ng-disabled="features.disabled"
                                    id="disableUpdate"
                                    name="disableUpdate"
                                    off-text="{{:: 'offText' | translate}}"
@@ -307,6 +296,7 @@
                         </label>
                         <div class="col-md-6">
                             <input data-ng-model="features.endpointControl.disableDelete"
+                                   data-ng-disabled="features.disabled"
                                    id="disableDelete"
                                    name="disableDelete"
                                    off-text="{{:: 'offText' | translate}}"
@@ -320,24 +310,6 @@
 
                 </div>
             </div>
-
-            <fieldset class="border-top">
-                <div class="form-group clearfix block">
-                    <label class="col-md-2 control-label"
-                           for="authenticated">
-                        {{:: 'resource.type.features.authorization.authenticated' | translate }}</label>
-                    <div class="col-md-6">
-                        <input data-ng-model="requiresAuthentication"
-                               id="authenticated"
-                               name="authenticated"
-                               off-text="{{:: 'offText' | translate}}"
-                               on-text="{{:: 'onText' | translate}}"
-                               onoffswitch/>
-                    </div>
-                    <kc-tooltip>{{:: 'resource.type.features.authorization.authenticated.tooltip' | translate}}
-                    </kc-tooltip>
-                </div>
-            </fieldset>
 
             <div class="form-group">
                 <label class="col-md-2 control-label ng-binding"

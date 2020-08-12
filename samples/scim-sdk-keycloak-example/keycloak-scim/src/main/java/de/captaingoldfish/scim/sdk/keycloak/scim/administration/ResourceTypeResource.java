@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response;
 
 import org.keycloak.models.KeycloakSession;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
@@ -90,11 +91,15 @@ public class ResourceTypeResource extends AbstractEndpoint
     }
     ResourceTypeAuthorization authorization = resourceType.get().getFeatures().getAuthorization();
     Map<String, Set<String>> availableRoles = new HashMap<>();
-    availableRoles.put("roles", resourceTypeService.getAvailableRolesFor(authorization.getRoles()));
-    availableRoles.put("create", resourceTypeService.getAvailableRolesFor(authorization.getRolesCreate()));
-    availableRoles.put("get", resourceTypeService.getAvailableRolesFor(authorization.getRolesGet()));
-    availableRoles.put("update", resourceTypeService.getAvailableRolesFor(authorization.getRolesUpdate()));
-    availableRoles.put("delete", resourceTypeService.getAvailableRolesFor(authorization.getRolesDelete()));
+    availableRoles.put(AttributeNames.Custom.ROLES, resourceTypeService.getAvailableRolesFor(authorization.getRoles()));
+    availableRoles.put(AttributeNames.Custom.ROLES_CREATE,
+                       resourceTypeService.getAvailableRolesFor(authorization.getRolesCreate()));
+    availableRoles.put(AttributeNames.Custom.ROLES_GET,
+                       resourceTypeService.getAvailableRolesFor(authorization.getRolesGet()));
+    availableRoles.put(AttributeNames.Custom.ROLES_UPDATE,
+                       resourceTypeService.getAvailableRolesFor(authorization.getRolesUpdate()));
+    availableRoles.put(AttributeNames.Custom.ROLES_DELETE,
+                       resourceTypeService.getAvailableRolesFor(authorization.getRolesDelete()));
     return Response.ok(availableRoles).build();
   }
 

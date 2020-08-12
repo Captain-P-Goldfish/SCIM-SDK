@@ -30,6 +30,10 @@ module.factory('ResourceType', function ($resource) {
             update: {
                 method: 'PUT',
                 url: authUrl + '/realms/:realm/scim/admin/resourceType/:name'
+            },
+            availableRoles: {
+                method: 'GET',
+                url: authUrl + '/realms/:realm/scim/admin/resourceType/availableRoles/:name'
             }
         });
 });
