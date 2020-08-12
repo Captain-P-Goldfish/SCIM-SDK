@@ -6,6 +6,8 @@ import org.keycloak.connections.jpa.entityprovider.JpaEntityProviderFactory;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.RoleContainerModel;
+import org.keycloak.models.RoleModel;
 
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimResourceTypeService;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
@@ -39,7 +41,16 @@ public class ScimJpaEntityProviderFactory implements JpaEntityProviderFactory
   {
     factory.register((event) -> {
       if (event instanceof RealmModel.RealmRemovedEvent)
+      {
         realmRemoved(((RealmModel.RealmRemovedEvent)event).getKeycloakSession());
+      }
+      else if (event instanceof RoleContainerModel.RoleRemovedEvent)
+      {
+        RoleContainerModel.RoleRemovedEvent roleRemovedEvent = (RoleContainerModel.RoleRemovedEvent)event;
+        KeycloakSession keycloakSession = roleRemovedEvent.getKeycloakSession();
+        RoleModel roleModel = roleRemovedEvent.getRole();
+        roleRemoved(keycloakSession, roleModel);
+      }
     });
   }
 
@@ -62,5 +73,16 @@ public class ScimJpaEntityProviderFactory implements JpaEntityProviderFactory
   {
     new ScimServiceProviderService(keycloakSession).deleteProvider();
     new ScimResourceTypeService(keycloakSession).deleteResourceTypes();
+  }
+
+  /**
+   * if a role was removed that was associated with a scim endpoint it must also be removed from the scim
+   * database configuration
+   * 
+   * @param removedRole the role that was removed
+   */
+  public void roleRemoved(KeycloakSession keycloakSession, RoleModel removedRole)
+  {
+    new ScimResourceTypeService(keycloakSession).removeAssociatedRoles(removedRole);
   }
 }

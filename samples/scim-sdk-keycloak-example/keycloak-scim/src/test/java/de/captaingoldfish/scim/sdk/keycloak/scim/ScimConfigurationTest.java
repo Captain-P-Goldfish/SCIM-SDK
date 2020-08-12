@@ -65,7 +65,6 @@ public class ScimConfigurationTest extends KeycloakScimManagementTest
     ResourceTypeFeatures features = resourceType.getFeatures();
     Assertions.assertEquals(features.isAutoFiltering(), entity.isAutoFiltering());
     Assertions.assertEquals(features.isAutoSorting(), entity.isAutoSorting());
-    Assertions.assertEquals(features.isSingletonEndpoint(), entity.isSingletonEndpoint());
 
     EndpointControlFeature endpointControl = features.getEndpointControlFeature();
     Assertions.assertEquals(endpointControl.isCreateDisabled(), entity.isDisableCreate());
@@ -99,7 +98,7 @@ public class ScimConfigurationTest extends KeycloakScimManagementTest
     Assertions.assertFalse(endpointControl.isDeleteDisabled());
 
     ResourceTypeAuthorization authorization = features.getAuthorization();
-    Assertions.assertFalse(authorization.isAuthenticated());
+    Assertions.assertTrue(authorization.isAuthenticated());
     Assertions.assertTrue(authorization.getRoles().isEmpty());
     Assertions.assertTrue(authorization.getRolesCreate().isEmpty());
     Assertions.assertTrue(authorization.getRolesGet().isEmpty());

@@ -38,7 +38,6 @@
             <column name="NAME" type="VARCHAR(50)"/>
             <column name="DESCRIPTION" type="VARCHAR(255)"/>
             <column name="ENABLED" type="BOOLEAN"/>
-            <column name="SINGLETON_ENDPOINT" type="BOOLEAN"/>
             <column name="AUTO_FILTERING" type="BOOLEAN"/>
             <column name="AUTO_SORTING" type="BOOLEAN"/>
             <column name="ETAG_ENABLED" type="BOOLEAN"/>
@@ -54,6 +53,71 @@
 
         <addUniqueConstraint tableName="SCIM_RESOURCE_TYPE" columnNames="REALM_ID,NAME"
                              constraintName="SCIM_RESOURCE_TYPE_UQ"/>
+
+        <createTable tableName="SCIM_ENDPOINT_ROLES">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCIM_ENDPOINT_ROLE_FK"
+                             referencedTableName="SCIM_RESOURCE_TYPE"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_ENDPOINT_ROLES" indexName="SCIM_ENDPOINT_ROLES_IDX">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createTable tableName="SCIM_ENDPOINT_CREATE_ROLES">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCIM_ENDPOINT_CREATE_ROLE_FK"
+                             referencedTableName="SCIM_RESOURCE_TYPE"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_ENDPOINT_CREATE_ROLES" indexName="SCIM_ENDPOINT_CREATE_ROLES_IDX">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createTable tableName="SCIM_ENDPOINT_GET_ROLES">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCIM_ENDPOINT_GET_ROLE_FK"
+                             referencedTableName="SCIM_RESOURCE_TYPE"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_ENDPOINT_GET_ROLES" indexName="SCIM_ENDPOINT_GET_ROLES_IDX">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createTable tableName="SCIM_ENDPOINT_UPDATE_ROLES">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCIM_ENDPOINT_UPDATE_ROLE_FK"
+                             referencedTableName="SCIM_RESOURCE_TYPE"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_ENDPOINT_UPDATE_ROLES" indexName="SCIM_ENDPOINT_UPDATE_ROLES_IDX">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
+        <createTable tableName="SCIM_ENDPOINT_DELETE_ROLES">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCIM_ENDPOINT_DELETE_ROLE_FK"
+                             referencedTableName="SCIM_RESOURCE_TYPE"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="ROLE_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_ENDPOINT_DELETE_ROLES" indexName="SCIM_ENDPOINT_DELETE_ROLES_IDX">
+            <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)"/>
+        </createIndex>
 
     </changeSet>
 

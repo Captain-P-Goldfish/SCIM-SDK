@@ -19,7 +19,6 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
-import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -72,23 +71,13 @@ public final class ScimConfiguration
     ScimResourceTypeService resourceTypeService = new ScimResourceTypeService(keycloakSession);
 
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
-    ResourceTypeAuthorization userAuthorization = ResourceTypeAuthorization.builder().authenticated(false).build();
-    userResourceType.setFeatures(ResourceTypeFeatures.builder()
-                                                     .autoFiltering(true)
-                                                     .autoSorting(true)
-                                                     .authorization(userAuthorization)
-                                                     .build());
+    userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     setUserAttributeRestrictions(userResourceType);
     ScimResourceTypeEntity userResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(userResourceType);
     resourceTypeService.updateResourceType(userResourceType, userResourceTypeEntity);
 
     ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
-    ResourceTypeAuthorization groupAuthorization = ResourceTypeAuthorization.builder().authenticated(false).build();
-    groupResourceType.setFeatures(ResourceTypeFeatures.builder()
-                                                      .autoFiltering(true)
-                                                      .autoSorting(true)
-                                                      .authorization(groupAuthorization)
-                                                      .build());
+    groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     ScimResourceTypeEntity groupResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(groupResourceType);
     resourceTypeService.updateResourceType(groupResourceType, groupResourceTypeEntity);
 

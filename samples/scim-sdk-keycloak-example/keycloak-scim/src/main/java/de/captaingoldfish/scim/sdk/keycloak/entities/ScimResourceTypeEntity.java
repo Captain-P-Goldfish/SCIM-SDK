@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.keycloak.entities;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.persistence.Access;
@@ -8,11 +10,15 @@ import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
+import org.keycloak.models.jpa.entities.RoleEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import lombok.AccessLevel;
@@ -81,12 +87,6 @@ public class ScimResourceTypeEntity
   private boolean enabled = true;
 
   /**
-   * makes this resource type to singleton endpoint
-   */
-  @Column(name = "SINGLETON_ENDPOINT")
-  private boolean singletonEndpoint;
-
-  /**
    * activates the auto filtering feature of the SCIM-SDK
    */
   @Column(name = "AUTO_FILTERING")
@@ -141,6 +141,65 @@ public class ScimResourceTypeEntity
   private boolean requireAuthentication = true;
 
   /**
+   * the roles to access either endpoint of "create, get, list, update, patch or delete"
+   */
+  // @formatter:off
+  @OneToMany
+  @JoinTable(name = "SCIM_ENDPOINT_ROLES",
+             joinColumns = {@JoinColumn(name = "SCIM_RESOURCE_TYPE_ID")},
+             inverseJoinColumns = {@JoinColumn(name = "ROLE_ID")})
+  // @formatter:on
+  private List<RoleEntity> endpointRoles;
+
+  /**
+   * the roles to access the create endpoint. Nullifies the values of {@link #endpointRoles} if at least one
+   * value is present
+   */
+  // @formatter:off
+  @OneToMany
+  @JoinTable(name = "SCIM_ENDPOINT_CREATE_ROLES",
+             joinColumns = {@JoinColumn(name = "SCIM_RESOURCE_TYPE_ID")},
+             inverseJoinColumns = {@JoinColumn(name = "ROLE_ID")})
+  // @formatter:on
+  private List<RoleEntity> createRoles;
+
+  /**
+   * the roles to access the get/list endpoint. Nullifies the values of {@link #endpointRoles} if at least one
+   * value is present
+   */
+  // @formatter:off
+  @OneToMany
+  @JoinTable(name = "SCIM_ENDPOINT_GET_ROLES",
+             joinColumns = {@JoinColumn(name = "SCIM_RESOURCE_TYPE_ID")},
+             inverseJoinColumns = {@JoinColumn(name = "ROLE_ID")})
+  // @formatter:on
+  private List<RoleEntity> getRoles;
+
+  /**
+   * the roles to access the update/patch endpoint. Nullifies the values of {@link #endpointRoles} if at least
+   * one value is present
+   */
+  // @formatter:off
+  @OneToMany
+  @JoinTable(name = "SCIM_ENDPOINT_UPDATE_ROLES",
+             joinColumns = {@JoinColumn(name = "SCIM_RESOURCE_TYPE_ID")},
+             inverseJoinColumns = {@JoinColumn(name = "ROLE_ID")})
+  // @formatter:on
+  private List<RoleEntity> updateRoles;
+
+  /**
+   * the roles to access the delete endpoint. Nullifies the values of {@link #endpointRoles} if at least one
+   * value is present
+   */
+  // @formatter:off
+  @OneToMany
+  @JoinTable(name = "SCIM_ENDPOINT_DELETE_ROLES",
+             joinColumns = {@JoinColumn(name = "SCIM_RESOURCE_TYPE_ID")},
+             inverseJoinColumns = {@JoinColumn(name = "ROLE_ID")})
+  // @formatter:on
+  private List<RoleEntity> deleteRoles;
+
+  /**
    * when this resource type was created
    */
   @Column(name = "CREATED")
@@ -157,7 +216,6 @@ public class ScimResourceTypeEntity
                                 String name,
                                 String description,
                                 Boolean enabled,
-                                boolean singletonEndpoint,
                                 boolean autoFiltering,
                                 boolean autoSorting,
                                 boolean etagEnabled,
@@ -167,6 +225,11 @@ public class ScimResourceTypeEntity
                                 boolean disableUpdate,
                                 boolean disableDelete,
                                 Boolean requireAuthentication,
+                                List<RoleEntity> endpointRoles,
+                                List<RoleEntity> createRoles,
+                                List<RoleEntity> getRoles,
+                                List<RoleEntity> updateRoles,
+                                List<RoleEntity> deleteRoles,
                                 Instant created,
                                 Instant lastModified)
   {
@@ -174,7 +237,6 @@ public class ScimResourceTypeEntity
     this.name = name;
     this.description = description;
     this.enabled = Optional.ofNullable(enabled).orElse(true);
-    this.singletonEndpoint = singletonEndpoint;
     this.autoFiltering = autoFiltering;
     this.autoSorting = autoSorting;
     this.etagEnabled = etagEnabled;
@@ -184,6 +246,11 @@ public class ScimResourceTypeEntity
     this.disableUpdate = disableUpdate;
     this.disableDelete = disableDelete;
     this.requireAuthentication = Optional.ofNullable(requireAuthentication).orElse(true);
+    this.endpointRoles = Optional.ofNullable(endpointRoles).orElse(new ArrayList<>());
+    this.createRoles = Optional.ofNullable(createRoles).orElse(new ArrayList<>());
+    this.getRoles = Optional.ofNullable(getRoles).orElse(new ArrayList<>());
+    this.updateRoles = Optional.ofNullable(updateRoles).orElse(new ArrayList<>());
+    this.deleteRoles = Optional.ofNullable(deleteRoles).orElse(new ArrayList<>());
     this.created = created;
     this.lastModified = lastModified;
   }

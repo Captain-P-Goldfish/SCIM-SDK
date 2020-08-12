@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.keycloak.setup;
 
+import java.math.BigInteger;
+
 import javax.persistence.EntityManager;
 
 import org.junit.jupiter.api.AfterEach;
@@ -33,6 +35,7 @@ import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import de.captaingoldfish.scim.sdk.keycloak.scim.ScimConfigurationBridge;
 import de.captaingoldfish.scim.sdk.keycloak.scim.ScimEndpoint;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -59,6 +62,7 @@ public abstract class KeycloakScimManagementTest
    * the custom endpoint that is under test
    */
   @Getter
+  @Setter
   private ScimEndpoint scimEndpoint;
 
   /**
@@ -261,5 +265,17 @@ public abstract class KeycloakScimManagementTest
   {
     return ((Long)getEntityManager().createQuery("select count(entity) from " + entityClass.getSimpleName() + " entity")
                                     .getSingleResult()).intValue();
+  }
+
+  /**
+   * counts the number of entries within the given table
+   *
+   * @param tableName the name of the table from which the entries should be counted
+   * @return the number of entries within the database of the given entity-type
+   */
+  public int countEntriesInMappingTable(String tableName)
+  {
+    return ((BigInteger)getEntityManager().createNativeQuery("select count(*) from " + tableName)
+                                          .getSingleResult()).intValue();
   }
 }

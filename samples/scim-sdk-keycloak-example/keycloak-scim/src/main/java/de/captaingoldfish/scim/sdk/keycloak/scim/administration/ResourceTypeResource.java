@@ -1,7 +1,11 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim.administration;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
+import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -19,6 +23,7 @@ import de.captaingoldfish.scim.sdk.keycloak.scim.resources.ParseableResourceType
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimResourceTypeService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 
 
 /**
@@ -64,6 +69,35 @@ public class ResourceTypeResource extends AbstractEndpoint
     resourceTypeService.updateResourceType(resourceType, scimResourceTypeEntity.get());
     return Response.status(HttpStatus.OK).entity(resourceType.toString()).build();
   }
+
+  /**
+   * returns the roles that are available for the given resource type
+   * 
+   * @param resourceTypeName the name of the resource type for which the available roles should be retrieved
+   */
+  @GET
+  @Path("/availableRoles/{name}")
+  @Produces(MediaType.APPLICATION_JSON)
+  public Response getAvailableResourceTypeRoles(@PathParam("name") String resourceTypeName)
+  {
+    ScimResourceTypeService resourceTypeService = new ScimResourceTypeService(getKeycloakSession());
+    Optional<ResourceType> resourceType = getResourceEndpoint().getResourceTypeByName(resourceTypeName);
+    if (!resourceType.isPresent())
+    {
+      return Response.status(HttpStatus.BAD_REQUEST)
+                     .entity("resource type with name '" + resourceTypeName + "' not found")
+                     .build();
+    }
+    ResourceTypeAuthorization authorization = resourceType.get().getFeatures().getAuthorization();
+    Map<String, Set<String>> availableRoles = new HashMap<>();
+    availableRoles.put("roles", resourceTypeService.getAvailableRolesFor(authorization.getRoles()));
+    availableRoles.put("create", resourceTypeService.getAvailableRolesFor(authorization.getRolesCreate()));
+    availableRoles.put("get", resourceTypeService.getAvailableRolesFor(authorization.getRolesGet()));
+    availableRoles.put("update", resourceTypeService.getAvailableRolesFor(authorization.getRolesUpdate()));
+    availableRoles.put("delete", resourceTypeService.getAvailableRolesFor(authorization.getRolesDelete()));
+    return Response.ok(availableRoles).build();
+  }
+
 
   /**
    * overridden to grant access to unit test scope
