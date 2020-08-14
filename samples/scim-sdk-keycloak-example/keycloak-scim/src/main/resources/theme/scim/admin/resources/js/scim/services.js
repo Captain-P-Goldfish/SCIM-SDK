@@ -28,10 +28,15 @@ module.factory('ServiceProviderLoader', function (Loader, ServiceProvider, $rout
 /* ***************************************************************************************************** */
 
 module.factory('ResourceType', function ($resource) {
-    return $resource(authUrl + '/realms/:realm/scim/v2/ResourceTypes/:name?sortBy=name&filter=name ne' +
+    return $resource(authUrl + '/realms/:realm/scim/v2/ResourceTypes?sortBy=name&filter=name ne' +
         ' "ServiceProviderConfig" and name ne "ResourceType" and name ne "Schema"',
         {},
         {
+            metaResourceTypes: {
+                method: 'GET',
+                url: authUrl + '/realms/:realm/scim/v2/ResourceTypes/:name?sortBy=name&filter=name eq ' +
+                    ' "ServiceProviderConfig" or name eq "ResourceType" or name eq "Schema"'
+            },
             update: {
                 method: 'PUT',
                 url: authUrl + '/realms/:realm/scim/admin/resourceType/:name'

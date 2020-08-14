@@ -1,6 +1,30 @@
 <div class="col-sm-9 col-md-10 col-sm-push-3 col-md-push-2">
     <kc-tabs-scim-list></kc-tabs-scim-list>
 
+    <table class="table table-striped table-bordered" id="meta-resource-type-table">
+        <thead>
+        <tr>
+            <th colspan="4">{{:: 'resource.type.meta.heading' | translate}}</th>
+        </tr>
+        <tr>
+            <th class="w-25">{{:: 'name' | translate}}</th>
+            <th class="w-25">{{:: 'endpoint' | translate}}</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr data-ng-repeat="resourceType in metaResources.Resources">
+            <td class="clip">
+                {{resourceType.name}}
+            </td>
+            <td class="clip">
+                <a href="{{authUrl + '/realms/' + realm.realm + '/scim/v2' + resourceType.endpoint}}" target="_blank">
+                    {{resourceType.endpoint}}
+                </a>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
     <table class="table table-striped table-bordered" id="resource-type-table">
         <thead>
         <tr>

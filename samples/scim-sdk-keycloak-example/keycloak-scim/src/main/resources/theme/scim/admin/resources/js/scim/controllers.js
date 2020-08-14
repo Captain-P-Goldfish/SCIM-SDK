@@ -108,7 +108,8 @@ module.controller('ResourceTypeListController', function ($scope, realm, Resourc
     $scope.RESOURCE_TYPE_FEATURE_KEY = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
     $scope.realm = realm;
     $scope.resource = resource;
-    $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+    $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY];
+    $scope.metaResources = ResourceType.metaResourceTypes({realm: realm.realm});
 });
 
 module.controller('ResourceTypeController', function ($scope, Notifications, realm, ResourceType, resource) {
