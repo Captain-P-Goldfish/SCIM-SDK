@@ -2,17 +2,24 @@ package de.captaingoldfish.scim.sdk.keycloak.entities;
 
 import java.io.Serializable;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.Access;
 import javax.persistence.AccessType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
+import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.NamedQueries;
 import javax.persistence.NamedQuery;
+import javax.persistence.OneToMany;
 import javax.persistence.Table;
 import javax.persistence.Version;
 
+import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.models.utils.KeycloakModelUtils;
 
 import lombok.AccessLevel;
@@ -125,6 +132,17 @@ public class ScimServiceProviderEntity implements Serializable
   private long bulkMaxPayloadSize;
 
   /**
+   * the clients that are allowed to access the SCIM endpoints. OPTIONAL
+   */
+  // @formatter:off
+  @OneToMany
+  @JoinTable(name = "SCIM_SP_AUTHORIZED_CLIENTS",
+             joinColumns = {@JoinColumn(name = "SCIM_SERVICE_PROVIDER_ID")},
+             inverseJoinColumns = {@JoinColumn(name = "CLIENT_ID")})
+  // @formatter:on
+  private List<ClientEntity> authorizedClients;
+
+  /**
    * the timestamp when this configuration was created
    */
   @Column(name = "CREATED")
@@ -148,6 +166,7 @@ public class ScimServiceProviderEntity implements Serializable
                                    boolean bulkSupported,
                                    int bulkMaxOperations,
                                    long bulkMaxPayloadSize,
+                                   List<ClientEntity> authorizedClients,
                                    Instant created,
                                    Instant lastModified)
   {
@@ -162,6 +181,7 @@ public class ScimServiceProviderEntity implements Serializable
     this.bulkSupported = bulkSupported;
     this.bulkMaxOperations = bulkMaxOperations;
     this.bulkMaxPayloadSize = bulkMaxPayloadSize;
+    this.authorizedClients = Optional.ofNullable(authorizedClients).orElse(new ArrayList<>());
     this.created = created;
     this.lastModified = lastModified;
   }

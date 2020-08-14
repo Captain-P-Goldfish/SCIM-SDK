@@ -33,4 +33,5 @@ public abstract class AbstractEndpoint
     this.keycloakSession = keycloakSession;
     this.resourceEndpoint = ScimConfiguration.getScimEndpoint(keycloakSession);
   }
+
 }

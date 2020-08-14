@@ -1,18 +1,28 @@
 package de.captaingoldfish.scim.sdk.keycloak.services;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Root;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.ClientEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
@@ -100,8 +110,71 @@ public class ScimServiceProviderService extends AbstractService
     scimServiceProviderEntity.setBulkMaxOperations(serviceProvider.getBulkConfig().getMaxOperations());
     scimServiceProviderEntity.setBulkMaxPayloadSize(serviceProvider.getBulkConfig().getMaxPayloadSize());
     scimServiceProviderEntity.setLastModified(Instant.now());
+
+    {
+      // the attribute authorizedClients is a custom attribute that will be added to the json structure from the
+      // web-admin console. It is not a registered SCIM attribute!
+      ArrayNode arrayNode = (ArrayNode)serviceProvider.get("authorizedClients");
+      Optional.ofNullable(arrayNode).ifPresent(clientIdArray -> {
+        Set<String> authorizedClientIds = new HashSet<>();
+        for ( JsonNode jsonNode : clientIdArray )
+        {
+          authorizedClientIds.add(jsonNode.textValue());
+        }
+        scimServiceProviderEntity.setAuthorizedClients(getAuthorizedClients(authorizedClientIds));
+      });
+    }
+
     getEntityManager().flush();
     return toScimRepresentation(scimServiceProviderEntity);
+  }
+
+  /**
+   * gets the {@link ClientEntity} representations with the given clientIds
+   * 
+   * @param clientIds the clientIds of the clients that should be extracted from the database
+   * @return the list of all clients that matched the values in the given set
+   */
+  private List<ClientEntity> getAuthorizedClients(Set<String> clientIds)
+  {
+    RealmModel realmModel = getKeycloakSession().getContext().getRealm();
+    List<ClientEntity> clientEntityList = new ArrayList<>();
+    for ( String clientId : clientIds )
+    {
+      loadClient(realmModel, clientId).ifPresent(clientEntityList::add);
+    }
+    return clientEntityList;
+  }
+
+  /**
+   * loads the client with the given clientId
+   * 
+   * @param realmModel the owning realm of the client
+   * @param clientId the clientId of the client
+   * @return the client if it does exist or an empty if the client does not exist in the database
+   */
+  private Optional<ClientEntity> loadClient(RealmModel realmModel, String clientId)
+  {
+    EntityManager entityManager = getEntityManager();
+    CriteriaBuilder criteriaBuilder = entityManager.getCriteriaBuilder();
+    CriteriaQuery<ClientEntity> clientQuery = criteriaBuilder.createQuery(ClientEntity.class);
+    Root<ClientEntity> root = clientQuery.from(ClientEntity.class);
+    // @formatter:off
+    clientQuery.where(
+      criteriaBuilder.and(
+        criteriaBuilder.equal(root.get("realm").get("id"), realmModel.getId()),
+        criteriaBuilder.equal(root.get("clientId"), clientId)
+      )
+    );
+    // @formatter:on
+    try
+    {
+      return Optional.of(entityManager.createQuery(clientQuery).getSingleResult());
+    }
+    catch (NoResultException ex)
+    {
+      return Optional.empty();
+    }
   }
 
   /**
@@ -174,7 +247,15 @@ public class ScimServiceProviderService extends AbstractService
       meta.setLastModified(Optional.ofNullable(entity.getLastModified()).orElse(entity.getCreated()));
       meta.setVersion(ETag.builder().tag(String.valueOf(entity.getVersion())).build());
     });
-    serviceProvider.set("enabled", BooleanNode.valueOf(entity.isEnabled()));
+
+    {
+      // now adding custom attributes not that are not defined by SCIM but are used within the web-admin console
+      serviceProvider.set("enabled", BooleanNode.valueOf(entity.isEnabled()));
+
+      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+      entity.getAuthorizedClients().stream().map(ClientEntity::getClientId).forEach(arrayNode::add);
+      serviceProvider.set("authorizedClients", arrayNode);
+    }
     return serviceProvider;
   }
 
@@ -203,6 +284,20 @@ public class ScimServiceProviderService extends AbstractService
     RealmModel realmModel = getKeycloakSession().getContext().getRealm();
     getEntityManager().createNamedQuery("removeScimServiceProvider")
                       .setParameter("realmId", realmModel.getId())
+                      .executeUpdate();
+  }
+
+  /**
+   * removes all client associations of the given client from the service provider of the current realm
+   * 
+   * @param removedClient the client that was removed
+   */
+  public void removeAssociatedClients(ClientModel removedClient)
+  {
+    // unfortunately I cannot do this in a clean way because the keycloak implementation was prematurely calling
+    // the flush-method on the entity manager
+    getEntityManager().createNativeQuery("DELETE FROM SCIM_SP_AUTHORIZED_CLIENTS WHERE CLIENT_ID = '"
+                                         + removedClient.getId() + "'")
                       .executeUpdate();
   }
 }

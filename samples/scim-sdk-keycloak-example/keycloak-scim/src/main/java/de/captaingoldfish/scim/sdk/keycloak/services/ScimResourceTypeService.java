@@ -204,8 +204,8 @@ public class ScimResourceTypeService extends AbstractService
   }
 
   /**
-   * retrieves the realm roles of the given names from the database. If a roles does not exist within the
-   * database it is simple ignored and removed
+   * retrieves the realm roles of the given names from the database. If a role does not exist within the
+   * database it is simply ignored and removed
    * 
    * @param roles the roles that should be added to the current resource type
    * @return the list of role entities that do exist in the keycloak_roles table

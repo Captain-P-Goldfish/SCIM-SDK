@@ -14,3 +14,11 @@ module.directive('kcTabsResourceType', function () {
         templateUrl: resourceUrl + '/templates/kc-tabs-resource-type.html'
     }
 });
+module.directive('kcTabsServiceProvider', function () {
+    return {
+        scope: true,
+        restrict: 'E',
+        replace: true,
+        templateUrl: resourceUrl + '/templates/kc-tabs-service-provider.html'
+    }
+});

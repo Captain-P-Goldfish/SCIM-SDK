@@ -8,6 +8,11 @@ module.factory('ServiceProvider', function ($resource) {
             update: {
                 method: 'PUT',
                 url: authUrl + '/realms/:realm/scim/admin/serviceProviderConfig'
+            },
+            availableAuthClients: {
+                method: 'GET',
+                url: authUrl + '/realms/:realm/scim/admin/serviceProviderConfig/availableClients',
+                isArray: true
             }
         });
 });

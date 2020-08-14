@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.keycloak.provider;
 import org.keycloak.Config;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProvider;
 import org.keycloak.connections.jpa.entityprovider.JpaEntityProviderFactory;
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
@@ -51,6 +52,13 @@ public class ScimJpaEntityProviderFactory implements JpaEntityProviderFactory
         RoleModel roleModel = roleRemovedEvent.getRole();
         roleRemoved(keycloakSession, roleModel);
       }
+      else if (event instanceof RealmModel.ClientRemovedEvent)
+      {
+        RealmModel.ClientRemovedEvent clientRemovedEvent = (RealmModel.ClientRemovedEvent)event;
+        KeycloakSession keycloakSession = clientRemovedEvent.getKeycloakSession();
+        ClientModel clientModel = clientRemovedEvent.getClient();
+        clientRemoved(keycloakSession, clientModel);
+      }
     });
   }
 
@@ -84,5 +92,16 @@ public class ScimJpaEntityProviderFactory implements JpaEntityProviderFactory
   public void roleRemoved(KeycloakSession keycloakSession, RoleModel removedRole)
   {
     new ScimResourceTypeService(keycloakSession).removeAssociatedRoles(removedRole);
+  }
+
+  /**
+   * if a client was removed that was associated with a scim service provider it must also be removed from the
+   * scim database configuration
+   * 
+   * @param removedClient the client that was removed
+   */
+  public void clientRemoved(KeycloakSession keycloakSession, ClientModel removedClient)
+  {
+    new ScimServiceProviderService(keycloakSession).removeAssociatedClients(removedClient);
   }
 }

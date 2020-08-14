@@ -43,6 +43,67 @@ module.controller('ServiceProviderController', function ($modal, $scope, realm, 
 
 });
 
+module.controller('ServiceProviderAuthController', function ($modal, $scope, realm, ServiceProvider, serviceProvider,
+                                                             $location, $route, Dialog, Notifications) {
+    $scope.realm = realm;
+
+    initDefaults = function (sp) {
+        $scope.serviceProvider = sp;
+        $scope.serviceProvider.authorizedClients = (typeof $scope.serviceProvider.authorizedClients === 'undefined')
+            ? []
+            : $scope.serviceProvider.authorizedClients;
+        $scope.availableClients = ServiceProvider.availableAuthClients({realm: realm.realm});
+
+        $scope.selectedAvailableClients = [];
+        $scope.selectedAssignedClients = [];
+    }
+
+    initDefaults(serviceProvider);
+
+    moveElementsFromTo = function (from, to, elements) {
+        elements.forEach(function (element) {
+            var index = from.indexOf(element);
+            if (index > -1) {
+                from.splice(index, 1);
+                to.push(element);
+            }
+        });
+    }
+
+    $scope.addAuthorizedClients = function () {
+        moveElementsFromTo($scope.availableClients,
+            $scope.serviceProvider.authorizedClients,
+            $scope.selectedAvailableClients)
+        ServiceProvider.update(
+            {
+                realm: realm.realm
+            },
+            $scope.serviceProvider,
+            function (response) {
+                initDefaults(response);
+                Notifications.success("Your changes have been saved to ServiceProvider.");
+            }
+        );
+    }
+
+
+    $scope.removeAuthorizedClients = function () {
+        moveElementsFromTo($scope.serviceProvider.authorizedClients,
+            $scope.availableClients,
+            $scope.selectedAssignedClients)
+        ServiceProvider.update(
+            {
+                realm: realm.realm
+            },
+            $scope.serviceProvider,
+            function (response) {
+                initDefaults(response);
+                Notifications.success("Your changes have been saved to ServiceProvider.");
+            }
+        );
+    }
+});
+
 module.controller('ResourceTypeListController', function ($scope, realm, ResourceType, resource) {
     $scope.RESOURCE_TYPE_FEATURE_KEY = 'urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures';
     $scope.realm = realm;

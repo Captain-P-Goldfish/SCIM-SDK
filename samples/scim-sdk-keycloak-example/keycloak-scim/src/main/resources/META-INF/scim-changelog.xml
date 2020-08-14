@@ -119,6 +119,19 @@
             <column name="SCIM_RESOURCE_TYPE_ID" type="VARCHAR(36)"/>
         </createIndex>
 
+        <createTable tableName="SCIM_SP_AUTHORIZED_CLIENTS">
+            <column name="SCIM_SERVICE_PROVIDER_ID" type="VARCHAR(36)">
+                <constraints foreignKeyName="SCIM_SP_AUTHORIZED_CLIENT_FK"
+                             referencedTableName="SCIM_SERVICE_PROVIDER"
+                             referencedColumnNames="ID"/>
+            </column>
+            <column name="CLIENT_ID" type="VARCHAR(36)"/>
+        </createTable>
+
+        <createIndex tableName="SCIM_SP_AUTHORIZED_CLIENTS" indexName="SCIM_SP_AUTHORIZED_CLIENT_IDX">
+            <column name="SCIM_SERVICE_PROVIDER_ID" type="VARCHAR(36)"/>
+        </createIndex>
+
     </changeSet>
 
 </databaseChangeLog>

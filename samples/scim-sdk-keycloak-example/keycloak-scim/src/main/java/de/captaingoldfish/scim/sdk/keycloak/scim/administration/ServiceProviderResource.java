@@ -1,15 +1,22 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim.administration;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
+import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.storage.ClientStorageManager;
+
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
@@ -83,6 +90,21 @@ public class ServiceProviderResource extends AbstractEndpoint
     }
 
     return Response.ok().entity(newServiceProvider.toString()).build();
+  }
+
+  /**
+   * @return the clients that may be used to restrict access to the SCIM endpoint
+   */
+  @GET
+  @Produces(MediaType.APPLICATION_JSON)
+  @Path("/availableClients")
+  public Response getAvailableClients()
+  {
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    ClientStorageManager clientProvider = new ClientStorageManager(getKeycloakSession());
+    List<ClientModel> clientModelList = clientProvider.getClients(getKeycloakSession().getContext().getRealm());
+    clientModelList.forEach(clientModel -> arrayNode.add(clientModel.getClientId()));
+    return Response.ok(arrayNode.toString()).build();
   }
 
   /**
