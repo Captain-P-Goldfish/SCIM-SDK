@@ -35,7 +35,7 @@
             <th class="w-15">{{:: 'name' | translate}}</th>
             <th class="w-25">{{:: 'endpoint' | translate}}</th>
             <th class="w-15">{{:: 'enabled' | translate}}</th>
-            <th class="w-15">{{:: 'authenticated' | translate}}</th>
+            <th class="w-15">{{:: 'requires.authentication' | translate}}</th>
             <th class="w-15">{{:: 'actions' | translate}}</th>
         </tr>
         </thead>
@@ -51,7 +51,11 @@
                     {{authUrl + '/realms/' + realm.realm + '/scim/v2' + resourceType.endpoint}}
                 </a>
             </td>
-            <td class="clip">{{!resourceType[RESOURCE_TYPE_FEATURE_KEY].disabled}}</td>
+            <td class="clip"
+                style="{{isEnabled(resourceType) ? 'background-color: lightgreen'
+                                                 : 'background-color: lightcoral'}}">
+                {{isEnabled(resourceType)}}
+            </td>
             <td class="clip"
                 style="{{requiresAuthentication(resourceType) ? 'background-color: lightgreen'
                                                               : 'background-color: lightcoral'}}">

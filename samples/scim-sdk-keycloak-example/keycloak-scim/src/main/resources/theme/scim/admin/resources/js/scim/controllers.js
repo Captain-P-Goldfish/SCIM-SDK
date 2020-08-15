@@ -112,10 +112,16 @@ module.controller('ResourceTypeListController', function ($scope, realm, Resourc
     $scope.metaResources = ResourceType.metaResourceTypes({realm: realm.realm});
 
     $scope.requiresAuthentication = function (resourceType) {
-        var features = resourceType[$scope.RESOURCE_TYPE_FEATURE_KEY]
+        var features = resourceType[$scope.RESOURCE_TYPE_FEATURE_KEY];
         return !features.hasOwnProperty('authorization') ||
             !features.authorization.hasOwnProperty('authenticated') ||
             features.authorization.authenticated;
+    }
+
+    $scope.isEnabled = function (resourceType) {
+        var features = resourceType[$scope.RESOURCE_TYPE_FEATURE_KEY];
+        features = (typeof features === 'undefined') ? {} : features;
+        return !features.hasOwnProperty('disabled') || !features.disabled;
     }
 });
 
@@ -125,6 +131,13 @@ module.controller('ResourceTypeController', function ($scope, Notifications, rea
     $scope.resource = resource;
     $scope.copy = angular.copy(resource);
     $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
+    $scope.features = $scope.features = (typeof $scope.features === 'undefined') ? {} : $scope.features;
+
+    isEnabled = function () {
+        return !$scope.features.hasOwnProperty('disabled') || !$scope.features.disabled;
+    }
+
+    $scope.enabled = isEnabled();
 
     $scope.isEqual = function () {
         return angular.equals($scope.copy, resource);
@@ -136,6 +149,10 @@ module.controller('ResourceTypeController', function ($scope, Notifications, rea
         } else {
             $scope.changed = false;
         }
+    }, true);
+
+    $scope.$watch('enabled', function (value) {
+        $scope.features.disabled = !value;
     }, true);
 
     $scope.save = function () {
@@ -160,6 +177,7 @@ module.controller('ResourceTypeController', function ($scope, Notifications, rea
         $scope.features = $scope.resource[$scope.RESOURCE_TYPE_FEATURE_KEY]
         $scope.changed = false;
     };
+
 });
 
 module.controller('ResourceTypeAuthController', function ($scope, Notifications, realm, ResourceType, resource) {
