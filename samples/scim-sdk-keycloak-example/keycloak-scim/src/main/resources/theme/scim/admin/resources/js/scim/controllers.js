@@ -110,6 +110,13 @@ module.controller('ResourceTypeListController', function ($scope, realm, Resourc
     $scope.resource = resource;
     $scope.features = resource[$scope.RESOURCE_TYPE_FEATURE_KEY];
     $scope.metaResources = ResourceType.metaResourceTypes({realm: realm.realm});
+
+    $scope.requiresAuthentication = function (resourceType) {
+        var features = resourceType[$scope.RESOURCE_TYPE_FEATURE_KEY]
+        return !features.hasOwnProperty('authorization') ||
+            !features.authorization.hasOwnProperty('authenticated') ||
+            features.authorization.authenticated;
+    }
 });
 
 module.controller('ResourceTypeController', function ($scope, Notifications, realm, ResourceType, resource) {
