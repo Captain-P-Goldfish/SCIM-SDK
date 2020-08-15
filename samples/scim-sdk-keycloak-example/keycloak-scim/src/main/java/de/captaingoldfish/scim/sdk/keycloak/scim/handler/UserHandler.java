@@ -51,11 +51,6 @@ public class UserHandler extends ResourceHandler<User>
   public static final String PRIMARY_SUFFIX = "_primary";
 
   /**
-   * an attribute that is added to users created by the scim protocol
-   */
-  private static final String SCIM_USER = "scim-user";
-
-  /**
    * {@inheritDoc}
    */
   @Override
@@ -81,7 +76,7 @@ public class UserHandler extends ResourceHandler<User>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users().getUserById(id, keycloakSession.getContext().getRealm());
-    if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
+    if (userModel == null)
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
@@ -106,10 +101,7 @@ public class UserHandler extends ResourceHandler<User>
     // api should be used
     RealmModel realmModel = keycloakSession.getContext().getRealm();
     List<UserModel> userModels = keycloakSession.users().getUsers(realmModel);
-    List<User> userList = userModels.stream()
-                                    .filter(userModel -> Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
-                                    .map(this::modelToUser)
-                                    .collect(Collectors.toList());
+    List<User> userList = userModels.stream().map(this::modelToUser).collect(Collectors.toList());
     return PartialListResponse.<User> builder().totalResults(userList.size()).resources(userList).build();
   }
 
@@ -123,7 +115,7 @@ public class UserHandler extends ResourceHandler<User>
     UserModel userModel = keycloakSession.users()
                                          .getUserById(userToUpdate.getId().get(),
                                                       keycloakSession.getContext().getRealm());
-    if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
+    if (userModel == null)
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
@@ -141,7 +133,7 @@ public class UserHandler extends ResourceHandler<User>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users().getUserById(id, keycloakSession.getContext().getRealm());
-    if (userModel == null || !Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_USER)))
+    if (userModel == null)
     {
       throw new ResourceNotFoundException("resource with id '" + id + "' does not exist");
     }
@@ -158,8 +150,6 @@ public class UserHandler extends ResourceHandler<User>
    */
   private UserModel userToModel(User user, UserModel userModel)
   {
-    userModel.setSingleAttribute(SCIM_USER, String.valueOf(true));
-
     user.isActive().ifPresent(userModel::setEnabled);
     user.getName().ifPresent(name -> {
       name.getGivenName().ifPresent(userModel::setFirstName);
