@@ -5,12 +5,12 @@
 
     <parent>
         <groupId>de.captaingoldfish</groupId>
-        <artifactId>scim-sdk-keycloak-example</artifactId>
+        <artifactId>scim-for-keycloak</artifactId>
         <version>1.7.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-scim</artifactId>
-    <name>SCIM SDK keycloak</name>
+    <name>SCIM for Keycloak Server</name>
 
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.keycloak.scim</module.name>

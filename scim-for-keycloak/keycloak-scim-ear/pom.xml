@@ -4,12 +4,12 @@
 
     <parent>
         <groupId>de.captaingoldfish</groupId>
-        <artifactId>scim-sdk-keycloak-example</artifactId>
+        <artifactId>scim-for-keycloak</artifactId>
         <version>1.7.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-scim-ear</artifactId>
-    <name>SCIM SDK keycloak ear</name>
+    <name>SCIM for Keycloak ear Deployment</name>
 
     <packaging>ear</packaging>
 
