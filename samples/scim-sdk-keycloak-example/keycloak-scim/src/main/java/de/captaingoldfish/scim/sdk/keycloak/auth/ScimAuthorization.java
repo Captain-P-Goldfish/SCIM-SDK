@@ -2,11 +2,16 @@ package de.captaingoldfish.scim.sdk.keycloak.auth;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import javax.ws.rs.NotAuthorizedException;
 
+import org.keycloak.models.ClientModel;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.RoleModel;
+import org.keycloak.models.UserModel;
 import org.keycloak.services.resources.admin.AdminAuth;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
@@ -52,7 +57,7 @@ public class ScimAuthorization implements Authorization
   @Override
   public String getClientId()
   {
-    return null;
+    return Optional.ofNullable(authResult).map(AdminAuth::getClient).map(ClientModel::getClientId).orElse("[unknown]");
   }
 
   /**
@@ -61,7 +66,11 @@ public class ScimAuthorization implements Authorization
   @Override
   public Set<String> getClientRoles()
   {
-    return Collections.emptySet();
+    return Optional.ofNullable(authResult)
+                   .map(AdminAuth::getUser)
+                   .map(UserModel::getRealmRoleMappings)
+                   .map(realmRoles -> realmRoles.stream().map(RoleModel::getName).collect(Collectors.toSet()))
+                   .orElse(Collections.emptySet());
   }
 
   /**
@@ -76,18 +85,15 @@ public class ScimAuthorization implements Authorization
       try
       {
         authResult = authentication.authenticate(keycloakSession);
-        return true;
       }
       catch (NotAuthorizedException ex)
       {
-        log.error("authentication failed", ex);
+        log.trace(ex.getMessage(), ex);
+        log.error("authentication failed");
         return false;
       }
     }
-    else
-    {
-      return true;
-    }
+    return true;
   }
 
   /**

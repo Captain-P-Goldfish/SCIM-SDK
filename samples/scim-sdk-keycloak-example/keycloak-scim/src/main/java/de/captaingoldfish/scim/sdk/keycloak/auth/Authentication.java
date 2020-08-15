@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.keycloak.auth;
 
+import java.util.Optional;
+
 import javax.ws.rs.ClientErrorException;
 import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.NotFoundException;
@@ -12,13 +14,16 @@ import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.RoleModel;
+import org.keycloak.models.jpa.entities.ClientEntity;
 import org.keycloak.representations.AccessToken;
 import org.keycloak.services.managers.AppAuthManager;
 import org.keycloak.services.managers.AuthenticationManager;
 import org.keycloak.services.managers.RealmManager;
 import org.keycloak.services.resources.admin.AdminAuth;
 
+import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import de.captaingoldfish.scim.sdk.keycloak.provider.RealmRoleInitializer;
+import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -59,13 +64,34 @@ public class Authentication
                                                                                        context.getUri(),
                                                                                        context.getConnection(),
                                                                                        context.getRequestHeaders());
-
     if (result == null)
     {
       log.error(ERROR_MESSAGE_AUTHENTICATION_FAILED);
       throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
     }
-    return createAdminAuth(keycloakSession, result);
+    AdminAuth adminAuth = createAdminAuth(keycloakSession, result);
+
+    ScimServiceProviderService serviceProviderService = new ScimServiceProviderService(keycloakSession);
+    Optional<ScimServiceProviderEntity> optionalEntity = serviceProviderService.getServiceProviderEntity();
+    if (optionalEntity.isPresent())
+    {
+      // there might be an association to an existing client with this service provider. If so the associated
+      // clients are the only ones that are allowed to access the SCIM endpoint
+      ScimServiceProviderEntity entity = optionalEntity.get();
+      boolean isClientAuthorized = entity.getAuthorizedClients().isEmpty()
+                                   || entity.getAuthorizedClients()
+                                            .stream()
+                                            .map(ClientEntity::getClientId)
+                                            .anyMatch(clientId -> clientId.equals(adminAuth.getClient().getClientId()));
+      if (!isClientAuthorized)
+      {
+        log.error(ERROR_MESSAGE_AUTHENTICATION_FAILED);
+        throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
+      }
+    }
+    // if no service provider representation are found in the database (which shouldn't happen under normal
+    // circumstances) we do not expect any clients to be associated with the current service provider
+    return adminAuth;
   }
 
   /**
