@@ -110,11 +110,21 @@ class ResourceEndpointHandler
    */
   public ResourceType registerEndpoint(EndpointDefinition endpointDefinition)
   {
-    return resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
-                                                    endpointDefinition.getResourceType(),
-                                                    endpointDefinition.getResourceSchema(),
-                                                    endpointDefinition.getResourceSchemaExtensions()
-                                                                      .toArray(new JsonNode[0]));
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(endpointDefinition.getResourceHandler(),
+                                                                         endpointDefinition.getResourceType(),
+                                                                         endpointDefinition.getResourceSchema(),
+                                                                         endpointDefinition.getResourceSchemaExtensions()
+                                                                                           .toArray(new JsonNode[0]));
+    ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+    Schema mainSchema = resourceType.getMainSchema();
+    resourceHandler.setSchema(mainSchema);
+    resourceHandler.setSchemaExtensions(resourceType.getAllSchemas()
+                                                    .stream()
+                                                    .filter(schema -> !schema.getId()
+                                                                             .get()
+                                                                             .equals(mainSchema.getId().get()))
+                                                    .collect(Collectors.toList()));
+    return resourceType;
   }
 
   /**
@@ -1027,9 +1037,10 @@ class ResourceEndpointHandler
   private ResourceType getResourceType(String endpoint)
   {
     Supplier<String> errorMessage = () -> "no resource found for endpoint '" + endpoint + "'";
-    return Optional.ofNullable(resourceTypeFactory.getResourceType(endpoint))
-                   .orElseThrow(() -> new BadRequestException(errorMessage.get(), null,
-                                                              ScimType.Custom.UNKNOWN_RESOURCE));
+    ResourceType resourceType = Optional.ofNullable(resourceTypeFactory.getResourceType(endpoint))
+                                        .orElseThrow(() -> new BadRequestException(errorMessage.get(), null,
+                                                                                   ScimType.Custom.UNKNOWN_RESOURCE));
+    return resourceType;
   }
 
   /**

@@ -7,11 +7,14 @@ import java.util.List;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -28,6 +31,20 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   @Getter
   private Class<T> type;
+
+  /**
+   * allows to access the definition of the main schema
+   */
+  @Getter
+  @Setter(AccessLevel.PROTECTED)
+  private Schema schema;
+
+  /**
+   * allows to access the attribute definitions of a schema extension
+   */
+  @Getter
+  @Setter(AccessLevel.PROTECTED)
+  private List<Schema> schemaExtensions;
 
   /**
    * default constructor that resolves the generic type for this class
