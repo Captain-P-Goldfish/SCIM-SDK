@@ -14,7 +14,7 @@
         <tbody>
         <tr data-ng-repeat="resourceType in metaResources.Resources">
             <td class="clip">
-                {{resourceType.name}}
+                    {{resourceType.name}}
             </td>
             <td class="clip">
                 <a href="{{authUrl + '/realms/' + realm.realm + '/scim/v2' + resourceType.endpoint}}" target="_blank">
