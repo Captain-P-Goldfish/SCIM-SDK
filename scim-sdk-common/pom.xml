@@ -56,7 +56,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/resource-type-feature-ext.json
                             </file>
-                            <checksum>5a1ee4fdf32b8d078a0ab3f8c94bf574</checksum>
+                            <checksum>f685f254f6785afd3656fdfb55517ac6</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

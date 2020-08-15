@@ -7,6 +7,17 @@
   "description": "An extension that enables additional features for single resource types",
   "attributes": [
     {
+      "name": "disabled",
+      "type": "boolean",
+      "description": "a boolean that will disable access to this resource type if set to true.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
+    {
       "name": "singletonEndpoint",
       "type": "boolean",
       "description": "a boolean that tells us if the endpoint is used as singleton endpoint. This feature may be used e.g. for the /ServiceProviderConfig endpoint to delegate a list-request to a simple get-request.",
