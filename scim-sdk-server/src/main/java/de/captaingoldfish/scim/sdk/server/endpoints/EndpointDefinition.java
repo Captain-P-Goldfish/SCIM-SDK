@@ -6,7 +6,8 @@ import java.util.Objects;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -15,7 +16,8 @@ import lombok.Data;
  * <br>
  * the endpoint definition is used to register new endpoints into the application context
  */
-@Data
+@Getter
+@Setter
 public class EndpointDefinition
 {
 
