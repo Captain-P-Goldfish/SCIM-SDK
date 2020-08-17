@@ -68,6 +68,10 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>de.captaingoldfish</groupId>
+            <artifactId>keycloak-scim-resources</artifactId>
+        </dependency>
 
         <!-- test dependencies -->
         <dependency>

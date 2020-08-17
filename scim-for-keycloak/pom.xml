@@ -18,6 +18,7 @@
         <module>keycloak-scim</module>
         <module>keycloak-scim-ear</module>
         <module>keycloak-scim-client</module>
+        <module>keycloak-scim-resources</module>
     </modules>
 
     <properties>
@@ -39,6 +40,12 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>keycloak-scim-resources</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <dependency>
                 <groupId>org.keycloak</groupId>
                 <artifactId>keycloak-parent</artifactId>

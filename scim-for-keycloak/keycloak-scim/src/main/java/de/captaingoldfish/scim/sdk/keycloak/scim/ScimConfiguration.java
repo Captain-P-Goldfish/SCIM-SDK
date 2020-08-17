@@ -11,7 +11,9 @@ import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
+import de.captaingoldfish.scim.sdk.keycloak.scim.endpoints.RoleEndpointDefinition;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.GroupHandler;
+import de.captaingoldfish.scim.sdk.keycloak.scim.handler.RealmRoleHandler;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimResourceTypeService;
 import de.captaingoldfish.scim.sdk.keycloak.services.ScimServiceProviderService;
@@ -80,6 +82,11 @@ public final class ScimConfiguration
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     ScimResourceTypeEntity groupResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(groupResourceType);
     resourceTypeService.updateResourceType(groupResourceType, groupResourceTypeEntity);
+
+    ResourceType roleResourceType = resourceEndpoint.registerEndpoint(new RoleEndpointDefinition(new RealmRoleHandler()));
+    roleResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+    ScimResourceTypeEntity roleResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(roleResourceType);
+    resourceTypeService.updateResourceType(roleResourceType, roleResourceTypeEntity);
 
     return resourceEndpoint;
   }
