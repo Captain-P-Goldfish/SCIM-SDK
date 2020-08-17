@@ -87,7 +87,7 @@
         <version.junit.jupiter>5.6.2</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.9.12</version.reflections>
-        <version.mockito>3.4.6</version.mockito>
+        <version.mockito>3.5.0</version.mockito>
         <version.resteasy.jaxrs>3.11.2.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.4.1</version.equalsverifier>
         <version.springboot>2.3.3.RELEASE</version.springboot>
