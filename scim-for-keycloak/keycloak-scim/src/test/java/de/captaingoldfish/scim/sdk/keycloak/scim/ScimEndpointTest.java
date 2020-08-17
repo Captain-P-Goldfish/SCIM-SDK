@@ -57,7 +57,7 @@ public class ScimEndpointTest extends KeycloakScimManagementTest
     // the endpoint is already initialized by method super.initializeEndpoint()
     new ScimEndpoint(getKeycloakSession(), getAuthentication());
     Assertions.assertEquals(1, countEntriesInTable(ScimServiceProviderEntity.class));
-    Assertions.assertEquals(2, countEntriesInTable(ScimResourceTypeEntity.class));
+    Assertions.assertEquals(3, countEntriesInTable(ScimResourceTypeEntity.class));
   }
 
   /**
