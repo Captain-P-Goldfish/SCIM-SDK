@@ -3,7 +3,7 @@
     <deployment>
         <module-alias name="deployment.scim.for.keycloak"/>
     </deployment>
-    <sub-deployment name="scim-for-keycloak.jar">
+    <sub-deployment name="scim-for-keycloak-server.jar">
         <dependencies>
             <module name="org.keycloak.keycloak-services"/>
             <module name="org.keycloak.keycloak-model-jpa"/>
