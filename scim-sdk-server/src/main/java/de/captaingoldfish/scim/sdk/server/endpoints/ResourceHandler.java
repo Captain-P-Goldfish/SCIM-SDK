@@ -3,6 +3,8 @@ package de.captaingoldfish.scim.sdk.server.endpoints;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
@@ -45,6 +47,13 @@ public abstract class ResourceHandler<T extends ResourceNode>
   @Getter
   @Setter(AccessLevel.PROTECTED)
   private List<Schema> schemaExtensions;
+
+  /**
+   * gives access to the changePassword value of the current service provider configuration
+   */
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private Supplier<Boolean> changePasswordSupported;
 
   /**
    * default constructor that resolves the generic type for this class
@@ -150,4 +159,13 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   public abstract void deleteResource(String id, Authorization authorization);
 
+  /**
+   * @return true if the value in the in the corresponding value in the
+   *         {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider} configuration is true, false
+   *         else
+   */
+  public final boolean isChangePasswordSupported()
+  {
+    return Optional.ofNullable(changePasswordSupported).map(Supplier::get).orElse(false);
+  }
 }

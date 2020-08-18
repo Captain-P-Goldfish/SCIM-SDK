@@ -124,6 +124,7 @@ class ResourceEndpointHandler
                                                                              .get()
                                                                              .equals(mainSchema.getId().get()))
                                                     .collect(Collectors.toList()));
+    resourceHandler.setChangePasswordSupported(() -> serviceProvider.getChangePasswordConfig().isSupported());
     return resourceType;
   }
 
