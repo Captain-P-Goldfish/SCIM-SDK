@@ -5,7 +5,7 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-samples</artifactId>
-        <version>1.7.1-SNAPSHOT</version>
+        <version>1.8.0</version>
     </parent>
 
     <artifactId>scim-sdk-springboot-example</artifactId>
