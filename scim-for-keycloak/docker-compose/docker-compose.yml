@@ -15,7 +15,7 @@ services:
     volumes:
       - mariadb
   keycloak:
-    image: keycloak-scim-sdk:latest
+    image: scim-for-keycloak:latest
     depends_on:
       - mariadb
     ports:
