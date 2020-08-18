@@ -9,7 +9,7 @@
         <version>1.7.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-scim</artifactId>
+    <artifactId>scim-for-keycloak-server</artifactId>
     <name>SCIM for Keycloak Server</name>
 
     <properties>
@@ -70,7 +70,7 @@
         </dependency>
         <dependency>
             <groupId>de.captaingoldfish</groupId>
-            <artifactId>keycloak-scim-resources</artifactId>
+            <artifactId>scim-for-keycloak-resources</artifactId>
         </dependency>
 
         <!-- test dependencies -->

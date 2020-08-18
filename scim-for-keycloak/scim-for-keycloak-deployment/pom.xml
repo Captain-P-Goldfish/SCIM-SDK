@@ -8,7 +8,7 @@
         <version>1.7.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-scim-ear</artifactId>
+    <artifactId>scim-for-keycloak-ear</artifactId>
     <name>SCIM for Keycloak ear Deployment</name>
 
     <packaging>ear</packaging>
@@ -20,13 +20,13 @@
     <dependencies>
         <dependency>
             <groupId>de.captaingoldfish</groupId>
-            <artifactId>keycloak-scim</artifactId>
+            <artifactId>scim-for-keycloak-server</artifactId>
             <scope>compile</scope>
         </dependency>
     </dependencies>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
+        <finalName>scim-for-keycloak</finalName>
 
         <plugins>
             <plugin>
@@ -38,9 +38,9 @@
                     <modules>
                         <jarModule>
                             <groupId>de.captaingoldfish</groupId>
-                            <artifactId>keycloak-scim</artifactId>
+                            <artifactId>scim-for-keycloak-server</artifactId>
                             <includeInApplicationXml>true</includeInApplicationXml>
-                            <bundleFileName>keycloak-scim.jar</bundleFileName>
+                            <bundleFileName>scim-for-keycloak-server.jar</bundleFileName>
                             <bundleDir>/</bundleDir>
                         </jarModule>
                     </modules>
@@ -66,7 +66,7 @@
                             <verbose>true</verbose>
                             <images>
                                 <image>
-                                    <name>keycloak-scim-sdk:${project.version}</name>
+                                    <name>scim-for-keycloak:${project.version}</name>
                                     <build>
                                         <contextDir>.</contextDir>
                                         <assembly>

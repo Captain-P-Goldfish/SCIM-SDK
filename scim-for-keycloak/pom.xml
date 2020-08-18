@@ -15,10 +15,10 @@
     <packaging>pom</packaging>
 
     <modules>
-        <module>keycloak-scim</module>
-        <module>keycloak-scim-ear</module>
-        <module>keycloak-scim-client</module>
-        <module>keycloak-scim-resources</module>
+        <module>scim-for-keycloak-resources</module>
+        <module>scim-for-keycloak-server</module>
+        <module>scim-for-keycloak-deployment</module>
+        <module>scim-for-keycloak-client</module>
     </modules>
 
     <properties>
@@ -42,7 +42,7 @@
         <dependencies>
             <dependency>
                 <groupId>de.captaingoldfish</groupId>
-                <artifactId>keycloak-scim-resources</artifactId>
+                <artifactId>scim-for-keycloak-resources</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
@@ -56,12 +56,12 @@
 
             <dependency>
                 <groupId>de.captaingoldfish</groupId>
-                <artifactId>keycloak-scim</artifactId>
+                <artifactId>scim-for-keycloak-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>de.captaingoldfish</groupId>
-                <artifactId>scim-sdk-client</artifactId>
+                <artifactId>scim-for-keycloak-client</artifactId>
                 <version>${project.version}</version>
             </dependency>
 

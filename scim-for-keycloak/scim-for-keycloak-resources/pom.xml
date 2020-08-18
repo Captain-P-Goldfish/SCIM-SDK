@@ -9,7 +9,7 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>keycloak-scim-resources</artifactId>
+    <artifactId>scim-for-keycloak-resources</artifactId>
 
     <name>SCIM for Keycloak Custom Resources</name>
 

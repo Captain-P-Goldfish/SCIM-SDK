@@ -8,7 +8,7 @@
         <version>1.7.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>keycloak-scim-client</artifactId>
+    <artifactId>scim-for-keycloak-client</artifactId>
     <name>SCIM for Keycloak Sample Client</name>
 
     <properties>
