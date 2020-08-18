@@ -62,3 +62,9 @@ endpoints. This endpoint provides support for adding new `RealmRoles` and associ
   ![theme-settings](images/resource-type-auth-config.png)  
   The role settings are of course only respected if authentication is enabled.  
    
+## Disadvantages
+
+I didn't find a really good way in storing multi-valued-complex structures in the user-attributes table so I stored
+such data structures in pure json in this table. Please note that the values in the screenshot are simply 
+auto-generated test-values. 
+![theme-settings](images/user-storage.png)  
