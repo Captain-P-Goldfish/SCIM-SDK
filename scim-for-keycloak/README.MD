@@ -64,7 +64,11 @@ endpoints. This endpoint provides support for adding new `RealmRoles` and associ
    
 ## Disadvantages
 
-I didn't find a really good way in storing multi-valued-complex structures in the user-attributes table so I stored
+1. I didn't find a really good way in storing multi-valued-complex structures in the user-attributes table so I stored
 such data structures in pure json in this table. Please note that the values in the screenshot are simply 
 auto-generated test-values. 
-![theme-settings](images/user-storage.png)  
+![theme-settings](images/user-storage.png)
+2. User loading and filtering is not implemented on database level meaning that a "list-Users"-request will currently
+ retrieve all Users of the used realm from the database. Filtering, sorting and limiting of the returned entries will be
+  done on API level by the SCIM-SDK. (personal tests have shown that this is still pretty fast with at least 
+  5000 Users. I never tried more)  
