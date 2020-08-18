@@ -56,6 +56,13 @@ public abstract class ResourceHandler<T extends ResourceNode>
   private Supplier<Boolean> changePasswordSupported;
 
   /**
+   * gives access to the filter max results value of the current service provider configuration
+   */
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private Supplier<Integer> maxResults;
+
+  /**
    * default constructor that resolves the generic type for this class
    */
   public ResourceHandler()
@@ -167,5 +174,14 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public final boolean isChangePasswordSupported()
   {
     return Optional.ofNullable(changePasswordSupported).map(Supplier::get).orElse(false);
+  }
+
+  /**
+   * @return the maximum results value from the current
+   *         {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider} configuration
+   */
+  public final int getMaxResults()
+  {
+    return Optional.ofNullable(maxResults).map(Supplier::get).orElse(Integer.MAX_VALUE);
   }
 }
