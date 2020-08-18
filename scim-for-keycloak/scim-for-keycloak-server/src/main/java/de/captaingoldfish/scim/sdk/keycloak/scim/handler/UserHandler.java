@@ -8,11 +8,15 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.keycloak.models.KeycloakSession;
+import org.keycloak.models.ModelException;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.UserCredentialManager;
+import org.keycloak.models.UserCredentialModel;
 import org.keycloak.models.UserModel;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
@@ -119,6 +123,10 @@ public class UserHandler extends ResourceHandler<User>
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
+    if (isChangePasswordSupported() && userToUpdate.getPassword().isPresent())
+    {
+      setPassword(keycloakSession, userToUpdate.getPassword().get(), userModel);
+    }
     userModel = userToModel(userToUpdate, userModel);
     userModel.setSingleAttribute(AttributeNames.RFC7643.LAST_MODIFIED, String.valueOf(Instant.now().toEpochMilli()));
     log.info("updated user with username: {}", userModel.getUsername());
@@ -139,6 +147,33 @@ public class UserHandler extends ResourceHandler<User>
     }
     keycloakSession.users().removeUser(keycloakSession.getContext().getRealm(), userModel);
     log.info("deleted user with username: {}", userModel.getUsername());
+  }
+
+  /**
+   * this method will set the password of the user
+   *
+   * @param password the password to set
+   * @param userModel the model that should receive the password
+   */
+  private void setPassword(KeycloakSession keycloakSession, String password, UserModel userModel)
+  {
+    if (StringUtils.isEmpty(password))
+    {
+      return;
+    }
+    UserCredentialModel userCredential = UserCredentialModel.password(password);
+    UserCredentialManager credentialManager = keycloakSession.userCredentialManager();
+    RealmModel realm = keycloakSession.getContext().getRealm();
+    try
+    {
+      credentialManager.updateCredential(realm, userModel, userCredential);
+    }
+    catch (ModelException ex)
+    {
+      // this exception is thrown if the password policy was not matched
+      log.debug(ex.getMessage(), ex);
+      throw new BadRequestException("password policy not matched");
+    }
   }
 
   /**
@@ -313,7 +348,7 @@ public class UserHandler extends ResourceHandler<User>
     String lastModifiedString = userModel.getFirstAttribute(AttributeNames.RFC7643.LAST_MODIFIED);
     if (StringUtils.isNotBlank(lastModifiedString))
     {
-      return Instant.ofEpochMilli(Integer.parseInt(lastModifiedString));
+      return Instant.ofEpochMilli(Long.parseLong(lastModifiedString));
     }
     else
     {

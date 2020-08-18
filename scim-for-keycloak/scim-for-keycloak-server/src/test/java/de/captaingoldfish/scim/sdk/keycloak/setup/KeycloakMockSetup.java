@@ -1,15 +1,25 @@
 package de.captaingoldfish.scim.sdk.keycloak.setup;
 
+import java.util.Collections;
 import java.util.UUID;
 
 import javax.persistence.EntityManager;
 
 import org.junit.jupiter.api.Assertions;
+import org.keycloak.credential.CredentialProvider;
+import org.keycloak.credential.PasswordCredentialProvider;
+import org.keycloak.credential.PasswordCredentialProviderFactory;
+import org.keycloak.credential.UserCredentialStoreManager;
+import org.keycloak.credential.hash.PasswordHashProvider;
+import org.keycloak.credential.hash.Pbkdf2PasswordHashProviderFactory;
 import org.keycloak.models.KeycloakContext;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
+import org.keycloak.models.PasswordPolicy;
 import org.keycloak.models.RealmModel;
 import org.keycloak.models.UserModel;
+import org.keycloak.policy.DefaultPasswordPolicyManagerProvider;
+import org.keycloak.policy.PasswordPolicyManagerProvider;
 import org.keycloak.services.DefaultKeycloakContext;
 import org.keycloak.services.DefaultKeycloakSessionFactory;
 import org.keycloak.services.DefaultKeycloakTransactionManager;
@@ -79,6 +89,30 @@ class KeycloakMockSetup
     keycloakTransactionManager = Mockito.spy(new DefaultKeycloakTransactionManager(keycloakSession));
     Mockito.doReturn(keycloakTransactionManager).when(keycloakSession).getTransactionManager();
     Mockito.doReturn(keycloakSession).when(keycloakSessionFactory).create();
+    setupPasswordManagingSettings();
+  }
+
+  /**
+   * setups the password managing configuration for testing
+   */
+  protected void setupPasswordManagingSettings()
+  {
+    Mockito.doReturn(new UserCredentialStoreManager(keycloakSession)).when(keycloakSession).userCredentialManager();
+    Mockito.doReturn(Collections.singletonList(new PasswordCredentialProviderFactory()))
+           .when(keycloakSessionFactory)
+           .getProviderFactories(CredentialProvider.class);
+    Mockito.doReturn(new PasswordCredentialProvider(keycloakSession))
+           .when(keycloakSession)
+           .getProvider(CredentialProvider.class, PasswordCredentialProviderFactory.PROVIDER_ID);
+    Mockito.doReturn(new DefaultPasswordPolicyManagerProvider(keycloakSession))
+           .when(keycloakSession)
+           .getProvider(PasswordPolicyManagerProvider.class);
+    PasswordHashProvider passwordHashProvider = new Pbkdf2PasswordHashProviderFactory().create(keycloakSession);
+    Mockito.doReturn(passwordHashProvider)
+           .when(keycloakSession)
+           .getProvider(PasswordHashProvider.class, "pbkdf2-sha256");
+    Mockito.doReturn(passwordHashProvider).when(keycloakSession).getProvider(PasswordHashProvider.class, "pbkdf2");
+    Mockito.doReturn(new UserCredentialStoreManager(keycloakSession)).when(keycloakSession).userCredentialManager();
   }
 
   /**
@@ -89,6 +123,7 @@ class KeycloakMockSetup
     log.trace("building test realm '{}'", TEST_REALM_NAME);
     entityManager.getTransaction().begin();
     realmModel = keycloakSession.realms().createRealm(UUID.randomUUID().toString(), TEST_REALM_NAME);
+    realmModel.setPasswordPolicy(PasswordPolicy.build().build(keycloakSession));
     entityManager.getTransaction().commit();
     Mockito.doReturn(realmModel).when(keycloakContext).getRealm();
     Assertions.assertEquals(1, keycloakSession.realms().getRealms().size());
