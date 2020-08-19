@@ -25,6 +25,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.IORuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;
@@ -102,15 +103,16 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
   @CsvSource({"0,0,0", "1,10,10", "10,1,10", "10,10,1", "0,1,0", "0,10,10", "10,10,0", "10,0,10"})
   public void testGovernikusHttpClientTest(int connectTimeout, int requestTimeout, int socketTimeout) throws IOException
   {
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .connectTimeout(connectTimeout)
-                                              .requestTimeout(requestTimeout)
-                                              .socketTimeout(socketTimeout)
-                                              .proxy(null)
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder()
+                                                    .connectTimeout(connectTimeout)
+                                                    .requestTimeout(requestTimeout)
+                                                    .socketTimeout(socketTimeout)
+                                                    .proxy(null)
+                                                    .clientAuth(tlsClientAuthenticationKeystore)
+                                                    .truststore(tlsTruststore)
+                                                    .hostnameVerifier((s, sslSession) -> true)
+                                                    .build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     RequestConfig requestConfig = httpClient.getRequestConfig();
     Assertions.assertNotNull(requestConfig);
     final int timeoutMillis = ScimHttpClient.getTIMEOUT_MILLIS();
@@ -138,15 +140,16 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     int connectTimeout = 10;
     int requestTimeout = 10;
     int socketTimeout = 1;
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .connectTimeout(connectTimeout)
-                                              .requestTimeout(requestTimeout)
-                                              .socketTimeout(socketTimeout)
-                                              .proxy(null)
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder()
+                                                    .connectTimeout(connectTimeout)
+                                                    .requestTimeout(requestTimeout)
+                                                    .socketTimeout(socketTimeout)
+                                                    .proxy(null)
+                                                    .clientAuth(tlsClientAuthenticationKeystore)
+                                                    .truststore(tlsTruststore)
+                                                    .hostnameVerifier((s, sslSession) -> true)
+                                                    .build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     try
     {
       httpClient.sendRequest(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH)));
@@ -168,15 +171,16 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     int connectTimeout = 1;
     int requestTimeout = 10;
     int socketTimeout = 10;
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .connectTimeout(connectTimeout)
-                                              .requestTimeout(requestTimeout)
-                                              .socketTimeout(socketTimeout)
-                                              .proxy(null)
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder()
+                                                    .connectTimeout(connectTimeout)
+                                                    .requestTimeout(requestTimeout)
+                                                    .socketTimeout(socketTimeout)
+                                                    .proxy(null)
+                                                    .clientAuth(tlsClientAuthenticationKeystore)
+                                                    .truststore(tlsTruststore)
+                                                    .hostnameVerifier((s, sslSession) -> true)
+                                                    .build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     String requestUrl = getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH).replaceFirst(String.valueOf(getLocalServerPort()),
                                                                                          "connectTimeout");
     try
@@ -208,15 +212,16 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     int connectTimeout = 1;
     int requestTimeout = 1;
     int socketTimeout = 1;
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .connectTimeout(connectTimeout)
-                                              .requestTimeout(requestTimeout)
-                                              .socketTimeout(socketTimeout)
-                                              .proxy(null)
-                                              .tlsClientAuthenticatonKeystore(tlsClientAuthenticationKeystore)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder()
+                                                    .connectTimeout(connectTimeout)
+                                                    .requestTimeout(requestTimeout)
+                                                    .socketTimeout(socketTimeout)
+                                                    .proxy(null)
+                                                    .clientAuth(tlsClientAuthenticationKeystore)
+                                                    .truststore(tlsTruststore)
+                                                    .hostnameVerifier((s, sslSession) -> true)
+                                                    .build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     String host = UUID.randomUUID().toString();
     String requestUrl = getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH).replaceFirst("localhost", host);
     try
@@ -241,14 +246,15 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     int connectTimeout = 1;
     int requestTimeout = 1;
     int socketTimeout = 1;
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .connectTimeout(connectTimeout)
-                                              .requestTimeout(requestTimeout)
-                                              .socketTimeout(socketTimeout)
-                                              .proxy(null)
-                                              .truststore(tlsTruststore)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder()
+                                                    .connectTimeout(connectTimeout)
+                                                    .requestTimeout(requestTimeout)
+                                                    .socketTimeout(socketTimeout)
+                                                    .proxy(null)
+                                                    .truststore(tlsTruststore)
+                                                    .hostnameVerifier((s, sslSession) -> true)
+                                                    .build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     try
     {
       httpClient.sendRequest(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH)));
@@ -270,13 +276,14 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     int connectTimeout = 1;
     int requestTimeout = 1;
     int socketTimeout = 1;
-    ScimHttpClient httpClient = ScimHttpClient.builder()
-                                              .connectTimeout(connectTimeout)
-                                              .requestTimeout(requestTimeout)
-                                              .socketTimeout(socketTimeout)
-                                              .proxy(null)
-                                              .hostnameVerifier((s, sslSession) -> true)
-                                              .build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder()
+                                                    .connectTimeout(connectTimeout)
+                                                    .requestTimeout(requestTimeout)
+                                                    .socketTimeout(socketTimeout)
+                                                    .proxy(null)
+                                                    .hostnameVerifier((s, sslSession) -> true)
+                                                    .build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     try
     {
       httpClient.sendRequest(new HttpGet(getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH)));
@@ -299,7 +306,8 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     final String PROXY_HOST = "localhost";
     final int PROXY_PORT = 8888;
     ProxyHelper proxyHelper = ProxyHelper.builder().systemProxyHost(PROXY_HOST).systemProxyPort(PROXY_PORT).build();
-    ScimHttpClient httpClient = ScimHttpClient.builder().proxy(proxyHelper).build();
+    ScimClientConfig clientConfig = ScimClientConfig.builder().proxy(proxyHelper).build();
+    ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
     RequestConfig requestConfig = httpClient.getRequestConfig();
     Assertions.assertNotNull(requestConfig.getProxy());
     Assertions.assertEquals(PROXY_HOST, requestConfig.getProxy().getHostName());

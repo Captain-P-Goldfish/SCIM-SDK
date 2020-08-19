@@ -52,8 +52,9 @@ public class RequestUtilsTest
    * @param attributes the attribute string
    */
   @ParameterizedTest
-  @ValueSource(strings = {"", "userName", "userName,nickName",
-                          "id,nickName,urn:ietf:params:scim:schemas:core:2.0:User:name,userName,name"})
+  @ValueSource(strings = {"", "id", "externalId", "name", "userName", "userName,nickName",
+                          "id,nickName,urn:ietf:params:scim:schemas:core:2.0:User:name,userName,name",
+                          "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager"})
   public void testParseAttributes(String attributes)
   {
     List<String> attributeList = Assertions.assertDoesNotThrow(() -> RequestUtils.getAttributes(attributes));

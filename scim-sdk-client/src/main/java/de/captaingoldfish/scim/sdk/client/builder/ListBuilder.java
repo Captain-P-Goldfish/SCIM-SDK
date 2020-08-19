@@ -8,23 +8,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
+import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -45,12 +49,13 @@ public class ListBuilder<T extends ResourceNode>
   private final String baseUrl;
 
   /**
-   * the http client configuration to access the scim endpoint
+   * the endpoint path of the resource e.g. /Users or /Groups
    */
-  private final ScimClientConfig scimClientConfig;
+  private final String endpoint;
 
   /**
-   * the entity type that should be returned
+   * the entity type that should be returned. Has actually no usage but is only here to setup the generic type
+   * of this instance
    */
   private final Class<T> responseEntityType;
 
@@ -60,11 +65,17 @@ public class ListBuilder<T extends ResourceNode>
   @Getter(AccessLevel.PROTECTED)
   private final Map<String, String> requestParameters = new HashMap<>();
 
-  public ListBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  /**
+   * an apache http client wrapper that offers some convenience methods
+   */
+  private final ScimHttpClient scimHttpClient;
+
+  public ListBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
-    this.scimClientConfig = scimClientConfig;
+    this.endpoint = endpoint;
     this.responseEntityType = responseEntityType;
+    this.scimHttpClient = scimHttpClient;
   }
 
   /**
@@ -200,7 +211,7 @@ public class ListBuilder<T extends ResourceNode>
   /**
    * a request builder that builds the list-request as a http-get request
    */
-  public static class GetRequestBuilder<T extends ResourceNode> extends RequestBuilder<T>
+  public static class GetRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
   {
 
     /**
@@ -210,7 +221,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public GetRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType);
+      super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
+            listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
@@ -218,32 +230,9 @@ public class ListBuilder<T extends ResourceNode>
      * {@inheritDoc}
      */
     @Override
-    public RequestBuilder<T> setEndpoint(String endpoint)
+    protected boolean isExpectedResponseCode(int httpStatus)
     {
-      return super.setEndpoint(endpoint);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
-    {
-      Class<T1> type = httpResponseCode == HttpStatus.OK ? (Class<T1>)ListResponse.class
-        : (Class<T1>)ErrorResponse.class;
-      if (ListResponse.class.equals(type))
-      {
-        ListResponse<T> listResponse = new ListResponse<>(getResponseEntityType());
-        JsonNode jsonNode = JsonHelper.readJsonDocument(responseBody);
-        jsonNode.fields().forEachRemaining(stringJsonNodeEntry -> {
-          listResponse.set(stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
-        });
-        return (T1)listResponse;
-      }
-      else
-      {
-        return JsonHelper.readJsonDocument(responseBody, type);
-      }
+      return HttpStatus.OK == httpStatus;
     }
 
     /**
@@ -271,12 +260,39 @@ public class ListBuilder<T extends ResourceNode>
       }
       return new HttpGet(getBaseUrl() + getEndpoint() + queryBuilder.toString());
     }
+
+    /**
+     * checks if the response contains a schema-uri that matches the value of
+     * {@link de.captaingoldfish.scim.sdk.common.constants.SchemaUris#LIST_RESPONSE_URI}
+     */
+    @Override
+    protected Function<HttpResponse, Boolean> isResponseParseable()
+    {
+      return httpResponse -> {
+        String responseBody = httpResponse.getResponseBody();
+        if (StringUtils.isNotBlank(responseBody) && responseBody.contains(SchemaUris.LIST_RESPONSE_URI))
+        {
+          return true;
+        }
+        return false;
+      };
+    }
+
+    /**
+     * uses a custom response type that overrides the translation of the returned resource
+     */
+    @Override
+    protected ServerResponse<ListResponse<T>> toResponse(HttpResponse response)
+    {
+      return new ListServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()),
+                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable());
+    }
   }
 
   /**
    * a request builder that builds the list-request as a http-post request
    */
-  public static class PostRequestBuilder<T extends ResourceNode> extends RequestBuilder<T>
+  public static class PostRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
   {
 
     /**
@@ -286,7 +302,8 @@ public class ListBuilder<T extends ResourceNode>
 
     public PostRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.scimClientConfig, listBuilder.responseEntityType);
+      super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
+            listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
     }
 
@@ -294,32 +311,9 @@ public class ListBuilder<T extends ResourceNode>
      * {@inheritDoc}
      */
     @Override
-    public RequestBuilder<T> setEndpoint(String endpoint)
+    protected boolean isExpectedResponseCode(int httpStatus)
     {
-      return super.setEndpoint(endpoint);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
-    {
-      Class<T1> type = httpResponseCode == HttpStatus.OK ? (Class<T1>)ListResponse.class
-        : (Class<T1>)ErrorResponse.class;
-      if (ListResponse.class.equals(type))
-      {
-        ListResponse<T> listResponse = new ListResponse<>(getResponseEntityType());
-        JsonNode jsonNode = JsonHelper.readJsonDocument(responseBody);
-        jsonNode.fields().forEachRemaining(stringJsonNodeEntry -> {
-          listResponse.set(stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
-        });
-        return (T1)listResponse;
-      }
-      else
-      {
-        return JsonHelper.readJsonDocument(responseBody, type);
-      }
+      return HttpStatus.OK == httpStatus;
     }
 
     /**
@@ -338,6 +332,79 @@ public class ListBuilder<T extends ResourceNode>
         httpPost.setEntity(stringEntity);
       }
       return httpPost;
+    }
+
+    /**
+     * checks if the response contains a schema-uri that matches the value of
+     * {@link de.captaingoldfish.scim.sdk.common.constants.SchemaUris#LIST_RESPONSE_URI}
+     */
+    @Override
+    protected Function<HttpResponse, Boolean> isResponseParseable()
+    {
+      return httpResponse -> {
+        String responseBody = httpResponse.getResponseBody();
+        if (StringUtils.isNotBlank(responseBody) && responseBody.contains(SchemaUris.LIST_RESPONSE_URI))
+        {
+          return true;
+        }
+        return false;
+      };
+    }
+
+    /**
+     * uses a custom response type that overrides the translation of the returned resource
+     */
+    @Override
+    protected ServerResponse<ListResponse<T>> toResponse(HttpResponse response)
+    {
+      return new ListServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()),
+                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable());
+    }
+  }
+
+  /**
+   * overrides the translation of the returned resource from the server
+   */
+  public static class ListServerResponse<T extends ResourceNode> extends ServerResponse<ListResponse<T>>
+  {
+
+    /**
+     * the generic type of the resources within the list response
+     */
+    private Class<T> responseEntityType;
+
+    public ListServerResponse(HttpResponse httpResponse,
+                              boolean expectedResponseCode,
+                              Class<ListResponse<T>> type,
+                              Class<T> responseEntityType,
+                              Function<HttpResponse, Boolean> isResponseParseable)
+    {
+      super(httpResponse, expectedResponseCode, type, isResponseParseable);
+      this.responseEntityType = responseEntityType;
+    }
+
+    /**
+     * translates the response body into a list response and parses then all json nodes within the resource into
+     * objects of the given resource node type
+     *
+     * @param responseType the type of the node which might be of type
+     *          {@link de.captaingoldfish.scim.sdk.common.resources.User},
+     *          {@link de.captaingoldfish.scim.sdk.common.resources.Group}
+     * @return a list response with resources of type R
+     */
+    @Override
+    public <R extends ScimObjectNode> R getResource(Class<R> responseType)
+    {
+      ListResponse<ScimObjectNode> listResponse = JsonHelper.readJsonDocument(getResponseBody(), ListResponse.class);
+      List<T> typedResources = listResponse.getListedResources().parallelStream().map(scimObjectNode -> {
+        return JsonHelper.readJsonDocument(scimObjectNode.toString(), responseEntityType);
+      }).collect(Collectors.toList());
+      ListResponse typedListResponse = new ListResponse<>(responseEntityType);
+      typedListResponse.setItemsPerPage(listResponse.getItemsPerPage());
+      typedListResponse.setStartIndex(listResponse.getStartIndex());
+      typedListResponse.setTotalResults(listResponse.getTotalResults());
+      typedListResponse.setListedResources(typedResources);
+      return (R)typedListResponse;
     }
   }
 

@@ -116,4 +116,13 @@ public class JsonHelperTest
     Assertions.assertFalse(JsonHelper.getArrayAttribute(jsonNode, "unknown").isPresent());
     Assertions.assertThrows(IncompatibleAttributeException.class, () -> JsonHelper.getArrayAttribute(jsonNode, "id"));
   }
+
+  /**
+   * asserts that an empty string is seen as invalid json
+   */
+  @Test
+  public void testEmptyStringIsNotJson()
+  {
+    Assertions.assertFalse(JsonHelper.isValidJson(""));
+  }
 }

@@ -32,6 +32,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -207,6 +208,7 @@ public class UserHandler extends ResourceHandler<User>
       log.info(this.getClass().getName() + " deleteResource " + userModel.toString());
     }
     keycloakSession.users().removeUser(keycloakSession.getContext().getRealm(), userModel);
+    log.info("deleted user with username: {}", userModel.getUsername());
   }
 
   /**

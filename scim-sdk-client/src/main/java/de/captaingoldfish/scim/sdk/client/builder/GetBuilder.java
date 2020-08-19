@@ -4,14 +4,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.common.response.GetResponse;
-import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
-import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -22,38 +19,15 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
-  /**
-   * the resource id that should be returned
-   */
-  private String id;
 
-
-  public GetBuilder(String baseUrl, ScimClientConfig scimClientConfig, Class<T> responseEntityType)
+  public GetBuilder(String baseUrl,
+                    String endpoint,
+                    String resourceId,
+                    Class<T> responseEntityType,
+                    ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, scimClientConfig, responseEntityType);
-  }
-
-
-  /**
-   * @param id sets the resource id of the resource that should be returned from the server
-   */
-  public GetBuilder<T> setId(String id)
-  {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for get-requests");
-    }
-    this.id = id;
-    return this;
-  }
-
-  /**
-   * {@inheritDoc}
-   */
-  @Override
-  public GetBuilder<T> setEndpoint(String endpoint)
-  {
-    return (GetBuilder<T>)super.setEndpoint(endpoint);
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
+          scimHttpClient);
   }
 
   /**
@@ -96,10 +70,9 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
-  protected <T1 extends ScimResponse> T1 buildScimResponse(int httpResponseCode, String responseBody)
+  protected boolean isExpectedResponseCode(int httpStatus)
   {
-    Class<T1> type = HttpStatus.OK == httpResponseCode ? (Class<T1>)GetResponse.class : (Class<T1>)ErrorResponse.class;
-    return JsonHelper.readJsonDocument(responseBody, type);
+    return HttpStatus.OK == httpStatus;
   }
 
   /**
@@ -108,11 +81,7 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    if (StringUtils.isBlank(id))
-    {
-      throw new IllegalStateException("id must not be blank for get-requests");
-    }
-    HttpGet httpGet = new HttpGet(getBaseUrl() + getEndpoint() + "/" + id);
+    HttpGet httpGet = new HttpGet(getBaseUrl() + getEndpoint());
     if (isUseIfMatch())
     {
       httpGet.setHeader(HttpHeader.IF_MATCH_HEADER, getVersion().toString());

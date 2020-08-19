@@ -119,8 +119,9 @@ public class PatchResourceHandler extends AbstractPatch
         || jsonNode.get(schemaAttribute.getName()) != null
            && Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()))
     {
-      throw new BadRequestException("attribute cannot be written it has a mutability of '"
-                                    + schemaAttribute.getMutability() + "'", null, ScimType.RFC7644.MUTABILITY);
+      throw new BadRequestException("attribute with name '" + schemaAttribute.getFullResourceName()
+                                    + "' cannot be written it has a mutability of '" + schemaAttribute.getMutability()
+                                    + "'", null, ScimType.RFC7644.MUTABILITY);
     }
   }
 

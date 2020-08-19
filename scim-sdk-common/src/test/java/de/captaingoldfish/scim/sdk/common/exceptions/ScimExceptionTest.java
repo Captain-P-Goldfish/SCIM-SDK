@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.common.exceptions;
 
 import java.lang.reflect.Modifier;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -12,6 +14,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
+import org.reflections.util.ConfigurationBuilder;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,9 +32,23 @@ public class ScimExceptionTest
   /**
    * extracts all exceptions defined in the exceptions package
    */
-  private static Stream<Arguments> getExceptions()
+  public static Stream<Arguments> getExceptions()
   {
-    Reflections reflections = new Reflections(ScimException.class.getPackage().getName());
+    final String exceptionPackage = ScimException.class.getPackage().getName();
+    final String resourcePath = "/" + exceptionPackage.replaceAll("\\.", "/");
+    final URL exceptionPackageUrl = ScimException.class.getResource(resourcePath);
+    final URL mainExceptionPackageUrl;
+    try
+    {
+      mainExceptionPackageUrl = new URL(exceptionPackageUrl.toString().replace("test-classes", "classes"));
+    }
+    catch (MalformedURLException e)
+    {
+      throw new IllegalStateException(e.getMessage(), e);
+    }
+    Assertions.assertNotNull(exceptionPackageUrl);
+    Reflections reflections = new Reflections(new ConfigurationBuilder().setUrls(mainExceptionPackageUrl)
+                                                                        .setScanners(new SubTypesScanner()));
     Set<Class<? extends Exception>> subTypes = reflections.getSubTypesOf(Exception.class);
     subTypes.removeIf(RuntimeException.class::equals);
     List<Arguments> argumentList = new ArrayList<>();

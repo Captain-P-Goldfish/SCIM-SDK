@@ -5,6 +5,7 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -13,6 +14,7 @@ import lombok.Builder;
  * <br>
  * A complex type that specifies Sort configuration options. REQUIRED.
  */
+@NoArgsConstructor
 public class SortConfig extends ScimObjectNode
 {
 

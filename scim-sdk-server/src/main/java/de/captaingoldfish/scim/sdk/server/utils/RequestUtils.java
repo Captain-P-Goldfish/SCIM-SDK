@@ -79,8 +79,8 @@ public final class RequestUtils
   /**
    * parses the given attributes into an array of strings
    *
-   * @param attributes the attributes request parameter that is expected to be a comma seperated string
-   * @return the array of the seperated attribute names or an empty
+   * @param attributes the attributes request parameter that is expected to be a comma separated string
+   * @return the array of the separated attribute names or an empty
    */
   private static Optional<String[]> getAttributeList(String attributes)
   {
@@ -88,7 +88,7 @@ public final class RequestUtils
     {
       return Optional.empty();
     }
-    if (!attributes.matches("(^[a-zA-Z0-9][:a-zA-Z0-9.,]+[a-zA-Z0-9]$)*"))
+    if (!attributes.matches("(^[a-zA-Z0-9]([:a-zA-Z0-9.,]+)?[a-zA-Z0-9]$)*"))
     {
       String errorMessage = "the attributes or excludedAttributes parameter '" + attributes + "' is malformed please "
                             + "check your syntax and please note that whitespaces are not allowed.";

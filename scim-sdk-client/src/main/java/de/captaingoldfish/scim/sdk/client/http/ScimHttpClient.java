@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.client.http;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
@@ -8,7 +9,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
 
@@ -21,13 +21,12 @@ import org.apache.http.conn.ConnectTimeoutException;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.exceptions.ConnectTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.IORuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SocketTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException;
-import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -46,8 +45,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 // @formatter:on
 @Slf4j
-@Builder
-public class ScimHttpClient
+public class ScimHttpClient implements Closeable
 {
 
   /**
@@ -60,44 +58,18 @@ public class ScimHttpClient
    * reads the timeout in seconds for setting up a connection<br>
    * <b>default: </b>3
    */
-  private int connectTimeout;
+  @Getter
+  private ScimClientConfig scimClientConfig;
 
   /**
-   * reads the timeout in seconds for a request <br>
-   * <b>default: </b>3
+   * used to send requests to the server
    */
-  private int requestTimeout;
+  private CloseableHttpClient httpClient;
 
-  /**
-   * reads the timeout in seconds for a request <br>
-   * <b>default: </b>3
-   */
-  private int socketTimeout;
-
-  /**
-   * a helper that will simplify using the proxy settings
-   */
-  private ProxyHelper proxy;
-
-  /**
-   * verimi demands client authentication on the token endpoint and the user-info endpoint
-   */
-  private KeyStoreWrapper tlsClientAuthenticatonKeystore;
-
-  /**
-   * in case that a truststore is used for testing
-   */
-  private KeyStoreWrapper truststore;
-
-  /**
-   * in case that the default hostname verifier should not be used
-   */
-  private HostnameVerifier hostnameVerifier;
-
-  /**
-   * may be used to manipulate the apache configuration before the http client is created
-   */
-  private ConfigManipulator configManipulator;
+  public ScimHttpClient(ScimClientConfig scimClientConfig)
+  {
+    this.scimClientConfig = scimClientConfig;
+  }
 
   /**
    * translates an apache {@link CloseableHttpResponse} to an {@link HttpResponse} object
@@ -112,7 +84,7 @@ public class ScimHttpClient
     Arrays.stream(response.getAllHeaders()).forEach(header -> headers.put(header.getName(), header.getValue()));
     return HttpResponse.builder()
                        .httpStatusCode(response.getStatusLine().getStatusCode())
-                       .responseBody(response.getEntity() == null ? ""
+                       .responseBody(response.getEntity() == null ? null
                          : IOUtils.toString(response.getEntity().getContent(), StandardCharsets.UTF_8))
                        .responseHeaders(headers)
                        .build();
@@ -127,25 +99,26 @@ public class ScimHttpClient
   {
     HttpClientBuilder clientBuilder = HttpClientBuilder.create();
     CredentialsProvider credentialsProvider = null;
-    if (proxy != null && proxy.isProxySet())
+    if (scimClientConfig.getProxy() != null && scimClientConfig.getProxy().isProxySet())
     {
-      credentialsProvider = proxy.getProxyCredentials();
+      credentialsProvider = scimClientConfig.getProxy().getProxyCredentials();
     }
     clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-    if (tlsClientAuthenticatonKeystore != null || truststore != null)
+    if (scimClientConfig.getClientAuth() != null || scimClientConfig.getTruststore() != null)
     {
-      clientBuilder.setSSLContext(SSLContextHelper.getSslContext(tlsClientAuthenticatonKeystore, truststore));
+      clientBuilder.setSSLContext(SSLContextHelper.getSslContext(scimClientConfig.getClientAuth(),
+                                                                 scimClientConfig.getTruststore()));
     }
 
     clientBuilder.setConnectionReuseStrategy((response, context) -> false);
-    if (hostnameVerifier != null)
+    if (scimClientConfig.getHostnameVerifier() != null)
     {
-      clientBuilder.setSSLHostnameVerifier(hostnameVerifier);
+      clientBuilder.setSSLHostnameVerifier(scimClientConfig.getHostnameVerifier());
     }
     clientBuilder.setDefaultRequestConfig(getRequestConfig());
-    if (configManipulator != null)
+    if (scimClientConfig.getConfigManipulator() != null)
     {
-      configManipulator.modifyHttpClientConfig(clientBuilder);
+      scimClientConfig.getConfigManipulator().modifyHttpClientConfig(clientBuilder);
     }
     return clientBuilder.build();
   }
@@ -158,34 +131,34 @@ public class ScimHttpClient
   public RequestConfig getRequestConfig()
   {
     RequestConfig.Builder configBuilder;
-    if (proxy == null)
+    if (scimClientConfig.getProxy() == null)
     {
       configBuilder = RequestConfig.copy(RequestConfig.DEFAULT);
     }
     else
     {
-      RequestConfig proxyConfig = proxy.getProxyConfig();
+      RequestConfig proxyConfig = scimClientConfig.getProxy().getProxyConfig();
       configBuilder = RequestConfig.copy(proxyConfig);
     }
-    if (connectTimeout > 0)
+    if (scimClientConfig.getConnectTimeout() > 0)
     {
-      configBuilder.setConnectTimeout(connectTimeout * TIMEOUT_MILLIS);
-      log.debug("connection timeout '{}' seconds", connectTimeout);
+      configBuilder.setConnectTimeout(scimClientConfig.getConnectTimeout() * TIMEOUT_MILLIS);
+      log.debug("connection timeout '{}' seconds", scimClientConfig.getConnectTimeout());
     }
-    if (socketTimeout > 0)
+    if (scimClientConfig.getSocketTimeout() > 0)
     {
-      configBuilder.setSocketTimeout(socketTimeout * TIMEOUT_MILLIS);
-      log.debug("socket timeout '{}' seconds", socketTimeout);
+      configBuilder.setSocketTimeout(scimClientConfig.getSocketTimeout() * TIMEOUT_MILLIS);
+      log.debug("socket timeout '{}' seconds", scimClientConfig.getSocketTimeout());
     }
-    if (requestTimeout > 0)
+    if (scimClientConfig.getRequestTimeout() > 0)
     {
-      configBuilder.setConnectionRequestTimeout(requestTimeout * TIMEOUT_MILLIS);
-      log.debug("request timeout '{}' seconds", requestTimeout);
+      configBuilder.setConnectionRequestTimeout(scimClientConfig.getRequestTimeout() * TIMEOUT_MILLIS);
+      log.debug("request timeout '{}' seconds", scimClientConfig.getRequestTimeout());
     }
 
-    if (configManipulator != null)
+    if (scimClientConfig.getConfigManipulator() != null)
     {
-      configManipulator.modifyRequestConfig(configBuilder);
+      scimClientConfig.getConfigManipulator().modifyRequestConfig(configBuilder);
     }
     return configBuilder.build();
   }
@@ -205,8 +178,11 @@ public class ScimHttpClient
    */
   public HttpResponse sendRequest(HttpUriRequest uriRequest)
   {
-    try (CloseableHttpClient httpClient = getHttpClient();
-      CloseableHttpResponse response = httpClient.execute(uriRequest))
+    if (httpClient == null)
+    {
+      httpClient = getHttpClient();
+    }
+    try (CloseableHttpResponse response = httpClient.execute(uriRequest))
     {
       return toResponse(response);
     }
@@ -216,11 +192,13 @@ public class ScimHttpClient
     }
     catch (ConnectTimeoutException ex)
     {
-      throw new ConnectTimeoutRuntimeException("connection timeout after '" + connectTimeout + "' seconds", ex);
+      throw new ConnectTimeoutRuntimeException("connection timeout after '" + scimClientConfig.getConnectTimeout()
+                                               + "' seconds", ex);
     }
     catch (SocketTimeoutException ex)
     {
-      throw new SocketTimeoutRuntimeException("socket timeout after '" + socketTimeout + "' seconds", ex);
+      throw new SocketTimeoutRuntimeException("socket timeout after '" + scimClientConfig.getSocketTimeout()
+                                              + "' seconds", ex);
     }
     catch (UnknownHostException ex)
     {
@@ -232,4 +210,25 @@ public class ScimHttpClient
     }
   }
 
+  /**
+   * will close the apache http client
+   */
+  @Override
+  public void close()
+  {
+    if (httpClient == null)
+    {
+      return;
+    }
+    try
+    {
+      httpClient.close();
+    }
+    catch (IOException e)
+    {
+      // will never happen since the implementation of httpclient is an InternalHttpClient from apache
+      log.error(e.getMessage(), e);
+    }
+    httpClient = null;
+  }
 }

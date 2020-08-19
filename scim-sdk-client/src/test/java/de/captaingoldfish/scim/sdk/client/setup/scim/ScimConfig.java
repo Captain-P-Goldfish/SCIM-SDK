@@ -81,17 +81,6 @@ public class ScimConfig
   }
 
   /**
-   * creates a resource endpoint for scim
-   *
-   * @param serviceProvider the service provider configuration
-   * @return the resource endpoint
-   */
-  private ResourceEndpoint getResourceEndpoint(ServiceProvider serviceProvider)
-  {
-    return new ResourceEndpoint(serviceProvider);
-  }
-
-  /**
    * gets the user resource type that is the core object of the /Users endpoint. We will also activate the
    * auto-filtering extension so that filtering will work on the fly
    *

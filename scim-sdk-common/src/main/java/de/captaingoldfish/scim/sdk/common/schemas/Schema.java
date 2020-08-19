@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -183,11 +184,26 @@ public class Schema extends ResourceNode
   }
 
   /**
+   * the names of the attributes of this schema inclusive the subattribute names. Subattributes will be
+   * displayed in their scimNodeName notation separated with a dot e.g. "name.givenName"
+   *
+   * @return a set of attributes that belongs to this schema
+   */
+  public Set<String> getAttributeNames()
+  {
+    return getAttributes().stream()
+                          .flatMap(attribute -> attribute.getSubAttributes().stream())
+                          .map(SchemaAttribute::getScimNodeName)
+                          .collect(Collectors.toSet());
+  }
+
+  /**
    * removes an attribute definition from this schema
    */
   public void removeAttribute(SchemaAttribute schemaAttribute)
   {
     List<SchemaAttribute> attributes = getAttributes();
+    attributeRegister.remove(schemaAttribute.getScimNodeName());
     attributes.remove(schemaAttribute);
     setAttributes(attributes);
   }

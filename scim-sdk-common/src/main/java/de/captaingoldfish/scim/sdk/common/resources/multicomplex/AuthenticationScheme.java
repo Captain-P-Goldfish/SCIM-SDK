@@ -6,6 +6,7 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidConfigException;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -16,6 +17,7 @@ import lombok.Builder;
  * discovery of configurations, the service provider SHOULD, with the appropriate security considerations,
  * make the authenticationSchemes attribute publicly accessible without prior authentication. REQUIRED.
  */
+@NoArgsConstructor
 public class AuthenticationScheme extends MultiComplexNode
 {
 

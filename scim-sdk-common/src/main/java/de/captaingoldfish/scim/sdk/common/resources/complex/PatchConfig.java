@@ -5,6 +5,7 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -13,6 +14,7 @@ import lombok.Builder;
  * <br>
  * A complex type that specifies PATCH configuration options. REQUIRED. See Section 3.5.2 of [RFC7644].
  */
+@NoArgsConstructor
 public class PatchConfig extends ScimObjectNode
 {
 

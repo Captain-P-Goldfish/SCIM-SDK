@@ -5,17 +5,13 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-keycloak-example</artifactId>
-        <version>1.3.4-SNAPSHOT</version>
+        <version>1.4.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>keycloak-scim-ear</artifactId>
     <name>SCIM SDK keycloak ear</name>
 
     <packaging>ear</packaging>
-
-    <properties>
-        <module.name>de.captaingoldfish.scim.sdk.keycloak.scim.ear</module.name>
-    </properties>
 
     <dependencies>
         <dependency>

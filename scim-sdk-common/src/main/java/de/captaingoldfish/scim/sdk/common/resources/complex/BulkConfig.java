@@ -6,6 +6,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -16,6 +17,7 @@ import lombok.Builder;
  * <br>
  * A complex type that specifies bulk configuration options. See Section 3.7 of [RFC7644]. REQUIRED.
  */
+@NoArgsConstructor
 public class BulkConfig extends ScimObjectNode
 {
 

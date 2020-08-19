@@ -5,25 +5,19 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-samples</artifactId>
-        <version>1.3.4-SNAPSHOT</version>
+        <version>1.4.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-sdk-springboot-example</artifactId>
 
     <name>SCIM SDK springboot example</name>
 
-    <properties>
-        <module.name>de.captaingoldfish.scim.sdk.springboot.sample</module.name>
-
-        <version.spring.boot>2.2.0.RELEASE</version.spring.boot>
-    </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
-                <version>${version.spring.boot}</version>
+                <version>${version.springboot}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -61,6 +55,10 @@
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>jakarta.xml.bind-api</artifactId>
+                    <groupId>jakarta.xml.bind</groupId>
+                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>
@@ -70,7 +68,7 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <version>${version.spring.boot}</version>
+                <version>${version.springboot}</version>
                 <executions>
                     <execution>
                         <goals>

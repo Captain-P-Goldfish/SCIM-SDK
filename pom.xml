@@ -6,7 +6,7 @@
     <artifactId>scim-sdk-parent</artifactId>
 
     <packaging>pom</packaging>
-    <version>1.3.4-SNAPSHOT</version>
+    <version>1.4.3-SNAPSHOT</version>
 
     <name>SCIM SDK</name>
     <description>A full SCIM 2.0 open source implementation</description>
@@ -53,12 +53,13 @@
         <module>scim-sdk-server</module>
         <module>scim-sdk-client</module>
         <module>scim-sdk-common</module>
+        <module>integration-tests</module>
         <module>samples</module>
     </modules>
 
     <properties>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>11</maven.compiler.source>
+        <maven.compiler.target>11</maven.compiler.target>
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -66,31 +67,34 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.basedir}</formatter-path>
 
-        <version.lombok>1.18.10</version.lombok>
+        <version.lombok>1.18.12</version.lombok>
+        <version.mapstruct>1.3.1.Final</version.mapstruct>
 
         <!-- application dependencies -->
-        <version.apache.commons.lang3>3.9</version.apache.commons.lang3>
+        <version.apache.commons.lang3>3.10</version.apache.commons.lang3>
         <version.commons.io>2.6</version.commons.io>
-        <version.jackson>2.10.2</version.jackson>
-        <version.ws.rs.api>2.1.1</version.ws.rs.api>
-        <version.antlr>4.8</version.antlr>
-        <version.apache.http.client>4.5.11</version.apache.http.client>
+        <version.jackson>2.11.0</version.jackson>
+        <version.antlr>4.8-1</version.antlr>
+        <version.apache.http.client>4.5.12</version.apache.http.client>
         <version.apache.http.core>4.4.13</version.apache.http.core>
-        <version.bouncy.castle>1.64</version.bouncy.castle>
+        <version.bouncy.castle>1.65</version.bouncy.castle>
 
+        <version.ws.rs.api>2.1.1</version.ws.rs.api>
+        <version.jaxb.api>2.3.0</version.jaxb.api>
+        <version.javax.activation>1.2.0</version.javax.activation>
 
         <!-- logging dependencies -->
-        <version.log4j2>2.13.0</version.log4j2>
+        <version.log4j2>2.13.2</version.log4j2>
         <version.slf4j>1.7.30</version.slf4j>
 
         <!-- test dependencies -->
         <version.junit.jupiter>5.5.2</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.9.12</version.reflections>
-        <version.mockito>3.2.4</version.mockito>
-        <version.resteasy.jaxrs>3.10.0.Final</version.resteasy.jaxrs>
-        <version.equalsverifier>3.1.12</version.equalsverifier>
-        <version.springboot>2.2.4.RELEASE</version.springboot>
+        <version.mockito>3.3.3</version.mockito>
+        <version.resteasy.jaxrs>3.11.2.Final</version.resteasy.jaxrs>
+        <version.equalsverifier>3.1.13</version.equalsverifier>
+        <version.springboot>2.2.6.RELEASE</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
 
         <!-- plugins -->
@@ -117,6 +121,12 @@
                 <artifactId>lombok</artifactId>
                 <scope>provided</scope>
                 <version>${version.lombok}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.mapstruct</groupId>
+                <artifactId>mapstruct-processor</artifactId>
+                <scope>provided</scope>
+                <version>${version.mapstruct}</version>
             </dependency>
 
             <!-- application dependencies -->
@@ -159,14 +169,24 @@
             </dependency>
             <!-- end json libraries -->
             <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4</artifactId>
+                <version>${version.antlr}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.ws.rs</groupId>
                 <artifactId>javax.ws.rs-api</artifactId>
                 <version>${version.ws.rs.api}</version>
             </dependency>
             <dependency>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr4</artifactId>
-                <version>${version.antlr}</version>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${version.jaxb.api}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>javax.activation</artifactId>
+                <version>${version.javax.activation}</version>
             </dependency>
 
             <dependency>
@@ -189,7 +209,6 @@
                 <artifactId>bcpkix-jdk15on</artifactId>
                 <version>${version.bouncy.castle}</version>
             </dependency>
-
 
             <!-- logging dependencies -->
             <dependency>
@@ -264,6 +283,12 @@
                 <artifactId>resteasy-jaxrs</artifactId>
                 <version>${version.resteasy.jaxrs}</version>
                 <scope>test</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.jboss.spec.javax.xml.bind</groupId>
+                        <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>nl.jqno.equalsverifier</groupId>
@@ -283,13 +308,11 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-security</artifactId>
                 <version>${version.springboot}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-web</artifactId>
                 <version>${version.springboot}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -317,6 +340,10 @@
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct-processor</artifactId>
+        </dependency>
 
         <!-- application dependencies -->
         <dependency>
@@ -335,7 +362,10 @@
             <groupId>javax.ws.rs</groupId>
             <artifactId>javax.ws.rs-api</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
 
         <!-- logging dependencies -->
         <dependency>
@@ -422,6 +452,13 @@
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                     <encoding>${project.build.sourceEncoding}</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${version.lombok}</version>
+                        </path>
+                    </annotationProcessorPaths>
                 </configuration>
             </plugin>
 
@@ -429,6 +466,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${version.maven.surefire.plugin}</version>
+                <configuration>
+                    <forkCount>0</forkCount>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -483,25 +523,10 @@
                 <artifactId>versions-maven-plugin</artifactId>
                 <version>${version.maven.versions.plugin}</version>
             </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-jar-plugin</artifactId>
-                <version>${version.maven.jar.plugin}</version>
-                <configuration>
-                    <archive>
-                        <manifestEntries>
-                            <!--suppress UnresolvedMavenProperty -->
-                            <Automatic-Module-Name>${module.name}</Automatic-Module-Name>
-                        </manifestEntries>
-                    </archive>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
-
         <profile>
             <id>release-only</id>
             <activation>
@@ -539,6 +564,7 @@
                         </executions>
                         <configuration>
                             <additionalOptions>-Xdoclint:none</additionalOptions>
+                            <source>8</source>
                         </configuration>
                     </plugin>
 
