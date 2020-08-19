@@ -4,6 +4,16 @@ It is a full fleshed SCIM implementation that is easily integrated into keycloak
 within the web admin console. You'll be able to restrict access of endpoints with roles and to specific clients
 . Select the option `scim` on entry `Admin Console Theme` and reload the page (Press F5).
 
+## Keycloak support matrix 
+
+|  version | supported          | easily adapted         |
+| :------- | :----------------- | :--------------------- |
+| lower    | :x:                | :heavy_check_mark:     |
+| 8.0.x    | :x:                | :heavy_check_mark:     |
+| 9.0.x    | :heavy_check_mark: |                        |
+| 10.0.x   | :heavy_check_mark: |                        |
+| 11.0.0   | :heavy_check_mark: |                        |
+
 ## Deploy into a standalone keycloak server?
 
 Switch into the parent directory "SCIM-SDK" and build the project once with `mvn package -DskipTests`.
