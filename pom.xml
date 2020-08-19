@@ -80,7 +80,7 @@
         <version.bouncy.castle>1.66</version.bouncy.castle>
 
         <!-- dependency conflicts -->
-        <version.javassist>3.26.0-GA</version.javassist>
+        <version.javassist>3.27.0-GA</version.javassist>
 
         <!-- logging dependencies -->
         <version.log4j2>2.13.3</version.log4j2>
