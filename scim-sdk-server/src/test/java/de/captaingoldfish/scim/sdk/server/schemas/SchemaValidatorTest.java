@@ -59,6 +59,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -1768,6 +1769,42 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * this test will verify that a field that is defined as multivalued attribute can be set as simple single
+   * valued attribute and is then converted automatically into a one-size array.<br>
+   * <br>
+   * 
+   * <pre>
+   *   "strings": "123456"
+   * </pre>
+   * 
+   * should become
+   * 
+   * <pre>
+   *   "strings": ["123456"]
+   * </pre>
+   */
+  @Test
+  public void testSimpleSingleValueAttributeAsMultiValuedAttribute()
+  {
+    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
+    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         allTypesResourceTypeJson,
+                                                                         allTypesValidationSchema,
+                                                                         enterpriseUserValidationSchema);
+    SchemaAttribute stringArrayAttribute = resourceType.getMainSchema().getSchemaAttribute("stringArray");
+    stringArrayAttribute.setMinItems(null); // do not require a minimum array size default is set to 2 here
+
+    AllTypes allTypes = new AllTypes(true);
+    // see method AllTypes#setStringArray
+    allTypes.set("stringArray", new TextNode("123456"));
+
+    successfulValidationForRequest(resourceType, allTypes);
+  }
+
+  /**
    * this test will verify that the attribute validation is executed correctly
    */
   @TestFactory
@@ -2341,7 +2378,7 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * verifies that the documentation validation fails in case of request if the document evaluates to an empty
+   * verifies that the document validation fails in case of request if the document evaluates to an empty
    * document. For example: this happens if the attributes within the document are not writable
    */
   @Test
@@ -2372,8 +2409,8 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * verifies that the documentation does not throw any exceptions anymore if the response-document evaluates to
-   * an empty document. RFC7644 Tells us that a body SHOULD be returned but it must not
+   * verifies that the document does not throw any exceptions anymore if the response-document evaluates to an
+   * empty document. RFC7644 Tells us that a body SHOULD be returned but it must not
    */
   @Test
   public void testValidateReceivedDocumentToEmptyDocumentForResponse()

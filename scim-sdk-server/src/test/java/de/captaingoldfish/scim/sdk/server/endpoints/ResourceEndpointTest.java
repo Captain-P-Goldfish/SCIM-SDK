@@ -1329,8 +1329,9 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(patchOp)
                                                                                 .path(path)
-                                                                                .values(Arrays.asList("captain"))
+                                                                                .value("captain")
                                                                                 .build());
+
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
     Meta meta = Meta.builder()

@@ -2959,6 +2959,7 @@ public class PatchTargetHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
+      log.error(ex.getMessage(), ex);
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
       MatcherAssert.assertThat(ex.getDetail(),
