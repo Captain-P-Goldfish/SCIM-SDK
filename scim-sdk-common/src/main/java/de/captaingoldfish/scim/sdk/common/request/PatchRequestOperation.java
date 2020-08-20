@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -90,7 +91,18 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   public void setValues(List<String> value)
   {
-    setAttributeList(AttributeNames.RFC7643.VALUE, value);
+    if (value == null || value.size() > 1)
+    {
+      setAttributeList(AttributeNames.RFC7643.VALUE, value);
+    }
+    else if (value.size() == 1)
+    {
+      setAttribute(AttributeNames.RFC7643.VALUE, value.get(0));
+    }
+    else
+    {
+      setAttribute(AttributeNames.RFC7643.VALUE, (String)null);
+    }
   }
 
   /**
@@ -101,4 +113,13 @@ public class PatchRequestOperation extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.VALUE, value == null ? null : Collections.singletonList(value));
   }
 
+  public static class PatchRequestOperationBuilder
+  {
+
+    public PatchRequestOperationBuilder value(String value)
+    {
+      this.values(Arrays.asList(value));
+      return this;
+    }
+  }
 }

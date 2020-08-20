@@ -618,11 +618,14 @@ public class SchemaValidator
   private Optional<JsonNode> checkMetaAttributeOnDocument(JsonNode document, SchemaAttribute schemaAttribute)
   {
     JsonNode documentNode = document.get(schemaAttribute.getName());
-    log.trace("validating attribute '{}' with value '{}'",
-              schemaAttribute.getName(),
-              Optional.ofNullable(documentNode)
-                      .map(JsonNode::textValue)
-                      .orElse(Optional.ofNullable(documentNode).map(JsonNode::toString).orElse(null)));
+    if (log.isTraceEnabled())
+    {
+      log.trace("validating attribute '{}' with value '{}'",
+                schemaAttribute.getName(),
+                Optional.ofNullable(documentNode)
+                        .map(JsonNode::textValue)
+                        .orElse(Optional.ofNullable(documentNode).map(JsonNode::toString).orElse(null)));
+    }
     validateIsRequired(documentNode, schemaAttribute);
     if (directionType != null && directionType.equals(DirectionType.RESPONSE) && documentNode == null
         && schemaAttribute.getReferenceTypes().contains(ReferenceTypes.RESOURCE))
@@ -649,7 +652,7 @@ public class SchemaValidator
     {
       return Optional.empty();
     }
-    validateComplexAndArrayTypeAttribute(documentNode, schemaAttribute);
+    documentNode = validateComplexAndArrayTypeAttribute(documentNode, schemaAttribute);
 
     if (schemaAttribute.isMultiValued())
     {
@@ -712,7 +715,7 @@ public class SchemaValidator
    * @param document the document part to validate
    * @param schemaAttribute the meta information of the attribute
    */
-  private void validateComplexAndArrayTypeAttribute(JsonNode document, SchemaAttribute schemaAttribute)
+  private JsonNode validateComplexAndArrayTypeAttribute(JsonNode document, SchemaAttribute schemaAttribute)
   {
     Supplier<String> errorMessage = () -> String.format("the attribute '%s' does not apply to its defined type. The "
                                                         + "received document node is of type '%s' but the schema"
@@ -726,19 +729,35 @@ public class SchemaValidator
                                                         document.toString());
     if (schemaAttribute.isMultiValued())
     {
-      if (document != null && !document.isArray() || document != null && Type.COMPLEX.equals(schemaAttribute.getType())
-                                                     && document.size() != 0 && !document.get(0).isObject())
+      boolean isComplexExpected = Type.COMPLEX.equals(schemaAttribute.getType());
+      boolean isNodeMultiValuedComplex = document == null
+                                         || document.isArray() && document.size() > 0 && document.get(0).isObject()
+                                         || document.isArray() && document.size() == 0;
+
+      boolean isSimpleMultiValuedExpected = !isComplexExpected;
+      boolean isNodeSimpleMultiValued = document == null || document.isArray();
+
+      if (isSimpleMultiValuedExpected && !isNodeSimpleMultiValued && !isNodeMultiValuedComplex)
+      {
+        ArrayNode arrayNode = new ScimArrayNode(schemaAttribute);
+        arrayNode.add(document);
+        return arrayNode;
+      }
+
+      if (isSimpleMultiValuedExpected && !isNodeSimpleMultiValued || isComplexExpected && !isNodeMultiValuedComplex)
       {
         throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
       }
     }
     else if (Type.COMPLEX.equals(schemaAttribute.getType()))
     {
-      if (document != null && !document.isObject())
+      boolean isNodeComplex = document == null || document.isObject();
+      if (!isNodeComplex)
       {
         throw new DocumentValidationException(errorMessage.get(), null, getHttpStatus(), null);
       }
     }
+    return document;
   }
 
   /**
