@@ -5,6 +5,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
+import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -54,6 +55,11 @@ public class EndpointFeatureHandler
                                           EndpointType endpointType,
                                           Authorization authorization)
   {
+    ResourceTypeAuthorization resourceTypeAuthorization = resourceType.getFeatures().getAuthorization();
+    if (!resourceTypeAuthorization.isAuthenticated())
+    {
+      return;
+    }
     if (authorization != null)
     {
       authorization.isClientAuthorized(resourceType, endpointType);

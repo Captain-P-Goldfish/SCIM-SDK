@@ -22,6 +22,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -44,11 +45,18 @@ public class ETagHandler
    * @param resourceNode the current resource node
    * @return the version set by the developer or a base64 encoded SHA-1 hash. An empty if etag is not supported
    */
-  public static Optional<ETag> getResourceVersion(ServiceProvider serviceProvider, ResourceNode resourceNode)
+  public static Optional<ETag> getResourceVersion(ServiceProvider serviceProvider,
+                                                  ResourceType resourceType,
+                                                  ResourceNode resourceNode)
   {
     if (!serviceProvider.getETagConfig().isSupported())
     {
       log.trace("not handling eTags for service provider support for eTags is set to false");
+      return Optional.empty();
+    }
+    else if (!resourceType.getFeatures().getETagFeature().isEnabled())
+    {
+      log.trace("not handling eTags for support on resource type {} is disabled", resourceType.getName());
       return Optional.empty();
     }
     Optional<ETag> version = resourceNode.getMeta().flatMap(Meta::getVersion);
@@ -93,12 +101,18 @@ public class ETagHandler
    * @param httpHeaders the http headers that might contain the corresponding http request headers
    */
   public static void validateVersion(ServiceProvider serviceProvider,
+                                     ResourceType resourceType,
                                      Supplier<ResourceNode> currentState,
                                      Map<String, String> httpHeaders)
   {
     if (!serviceProvider.getETagConfig().isSupported())
     {
-      log.debug("not handling eTags for service provider support for eTags is set to false");
+      log.trace("not handling eTags for service provider support for eTags is set to false");
+      return;
+    }
+    else if (!resourceType.getFeatures().getETagFeature().isEnabled())
+    {
+      log.trace("not handling eTags for for support on resource type {} is disabled", resourceType.getName());
       return;
     }
     Optional<ETag> ifNoneMatchEtag = getETagFromHeader(httpHeaders, true);

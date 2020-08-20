@@ -1,5 +1,8 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.authorize;
 
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 import org.slf4j.Logger;
@@ -27,7 +30,10 @@ public interface Authorization
    * this is just a marker for error messages that will be printed into the log for debug purposes to be able to
    * identify the client that tried to do a forbidden action
    */
-  public String getClientId();
+  default String getClientId()
+  {
+    return null;
+  }
 
   /**
    * @return the roles that an authenticated client possesses
@@ -43,19 +49,32 @@ public interface Authorization
    */
   default void isClientAuthorized(ResourceType resourceType, EndpointType endpointType)
   {
+    Set<String> defaultRoles = resourceType.getFeatures().getAuthorization().getRoles();
     switch (endpointType)
     {
       case CREATE:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesCreate());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesCreate(),
+                     defaultRoles);
         break;
       case UPDATE:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesUpdate());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesUpdate(),
+                     defaultRoles);
         break;
       case DELETE:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesDelete());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesDelete(),
+                     defaultRoles);
         break;
       default:
-        isAuthorized(resourceType, endpointType, resourceType.getFeatures().getAuthorization().getRolesGet());
+        isAuthorized(resourceType,
+                     endpointType,
+                     resourceType.getFeatures().getAuthorization().getRolesGet(),
+                     defaultRoles);
     }
   }
 
@@ -66,22 +85,59 @@ public interface Authorization
    * @param endpointType the method that was called by the client
    * @param roles the required roles to access the given endpoint
    */
-  default void isAuthorized(ResourceType resourceType, EndpointType endpointType, Set<String> roles)
+  default void isAuthorized(ResourceType resourceType,
+                            EndpointType endpointType,
+                            Set<String> roles,
+                            Set<String> defaultRoles)
   {
-    if (roles == null || roles.isEmpty())
+    final Set<String> effectiveRoles = new HashSet<>(Optional.ofNullable(roles).orElse(new HashSet<>()));
+    if (effectiveRoles.isEmpty())
+    {
+      effectiveRoles.addAll(defaultRoles);
+    }
+    if (effectiveRoles.isEmpty())
     {
       return;
     }
-    if (!getClientRoles().containsAll(roles))
+    if (!Optional.ofNullable(getClientRoles())
+                 .map(clientRoles -> clientRoles.containsAll(effectiveRoles))
+                 .orElse(false))
     {
       log.debug("the client '{}' tried to execute an action without proper authorization. "
                 + "Required authorization is '{}' but the client has '{}'",
                 getClientId(),
-                roles,
+                effectiveRoles,
                 getClientRoles());
       throw new ForbiddenException("you are not authorized to access the '" + endpointType
                                    + "' endpoint on resource type '" + resourceType.getName() + "'");
     }
+  }
+
+  /**
+   * this method can be used to authenticate a user. This method is called on a request-base which means that
+   * the authentication method is executed once for each request that requires authentication
+   * 
+   * @param httpHeaders in case that the authentication details are sent in the http headers
+   * @param queryParams in case that authentication identifier are used in the query
+   * @return true if the user / client was successfully be authenticated, false else
+   * @see <a href=
+   *      "https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authentication">
+   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authentication
+   *      </a>
+   */
+  default boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams)
+  {
+    return true;
+  }
+
+  /**
+   * the current realm for which the authentication should be executed. This value will be present in the
+   * WWW-Authenticate response header of the {@link de.captaingoldfish.scim.sdk.common.response.ErrorResponse}
+   * object if the authentication has failed
+   */
+  default String getRealm()
+  {
+    return "SCIM";
   }
 
 }

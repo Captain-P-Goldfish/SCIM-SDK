@@ -48,13 +48,26 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   @Getter(AccessLevel.PROTECTED)
   private final List<BulkRequestOperation> bulkRequestOperationList;
 
-  public BulkBuilder(String baseUrl, ScimHttpClient scimHttpClient)
+  /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param baseUrl the fully qualified url to the required resource
+   * @param scimHttpClient the http client instance
+   * @param isFullUrl if the given base url is the fully qualified url or not
+   */
+  public BulkBuilder(String baseUrl, ScimHttpClient scimHttpClient, boolean isFullUrl)
   {
-    super(baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
+    super(isFullUrl ? null : baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
 
     builder = BulkRequest.builder();
     bulkRequestOperationList = new ArrayList<>();
     builder.bulkRequestOperation(bulkRequestOperationList);
+    this.fullUrl = isFullUrl ? baseUrl : null;
   }
 
   /**
@@ -72,7 +85,15 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    HttpPost httpPost;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpPost = new HttpPost(fullUrl);
+    }
     StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
     httpPost.setEntity(stringEntity);
     return httpPost;

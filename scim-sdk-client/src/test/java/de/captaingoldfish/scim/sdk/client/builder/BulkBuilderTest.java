@@ -6,7 +6,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.http.MediaType;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
@@ -38,12 +39,14 @@ public class BulkBuilderTest extends HttpServerMockup
   /**
    * verifies that a bulk request is correctly resolved after return from the server
    */
-  @Test
-  public void testCreateBulkRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testCreateBulkRequest(boolean useFullUrl)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
+    String url = useFullUrl ? getServerUrl() + EndpointPaths.BULK : getServerUrl();
+    BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, useFullUrl);
     ServerResponse<BulkResponse> response = bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
                                                        .bulkId(UUID.randomUUID().toString())
@@ -58,12 +61,14 @@ public class BulkBuilderTest extends HttpServerMockup
   /**
    * causes a precondition failed response from the server by causing errors in the bulk request
    */
-  @Test
-  public void testCreateWithPreconditionFailed()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testCreateWithPreconditionFailed(boolean useFullUrl)
   {
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
+    String url = useFullUrl ? getServerUrl() + EndpointPaths.BULK : getServerUrl();
+    BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, useFullUrl);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
@@ -78,13 +83,15 @@ public class BulkBuilderTest extends HttpServerMockup
   /**
    * causes a payload too large error on the server side
    */
-  @Test
-  public void testPayloadTooLarge()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testPayloadTooLarge(boolean useFullUrl)
   {
     scimConfig.getServiceProvider().getBulkConfig().setMaxPayloadSize(1L);
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
+    String url = useFullUrl ? getServerUrl() + EndpointPaths.BULK : getServerUrl();
+    BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, useFullUrl);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
@@ -99,13 +106,15 @@ public class BulkBuilderTest extends HttpServerMockup
   /**
    * causes a too many operations error on the server side
    */
-  @Test
-  public void testTooManyOperations()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testTooManyOperations(boolean useFullUrl)
   {
     scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(0);
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
+    String url = useFullUrl ? getServerUrl() + EndpointPaths.BULK : getServerUrl();
+    BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, useFullUrl);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
@@ -120,8 +129,9 @@ public class BulkBuilderTest extends HttpServerMockup
   /**
    * assumes that a wrong server was called and a totally unknown response is returned
    */
-  @Test
-  public void testCommunicationWithWrongServer()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testCommunicationWithWrongServer(boolean useFullUrl)
   {
     setGetResponseBody(() -> "an internal server error occurred");
     setGetResponseStatus(() -> HttpStatus.INTERNAL_SERVER_ERROR);
@@ -133,7 +143,8 @@ public class BulkBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    BulkBuilder bulkBuilder = new BulkBuilder(getServerUrl(), scimHttpClient);
+    String url = useFullUrl ? getServerUrl() + EndpointPaths.BULK : getServerUrl();
+    BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, useFullUrl);
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)

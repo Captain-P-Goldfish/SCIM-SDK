@@ -10,7 +10,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
@@ -19,6 +20,7 @@ import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
@@ -56,13 +58,22 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a create request can be successfully built and send to the scim service provider
    */
-  @Test
-  public void testBuildCreateRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildCreateRequest(boolean useFullUrl)
   {
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                      .setResource(user)
-                                                      .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.create(getServerUrl() + EndpointPaths.USERS, User.class)
+                                   .setResource(user)
+                                   .sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.create(User.class, EndpointPaths.USERS).setResource(user).sendRequest();
+    }
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
@@ -78,15 +89,24 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that an error response is correctly parsed
    */
-  @Test
-  public void testBuildCreateRequestWithErrorResponse()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildCreateRequestWithErrorResponse(boolean useFullUrl)
   {
     User user = User.builder().userName("goldfish").build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
-    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                      .setResource(user)
-                                                      .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.create(getServerUrl() + EndpointPaths.USERS, User.class)
+                                   .setResource(user)
+                                   .sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.create(User.class, EndpointPaths.USERS).setResource(user).sendRequest();
+    }
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
@@ -99,8 +119,9 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a get-request can successfully be built
    */
-  @Test
-  public void testBuildGetRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildGetRequest(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -108,7 +129,15 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
-    ServerResponse<User> response = scimRequestBuilder.get(User.class, EndpointPaths.USERS, id).sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.get(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class).sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.get(User.class, EndpointPaths.USERS, id).sendRequest();
+    }
 
     Assertions.assertNotNull(response.getResource());
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
@@ -120,12 +149,21 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a response for a get-request is correctly returned if the user was not found
    */
-  @Test
-  public void testBuildGetRequestWithUserNotFound()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildGetRequestWithUserNotFound(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
 
-    ServerResponse<User> response = scimRequestBuilder.get(User.class, EndpointPaths.USERS, id).sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.get(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class).sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.get(User.class, EndpointPaths.USERS, id).sendRequest();
+    }
 
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -136,8 +174,9 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a delete-request can successfully be built
    */
-  @Test
-  public void testBuildDeleteRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildDeleteRequest(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -145,7 +184,15 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
-    ServerResponse<User> response = scimRequestBuilder.delete(User.class, EndpointPaths.USERS, id).sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.delete(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class).sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.delete(User.class, EndpointPaths.USERS, id).sendRequest();
+    }
 
     Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
@@ -156,12 +203,21 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a response for a get-request is correctly returned if the user was not found
    */
-  @Test
-  public void testBuildDeleteRequestWithUserNotFound()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildDeleteRequestWithUserNotFound(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
 
-    ServerResponse<User> response = scimRequestBuilder.delete(User.class, EndpointPaths.USERS, id).sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.delete(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class).sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.delete(User.class, EndpointPaths.USERS, id).sendRequest();
+    }
 
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -172,8 +228,9 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a delete-request can successfully be built
    */
-  @Test
-  public void testBuildUpdateRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildUpdateRequest(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -182,9 +239,17 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     userHandler.getInMemoryMap().put(id, user);
 
     User updateUser = User.builder().nickName("hello world").build();
-    ServerResponse<User> response = scimRequestBuilder.update(User.class, EndpointPaths.USERS, id)
-                                                      .setResource(updateUser)
-                                                      .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.update(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class)
+                                   .setResource(updateUser)
+                                   .sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.update(User.class, EndpointPaths.USERS, id).setResource(updateUser).sendRequest();
+    }
 
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
@@ -195,15 +260,24 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that a response for a get-request is correctly returned if the user was not found
    */
-  @Test
-  public void testBuildUpdateRequestWithUserNotFound()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildUpdateRequestWithUserNotFound(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
 
     User updateUser = User.builder().nickName("hello world").build();
-    ServerResponse<User> response = scimRequestBuilder.update(User.class, EndpointPaths.USERS, id)
-                                                      .setResource(updateUser)
-                                                      .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.update(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class)
+                                   .setResource(updateUser)
+                                   .sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.update(User.class, EndpointPaths.USERS, id).setResource(updateUser).sendRequest();
+    }
 
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -214,19 +288,20 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   /**
    * verifies that it is possible to add additional http headers to the request
    */
-  @Test
-  public void testSendAdditionalHeaders()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testSendAdditionalHeaders(boolean useFullUrl)
   {
     final Map<String, String[]> httpHeaders = new HashMap<>();
     final String token = UUID.randomUUID().toString();
-    httpHeaders.put(HttpHeader.AUHORIZATION, new String[]{"Bearer " + token, "hello world"});
+    httpHeaders.put(HttpHeader.AUTHORIZATION, new String[]{"Bearer " + token, "hello world"});
     httpHeaders.put(HttpHeader.IF_MATCH_HEADER, new String[]{token});
 
     User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, requestBody) -> {
-      List<String> authHeaders = httpExchange.getRequestHeaders().get(HttpHeader.AUHORIZATION);
+      List<String> authHeaders = httpExchange.getRequestHeaders().get(HttpHeader.AUTHORIZATION);
       Assertions.assertEquals(2, authHeaders.size(), authHeaders.toString());
       Assertions.assertEquals("Bearer " + token, authHeaders.get(0), authHeaders.toString());
       Assertions.assertEquals("hello world", authHeaders.get(1), authHeaders.toString());
@@ -237,9 +312,49 @@ public class ScimRequestBuilderTest extends HttpServerMockup
       wasCalled.set(true);
     });
 
-    scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                      .setResource(user)
-                      .sendRequestWithMultiHeaders(httpHeaders);
+    if (useFullUrl)
+    {
+      scimRequestBuilder.create(getServerUrl() + EndpointPaths.USERS, User.class)
+                        .setResource(user)
+                        .sendRequestWithMultiHeaders(httpHeaders);
+    }
+    else
+    {
+      scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                        .setResource(user)
+                        .sendRequestWithMultiHeaders(httpHeaders);
+    }
     Assertions.assertTrue(wasCalled.get());
+  }
+
+  /**
+   * verifies that a service provider configuration can successfully be read without any problems
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testGetServiceProviderAndReadDetails(boolean useFullUrl)
+  {
+    ServerResponse<ServiceProvider> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.get(getServerUrl() + EndpointPaths.SERVICE_PROVIDER_CONFIG, ServiceProvider.class)
+                                   .sendRequest();
+
+    }
+    else
+    {
+      response = scimRequestBuilder.get(ServiceProvider.class, EndpointPaths.SERVICE_PROVIDER_CONFIG, null)
+                                   .sendRequest();
+    }
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    ServiceProvider serviceProvider = response.getResource();
+    Assertions.assertNotNull(serviceProvider);
+    Assertions.assertDoesNotThrow(serviceProvider::getBulkConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getFilterConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getPatchConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getSortConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getETagConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getChangePasswordConfig);
+    Assertions.assertDoesNotThrow(serviceProvider::getAuthenticationSchemes);
   }
 }

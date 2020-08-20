@@ -1,7 +1,9 @@
 package de.captaingoldfish.scim.sdk.server.schemas;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -123,6 +125,14 @@ public final class SchemaFactory
       return schema;
     }
     return metaSchemas.get(id);
+  }
+
+  /**
+   * @return all registered resource schematas
+   */
+  public Set<Schema> getAllResourceSchemas()
+  {
+    return new HashSet<>(resourceSchemas.values());
   }
 
 }

@@ -47,7 +47,7 @@ public class FilterAttributeNameTest
     {
       Assertions.assertNull(attributeName.getShortName());
       Assertions.assertNull(attributeName.getResourceUri());
-      MatcherAssert.assertThat(attributeName.getFullName(), Matchers.isEmptyString());
+      MatcherAssert.assertThat(attributeName.getFullName(), Matchers.emptyString());
     }
   }
 }

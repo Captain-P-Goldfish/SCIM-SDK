@@ -3,15 +3,20 @@ package de.captaingoldfish.scim.sdk.server.endpoints;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -28,6 +33,34 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   @Getter
   private Class<T> type;
+
+  /**
+   * allows to access the definition of the main schema
+   */
+  @Getter
+  @Setter(AccessLevel.PROTECTED)
+  private Schema schema;
+
+  /**
+   * allows to access the attribute definitions of a schema extension
+   */
+  @Getter
+  @Setter(AccessLevel.PROTECTED)
+  private List<Schema> schemaExtensions;
+
+  /**
+   * gives access to the changePassword value of the current service provider configuration
+   */
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private Supplier<Boolean> changePasswordSupported;
+
+  /**
+   * gives access to the filter max results value of the current service provider configuration
+   */
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private Supplier<Integer> maxResults;
 
   /**
    * default constructor that resolves the generic type for this class
@@ -133,4 +166,22 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   public abstract void deleteResource(String id, Authorization authorization);
 
+  /**
+   * @return true if the value in the in the corresponding value in the
+   *         {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider} configuration is true, false
+   *         else
+   */
+  public final boolean isChangePasswordSupported()
+  {
+    return Optional.ofNullable(changePasswordSupported).map(Supplier::get).orElse(false);
+  }
+
+  /**
+   * @return the maximum results value from the current
+   *         {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider} configuration
+   */
+  public final int getMaxResults()
+  {
+    return Optional.ofNullable(maxResults).map(Supplier::get).orElse(Integer.MAX_VALUE);
+  }
 }

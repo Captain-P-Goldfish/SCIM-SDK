@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>de.captaingoldfish</groupId>
+        <artifactId>scim-sdk-parent</artifactId>
+        <version>1.8.1-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>scim-for-keycloak</artifactId>
+    <name>SCIM for Keycloak</name>
+
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>scim-for-keycloak-resources</module>
+        <module>scim-for-keycloak-server</module>
+        <module>scim-for-keycloak-deployment</module>
+        <module>scim-for-keycloak-client</module>
+    </modules>
+
+    <properties>
+        <!--suppress UnresolvedMavenProperty -->
+        <formatter-path>${project.parent.parent.basedir}</formatter-path>
+
+        <version.keycloak>11.0.0</version.keycloak>
+
+        <version.sun.javax.activation>1.2.0</version.sun.javax.activation>
+        <version.javax.activation>1.1.1</version.javax.activation>
+
+        <!-- test dependencies -->
+        <version.h2>1.4.200</version.h2>
+
+        <!-- plugin versions -->
+        <version.maven.ear.plugin>3.0.2</version.maven.ear.plugin>
+
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-for-keycloak-resources</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.keycloak</groupId>
+                <artifactId>keycloak-parent</artifactId>
+                <version>${version.keycloak}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-for-keycloak-server</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-for-keycloak-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.sun.activation</groupId>
+                <artifactId>javax.activation</artifactId>
+                <version>${version.sun.javax.activation}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${version.javax.activation}</version>
+            </dependency>
+
+            <!-- test dependencies -->
+            <dependency>
+                <groupId>com.h2database</groupId>
+                <artifactId>h2</artifactId>
+                <version>${version.h2}</version>
+                <scope>test</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-deploy-plugin</artifactId>
+                <configuration>
+                    <skip>true</skip>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>

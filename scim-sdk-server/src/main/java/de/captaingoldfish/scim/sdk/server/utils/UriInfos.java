@@ -5,6 +5,7 @@ import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -176,13 +177,14 @@ public class UriInfos
     {
       return null;
     }
-    for ( ResourceType resourceType : resourceTypeFactory.getAllResourceTypes() )
+    final String lastPathPart = "/" + urlParts[urlParts.length - 1];
+    final String nextToLastPathPart = "/" + urlParts[urlParts.length - 2];
+    ResourceType resourceType = Optional.ofNullable(resourceTypeFactory.getResourceType(nextToLastPathPart))
+                                        .orElse(resourceTypeFactory.getResourceType(lastPathPart));
+
+    if (resourceType != null)
     {
-      if (StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 1])
-          || (urlParts.length > 1 && StringUtils.endsWith(resourceType.getEndpoint(), urlParts[urlParts.length - 2])))
-      {
-        return resourceType;
-      }
+      return resourceType;
     }
     throw new BadRequestException("the request url does not point to a registered resource type. Registered resource "
                                   + "types are: ["

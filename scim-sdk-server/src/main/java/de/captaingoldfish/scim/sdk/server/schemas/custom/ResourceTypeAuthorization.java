@@ -22,18 +22,36 @@ public class ResourceTypeAuthorization extends ScimObjectNode
 {
 
   @Builder
-  public ResourceTypeAuthorization(Set<String> roles,
+  public ResourceTypeAuthorization(Boolean authenticated,
+                                   Set<String> roles,
                                    Set<String> rolesCreate,
                                    Set<String> rolesGet,
                                    Set<String> rolesUpdate,
                                    Set<String> rolesDelete)
   {
     this();
+    setAuthenticated(authenticated);
     setRoles(roles);
     setRolesCreate(rolesCreate);
     setRolesGet(rolesGet);
     setRolesUpdate(rolesUpdate);
     setRolesDelete(rolesDelete);
+  }
+
+  /**
+   * tells us if access to this endpoint will require authentication. Default is true
+   */
+  public boolean isAuthenticated()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.AUTHENTICATED).orElse(true);
+  }
+
+  /**
+   * tells us if access to this endpoint will require authentication. Default is true
+   */
+  public void setAuthenticated(Boolean authenticated)
+  {
+    setAttribute(AttributeNames.Custom.AUTHENTICATED, authenticated);
   }
 
   /**
@@ -72,12 +90,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesCreate()
   {
-    Set<String> rolesCreate = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_CREATE);
-    if (rolesCreate.isEmpty())
-    {
-      rolesCreate = getRoles();
-    }
-    return rolesCreate;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_CREATE);
   }
 
   /**
@@ -104,12 +117,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesGet()
   {
-    Set<String> rolesGet = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_GET);
-    if (rolesGet.isEmpty())
-    {
-      rolesGet = getRoles();
-    }
-    return rolesGet;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_GET);
   }
 
   /**
@@ -136,12 +144,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesUpdate()
   {
-    Set<String> rolesUpdate = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_UPDATE);
-    if (rolesUpdate.isEmpty())
-    {
-      rolesUpdate = getRoles();
-    }
-    return rolesUpdate;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_UPDATE);
   }
 
   /**
@@ -168,12 +171,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
    */
   public Set<String> getRolesDelete()
   {
-    Set<String> rolesDelete = getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_DELETE);
-    if (rolesDelete.isEmpty())
-    {
-      rolesDelete = getRoles();
-    }
-    return rolesDelete;
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_DELETE);
   }
 
   /**

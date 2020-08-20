@@ -7,6 +7,17 @@
   "description": "An extension that enables additional features for single resource types",
   "attributes": [
     {
+      "name": "disabled",
+      "type": "boolean",
+      "description": "a boolean that will disable access to this resource type if set to true.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
+    },
+    {
       "name": "singletonEndpoint",
       "type": "boolean",
       "description": "a boolean that tells us if the endpoint is used as singleton endpoint. This feature may be used e.g. for the /ServiceProviderConfig endpoint to delegate a list-request to a simple get-request.",
@@ -38,6 +49,30 @@
       "multiValued": false,
       "caseExact": false,
       "required": false
+    },
+    {
+      "name": "etag",
+      "type": "complex",
+      "description": "a complex type configuration for eTags that describes how the automatic API handling should use ETags",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false,
+      "subAttributes": [
+        {
+          "name": "enabled",
+          "type": "boolean",
+          "description": "a boolean if set to false ETags will not be generated automatically on this resource endpoint. Default is false.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        }
+      ]
     },
     {
       "name": "endpointControl",
@@ -118,6 +153,17 @@
       "caseExact": false,
       "required": false,
       "subAttributes": [
+        {
+          "name": "authenticated",
+          "type": "boolean",
+          "description": "tells us if access to this endpoint will require authentication. Default is true",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
         {
           "name": "roles",
           "type": "string",

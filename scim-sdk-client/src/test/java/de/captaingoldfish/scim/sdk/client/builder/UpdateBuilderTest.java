@@ -5,7 +5,8 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
@@ -32,8 +33,9 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * verifies that a resource can successfully be updated
    */
-  @Test
-  public void testUpdateResourceSuccess()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testUpdateResourceSuccess(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -55,15 +57,26 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * verifies that an error response is correctly parsed
    */
-  @Test
-  public void testUpdateResourceFail()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testUpdateResourceFail(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
-                                                        scimHttpClient).setResource(updateUser).sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = new UpdateBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class,
+                                     scimHttpClient).setResource(updateUser).sendRequest();
+
+    }
+    else
+    {
+      response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                     scimHttpClient).setResource(updateUser).sendRequest();
+    }
 
     Assertions.assertEquals(HttpStatus.NOT_FOUND, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -74,8 +87,9 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * sets the if-match-header in the request and expects a successful update
    */
-  @Test
-  public void testIfMatchHeader()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testIfMatchHeader(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -96,10 +110,19 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
-                                                        scimHttpClient).setETagForIfMatch(version)
-                                                                       .setResource(updateUser)
-                                                                       .sendRequest();
+
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = new UpdateBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class,
+                                     scimHttpClient).setETagForIfMatch(version).setResource(updateUser).sendRequest();
+    }
+    else
+    {
+      response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                     scimHttpClient).setETagForIfMatch(version).setResource(updateUser).sendRequest();
+    }
+
     Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
@@ -110,8 +133,9 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * sets the if-match-header in the request and expects a successful update.
    */
-  @Test
-  public void testIfMatchHeader2()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testIfMatchHeader2(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -132,10 +156,22 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
-                                                        scimHttpClient).setETagForIfMatch(ETag.parseETag(version))
-                                                                       .setResource(updateUser)
-                                                                       .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = new UpdateBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class,
+                                     scimHttpClient).setETagForIfMatch(ETag.parseETag(version))
+                                                    .setResource(updateUser)
+                                                    .sendRequest();
+    }
+    else
+    {
+      response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                     scimHttpClient).setETagForIfMatch(ETag.parseETag(version))
+                                                    .setResource(updateUser)
+                                                    .sendRequest();
+    }
+
     Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
@@ -146,8 +182,9 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * sets the if-match-header in the request
    */
-  @Test
-  public void testIfNoneMatchHeader()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testIfNoneMatchHeader(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -168,10 +205,22 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
-                                                        scimHttpClient).setETagForIfNoneMatch(version)
-                                                                       .setResource(updateUser)
-                                                                       .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = new UpdateBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class,
+                                     scimHttpClient).setETagForIfNoneMatch(version)
+                                                    .setResource(updateUser)
+                                                    .sendRequest();
+    }
+    else
+    {
+      response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                     scimHttpClient).setETagForIfNoneMatch(version)
+                                                    .setResource(updateUser)
+                                                    .sendRequest();
+    }
+
     Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -182,8 +231,9 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * sets the if-match-header in the request
    */
-  @Test
-  public void testIfNoneMatchHeader2()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testIfNoneMatchHeader2(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -204,10 +254,22 @@ public class UpdateBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
-    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
-                                                        scimHttpClient).setETagForIfNoneMatch(ETag.parseETag(version))
-                                                                       .setResource(updateUser)
-                                                                       .sendRequest();
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = new UpdateBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class,
+                                     scimHttpClient).setETagForIfNoneMatch(ETag.parseETag(version))
+                                                    .setResource(updateUser)
+                                                    .sendRequest();
+    }
+    else
+    {
+      response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                     scimHttpClient).setETagForIfNoneMatch(ETag.parseETag(version))
+                                                    .setResource(updateUser)
+                                                    .sendRequest();
+    }
+
     Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());

@@ -44,9 +44,9 @@ public final class ResourceEndpointHandlerUtil
    */
   public static void registerAllEndpoints(ResourceTypeFactory resourceTypeFactory, ServiceProvider serviceProvider)
   {
-    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl());
+    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl(true));
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(new GroupHandlerImpl());
-    MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl());
+    MeEndpointDefinition meEndpoint = new MeEndpointDefinition(new UserHandlerImpl(true));
     ResourceTypeEndpointDefinition resourceTypeEndpoint = new ResourceTypeEndpointDefinition(resourceTypeFactory);
     SchemaEndpointDefinition schemaEndpoint = new SchemaEndpointDefinition(resourceTypeFactory);
     ServiceProviderEndpointDefinition serviceProviderEndpoint = new ServiceProviderEndpointDefinition(serviceProvider);

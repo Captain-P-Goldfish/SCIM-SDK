@@ -19,6 +19,24 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
+  /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param fullUrl the fully qualified url to the required resource
+   * @param responseEntityType the type of the resource that should be returned
+   * @param scimHttpClient the http client instance
+   */
+  public GetBuilder(String fullUrl, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  {
+    super(responseEntityType, scimHttpClient);
+    this.fullUrl = fullUrl;
+  }
+
 
   public GetBuilder(String baseUrl,
                     String endpoint,
@@ -28,6 +46,7 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   {
     super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
           scimHttpClient);
+    this.fullUrl = null;
   }
 
   /**
@@ -81,7 +100,15 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
-    HttpGet httpGet = new HttpGet(getBaseUrl() + getEndpoint());
+    HttpGet httpGet;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpGet = new HttpGet(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpGet = new HttpGet(fullUrl);
+    }
     if (isUseIfMatch())
     {
       httpGet.setHeader(HttpHeader.IF_MATCH_HEADER, getVersion().toString());

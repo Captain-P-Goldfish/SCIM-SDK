@@ -91,6 +91,7 @@ public class ScimConfig
   {
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
     return userResourceType;
   }
 
@@ -105,6 +106,7 @@ public class ScimConfig
   {
     ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+    groupResourceType.getFeatures().getETagFeature().setEnabled(true);
     return groupResourceType;
   }
 }

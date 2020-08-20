@@ -48,6 +48,7 @@ import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
@@ -55,6 +56,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
@@ -133,7 +135,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    userHandler = Mockito.spy(new UserHandlerImpl());
+    userHandler = Mockito.spy(new UserHandlerImpl(true));
     groupHandler = Mockito.spy(new GroupHandlerImpl());
     UserEndpointDefinition userEndpoint = new UserEndpointDefinition(userHandler);
     GroupEndpointDefinition groupEndpoint = new GroupEndpointDefinition(groupHandler);
@@ -1472,6 +1474,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
       resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
       resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+      ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+      userResourceType.getFeatures().getETagFeature().setEnabled(true);
+
       User user = User.builder().userName("goldfish").build();
       ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
                                                                          user.toString(),
@@ -1738,6 +1743,44 @@ public class ResourceEndpointHandlerTest implements FileReferences
     /* ************************************************************************************************************/
 
     return dynamicTests;
+  }
+
+  /**
+   * this test will show that resource reference links are set into the $ref attribute if enough information to
+   * determine the correct resource is present
+   */
+  @Test
+  public void testResourceReferencesAreSetAutomaticallyIfPossible()
+  {
+    String userId;
+    // first of all create a group and a user that is a member of this group
+    {
+      User chuck = User.builder().userName("chuck_norris").active(true).build();
+      ScimResponse createUserResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
+                                                                               chuck.toString(),
+                                                                               getBaseUrlSupplier(),
+                                                                               null);
+      MatcherAssert.assertThat(createUserResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+      chuck = JsonHelper.copyResourceToObject(createUserResponse, User.class);
+      userId = chuck.getId().get();
+    }
+
+
+    // now we created a user and we will create a group that has this user set as a member. The response must
+    // contain the $ref value with a fully qualified url to the user resource
+    Group adminGroup = Group.builder()
+                            .displayName("admin")
+                            .members(Arrays.asList(Member.builder().value(userId).type(ResourceTypeNames.USER).build()))
+                            .build();
+    ScimResponse createGroupResponse = resourceEndpointHandler.createResource(EndpointPaths.GROUPS,
+                                                                              adminGroup.toString(),
+                                                                              getBaseUrlSupplier(),
+                                                                              null);
+    MatcherAssert.assertThat(createGroupResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+    adminGroup = JsonHelper.copyResourceToObject(createGroupResponse, Group.class);
+    Assertions.assertEquals(1, adminGroup.getMembers().size());
+    Assertions.assertEquals(getBaseUrlSupplier().get() + EndpointPaths.USERS + "/" + userId,
+                            adminGroup.getMembers().get(0).getRef().orElse(null));
   }
 
   /**

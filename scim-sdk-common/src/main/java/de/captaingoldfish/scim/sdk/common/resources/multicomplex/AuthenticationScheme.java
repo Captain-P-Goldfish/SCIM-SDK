@@ -136,4 +136,13 @@ public class AuthenticationScheme extends MultiComplexNode
     setAttribute(AttributeNames.RFC7643.DOCUMENTATION_URI, documentationUri);
   }
 
+  /**
+   * returns this authentication type as string representation that matches the http WWW-Authenticate response
+   * header representation
+   */
+  public String getWwwAuthenticateHeaderRepresentation(String realm)
+  {
+    return getAuthenticationType() + " realm=\"" + realm + "\"";
+  }
+
 }

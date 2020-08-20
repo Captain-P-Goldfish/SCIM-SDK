@@ -93,7 +93,7 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
                                                  .password(SecurityConstants.PASSWORD)
                                                  .build());
         AbstractSpringBootWebTest.headerValidator = headers -> {
-          Assertions.assertTrue(headers.containsKey(HttpHeader.AUHORIZATION.toLowerCase()));
+          Assertions.assertTrue(headers.containsKey(HttpHeader.AUTHORIZATION.toLowerCase()));
           Assertions.assertFalse(headers.containsKey("cookie"));
           wasConsumerExecuted.set(true);
         };
@@ -102,7 +102,7 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
       {
         scimRequestBuilder.getScimClientConfig().setBasicAuth(null);
         AbstractSpringBootWebTest.headerValidator = headers -> {
-          Assertions.assertFalse(headers.containsKey(HttpHeader.AUHORIZATION.toLowerCase()));
+          Assertions.assertFalse(headers.containsKey(HttpHeader.AUTHORIZATION.toLowerCase()));
           Assertions.assertTrue(headers.containsKey("cookie"));
           wasConsumerExecuted.set(true);
         };

@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.handler;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,7 +68,10 @@ public class GroupHandlerImpl extends ResourceHandler<Group>
                                            List<SchemaAttribute> excludedAttributes,
                                            Authorization authorization)
   {
-    return null;
+    return PartialListResponse.builder()
+                              .resources(new ArrayList<>(inMemoryMap.values()))
+                              .totalResults(inMemoryMap.size())
+                              .build();
   }
 
   @Override

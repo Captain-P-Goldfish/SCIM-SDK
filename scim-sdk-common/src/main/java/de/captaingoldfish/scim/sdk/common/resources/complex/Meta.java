@@ -92,6 +92,18 @@ public class Meta extends ScimObjectNode
   }
 
   /**
+   * The "DateTime" that the resource was added to the service provider. This attribute MUST be a DateTime.
+   *
+   * @param fractionalDigits the number of nano digits after which the line is cut off e.g. if set to 3 the
+   *          result will look like '1970-01-01T00:00:00.000Z' and if set to 4 the result looks like
+   *          '1970-01-01T00:00:00.0000Z'
+   */
+  public void setCreated(Instant dateTime, int fractionalDigits)
+  {
+    setDateTimeAttribute(AttributeNames.RFC7643.CREATED, dateTime, fractionalDigits);
+  }
+
+  /**
    * The most recent DateTime that the details of this resource were updated at the service provider. If this
    * resource has never been modified since its initial creation, the value MUST be the same as the value of
    * "created".
@@ -139,6 +151,20 @@ public class Meta extends ScimObjectNode
   public void setLastModified(LocalDateTime dateTime)
   {
     setDateTimeAttribute(AttributeNames.RFC7643.LAST_MODIFIED, dateTime);
+  }
+
+  /**
+   * The most recent DateTime that the details of this resource were updated at the service provider. If this
+   * resource has never been modified since its initial creation, the value MUST be the same as the value of
+   * "created".
+   *
+   * @param fractionalDigits the number of nano digits after which the line is cut off e.g. if set to 3 the
+   *          result will look like '1970-01-01T00:00:00.000Z' and if set to 4 the result looks like
+   *          '1970-01-01T00:00:00.0000Z'
+   */
+  public void setLastModified(Instant dateTime, int fractionalDigits)
+  {
+    setDateTimeAttribute(AttributeNames.RFC7643.LAST_MODIFIED, dateTime, fractionalDigits);
   }
 
   /**

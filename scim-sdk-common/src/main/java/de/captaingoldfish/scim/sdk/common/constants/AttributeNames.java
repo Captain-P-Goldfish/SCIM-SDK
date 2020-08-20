@@ -149,6 +149,18 @@ public final class AttributeNames
      * this attribute defines the validation attribute for dateTime types 'notAfter'
      */
     public static final String NOT_AFTER = "notAfter";
+
+    /**
+     * a boolean if set to false ETags will not be generated automatically on this resource endpoint. Default is
+     * true.
+     */
+    public static final String ETAG_ENABLED = "enabled";
+
+    /**
+     * used in resource type definitions to tell us if access to a specific endpoint requires authentication or
+     * not
+     */
+    public static final String AUTHENTICATED = "authenticated";
   }
 
   /**

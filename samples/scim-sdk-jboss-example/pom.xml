@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
         <artifactId>scim-sdk-samples</artifactId>
         <groupId>de.captaingoldfish</groupId>
-        <version>1.4.3-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-sdk-jboss-example</artifactId>
@@ -16,9 +15,10 @@
 
     <properties>
         <version.jboss.javaee.8.0>1.0.4.Final</version.jboss.javaee.8.0>
-        <version.cdi.api>2.0.SP1</version.cdi.api>
+        <version.cdi.api>2.0</version.cdi.api>
         <version.jboss.el.api>1.0.13.Final</version.jboss.el.api>
-        <version.jboss.jaxrs.api>1.0.3.Final</version.jboss.jaxrs.api>
+        <version.jboss.jaxrs.api>2.0.1.Final</version.jboss.jaxrs.api>
+        <version.javax.activation>1.1.1</version.javax.activation>
         <version.jboss.annotations.api>2.0.1.Final</version.jboss.annotations.api>
 
         <version.maven.war.plugin>3.2.3</version.maven.war.plugin>
@@ -46,6 +46,11 @@
                 <artifactId>jboss-annotations-api_1.3_spec</artifactId>
                 <version>${version.jboss.annotations.api}</version>
             </dependency>
+            <dependency>
+                <groupId>javax.activation</groupId>
+                <artifactId>activation</artifactId>
+                <version>${version.javax.activation}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -70,19 +75,9 @@
                     <artifactId>taglibs-standard-spec</artifactId>
                     <groupId>org.apache.taglibs</groupId>
                 </exclusion>
-                <exclusion>
-                    <artifactId>activation</artifactId>
-                    <groupId>javax.activation</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>javax.mail</artifactId>
-                    <groupId>com.sun.mail</groupId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>jboss-jaxb-api_2.3_spec</artifactId>
-                    <groupId>org.jboss.spec.javax.xml.bind</groupId>
-                </exclusion>
             </exclusions>
         </dependency>
     </dependencies>
+
+
 </project>

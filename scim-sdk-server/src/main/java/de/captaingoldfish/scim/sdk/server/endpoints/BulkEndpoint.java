@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -83,6 +84,12 @@ class BulkEndpoint
   private final ResourceTypeFactory resourceTypeFactory;
 
   /**
+   * arbitary code that is executed before the endpoint is called. This might be used to execute authentication
+   * on dedicated resource types
+   */
+  private final Consumer<ResourceType> doBeforeExecution;
+
+  /**
    * this map is used to map the ids of newly created resources to bulkIds
    */
   private final Map<String, String> resolvedBulkIds = new HashMap<>();
@@ -92,13 +99,23 @@ class BulkEndpoint
    */
   private final Map<String, Set<String>> circularReferenceDetectorMap = new HashMap<>();
 
+  private final Map<String, String> originalHttpHeaders;
+
+  private final Map<String, String> originalQueryParams;
+
   public BulkEndpoint(ResourceEndpoint resourceEndpoint,
                       ServiceProvider serviceProvider,
-                      ResourceTypeFactory resourceTypeFactory)
+                      ResourceTypeFactory resourceTypeFactory,
+                      Map<String, String> originalHttpHeaders,
+                      Map<String, String> originalQueryParams,
+                      Consumer<ResourceType> doBeforeExecution)
   {
     this.resourceEndpoint = resourceEndpoint;
     this.serviceProvider = serviceProvider;
     this.resourceTypeFactory = resourceTypeFactory;
+    this.originalHttpHeaders = originalHttpHeaders;
+    this.originalQueryParams = originalQueryParams;
+    this.doBeforeExecution = doBeforeExecution;
   }
 
   /**
@@ -222,6 +239,7 @@ class BulkEndpoint
                                                             baseUri + operation.getPath(),
                                                             httpMethod,
                                                             httpHeaders);
+    operationUriInfo.getQueryParameters().putAll(originalQueryParams);
     String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
     String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
     String bulkId = operation.getBulkId().orElse(null);
@@ -247,7 +265,8 @@ class BulkEndpoint
     ScimResponse scimResponse = resourceEndpoint.resolveRequest(httpMethod,
                                                                 operation.getData().orElse(null),
                                                                 operationUriInfo,
-                                                                authorization);
+                                                                authorization,
+                                                                doBeforeExecution);
     responseBuilder.status(scimResponse.getHttpStatus())
                    .response(ErrorResponse.class.isAssignableFrom(scimResponse.getClass()) ? (ErrorResponse)scimResponse
                      : null);
@@ -284,7 +303,7 @@ class BulkEndpoint
    */
   private Map<String, String> getHttpHeadersForBulk(BulkRequestOperation operation)
   {
-    Map<String, String> httpHeaders = new HashMap<>();
+    Map<String, String> httpHeaders = new HashMap<>(originalHttpHeaders);
     httpHeaders.put(EndpointPaths.BULK, "true");
     operation.getVersion().ifPresent(eTag -> httpHeaders.put(HttpHeader.IF_MATCH_HEADER, eTag.getEntityTag()));
     return httpHeaders;

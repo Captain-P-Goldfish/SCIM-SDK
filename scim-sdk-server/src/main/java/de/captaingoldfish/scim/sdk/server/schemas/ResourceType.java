@@ -301,16 +301,7 @@ public class ResourceType extends ResourceNode
    * The resource type's human-readable description. When applicable, service providers MUST specify the
    * description. OPTIONAL.
    */
-  private void setDescription(String description)
-  {
-    setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
-  }
-
-  /**
-   * The resource type's human-readable description. When applicable, service providers MUST specify the
-   * description. OPTIONAL.
-   */
-  private void setResourceTypeDescription(String description)
+  public void setDescription(String description)
   {
     setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
   }
@@ -403,6 +394,13 @@ public class ResourceType extends ResourceNode
    */
   public class SchemaExtension extends ScimObjectNode
   {
+
+    public SchemaExtension(String schema, boolean required)
+    {
+      super(null);
+      setSchema(schema);
+      setRequired(required);
+    }
 
     public SchemaExtension(JsonNode jsonNode)
     {

@@ -39,7 +39,15 @@ public class ScimType
      */
     public static final String UNPARSEABLE_REQUEST = "unparseableRequest";
 
+    /**
+     * if the request body exceeds the maximum allowed payload size (for bulk requests only)
+     */
     public static final String TOO_LARGE = "tooLarge";
+
+    /**
+     * if the client / user is not authenticated
+     */
+    public static final String UNAUTENTICATED = "unauthenticated";
   }
 
 

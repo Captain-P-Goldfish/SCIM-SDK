@@ -33,6 +33,7 @@ import de.captaingoldfish.scim.sdk.client.exceptions.SocketTimeoutRuntimeExcepti
 import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreSupporter;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
+import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
 import de.captaingoldfish.scim.sdk.client.springboot.SpringBootInitializer;
@@ -101,7 +102,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
    */
   @ParameterizedTest // NOPMD
   @CsvSource({"0,0,0", "1,10,10", "10,1,10", "10,10,1", "0,1,0", "0,10,10", "10,10,0", "10,0,10"})
-  public void testGovernikusHttpClientTest(int connectTimeout, int requestTimeout, int socketTimeout) throws IOException
+  public void testHttpClientTest(int connectTimeout, int requestTimeout, int socketTimeout) throws IOException
   {
     ScimClientConfig clientConfig = ScimClientConfig.builder()
                                                     .connectTimeout(connectTimeout)
@@ -181,8 +182,9 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
                                                     .hostnameVerifier((s, sslSession) -> true)
                                                     .build();
     ScimHttpClient httpClient = new ScimHttpClient(clientConfig);
+    int freeLocalPort = HttpServerMockup.getFreeLocalPort();
     String requestUrl = getRequestUrl(TestController.TIMEOUT_ENDPOINT_PATH).replaceFirst(String.valueOf(getLocalServerPort()),
-                                                                                         "connectTimeout");
+                                                                                         String.valueOf(freeLocalPort));
     try
     {
       httpClient.sendRequest(new HttpGet(requestUrl));
@@ -192,12 +194,13 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     {
       log.debug(ex.getMessage(), ex);
       Assertions.assertEquals("connection timeout after '1' seconds", ex.getMessage());
-      Assertions.assertEquals("Connect to localhost:443 [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] "
-                              + "failed: connect timed out",
+      Assertions.assertEquals("Connect to localhost:" + freeLocalPort
+                              + " [localhost/127.0.0.1, localhost/0:0:0:0:0:0:0:1] failed: connect timed out",
                               ex.getCause().getMessage());
     }
     catch (IORuntimeException ex)
     {
+      log.debug(ex.getMessage(), ex);
       Assertions.assertEquals("communication with server failed", ex.getMessage());
       MatcherAssert.assertThat(ex.getCause().getMessage(), Matchers.containsString("(Connection refused)"));
     }

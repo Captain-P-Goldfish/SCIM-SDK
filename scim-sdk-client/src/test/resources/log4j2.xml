@@ -9,6 +9,9 @@
     </Appenders>
     <Loggers>
 
+        <Logger name="de.captaingoldfish" level="info" additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
         <Logger name="org.springframework" level="info" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>

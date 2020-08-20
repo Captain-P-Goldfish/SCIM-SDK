@@ -5,12 +5,16 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-samples</artifactId>
-        <version>1.4.3-SNAPSHOT</version>
+        <version>1.8.1-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-sdk-springboot-example</artifactId>
 
     <name>SCIM SDK springboot example</name>
+
+    <properties>
+        <module.name>de.captaingoldfish.scim.sdk.springboot.sample</module.name>
+    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -54,10 +58,6 @@
                 <exclusion>
                     <groupId>org.junit.vintage</groupId>
                     <artifactId>junit-vintage-engine</artifactId>
-                </exclusion>
-                <exclusion>
-                    <artifactId>jakarta.xml.bind-api</artifactId>
-                    <groupId>jakarta.xml.bind</groupId>
                 </exclusion>
             </exclusions>
         </dependency>

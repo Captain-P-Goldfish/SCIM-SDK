@@ -57,6 +57,19 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
+   * builds a create builder class based on the given type
+   *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @param type the type that should be created
+   * @return a create-request builder for the given resource type
+   */
+  public <T extends ResourceNode> CreateBuilder<T> create(String fullyQualifiedUrl, Class<T> type)
+  {
+    return new CreateBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
+  }
+
+  /**
    * builds a get builder class based on the given type
    *
    * @param type the type that should be created
@@ -71,6 +84,31 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
+   * builds a get builder that is used to access a singleton resource from the provider
+   *
+   * @param type the type that should be created
+   * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
+   * @return a get-request builder for the given resource type
+   */
+  public <T extends ResourceNode> GetBuilder<T> get(Class<T> type, String endpoint)
+  {
+    return new GetBuilder<>(baseUrl, endpoint, null, type, scimHttpClient);
+  }
+
+  /**
+   * builds a get builder class based on the given type
+   *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @param type the type that should be created
+   * @return a get-request builder for the given resource type
+   */
+  public <T extends ResourceNode> GetBuilder<T> get(String fullyQualifiedUrl, Class<T> type)
+  {
+    return new GetBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
+  }
+
+  /**
    * builds a delete builder class based on the given type
    *
    * @param type the type that should be created
@@ -82,6 +120,19 @@ public class ScimRequestBuilder implements AutoCloseable
   public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type, String endpoint, String resourceId)
   {
     return new DeleteBuilder<>(baseUrl, endpoint, resourceId, type, scimHttpClient);
+  }
+
+  /**
+   * builds a delete builder class based on the given type
+   *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @param type the type that should be created
+   * @return a delete-request builder for the given resource type
+   */
+  public <T extends ResourceNode> DeleteBuilder<T> delete(String fullyQualifiedUrl, Class<T> type)
+  {
+    return new DeleteBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
   }
 
   /**
@@ -101,6 +152,19 @@ public class ScimRequestBuilder implements AutoCloseable
   /**
    * builds an update builder class based on the given type
    *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @param type the type that should be created
+   * @return a update-request builder for the given resource type
+   */
+  public <T extends ResourceNode> UpdateBuilder<T> update(String fullyQualifiedUrl, Class<T> type)
+  {
+    return new UpdateBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
+  }
+
+  /**
+   * builds an update builder class based on the given type
+   *
    * @param type the type that should be created
    * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
    * @return a update-request builder for the given resource type
@@ -111,13 +175,38 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
+   * builds an update builder class based on the given type
+   *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @param type the type that should be created
+   * @return a update-request builder for the given resource type
+   */
+  public <T extends ResourceNode> ListBuilder<T> list(String fullyQualifiedUrl, Class<T> type)
+  {
+    return new ListBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
+  }
+
+  /**
    * builds an bulk request builder
    *
    * @return a bulk-request builder
    */
   public BulkBuilder bulk()
   {
-    return new BulkBuilder(baseUrl, scimHttpClient);
+    return new BulkBuilder(baseUrl, scimHttpClient, false);
+  }
+
+  /**
+   * builds an bulk request builder
+   *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @return a bulk-request builder
+   */
+  public BulkBuilder bulk(String fullyQualifiedUrl)
+  {
+    return new BulkBuilder(fullyQualifiedUrl, scimHttpClient, true);
   }
 
   /**
@@ -132,6 +221,19 @@ public class ScimRequestBuilder implements AutoCloseable
   public <T extends ResourceNode> PatchBuilder<T> patch(Class<T> type, String endpoint, String resourceId)
   {
     return new PatchBuilder<>(baseUrl, endpoint, resourceId, type, scimHttpClient);
+  }
+
+  /**
+   * builds a patch request builder
+   *
+   * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
+   *          qualified url
+   * @param type the type that should be created
+   * @return a patch-request builder
+   */
+  public <T extends ResourceNode> PatchBuilder<T> patch(String fullyQualifiedUrl, Class<T> type)
+  {
+    return new PatchBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
   }
 
   /**

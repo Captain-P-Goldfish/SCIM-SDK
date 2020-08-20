@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -120,7 +122,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   public void initialize()
   {
     serviceProvider = ServiceProvider.builder().build();
-    userHandler = Mockito.spy(new UserHandlerImpl());
+    userHandler = Mockito.spy(new UserHandlerImpl(true));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
   }
@@ -136,6 +138,51 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String url = BASE_URI + EndpointPaths.USERS;
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+    CreateResponse createResponse = (CreateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.CREATED, createResponse.getHttpStatus());
+    User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+    Assertions.assertEquals(user.getUserName().get(), createdUser.getUserName().get());
+    Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0))
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + createdUser.getId().get(),
+                            createdUser.getMeta().get().getLocation().get());
+  }
+
+  /**
+   * this test will verify that a creation request is processed successfully if parameters are correctly set and
+   * a resource type consumer is present
+   */
+  @Test
+  public void testCreateResourceWithResourceTypeConsumer()
+  {
+    final String userName = "chuck_norris";
+    final User user = User.builder().userName(userName).build();
+    final String url = BASE_URI + EndpointPaths.USERS;
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     CreateResponse createResponse = (CreateResponse)scimResponse;
@@ -238,6 +285,59 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
+   * this test will verify that a get request is processed successfully if parameters are correctly set and a
+   * resource type consumer is set
+   */
+  @Test
+  public void testGetResourceWithResourceTypeConsumer()
+  {
+    final String userName = "chuck_norris";
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    final User user = User.builder().id(id).userName(userName).meta(meta).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    userHandler.getInMemoryMap().put(id, user);
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
+
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
+    User returnedUser = JsonHelper.copyResourceToObject(getResponse, User.class);
+    Assertions.assertEquals(user.getUserName().get(), returnedUser.getUserName().get());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0))
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
+                            returnedUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * this test will verify that an update request is processed successfully if parameters are correctly set
    */
   @Test
@@ -284,6 +384,62 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
+   * this test will verify that an update request is processed successfully if parameters are correctly set and
+   * if a resource type consumer is set
+   */
+  @Test
+  public void testUpdateResourceWithResourceTypeConsumer()
+  {
+    final String userName = "chuck_norris";
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    final User user = User.builder().id(id).userName(userName).meta(meta).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    userHandler.getInMemoryMap().put(id, user);
+    User changedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    changedUser.setUserName("ourNewName");
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PUT,
+                                                               changedUser.toString(),
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
+
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    User returnedUser = JsonHelper.copyResourceToObject(updateResponse, User.class);
+    Assertions.assertNotEquals(user.getUserName().get(), returnedUser.getUserName().get());
+    Assertions.assertEquals(changedUser.getUserName().get(), returnedUser.getUserName().get());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0))
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
+                            returnedUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * this test will verify that a delete request is processed successfully if parameters are correctly set
    */
   @Test
@@ -302,6 +458,58 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.DELETE, user.toString(), httpHeaders);
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+    DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
+    Assertions.assertTrue(deleteResponse.isEmpty());
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0))
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+  }
+
+  /**
+   * this test will verify that a delete request is processed successfully if parameters are correctly set and
+   * if a resource type consumer is set
+   */
+  @Test
+  public void testDeleteResourceWithResourceTypeConsumer()
+  {
+    final String userName = "chuck_norris";
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    final User user = User.builder().id(id).userName(userName).meta(meta).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    userHandler.getInMemoryMap().put(id, user);
+    Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.DELETE,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
+
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
     DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
@@ -384,6 +592,79 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
+   * this test will create 5 users and will then send a filter request with get that verifies that the request
+   * is correctly processed and a resource type consumer is set
+   */
+  @Test
+  public void testQueryResourcesWithGetWithResourceTypeConsumer()
+  {
+    int maxUsers = 5;
+    serviceProvider.getFilterConfig().setSupported(true);
+    serviceProvider.getFilterConfig().setMaxResults(maxUsers);
+    resourceEndpoint.getResourceTypeFactory()
+                    .getResourceType(EndpointPaths.USERS)
+                    .setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
+    int counter = 0;
+    final String searchValue = "0";
+    for ( int i = 0 ; i < maxUsers ; i++ )
+    {
+      final String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder()
+                      .resourceType(ResourceTypeNames.USER)
+                      .created(LocalDateTime.now())
+                      .lastModified(LocalDateTime.now())
+                      .build();
+      User user = User.builder().id(id).userName(id).meta(meta).build();
+      if (id.startsWith(searchValue))
+      {
+        counter++;
+      }
+      userHandler.getInMemoryMap().put(id, user);
+    }
+    log.warn("counter: {}", counter);
+    final String url = BASE_URI + EndpointPaths.USERS
+                       + String.format("?startIndex=1&count=%d&filter=%s",
+                                       maxUsers,
+                                       "userName sw \"" + searchValue + "\"");
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
+
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(counter, listResponse.getListedResources().size());
+    Assertions.assertEquals(counter, listResponse.getTotalResults());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(maxUsers),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    log.warn(listResponse.getListedResources()
+                         .stream()
+                         .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
+                         .collect(Collectors.joining("\n")));
+    log.warn(listResponse.toPrettyString());
+  }
+
+  /**
    * this test will create 500 users and will then send a filter request with post that verifies that the
    * request is correctly processed
    */
@@ -424,6 +705,81 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                HttpMethod.POST,
                                                                searchRequest.toString(),
                                                                httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(counter, listResponse.getListedResources().size());
+    Assertions.assertEquals(counter, listResponse.getTotalResults());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(maxUsers),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    log.warn(listResponse.getListedResources()
+                         .stream()
+                         .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
+                         .collect(Collectors.joining("\n")));
+    log.warn(listResponse.toPrettyString());
+  }
+
+  /**
+   * this test will create 5 users and will then send a filter request with post that verifies that the request
+   * is correctly processed if a resource type consumer is set
+   */
+  @Test
+  public void testQueryResourcesWithPostWithResourceTypeConsumerSet()
+  {
+    int maxUsers = 5;
+    serviceProvider.getFilterConfig().setSupported(true);
+    serviceProvider.getFilterConfig().setMaxResults(maxUsers);
+    resourceEndpoint.getResourceTypeFactory()
+                    .getResourceType(EndpointPaths.USERS)
+                    .setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
+    int counter = 0;
+    final String searchValue = "0";
+    for ( int i = 0 ; i < maxUsers ; i++ )
+    {
+      final String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder()
+                      .resourceType(ResourceTypeNames.USER)
+                      .created(LocalDateTime.now())
+                      .lastModified(LocalDateTime.now())
+                      .build();
+      User user = User.builder().id(id).userName(id).meta(meta).build();
+      if (id.startsWith(searchValue))
+      {
+        counter++;
+      }
+      userHandler.getInMemoryMap().put(id, user);
+    }
+    log.warn("counter: {}", counter);
+    final String url = BASE_URI + EndpointPaths.USERS + EndpointPaths.SEARCH;
+    SearchRequest searchRequest = SearchRequest.builder()
+                                               .startIndex(1L)
+                                               .count(maxUsers)
+                                               .filter("userName sw \"" + searchValue + "\"")
+                                               .build();
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               searchRequest.toString(),
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
+
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
@@ -856,6 +1212,60 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
                                                                httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    copiedUser.setName(name);
+    Assertions.assertEquals(copiedUser, updateResponse);
+
+    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    Assertions.assertEquals(updateResponse, getResponse);
+    Assertions.assertEquals(copiedUser, getResponse);
+  }
+
+  /**
+   * Verifies that a resource can successfully be patched if a resource type consumer is set
+   */
+  @Test
+  public void testPatchResourceWithResourceTypeConsumer()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    Consumer<ResourceType> resourceTypeConsumer = resourceType -> {
+      wasCalled.set(true);
+      Assertions.assertEquals(EndpointPaths.USERS, resourceType.getEndpoint());
+    };
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders,
+                                                               resourceTypeConsumer);
+    Assertions.assertTrue(wasCalled.get());
+
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1568,7 +1978,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String url = BASE_URI + EndpointPaths.USERS;
     serviceProvider = getServiceProvider();
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
-    EndpointDefinition endpointDefinition = new UserEndpointDefinition(new UserHandlerImpl());
+    EndpointDefinition endpointDefinition = new UserEndpointDefinition(new UserHandlerImpl(true));
     endpointDefinition.setResourceType(JsonHelper.loadJsonDocument(USER_AUTHORIZED_RESOURCE_TYPE));
     endpointDefinition.setResourceSchemaExtensions(Collections.emptyList());
     ResourceType resourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
@@ -1817,10 +2227,10 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String requiredRole = "admin";
     resourceType.getFeatures().getAuthorization().setRoles(requiredRole);
     ResourceTypeAuthorization resourceTypeAuthorization = resourceType.getFeatures().getAuthorization();
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesCreate().iterator().next());
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesGet().iterator().next());
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesUpdate().iterator().next());
-    Assertions.assertEquals(requiredRole, resourceTypeAuthorization.getRolesDelete().iterator().next());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesCreate().isEmpty());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesGet().isEmpty());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesUpdate().isEmpty());
+    Assertions.assertTrue(resourceTypeAuthorization.getRolesDelete().isEmpty());
     final ClientAuthorization clientAuthorization = new ClientAuthorization("goldfish", requiredRole);
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();

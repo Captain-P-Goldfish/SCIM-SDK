@@ -70,12 +70,34 @@ public class ListBuilder<T extends ResourceNode>
    */
   private final ScimHttpClient scimHttpClient;
 
+  /**
+   * the fully qualified url to the required resource
+   */
+  private final String fullUrl;
+
+  /**
+   * if the resource should be retrieved by using the fully qualified url
+   *
+   * @param fullUrl the fully qualified url to the required resource
+   * @param responseEntityType the type of the resource that should be returned
+   * @param scimHttpClient the http client instance
+   */
+  public ListBuilder(String fullUrl, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
+  {
+    this.baseUrl = null;
+    this.endpoint = null;
+    this.responseEntityType = responseEntityType;
+    this.scimHttpClient = scimHttpClient;
+    this.fullUrl = fullUrl;
+  }
+
   public ListBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
     this.endpoint = endpoint;
     this.responseEntityType = responseEntityType;
     this.scimHttpClient = scimHttpClient;
+    this.fullUrl = null;
   }
 
   /**
@@ -244,7 +266,14 @@ public class ListBuilder<T extends ResourceNode>
       StringBuilder queryBuilder = new StringBuilder();
       if (!listBuilder.requestParameters.isEmpty())
       {
-        queryBuilder.append("?");
+        if (StringUtils.contains(listBuilder.fullUrl, "?"))
+        {
+          queryBuilder.append("&");
+        }
+        else
+        {
+          queryBuilder.append("?");
+        }
         List<String> pairs = new ArrayList<>();
         listBuilder.requestParameters.forEach((key, value) -> {
           try
@@ -258,7 +287,16 @@ public class ListBuilder<T extends ResourceNode>
         });
         queryBuilder.append(String.join("&", pairs));
       }
-      return new HttpGet(getBaseUrl() + getEndpoint() + queryBuilder.toString());
+      HttpGet httpGet;
+      if (StringUtils.isBlank(listBuilder.fullUrl))
+      {
+        httpGet = new HttpGet(getBaseUrl() + getEndpoint() + queryBuilder.toString());
+      }
+      else
+      {
+        httpGet = new HttpGet(listBuilder.fullUrl + queryBuilder.toString());
+      }
+      return httpGet;
     }
 
     /**
@@ -322,7 +360,23 @@ public class ListBuilder<T extends ResourceNode>
     @Override
     protected HttpUriRequest getHttpUriRequest()
     {
-      HttpPost httpPost = new HttpPost(getBaseUrl() + getEndpoint() + "/.search");
+      HttpPost httpPost;
+      if (StringUtils.isBlank(listBuilder.fullUrl))
+      {
+        httpPost = new HttpPost(getBaseUrl() + getEndpoint() + "/.search");
+      }
+      else
+      {
+        String url = listBuilder.fullUrl;
+        if (url.endsWith("/.search"))
+        {
+          httpPost = new HttpPost(listBuilder.fullUrl);
+        }
+        else
+        {
+          httpPost = new HttpPost(listBuilder.fullUrl + "/.search");
+        }
+      }
       if (!listBuilder.requestParameters.isEmpty())
       {
         SearchRequest searchRequest = SearchRequest.builder().build();

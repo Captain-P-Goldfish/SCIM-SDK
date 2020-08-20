@@ -55,7 +55,7 @@ public class UriInfosTest
   public void initialize()
   {
     resourceTypeFactory = new ResourceTypeFactory();
-    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl());
+    UserEndpointDefinition userEndpoint = new UserEndpointDefinition(new UserHandlerImpl(true));
     resourceTypeFactory.registerResourceType(null,
                                              userEndpoint.getResourceType(),
                                              userEndpoint.getResourceSchema(),
