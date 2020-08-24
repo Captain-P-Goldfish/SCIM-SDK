@@ -33,7 +33,7 @@ public enum PatchOp
   {
     for ( PatchOp patchOp : PatchOp.values() )
     {
-      if (StringUtils.equals(value, patchOp.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, patchOp.getValue()))
       {
         return patchOp;
       }

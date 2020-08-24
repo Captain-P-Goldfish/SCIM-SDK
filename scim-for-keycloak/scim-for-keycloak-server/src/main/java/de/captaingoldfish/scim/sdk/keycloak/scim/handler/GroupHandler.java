@@ -176,6 +176,10 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     RealmModel realmModel = keycloakSession.getContext().getRealm();
     group.getDisplayName().ifPresent(groupModel::setName);
+    if (group.getExternalId().isPresent())
+    {
+      groupModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, group.getExternalId().get());
+    }
     group.getMembers()
          .stream()
          .filter(groupMember -> groupMember.getType().isPresent()
@@ -207,6 +211,7 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     return Group.builder()
                 .id(groupModel.getId())
+                .externalId(groupModel.getFirstAttribute(AttributeNames.RFC7643.EXTERNAL_ID))
                 .displayName(groupModel.getName())
                 .members(getMembers(keycloakSession, groupModel))
                 .meta(Meta.builder().created(getCreated(groupModel)).lastModified(getLastModified(groupModel)).build())

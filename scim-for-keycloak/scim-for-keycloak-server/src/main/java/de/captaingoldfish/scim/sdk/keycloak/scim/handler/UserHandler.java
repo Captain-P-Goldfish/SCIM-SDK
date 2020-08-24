@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.keycloak.scim.handler;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -72,6 +73,10 @@ public class UserHandler extends ResourceHandler<User>
 
   private static final String SCIM_ORGANIZATION = "company";
 
+  private static final String SCIM_TELPEHONE_NUMBER = "phoneNumber";
+
+  private static final String SCIM_MOBILE_TELPEHONE_NUMBER = "mobileNumber";
+
   private static final String SCIM_TITLE = "title";
 
   /**
@@ -98,6 +103,18 @@ public class UserHandler extends ResourceHandler<User>
     if (keycloakSession.users().getUserByUsername(username, keycloakSession.getContext().getRealm()) != null)
     {
       throw new ConflictException("the username '" + username + "' is already taken");
+    }
+    Optional<Email> emailOpt = user.getEmails()
+                                   .stream()
+                                   .filter(MultiComplexNode::isPrimary)
+                                   .findAny()
+                                   .filter(value -> value.getValue().isPresent());
+    if (emailOpt.isPresent() && keycloakSession.users()
+                                               .getUserByEmail(emailOpt.get().getValue().orElse("xx"),
+                                                               keycloakSession.getContext().getRealm()) != null)
+    {
+      throw new ConflictException("the email '" + emailOpt.get().getValue().get() + "' is already taken");
+
     }
     UserModel userModel = keycloakSession.users().addUser(keycloakSession.getContext().getRealm(), username);
     userModel = userToModel(user, userModel);
@@ -254,6 +271,7 @@ public class UserHandler extends ResourceHandler<User>
   private UserModel userToModel(User user, UserModel userModel)
   {
     user.isActive().ifPresent(userModel::setEnabled);
+    userModel.setSingleAttribute(SCIM_USER, String.valueOf(true));
     user.getName().ifPresent(name -> {
       name.getGivenName().ifPresent(userModel::setFirstName);
       name.getFamilyName().ifPresent(userModel::setLastName);
@@ -281,7 +299,22 @@ public class UserHandler extends ResourceHandler<User>
         .findAny()
         .flatMap(MultiComplexNode::getValue)
         .ifPresent(userModel::setEmail);
+    for ( PhoneNumber number : user.getPhoneNumbers() )
+    {
+      if (number.getType().isPresent() && number.getValue().isPresent() && "work".equals(number.getType().get()))
+      {
+        userModel.setSingleAttribute(SCIM_TELPEHONE_NUMBER, number.getValue().get());
+      }
+      else if (number.getType().isPresent() && number.getValue().isPresent() && "mobile".equals(number.getType().get()))
+      {
+        userModel.setSingleAttribute(SCIM_MOBILE_TELPEHONE_NUMBER, number.getValue().get());
+      }
+    }
 
+    if (user.getLdapId().isPresent())
+    {
+      userModel.setSingleAttribute(SCIM_LDAP_ID, user.getLdapId().get());
+    }
     setMultiAttribute(user::getEmails, AttributeNames.RFC7643.EMAILS, userModel);
     setMultiAttribute(user::getPhoneNumbers, AttributeNames.RFC7643.PHONE_NUMBERS, userModel);
     setMultiAttribute(user::getAddresses, AttributeNames.RFC7643.ADDRESSES, userModel);
@@ -291,6 +324,10 @@ public class UserHandler extends ResourceHandler<User>
     setMultiAttribute(user::getRoles, AttributeNames.RFC7643.ROLES, userModel);
     setMultiAttribute(user::getX509Certificates, AttributeNames.RFC7643.X509_CERTIFICATES, userModel);
 
+    if (user.getExternalId().isPresent())
+    {
+      userModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, user.getExternalId().get());
+    }
     userModel.setSingleAttribute(AttributeNames.RFC7643.COST_CENTER,
                                  user.getEnterpriseUser().flatMap(EnterpriseUser::getCostCenter).orElse(null));
     userModel.setSingleAttribute(AttributeNames.RFC7643.DEPARTMENT,
@@ -336,8 +373,20 @@ public class UserHandler extends ResourceHandler<User>
    */
   private User modelToUser(UserModel userModel)
   {
+    List<PhoneNumber> phoneNumbers = new ArrayList<PhoneNumber>();
+    String telephoneNumber = userModel.getFirstAttribute(SCIM_TELPEHONE_NUMBER);
+    String mobileNumber = userModel.getFirstAttribute(SCIM_MOBILE_TELPEHONE_NUMBER);
+    if (!StringUtils.isEmpty(telephoneNumber))
+    {
+      phoneNumbers.add(new PhoneNumber("work", true, null, telephoneNumber, null));
+    }
+    if (!StringUtils.isEmpty(mobileNumber))
+    {
+      phoneNumbers.add(new PhoneNumber("mobile", false, null, mobileNumber, null));
+    }
     User user = User.builder()
                     .id(userModel.getId())
+                    .ldapId(userModel.getFirstAttribute(SCIM_LDAP_ID))
                     .userName(userModel.getUsername())
                     .name(Name.builder()
                               .givenName(userModel.getFirstName())
@@ -352,12 +401,13 @@ public class UserHandler extends ResourceHandler<User>
                     .title(userModel.getFirstAttribute(AttributeNames.RFC7643.TITLE))
                     .displayName(userModel.getFirstAttribute(AttributeNames.RFC7643.DISPLAY_NAME))
                     .userType(userModel.getFirstAttribute(AttributeNames.RFC7643.USER_TYPE))
+                    .externalId(userModel.getFirstAttribute(AttributeNames.RFC7643.EXTERNAL_ID))
                     .locale(userModel.getFirstAttribute(AttributeNames.RFC7643.LOCALE))
                     .preferredLanguage(userModel.getFirstAttribute(AttributeNames.RFC7643.PREFERRED_LANGUAGE))
                     .timeZone(userModel.getFirstAttribute(AttributeNames.RFC7643.TIMEZONE))
                     .profileUrl(userModel.getFirstAttribute(AttributeNames.RFC7643.PROFILE_URL))
                     .emails(getAttributeList(Email.class, AttributeNames.RFC7643.EMAILS, userModel))
-                    .phoneNumbers(getAttributeList(PhoneNumber.class, AttributeNames.RFC7643.PHONE_NUMBERS, userModel))
+                    .phoneNumbers(phoneNumbers)
                     .addresses(getAttributeList(Address.class, AttributeNames.RFC7643.ADDRESSES, userModel))
                     .ims(getAttributeList(Ims.class, AttributeNames.RFC7643.IMS, userModel))
                     .entitlements(getAttributeList(Entitlement.class, AttributeNames.RFC7643.ENTITLEMENTS, userModel))
