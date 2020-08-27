@@ -175,6 +175,10 @@ public class GroupHandler extends ResourceHandler<Group>
 
     newGroupMemberIds.forEach(id -> {
       GroupModel newMember = keycloakSession.realms().getGroupById(id, realmModel);
+      if (newMember == null)
+      {
+        throw new ResourceNotFoundException(String.format("Group with id '%s' does not exist", id));
+      }
       groupModel.addChild(newMember);
     });
   }
@@ -205,6 +209,10 @@ public class GroupHandler extends ResourceHandler<Group>
 
     newUserMemberIds.forEach(id -> {
       UserModel newMember = keycloakSession.users().getUserById(id, realmModel);
+      if (newMember == null)
+      {
+        throw new ResourceNotFoundException(String.format("User with id '%s' does not exist", id));
+      }
       newMember.joinGroup(groupModel);
     });
   }
