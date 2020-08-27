@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.keycloak.scim.handler;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -138,24 +139,74 @@ public class GroupHandler extends ResourceHandler<Group>
     group.getDisplayName().ifPresent(groupModel::setName);
     group.getExternalId()
          .ifPresent(externalId -> groupModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId));
-    group.getMembers()
-         .stream()
-         .filter(groupMember -> groupMember.getType().isPresent()
-                                && groupMember.getType().get().equalsIgnoreCase("User"))
-         .forEach(groupMember -> {
-           UserModel userMember = keycloakSession.users().getUserById(groupMember.getValue().get(), realmModel);
-           userMember.joinGroup(groupModel);
-         });
 
-    group.getMembers()
-         .stream()
-         .filter(groupMember -> groupMember.getType().isPresent()
-                                && groupMember.getType().get().equalsIgnoreCase("Group"))
-         .forEach(groupMember -> {
-           GroupModel groupModelMember = realmModel.getGroupById(groupMember.getValue().get());
-           groupModel.addChild(groupModelMember);
-         });
+
+    updateUserMemberships(keycloakSession, group, groupModel, realmModel);
+    updateGroupMemberships(keycloakSession, group, groupModel, realmModel);
+
     return groupModel;
+  }
+
+  /**
+   * remove groups that are no longer associated with the current group and adds the newly associated groups
+   * 
+   * @param group the scim group model as it must be after the change
+   * @param groupModel the current group model
+   */
+  private void updateGroupMemberships(KeycloakSession keycloakSession,
+                                      Group group,
+                                      GroupModel groupModel,
+                                      RealmModel realmModel)
+  {
+    Set<String> newGroupMemberIds = group.getMembers()
+                                         .stream()
+                                         .filter(groupMember -> groupMember.getType().isPresent()
+                                                                && groupMember.getType()
+                                                                              .get()
+                                                                              .equalsIgnoreCase("Group"))
+                                         .map(groupMember -> groupMember.getValue().get())
+                                         .collect(Collectors.toSet());
+    Set<GroupModel> oldGroupMembers = groupModel.getSubGroups();
+    oldGroupMembers.removeIf(gm -> newGroupMemberIds.contains(gm.getId()));
+    oldGroupMembers.forEach(groupModel::removeChild);
+
+    Set<String> unchangedMemberIds = oldGroupMembers.stream().map(GroupModel::getId).collect(Collectors.toSet());
+    newGroupMemberIds.removeIf(unchangedMemberIds::contains);
+
+    newGroupMemberIds.forEach(id -> {
+      GroupModel newMember = keycloakSession.realms().getGroupById(id, realmModel);
+      groupModel.addChild(newMember);
+    });
+  }
+
+  /**
+   * remove users that are no longer associated with the current group and adds the newly associated users
+   *
+   * @param group the scim group model as it must be after the change
+   * @param groupModel the current group model
+   */
+  private void updateUserMemberships(KeycloakSession keycloakSession,
+                                     Group group,
+                                     GroupModel groupModel,
+                                     RealmModel realmModel)
+  {
+    Set<String> newUserMemberIds = group.getMembers()
+                                        .stream()
+                                        .filter(groupMember -> groupMember.getType().isPresent()
+                                                               && groupMember.getType().get().equalsIgnoreCase("User"))
+                                        .map(groupMember -> groupMember.getValue().get())
+                                        .collect(Collectors.toSet());
+    List<UserModel> oldUserMembers = keycloakSession.users().getGroupMembers(realmModel, groupModel);
+    oldUserMembers.removeIf(userModel -> newUserMemberIds.contains(userModel.getId()));
+    oldUserMembers.forEach(userModel -> userModel.leaveGroup(groupModel));
+
+    Set<String> unchangedMemberIds = oldUserMembers.stream().map(UserModel::getId).collect(Collectors.toSet());
+    newUserMemberIds.removeIf(unchangedMemberIds::contains);
+
+    newUserMemberIds.forEach(id -> {
+      UserModel newMember = keycloakSession.users().getUserById(id, realmModel);
+      newMember.joinGroup(groupModel);
+    });
   }
 
   /**
