@@ -147,7 +147,7 @@ public class GroupHandlerTest extends KeycloakScimManagementTest
    * {@link de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException}
    * 
    * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/55">
-   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/55 </a>
+   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/55</a>
    */
   @ParameterizedTest
   @ValueSource(strings = {"User", "Group"})
@@ -171,5 +171,50 @@ public class GroupHandlerTest extends KeycloakScimManagementTest
     ErrorResponse errorResponse = JsonHelper.readJsonDocument((String)response.getEntity(), ErrorResponse.class);
     Assertions.assertEquals(String.format("%s with id '%s' does not exist", type, notExistingId),
                             errorResponse.getDetail().get());
+  }
+
+  /**
+   * verifies that groups can be created if their names are prefixes of other group names
+   * 
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/56">
+   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/56</a>
+   */
+  @Test
+  public void testCreateGroupWithSimiliarNames()
+  {
+    final String prefixName = "groupBremen";
+    GroupModel removeBremenGroup = getKeycloakSession().realms().createGroup(getRealmModel(), prefixName + "Remove");
+
+    Group nintendo = Group.builder().displayName(prefixName).build();
+    HttpServletRequest request = RequestBuilder.builder(getScimEndpoint())
+                                               .endpoint(EndpointPaths.GROUPS)
+                                               .method(HttpMethod.POST)
+                                               .requestBody(nintendo.toString())
+                                               .build();
+
+    Response response = getScimEndpoint().handleScimRequest(request);
+    Assertions.assertEquals(HttpStatus.CREATED, response.getStatus());
+  }
+
+  /**
+   * verifies that a group with a duplicate name cannot be created
+   * 
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/56">
+   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/56</a>
+   */
+  @Test
+  public void testCreateGroupWithDuplicateName()
+  {
+    GroupModel groupBremen = getKeycloakSession().realms().createGroup(getRealmModel(), "groupBremen");
+
+    Group nintendo = Group.builder().displayName(groupBremen.getName()).build();
+    HttpServletRequest request = RequestBuilder.builder(getScimEndpoint())
+                                               .endpoint(EndpointPaths.GROUPS)
+                                               .method(HttpMethod.POST)
+                                               .requestBody(nintendo.toString())
+                                               .build();
+
+    Response response = getScimEndpoint().handleScimRequest(request);
+    Assertions.assertEquals(HttpStatus.CONFLICT, response.getStatus());
   }
 }

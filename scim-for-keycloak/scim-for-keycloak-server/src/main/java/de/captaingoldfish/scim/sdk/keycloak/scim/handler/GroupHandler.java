@@ -21,6 +21,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.keycloak.auth.ScimAuthorization;
+import de.captaingoldfish.scim.sdk.keycloak.services.GroupService;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
@@ -43,9 +44,7 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     final String groupName = group.getDisplayName().get();
-    if (!keycloakSession.realms()
-                        .searchForGroupByName(keycloakSession.getContext().getRealm(), groupName, null, null)
-                        .isEmpty())
+    if (new GroupService(keycloakSession).getGroupByName(groupName).isPresent())
     {
       throw new ConflictException("a group with name '" + groupName + "' does already exist");
     }
