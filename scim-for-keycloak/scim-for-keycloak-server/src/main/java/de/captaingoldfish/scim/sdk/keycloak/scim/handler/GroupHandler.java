@@ -35,11 +35,6 @@ public class GroupHandler extends ResourceHandler<Group>
 {
 
   /**
-   * an attribute that is added to groups created by the scim protocol
-   */
-  private static final String SCIM_GROUP = "scim-group";
-
-  /**
    * {@inheritDoc}
    */
   @Override
@@ -66,7 +61,7 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(id);
-    if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
+    if (groupModel == null)
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
@@ -91,7 +86,6 @@ public class GroupHandler extends ResourceHandler<Group>
     // api should be used
     List<GroupModel> groupModels = keycloakSession.getContext().getRealm().getGroups();
     List<Group> groupList = groupModels.stream()
-                                       .filter(groupModel -> Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
                                        .map(groupModel -> modelToGroup(keycloakSession, groupModel))
                                        .collect(Collectors.toList());
     return PartialListResponse.<Group> builder()
@@ -108,7 +102,7 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(groupToUpdate.getId().get());
-    if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
+    if (groupModel == null)
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
@@ -124,7 +118,7 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(id);
-    if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
+    if (groupModel == null)
     {
       throw new ResourceNotFoundException("group with id '" + id + "' does not exist");
     }
@@ -159,7 +153,6 @@ public class GroupHandler extends ResourceHandler<Group>
            GroupModel groupModelMember = realmModel.getGroupById(groupMember.getValue().get());
            groupModel.addChild(groupModelMember);
          });
-    groupModel.setSingleAttribute(SCIM_GROUP, String.valueOf(true));
     return groupModel;
   }
 
