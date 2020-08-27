@@ -85,6 +85,8 @@ public class RoleService extends AbstractService
     }
     RoleModel roleModel = optionalRole.get();
     role.getDescription().ifPresent(roleModel::setDescription);
+    role.getExternalId()
+        .ifPresent(externalId -> roleModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId));
 
     removeRolesFromAllAssociates(roleModel);
     role.getAssociates().forEach(associate -> addRoleToAssociate(roleModel, associate));

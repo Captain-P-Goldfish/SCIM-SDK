@@ -30,6 +30,7 @@ public class RealmRole extends ResourceNode
 
   @Builder
   public RealmRole(String id,
+                   String externalId,
                    String name,
                    String description,
                    List<RoleAssociate> associates,
@@ -38,6 +39,7 @@ public class RealmRole extends ResourceNode
   {
     this();
     setId(id);
+    setExternalId(externalId);
     setName(name);
     setDescription(description);
     setAssociates(associates);

@@ -192,6 +192,7 @@ public class RealmRoleHandler extends ResourceHandler<RealmRole>
 
     RealmRole role = RealmRole.builder()
                               .id(roleModel.getId())
+                              .externalId(roleModel.getFirstAttribute(AttributeNames.RFC7643.EXTERNAL_ID))
                               .name(roleModel.getName())
                               .description(roleModel.getDescription())
                               .associates(associates)

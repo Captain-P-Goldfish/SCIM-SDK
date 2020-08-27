@@ -272,6 +272,7 @@ public class UserHandler extends ResourceHandler<User>
   {
     User user = User.builder()
                     .id(userModel.getId())
+                    .externalId(userModel.getFirstAttribute(AttributeNames.RFC7643.EXTERNAL_ID))
                     .userName(userModel.getUsername())
                     .name(Name.builder()
                               .givenName(userModel.getFirstName())
