@@ -148,6 +148,8 @@ public class RoleService extends AbstractService
     RealmModel realmModel = getKeycloakSession().getContext().getRealm();
     RoleModel roleModel = getKeycloakSession().realms().addRealmRole(realmModel, role.getName());
     role.getDescription().ifPresent(roleModel::setDescription);
+    role.getExternalId()
+        .ifPresent(externalId -> roleModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId));
     role.getAssociates().forEach(associate -> {
       addRoleToAssociate(roleModel, associate);
     });

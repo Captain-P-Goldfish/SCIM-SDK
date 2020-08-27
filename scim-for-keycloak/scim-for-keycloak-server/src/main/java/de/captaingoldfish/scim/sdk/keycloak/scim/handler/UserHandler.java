@@ -185,6 +185,8 @@ public class UserHandler extends ResourceHandler<User>
    */
   private UserModel userToModel(User user, UserModel userModel)
   {
+    user.getExternalId()
+        .ifPresent(externalId -> userModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId));
     user.isActive().ifPresent(userModel::setEnabled);
     user.getName().ifPresent(name -> {
       name.getGivenName().ifPresent(userModel::setFirstName);

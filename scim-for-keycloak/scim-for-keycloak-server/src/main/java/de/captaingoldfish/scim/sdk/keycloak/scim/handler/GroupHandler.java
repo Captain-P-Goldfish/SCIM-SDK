@@ -136,6 +136,8 @@ public class GroupHandler extends ResourceHandler<Group>
   {
     RealmModel realmModel = keycloakSession.getContext().getRealm();
     group.getDisplayName().ifPresent(groupModel::setName);
+    group.getExternalId()
+         .ifPresent(externalId -> groupModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId));
     group.getMembers()
          .stream()
          .filter(groupMember -> groupMember.getType().isPresent()
