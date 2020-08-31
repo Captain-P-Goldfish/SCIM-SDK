@@ -57,9 +57,12 @@ public class GroupHandler extends ResourceHandler<Group>
     {
       log.info(this.getClass().getName() + " createResource input: " + group.toPrettyString());
     }
-    if (!keycloakSession.realms()
-                        .searchForGroupByName(keycloakSession.getContext().getRealm(), groupName, null, null)
-                        .isEmpty())
+    if (keycloakSession.realms()
+                       .searchForGroupByName(keycloakSession.getContext().getRealm(), groupName, null, null)
+                       .stream()
+                       .filter(g -> ((GroupModel)g).getName().equals(groupName))
+                       .findFirst()
+                       .orElse(null) != null)
     {
       throw new ConflictException("a group with name '" + groupName + "' does already exist");
     }
@@ -180,12 +183,38 @@ public class GroupHandler extends ResourceHandler<Group>
     {
       groupModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, group.getExternalId().get());
     }
+    List<Member> groupMembers = group.getMembers();
+    keycloakSession.users().getGroupMembers(realmModel, groupModel).stream().forEach(modelMember -> {
+      boolean found = false;
+      for ( Member groupMember : groupMembers )
+      {
+        if (groupMember.getType().isPresent() && groupMember.getType().get().equalsIgnoreCase("User")
+            || !groupMember.getType().isPresent())
+        {
+          if (groupMember.getValue().get().equals(modelMember.getId()))
+          {
+            found = false;
+          }
+        }
+      }
+      if (!found)
+      {
+        modelMember.leaveGroup(groupModel);
+      }
+    });
+
     group.getMembers()
          .stream()
-         .filter(groupMember -> groupMember.getType().isPresent()
-                                && groupMember.getType().get().equalsIgnoreCase("User"))
+         .filter(groupMember -> !groupMember.getType().isPresent()
+                                || groupMember.getType().isPresent()
+                                   && groupMember.getType().get().equalsIgnoreCase("User"))
          .forEach(groupMember -> {
            UserModel userMember = keycloakSession.users().getUserById(groupMember.getValue().get(), realmModel);
+           if (userMember == null)
+           {
+             throw new ResourceNotFoundException(String.format("An user with Id %s was not found",
+                                                               groupMember.getValue().get()));
+           }
            userMember.joinGroup(groupModel);
          });
 
