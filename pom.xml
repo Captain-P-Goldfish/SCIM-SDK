@@ -109,7 +109,7 @@
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
         <version.maven.versions.plugin>2.8.1</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.2.0</version.maven.jar.plugin>
-        <version.maven.docker.plugin>0.33.0</version.maven.docker.plugin>
+        <version.maven.docker.plugin>0.34.0</version.maven.docker.plugin>
         <version.gmaven.plugin>1.5</version.gmaven.plugin>
     </properties>
 
