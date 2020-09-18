@@ -8,7 +8,7 @@
         <version>1.8.1-SNAPSHOT</version>
     </parent>
 
-    <artifactId>scim-for-keycloak-ear</artifactId>
+    <artifactId>scim-for-keycloak-deployment</artifactId>
     <name>SCIM for Keycloak ear Deployment</name>
 
     <packaging>ear</packaging>
