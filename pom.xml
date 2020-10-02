@@ -92,7 +92,7 @@
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.9.12</version.reflections>
         <version.mockito>3.5.11</version.mockito>
-        <version.resteasy.jaxrs>3.13.1.Final</version.resteasy.jaxrs>
+        <version.resteasy.jaxrs>3.13.2.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.4.3</version.equalsverifier>
         <version.springboot>2.3.4.RELEASE</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
