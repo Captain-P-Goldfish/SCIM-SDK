@@ -41,6 +41,8 @@ public class GroupHandler extends ResourceHandler<Group>
    */
   private static final String SCIM_GROUP = "scim-group";
 
+  private static final String SCIM_LDAP_ID = "LDAP_ID";
+
   private static String KEYCLOAK_DEBUG = System.getProperty("keycloak.debug");
 
   /**
@@ -182,6 +184,7 @@ public class GroupHandler extends ResourceHandler<Group>
     if (group.getExternalId().isPresent())
     {
       groupModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, group.getExternalId().get());
+      groupModel.setSingleAttribute(SCIM_LDAP_ID, group.getExternalId().get());
     }
     List<Member> groupMembers = group.getMembers();
     keycloakSession.users().getGroupMembers(realmModel, groupModel).stream().forEach(modelMember -> {
@@ -241,6 +244,7 @@ public class GroupHandler extends ResourceHandler<Group>
     return Group.builder()
                 .id(groupModel.getId())
                 .externalId(groupModel.getFirstAttribute(AttributeNames.RFC7643.EXTERNAL_ID))
+                .ldapId(groupModel.getFirstAttribute(SCIM_LDAP_ID))
                 .displayName(groupModel.getName())
                 .members(getMembers(keycloakSession, groupModel))
                 .meta(Meta.builder().created(getCreated(groupModel)).lastModified(getLastModified(groupModel)).build())

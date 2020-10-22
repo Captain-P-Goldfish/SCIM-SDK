@@ -36,11 +36,12 @@ public class Group extends ResourceNode
   }
 
   @Builder
-  public Group(String id, String externalId, String displayName, List<Member> members, Meta meta)
+  public Group(String id, String externalId, String ldapId, String displayName, List<Member> members, Meta meta)
   {
     this();
     setId(id);
     setExternalId(externalId);
+    setLdapId(ldapId);
     setDisplayName(displayName);
     setMembers(members);
     setMeta(meta);
@@ -60,6 +61,16 @@ public class Group extends ResourceNode
   public void setDisplayName(String displayName)
   {
     setAttribute(AttributeNames.RFC7643.DISPLAY_NAME, displayName);
+  }
+
+  public Optional<String> getLdapId()
+  {
+    return getStringAttribute("ldapId");
+  }
+
+  public void setLdapId(String ldapId)
+  {
+    setAttribute("ldapId", ldapId);
   }
 
   /**
