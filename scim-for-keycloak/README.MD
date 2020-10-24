@@ -82,3 +82,19 @@ auto-generated test-values.
  retrieve all Users of the used realm from the database. Filtering, sorting and limiting of the returned entries will be
   done on API level by the SCIM-SDK. (personal tests have shown that this is still pretty fast with at least 
   5000 Users. I never tried more)  
+
+
+#Grant management-access for configuration
+
+In some cases you might want to have several administration users that will only be able to configure the SCIM
+environment of a single realm. 
+In such a case you must give the user a specific role that will grant access to configure the SCIM environment. If 
+the user does not have the corresponding role the "SCIM"-menu entry will not be visible to this user. 
+
+For each realm that gets created you will find a client named "realm-management". A specific *client-role* named
+*scim-admin* can be found under this client. If you want a user to be able to configure the SCIM environment in a 
+specific realm you need to grant this role to the user. In order to do this you must create a composite *realm-role*
+that you can name as you want but is also named *scim-admin* in the example below. Simply assign the created 
+*realm-role* that itself got the *client-role* *scim-admin* assigned to it to the user, and the user 
+should be able to configure the SCIM environment for the specific realm
+![theme-settings](images/restricted-scim-access.png)  
