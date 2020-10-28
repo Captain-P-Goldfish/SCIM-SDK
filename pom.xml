@@ -67,15 +67,15 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.basedir}</formatter-path>
 
-        <version.lombok>1.18.12</version.lombok>
+        <version.lombok>1.18.16</version.lombok>
 
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.11</version.apache.commons.lang3>
         <version.commons.io>2.8.0</version.commons.io>
-        <version.jackson>2.11.2</version.jackson>
+        <version.jackson>2.11.3</version.jackson>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.antlr>4.8-1</version.antlr>
-        <version.apache.http.client>4.5.12</version.apache.http.client>
+        <version.apache.http.client>4.5.13</version.apache.http.client>
         <version.apache.http.core>4.4.13</version.apache.http.core>
         <version.bouncy.castle>1.66</version.bouncy.castle>
 
@@ -91,15 +91,15 @@
         <version.junit.jupiter>5.6.2</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.9.12</version.reflections>
-        <version.mockito>3.5.11</version.mockito>
-        <version.resteasy.jaxrs>3.13.1.Final</version.resteasy.jaxrs>
-        <version.equalsverifier>3.4.3</version.equalsverifier>
+        <version.mockito>3.6.0</version.mockito>
+        <version.resteasy.jaxrs>3.13.2.Final</version.resteasy.jaxrs>
+        <version.equalsverifier>3.5</version.equalsverifier>
         <version.springboot>2.3.4.RELEASE</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.8.1</version.maven.compiler.plugin>
-        <version.maven.formatter.plugin>2.12.2</version.maven.formatter.plugin>
+        <version.maven.formatter.plugin>2.13.0</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.0.0-M3</version.maven.enforcer.plugin>
         <version.maven.surefire.plugin>3.0.0-M5</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.2.1</version.maven.source.plugin>
@@ -110,7 +110,7 @@
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
         <version.maven.versions.plugin>2.8.1</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.2.0</version.maven.jar.plugin>
-        <version.maven.docker.plugin>0.34.0</version.maven.docker.plugin>
+        <version.maven.docker.plugin>0.34.1</version.maven.docker.plugin>
         <version.gmaven.plugin>1.5</version.gmaven.plugin>
     </properties>
 
