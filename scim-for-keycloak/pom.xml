@@ -18,6 +18,7 @@
         <module>scim-for-keycloak-server</module>
         <module>scim-for-keycloak-deployment</module>
         <module>scim-for-keycloak-client</module>
+        <module>scim-for-keycloak-frontend-integration-tests</module>
     </modules>
 
     <properties>
