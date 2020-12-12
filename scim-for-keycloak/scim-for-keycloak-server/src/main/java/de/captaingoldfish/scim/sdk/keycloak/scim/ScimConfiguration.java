@@ -6,10 +6,7 @@ import java.util.Map;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.RealmModel;
 
-import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
-import de.captaingoldfish.scim.sdk.common.schemas.Schema;
-import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.scim.endpoints.RoleEndpointDefinition;
 import de.captaingoldfish.scim.sdk.keycloak.scim.handler.GroupHandler;
@@ -74,7 +71,6 @@ public final class ScimConfiguration
 
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
-    setUserAttributeRestrictions(userResourceType);
     ScimResourceTypeEntity userResourceTypeEntity = resourceTypeService.getOrCreateResourceTypeEntry(userResourceType);
     resourceTypeService.updateResourceType(userResourceType, userResourceTypeEntity);
 
@@ -89,23 +85,6 @@ public final class ScimConfiguration
     resourceTypeService.updateResourceType(roleResourceType, roleResourceTypeEntity);
 
     return resourceEndpoint;
-  }
-
-  /**
-   * sets attribute validation on the user attribute "username"<br>
-   * <br>
-   * <b>NOTE:</b><br>
-   * This method is simply an example to show what else the SCIM-SDK API can do for you
-   *
-   * @param userResourceType the resource type to access the username attribute
-   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation">
-   *      https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation </a>
-   */
-  private static void setUserAttributeRestrictions(ResourceType userResourceType)
-  {
-    Schema user = userResourceType.getMainSchema();
-    SchemaAttribute username = user.getSchemaAttribute(AttributeNames.RFC7643.USER_NAME);
-    username.setPattern("[a-z\\-_ ]+");
   }
 
 }
