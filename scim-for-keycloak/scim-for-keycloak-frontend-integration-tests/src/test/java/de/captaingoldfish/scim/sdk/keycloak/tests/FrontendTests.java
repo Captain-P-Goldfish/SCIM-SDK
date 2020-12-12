@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
+import org.openqa.selenium.WebDriver;
 
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
@@ -65,7 +66,9 @@ public abstract class FrontendTests
   public List<DynamicTest> testScimForKeycloakFrontend()
   {
     List<DynamicTest> dynamicTests = new ArrayList<>();
-    dynamicTests.add(DynamicTest.dynamicTest("test", () -> {
+    dynamicTests.add(DynamicTest.dynamicTest("open keycloak web admin console and do login", () -> {
+      WebDriver webDriver = testSetup.createNewWebDriver();
+      webDriver.get(testSetup.getBrowserAccessUrl());
       log.warn("test");
     }));
     return dynamicTests;

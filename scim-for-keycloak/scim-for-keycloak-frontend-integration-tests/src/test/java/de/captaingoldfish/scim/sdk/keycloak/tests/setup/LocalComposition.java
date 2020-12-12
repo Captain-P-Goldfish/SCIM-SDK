@@ -1,9 +1,15 @@
 package de.captaingoldfish.scim.sdk.keycloak.tests.setup;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.TimeUnit;
 
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.database.DbSetup;
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.database.LocalDatabaseSetup;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.DbSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.LocalDatabaseSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.utils.PropertyReader;
 
 
@@ -24,6 +30,8 @@ public class LocalComposition implements TestSetup
 
   private final DbSetup dbSetup;
 
+  private List<WebDriver> seleniumWebDriverList = new ArrayList<>();
+
   public LocalComposition()
   {
     this.dbSetup = new LocalDatabaseSetup();
@@ -38,7 +46,7 @@ public class LocalComposition implements TestSetup
   @Override
   public void stop()
   {
-    // do nothing
+    seleniumWebDriverList.forEach(WebDriver::close);
   }
 
   @Override
@@ -63,5 +71,16 @@ public class LocalComposition implements TestSetup
   public DbSetup getDbSetup()
   {
     return dbSetup;
+  }
+
+  @Override
+  public WebDriver createNewWebDriver()
+  {
+    WebDriver webDriver = new FirefoxDriver();
+    webDriver.manage().timeouts().implicitlyWait(5, TimeUnit.SECONDS);
+    webDriver.manage().timeouts().pageLoadTimeout(5, TimeUnit.SECONDS);
+    webDriver.manage().timeouts().setScriptTimeout(5, TimeUnit.SECONDS);
+    seleniumWebDriverList.add(webDriver);
+    return webDriver;
   }
 }

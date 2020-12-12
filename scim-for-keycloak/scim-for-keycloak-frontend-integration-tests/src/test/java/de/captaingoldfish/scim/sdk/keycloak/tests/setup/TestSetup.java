@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.keycloak.tests.setup;
 
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.database.DbSetup;
+import org.openqa.selenium.WebDriver;
+
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.DbSetup;
 
 
 /**
@@ -39,5 +41,10 @@ public interface TestSetup
    * @return the database setup to get access to the currently running database
    */
   public DbSetup getDbSetup();
+
+  /**
+   * @return a new selenium web driver instance
+   */
+  public WebDriver createNewWebDriver();
 
 }

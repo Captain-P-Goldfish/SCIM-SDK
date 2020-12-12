@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloak;
+package de.captaingoldfish.scim.sdk.keycloak.tests.setup.container;
 
 import java.io.File;
 import java.time.Duration;
@@ -12,7 +12,6 @@ import org.testcontainers.containers.output.OutputFrame;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.database.DbSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.utils.PropertyReader;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 11.12.2020
  */
 @Slf4j
-public class KeycloakDockerSetup
+public class DockerKeycloakSetup
 {
 
   /**
@@ -61,7 +60,7 @@ public class KeycloakDockerSetup
   @SuppressWarnings("rawtypes")
   protected GenericContainer keycloakContainer;
 
-  public KeycloakDockerSetup(Network network, DbSetup dbSetup)
+  public DockerKeycloakSetup(Network network, DbSetup dbSetup)
   {
     this.network = network;
     this.dbSetup = dbSetup;

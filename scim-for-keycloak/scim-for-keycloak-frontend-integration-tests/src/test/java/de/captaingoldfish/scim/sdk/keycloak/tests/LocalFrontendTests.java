@@ -1,9 +1,9 @@
 package de.captaingoldfish.scim.sdk.keycloak.tests;
 
-import java.util.List;
+import java.io.File;
 
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.DynamicTest;
 
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.LocalComposition;
 
@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.keycloak.tests.setup.LocalComposition;
  * @author Pascal Knueppel
  * @since 11.12.2020
  */
+@Disabled("for local setup use only")
 public class LocalFrontendTests extends FrontendTests
 {
 
@@ -23,10 +24,10 @@ public class LocalFrontendTests extends FrontendTests
     super(new LocalComposition());
   }
 
-  @Disabled("for local setup use only")
-  @Override
-  public List<DynamicTest> testScimForKeycloakFrontend()
+  @BeforeAll
+  public static void initSelenium()
   {
-    return super.testScimForKeycloakFrontend();
+    System.setProperty("webdriver.gecko.driver", new File(".").getAbsolutePath() + "/geckodriver.exe");
   }
+
 }

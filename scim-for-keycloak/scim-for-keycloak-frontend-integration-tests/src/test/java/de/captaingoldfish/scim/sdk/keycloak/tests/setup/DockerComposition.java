@@ -1,10 +1,16 @@
 package de.captaingoldfish.scim.sdk.keycloak.tests.setup;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.openqa.selenium.WebDriver;
 import org.testcontainers.containers.Network;
 
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.database.DbSetup;
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.database.DockerDatabaseSetup;
-import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloak.KeycloakDockerSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.DbSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.DockerDatabaseSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.DockerKeycloakSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.setup.container.SeleniumFirefox;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -13,6 +19,7 @@ import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloak.KeycloakDockerS
  * @author Pascal Knüppel
  * @since 11.12.2020
  */
+@Slf4j
 public class DockerComposition implements TestSetup
 {
 
@@ -32,12 +39,17 @@ public class DockerComposition implements TestSetup
   /**
    * the keycloak docker setup that is being used
    */
-  private final KeycloakDockerSetup keycloakDockerSetup;
+  private final DockerKeycloakSetup dockerKeycloakSetup;
+
+  /**
+   * a list of created web drivers that are being used to access the keycloak web admin
+   */
+  private List<SeleniumFirefox> seleniumFirefoxList = new ArrayList<>();
 
   public DockerComposition()
   {
     this.dbSetup = new DockerDatabaseSetup(NETWORK);
-    this.keycloakDockerSetup = new KeycloakDockerSetup(NETWORK, dbSetup);
+    this.dockerKeycloakSetup = new DockerKeycloakSetup(NETWORK, dbSetup);
   }
 
   /**
@@ -47,7 +59,8 @@ public class DockerComposition implements TestSetup
   public void start()
   {
     dbSetup.start();
-    keycloakDockerSetup.start();
+    dockerKeycloakSetup.start();
+    log.info("keycloak is accessible under: {}", dockerKeycloakSetup.getServerUrl());
   }
 
   /**
@@ -56,35 +69,36 @@ public class DockerComposition implements TestSetup
   @Override
   public void stop()
   {
-    keycloakDockerSetup.stop();
+    seleniumFirefoxList.forEach(SeleniumFirefox::stop);
+    dockerKeycloakSetup.stop();
     dbSetup.stop();
   }
 
   /**
-   * @see KeycloakDockerSetup#getContainerServerUrl()
+   * @see DockerKeycloakSetup#getContainerServerUrl()
    */
   @Override
   public String getBrowserAccessUrl()
   {
-    return keycloakDockerSetup.getContainerServerUrl();
+    return dockerKeycloakSetup.getContainerServerUrl();
   }
 
   /**
-   * @see KeycloakDockerSetup#getAdminUser()
+   * @see DockerKeycloakSetup#getAdminUser()
    */
   @Override
   public String getAdminUserName()
   {
-    return keycloakDockerSetup.getAdminUser();
+    return dockerKeycloakSetup.getAdminUser();
   }
 
   /**
-   * @see KeycloakDockerSetup#getAdminPassword()
+   * @see DockerKeycloakSetup#getAdminPassword()
    */
   @Override
   public String getAdminUserPassword()
   {
-    return keycloakDockerSetup.getAdminPassword();
+    return dockerKeycloakSetup.getAdminPassword();
   }
 
   /**
@@ -94,5 +108,17 @@ public class DockerComposition implements TestSetup
   public DbSetup getDbSetup()
   {
     return dbSetup;
+  }
+
+  /**
+   * @return creates a new selenium web driver instance and starts it
+   */
+  @Override
+  public WebDriver createNewWebDriver()
+  {
+    SeleniumFirefox seleniumFirefox = new SeleniumFirefox(NETWORK);
+    seleniumFirefoxList.add(seleniumFirefox);
+    seleniumFirefox.start();
+    return seleniumFirefox.getDriver();
   }
 }

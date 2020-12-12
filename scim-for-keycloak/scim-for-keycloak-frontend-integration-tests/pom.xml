@@ -18,12 +18,14 @@
         <!-- version conflicts -->
         <version.commons.compress>1.18</version.commons.compress>
         <version.jna>5.6.0</version.jna>
+        <version.okio>2.9.0</version.okio>
 
         <!-- test dependencies -->
         <version.testcontainers>1.15.1</version.testcontainers>
         <version.mysql.connector>8.0.21</version.mysql.connector>
         <version.mariadb.connector>2.6.2</version.mariadb.connector>
         <version.mssql.connector>8.4.0.jre8</version.mssql.connector>
+        <version.selenium>3.141.59</version.selenium>
     </properties>
 
     <dependencyManagement>
@@ -33,11 +35,18 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
                 <version>${version.commons.compress}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>${version.jna}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>com.squareup.okio</groupId>
+                <artifactId>okio</artifactId>
+                <version>${version.okio}</version>
                 <scope>test</scope>
             </dependency>
 
@@ -52,6 +61,12 @@
             <dependency>
                 <groupId>org.testcontainers</groupId>
                 <artifactId>junit-jupiter</artifactId>
+                <version>${version.testcontainers}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testcontainers</groupId>
+                <artifactId>selenium</artifactId>
                 <version>${version.testcontainers}</version>
                 <scope>test</scope>
             </dependency>
@@ -73,6 +88,12 @@
                 <version>${version.mssql.connector}</version>
                 <scope>test</scope>
             </dependency>
+            <dependency>
+                <groupId>org.seleniumhq.selenium</groupId>
+                <artifactId>selenium-java</artifactId>
+                <version>${version.selenium}</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -90,6 +111,14 @@
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>junit-jupiter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>selenium</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.seleniumhq.selenium</groupId>
+            <artifactId>selenium-java</artifactId>
         </dependency>
         <dependency>
             <groupId>mysql</groupId>
@@ -141,6 +170,11 @@
     </dependencies>
 
     <build>
+        <resources>
+            <resource>
+                <directory>${project.basedir}/src/test/resources</directory>
+            </resource>
+        </resources>
         <testResources>
             <testResource>
                 <directory>${project.basedir}/src/test/resources</directory>

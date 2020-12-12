@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.keycloak.tests.setup.database;
+package de.captaingoldfish.scim.sdk.keycloak.tests.setup.container;
 
 import java.util.Map;
 
