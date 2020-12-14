@@ -1,14 +1,21 @@
 package de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import javax.persistence.EntityManager;
+import javax.persistence.NoResultException;
+import javax.persistence.Query;
 
+import org.junit.platform.commons.util.StringUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
 
+import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
+import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -71,6 +78,14 @@ public class DirectKeycloakAccessSetup
   }
 
   /**
+   * clears the current entity manager cache
+   */
+  public void clearCache()
+  {
+    getEntityManager().clear();
+  }
+
+  /**
    * used to start a new JPA transaction
    */
   public void beginTransaction()
@@ -114,5 +129,54 @@ public class DirectKeycloakAccessSetup
   {
     return ((BigInteger)getEntityManager().createNativeQuery("select count(*) from " + tableName)
                                           .getSingleResult()).intValue();
+  }
+
+  /**
+   * @return either an existing representation from the database or an empty
+   */
+  public ScimServiceProviderEntity getServiceProviderEntity(String realmId)
+  {
+    EntityManager entityManager = getEntityManager();
+    ScimServiceProviderEntity scimServiceProvider;
+    try
+    {
+      scimServiceProvider = entityManager.createNamedQuery("getScimServiceProvider", ScimServiceProviderEntity.class)
+                                         .setParameter("realmId", realmId)
+                                         .getSingleResult();
+      return entityManager.merge(scimServiceProvider);
+    }
+    catch (NoResultException ex)
+    {
+      return null;
+    }
+  }
+
+  /**
+   * tries to get either all existing resource types or just the resource types of one specific realm
+   *
+   * @param realmId null or an existing realmId
+   * @return either all resource types from the given realm or all resource types from all realms
+   */
+  public List<ScimResourceTypeEntity> getResourceTypeEntities(String realmId)
+  {
+    try
+    {
+      String sqlQuery = "select rt from " + ScimResourceTypeEntity.class.getSimpleName() + " rt";
+      if (StringUtils.isNotBlank(realmId))
+      {
+        sqlQuery += " where rt.realmId = :realmId";
+      }
+      Query query = getEntityManager().createQuery(sqlQuery, ScimResourceTypeEntity.class);
+      if (StringUtils.isNotBlank(realmId))
+      {
+        query.setParameter("realmId", realmId);
+      }
+      return query.getResultList();
+
+    }
+    catch (NoResultException ex)
+    {
+      return new ArrayList<>();
+    }
   }
 }

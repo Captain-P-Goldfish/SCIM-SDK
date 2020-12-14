@@ -12,6 +12,9 @@ import org.openqa.selenium.WebDriver;
 
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ActivateScimThemeTestBuilder;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.CreateNewRealmTestBuilder;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.WebAdminLoginTestBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -65,12 +68,15 @@ public abstract class FrontendTests
   @TestFactory
   public List<DynamicTest> testScimForKeycloakFrontend()
   {
+    WebDriver webDriver = testSetup.createNewWebDriver();
+
     List<DynamicTest> dynamicTests = new ArrayList<>();
-    dynamicTests.add(DynamicTest.dynamicTest("open keycloak web admin console and do login", () -> {
-      WebDriver webDriver = testSetup.createNewWebDriver();
-      webDriver.get(testSetup.getBrowserAccessUrl());
-      log.warn("test");
-    }));
+    dynamicTests.addAll(new WebAdminLoginTestBuilder(webDriver, testSetup,
+                                                     directKeycloakAccessSetup).buildDynamicTests());
+    dynamicTests.addAll(new ActivateScimThemeTestBuilder(webDriver, testSetup,
+                                                         directKeycloakAccessSetup).buildDynamicTests());
+    dynamicTests.addAll(new CreateNewRealmTestBuilder(webDriver, testSetup,
+                                                      directKeycloakAccessSetup).buildDynamicTests());
     return dynamicTests;
   }
 }
