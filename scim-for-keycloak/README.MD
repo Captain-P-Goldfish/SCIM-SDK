@@ -79,22 +79,42 @@ such data structures in pure json in this table. Please note that the values in 
 auto-generated test-values. 
 ![theme-settings](images/user-storage.png)
 2. User loading and filtering is not implemented on database level meaning that a "list-Users"-request will currently
- retrieve all Users of the used realm from the database. Filtering, sorting and limiting of the returned entries will be
-  done on API level by the SCIM-SDK. (personal tests have shown that this is still pretty fast with at least 
-  5000 Users. I never tried more)  
-
+   retrieve all Users of the used realm from the database. Filtering, sorting and limiting of the returned entries will be
+   done on API level by the SCIM-SDK. (personal tests have shown that this is still pretty fast with at least 5000
+   Users. I never tried more)
 
 ## Grant management-access for configuration
 
 In some cases you might want to have several administration users that will only be able to configure the SCIM
-environment of a single realm. 
-In such a case you must give the user a specific role that will grant access to configure the SCIM environment. If 
-the user does not have the corresponding role the "SCIM"-menu entry will not be visible to this user. 
+environment of a single realm. In such a case the user must have specific roles that will grant access to configure the
+SCIM environment. If the user does not have the corresponding role the "SCIM"-menu entry will not be visible to this
+user.
 
-For each realm that gets created you will find a client named "realm-management". A specific *client-role* named
-*scim-admin* can be found under this client. If you want a user to be able to configure the SCIM environment in a 
-specific realm you need to grant this role to the user. In order to do this you must create a composite *realm-role*
-that you can name as you want but is also named *scim-admin* in the example below. Simply assign the created 
-*realm-role* that itself got the *client-role* *scim-admin* assigned to it to the user, and the user 
-should be able to configure the SCIM environment for the specific realm
-![theme-settings](images/restricted-scim-access.png)  
+Two different roles are required to access the "SCIM"-menu.
+
+1. view-realm (allows the user to see the "SCIM"-menu item on the left)
+2. scim-admin (allows the user to modify the SCIM configuration)
+
+The "scim-admin" role exists several times for several clients.
+
+1. For each realm that is created a new "master-client" for this realm is added to the "master" realm. Each of these
+   clients will get the "scim-admin" role that is needed for users from the "master" realm to access the "SCIM"-menu. So
+   if you create a realm with name "test" you will be able to find a client with name "test-realm" within the clients
+   section of the "master" realm. The "scim-admin" role of this client is needed to modify the data of the SCIM
+   environment in the "test" realm for users of realm "master".
+
+2. If a new realm "test" is created you should be able to find a client in the clients section of realm "test" with name
+   "realm-management". This client should have the client-role "scim-admin". Grant this role to users of realm
+   "test" to grant access to the SCIM configuration for this realm.
+
+3. The last case is the SCIM configuration for realm "master". This works analogous to 2. But for realm "master" the
+   name of the "master-client" is "master-realm" instead of "realm-management".
+
+So in total we got 2 different cases:
+
+1. users of realm "master" are able to get access to SCIM configurations of several realms.
+2. users of other realms can only access the SCIM configuration of their own realm.
+
+![theme-settings](images/scim-access-from-master-realm-to-master.png)  
+![theme-settings](images/scim-access-for-realm-test.png)  
+![theme-settings](images/scim-access-from-test-realm-to-test.png)  

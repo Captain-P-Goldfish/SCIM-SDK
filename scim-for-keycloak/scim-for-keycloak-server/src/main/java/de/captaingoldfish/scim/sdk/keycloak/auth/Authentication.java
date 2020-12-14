@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.keycloak.auth;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import javax.ws.rs.ClientErrorException;
@@ -103,15 +105,48 @@ public class Authentication
   public void authenticateAsScimAdmin(KeycloakSession keycloakSession)
   {
     AdminAuth adminAuth = authenticateOnRealm(keycloakSession);
-    RoleModel roleModel = keycloakSession.getContext()
-                                         .getRealm()
-                                         .getMasterAdminClient()
-                                         .getRole(RealmRoleInitializer.SCIM_ADMIN_ROLE);
-    boolean accessGranted = adminAuth.getUser().hasRole(roleModel);
+    List<RoleModel> authorizedRoles = getAuthorizedRoles(keycloakSession);
+    boolean accessGranted = authorizedRoles.stream()
+                                           .anyMatch(authorizedRole -> adminAuth.getUser().hasRole(authorizedRole));
     if (!accessGranted)
     {
       throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
     }
+  }
+
+  /**
+   * tries to get the roles that are authorized to access the SCIM environment
+   * 
+   * @param keycloakSession the current request context
+   * @return should be the "scim-admin" role of the master client of this realm that is located in the master
+   *         realm itself (used to grant access for the admin user) and the "scim-admin" role of the
+   *         realm-management client of the current realm
+   */
+  private List<RoleModel> getAuthorizedRoles(KeycloakSession keycloakSession)
+  {
+    List<RoleModel> authorizedRoles = new ArrayList<>();
+    RoleModel masterClientRoleModel = keycloakSession.getContext()
+                                                     .getRealm()
+                                                     .getMasterAdminClient()
+                                                     .getRole(RealmRoleInitializer.SCIM_ADMIN_ROLE);
+    authorizedRoles.add(masterClientRoleModel);
+    RealmModel currentRealm = keycloakSession.getContext().getRealm();
+    RealmManager realmManager = new RealmManager(keycloakSession);
+    String realmManagementClientId;
+    if (currentRealm.getId().equals("master"))
+    {
+      // could not find any matching constant in the keycloak project
+      realmManagementClientId = "master-realm";
+    }
+    else
+    {
+      // is actually hardcoded by keycloak and is always "realm-management"
+      realmManagementClientId = realmManager.getRealmAdminClientId(currentRealm);
+    }
+    ClientModel clientModel = currentRealm.getClientByClientId(realmManagementClientId);
+    RoleModel realmClientRoleModel = clientModel.getRole(RealmRoleInitializer.SCIM_ADMIN_ROLE);
+    authorizedRoles.add(realmClientRoleModel);
+    return authorizedRoles;
   }
 
   /**
@@ -194,7 +229,9 @@ public class Authentication
   {
     KeycloakContext context = keycloakSession.getContext();
     RealmModel realm = context.getRealm();
-    ClientModel client = realm.getClientByClientId(result.getToken().getIssuedFor());
+    // authorized party ("azp" JWT claim)
+    String authorizedParty = result.getToken().getIssuedFor();
+    ClientModel client = realm.getClientByClientId(authorizedParty);
     if (client == null)
     {
       log.error(ERROR_MESSAGE_AUTHENTICATION_FAILED);
