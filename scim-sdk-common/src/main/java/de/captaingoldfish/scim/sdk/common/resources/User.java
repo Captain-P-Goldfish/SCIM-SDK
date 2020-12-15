@@ -52,6 +52,7 @@ public class User extends ResourceNode
                String locale,
                String timeZone,
                Boolean active,
+               Boolean imported,
                String password,
                List<Email> emails,
                List<PhoneNumber> phoneNumbers,
@@ -80,6 +81,7 @@ public class User extends ResourceNode
     setLocale(locale);
     setTimezone(timeZone);
     setActive(active);
+    setImported(imported);
     setPassword(password);
     setEmails(emails);
     setPhoneNumbers(phoneNumbers);
@@ -367,6 +369,19 @@ public class User extends ResourceNode
   public void setActive(Boolean active)
   {
     setAttribute(AttributeNames.RFC7643.ACTIVE, active);
+  }
+
+  /**
+   * @return
+   */
+  public Optional<Boolean> isImported()
+  {
+    return getBooleanAttribute("isImported");
+  }
+
+  public void setImported(Boolean imported)
+  {
+    setAttribute("isImported", imported);
   }
 
   // @formatter:off

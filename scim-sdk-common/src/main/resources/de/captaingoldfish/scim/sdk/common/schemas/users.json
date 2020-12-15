@@ -232,6 +232,17 @@
       "caseExact": false
     },
     {
+      "name": "isImported",
+      "type": "boolean",
+      "description": "A Boolean value indicating the User was created by an import.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    },
+    {
       "name": "password",
       "type": "string",
       "description": "The User's cleartext password.  This attribute is intended to be used as a means to specify an initial\npassword when creating a new User or to reset an existing User's password.",

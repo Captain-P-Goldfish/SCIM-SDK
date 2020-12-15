@@ -67,6 +67,8 @@ public class UserHandler extends ResourceHandler<User>
 
   private static final String SCIM_HONORIC_SUFFIX = "honoricSuffix";
 
+  private static final String SCIM_IS_IMPORTED = "isImported";
+
   private static final String SCIM_LDAP_ID = "LDAP_ID";
 
   private static final String SCIM_MIDDLE_NAME = "middleName";
@@ -117,7 +119,7 @@ public class UserHandler extends ResourceHandler<User>
 
     }
     UserModel userModel = keycloakSession.users().addUser(keycloakSession.getContext().getRealm(), username);
-    userModel = userToModel(user, userModel);
+    userModel = userToModel(user, userModel, true);
     User ret = modelToUser(userModel);
     if (KEYCLOAK_DEBUG != null)
     {
@@ -210,7 +212,7 @@ public class UserHandler extends ResourceHandler<User>
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
-    userModel = userToModel(userToUpdate, userModel);
+    userModel = userToModel(userToUpdate, userModel, false);
     User ret = modelToUser(userModel);
     log.info(this.getClass().getName() + " updateResource returns: " + ret.toPrettyString());
     return ret;
@@ -266,11 +268,15 @@ public class UserHandler extends ResourceHandler<User>
    *
    * @param user the scim user instance
    * @param userModel the keycloak user instance
+   * @param isCreation this is a create request
    * @return the updated keycloak user instance
    */
-  private UserModel userToModel(User user, UserModel userModel)
+  private UserModel userToModel(User user, UserModel userModel, boolean isCreation)
   {
+    final boolean[] imported = {false};
+    user.isImported().ifPresent(isImported -> imported[0] = isImported);
     user.isActive().ifPresent(userModel::setEnabled);
+    userModel.setSingleAttribute(SCIM_IS_IMPORTED, String.valueOf(imported[0]));
     userModel.setSingleAttribute(SCIM_USER, String.valueOf(true));
     user.getName().ifPresent(name -> {
       name.getGivenName().ifPresent(userModel::setFirstName);
@@ -311,7 +317,7 @@ public class UserHandler extends ResourceHandler<User>
       }
     }
 
-    if (user.getLdapId().isPresent())
+    if (user.getLdapId().isPresent() && (!imported[0] || isCreation))
     {
       userModel.setSingleAttribute(SCIM_LDAP_ID, user.getLdapId().get());
     }
@@ -397,6 +403,7 @@ public class UserHandler extends ResourceHandler<User>
                               .formatted(userModel.getFirstAttribute(AttributeNames.RFC7643.FORMATTED))
                               .build())
                     .active(userModel.isEnabled())
+                    .imported(Boolean.parseBoolean(userModel.getFirstAttribute(SCIM_IS_IMPORTED)))
                     .nickName(userModel.getFirstAttribute(AttributeNames.RFC7643.NICK_NAME))
                     .title(userModel.getFirstAttribute(AttributeNames.RFC7643.TITLE))
                     .displayName(userModel.getFirstAttribute(AttributeNames.RFC7643.DISPLAY_NAME))

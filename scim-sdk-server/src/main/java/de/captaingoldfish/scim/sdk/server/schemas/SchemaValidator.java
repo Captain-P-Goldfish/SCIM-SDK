@@ -446,10 +446,12 @@ public class SchemaValidator
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId().orElse("null") + "' is referenced "
                                        + "in the '" + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
                                        + "not present within the document";
-      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getNonNullId()))
-                                   .orElseThrow(() -> new BadRequestException(message.get(), null,
-                                                                              ScimType.Custom.MISSING_EXTENSION));
-      JsonNode extensionNode = validateExtensionForRequest(schemaExtension, extension, httpMethod);
+      JsonNode extension = document.get(schemaExtension.getNonNullId());
+      JsonNode extensionNode = null;
+      if (extension != null)
+      {
+        validateExtensionForRequest(schemaExtension, extension, httpMethod);
+      }
       if (extensionNode == null)
       {
         JsonHelper.getArrayAttribute(validatedMainDocument, AttributeNames.RFC7643.SCHEMAS).ifPresent(arrayNode -> {
