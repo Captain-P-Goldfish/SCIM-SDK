@@ -1,10 +1,11 @@
 package de.captaingoldfish.scim.sdk.keycloak.services;
 
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
@@ -94,7 +95,7 @@ public class RoleService extends AbstractService
     removeAllChildRoles(roleModel);
     role.getChildren().forEach(childRole -> addChildRole(roleModel, childRole));
 
-    roleModel.setAttribute(AttributeNames.RFC7643.LAST_MODIFIED, Collections.singleton(Instant.now().toString()));
+    roleModel.setAttribute(AttributeNames.RFC7643.LAST_MODIFIED, Collections.singletonList(Instant.now().toString()));
     return roleModel;
   }
 
@@ -105,7 +106,7 @@ public class RoleService extends AbstractService
    */
   private void removeAllChildRoles(RoleModel roleModel)
   {
-    roleModel.getComposites().forEach(roleModel::removeCompositeRole);
+    roleModel.getCompositesStream().collect(Collectors.toList()).forEach(roleModel::removeCompositeRole);
   }
 
   /**
@@ -118,7 +119,7 @@ public class RoleService extends AbstractService
   {
     RealmModel realmModel = getKeycloakSession().getContext().getRealm();
     final String childRoleId = childRole.getValue().orElse(null);
-    RoleModel childRoleModel = getKeycloakSession().realms().getRoleById(childRoleId, realmModel);
+    RoleModel childRoleModel = getKeycloakSession().roles().getRoleById(realmModel, childRoleId);
     if (childRoleModel == null)
     {
       throw new ResourceNotFoundException("role with id '" + childRoleId + "' does not exist");
@@ -148,7 +149,7 @@ public class RoleService extends AbstractService
   public RoleModel createNewRole(RealmRole role)
   {
     RealmModel realmModel = getKeycloakSession().getContext().getRealm();
-    RoleModel roleModel = getKeycloakSession().realms().addRealmRole(realmModel, role.getName());
+    RoleModel roleModel = getKeycloakSession().roles().addRealmRole(realmModel, role.getName());
     role.getDescription().ifPresent(roleModel::setDescription);
     role.getExternalId()
         .ifPresent(externalId -> roleModel.setSingleAttribute(AttributeNames.RFC7643.EXTERNAL_ID, externalId));
@@ -159,8 +160,8 @@ public class RoleService extends AbstractService
       addChildRole(roleModel, child);
     });
     Instant now = Instant.now();
-    roleModel.setAttribute(AttributeNames.RFC7643.CREATED, Collections.singleton(now.toString()));
-    roleModel.setAttribute(AttributeNames.RFC7643.LAST_MODIFIED, Collections.singleton(now.toString()));
+    roleModel.setAttribute(AttributeNames.RFC7643.CREATED, Collections.singletonList(now.toString()));
+    roleModel.setAttribute(AttributeNames.RFC7643.LAST_MODIFIED, Collections.singletonList(now.toString()));
     return roleModel;
   }
 
@@ -213,8 +214,8 @@ public class RoleService extends AbstractService
    */
   private void addRoleToGroup(RoleModel roleModel, String groupId)
   {
-    GroupModel groupModel = getKeycloakSession().realms()
-                                                .getGroupById(groupId, getKeycloakSession().getContext().getRealm());
+    GroupModel groupModel = getKeycloakSession().groups()
+                                                .getGroupById(getKeycloakSession().getContext().getRealm(), groupId);
     if (groupModel == null)
     {
       throw new ResourceNotFoundException("role cannot be granted to non existing group with id '" + groupId + "'");
@@ -229,10 +230,9 @@ public class RoleService extends AbstractService
   public List<RoleMapperModel> getAssociatedMembers(RoleModel roleModel)
   {
     RealmModel realmModel = getKeycloakSession().getContext().getRealm();
-    List<UserModel> userRoleMembers = getKeycloakSession().users().getRoleMembers(realmModel, roleModel);
-    List<GroupModel> groupRoleMembers = getKeycloakSession().realms().getGroupsByRole(realmModel, roleModel, -1, -1);
-    List<RoleMapperModel> roleMappers = new ArrayList<>(userRoleMembers);
-    roleMappers.addAll(groupRoleMembers);
-    return roleMappers;
+    Stream<UserModel> userRoleMembers = getKeycloakSession().users().getRoleMembersStream(realmModel, roleModel);
+    Stream<GroupModel> groupRoleMembers = getKeycloakSession().groups()
+                                                              .getGroupsByRoleStream(realmModel, roleModel, -1, -1);
+    return Stream.concat(userRoleMembers, groupRoleMembers).collect(Collectors.toList());
   }
 }
