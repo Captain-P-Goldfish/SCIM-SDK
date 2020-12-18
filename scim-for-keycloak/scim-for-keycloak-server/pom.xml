@@ -78,6 +78,11 @@
             <artifactId>h2</artifactId>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.keycloak</groupId>
+            <artifactId>keycloak-themes</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
