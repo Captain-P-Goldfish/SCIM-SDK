@@ -52,9 +52,9 @@ public class ScimJpaEntityProviderFactory implements JpaEntityProviderFactory
         RoleModel roleModel = roleRemovedEvent.getRole();
         roleRemoved(keycloakSession, roleModel);
       }
-      else if (event instanceof RealmModel.ClientRemovedEvent)
+      else if (event instanceof ClientModel.ClientRemovedEvent)
       {
-        RealmModel.ClientRemovedEvent clientRemovedEvent = (RealmModel.ClientRemovedEvent)event;
+        ClientModel.ClientRemovedEvent clientRemovedEvent = (ClientModel.ClientRemovedEvent)event;
         KeycloakSession keycloakSession = clientRemovedEvent.getKeycloakSession();
         ClientModel clientModel = clientRemovedEvent.getClient();
         clientRemoved(keycloakSession, clientModel);

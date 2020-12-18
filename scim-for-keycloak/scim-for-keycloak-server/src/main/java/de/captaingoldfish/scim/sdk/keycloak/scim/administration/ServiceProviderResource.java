@@ -1,8 +1,8 @@
 package de.captaingoldfish.scim.sdk.keycloak.scim.administration;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.PUT;
@@ -101,9 +101,10 @@ public class ServiceProviderResource extends AbstractEndpoint
   public Response getAvailableClients()
   {
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    ClientStorageManager clientProvider = new ClientStorageManager(getKeycloakSession());
-    List<ClientModel> clientModelList = clientProvider.getClients(getKeycloakSession().getContext().getRealm());
-    clientModelList.forEach(clientModel -> arrayNode.add(clientModel.getClientId()));
+    ClientStorageManager clientProvider = new ClientStorageManager(getKeycloakSession(), 10000);
+    Stream<ClientModel> clientModelStream = clientProvider.getClientsStream(getKeycloakSession().getContext()
+                                                                                                .getRealm());
+    clientModelStream.forEach(clientModel -> arrayNode.add(clientModel.getClientId()));
     return Response.ok(arrayNode.toString()).build();
   }
 

@@ -6,13 +6,10 @@ within the web admin console. You'll be able to restrict access of endpoints wit
 
 ## Keycloak support matrix 
 
-|  version | supported          | easily adapted         |
-| :------- | :----------------- | :--------------------- |
-| lower    | :x:                | :heavy_check_mark:     |
-| 8.0.x    | :x:                | :heavy_check_mark:     |
-| 9.0.x    | :heavy_check_mark: |                        |
-| 10.0.x   | :heavy_check_mark: |                        |
-| 11.0.0   | :heavy_check_mark: |                        |
+| scim-for-keycloak | < KC 8.0.x         | KC 8.0.x - 11.0.x  | KC 12.0.x          |
+| :---------------- | :----------------- | :----------------- | :----------------- | 
+| 1.8.x             | :x:                | :heavy_check_mark: | :x:                |
+| 1.9.x             | :x:                | :x:                | :heavy_check_mark: | 
 
 ## Deploy into a standalone keycloak server?
 

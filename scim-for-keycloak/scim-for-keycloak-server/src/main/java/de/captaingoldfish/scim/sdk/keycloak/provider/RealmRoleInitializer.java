@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.keycloak.provider;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -99,10 +99,9 @@ public class RealmRoleInitializer
    */
   private static void setupRealmAccess(KeycloakSession session)
   {
-    List<RealmModel> realms = session.realms().getRealms();
+    Stream<RealmModel> realms = session.realms().getRealmsStream();
     RealmManager manager = new RealmManager(session);
-    for ( RealmModel realm : realms )
-    {
+    realms.forEach(realm -> {
       ClientModel client = realm.getMasterAdminClient();
       if (client.getRole(SCIM_ADMIN_ROLE) == null)
       {
@@ -119,7 +118,7 @@ public class RealmRoleInitializer
           addRealmAdminRoles(manager, realm);
         }
       }
-    }
+    });
   }
 
   /**

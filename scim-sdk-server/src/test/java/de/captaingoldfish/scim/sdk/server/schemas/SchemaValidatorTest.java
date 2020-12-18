@@ -468,6 +468,35 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * This test is explicitly for checking compatibility with microsoft Azure AD. Azure AD sends schema extension
+   * references in the schema attribute even if the extension is not present within the document. So this test
+   * verifies that the schema validation will not fail if the extension is explicitly set but not present within
+   * a request
+   */
+  @Test
+  public void testIgnoreReferencedButMissingExtensionsOnRequest()
+  {
+    final JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    final JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    final JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(true),
+                                                                             userResourceTypeNode,
+                                                                             userSchemaNode,
+                                                                             enterpriseUser);
+    User userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    userSchema.addSchema(SchemaUris.ENTERPRISE_USER_URI);
+
+    Assertions.assertNull(userSchema.get(SchemaUris.ENTERPRISE_USER_URI));
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateDocumentForRequest(userResourceType, userSchema, HttpMethod.POST);
+    });
+    User validatedUser = JsonHelper.readJsonDocument(validatedDocument.toString(), User.class);
+    Assertions.assertFalse(validatedUser.getEnterpriseUser().isPresent());
+    Assertions.assertEquals(1, validatedUser.getSchemas().size());
+    Assertions.assertEquals(SchemaUris.USER_URI, validatedUser.getSchemas().iterator().next());
+  }
+
+  /**
    * this test will verify that unknown attributes are removed from the validated document
    */
   @Test

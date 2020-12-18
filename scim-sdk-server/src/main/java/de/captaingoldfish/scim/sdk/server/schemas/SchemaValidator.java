@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -27,7 +28,6 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidDateTimeRepresentationException;
@@ -443,12 +443,13 @@ public class SchemaValidator
     validatedForMissingRequiredExtension(resourceType, document, DirectionType.REQUEST);
     for ( Schema schemaExtension : resourceSchema.getExtensions() )
     {
-      Supplier<String> message = () -> "the extension '" + schemaExtension.getId().orElse("null") + "' is referenced "
-                                       + "in the '" + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
-                                       + "not present within the document";
-      JsonNode extension = Optional.ofNullable(document.get(schemaExtension.getNonNullId()))
-                                   .orElseThrow(() -> new BadRequestException(message.get(), null,
-                                                                              ScimType.Custom.MISSING_EXTENSION));
+      JsonNode extension = getSchemaExtensionFromResourceDocument(document, validatedMainDocument, schemaExtension);
+      if (extension == null)
+      {
+        // if the referenced schema extension is not present within the resource document we do not need to validate
+        // the extension so go on to the next one
+        continue;
+      }
       JsonNode extensionNode = validateExtensionForRequest(schemaExtension, extension, httpMethod);
       if (extensionNode == null)
       {
@@ -466,6 +467,63 @@ public class SchemaValidator
       ((ObjectNode)validatedMainDocument).set(AttributeNames.RFC7643.META, document.get(AttributeNames.RFC7643.META));
     }
     return validatedMainDocument;
+  }
+
+  /**
+   * Tries to get the extension body from the resource document.
+   *
+   * @param originalDocument the resource document from the request
+   * @param validatedMainDocument the rebuild document with validated attributes only
+   * @param schemaExtension the extension schema definition that was referenced by the resource documents
+   *          "schemas"-attribute
+   * @return the scheme extension node or null if not present
+   */
+  private static JsonNode getSchemaExtensionFromResourceDocument(JsonNode originalDocument,
+                                                                 JsonNode validatedMainDocument,
+                                                                 Schema schemaExtension)
+  {
+    JsonNode extension = originalDocument.get(schemaExtension.getNonNullId());
+    if (extension == null)
+    {
+      if (log.isDebugEnabled())
+      {
+        String message = String.format("the extension '%s' is referenced in the '%s' attribute but is not present "
+                                       + "within the document",
+                                       schemaExtension.getId().orElse("null"),
+                                       AttributeNames.RFC7643.SCHEMAS);
+        log.debug(message);
+      }
+      removeExtensionFromSchemasAttribute(validatedMainDocument, schemaExtension);
+    }
+    return extension;
+  }
+
+  /**
+   * If a schemas attribute of a resource document has an extension reference that is not present within the
+   * resource documents body the extension reference uri will be removed from the schemas attribute to prevent
+   * erroneously handling by developers who might assume that the extension will be present if set within the
+   * schemas attribute
+   *
+   * @param validatedMainDocument the resource document from which the schema extension uri will be removed
+   * @param schemaExtension the schema extensions definition to access the specific uri that should be removed
+   */
+  private static void removeExtensionFromSchemasAttribute(JsonNode validatedMainDocument, Schema schemaExtension)
+  {
+    ArrayNode schemasNode = (ArrayNode)validatedMainDocument.get(AttributeNames.RFC7643.SCHEMAS);
+    int indexToRemove = -1;
+    for ( int i = 0 ; i < schemasNode.size() ; i++ )
+    {
+      TextNode textNode = (TextNode)schemasNode.get(i);
+      if (schemaExtension.getNonNullId().equals(textNode.textValue()))
+      {
+        indexToRemove = i;
+        break;
+      }
+    }
+    if (indexToRemove >= 0)
+    {
+      schemasNode.remove(indexToRemove);
+    }
   }
 
   /**
