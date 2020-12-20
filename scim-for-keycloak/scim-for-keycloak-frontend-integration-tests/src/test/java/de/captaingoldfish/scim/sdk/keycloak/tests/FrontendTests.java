@@ -14,6 +14,7 @@ import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ActivateScimThemeTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.CreateNewRealmTestBuilder;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ServiceProviderConfigTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.WebAdminLoginTestBuilder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -77,6 +78,8 @@ public abstract class FrontendTests
                                                          directKeycloakAccessSetup).buildDynamicTests());
     dynamicTests.addAll(new CreateNewRealmTestBuilder(webDriver, testSetup,
                                                       directKeycloakAccessSetup).buildDynamicTests());
+    dynamicTests.addAll(new ServiceProviderConfigTestBuilder(webDriver, testSetup,
+                                                             directKeycloakAccessSetup).buildDynamicTests());
     return dynamicTests;
   }
 }

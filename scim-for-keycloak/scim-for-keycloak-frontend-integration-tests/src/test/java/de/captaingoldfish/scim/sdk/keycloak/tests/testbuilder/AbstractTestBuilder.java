@@ -87,6 +87,78 @@ public abstract class AbstractTestBuilder
   }
 
   /**
+   * tries to enable a checkbox element that can be found under the given id selector. If the checkbox is
+   * already enabled nothing is done
+   * 
+   * @param idSelector the id selector to find the checkbox
+   * @return true if the checkbox was disabled and has been enabled, false if the checkbox was already enabled
+   */
+  protected boolean enableKeycloakCheckboxElement(By idSelector)
+  {
+    WebElement checkbox = getKeycloakCheckboxElement(idSelector);
+    // this class tells that the checkbox is disabled
+    final String disabledClass = "ng-empty";
+    if (hasClass(checkbox.findElement(By.tagName("input")), disabledClass))
+    {
+      checkbox.click();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * tries to disable a checkbox element that can be found under the given id selector. If the checkbox is
+   * already disabled nothing is done
+   * 
+   * @param idSelector the id selector to find the checkbox
+   * @return true if the checkbox was enabled and has been disabled, false if the checkbox was already disabled
+   */
+  protected boolean disableKeycloakCheckboxElement(By idSelector)
+  {
+    WebElement checkbox = getKeycloakCheckboxElement(idSelector);
+    // this class tells that the checkbox is enabled
+    final String enabledClass = "ng-not-empty";
+    if (hasClass(checkbox.findElement(By.tagName("input")), enabledClass))
+    {
+      checkbox.click();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * tries to set the checkbox element to the given value
+   * 
+   * @param idSelector the id selector to find the checkbox
+   * @param enabled true to enable the checkbox, false to disable the checkbox
+   * @return true if the checkbox state has changed, false if the checkbox was already in the given state
+   */
+  protected boolean setCheckboxElement(By idSelector, boolean enabled)
+  {
+    if (enabled)
+    {
+      return enableKeycloakCheckboxElement(idSelector);
+    }
+    return disableKeycloakCheckboxElement(idSelector);
+  }
+
+  /**
+   * checks if the give web element has the given class in the class-attribute
+   */
+  protected boolean hasClass(WebElement element, String expectedClassValue)
+  {
+    String classes = element.getAttribute("class");
+    for ( String c : classes.split(" ") )
+    {
+      if (c.equals(expectedClassValue))
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
    * thx to <a href=
    * "https://sqa.stackexchange.com/questions/26299/staleelementreferenceexception-with-explicit-wait">Stack
    * Exchange</a>
