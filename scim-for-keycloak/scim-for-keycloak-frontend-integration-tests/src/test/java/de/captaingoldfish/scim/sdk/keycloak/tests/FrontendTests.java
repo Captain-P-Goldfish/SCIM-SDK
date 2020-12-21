@@ -14,6 +14,7 @@ import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ActivateScimThemeTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.CreateNewRealmTestBuilder;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ServiceProviderAuthorizationTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ServiceProviderConfigTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.WebAdminLoginTestBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -71,6 +72,8 @@ public abstract class FrontendTests
   {
     WebDriver webDriver = testSetup.createNewWebDriver();
 
+    String currentRealm = "master";
+
     List<DynamicTest> dynamicTests = new ArrayList<>();
     dynamicTests.addAll(new WebAdminLoginTestBuilder(webDriver, testSetup,
                                                      directKeycloakAccessSetup).buildDynamicTests());
@@ -78,8 +81,10 @@ public abstract class FrontendTests
                                                          directKeycloakAccessSetup).buildDynamicTests());
     dynamicTests.addAll(new CreateNewRealmTestBuilder(webDriver, testSetup,
                                                       directKeycloakAccessSetup).buildDynamicTests());
-    dynamicTests.addAll(new ServiceProviderConfigTestBuilder(webDriver, testSetup,
-                                                             directKeycloakAccessSetup).buildDynamicTests());
+    dynamicTests.addAll(new ServiceProviderConfigTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
+                                                             currentRealm).buildDynamicTests());
+    dynamicTests.addAll(new ServiceProviderAuthorizationTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
+                                                                    currentRealm).buildDynamicTests());
     return dynamicTests;
   }
 }

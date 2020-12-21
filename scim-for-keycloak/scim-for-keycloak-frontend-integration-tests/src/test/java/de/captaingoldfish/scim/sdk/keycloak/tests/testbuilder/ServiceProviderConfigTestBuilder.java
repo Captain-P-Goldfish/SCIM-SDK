@@ -13,12 +13,14 @@ import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.utils.WaitStrategy;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * @author Pascal Knueppel
  * @since 18.12.2020
  */
+@Slf4j
 public class ServiceProviderConfigTestBuilder extends AbstractTestBuilder
 {
 
@@ -29,16 +31,17 @@ public class ServiceProviderConfigTestBuilder extends AbstractTestBuilder
 
   public ServiceProviderConfigTestBuilder(WebDriver webDriver,
                                           TestSetup testSetup,
-                                          DirectKeycloakAccessSetup directKeycloakAccessSetup)
+                                          DirectKeycloakAccessSetup directKeycloakAccessSetup,
+                                          String realm)
   {
     super(webDriver, testSetup, directKeycloakAccessSetup);
-    currentRealm = "master";
+    this.currentRealm = realm;
   }
 
   @Override
   public List<DynamicTest> buildDynamicTests()
   {
-    testCompareTestAndResetValues();
+    compareTestAndResetValues();
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
 
@@ -148,7 +151,7 @@ public class ServiceProviderConfigTestBuilder extends AbstractTestBuilder
   /**
    * this test will simply make sure that the values of the test values and the reset values are not identical
    */
-  public void testCompareTestAndResetValues()
+  public void compareTestAndResetValues()
   {
     Assertions.assertNotEquals(ResetValues.ENABLED, TestValues.ENABLED);
     Assertions.assertNotEquals(ResetValues.MAX_RESULTS, TestValues.MAX_RESULTS);

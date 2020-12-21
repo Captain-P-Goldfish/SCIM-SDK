@@ -6,6 +6,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.DynamicTest;
 import org.openqa.selenium.By;
+import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -159,13 +160,11 @@ public abstract class AbstractTestBuilder
   }
 
   /**
-   * thx to <a href=
-   * "https://sqa.stackexchange.com/questions/26299/staleelementreferenceexception-with-explicit-wait">Stack
-   * Exchange</a>
+   * allows to wait until an element is clickable after an action on the web page has modified the DOM document.
    */
   protected WebElement untilClickable(By what)
   {
-    return wait.until(ExpectedConditions.elementToBeClickable(what));
+    return wait.ignoring(StaleElementReferenceException.class).until(ExpectedConditions.elementToBeClickable(what));
   }
 
   /**
