@@ -8,16 +8,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.TestFactory;
+import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.WebDriverWait;
 
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ActivateScimThemeTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.CreateNewRealmTestBuilder;
-import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ResourceTypeListTestBuilder;
-import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ServiceProviderAuthorizationTestBuilder;
-import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ServiceProviderConfigTestBuilder;
-import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.WebAdminLoginTestBuilder;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.RealmTestBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -73,21 +73,38 @@ public abstract class FrontendTests
   {
     WebDriver webDriver = testSetup.createNewWebDriver();
 
-    String currentRealm = "master";
+    loginOnAdminConsole(testSetup, webDriver);
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
-    dynamicTests.addAll(new WebAdminLoginTestBuilder(webDriver, testSetup,
-                                                     directKeycloakAccessSetup).buildDynamicTests());
+    dynamicTests.addAll(new RealmTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
+                                             "master").buildDynamicTests());
     dynamicTests.addAll(new ActivateScimThemeTestBuilder(webDriver, testSetup,
                                                          directKeycloakAccessSetup).buildDynamicTests());
     dynamicTests.addAll(new CreateNewRealmTestBuilder(webDriver, testSetup,
                                                       directKeycloakAccessSetup).buildDynamicTests());
-    dynamicTests.addAll(new ServiceProviderConfigTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
-                                                             currentRealm).buildDynamicTests());
-    dynamicTests.addAll(new ServiceProviderAuthorizationTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
-                                                                    currentRealm).buildDynamicTests());
-    dynamicTests.addAll(new ResourceTypeListTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
-                                                        currentRealm).buildDynamicTests());
     return dynamicTests;
+  }
+
+  /**
+   * executes the login on the keycloak web admin console
+   */
+  private void loginOnAdminConsole(TestSetup testSetup, WebDriver webDriver)
+  {
+    final WebDriverWait wait = new WebDriverWait(webDriver, 5000);
+    final String loginAddress = testSetup.getBrowserAccessUrl() + "/auth/admin/";
+    webDriver.get(loginAddress);
+
+    WebElement usernameInput = wait.until(d -> d.findElement(By.id("username")));
+    WebElement passwordInput = webDriver.findElement(By.id("password"));
+    WebElement loginForm = webDriver.findElement(By.id("kc-login"));
+
+    usernameInput.sendKeys(testSetup.getAdminUserName());
+    passwordInput.sendKeys(testSetup.getAdminUserPassword());
+    loginForm.click();
+    // keycloak is acting differently based on the case that the server is running on windows or in a docker
+    // environment. Therefore we are calling the master realm directly to ensure that we start on the master
+    // realms overview page
+    final String masterRealmUrl = loginAddress + "master/console/#/realms/master";
+    webDriver.get(masterRealmUrl);
   }
 }

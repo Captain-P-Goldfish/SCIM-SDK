@@ -78,6 +78,7 @@ public class ServiceProviderConfigTestBuilder extends AbstractTestBuilder
     /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check database values of service provider", () -> {
       new WaitStrategy().waitFor(() -> {
+        directKeycloakAccessSetup.clearCache();
         ScimServiceProviderEntity serviceProviderEntity = directKeycloakAccessSetup.getServiceProviderEntity(currentRealm);
         Assertions.assertEquals(TestValues.ENABLED, serviceProviderEntity.isEnabled());
         Assertions.assertEquals(TestValues.MAX_RESULTS, serviceProviderEntity.getFilterMaxResults());

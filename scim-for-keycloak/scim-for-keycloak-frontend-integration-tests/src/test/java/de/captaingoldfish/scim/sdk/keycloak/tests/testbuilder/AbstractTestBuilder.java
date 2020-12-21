@@ -50,7 +50,7 @@ public abstract class AbstractTestBuilder
     this.webDriver = webDriver;
     this.testSetup = testSetup;
     this.directKeycloakAccessSetup = directKeycloakAccessSetup;
-    this.wait = new WebDriverWait(webDriver, 5);
+    this.wait = new WebDriverWait(webDriver, 2);
   }
 
   /**

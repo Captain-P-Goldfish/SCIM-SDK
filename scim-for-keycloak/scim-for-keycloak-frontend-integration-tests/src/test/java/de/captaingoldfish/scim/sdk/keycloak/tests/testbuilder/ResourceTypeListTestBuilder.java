@@ -56,6 +56,24 @@ public class ResourceTypeListTestBuilder extends AbstractTestBuilder
       wait.until(d -> d.findElement(By.id("meta-resource-type-table")));
     }));
     /* ******************************************************************************************************* */
+    dynamicTests.add(DynamicTest.dynamicTest("check all resource type configurations are identical", () -> {
+      List<ScimResourceTypeEntity> resourceTypeEntities = directKeycloakAccessSetup.getResourceTypeEntities(currentRealm);
+      ScimResourceTypeEntity firstResourceType = resourceTypeEntities.get(0);
+      for ( int i = 1 ; i < resourceTypeEntities.size() ; i++ )
+      {
+        ScimResourceTypeEntity nextResourceType = resourceTypeEntities.get(i);
+        Assertions.assertEquals(firstResourceType.isEnabled(), nextResourceType.isEnabled());
+        Assertions.assertEquals(firstResourceType.isAutoFiltering(), nextResourceType.isAutoFiltering());
+        Assertions.assertEquals(firstResourceType.isAutoSorting(), nextResourceType.isAutoSorting());
+        Assertions.assertEquals(firstResourceType.isEtagEnabled(), nextResourceType.isEtagEnabled());
+        Assertions.assertEquals(firstResourceType.isDisableCreate(), nextResourceType.isDisableCreate());
+        Assertions.assertEquals(firstResourceType.isDisableGet(), nextResourceType.isDisableGet());
+        Assertions.assertEquals(firstResourceType.isDisableList(), nextResourceType.isDisableList());
+        Assertions.assertEquals(firstResourceType.isDisableUpdate(), nextResourceType.isDisableUpdate());
+        Assertions.assertEquals(firstResourceType.isDisableDelete(), nextResourceType.isDisableDelete());
+      }
+    }));
+    /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check displayed meta resource types", () -> {
       WebElement metaResourceTypesTable = webDriver.findElement(By.id("meta-resource-type-table"));
       WebElement tableBody = metaResourceTypesTable.findElement(By.tagName("tbody"));
@@ -118,9 +136,8 @@ public class ResourceTypeListTestBuilder extends AbstractTestBuilder
                                                                         .findAny()
                                                                         .orElseThrow(IllegalStateException::new);
 
-        final String expectedWebAdminConfigUrlPattern = String.format("^https?://.+?/auth/admin/%s/console"
+        final String expectedWebAdminConfigUrlPattern = String.format("^https?://.+?/auth/admin/master/console"
                                                                       + "/#/realms/%s/scim/resource-type/%s",
-                                                                      currentRealm,
                                                                       currentRealm,
                                                                       resourceTypeName);
         MatcherAssert.assertThat(columns.get(0).findElement(By.tagName("a")).getAttribute("href"),

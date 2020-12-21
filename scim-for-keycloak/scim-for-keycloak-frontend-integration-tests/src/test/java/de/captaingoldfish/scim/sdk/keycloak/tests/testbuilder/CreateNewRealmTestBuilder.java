@@ -28,6 +28,9 @@ import de.captaingoldfish.scim.sdk.keycloak.tests.setup.utils.WaitStrategy;
 public class CreateNewRealmTestBuilder extends AbstractTestBuilder
 {
 
+  /**
+   * the id of the new realm that should be created
+   */
   private static final String REALM_ID = UUID.randomUUID().toString();
 
   public CreateNewRealmTestBuilder(WebDriver webDriver,
@@ -37,15 +40,18 @@ public class CreateNewRealmTestBuilder extends AbstractTestBuilder
     super(webDriver, testSetup, directKeycloakAccessSetup);
   }
 
+  /**
+   * creates a new realm, executes all realm frontend tests on this realm and deletes the realm eventually
+   */
   @Override
   public List<DynamicTest> buildDynamicTests()
   {
     List<DynamicTest> dynamicTests = new ArrayList<>();
-    dynamicTests.add(DynamicTest.dynamicTest("create a new realm" + REALM_ID, () -> {
+    dynamicTests.add(DynamicTest.dynamicTest("create a new realm: " + REALM_ID, () -> {
+      WebElement realmSelector = wait.until(d -> d.findElement(By.xpath("//div[@class = 'realm-selector']")));
       Actions actions = new Actions(webDriver);
       actions = actions.moveByOffset(200, 200);
       actions.perform();
-      WebElement realmSelector = wait.until(d -> d.findElement(By.xpath("//div[@class = 'realm-selector']")));
       actions.moveToElement(realmSelector).perform();
 
       untilClickable(By.xpath("//a[@href = '#/create/realm']")).click();
@@ -55,11 +61,13 @@ public class CreateNewRealmTestBuilder extends AbstractTestBuilder
       waitForRealmCreate.until(d -> d.findElement(By.id("name")));
     }));
     // **********************************************************************************************************
-    dynamicTests.add(getClickScimMenuTest());
+    dynamicTests.addAll(new ActivateScimThemeTestBuilder(webDriver, testSetup,
+                                                         directKeycloakAccessSetup).buildDynamicTests());
     // **********************************************************************************************************
     String longTestName = "verify scim database entries for realm '" + REALM_ID + "' are created";
     dynamicTests.add(DynamicTest.dynamicTest(longTestName, () -> {
       new WaitStrategy().waitFor(() -> {
+        directKeycloakAccessSetup.clearCache();
         ScimServiceProviderEntity scimServiceProviderEntity = directKeycloakAccessSetup.getServiceProviderEntity(REALM_ID);
         Assertions.assertNotNull(scimServiceProviderEntity);
         List<ScimResourceTypeEntity> resourceTypeEntities = directKeycloakAccessSetup.getResourceTypeEntities(REALM_ID);
@@ -67,7 +75,8 @@ public class CreateNewRealmTestBuilder extends AbstractTestBuilder
       });
     }));
     // **********************************************************************************************************
-    // TODO
+    dynamicTests.addAll(new RealmTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
+                                             REALM_ID).buildDynamicTests());
     // **********************************************************************************************************
     dynamicTests.add(DynamicTest.dynamicTest("delete realm: " + REALM_ID, () -> {
       By realmSettingsMenuXPath = By.xpath("//a[text()[contains(.,'Realm Settings')]]");
