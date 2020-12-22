@@ -285,6 +285,7 @@ public class ScimServiceProviderService extends AbstractService
     getEntityManager().createNamedQuery("removeScimServiceProvider")
                       .setParameter("realmId", realmModel.getId())
                       .executeUpdate();
+    getEntityManager().flush();
   }
 
   /**

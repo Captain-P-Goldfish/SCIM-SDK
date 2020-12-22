@@ -71,7 +71,7 @@ public class ServiceProviderResource extends AbstractEndpoint
 
     // now override the current service provider configuration
     {
-      ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(getKeycloakSession());
+      ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(getKeycloakSession(), true);
       ServiceProvider oldServiceProvider = resourceEndpoint.getServiceProvider();
       oldServiceProvider.setFilterConfig(newServiceProvider.getFilterConfig());
       oldServiceProvider.setSortConfig(newServiceProvider.getSortConfig());
