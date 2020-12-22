@@ -1,5 +1,0 @@
-superadmin
-admin
-moderator
-worker
-user

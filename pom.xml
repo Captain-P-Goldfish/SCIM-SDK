@@ -54,7 +54,6 @@
         <module>scim-sdk-server</module>
         <module>scim-sdk-client</module>
         <module>scim-sdk-common</module>
-        <module>scim-for-keycloak</module>
         <module>samples</module>
     </modules>
 
