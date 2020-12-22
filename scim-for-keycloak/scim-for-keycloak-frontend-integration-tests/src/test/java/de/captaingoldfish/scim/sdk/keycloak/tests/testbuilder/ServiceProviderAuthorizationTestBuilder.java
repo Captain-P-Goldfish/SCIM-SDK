@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -78,6 +79,34 @@ public class ServiceProviderAuthorizationTestBuilder extends AbstractTestBuilder
       wait.ignoring(StaleElementReferenceException.class).until(d -> d.findElement(By.id("available")));
     }));
     /* ******************************************************************************************************* */
+    dynamicTests.add(DynamicTest.dynamicTest("verify select lists are displaying elements correctly", () -> {
+      List<String> availableClientIds;
+      List<String> addedClientIds;
+
+      {
+        WebElement availableClientSelection = wait.until(d -> d.findElement(By.id("available")));
+        List<WebElement> availableOptions = availableClientSelection.findElements(By.tagName("option"));
+        availableClientIds = availableOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      {
+        WebElement assignedClientSelection = wait.until(d -> d.findElement(By.id("assigned")));
+        List<WebElement> assignedOptions = assignedClientSelection.findElements(By.tagName("option"));
+        addedClientIds = assignedOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      MatcherAssert.assertThat(availableClientIds,
+                               Matchers.not(Matchers.hasItems(assignedClientIds.stream()
+                                                                               .map(Matchers::equalTo)
+                                                                               .collect(Collectors.toList())
+                                                                               .toArray(new Matcher[0]))));
+      MatcherAssert.assertThat(addedClientIds,
+                               Matchers.hasItems(assignedClientIds.stream()
+                                                                  .map(Matchers::equalTo)
+                                                                  .collect(Collectors.toList())
+                                                                  .toArray(new Matcher[0])));
+    }));
+    /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check assigned clients on database", () -> {
       new WaitStrategy().waitFor(() -> {
         directKeycloakAccessSetup.clearCache();
@@ -105,6 +134,28 @@ public class ServiceProviderAuthorizationTestBuilder extends AbstractTestBuilder
       WebElement removeSelectedButton = untilClickable(By.id("remove-selected"));
       removeSelectedButton.click();
       wait.ignoring(StaleElementReferenceException.class).until(d -> d.findElement(By.id("available")));
+    }));
+    /* ******************************************************************************************************* */
+    dynamicTests.add(DynamicTest.dynamicTest("verify select lists are displaying elements correctly", () -> {
+      List<String> availableClientIds;
+      List<String> addedClientIds;
+
+      {
+        WebElement availableClientSelection = wait.until(d -> d.findElement(By.id("available")));
+        List<WebElement> availableOptions = availableClientSelection.findElements(By.tagName("option"));
+        availableClientIds = availableOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      {
+        WebElement assignedClientSelection = wait.until(d -> d.findElement(By.id("assigned")));
+        List<WebElement> assignedOptions = assignedClientSelection.findElements(By.tagName("option"));
+        addedClientIds = assignedOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      directKeycloakAccessSetup.clearCache();
+      Assertions.assertEquals(directKeycloakAccessSetup.getAllClientsOfRealm(currentRealm).size(),
+                              availableClientIds.size());
+      Assertions.assertEquals(0, addedClientIds.size());
     }));
     /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check removed clients on database", () -> {

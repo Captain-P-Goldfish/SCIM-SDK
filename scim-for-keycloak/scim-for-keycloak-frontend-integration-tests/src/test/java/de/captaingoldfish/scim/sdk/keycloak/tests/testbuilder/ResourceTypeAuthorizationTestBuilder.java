@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
+import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -158,6 +159,34 @@ public class ResourceTypeAuthorizationTestBuilder extends AbstractTestBuilder
       wait.ignoring(StaleElementReferenceException.class).until(d -> d.findElement(By.id("available-" + roleType)));
     }));
     /* ******************************************************************************************************* */
+    dynamicTests.add(DynamicTest.dynamicTest("verify select lists are displaying elements correctly", () -> {
+      List<String> availableRoles;
+      List<String> addedRoles;
+
+      {
+        WebElement availableClientSelection = wait.until(d -> d.findElement(By.id("available-" + roleType)));
+        List<WebElement> availableOptions = availableClientSelection.findElements(By.tagName("option"));
+        availableRoles = availableOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      {
+        WebElement assignedClientSelection = wait.until(d -> d.findElement(By.id("assigned-" + roleType)));
+        List<WebElement> assignedOptions = assignedClientSelection.findElements(By.tagName("option"));
+        addedRoles = assignedOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      MatcherAssert.assertThat(availableRoles,
+                               Matchers.not(Matchers.hasItems(tempAssignedRoles.stream()
+                                                                               .map(Matchers::equalTo)
+                                                                               .collect(Collectors.toList())
+                                                                               .toArray(new Matcher[0]))));
+      MatcherAssert.assertThat(addedRoles,
+                               Matchers.hasItems(tempAssignedRoles.stream()
+                                                                  .map(Matchers::equalTo)
+                                                                  .collect(Collectors.toList())
+                                                                  .toArray(new Matcher[0])));
+    }));
+    /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check assigned " + roleType + " roles: " + resourceTypeName, () -> {
       new WaitStrategy().waitFor(() -> {
         directKeycloakAccessSetup.clearCache();
@@ -188,6 +217,28 @@ public class ResourceTypeAuthorizationTestBuilder extends AbstractTestBuilder
       WebElement removeSelectedButton = untilClickable(By.id("remove-" + roleType + "-role"));
       removeSelectedButton.click();
       wait.until(d -> d.findElement(By.id("available-" + roleType)));
+    }));
+    /* ******************************************************************************************************* */
+    dynamicTests.add(DynamicTest.dynamicTest("verify select lists are displaying elements correctly", () -> {
+      List<String> availableRoles;
+      List<String> addedRoles;
+
+      {
+        WebElement availableClientSelection = wait.until(d -> d.findElement(By.id("available-" + roleType)));
+        List<WebElement> availableOptions = availableClientSelection.findElements(By.tagName("option"));
+        availableRoles = availableOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      {
+        WebElement assignedClientSelection = wait.until(d -> d.findElement(By.id("assigned-" + roleType)));
+        List<WebElement> assignedOptions = assignedClientSelection.findElements(By.tagName("option"));
+        addedRoles = assignedOptions.stream().map(WebElement::getText).collect(Collectors.toList());
+      }
+
+      directKeycloakAccessSetup.clearCache();
+      Assertions.assertEquals(directKeycloakAccessSetup.getAllRealmRolesOfRealm(currentRealm).size(),
+                              availableRoles.size());
+      Assertions.assertEquals(0, addedRoles.size());
     }));
     /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check removed " + roleType + " roles: " + resourceTypeName, () -> {

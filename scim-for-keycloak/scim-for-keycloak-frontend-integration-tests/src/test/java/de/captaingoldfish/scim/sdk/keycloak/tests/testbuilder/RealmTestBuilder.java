@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DynamicTest;
 import org.openqa.selenium.WebDriver;
 
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
-import de.captaingoldfish.scim.sdk.keycloak.custom.resources.RealmRole;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
 
@@ -41,9 +40,7 @@ public class RealmTestBuilder extends AbstractTestBuilder
                                                                     currentRealm).buildDynamicTests());
     dynamicTests.addAll(new ResourceTypeListTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
                                                         currentRealm).buildDynamicTests());
-    for ( String resourceTypeName : Arrays.asList(ResourceTypeNames.USER,
-                                                  ResourceTypeNames.GROUPS,
-                                                  RealmRole.RESOURCE_NAME) )
+    for ( String resourceTypeName : Arrays.asList(ResourceTypeNames.USER, ResourceTypeNames.GROUPS) )
     {
       dynamicTests.addAll(new ResourceTypeConfigTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
                                                             currentRealm, resourceTypeName).buildDynamicTests());

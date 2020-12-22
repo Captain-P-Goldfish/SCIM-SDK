@@ -8,11 +8,14 @@ import java.util.Map;
 import javax.persistence.EntityManager;
 import javax.persistence.NoResultException;
 import javax.persistence.Query;
+import javax.persistence.TypedQuery;
 
 import org.junit.platform.commons.util.StringUtils;
 import org.keycloak.models.KeycloakSession;
 import org.keycloak.models.KeycloakSessionFactory;
 import org.keycloak.models.RealmModel;
+import org.keycloak.models.jpa.entities.ClientEntity;
+import org.keycloak.models.jpa.entities.RoleEntity;
 
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimResourceTypeEntity;
 import de.captaingoldfish.scim.sdk.keycloak.entities.ScimServiceProviderEntity;
@@ -171,6 +174,64 @@ public class DirectKeycloakAccessSetup
       {
         query.setParameter("realmId", realmId);
       }
+      return query.getResultList();
+
+    }
+    catch (NoResultException ex)
+    {
+      return new ArrayList<>();
+    }
+  }
+
+  /**
+   * the clients of the given realm
+   * 
+   * @param realmId the realm of which the clients should be returned
+   */
+  public List<ClientEntity> getAllClientsOfRealm(String realmId)
+  {
+    try
+    {
+      String sqlQuery = "select client from " + ClientEntity.class.getSimpleName() + " client";
+      if (StringUtils.isNotBlank(realmId))
+      {
+        sqlQuery += " where client.realm.id = :realmId";
+      }
+      TypedQuery<ClientEntity> query = getEntityManager().createQuery(sqlQuery, ClientEntity.class);
+      if (StringUtils.isNotBlank(realmId))
+      {
+        query.setParameter("realmId", realmId);
+      }
+
+      return query.getResultList();
+
+    }
+    catch (NoResultException ex)
+    {
+      return new ArrayList<>();
+    }
+  }
+
+  /**
+   * the realm roles of the given realm
+   * 
+   * @param realmId the realm of which the clients should be returned
+   */
+  public List<RoleEntity> getAllRealmRolesOfRealm(String realmId)
+  {
+    try
+    {
+      String sqlQuery = "select role from " + RoleEntity.class.getSimpleName() + " role where role.clientRole is false";
+      if (StringUtils.isNotBlank(realmId))
+      {
+        sqlQuery += " and role.realmId = :realmId";
+      }
+      TypedQuery<RoleEntity> query = getEntityManager().createQuery(sqlQuery, RoleEntity.class);
+      if (StringUtils.isNotBlank(realmId))
+      {
+        query.setParameter("realmId", realmId);
+      }
+
       return query.getResultList();
 
     }
