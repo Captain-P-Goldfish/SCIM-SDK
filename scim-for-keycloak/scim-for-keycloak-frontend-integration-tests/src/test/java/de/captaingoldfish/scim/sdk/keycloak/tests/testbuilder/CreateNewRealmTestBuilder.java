@@ -10,7 +10,6 @@ import org.openqa.selenium.By;
 import org.openqa.selenium.StaleElementReferenceException;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -48,12 +47,8 @@ public class CreateNewRealmTestBuilder extends AbstractTestBuilder
   {
     List<DynamicTest> dynamicTests = new ArrayList<>();
     dynamicTests.add(DynamicTest.dynamicTest("create a new realm: " + REALM_ID, () -> {
-      By realmSelectorXPath = By.xpath("//div[@class = 'realm-selector']");
-      WebElement realmSelector = wait.until(ExpectedConditions.visibilityOfElementLocated(realmSelectorXPath));
-      Actions actions = new Actions(webDriver);
-      actions.moveToElement(realmSelector).perform();
+      webDriver.get(testSetup.getBrowserAccessUrl() + "/auth/admin/master/console/#/create/realm");
 
-      untilClickable(By.xpath("//a[@href = '#/create/realm']")).click();
       wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("name"))).sendKeys(REALM_ID);
       webDriver.findElement(By.xpath("//button[text() = 'Create']")).click();
       WebDriverWait waitForRealmCreate = new WebDriverWait(webDriver, 10);
