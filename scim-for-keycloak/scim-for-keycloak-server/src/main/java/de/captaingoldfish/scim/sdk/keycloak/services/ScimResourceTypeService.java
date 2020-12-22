@@ -287,6 +287,7 @@ public class ScimResourceTypeService extends AbstractService
     getEntityManager().createNamedQuery("removeScimResourceTypes")
                       .setParameter("realmId", realmModel.getId())
                       .executeUpdate();
+    getEntityManager().flush();
   }
 
   /**
@@ -341,7 +342,12 @@ public class ScimResourceTypeService extends AbstractService
    */
   private void removeRolesFromCurrentConfig(RoleModel roleModel)
   {
-    ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(getKeycloakSession());
+    ResourceEndpoint resourceEndpoint = ScimConfiguration.getScimEndpoint(getKeycloakSession(), false);
+    if (resourceEndpoint == null)
+    {
+      // in this case the realm itself was probably just removed
+      return;
+    }
     resourceEndpoint.getRegisteredResourceTypes().forEach(resourceType -> {
       ResourceTypeAuthorization authorization = resourceType.getFeatures().getAuthorization();
 

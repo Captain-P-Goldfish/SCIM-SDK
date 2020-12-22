@@ -5,7 +5,7 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-parent</artifactId>
-        <version>1.8.4-SNAPSHOT</version>
+        <version>1.9.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-for-keycloak</artifactId>
@@ -18,13 +18,14 @@
         <module>scim-for-keycloak-server</module>
         <module>scim-for-keycloak-deployment</module>
         <module>scim-for-keycloak-client</module>
+        <module>scim-for-keycloak-frontend-integration-tests</module>
     </modules>
 
     <properties>
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.parent.basedir}</formatter-path>
 
-        <version.keycloak>11.0.3</version.keycloak>
+        <version.keycloak>12.0.1</version.keycloak>
 
         <version.sun.javax.activation>1.2.0</version.sun.javax.activation>
         <version.javax.activation>1.1.1</version.javax.activation>

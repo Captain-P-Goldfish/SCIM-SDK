@@ -54,24 +54,24 @@ public class Authentication
   public AdminAuth authenticate(KeycloakSession keycloakSession)
   {
     KeycloakContext context = keycloakSession.getContext();
-    String accessToken = APP_AUTH_MANAGER.extractAuthorizationHeaderToken(context.getRequestHeaders());
+    String accessToken = AppAuthManager.extractAuthorizationHeaderToken(context.getRequestHeaders());
     if (accessToken == null)
     {
       log.error(ERROR_MESSAGE_AUTHENTICATION_FAILED);
       throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
     }
-    AuthenticationManager.AuthResult result = APP_AUTH_MANAGER.authenticateBearerToken(accessToken,
-                                                                                       keycloakSession,
-                                                                                       context.getRealm(),
-                                                                                       context.getUri(),
-                                                                                       context.getConnection(),
-                                                                                       context.getRequestHeaders());
-    if (result == null)
+    RealmModel authenticationRealm = keycloakSession.getContext().getRealm();
+    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
+    AuthenticationManager.AuthResult authResult = authenticator.setRealm(authenticationRealm)
+                                                               .setConnection(context.getConnection())
+                                                               .setHeaders(context.getRequestHeaders())
+                                                               .authenticate();
+    if (authResult == null)
     {
       log.error(ERROR_MESSAGE_AUTHENTICATION_FAILED);
       throw new NotAuthorizedException(ERROR_MESSAGE_AUTHENTICATION_FAILED);
     }
-    AdminAuth adminAuth = createAdminAuth(keycloakSession, result);
+    AdminAuth adminAuth = createAdminAuth(keycloakSession, authResult);
 
     ScimServiceProviderService serviceProviderService = new ScimServiceProviderService(keycloakSession);
     Optional<ScimServiceProviderEntity> optionalEntity = serviceProviderService.getServiceProviderEntity();
@@ -164,8 +164,7 @@ public class Authentication
   {
     KeycloakContext context = keycloakSession.getContext();
     RealmModel originalRealm = context.getRealm();
-    AppAuthManager authManager = new AppAuthManager();
-    String tokenString = authManager.extractAuthorizationHeaderToken(context.getRequestHeaders());
+    String tokenString = AppAuthManager.extractAuthorizationHeaderToken(context.getRequestHeaders());
 
     if (tokenString == null)
     {
@@ -193,12 +192,12 @@ public class Authentication
       throw new NotAuthorizedException("Unknown realm in token");
     }
     context.setRealm(authenticationRealm);
-    AuthenticationManager.AuthResult authResult = authManager.authenticateBearerToken(keycloakSession,
-                                                                                      authenticationRealm,
-                                                                                      keycloakSession.getContext()
-                                                                                                     .getUri(),
-                                                                                      context.getConnection(),
-                                                                                      context.getRequestHeaders());
+
+    AppAuthManager.BearerTokenAuthenticator authenticator = new AppAuthManager.BearerTokenAuthenticator(keycloakSession);
+    AuthenticationManager.AuthResult authResult = authenticator.setRealm(authenticationRealm)
+                                                               .setConnection(context.getConnection())
+                                                               .setHeaders(context.getRequestHeaders())
+                                                               .authenticate();
     if (authResult == null)
     {
       throw new NotAuthorizedException("Bearer");

@@ -58,7 +58,6 @@ public abstract class ResourceHandler<T extends ResourceNode>
   /**
    * gives access to the filter max results value of the current service provider configuration
    */
-  @Getter
   @Setter(AccessLevel.PACKAGE)
   private Supplier<Integer> maxResults;
 

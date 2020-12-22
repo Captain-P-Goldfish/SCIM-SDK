@@ -4,7 +4,7 @@ It is a full fleshed SCIM implementation that is easily integrated into keycloak
 within the web admin console. You'll be able to restrict access of endpoints with roles and to specific clients
 . Select the option `scim` on entry `Admin Console Theme` and reload the page (Press F5).
 
-## Keycloak support matrix 
+## Keycloak support matrix
 
 |  version | supported          | easily adapted         | scim-for-keycloak version  |
 | :------- | :----------------- | :--------------------- | :------------------------- |
@@ -13,7 +13,7 @@ within the web admin console. You'll be able to restrict access of endpoints wit
 | 9.0.x    | :heavy_check_mark: |                        | 1.8.x                      |
 | 10.0.x   | :heavy_check_mark: |                        | 1.8.x                      |     
 | 11.0.x   | :heavy_check_mark: |                        | 1.8.x                      |     
-| 12.0.x   | :heavy_check_mark: |                        | 1.9.x                      |     
+| 12.0.x   | :heavy_check_mark: |                        | 1.9.x                      |  
 
 ## Deploy into a standalone keycloak server?
 
