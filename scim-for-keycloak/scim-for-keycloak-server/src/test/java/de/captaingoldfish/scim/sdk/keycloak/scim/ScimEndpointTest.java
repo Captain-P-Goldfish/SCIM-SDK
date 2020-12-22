@@ -121,7 +121,7 @@ public class ScimEndpointTest extends KeycloakScimManagementTest
     KeycloakContext context = getKeycloakSession().getContext();
     RealmModel newRealm = getKeycloakSession().realms().createRealm("2ndRealm");
     Mockito.doReturn(newRealm).when(context).getRealm();
-    ScimConfiguration.getScimEndpoint(getKeycloakSession());
+    ScimConfiguration.getScimEndpoint(getKeycloakSession(), true);
     Assertions.assertEquals(2, ScimConfigurationBridge.getScimResourceEndpoints().size());
 
     // now try to load the users from the other realm. An empty list should be returned
@@ -148,7 +148,7 @@ public class ScimEndpointTest extends KeycloakScimManagementTest
     // first thing: create the new realm and initialize the scim configuration
     {
       Mockito.doReturn(newRealm).when(context).getRealm();
-      ScimConfiguration.getScimEndpoint(getKeycloakSession());
+      ScimConfiguration.getScimEndpoint(getKeycloakSession(), true);
       Assertions.assertEquals(2, ScimConfigurationBridge.getScimResourceEndpoints().size());
     }
 

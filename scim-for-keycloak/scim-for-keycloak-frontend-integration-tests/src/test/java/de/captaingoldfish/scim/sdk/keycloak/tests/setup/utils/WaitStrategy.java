@@ -34,6 +34,7 @@ public final class WaitStrategy
     Instant startTime = Instant.now();
     long timeDiff;
     boolean success = false;
+    Throwable lastException = null;
     do
     {
       try
@@ -44,6 +45,7 @@ public final class WaitStrategy
       catch (Exception | AssertionError ex)
       {
         log.debug(ex.getMessage(), ex);
+        lastException = ex;
       }
       Instant now = Instant.now();
       timeDiff = Duration.between(startTime, now).toMillis();
@@ -51,7 +53,7 @@ public final class WaitStrategy
     while (!success && timeDiff <= timeoutInMillis);
     if (timeDiff > timeoutInMillis)
     {
-      throw new TimeoutException("timed out while trying to retrieve data");
+      throw new TimeoutException("timed out while trying to retrieve data", lastException);
     }
   }
 

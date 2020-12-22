@@ -94,19 +94,17 @@ public class ServiceProviderAuthorizationTestBuilder extends AbstractTestBuilder
     }));
     /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("remove assigned clients from service provider", () -> {
-      new WaitStrategy().waitFor(() -> {
-        WebElement assignedClientSelection = wait.ignoring(StaleElementReferenceException.class)
-                                                 .until(d -> d.findElement(By.id("assigned")));
-        Select select = new Select(assignedClientSelection);
-        List<WebElement> options = assignedClientSelection.findElements(By.tagName("option"));
-        for ( int i = 0 ; i < options.size() ; i++ )
-        {
-          select.selectByIndex(i);
-        }
-        WebElement removeSelectedButton = untilClickable(By.id("remove-selected"));
-        removeSelectedButton.click();
-        wait.ignoring(StaleElementReferenceException.class).until(d -> d.findElement(By.id("available")));
-      });
+      WebElement assignedClientSelection = wait.ignoring(StaleElementReferenceException.class)
+                                               .until(d -> d.findElement(By.id("assigned")));
+      Select select = new Select(assignedClientSelection);
+      List<WebElement> options = assignedClientSelection.findElements(By.tagName("option"));
+      for ( int i = 0 ; i < options.size() ; i++ )
+      {
+        select.selectByIndex(i);
+      }
+      WebElement removeSelectedButton = untilClickable(By.id("remove-selected"));
+      removeSelectedButton.click();
+      wait.ignoring(StaleElementReferenceException.class).until(d -> d.findElement(By.id("available")));
     }));
     /* ******************************************************************************************************* */
     dynamicTests.add(DynamicTest.dynamicTest("check removed clients on database", () -> {

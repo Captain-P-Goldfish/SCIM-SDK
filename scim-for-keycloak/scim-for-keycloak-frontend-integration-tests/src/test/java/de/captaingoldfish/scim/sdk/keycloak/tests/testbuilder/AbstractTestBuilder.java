@@ -50,29 +50,13 @@ public abstract class AbstractTestBuilder
     this.webDriver = webDriver;
     this.testSetup = testSetup;
     this.directKeycloakAccessSetup = directKeycloakAccessSetup;
-    this.wait = new WebDriverWait(webDriver, 2);
+    this.wait = new WebDriverWait(webDriver, 5);
   }
 
   /**
    * @return the tests that should be created by this implementation
    */
   public abstract List<DynamicTest> buildDynamicTests();
-
-  /**
-   * @return the username to login to the web admin console
-   */
-  public String getWebAdminConsoleUsername()
-  {
-    return testSetup.getAdminUserName();
-  }
-
-  /**
-   * @return the password to login to the web admin console
-   */
-  public String getWebAdminConsolePassword()
-  {
-    return testSetup.getAdminUserPassword();
-  }
 
   /**
    * the keycloak checkbox elements have their id values on an element that is not clickable. The clickable

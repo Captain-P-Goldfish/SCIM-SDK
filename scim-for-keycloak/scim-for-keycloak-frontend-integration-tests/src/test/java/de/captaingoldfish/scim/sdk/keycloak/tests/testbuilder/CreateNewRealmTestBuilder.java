@@ -48,14 +48,13 @@ public class CreateNewRealmTestBuilder extends AbstractTestBuilder
   {
     List<DynamicTest> dynamicTests = new ArrayList<>();
     dynamicTests.add(DynamicTest.dynamicTest("create a new realm: " + REALM_ID, () -> {
-      WebElement realmSelector = wait.until(d -> d.findElement(By.xpath("//div[@class = 'realm-selector']")));
+      By realmSelectorXPath = By.xpath("//div[@class = 'realm-selector']");
+      WebElement realmSelector = wait.until(ExpectedConditions.visibilityOfElementLocated(realmSelectorXPath));
       Actions actions = new Actions(webDriver);
-      actions = actions.moveByOffset(200, 200);
-      actions.perform();
       actions.moveToElement(realmSelector).perform();
 
       untilClickable(By.xpath("//a[@href = '#/create/realm']")).click();
-      wait.until(d -> d.findElement(By.id("name"))).sendKeys(REALM_ID);
+      wait.until(ExpectedConditions.visibilityOfElementLocated(By.id("name"))).sendKeys(REALM_ID);
       webDriver.findElement(By.xpath("//button[text() = 'Create']")).click();
       WebDriverWait waitForRealmCreate = new WebDriverWait(webDriver, 10);
       waitForRealmCreate.until(d -> d.findElement(By.id("name")));
@@ -93,11 +92,13 @@ public class CreateNewRealmTestBuilder extends AbstractTestBuilder
     // **********************************************************************************************************
     longTestName = "verify scim database entries for realm '" + REALM_ID + "' are deleted";
     dynamicTests.add(DynamicTest.dynamicTest(longTestName, () -> {
-      directKeycloakAccessSetup.clearCache();
-      ScimServiceProviderEntity scimServiceProviderEntity = directKeycloakAccessSetup.getServiceProviderEntity(REALM_ID);
-      Assertions.assertNull(scimServiceProviderEntity);
-      List<ScimResourceTypeEntity> resourceTypeEntities = directKeycloakAccessSetup.getResourceTypeEntities(REALM_ID);
-      Assertions.assertEquals(0, resourceTypeEntities.size());
+      new WaitStrategy().waitFor(() -> {
+        directKeycloakAccessSetup.clearCache();
+        ScimServiceProviderEntity scimServiceProviderEntity = directKeycloakAccessSetup.getServiceProviderEntity(REALM_ID);
+        Assertions.assertNull(scimServiceProviderEntity);
+        List<ScimResourceTypeEntity> resourceTypeEntities = directKeycloakAccessSetup.getResourceTypeEntities(REALM_ID);
+        Assertions.assertEquals(0, resourceTypeEntities.size());
+      });
     }));
     // **********************************************************************************************************
     return dynamicTests;

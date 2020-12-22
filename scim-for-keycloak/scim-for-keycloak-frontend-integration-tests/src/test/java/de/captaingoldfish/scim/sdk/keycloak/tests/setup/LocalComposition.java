@@ -46,7 +46,7 @@ public class LocalComposition implements TestSetup
   @Override
   public void stop()
   {
-    seleniumWebDriverList.forEach(WebDriver::close);
+    seleniumWebDriverList.forEach(WebDriver::quit);
   }
 
   @Override

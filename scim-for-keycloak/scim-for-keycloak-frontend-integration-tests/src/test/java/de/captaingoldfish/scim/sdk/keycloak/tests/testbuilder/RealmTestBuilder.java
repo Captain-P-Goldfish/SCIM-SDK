@@ -47,6 +47,8 @@ public class RealmTestBuilder extends AbstractTestBuilder
     {
       dynamicTests.addAll(new ResourceTypeConfigTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
                                                             currentRealm, resourceTypeName).buildDynamicTests());
+      dynamicTests.addAll(new ResourceTypeAuthorizationTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
+                                                                   currentRealm, resourceTypeName).buildDynamicTests());
     }
     return dynamicTests;
   }
