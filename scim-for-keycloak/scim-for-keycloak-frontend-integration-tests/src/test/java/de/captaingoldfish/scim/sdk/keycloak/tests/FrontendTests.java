@@ -15,7 +15,9 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.TestSetup;
 import de.captaingoldfish.scim.sdk.keycloak.tests.setup.keycloakdirectsetup.DirectKeycloakAccessSetup;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.ActivateScimThemeTestBuilder;
 import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.CreateNewRealmTestBuilder;
+import de.captaingoldfish.scim.sdk.keycloak.tests.testbuilder.RealmTestBuilder;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -74,10 +76,10 @@ public abstract class FrontendTests
     loginOnAdminConsole(testSetup, webDriver);
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
-    // dynamicTests.addAll(new ActivateScimThemeTestBuilder(webDriver, testSetup,
-    // directKeycloakAccessSetup).buildDynamicTests());
-    // dynamicTests.addAll(new RealmTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
-    // "master").buildDynamicTests());
+    dynamicTests.addAll(new ActivateScimThemeTestBuilder(webDriver, testSetup,
+                                                         directKeycloakAccessSetup).buildDynamicTests());
+    dynamicTests.addAll(new RealmTestBuilder(webDriver, testSetup, directKeycloakAccessSetup,
+                                             "master").buildDynamicTests());
     dynamicTests.addAll(new CreateNewRealmTestBuilder(webDriver, testSetup,
                                                       directKeycloakAccessSetup).buildDynamicTests());
     return dynamicTests;
