@@ -3,8 +3,12 @@ package de.captaingoldfish.scim.sdk.common.utils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Optional;
 
 import org.apache.commons.io.IOUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -124,5 +128,89 @@ public class JsonHelperTest
   public void testEmptyStringIsNotJson()
   {
     Assertions.assertFalse(JsonHelper.isValidJson(""));
+  }
+
+  /**
+   * verifies that an object attribute is successfully be extracted from a json node if present
+   */
+  @Test
+  public void testGetObjectAttribute()
+  {
+    String jsonDocument = "{\"attribute\": {\"hello\": \"world\"}}";
+    JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
+
+    Optional<ObjectNode> objectNode = JsonHelper.getObjectAttribute(jsonNode, "attribute");
+    Assertions.assertTrue(objectNode.isPresent());
+    Assertions.assertEquals(1, objectNode.get().size());
+    Assertions.assertEquals("world", objectNode.get().get("hello").textValue());
+  }
+
+  /**
+   * verifies that an empty is returned if the attribute to be extracted does not exist
+   */
+  @Test
+  public void testGetObjectAttributeDoesNotExist()
+  {
+    String jsonDocument = "{\"attribute\": {\"hello\": \"world\"}}";
+    JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
+
+    Optional<ObjectNode> objectNode = JsonHelper.getObjectAttribute(jsonNode, "not_existing");
+    Assertions.assertFalse(objectNode.isPresent());
+  }
+
+  /**
+   * verifies that an exception is thrown if the attribute is not an object
+   */
+  @Test
+  public void testGetObjectAttributeIsNotAnObject()
+  {
+    String jsonDocument = "{\"attribute\": [{\"hello\": \"world\"}]}";
+    JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
+
+    Assertions.assertThrows(IncompatibleAttributeException.class,
+                            () -> JsonHelper.getObjectAttribute(jsonNode, "attribute"));
+  }
+
+  /**
+   * verifies that an exception is thrown if an object is tried to be retrieved as simple array attribute
+   */
+  @Test
+  public void getObjectAsSimpleArrayAttribute()
+  {
+    String jsonDocument = "{\"attribute\": {\"hello\": \"world\"}}";
+    JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
+
+    Assertions.assertThrows(IncompatibleAttributeException.class,
+                            () -> JsonHelper.getSimpleAttributeArray(jsonNode, "attribute"));
+  }
+
+  /**
+   * verifies that the attributes of an array are successfully extracted as list
+   */
+  @Test
+  public void getSimpleArrayAttributeValues()
+  {
+    String jsonDocument = "{\"attribute\": [\"hello\", \"world\"]}";
+    JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
+
+    Optional<List<String>> valuesOptional = JsonHelper.getSimpleAttributeArray(jsonNode, "attribute");
+    Assertions.assertTrue(valuesOptional.isPresent());
+    List<String> values = valuesOptional.get();
+    MatcherAssert.assertThat(values, Matchers.containsInAnyOrder(Matchers.equalTo("hello"), Matchers.equalTo("world")));
+  }
+
+  /**
+   * verifies that a simple attribute is successfully extracted
+   */
+  @Test
+  public void getSimpleAttributeValue()
+  {
+    String jsonDocument = "{\"hello\": \"world\"}";
+    JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
+
+    Optional<String> valueOptional = JsonHelper.getSimpleAttribute(jsonNode, "hello");
+    Assertions.assertTrue(valueOptional.isPresent());
+    String value = valueOptional.get();
+    Assertions.assertEquals("world", value);
   }
 }

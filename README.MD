@@ -1,9 +1,9 @@
 # SCIM 2.0 Open Source Implementation
 
 
-|  Branch | Travis CI Status |
-| :------ | :--------------- | 
-| master  | [![Build Status](https://travis-ci.com/Captain-P-Goldfish/SCIM-SDK.svg?branch=master)](https://travis-ci.com/Captain-P-Goldfish/SCIM-SDK)
+|  Branch | Travis CI Status | Code Coverage |
+| :------ | :--------------- | :------------ | 
+| master  | [![Build Status](https://travis-ci.com/Captain-P-Goldfish/SCIM-SDK.svg?branch=master)](https://travis-ci.com/Captain-P-Goldfish/SCIM-SDK) | [![codecov](https://codecov.io/gh/Captain-P-Goldfish/SCIM-SDK/branch/master/graph/badge.svg?token=z8URG24FO3)](https://codecov.io/gh/Captain-P-Goldfish/SCIM-SDK) |
 
 This is an open source implementation of the SCIM (System for Cross-domain Identity Management) protocol that is
  defined by RFC7643 and RFC7644. 

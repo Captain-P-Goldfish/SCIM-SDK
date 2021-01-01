@@ -235,12 +235,7 @@ public final class JsonHelper
     {
       return Optional.empty();
     }
-    JsonNode simpleArray = simpleArrayOptional.get();
-    if (simpleArray.isObject())
-    {
-      final String errorMessage = "attribute '" + attributeName + "' is not a simple array attribute";
-      throw new IncompatibleAttributeException(errorMessage, null, null, null);
-    }
+    ArrayNode simpleArray = simpleArrayOptional.get();
     List<T> arrayResult = new ArrayList<>();
     for ( JsonNode node : simpleArray )
     {

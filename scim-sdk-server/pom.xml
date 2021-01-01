@@ -45,6 +45,20 @@
                     <visitor>true</visitor>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <!-- exclude generated sources from antlr -->
+                        <exclude>/de/captaingoldfish/scim/sdk/server/filter/antlr/ScimFilterBaseVisitor.class</exclude>
+                        <exclude>/de/captaingoldfish/scim/sdk/serverfilter/antlr/ScimFilterLexer.class</exclude>
+                        <exclude>/de/captaingoldfish/scim/sdk/serverfilter/antlr/ScimFilterParser.class</exclude>
+                        <exclude>/de/captaingoldfish/scim/sdk/serverfilter/antlr/ScimFilterVisitor.class</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
