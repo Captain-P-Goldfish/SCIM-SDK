@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.common.etag;
 
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -149,5 +150,20 @@ public class ETagTest
     {
       Assertions.assertNotEquals(leftETag, rightETag);
     }
+  }
+
+  @Test
+  public void testToStringMethods()
+  {
+    ETag eTag = ETag.builder().tag("1").build();
+    Assertions.assertEquals(eTag.getEntityTag(), eTag.toString());
+    Assertions.assertEquals(eTag.getEntityTag(), eTag.toPrettyString());
+  }
+
+  @Test
+  public void testEquals()
+  {
+    Assertions.assertNotEquals(ETag.builder().tag("1").build(), new Object());
+    Assertions.assertEquals(ETag.builder().tag("1").build(), ETag.builder().tag("1").build());
   }
 }
