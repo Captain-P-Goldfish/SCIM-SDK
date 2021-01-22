@@ -10,6 +10,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -47,6 +49,18 @@ public class ResourceNodeTest implements FileReferences
     Assertions.assertEquals(id, testResource.getId().get());
     Assertions.assertEquals(externalId, testResource.getExternalId().get());
     Assertions.assertEquals(meta, testResource.getMeta().get());
+  }
+
+  /**
+   * verifies that empty strings can be set as legal values
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"", " ", "  "})
+  public void testAddEmptyStringValue(String emptyString)
+  {
+    TestResource testResource = new TestResource();
+    testResource.setExternalId(emptyString);
+    Assertions.assertEquals(emptyString, testResource.getExternalId().get());
   }
 
   /**

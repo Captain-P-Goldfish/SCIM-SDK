@@ -16,8 +16,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
@@ -345,7 +343,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
    */
   protected void setAttribute(String attributeName, String attributeValue)
   {
-    if (StringUtils.isBlank(attributeValue))
+    if (attributeValue == null)
     {
       JsonHelper.removeAttribute(this, attributeName);
       return;
