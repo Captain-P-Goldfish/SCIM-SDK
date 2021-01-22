@@ -21,6 +21,7 @@ import lombok.Getter;
 public enum Type
 {
 
+  ANY("any"),
   STRING("string"),
   COMPLEX("complex"),
   BOOLEAN("boolean"),

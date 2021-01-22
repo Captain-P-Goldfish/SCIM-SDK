@@ -956,6 +956,9 @@ public class SchemaValidator
     Type type = schemaAttribute.getType();
     switch (type)
     {
+      case ANY:
+        return new ScimTextNode(schemaAttribute, simpleDocumentNode.isTextual() ? simpleDocumentNode.textValue()
+          : simpleDocumentNode.toString());
       case STRING:
         isNodeOfExpectedType(schemaAttribute,
                              simpleDocumentNode,

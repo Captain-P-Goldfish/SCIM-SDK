@@ -28,7 +28,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/schema.schema.json
                             </file>
-                            <checksum>38e0c477dabf7d8bb62e3d4f44f79d1d</checksum>
+                            <checksum>8c10f8223922ff2f6dbeaaf940529fa7</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -112,7 +112,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/patch-request.json
                             </file>
-                            <checksum>a59458d2fabb45ef77ee5ce748458d1b</checksum>
+                            <checksum>e599374caf336247b261bfa504e61761</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

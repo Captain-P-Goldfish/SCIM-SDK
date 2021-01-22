@@ -122,7 +122,8 @@ class SchemaAttributeTest
                                           Type.DECIMAL.getValue(),
                                           Type.INTEGER.getValue(),
                                           Type.DATE_TIME.getValue(),
-                                          Type.REFERENCE.getValue()),
+                                          Type.REFERENCE.getValue(),
+                                          Type.ANY.getValue()),
                             type.getCanonicalValues());
   }
 

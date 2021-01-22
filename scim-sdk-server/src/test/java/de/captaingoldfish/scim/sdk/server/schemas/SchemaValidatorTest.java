@@ -47,11 +47,14 @@ import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
+import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
+import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
+import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimNode;
@@ -2461,5 +2464,49 @@ public class SchemaValidatorTest implements FileReferences
                                                                       null,
                                                                       null,
                                                                       baseUrlSupplier));
+  }
+
+  /**
+   * verifies that a patch operation is accepting a json boolean on schema validation
+   */
+  @Test
+  public void testPatchOpValidationWithBoolean()
+  {
+    JsonNode patchOpSchema = JsonHelper.loadJsonDocument(ClassPathReferences.PATCH_REQUEST_SCHEMA);
+    resourceTypeFactory.getSchemaFactory().registerMetaSchema(patchOpSchema);
+    Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("bool")
+                                                                                .valueNode(BooleanNode.getTrue())
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchOpRequest);
+    });
+  }
+
+  /**
+   * verifies that a patch operation is accepting a json integer on schema validation
+   */
+  @Test
+  public void testPatchOpValidationWithInteger()
+  {
+    JsonNode patchOpSchema = JsonHelper.loadJsonDocument(ClassPathReferences.PATCH_REQUEST_SCHEMA);
+    resourceTypeFactory.getSchemaFactory().registerMetaSchema(patchOpSchema);
+    Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("bool")
+                                                                                .valueNode(new IntNode(6))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Assertions.assertDoesNotThrow(() -> {
+      return SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchOpRequest);
+    });
   }
 }

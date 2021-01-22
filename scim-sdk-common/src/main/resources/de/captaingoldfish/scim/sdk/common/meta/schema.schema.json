@@ -78,7 +78,8 @@
             "decimal",
             "integer",
             "dateTime",
-            "reference"
+            "reference",
+            "any"
           ]
         },
         {

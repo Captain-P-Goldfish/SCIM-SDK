@@ -28,6 +28,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -1222,6 +1223,112 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
+  }
+
+  /**
+   * verifies that a patch operation request with a none string type value is processed successfully:
+   *
+   * <pre>
+   *  {
+   *   "Operations": [
+   *     {
+   *       "op": "replace",
+   *       "path": "active",
+   *       "value": [true]
+   *     }
+   *   ],
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ]
+   *  }
+   * </pre>
+   */
+  @Test
+  public void testPatchResourceWithBooleanArrayValueInPatchOpValue()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    final String path = "active";
+    BooleanNode value = BooleanNode.TRUE;
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(value)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    final String patchOpString = patchOpRequest.toString();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").active(false).meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpString, httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    Assertions.assertTrue(copiedUser.isActive().get());
+  }
+
+  /**
+   * verifies that a patch operation request with a none string type value is processed successfully:
+   *
+   * <pre>
+   *  {
+   *   "Operations": [
+   *     {
+   *       "op": "replace",
+   *       "path": "active",
+   *       "value": true
+   *     }
+   *   ],
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ]
+   *  }
+   * </pre>
+   */
+  @Test
+  public void testPatchResourceWithBooleanValueInPatchOpValue()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    final String path = "active";
+    BooleanNode value = BooleanNode.TRUE;
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(value)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    final String patchOpString = patchOpRequest.toString().replace("[true]", "true");
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").active(false).meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpString, httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    Assertions.assertTrue(copiedUser.isActive().get());
   }
 
   /**
