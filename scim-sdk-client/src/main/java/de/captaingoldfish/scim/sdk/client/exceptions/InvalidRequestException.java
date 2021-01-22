@@ -13,8 +13,4 @@ public class InvalidRequestException extends RuntimeException
     super(message);
   }
 
-  public InvalidRequestException(String message, Throwable cause)
-  {
-    super(message, cause);
-  }
 }

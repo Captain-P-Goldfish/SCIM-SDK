@@ -8,18 +8,9 @@ package de.captaingoldfish.scim.sdk.client.exceptions;
 public class SocketTimeoutRuntimeException extends IORuntimeException
 {
 
-  public SocketTimeoutRuntimeException(String message)
-  {
-    super(message);
-  }
-
   public SocketTimeoutRuntimeException(String message, Throwable cause)
   {
     super(message, cause);
   }
 
-  public SocketTimeoutRuntimeException(Throwable cause)
-  {
-    super(cause);
-  }
 }

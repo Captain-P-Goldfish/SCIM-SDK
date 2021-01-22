@@ -13,13 +13,4 @@ public class KeyStoreCreationFailedException extends RuntimeException
     super(message);
   }
 
-  public KeyStoreCreationFailedException(String message, Throwable cause)
-  {
-    super(message, cause);
-  }
-
-  public KeyStoreCreationFailedException(Throwable cause)
-  {
-    super(cause);
-  }
 }

@@ -19,12 +19,4 @@ public class SecurityProvider
    */
   public static final Provider BOUNCY_CASTLE_PROVIDER = new BouncyCastleProvider();
 
-  /**
-   * utility class constructor
-   */
-  private SecurityProvider()
-  {
-    super();
-  }
-
 }

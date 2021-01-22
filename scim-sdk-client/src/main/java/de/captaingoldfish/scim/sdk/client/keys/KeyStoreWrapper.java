@@ -8,7 +8,6 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.UnrecoverableKeyException;
-import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -22,8 +21,8 @@ import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreReadingException;
 import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -178,27 +177,6 @@ public class KeyStoreWrapper
   /**
    * constructor to befill the entries for this class
    *
-   * @param keyStore the keystore that should be accessible
-   * @param keyStoreType to resolve the given keystore into its appropriate type
-   * @param keystorePassword the password to access the keystore if necessary
-   * @param aliasPasswordPair a single alias key-password pair to access at least a single entry within the
-   *          keystore
-   * @param aliasPasswordPairs a list of alias key-password pairs to access other entreies as well
-   */
-  public KeyStoreWrapper(InputStream keyStore,
-                         KeyStoreSupporter.KeyStoreType keyStoreType,
-                         String keystorePassword,
-                         AliasPasswordPair aliasPasswordPair,
-                         AliasPasswordPair... aliasPasswordPairs)
-  {
-    this(KeyStoreSupporter.readKeyStore(keyStore, keyStoreType, keystorePassword), keystorePassword, aliasPasswordPair,
-         aliasPasswordPairs);
-    this.keystorePassword = keystorePassword;
-  }
-
-  /**
-   * constructor to befill the entries for this class
-   *
    * @param keyStore the keystore that should be accessible. <b>It is necessary for the keystore to have an
    *          appropriate file ending like 'jks', 'jceks', 'p12' or 'pfx'!</b>
    * @param keystorePassword the password to access the keystore if necessary
@@ -308,46 +286,6 @@ public class KeyStoreWrapper
   }
 
   /**
-   * will read the certificate from the given alias
-   * 
-   * @param alias the keystore entry to read
-   * @return the certificate under the given keystore entry
-   */
-  public Optional<X509Certificate[]> getCertificateChain(String alias)
-  {
-    if (keyStore == null || StringUtils.isBlank(alias))
-    {
-      return Optional.empty();
-    }
-    try
-    {
-      Certificate[] chain = keyStore.getCertificateChain(alias);
-
-      if (chain == null && log.isWarnEnabled())
-      {
-        log.warn("no certificate entry found for alias: {}", alias);
-      }
-      if (chain == null)
-      {
-        return Optional.empty();
-      }
-      else
-      {
-        X509Certificate[] x509Certificate = new X509Certificate[chain.length];
-        for ( int i = 0 ; i < chain.length ; i++ )
-        {
-          x509Certificate[i] = (X509Certificate)chain[i];
-        }
-        return Optional.of(x509Certificate);
-      }
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreReadingException("could not read certificate with alias: " + alias, e);
-    }
-  }
-
-  /**
    * will return all aliases as list. <br>
    * this is just a convenience method to prevent handling with {@link KeyStoreException}
    */
@@ -374,31 +312,10 @@ public class KeyStoreWrapper
   }
 
   /**
-   * will return all aliases without having to handle the exception. <br>
-   * this is just a convenience method to prevent handling with {@link KeyStoreException}
-   */
-  public Enumeration<String> getAliases()
-  {
-    if (keyStore == null)
-    {
-      throw new KeyStoreReadingException(COULD_NOT_ACCESS_KEYSTORE);
-    }
-    try
-    {
-      return keyStore.aliases();
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreReadingException(COULD_NOT_ACCESS_KEYSTORE, e);
-    }
-  }
-
-  /**
    * used as data holder to hold the key-passwords for any alias
    */
-  @Data
+  @Getter
   @AllArgsConstructor
-  @Builder
   public static class AliasPasswordPair
   {
 

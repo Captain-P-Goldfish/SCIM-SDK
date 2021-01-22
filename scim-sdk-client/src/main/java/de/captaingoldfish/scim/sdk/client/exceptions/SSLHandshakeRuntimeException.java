@@ -8,18 +8,9 @@ package de.captaingoldfish.scim.sdk.client.exceptions;
 public class SSLHandshakeRuntimeException extends IORuntimeException
 {
 
-  public SSLHandshakeRuntimeException(String message)
-  {
-    super(message);
-  }
-
   public SSLHandshakeRuntimeException(String message, Throwable cause)
   {
     super(message, cause);
   }
 
-  public SSLHandshakeRuntimeException(Throwable cause)
-  {
-    super(cause);
-  }
 }

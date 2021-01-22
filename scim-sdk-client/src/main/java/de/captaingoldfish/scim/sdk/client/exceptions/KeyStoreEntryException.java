@@ -14,13 +14,4 @@ public class KeyStoreEntryException extends RuntimeException
     super(message);
   }
 
-  public KeyStoreEntryException(String message, Throwable cause)
-  {
-    super(message, cause);
-  }
-
-  public KeyStoreEntryException(Throwable cause)
-  {
-    super(cause);
-  }
 }

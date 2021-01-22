@@ -10,11 +10,6 @@ package de.captaingoldfish.scim.sdk.client.exceptions;
 public class SslContextCreationFailedException extends RuntimeException
 {
 
-  public SslContextCreationFailedException(String message)
-  {
-    super(message);
-  }
-
   public SslContextCreationFailedException(String message, Throwable cause)
   {
     super(message, cause);

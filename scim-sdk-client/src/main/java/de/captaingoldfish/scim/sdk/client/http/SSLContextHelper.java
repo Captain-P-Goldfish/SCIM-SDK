@@ -13,7 +13,8 @@ import javax.net.ssl.TrustManagerFactory;
 
 import de.captaingoldfish.scim.sdk.client.exceptions.SslContextCreationFailedException;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
-
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -22,16 +23,9 @@ import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
  * <br>
  * a builder for creating {@link SSLContext}s with help of {@link KeyStoreWrapper}
  */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SSLContextHelper
 {
-
-  /**
-   * shut up PMD
-   */
-  private SSLContextHelper()
-  {
-    // shut up checkstyle
-  }
 
   /**
    * this method will build the {@link SSLContext} that will be used to access the eid-webservice. This

@@ -8,11 +8,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import de.captaingoldfish.scim.sdk.client.builder.BulkBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.PatchBuilder;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
@@ -175,11 +178,20 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
   /**
    * verifies that the bulk request builder can be used as expected
    */
-  @Test
-  public void testBulkRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBulkRequest(boolean withFullyQualifiedUrl)
   {
     final String bulkId = UUID.randomUUID().toString();
-    BulkBuilder builder = scimRequestBuilder.bulk();
+    BulkBuilder builder;
+    if (withFullyQualifiedUrl)
+    {
+      builder = scimRequestBuilder.bulk(getRequestUrl(TestController.SCIM_ENDPOINT_PATH + EndpointPaths.BULK));
+    }
+    else
+    {
+      builder = scimRequestBuilder.bulk();
+    }
     ServerResponse<BulkResponse> response = builder.bulkRequestOperation(EndpointPaths.USERS)
                                                    .data(User.builder().userName("goldfish").build())
                                                    .method(HttpMethod.POST)
@@ -216,8 +228,9 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
   /**
    * tests that patch requests are correctly send to the server
    */
-  @Test
-  public void testPatchRequest()
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testPatchRequest(boolean withFullyQualifiedUrl)
   {
     final String emailValue = "happy.day@scim-sdk.de";
     final String emailType = "fun";
@@ -228,6 +241,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     // get the id of an existing user
     ServerResponse<ListResponse<User>> listResponse = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
                                                                         .count(1)
+                                                                        .startIndex(withFullyQualifiedUrl ? 1 : 2)
                                                                         .get()
                                                                         .sendRequest();
     User randomUser = listResponse.getResource().getListedResources().get(0);
@@ -239,20 +253,31 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                                      .primary(emailPrimary)
                                                                      .build()))
                               .build();
-    ServerResponse<User> response = scimRequestBuilder.patch(User.class, EndpointPaths.USERS, randomUser.getId().get())
-                                                      .addOperation()
-                                                      .path("name.givenname")
-                                                      .op(PatchOp.ADD)
-                                                      .value(givenName)
-                                                      .next()
-                                                      .path("locale")
-                                                      .op(PatchOp.REPLACE)
-                                                      .value(locale)
-                                                      .next()
-                                                      .op(PatchOp.ADD)
-                                                      .valueNode(addingResource)
-                                                      .build()
-                                                      .sendRequest();
+
+    PatchBuilder<User> patchBuilder;
+    if (withFullyQualifiedUrl)
+    {
+      patchBuilder = scimRequestBuilder.patch(getRequestUrl(TestController.SCIM_ENDPOINT_PATH + EndpointPaths.USERS
+                                                            + "/" + randomUser.getId().get()),
+                                              User.class);
+    }
+    else
+    {
+      patchBuilder = scimRequestBuilder.patch(User.class, EndpointPaths.USERS, randomUser.getId().get());
+    }
+    ServerResponse<User> response = patchBuilder.addOperation()
+                                                .path("name.givenname")
+                                                .op(PatchOp.ADD)
+                                                .value(givenName)
+                                                .next()
+                                                .path("locale")
+                                                .op(PatchOp.REPLACE)
+                                                .value(locale)
+                                                .next()
+                                                .op(PatchOp.ADD)
+                                                .valueNode(addingResource)
+                                                .build()
+                                                .sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertNotNull(response.getResource());
     User patchedUser = response.getResource();

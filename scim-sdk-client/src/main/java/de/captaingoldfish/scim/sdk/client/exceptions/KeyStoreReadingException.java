@@ -19,8 +19,4 @@ public class KeyStoreReadingException extends RuntimeException
     super(message, cause);
   }
 
-  public KeyStoreReadingException(Throwable cause)
-  {
-    super(cause);
-  }
 }

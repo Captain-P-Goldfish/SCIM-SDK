@@ -8,18 +8,9 @@ package de.captaingoldfish.scim.sdk.client.exceptions;
 public class ConnectTimeoutRuntimeException extends IORuntimeException
 {
 
-  public ConnectTimeoutRuntimeException(String message)
-  {
-    super(message);
-  }
-
   public ConnectTimeoutRuntimeException(String message, Throwable cause)
   {
     super(message, cause);
   }
 
-  public ConnectTimeoutRuntimeException(Throwable cause)
-  {
-    super(cause);
-  }
 }

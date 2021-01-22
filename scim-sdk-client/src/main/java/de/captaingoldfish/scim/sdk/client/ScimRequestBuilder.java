@@ -9,6 +9,7 @@ import de.captaingoldfish.scim.sdk.client.builder.PatchBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 
@@ -35,6 +36,7 @@ public class ScimRequestBuilder implements AutoCloseable
   /**
    * a convenience implementation that wraps the apache http client
    */
+  @Getter(AccessLevel.PROTECTED) // for unit tests
   private ScimHttpClient scimHttpClient;
 
   public ScimRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig)

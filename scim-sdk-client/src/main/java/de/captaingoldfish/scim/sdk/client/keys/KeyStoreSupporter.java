@@ -5,23 +5,19 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Locale;
@@ -31,10 +27,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
-import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreConvertException;
 import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreCreationFailedException;
 import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreEntryException;
 import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreReadingException;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -46,28 +44,9 @@ import lombok.extern.slf4j.Slf4j;
  * entries into a keystore, reading entries, convert a keystore from jks to pkcs12 or vice versa etc.
  */
 @Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class KeyStoreSupporter
 {
-
-  /**
-   * message part for exceptions
-   */
-  private static final String STRING_BYTE_ARRAY_CANNOT_BE_READ_IN_THE_GIVEN = "this byte array cannot be read in the given ";
-
-  /**
-   * message part for exceptions
-   */
-  private static final String STRING_NOT_PKCS12 = "stream does not represent a PKCS12 key store";
-
-  /**
-   * message part for exceptions
-   */
-  private static final String STRING_INVALID_KEYSTORE_FORMAT = "invalid keystore format";
-
-  /**
-   * message for exceptions
-   */
-  private static final String MESSAGE_KEYSTORE_READ_ABORTED = "an unexpected error aborted the reading of the keystore.";
 
   /**
    * used for JKS keystores
@@ -78,14 +57,6 @@ public final class KeyStoreSupporter
    * used for JCEKS keystores
    */
   private static final String SUN_JCE_PROVIDER = "SunJCE";
-
-  /**
-   * utility class constructor
-   */
-  private KeyStoreSupporter()
-  {
-    super();
-  }
 
   /**
    * this method will make sure that the correct security provider is chosen for the different keystore types.
@@ -105,11 +76,10 @@ public final class KeyStoreSupporter
     {
       return Security.getProvider(SUN_PROVIDER);
     }
-    else if (keyStoreType.equals(KeyStoreType.JCEKS))
+    else
     {
       return Security.getProvider(SUN_JCE_PROVIDER);
     }
-    throw new IllegalStateException("unsupported keystore-type: " + keyStoreType);
   }
 
   /**
@@ -124,16 +94,14 @@ public final class KeyStoreSupporter
    * @throws KeyStoreCreationFailedException if the algorithm of the {@code keyStoreType} could not be resolved
    * @throws KeyStoreEntryException if the certificate or private key could not be added to the keystore
    */
+  @SneakyThrows
   public static KeyStore toKeyStore(PrivateKey privateKey,
                                     Certificate certificate,
                                     String alias,
                                     String keystorePassword,
                                     KeyStoreType keyStoreType)
   {
-    if (log.isTraceEnabled())
-    {
-      log.trace("putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
-    }
+    log.trace("putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
 
     if (privateKey == null)
     {
@@ -149,22 +117,11 @@ public final class KeyStoreSupporter
 
     addCertificateEntryToKeyStore(keyStore, certificate, alias);
 
-    try
-    {
-      if (log.isTraceEnabled())
-      {
-        log.trace("adding the private key to the keystore with alias '{}'", alias);
-      }
-      Certificate[] certificateChain = {certificate};
-      keyStore.setEntry(alias,
-                        new KeyStore.PrivateKeyEntry(privateKey, certificateChain),
-                        new KeyStore.PasswordProtection(keystorePassword.toCharArray()));
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreEntryException("could not add the given private key into the keystore with the given "
-                                       + "alias '" + alias + "'", e);
-    }
+    log.trace("adding the private key to the keystore with alias '{}'", alias);
+    Certificate[] certificateChain = {certificate};
+    keyStore.setEntry(alias,
+                      new KeyStore.PrivateKeyEntry(privateKey, certificateChain),
+                      new KeyStore.PasswordProtection(keystorePassword.toCharArray()));
 
     return keyStore;
   }
@@ -185,10 +142,7 @@ public final class KeyStoreSupporter
                                     String keystorePassword,
                                     KeyStoreType keyStoreType)
   {
-    if (log.isTraceEnabled())
-    {
-      log.trace("putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
-    }
+    log.trace("putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
 
     if (certificate == null)
     {
@@ -233,18 +187,14 @@ public final class KeyStoreSupporter
    * @param keyStore the keystore that should be converted
    * @param password the keystore password that will be used as encryption password for the keystore
    * @return the byte array that contains the data of the given keystore
-   * @throws KeyStoreConvertException if the keystore conversion failed.
    */
+  @SneakyThrows
   public static byte[] getBytes(KeyStore keyStore, String password)
   {
     try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream())
     {
       keyStore.store(outputStream, password.toCharArray());
       return outputStream.toByteArray();
-    }
-    catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreConvertException("keystore could not be translated to a byte array", e);
     }
   }
 
@@ -255,24 +205,14 @@ public final class KeyStoreSupporter
    * @param keystorePassword the password to secure the keystore
    * @return the newly created empty keystore-instance
    */
+  @SneakyThrows
   public static KeyStore createEmptyKeyStore(KeyStoreType keyStoreType, String keystorePassword)
   {
     KeyStore keyStore;
-    try
-    {
-      Provider provider = selectProvider(keyStoreType);
-      if (log.isTraceEnabled())
-      {
-        log.trace("creating a {} keystore with '{}' Provider", keyStoreType, provider.getName());
-      }
-      keyStore = KeyStore.getInstance(keyStoreType.name(), provider);
-      keyStore.load(null, keystorePassword == null ? null : keystorePassword.toCharArray());
-    }
-    catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e)
-    {
-      throw new KeyStoreCreationFailedException("for some unexpected reason the keystore instance could not be "
-                                                + "created", e);
-    }
+    Provider provider = selectProvider(keyStoreType);
+    log.trace("creating a {} keystore with '{}' Provider", keyStoreType, provider.getName());
+    keyStore = KeyStore.getInstance(keyStoreType.name(), provider);
+    keyStore.load(null, keystorePassword == null ? null : keystorePassword.toCharArray());
     return keyStore;
   }
 
@@ -290,24 +230,7 @@ public final class KeyStoreSupporter
     Optional<Certificate> certificateOptional = getCertificate(keyStore, alias);
     if (certificateOptional.isPresent())
     {
-      if (certificateOptional.get().equals(certificate))
-      {
-        if (log.isWarnEnabled())
-        {
-          log.warn("not adding certificate '{}' with alias '{}' to keystore '{}' because the exact same entry does "
-                   + "already exist",
-                   alias,
-                   keyStore,
-                   certificate);
-        }
-      }
-      else
-      {
-        // since we already have a certificate under the given alias we will create a new alias for the new
-        // certificate entry
-        String nonAmbigiousAlias = alias + "_";
-        addCertificateEntry(keyStore, nonAmbigiousAlias, certificate);
-      }
+      throw new IllegalArgumentException(String.format("certificate entry for alias '%s' does already exist", alias));
     }
     else
     {
@@ -325,23 +248,16 @@ public final class KeyStoreSupporter
    * @param certificate the certificate for the new entry
    * @return the keystore that was given as parameter
    */
-  private static KeyStore addCertificateEntry(KeyStore keyStore, String alias, Certificate certificate)
+  @SneakyThrows
+  public static KeyStore addCertificateEntry(KeyStore keyStore, String alias, Certificate certificate)
   {
-    try
-    {
-      keyStore.setCertificateEntry(alias, certificate);
-      log.trace("successfully added certificate entry under alias '{}' to keystore '{}'", alias, keyStore);
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreCreationFailedException("could not add certificate to keystore '" + keyStore + "' with alias '"
-                                                + alias + "'", e);
-    }
+    keyStore.setCertificateEntry(alias, certificate);
+    log.trace("successfully added certificate entry under alias '{}' to keystore '{}'", alias, keyStore);
     return keyStore;
   }
 
   /**
-   * will try to add the given key-entry under the given alias to the given keystore
+   * will try to add the given entry under the given alias to the given keystore
    *
    * @param keyStore the keystore to which the key entry should be added
    * @param alias the alias to use for the key-entry
@@ -349,28 +265,20 @@ public final class KeyStoreSupporter
    * @param password the password to secure the key within the keystore
    * @return the same keystore that was given as parameter
    */
-  public static KeyStore addKeyEntryToKeystore(KeyStore keyStore,
-                                               String alias,
-                                               Key key,
-                                               Certificate[] certificateChain,
-                                               String password)
+  public static KeyStore addEntryToKeystore(KeyStore keyStore,
+                                            String alias,
+                                            Key key,
+                                            Certificate[] certificateChain,
+                                            String password)
   {
     Optional<Key> existingKey = getKeyEntry(keyStore, alias, password);
     if (existingKey.isPresent())
     {
-      if (Arrays.equals(existingKey.get().getEncoded(), key.getEncoded()))
-      {
-        log.warn("will not add entry '{}' to keystore '{}' because it does already exist", alias, keyStore);
-      }
-      else
-      {
-        String nonAmbigiousAlias = alias + "_";
-        addKeyEntryToKeystore(keyStore, nonAmbigiousAlias, key, password, certificateChain);
-      }
+      throw new IllegalArgumentException(String.format("key entry for alias '%s' does already exist", alias));
     }
     else
     {
-      addKeyEntryToKeystore(keyStore, alias, key, password, certificateChain);
+      addEntryToKeystore(keyStore, alias, key, password, certificateChain);
     }
     return keyStore;
   }
@@ -385,22 +293,30 @@ public final class KeyStoreSupporter
    * @param certificateChain the certificate chain for the given key
    * @return the keystore that was passed as parameter
    */
-  private static KeyStore addKeyEntryToKeystore(KeyStore keyStore,
-                                                String alias,
-                                                Key key,
-                                                String password,
-                                                Certificate... certificateChain)
+  @SneakyThrows
+  private static KeyStore addEntryToKeystore(KeyStore keyStore,
+                                             String alias,
+                                             Key key,
+                                             String password,
+                                             Certificate... certificateChain)
   {
-    try
+    if (key == null)
+    {
+      if (certificateChain == null)
+      {
+        throw new IllegalArgumentException("missing certificate");
+      }
+      if (certificateChain.length > 1)
+      {
+        throw new IllegalArgumentException("only a single certificate can be added as certificate entry");
+      }
+      keyStore.setCertificateEntry(alias, certificateChain[0]);
+    }
+    else
     {
       keyStore.setKeyEntry(alias, key, password.toCharArray(), certificateChain);
-      log.trace("successfully added key-entry under alias '{}' to keystore '{}'", alias, keyStore);
     }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreCreationFailedException("could not add key entry with alias '" + alias + "' to keystore '"
-                                                + keyStore + "'", e);
-    }
+    log.trace("successfully added key-entry under alias '{}' to keystore '{}'", alias, keyStore);
     return keyStore;
   }
 
@@ -417,13 +333,10 @@ public final class KeyStoreSupporter
   {
     if (keyStore.getType().equals(keyStoreType.name()))
     {
-      if (log.isWarnEnabled())
-      {
-        log.warn("you tried to convert type '{}' to type '{}', this is unnecessary and the original "
-                 + "keystore will be returned.",
-                 keyStore.getType(),
-                 keyStoreType.name());
-      }
+      log.warn("you tried to convert type '{}' to type '{}', this is unnecessary and the original "
+               + "keystore will be returned.",
+               keyStore.getType(),
+               keyStoreType.name());
       return keyStore;
     }
 
@@ -434,7 +347,7 @@ public final class KeyStoreSupporter
     while (aliases.hasMoreElements())
     {
       String alias = aliases.nextElement();
-      tryCopyKeyEntry(keyStore, keyStorePassword, keyStorePassword, keyStoreType, newKeyStore, alias);
+      tryCopyEntry(keyStore, keyStorePassword, keyStorePassword, keyStoreType, newKeyStore, alias);
     }
     return newKeyStore;
   }
@@ -450,12 +363,12 @@ public final class KeyStoreSupporter
    * @param newKeyStore the new keystore to which the entry should be copied
    * @param alias the alias of the entry that should be copied
    */
-  public static void tryCopyKeyEntry(KeyStore keyStore,
-                                     String keyStorePassword,
-                                     String keyPassword,
-                                     KeyStoreType keyStoreType,
-                                     KeyStore newKeyStore,
-                                     String alias)
+  public static void tryCopyEntry(KeyStore keyStore,
+                                  String keyStorePassword,
+                                  String keyPassword,
+                                  KeyStoreType keyStoreType,
+                                  KeyStore newKeyStore,
+                                  String alias)
   {
     log.trace("adding key-entry of alias '{}' to new keystore of type '{}'", alias, keyStoreType.name());
     Optional<Certificate[]> certificateChainOptional = getCertificateChain(keyStore, alias);
@@ -463,12 +376,7 @@ public final class KeyStoreSupporter
     Optional<Key> key = getKeyEntry(keyStore, alias, keyPassword);
     if (key.isPresent() && certificateChainOptional.isPresent())
     {
-      addKeyEntryToKeystore(newKeyStore, alias, key.get(), keyStorePassword, certificateChainOptional.get());
-    }
-    else if (certificateChainOptional.isPresent())
-    {
-      Certificate[] certificateChain = certificateChainOptional.get();
-      addCertificateEntryToKeyStore(newKeyStore, certificateChain[certificateChain.length - 1], alias);
+      addEntryToKeystore(newKeyStore, alias, key.get(), keyStorePassword, certificateChainOptional.get());
     }
     else if (certificateOptional.isPresent())
     {
@@ -488,40 +396,14 @@ public final class KeyStoreSupporter
    * @param keyStore the keystore to save.
    * @param keystorePassword the password to access and save the given keystore
    */
+  @SneakyThrows
   public static void keyStoreToFile(File file, KeyStore keyStore, String keystorePassword)
   {
-    if (log.isTraceEnabled())
-    {
-      log.trace("creating file '{}' for keystore of type '{}'.", file.getAbsolutePath(), keyStore.getType());
-    }
-    if (file == null || keyStore == null)
-    {
-      throw new KeyStoreCreationFailedException("if the given keystore or file is null the file cannot be "
-                                                + "created.");
-    }
-    if (file.exists() && file.isDirectory())
-    {
-      throw new KeyStoreCreationFailedException("given file '" + file + "' is a directory. Keystore cannot be "
-                                                + "saved.");
-    }
-
-    File parentFile = file.getParentFile();
-    if (!file.exists() && (parentFile == null || !parentFile.exists()))
-    {
-      throw new KeyStoreCreationFailedException("The target directory '" + file.getAbsolutePath()
-                                                + "' does not exist. KeyStore cannot be saved.");
-    }
+    log.trace("creating file '{}' for keystore of type '{}'.", file.getAbsolutePath(), keyStore.getType());
     try (OutputStream outputStream = new FileOutputStream(file))
     {
       keyStore.store(outputStream, keystorePassword.toCharArray());
-      if (log.isTraceEnabled())
-      {
-        log.trace("keystore was successfully saved in file '{}'", file.getAbsolutePath());
-      }
-    }
-    catch (IOException | CertificateException | KeyStoreException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreCreationFailedException("could not create keystore file for some unexpected reason.", e);
+      log.trace("keystore was successfully saved in file '{}'", file.getAbsolutePath());
     }
   }
 
@@ -535,14 +417,11 @@ public final class KeyStoreSupporter
    */
   public static void keyStoreToFile(File directory, String filename, KeyStore keyStore, String keystorePassword)
   {
-    if (log.isTraceEnabled())
-    {
-      log.trace("creating file '{}/{}.{}' for keystore of type '{}'.",
-                directory.getAbsolutePath(),
-                filename,
-                KeyStoreType.valueOf(keyStore.getType()).getFileExtension(),
-                keyStore.getType());
-    }
+    log.trace("creating file '{}/{}.{}' for keystore of type '{}'.",
+              directory.getAbsolutePath(),
+              filename,
+              KeyStoreType.valueOf(keyStore.getType()).getFileExtension(),
+              keyStore.getType());
     KeyStoreType keyStoreType = KeyStoreType.valueOf(keyStore.getType());
     File keyStoreFile = new File(directory.getAbsolutePath() + File.separator + filename + "."
                                  + keyStoreType.getFileExtension());
@@ -569,41 +448,17 @@ public final class KeyStoreSupporter
       .orElseThrow(() -> new KeyStoreCreationFailedException("could not determine the type of the keystore. A specific "
         + "file extension like jks, jceks, p12 or pfx is needed."));
     // @formatter:on
-    try (InputStream inputStream = new FileInputStream(file))
-    {
-      KeyStore keyStore = KeyStore.getInstance(keyStoreType.name(), selectProvider(keyStoreType));
-      keyStore.load(inputStream, keyStorePassword.toCharArray());
-      return keyStore;
-    }
-    catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreCreationFailedException(MESSAGE_KEYSTORE_READ_ABORTED, e);
-    }
+    return getKeyStoreFromFile(file, keyStorePassword, keyStoreType);
   }
 
-  /**
-   * will read a file to a keystore.
-   *
-   * @param file the file that should be read to a keystore
-   * @param keyStoreType the type of the keystore.
-   * @param keyStorePassword the password to access the keystore
-   * @return the read keystore
-   */
-  public static KeyStore readKeyStore(File file, KeyStoreType keyStoreType, String keyStorePassword)
+  @SneakyThrows
+  private static KeyStore getKeyStoreFromFile(File file, String keyStorePassword, KeyStoreType keyStoreType)
   {
-    if (!file.exists())
-    {
-      throw new KeyStoreCreationFailedException("The file '" + file.getAbsolutePath() + "' does not exist!");
-    }
     try (InputStream inputStream = new FileInputStream(file))
     {
       KeyStore keyStore = KeyStore.getInstance(keyStoreType.name(), selectProvider(keyStoreType));
       keyStore.load(inputStream, keyStorePassword.toCharArray());
       return keyStore;
-    }
-    catch (KeyStoreException | IOException | CertificateException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreCreationFailedException(MESSAGE_KEYSTORE_READ_ABORTED, e);
     }
   }
 
@@ -615,6 +470,7 @@ public final class KeyStoreSupporter
    * @param keyStorePassword the password to access the keystore
    * @return the read keystore
    */
+  @SneakyThrows
   public static KeyStore readKeyStore(byte[] keyStoreBytes, KeyStoreType keyStoreType, String keyStorePassword)
   {
     if (keyStoreBytes == null || keyStoreType == null || keyStorePassword == null)
@@ -627,20 +483,6 @@ public final class KeyStoreSupporter
       keyStore.load(inputStream, keyStorePassword.toCharArray());
       return keyStore;
     }
-    catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreCreationFailedException(MESSAGE_KEYSTORE_READ_ABORTED, e);
-    }
-    catch (IOException e)
-    {
-      if (e.getMessage() != null && (e.getMessage().toLowerCase(Locale.ENGLISH).contains(STRING_INVALID_KEYSTORE_FORMAT)
-                                     || e.getMessage().contains(STRING_NOT_PKCS12)))
-      {
-        throw new KeyStoreCreationFailedException(STRING_BYTE_ARRAY_CANNOT_BE_READ_IN_THE_GIVEN + "keystore-format '"
-                                                  + keyStoreType.name() + "'.", e);
-      }
-      throw new KeyStoreCreationFailedException(MESSAGE_KEYSTORE_READ_ABORTED, e);
-    }
   }
 
   /**
@@ -651,6 +493,7 @@ public final class KeyStoreSupporter
    * @param keyStorePassword the password to access the keystore
    * @return the read keystore
    */
+  @SneakyThrows
   public static KeyStore readKeyStore(InputStream keyStoreStream, KeyStoreType keyStoreType, String keyStorePassword)
   {
     if (keyStoreStream == null || keyStoreType == null || keyStorePassword == null)
@@ -662,20 +505,6 @@ public final class KeyStoreSupporter
       KeyStore keyStore = KeyStore.getInstance(keyStoreType.name(), selectProvider(keyStoreType));
       keyStore.load(inputStream, keyStorePassword.toCharArray());
       return keyStore;
-    }
-    catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreCreationFailedException(MESSAGE_KEYSTORE_READ_ABORTED, e);
-    }
-    catch (IOException e)
-    {
-      if (e.getMessage() != null && (e.getMessage().toLowerCase(Locale.ENGLISH).contains(STRING_INVALID_KEYSTORE_FORMAT)
-                                     || e.getMessage().contains(STRING_NOT_PKCS12)))
-      {
-        throw new KeyStoreCreationFailedException(STRING_BYTE_ARRAY_CANNOT_BE_READ_IN_THE_GIVEN + "keystore-format '"
-                                                  + keyStoreType.name() + "'.", e);
-      }
-      throw new KeyStoreCreationFailedException(MESSAGE_KEYSTORE_READ_ABORTED, e);
     }
   }
 
@@ -734,6 +563,7 @@ public final class KeyStoreSupporter
    *          keystores
    * @return a keystore that can only be used as truststore
    */
+  @SneakyThrows
   public static KeyStore readTruststore(InputStream truststoreStream, KeyStoreType keyStoreType, String password)
   {
     if (truststoreStream == null)
@@ -750,20 +580,6 @@ public final class KeyStoreSupporter
       }
       keyStore.load(inputStream, keystorePin == null ? null : keystorePin.toCharArray());
       return keyStore;
-    }
-    catch (KeyStoreException | CertificateException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreCreationFailedException("an unexpected error aborted the reading of the truststore.", e);
-    }
-    catch (IOException e)
-    {
-      if (e.getMessage() != null && (e.getMessage().toLowerCase(Locale.ENGLISH).contains(STRING_INVALID_KEYSTORE_FORMAT)
-                                     || e.getMessage().contains(STRING_NOT_PKCS12)))
-      {
-        throw new KeyStoreCreationFailedException(STRING_BYTE_ARRAY_CANNOT_BE_READ_IN_THE_GIVEN + "truststore-format '"
-                                                  + keyStoreType.name() + "'.", e);
-      }
-      throw new KeyStoreCreationFailedException("an unexpected error aborted the reading of the truststore.", e);
     }
   }
 
@@ -813,7 +629,7 @@ public final class KeyStoreSupporter
     {
       String alias = aliases1.nextElement();
       aliasMap.add(alias);
-      tryCopyKeyEntry(keyStore1, mergedKeyStoreKeyPassword, password1, keyStoreType, mergedKeyStore, alias);
+      tryCopyEntry(keyStore1, mergedKeyStoreKeyPassword, password1, keyStoreType, mergedKeyStore, alias);
     }
 
     Enumeration<String> aliases2 = getAliases(keyStore2);
@@ -826,23 +642,16 @@ public final class KeyStoreSupporter
 
       if (key.isPresent())
       {
-        getCertificateChain(keyStore2, alias).ifPresent(certificates -> addKeyEntryToKeystore(mergedKeyStore,
-                                                                                              alias,
-                                                                                              key.get(),
-                                                                                              certificates,
-                                                                                              password2));
+        getCertificateChain(keyStore2, alias).ifPresent(certificates -> addEntryToKeystore(mergedKeyStore,
+                                                                                           alias,
+                                                                                           key.get(),
+                                                                                           certificates,
+                                                                                           password2));
       }
       else
       {
         Optional<Certificate> certificate = getCertificate(keyStore2, alias);
-        if (certificate.isPresent())
-        {
-          addCertificateEntryToKeyStore(mergedKeyStore, certificate.get(), alias);
-        }
-        else
-        {
-          log.warn("empty keystore entry found... keystore seems to be corrupted");
-        }
+        certificate.ifPresent(cert -> addCertificateEntryToKeyStore(mergedKeyStore, cert, alias));
       }
     }
     return mergedKeyStore;
@@ -859,6 +668,7 @@ public final class KeyStoreSupporter
    * @throws KeyStoreReadingException if the keystore entry could not be read or if the first keystore entry is
    *           only a certificate entry
    */
+  @SneakyThrows
   public static KeyPair readFirstKeyPairEntryFromKeyStore(KeyStore keyStore, String privateKeyPassword)
   {
     Enumeration<String> aliases = getAliases(keyStore);
@@ -866,17 +676,10 @@ public final class KeyStoreSupporter
     while (aliases.hasMoreElements())
     {
       String alias = aliases.nextElement();
-      try
-      {
-        PrivateKey privateKey = (PrivateKey)keyStore.getKey(alias, privateKeyPassword.toCharArray());
-        PublicKey publicKey = keyStore.getCertificate(alias).getPublicKey();
-        keyPair = new KeyPair(publicKey, privateKey);
-        break;
-      }
-      catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e)
-      {
-        throw new KeyStoreReadingException("could not extract private key from keystore with alias '" + alias + "'", e);
-      }
+      PrivateKey privateKey = (PrivateKey)keyStore.getKey(alias, privateKeyPassword.toCharArray());
+      PublicKey publicKey = keyStore.getCertificate(alias).getPublicKey();
+      keyPair = new KeyPair(publicKey, privateKey);
+      break;
     }
     return keyPair;
   }
@@ -888,16 +691,10 @@ public final class KeyStoreSupporter
    * @return the aliases of the given keystore
    * @throws KeyStoreReadingException in case of a {@link KeyStoreException}
    */
+  @SneakyThrows
   public static Enumeration<String> getAliases(KeyStore keyStore)
   {
-    try
-    {
-      return keyStore.aliases();
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreReadingException("could not access aliases of keystore...", e);
-    }
+    return keyStore.aliases();
   }
 
   /**
@@ -909,16 +706,13 @@ public final class KeyStoreSupporter
    * @param password the password of the private key entry for the given alias
    * @return the private key entry if it does exist
    */
-  private static Optional<Key> getKeyEntry(KeyStore keyStore, String alias, String password)
+  @SneakyThrows
+  public static Optional<Key> getKeyEntry(KeyStore keyStore, String alias, String password)
   {
     try
     {
-      return Optional.ofNullable(keyStore.getKey(alias, password.toCharArray()));
-    }
-    catch (KeyStoreException | NoSuchAlgorithmException e)
-    {
-      throw new KeyStoreReadingException("could not extract key-entry from the given keystore of alias '" + alias + "'",
-                                         e);
+      return Optional.ofNullable(keyStore.getKey(alias,
+                                                 Optional.ofNullable(password).map(String::toCharArray).orElse(null)));
     }
     catch (UnrecoverableKeyException e)
     {
@@ -936,33 +730,19 @@ public final class KeyStoreSupporter
    * @param alias the alias where the chain should be found
    * @return the certificate chain if present or an empty
    */
+  @SneakyThrows
   public static Optional<Certificate[]> getCertificateChain(KeyStore keyStore, String alias)
   {
-    try
-    {
-      return Optional.ofNullable(keyStore.getCertificateChain(alias));
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreReadingException("cannot read certificate chain of keystore '" + keyStore + "' for alias '"
-                                         + alias + "'", e);
-    }
+    return Optional.ofNullable(keyStore.getCertificateChain(alias));
   }
 
   /**
    * convenience method to read a certificate entry from a keystore
    */
+  @SneakyThrows
   public static Optional<Certificate> getCertificate(KeyStore keyStore, String alias)
   {
-    try
-    {
-      return Optional.ofNullable(keyStore.getCertificate(alias));
-    }
-    catch (KeyStoreException e)
-    {
-      throw new KeyStoreReadingException("cannot read certificate of keystore '" + keyStore + "' for alias '" + alias
-                                         + "'", e);
-    }
+    return Optional.ofNullable(keyStore.getCertificate(alias));
   }
 
   /**
@@ -991,7 +771,7 @@ public final class KeyStoreSupporter
      */
     public static Optional<KeyStoreType> byFileExtension(String fileExtension)
     {
-      if (fileExtension == null || StringUtils.isBlank(fileExtension))
+      if (StringUtils.isBlank(fileExtension))
       {
         return Optional.empty();
       }

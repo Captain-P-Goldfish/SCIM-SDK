@@ -20,13 +20,18 @@ import java.util.Enumeration;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
-import de.captaingoldfish.scim.sdk.client.exceptions.KeyGenerationException;
 import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreCreationFailedException;
 import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreEntryException;
+import lombok.SneakyThrows;
 
 
 /**
@@ -57,7 +62,7 @@ public class KeyStoreSupporterTest
     }
     catch (NoSuchAlgorithmException e)
     {
-      throw new KeyGenerationException("RSA-Schluessel konnte nicht erzeugt werden", e);
+      throw new IllegalStateException("RSA-Schluessel konnte nicht erzeugt werden", e);
     }
     keyPairGenerator.initialize(keyGenerationParameters.getStrength(), keyGenerationParameters.getRandom());
     return keyPairGenerator.generateKeyPair();
@@ -240,9 +245,28 @@ public class KeyStoreSupporterTest
     KeyStore keyStore = KeyStoreSupporter.addCertificateEntryToKeyStore(jksKeyStore, certificate1, alias);
     Assertions.assertArrayEquals(certificate1.getEncoded(),
                                  KeyStoreSupporter.getCertificate(keyStore, alias).get().getEncoded());
-    keyStore = KeyStoreSupporter.addCertificateEntryToKeyStore(jksKeyStore, certificate2, alias);
-    Assertions.assertArrayEquals(certificate2.getEncoded(),
-                                 KeyStoreSupporter.getCertificate(keyStore, alias + "_").get().getEncoded());
+    Assertions.assertThrows(IllegalArgumentException.class,
+                            () -> KeyStoreSupporter.addCertificateEntryToKeyStore(jksKeyStore, certificate2, alias));
+  }
+
+  @SneakyThrows
+  @Test
+  public void testAddCertificateEntry()
+  {
+    KeyPair keyPair1 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    X509Certificate certificate1 = CertificateCreator.createX509SelfSignedCertificate(keyPair1,
+                                                                                      distinguishedName,
+                                                                                      new Date(),
+                                                                                      new Date(System.currentTimeMillis()
+                                                                                               + 1000L * 60 * 60 * 24));
+
+    String alias = "alias";
+
+    KeyStore keyStore = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.JKS, "123456");
+    KeyStoreSupporter.addCertificateEntry(keyStore, alias, certificate1);
+    Assertions.assertArrayEquals(certificate1.getEncoded(), keyStore.getCertificate(alias).getEncoded());
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.addCertificateEntry(KeyStore.getInstance("JKS"), alias, null));
   }
 
   /**
@@ -304,64 +328,10 @@ public class KeyStoreSupporterTest
   }
 
   /**
-   * this test shall show that a keystore can be saved within a file with the correct file extensions.
-   */
-  @Test
-  public void testKeyStoreToFile()
-  {
-    KeyPair keyPair = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
-    X509Certificate certificate = CertificateCreator.createX509SelfSignedCertificate(keyPair,
-                                                                                     distinguishedName,
-                                                                                     new Date(),
-                                                                                     new Date(System.currentTimeMillis()
-                                                                                              + 1000L * 60 * 60 * 24));
-    String alias = "alias";
-    String password = "password";
-    KeyStore jksKeyStore = KeyStoreSupporter.toKeyStore(keyPair.getPrivate(),
-                                                        certificate,
-                                                        alias,
-                                                        password,
-                                                        KeyStoreSupporter.KeyStoreType.JKS);
-
-    File targetDirectory = new File(".");
-    String filename = "testKeyStoreFile";
-
-    saveJksKeyStore:
-    {
-      File targetFile = new File(targetDirectory.getAbsolutePath() + "/" + filename + ".jks");
-      KeyStoreSupporter.keyStoreToFile(targetDirectory, filename, jksKeyStore, password);
-      Assertions.assertTrue(targetFile.exists(), getErrorTextFileNotCreated(targetFile));
-      targetFile.delete();
-    }
-
-    saveJceksKeyStore:
-    {
-      KeyStore jceksKeyStore = KeyStoreSupporter.convertKeyStore(jksKeyStore,
-                                                                 password,
-                                                                 KeyStoreSupporter.KeyStoreType.JCEKS);
-      File targetFile = new File(targetDirectory.getAbsolutePath() + "/" + filename + ".jceks");
-      KeyStoreSupporter.keyStoreToFile(targetDirectory, filename, jceksKeyStore, password);
-      Assertions.assertTrue(targetFile.exists(), getErrorTextFileNotCreated(targetFile));
-      targetFile.delete();
-    }
-
-    savePkcs12KeyStore:
-    {
-      KeyStore pkcs12KeyStore = KeyStoreSupporter.convertKeyStore(jksKeyStore,
-                                                                  password,
-                                                                  KeyStoreSupporter.KeyStoreType.PKCS12);
-      File targetFile = new File(targetDirectory.getAbsolutePath() + "/" + filename + ".p12");
-      KeyStoreSupporter.keyStoreToFile(targetDirectory, filename, pkcs12KeyStore, password);
-      Assertions.assertTrue(targetFile.exists(), getErrorTextFileNotCreated(targetFile));
-      targetFile.delete();
-    }
-  }
-
-  /**
    * This test will show that keystores can be read from files and byte-arrays
    */
-  @Test
-  public void testReadKeyStore() throws KeyStoreException, IOException
+  @TestFactory
+  public List<DynamicTest> testReadKeyStore() throws KeyStoreException, IOException
   {
     KeyPair keyPair = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
     X509Certificate x509Certificate = CertificateCreator.createX509SelfSignedCertificate(keyPair,
@@ -381,8 +351,9 @@ public class KeyStoreSupporterTest
     File targetDirectory = new File(".");
     String filename = "testKeyStoreFile";
 
-    createJksKeyStoreFile:
-    {
+    List<DynamicTest> dynamicTestList = new ArrayList<>();
+
+    dynamicTestList.add(DynamicTest.dynamicTest("create JKS keystore file", () -> {
       File targetFile = new File(targetDirectory.getAbsolutePath() + "/" + filename + ".jks");
       KeyStoreSupporter.keyStoreToFile(targetDirectory, filename, jksKeyStore, password);
       Assertions.assertTrue(targetFile.exists(), getErrorTextFileNotCreated(targetFile));
@@ -399,11 +370,17 @@ public class KeyStoreSupporterTest
       certificateAlias = keyStore.getCertificateAlias(certificate);
       Assertions.assertNotNull(certificateAlias);
       Assertions.assertEquals(alias, certificateAlias);
-      targetFile.delete();
-    }
 
-    createJceksKeyStoreFile:
-    {
+      InputStream keystoreInputStream = FileUtils.openInputStream(targetFile);
+      keyStore = KeyStoreSupporter.readKeyStore(keystoreInputStream, KeyStoreSupporter.KeyStoreType.JKS, password);
+      certificateAlias = keyStore.getCertificateAlias(certificate);
+      Assertions.assertNotNull(certificateAlias);
+      Assertions.assertEquals(alias, certificateAlias);
+      targetFile.delete();
+    }));
+
+
+    dynamicTestList.add(DynamicTest.dynamicTest("create JCEKS keystore file", () -> {
       KeyStore jceksKeyStore = KeyStoreSupporter.convertKeyStore(jksKeyStore,
                                                                  password,
                                                                  KeyStoreSupporter.KeyStoreType.JCEKS);
@@ -422,11 +399,16 @@ public class KeyStoreSupporterTest
       certificateAlias = keyStore.getCertificateAlias(certificate);
       Assertions.assertNotNull(certificateAlias);
       Assertions.assertEquals(alias, certificateAlias);
-      targetFile.delete();
-    }
 
-    createPkcs12KeyStoreFile:
-    {
+      InputStream keystoreInputStream = FileUtils.openInputStream(targetFile);
+      keyStore = KeyStoreSupporter.readKeyStore(keystoreInputStream, KeyStoreSupporter.KeyStoreType.JCEKS, password);
+      certificateAlias = keyStore.getCertificateAlias(certificate);
+      Assertions.assertNotNull(certificateAlias);
+      Assertions.assertEquals(alias, certificateAlias);
+      targetFile.delete();
+    }));
+
+    dynamicTestList.add(DynamicTest.dynamicTest("create PKCS12 keystore file", () -> {
       KeyStore jceksKeyStore = KeyStoreSupporter.convertKeyStore(jksKeyStore,
                                                                  password,
                                                                  KeyStoreSupporter.KeyStoreType.PKCS12);
@@ -445,8 +427,41 @@ public class KeyStoreSupporterTest
       certificateAlias = keyStore.getCertificateAlias(certificate);
       Assertions.assertNotNull(certificateAlias);
       Assertions.assertEquals(alias, certificateAlias);
+
+      InputStream keystoreInputStream = FileUtils.openInputStream(targetFile);
+      keyStore = KeyStoreSupporter.readKeyStore(keystoreInputStream, KeyStoreSupporter.KeyStoreType.PKCS12, password);
+      certificateAlias = keyStore.getCertificateAlias(certificate);
+      Assertions.assertNotNull(certificateAlias);
+      Assertions.assertEquals(alias, certificateAlias);
       targetFile.delete();
-    }
+    }));
+
+    return dynamicTestList;
+  }
+
+  @Test
+  public void testReadNoneExistingKeystoreFile()
+  {
+    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+                            () -> KeyStoreSupporter.readKeyStore(new File("file-does-not-exist.txt"), "123456"));
+  }
+
+  @Test
+  public void testReadKeystoreFromNullByteArray()
+  {
+    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+                            () -> KeyStoreSupporter.readKeyStore((byte[])null,
+                                                                 KeyStoreSupporter.KeyStoreType.JKS,
+                                                                 "123456"));
+  }
+
+  @Test
+  public void testReadKeystoreFromNullInpustream()
+  {
+    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+                            () -> KeyStoreSupporter.readKeyStore((InputStream)null,
+                                                                 KeyStoreSupporter.KeyStoreType.JKS,
+                                                                 "123456"));
   }
 
   /**
@@ -462,6 +477,78 @@ public class KeyStoreSupporterTest
                                                                                       new Date(System.currentTimeMillis()
                                                                                                + 1000L * 60 * 60 * 24));
     String alias1 = "alias1";
+    String password1 = "password1";
+    KeyStore keyStore1 = KeyStoreSupporter.toKeyStore(keyPair1.getPrivate(),
+                                                      certificate1,
+                                                      alias1,
+                                                      password1,
+                                                      KeyStoreSupporter.KeyStoreType.JKS);
+
+    KeyPair keyPair2 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    X509Certificate certificate2 = CertificateCreator.createX509SelfSignedCertificate(keyPair2,
+                                                                                      distinguishedName,
+                                                                                      new Date(),
+                                                                                      new Date(System.currentTimeMillis()
+                                                                                               + 1000L * 60 * 60 * 24));
+    String alias2 = "alias2";
+    String password2 = "password2";
+    KeyStore keyStore2 = KeyStoreSupporter.toKeyStore(keyPair2.getPrivate(),
+                                                      certificate2,
+                                                      alias2,
+                                                      password2,
+                                                      KeyStoreSupporter.KeyStoreType.JKS);
+    X509Certificate keystore2CertEntry = getTestCertificate();
+    String alias3 = "keystore-2-cert-entry";
+    KeyStoreSupporter.addEntryToKeystore(keyStore2, alias3, null, new X509Certificate[]{keystore2CertEntry}, password2);
+
+    String mergedKeyStoreKeyPasswords = "newPassword";
+    KeyStore mergedKeyStore = KeyStoreSupporter.mergeKeyStores(keyStore1,
+                                                               password1,
+                                                               keyStore2,
+                                                               password2,
+                                                               KeyStoreSupporter.KeyStoreType.PKCS12,
+                                                               mergedKeyStoreKeyPasswords);
+    Enumeration<String> aliasesEnumeration = mergedKeyStore.aliases();
+    List<String> aliases = new ArrayList<>();
+    while (aliasesEnumeration.hasMoreElements())
+    {
+      aliases.add(aliasesEnumeration.nextElement());
+    }
+
+    Assertions.assertEquals(3, aliases.size());
+    Assertions.assertTrue(aliases.contains(alias1), getErrorWrongAlias(alias1));
+    Assertions.assertTrue(aliases.contains(alias2), getErrorWrongAlias(alias2));
+
+    Key key1 = mergedKeyStore.getKey(alias1, mergedKeyStoreKeyPasswords.toCharArray());
+    Assertions.assertArrayEquals(keyPair1.getPrivate().getEncoded(), key1.getEncoded());
+
+    Key key2 = mergedKeyStore.getKey(alias2, mergedKeyStoreKeyPasswords.toCharArray());
+    Assertions.assertArrayEquals(keyPair2.getPrivate().getEncoded(), key2.getEncoded());
+
+    Certificate cert1 = mergedKeyStore.getCertificate(alias1);
+    Assertions.assertArrayEquals(certificate1.getEncoded(), cert1.getEncoded());
+
+    Certificate cert2 = mergedKeyStore.getCertificate(alias2);
+    Assertions.assertArrayEquals(certificate2.getEncoded(), cert2.getEncoded());
+
+    Certificate cert3 = mergedKeyStore.getCertificate(alias3);
+    Assertions.assertArrayEquals(keystore2CertEntry.getEncoded(), cert3.getEncoded());
+  }
+
+  /**
+   * This test shows that merging of two keystore's will be successful even if keystore1 and keystore2 share the
+   * same alias.
+   */
+  @Test
+  public void testMergeKeyStores2() throws Exception
+  {
+    KeyPair keyPair1 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    X509Certificate certificate1 = CertificateCreator.createX509SelfSignedCertificate(keyPair1,
+                                                                                      distinguishedName,
+                                                                                      new Date(),
+                                                                                      new Date(System.currentTimeMillis()
+                                                                                               + 1000L * 60 * 60 * 24));
+    String alias1 = "alias";
     String password1 = "password1";
     KeyStore keyStore1 = KeyStoreSupporter.toKeyStore(keyPair1.getPrivate(),
                                                       certificate1,
@@ -511,124 +598,8 @@ public class KeyStoreSupporterTest
     Assertions.assertArrayEquals(certificate1.getEncoded(), cert1.getEncoded());
 
     Certificate cert2 = mergedKeyStore.getCertificate(alias2);
-    Assertions.assertArrayEquals(certificate2.getEncoded(), cert2.getEncoded());
-  }
-
-  /**
-   * This test shows that merging of two keystore's will be successful even if keystore1 and keystore2 share the
-   * same alias.
-   */
-  @Test
-  public void testMergeKeyStores2() throws Exception
-  {
-    KeyPair keyPair1 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
-    X509Certificate certificate1 = CertificateCreator.createX509SelfSignedCertificate(keyPair1,
-                                                                                      distinguishedName,
-                                                                                      new Date(),
-                                                                                      new Date(System.currentTimeMillis()
-                                                                                               + 1000L * 60 * 60 * 24));
-    String alias1 = "alias";
-    String password1 = "password1";
-    KeyStore keyStore1 = KeyStoreSupporter.toKeyStore(keyPair1.getPrivate(),
-                                                      certificate1,
-                                                      alias1,
-                                                      password1,
-                                                      KeyStoreSupporter.KeyStoreType.JKS);
-
-    KeyPair keyPair2 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
-    X509Certificate certificate2 = CertificateCreator.createX509SelfSignedCertificate(keyPair2,
-                                                                                      distinguishedName,
-                                                                                      new Date(),
-                                                                                      new Date(System.currentTimeMillis()
-                                                                                               + 1000L * 60 * 60 * 24));
-    String alias2 = "alias";
-    String password2 = "password2";
-    KeyStore keyStore2 = KeyStoreSupporter.toKeyStore(keyPair2.getPrivate(),
-                                                      certificate2,
-                                                      alias2,
-                                                      password2,
-                                                      KeyStoreSupporter.KeyStoreType.JKS);
-
-    String mergedKeyStoreKeyPasswords = "newPassword";
-    KeyStore mergedKeyStore = KeyStoreSupporter.mergeKeyStores(keyStore1,
-                                                               password1,
-                                                               keyStore2,
-                                                               password2,
-                                                               KeyStoreSupporter.KeyStoreType.PKCS12,
-                                                               mergedKeyStoreKeyPasswords);
-    Enumeration<String> aliasesEnumeration = mergedKeyStore.aliases();
-    List<String> aliases = new ArrayList<>();
-    while (aliasesEnumeration.hasMoreElements())
-    {
-      aliases.add(aliasesEnumeration.nextElement());
-    }
-
-    alias2 += "_";
-
-    Assertions.assertEquals(2, aliases.size());
-    Assertions.assertTrue(aliases.contains(alias1), getErrorWrongAlias(alias1));
-    Assertions.assertTrue(aliases.contains(alias2), getErrorWrongAlias(alias2));
-
-    Key key1 = mergedKeyStore.getKey(alias1, mergedKeyStoreKeyPasswords.toCharArray());
-    Assertions.assertArrayEquals(keyPair1.getPrivate().getEncoded(), key1.getEncoded());
-
-    Key key2 = mergedKeyStore.getKey(alias2, mergedKeyStoreKeyPasswords.toCharArray());
-    Assertions.assertArrayEquals(keyPair2.getPrivate().getEncoded(), key2.getEncoded());
-
-    Certificate cert1 = mergedKeyStore.getCertificate(alias1);
-    Assertions.assertArrayEquals(certificate1.getEncoded(), cert1.getEncoded());
-
-    Certificate cert2 = mergedKeyStore.getCertificate(alias2);
     Assertions.assertNotEquals(cert1, cert2, "certificates must be different entries");
     Assertions.assertArrayEquals(certificate2.getEncoded(), cert2.getEncoded());
-  }
-
-  /**
-   * This test shows that merging of two keystore's will be successful even if keystore1 and keystore2 share an
-   * identical certificate-entry.
-   */
-  @Test
-  public void testMergeKeyStores3() throws Exception
-  {
-    KeyPair keyPair1 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
-    X509Certificate certificate1 = CertificateCreator.createX509SelfSignedCertificate(keyPair1,
-                                                                                      distinguishedName,
-                                                                                      new Date(),
-                                                                                      new Date(System.currentTimeMillis()
-                                                                                               + 1000L * 60 * 60 * 24));
-    String alias1 = "alias";
-    String password1 = "password1";
-    KeyStore keyStore1 = KeyStoreSupporter.toKeyStore(keyPair1.getPrivate(),
-                                                      certificate1,
-                                                      alias1,
-                                                      password1,
-                                                      KeyStoreSupporter.KeyStoreType.JKS);
-
-    String password2 = password1;
-    KeyStore keyStore2 = KeyStoreSupporter.convertKeyStore(keyStore1, password1, KeyStoreSupporter.KeyStoreType.JCEKS);
-
-    String mergedKeyStoreKeyPasswords = "newPassword";
-    KeyStore mergedKeyStore = KeyStoreSupporter.mergeKeyStores(keyStore1,
-                                                               password1,
-                                                               keyStore2,
-                                                               password2,
-                                                               KeyStoreSupporter.KeyStoreType.PKCS12,
-                                                               mergedKeyStoreKeyPasswords);
-    Enumeration<String> aliasesEnumeration = mergedKeyStore.aliases();
-    List<String> aliases = new ArrayList<>();
-    while (aliasesEnumeration.hasMoreElements())
-    {
-      aliases.add(aliasesEnumeration.nextElement());
-    }
-
-    Assertions.assertEquals(1, aliases.size());
-    Assertions.assertTrue(aliases.contains(alias1), getErrorWrongAlias(alias1));
-
-    Key key1 = mergedKeyStore.getKey(alias1, mergedKeyStoreKeyPasswords.toCharArray());
-    Assertions.assertArrayEquals(keyPair1.getPrivate().getEncoded(), key1.getEncoded());
-
-    Certificate cert1 = mergedKeyStore.getCertificate(alias1);
-    Assertions.assertArrayEquals(certificate1.getEncoded(), cert1.getEncoded());
   }
 
   /**
@@ -655,6 +626,9 @@ public class KeyStoreSupporterTest
     Assertions.assertNotNull(readKeyPair);
     Assertions.assertEquals(keyPair.getPrivate(), readKeyPair.getPrivate());
     Assertions.assertEquals(keyPair.getPublic(), readKeyPair.getPublic());
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.readFirstKeyPairEntryFromKeyStore(KeyStore.getInstance("JKS"),
+                                                                                      password));
   }
 
   /**
@@ -667,6 +641,63 @@ public class KeyStoreSupporterTest
     KeyStore keyStore = KeyStoreSupporter.readTruststore(getClass().getResourceAsStream("/test-keys/test_truststore.jks"),
                                                          KeyStoreSupporter.KeyStoreType.JKS);
     Assertions.assertNotNull(keyStore);
+  }
+
+  /**
+   * this test does show us, that a jks keystore can be opened to access the certificate entries without a
+   * password.
+   */
+  @SneakyThrows
+  @Test
+  public void testReadTruststoreFromBytes()
+  {
+    byte[] truststoreBytes;
+    try (InputStream inputStream = getClass().getResourceAsStream("/test-keys/test_truststore.jks"))
+    {
+      truststoreBytes = IOUtils.toByteArray(inputStream);
+    }
+    KeyStore keyStore = KeyStoreSupporter.readTruststore(truststoreBytes, KeyStoreSupporter.KeyStoreType.JKS);
+    Assertions.assertNotNull(keyStore);
+  }
+
+  @SneakyThrows
+  @Test
+  public void testReadTruststoreFromBytesWithPassword()
+  {
+    byte[] truststoreBytes;
+    try (InputStream inputStream = getClass().getResourceAsStream("/test-keys/test.p12"))
+    {
+      truststoreBytes = IOUtils.toByteArray(inputStream);
+    }
+    KeyStore keyStore = KeyStoreSupporter.readTruststore(truststoreBytes,
+                                                         KeyStoreSupporter.KeyStoreType.PKCS12,
+                                                         "123456");
+    Assertions.assertNotNull(keyStore);
+  }
+
+  @SneakyThrows
+  @Test
+  public void testReadTruststoreWithNullBytesAndPassword()
+  {
+    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+                            () -> KeyStoreSupporter.readTruststore((byte[])null,
+                                                                   KeyStoreSupporter.KeyStoreType.PKCS12,
+                                                                   "123456"));
+  }
+
+  @Test
+  public void testReadTruststoreWithNullBytes()
+  {
+    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+                            () -> KeyStoreSupporter.readTruststore((byte[])null, KeyStoreSupporter.KeyStoreType.JKS));
+  }
+
+  @Test
+  public void testReadTruststoreWithNullInputstream()
+  {
+    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+                            () -> KeyStoreSupporter.readTruststore((InputStream)null,
+                                                                   KeyStoreSupporter.KeyStoreType.JKS));
   }
 
   /**
@@ -689,7 +720,7 @@ public class KeyStoreSupporterTest
   public void testReadPkcs12TruststoreWithoutUsingRequiredPassword()
   {
     InputStream keystoreStream = getClass().getResourceAsStream("/test-keys/test.p12");
-    Assertions.assertThrows(KeyStoreCreationFailedException.class,
+    Assertions.assertThrows(IOException.class,
                             () -> KeyStoreSupporter.readTruststore(keystoreStream,
                                                                    KeyStoreSupporter.KeyStoreType.PKCS12));
   }
@@ -742,6 +773,288 @@ public class KeyStoreSupporterTest
     byte[] keystoreBytes = KeyStoreSupporter.getBytes(keyStore, "123456");
     KeyStore newKeyStore = KeyStoreSupporter.readTruststore(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS);
     Assertions.assertEquals(keyStore.size(), newKeyStore.size());
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.getBytes(KeyStore.getInstance("JKS"), "123456"));
+  }
+
+  /**
+   * creates a keystore and adds a certificate as entry to it
+   */
+  @SneakyThrows
+  @ParameterizedTest
+  @ValueSource(strings = {"JKS", "JCEKS", "PKCS12"})
+  public void testToKeystore(KeyStoreSupporter.KeyStoreType keyStoreType)
+  {
+    final String alias = "test";
+    final String password = "123456";
+
+    X509Certificate certificate = getTestCertificate();
+    KeyStore keyStore = Assertions.assertDoesNotThrow(() -> KeyStoreSupporter.toKeyStore(certificate,
+                                                                                         alias,
+                                                                                         password,
+                                                                                         keyStoreType));
+    Assertions.assertNotNull(keyStore.getCertificate(alias));
+  }
+
+  /**
+   * creates a keystore and adds a certificate as entry to it
+   */
+  @Test
+  public void testToKeystoreWithNullCertificate()
+  {
+    final String alias = "test";
+    final String password = "123456";
+
+    Assertions.assertThrows(KeyStoreEntryException.class, () -> {
+      KeyStoreSupporter.toKeyStore(null, alias, password, KeyStoreSupporter.KeyStoreType.JKS);
+    });
+  }
+
+
+
+  /**
+   * verifies that the exact same instance is returned if a keystore has been tried to be converted to the same
+   * type that it already is
+   */
+  @Test
+  public void testConvertKeyStoreToSameType()
+  {
+    final String alias = "test";
+    final String password = "123456";
+    final KeyStoreSupporter.KeyStoreType keyStoreType = KeyStoreSupporter.KeyStoreType.PKCS12;
+
+    X509Certificate certificate = getTestCertificate();
+    KeyStore keyStore = Assertions.assertDoesNotThrow(() -> KeyStoreSupporter.toKeyStore(certificate,
+                                                                                         alias,
+                                                                                         password,
+                                                                                         keyStoreType));
+
+    KeyStore convertedKeystore = KeyStoreSupporter.convertKeyStore(keyStore, password, keyStoreType);
+    Assertions.assertEquals(keyStore, convertedKeystore);
+  }
+
+  @SneakyThrows
+  @TestFactory
+  public List<DynamicTest> testCopyKeystoreEntries()
+  {
+    KeyPair master = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    DistinguishedName masterDn = DistinguishedName.builder().commonName("master").build();
+    X509Certificate masterCertificate = CertificateCreator.createX509SelfSignedCertificate(master,
+                                                                                           masterDn,
+                                                                                           new Date(),
+                                                                                           new Date(System.currentTimeMillis()
+                                                                                                    + 1000L * 60 * 60
+                                                                                                      * 24));
+    KeyPair child = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    DistinguishedName childDn = DistinguishedName.builder().commonName("child").build();
+    X509Certificate childCertificate = CertificateCreator.createSignedX509Certificate(childDn,
+                                                                                      masterDn,
+                                                                                      new Date(),
+                                                                                      new Date(System.currentTimeMillis()
+                                                                                               + 1000L * 60 * 60 * 24),
+                                                                                      master.getPrivate(),
+                                                                                      child.getPublic());
+
+    final X509Certificate[] certificateChain = new X509Certificate[]{childCertificate, masterCertificate};
+    final String alias = "test";
+    final String password = "123456";
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    dynamicTests.add(DynamicTest.dynamicTest("copy private key and certificate chain", () -> {
+      KeyStore keyStore1 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.PKCS12, password);
+      keyStore1 = KeyStoreSupporter.addEntryToKeystore(keyStore1,
+                                                       alias,
+                                                       child.getPrivate(),
+                                                       certificateChain,
+                                                       password);
+
+      KeyStore keyStore2 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.JKS, password);
+
+
+      KeyStoreSupporter.tryCopyEntry(keyStore1,
+                                     password,
+                                     password,
+                                     KeyStoreSupporter.KeyStoreType.PKCS12,
+                                     keyStore2,
+                                     alias);
+      Assertions.assertEquals(keyStore1.size(), keyStore2.size());
+
+      Certificate[] chain1 = keyStore1.getCertificateChain(alias);
+      Certificate[] chain2 = keyStore2.getCertificateChain(alias);
+      Assertions.assertEquals(chain1.length, chain2.length);
+      Assertions.assertArrayEquals(keyStore1.getKey(alias, password.toCharArray()).getEncoded(),
+                                   keyStore2.getKey(alias, password.toCharArray()).getEncoded());
+
+      for ( int i = 0 ; i < certificateChain.length ; i++ )
+      {
+        Assertions.assertArrayEquals(certificateChain[i].getEncoded(), chain1[i].getEncoded());
+        Assertions.assertArrayEquals(certificateChain[i].getEncoded(), chain2[i].getEncoded());
+      }
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("add certificate chain to keystore", () -> {
+      KeyStore keyStore1 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.PKCS12, password);
+      Assertions.assertThrows(IllegalArgumentException.class,
+                              () -> KeyStoreSupporter.addEntryToKeystore(keyStore1,
+                                                                         alias,
+                                                                         null,
+                                                                         certificateChain,
+                                                                         null));
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("add null values to keystore", () -> {
+      KeyStore keyStore1 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.PKCS12, password);
+      Assertions.assertThrows(IllegalArgumentException.class,
+                              () -> KeyStoreSupporter.addEntryToKeystore(keyStore1, alias, null, null, null));
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("copy single certificate entry", () -> {
+      KeyStore keyStore1 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.JKS, password);
+      keyStore1 = KeyStoreSupporter.addEntryToKeystore(keyStore1,
+                                                       alias,
+                                                       null,
+                                                       new Certificate[]{masterCertificate},
+                                                       password);
+
+      KeyStore keyStore2 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.JKS, password);
+
+
+      KeyStoreSupporter.tryCopyEntry(keyStore1, password, null, KeyStoreSupporter.KeyStoreType.JKS, keyStore2, alias);
+      Assertions.assertEquals(keyStore1.size(), keyStore2.size());
+
+      Assertions.assertNull(keyStore1.getKey(alias, password.toCharArray()));
+      Assertions.assertNull(keyStore2.getKey(alias, password.toCharArray()));
+      Assertions.assertArrayEquals(keyStore1.getCertificate(alias).getEncoded(),
+                                   keyStore2.getCertificate(alias).getEncoded());
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("copy none existing alias", () -> {
+      KeyStore keyStore1 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.JKS, password);
+      KeyStore keyStore1_ = KeyStoreSupporter.addEntryToKeystore(keyStore1,
+                                                                 alias,
+                                                                 null,
+                                                                 new Certificate[]{masterCertificate},
+                                                                 password);
+
+      KeyStore keyStore2 = KeyStoreSupporter.createEmptyKeyStore(KeyStoreSupporter.KeyStoreType.JKS, password);
+
+
+      Assertions.assertDoesNotThrow(() -> KeyStoreSupporter.tryCopyEntry(keyStore1_,
+                                                                         password,
+                                                                         null,
+                                                                         KeyStoreSupporter.KeyStoreType.JKS,
+                                                                         keyStore2,
+                                                                         "not-existing"));
+      Assertions.assertEquals(0, keyStore2.size());
+    }));
+    return dynamicTests;
+  }
+
+  /**
+   * verifies that an alias cannot be added twice to a keystore
+   */
+  @Test
+  public void testAddKeystoreWithAlreadyExistingAlias()
+  {
+    KeyPair keyPair = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    X509Certificate certificate = CertificateCreator.createX509SelfSignedCertificate(keyPair,
+                                                                                     distinguishedName,
+                                                                                     new Date(),
+                                                                                     new Date(System.currentTimeMillis()
+                                                                                              + 1000L * 60 * 60 * 24));
+    String alias = "alias";
+    String password = "password";
+    KeyStore keyStore = KeyStoreSupporter.toKeyStore(keyPair.getPrivate(),
+                                                     certificate,
+                                                     alias,
+                                                     password,
+                                                     KeyStoreSupporter.KeyStoreType.JKS);
+
+    KeyPair keyPair2 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    X509Certificate certificate2 = CertificateCreator.createX509SelfSignedCertificate(keyPair2,
+                                                                                      distinguishedName,
+                                                                                      new Date(),
+                                                                                      new Date(System.currentTimeMillis()
+                                                                                               + 1000L * 60 * 60 * 24));
+    Assertions.assertThrows(IllegalArgumentException.class,
+                            () -> KeyStoreSupporter.addEntryToKeystore(keyStore,
+                                                                       alias,
+                                                                       keyPair2.getPrivate(),
+                                                                       new X509Certificate[]{certificate2},
+                                                                       password));
+
+  }
+
+  @Test
+  public void testGetKeyEntryWithWrongPassword()
+  {
+    KeyPair keyPair = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    X509Certificate certificate = CertificateCreator.createX509SelfSignedCertificate(keyPair,
+                                                                                     distinguishedName,
+                                                                                     new Date(),
+                                                                                     new Date(System.currentTimeMillis()
+                                                                                              + 1000L * 60 * 60 * 24));
+    String alias = "alias";
+    String password = "password";
+    KeyStore keyStore = KeyStoreSupporter.toKeyStore(keyPair.getPrivate(),
+                                                     certificate,
+                                                     alias,
+                                                     password,
+                                                     KeyStoreSupporter.KeyStoreType.JKS);
+
+    X509Certificate newCertEntry = getTestCertificate();
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.addEntryToKeystore(keyStore,
+                                                                       alias,
+                                                                       null,
+                                                                       new X509Certificate[]{newCertEntry},
+                                                                       "wrong-password"));
+  }
+
+  @Test
+  public void testGetKeyEntryWithUninitializedKeystore()
+  {
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.getKeyEntry(KeyStore.getInstance("JKS"), "alias", "123456"));
+  }
+
+  @Test
+  public void testGetCertificateWithUninitializedKeystore()
+  {
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.getCertificate(KeyStore.getInstance("JKS"), "alias"));
+  }
+
+  @Test
+  public void testGetCertificateChainWithUninitializedKeystore()
+  {
+    Assertions.assertThrows(KeyStoreException.class,
+                            () -> KeyStoreSupporter.getCertificateChain(KeyStore.getInstance("JKS"), "alias"));
+  }
+
+  @Test
+  public void testGetParseNullFile()
+  {
+    Assertions.assertFalse(KeyStoreSupporter.KeyStoreType.byFileExtension(null).isPresent());
+  }
+
+  @Test
+  public void testGetParsePfxFileExtension()
+  {
+    Assertions.assertEquals(KeyStoreSupporter.KeyStoreType.PKCS12,
+                            KeyStoreSupporter.KeyStoreType.byFileExtension("hello-world.pfx").get());
+  }
+
+  @Test
+  public void testGetParseUnknownFileExtension()
+  {
+    Assertions.assertFalse(KeyStoreSupporter.KeyStoreType.byFileExtension("hello-world.txt").isPresent());
+  }
+
+  public X509Certificate getTestCertificate()
+  {
+    KeyPair keyPair1 = generateKey(new KeyGenerationParameters(new SecureRandom(), 512));
+    return CertificateCreator.createX509SelfSignedCertificate(keyPair1,
+                                                              distinguishedName,
+                                                              new Date(),
+                                                              new Date(System.currentTimeMillis()
+                                                                       + 1000L * 60 * 60 * 24));
   }
 
   /**

@@ -5,14 +5,20 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.http.impl.client.CloseableHttpClient;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.springframework.web.util.UriComponents;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
@@ -24,6 +30,8 @@ import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -169,6 +177,127 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
     Assertions.assertNotNull(response.getErrorResponse());
+  }
+
+  /**
+   * verifies that the list response is correctly build and that the resources are returned as expected
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildListRequestWithGet(boolean useFullUrl)
+  {
+    ServerResponse<ListResponse<User>> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.list(getServerUrl() + EndpointPaths.USERS, User.class).get().sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.list(User.class, EndpointPaths.USERS).get().sendRequest();
+    }
+
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getItemsPerPage());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getListedResources().size());
+  }
+
+  /**
+   * sends a list get-request with custom parameters
+   */
+  @Test
+  public void testSendListWithGetAndCustomParams()
+  {
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    super.setVerifyRequestAttributes((httpExchange, s) -> {
+      UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl("http://localhost/"
+                                                                     + httpExchange.getRequestURI().toString())
+                                                        .build();
+      Assertions.assertEquals(uriComponents.getQueryParams().get("hello").get(0), "world");
+      Assertions.assertEquals(uriComponents.getQueryParams().get("world").get(0), "hello");
+      wasCalled.set(true);
+    });
+
+    ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
+                                                                    .custom("hello", "world")
+                                                                    .custom("world", "hello")
+                                                                    .get()
+                                                                    .sendRequest();
+
+    Assertions.assertTrue(wasCalled.get());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getItemsPerPage());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getListedResources().size());
+  }
+
+  /**
+   * sends a list get-request with custom parameters
+   */
+  @Test
+  public void testSendListWithFullUrlGetAndCustomParams()
+  {
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    super.setVerifyRequestAttributes((httpExchange, s) -> {
+      UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl("http://localhost/"
+                                                                     + httpExchange.getRequestURI().toString())
+                                                        .build();
+      Assertions.assertEquals(uriComponents.getQueryParams().get("hello").get(0), "world");
+      Assertions.assertEquals(uriComponents.getQueryParams().get("world").get(0), "hello");
+      wasCalled.set(true);
+    });
+
+    ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(getServerUrl() + EndpointPaths.USERS
+                                                                          + "?hello=world",
+                                                                          User.class)
+                                                                    .custom("world", "hello")
+                                                                    .get()
+                                                                    .sendRequest();
+
+    Assertions.assertTrue(wasCalled.get());
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getItemsPerPage());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getListedResources().size());
+  }
+
+  /**
+   * verifies that the list response is correctly build and that the resources are returned as expected
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testBuildListRequestWithPost(boolean useFullUrl)
+  {
+    ServerResponse<ListResponse<User>> response;
+    if (useFullUrl)
+    {
+      response = scimRequestBuilder.list(getServerUrl() + EndpointPaths.USERS, User.class).post().sendRequest();
+    }
+    else
+    {
+      response = scimRequestBuilder.list(User.class, EndpointPaths.USERS).post().sendRequest();
+    }
+
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getItemsPerPage());
+    Assertions.assertEquals(scimConfig.getServiceProvider().getFilterConfig().getMaxResults(),
+                            response.getResource().getListedResources().size());
   }
 
   /**
@@ -328,6 +457,22 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   }
 
   /**
+   * verifies that the service provider configuration can be loaded without having to set an id value
+   */
+  @Test
+  public void testGetSingletonWithGet()
+  {
+    ServerResponse<ServiceProvider> response = scimRequestBuilder.get(ServiceProvider.class,
+                                                                      EndpointPaths.SERVICE_PROVIDER_CONFIG)
+                                                                 .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK,
+                            response.getHttpStatus(),
+                            Optional.ofNullable(response.getErrorResponse())
+                                    .map(ErrorResponse::toPrettyString)
+                                    .orElse(null));
+  }
+
+  /**
    * verifies that a service provider configuration can successfully be read without any problems
    */
   @ParameterizedTest
@@ -356,5 +501,31 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertDoesNotThrow(serviceProvider::getETagConfig);
     Assertions.assertDoesNotThrow(serviceProvider::getChangePasswordConfig);
     Assertions.assertDoesNotThrow(serviceProvider::getAuthenticationSchemes);
+  }
+
+  /**
+   * verifies that closing the {@link ScimRequestBuilder} will close the underlying apache http client and that
+   * a new client is generated if get {@link ScimHttpClient#getHttpClient()} method is called
+   */
+  @Test
+  public void testCloseScimRequestBuilder()
+  {
+    Assertions.assertDoesNotThrow(() -> scimRequestBuilder.close());
+
+    ScimHttpClient scimHttpClient = scimRequestBuilder.getScimHttpClient();
+    ScimHttpClient scimHttpClient2 = scimRequestBuilder.getScimHttpClient();
+    Assertions.assertEquals(scimHttpClient, scimHttpClient2);
+
+    CloseableHttpClient client = scimHttpClient.getHttpClient();
+    Assertions.assertNotNull(client);
+    Assertions.assertEquals(client, scimHttpClient2.getHttpClient());
+
+    Assertions.assertDoesNotThrow(() -> scimRequestBuilder.close());
+
+    scimHttpClient2 = scimRequestBuilder.getScimHttpClient();
+    Assertions.assertEquals(scimHttpClient, scimHttpClient2);
+    // even when closed accessing the get httpclient method must return a new instance
+    Assertions.assertNotNull(scimHttpClient2.getHttpClient());
+    Assertions.assertNotEquals(client, scimHttpClient2.getHttpClient());
   }
 }

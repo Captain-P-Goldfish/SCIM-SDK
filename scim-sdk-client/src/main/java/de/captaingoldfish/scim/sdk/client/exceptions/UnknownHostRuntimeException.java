@@ -8,11 +8,6 @@ package de.captaingoldfish.scim.sdk.client.exceptions;
 public class UnknownHostRuntimeException extends RuntimeException
 {
 
-  public UnknownHostRuntimeException(String message)
-  {
-    super(message);
-  }
-
   public UnknownHostRuntimeException(String message, Throwable cause)
   {
     super(message, cause);

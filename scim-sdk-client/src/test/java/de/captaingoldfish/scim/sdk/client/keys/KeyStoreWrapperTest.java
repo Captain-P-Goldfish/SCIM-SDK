@@ -3,10 +3,14 @@ package de.captaingoldfish.scim.sdk.client.keys;
 import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.security.KeyStore;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+
+import de.captaingoldfish.scim.sdk.client.exceptions.KeyStoreReadingException;
+import lombok.SneakyThrows;
 
 
 /**
@@ -117,6 +121,17 @@ public class KeyStoreWrapperTest
   }
 
   /**
+   * test that a jks byte[] can be read without problems
+   */
+  @Test
+  public void testKeyStoreWrapperWithJKSByteArrayButNoType() throws URISyntaxException, IOException
+  {
+    byte[] keystoreBytes = IOUtils.toByteArray(getClass().getResource("/test-keys/test.jks").toURI());
+    KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KEYSTORE_MASTER_PASSWORD);
+    checkKeystoreWrapper(keyStoreWrapper);
+  }
+
+  /**
    * checks that the private key can be accessed with the keystore password if no
    * {@link de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper.AliasPasswordPair} pair is entered
    */
@@ -127,6 +142,68 @@ public class KeyStoreWrapperTest
     KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS,
                                                           KEYSTORE_MASTER_PASSWORD);
     checkKeystoreWrapper(keyStoreWrapper);
+  }
+
+  @Test
+  public void testReadKeyFromJksWithWrongPassword() throws URISyntaxException, IOException
+  {
+    byte[] keystoreBytes = IOUtils.toByteArray(getClass().getResource("/test-keys/test.jceks").toURI());
+    KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS,
+                                                          KEYSTORE_MASTER_PASSWORD);
+    Assertions.assertThrows(KeyStoreReadingException.class,
+                            () -> keyStoreWrapper.getPrivateKey(KEYSTORE_ALIAS, "false-password"));
+  }
+
+  @Test
+  public void testReadKeyFromJksWithWrongPassword2() throws URISyntaxException, IOException
+  {
+    byte[] keystoreBytes = IOUtils.toByteArray(getClass().getResource("/test-keys/test.jceks").toURI());
+    KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS,
+                                                          KEYSTORE_MASTER_PASSWORD);
+    keyStoreWrapper.getKeystoreEntries()
+                   .put(KEYSTORE_ALIAS, new KeyStoreWrapper.AliasPasswordPair(KEYSTORE_ALIAS, "false-password"));
+    Assertions.assertThrows(KeyStoreReadingException.class, () -> keyStoreWrapper.getPrivateKey(KEYSTORE_ALIAS));
+  }
+
+  @Test
+  public void testReadKeyFromJksWithEmptyValues() throws URISyntaxException, IOException
+  {
+    byte[] keystoreBytes = IOUtils.toByteArray(getClass().getResource("/test-keys/test.jceks").toURI());
+    KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS,
+                                                          KEYSTORE_MASTER_PASSWORD);
+    Assertions.assertFalse(keyStoreWrapper.getPrivateKey("", null).isPresent());
+    Assertions.assertFalse(keyStoreWrapper.getPrivateKey(KEYSTORE_ALIAS, null).isPresent());
+    Assertions.assertFalse(keyStoreWrapper.getPrivateKey("", KEYSTORE_MASTER_PASSWORD).isPresent());
+  }
+
+  @SneakyThrows
+  @Test
+  public void testGetCertificate()
+  {
+    byte[] keystoreBytes = IOUtils.toByteArray(getClass().getResource("/test-keys/test.jceks").toURI());
+    KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS,
+                                                          KEYSTORE_MASTER_PASSWORD);
+    Assertions.assertFalse(keyStoreWrapper.getCertificate(null).isPresent());
+    Assertions.assertFalse(keyStoreWrapper.getCertificate("").isPresent());
+    Assertions.assertFalse(keyStoreWrapper.getCertificate("none-existing-alias").isPresent());
+    keyStoreWrapper.setKeyStore(KeyStore.getInstance("JKS"));
+    Assertions.assertThrows(KeyStoreReadingException.class,
+                            () -> keyStoreWrapper.getCertificate("none-existing-alias"));
+  }
+
+  @SneakyThrows
+  @Test
+  public void testGetAliases()
+  {
+    byte[] keystoreBytes = IOUtils.toByteArray(getClass().getResource("/test-keys/test.jceks").toURI());
+    KeyStoreWrapper keyStoreWrapper = new KeyStoreWrapper(keystoreBytes, KeyStoreSupporter.KeyStoreType.JCEKS,
+                                                          KEYSTORE_MASTER_PASSWORD);
+    Assertions.assertEquals(1, keyStoreWrapper.getAliasesAsList().size());
+    Assertions.assertEquals(KEYSTORE_ALIAS, keyStoreWrapper.getAliasesAsList().get(0));
+    keyStoreWrapper.setKeyStore(null);
+    Assertions.assertThrows(KeyStoreReadingException.class, keyStoreWrapper::getAliasesAsList);
+    keyStoreWrapper.setKeyStore(KeyStore.getInstance("JKS"));
+    Assertions.assertThrows(KeyStoreReadingException.class, keyStoreWrapper::getAliasesAsList);
   }
 
   /**
@@ -142,5 +219,7 @@ public class KeyStoreWrapperTest
     Assertions.assertTrue(keyStoreWrapper.getCertificate(KEYSTORE_ALIAS).isPresent());
     Assertions.assertEquals(1, keyStoreWrapper.getAliasesAsList().size());
     Assertions.assertTrue(keyStoreWrapper.getAliasesAsList().contains(KEYSTORE_ALIAS));
+    Assertions.assertFalse(keyStoreWrapper.getPrivateKey("not-existing-alias").isPresent());
+    Assertions.assertFalse(keyStoreWrapper.getPrivateKey("").isPresent());
   }
 }

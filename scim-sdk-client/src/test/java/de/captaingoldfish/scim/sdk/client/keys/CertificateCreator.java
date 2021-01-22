@@ -18,7 +18,6 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
-import de.captaingoldfish.scim.sdk.client.exceptions.CertificateCreationException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -56,7 +55,7 @@ public class CertificateCreator
     }
     catch (Exception e)
     {
-      throw new CertificateCreationException(e);
+      throw new IllegalStateException(e);
     }
   }
 
@@ -84,7 +83,7 @@ public class CertificateCreator
     }
     catch (Exception e)
     {
-      throw new CertificateCreationException(e);
+      throw new IllegalStateException(e);
     }
   }
 
@@ -175,7 +174,7 @@ public class CertificateCreator
     }
     catch (CertificateException | OperatorCreationException e)
     {
-      throw new CertificateCreationException(e);
+      throw new IllegalStateException(e);
     }
   }
 
@@ -242,7 +241,7 @@ public class CertificateCreator
     }
     catch (CertificateException | OperatorCreationException e)
     {
-      throw new CertificateCreationException(e);
+      throw new IllegalStateException(e);
     }
   }
 }

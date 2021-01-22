@@ -138,6 +138,34 @@ public class HttpHeaderTest extends HttpServerMockup
    * asserts that the default headers are overridden by the preferred headers
    */
   @Test
+  public void testAddDefaultheadersWithMultiValuedMap()
+  {
+    Map<String, String[]> defaultHeaders = new HashMap<>();
+    final String[] customValue = new String[]{"123456", "654321"};
+    defaultHeaders.put("test", customValue);
+
+    ScimClientConfig scimClientConfig = ScimClientConfig.builder().httpMultiHeaders(defaultHeaders).build();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+
+    AtomicBoolean wasCalled = new AtomicBoolean(false);
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      List<String> headerValues = httpExchange.getRequestHeaders().get("test");
+      Assertions.assertNotNull(headerValues);
+      Assertions.assertEquals(2, headerValues.size());
+      Assertions.assertEquals("123456", headerValues.get(0));
+      Assertions.assertEquals("654321", headerValues.get(1));
+      wasCalled.set(true);
+    });
+
+    new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
+                        scimHttpClient).setResource(User.builder().userName("goldfish").build()).sendRequest();
+    Assertions.assertTrue(wasCalled.get());
+  }
+
+  /**
+   * asserts that the default headers are overridden by the preferred headers
+   */
+  @Test
   public void testPreferredMultiHeaderOverrideDefaultHeadersForCreate()
   {
     Map<String, String> defaultHeaders = new HashMap<>();

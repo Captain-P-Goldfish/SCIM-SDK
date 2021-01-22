@@ -10,7 +10,6 @@ import javax.security.auth.x500.X500Principal;
 import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.asn1.x500.X500Name;
 
-import de.captaingoldfish.scim.sdk.client.exceptions.UnsupportedDnException;
 import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
@@ -459,8 +458,10 @@ public class DistinguishedName
     }
     if (!dn.matches(SUPPORTED_CHARACTER_SET + "*"))
     {
-      throw new UnsupportedDnException("The given DN seems to contain invalid characters!", dn,
-                                       SUPPORTED_CHARACTER_SET);
+      throw new IllegalStateException(String.format("The given DN '%s' seems to contain invalid characters! "
+                                                    + "The valid character set is: %s",
+                                                    dn,
+                                                    SUPPORTED_CHARACTER_SET));
     }
   }
 

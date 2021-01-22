@@ -180,6 +180,22 @@ public class ListBuilderTest extends HttpServerMockup
     parseFilterWithAntlr(filter);
   }
 
+  /**
+   * verifies that the filter if setting it as string is correctly added to the builder
+   */
+  @Test
+  public void testBuildFilterWithStringFilter()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl() + EndpointPaths.USERS, User.class, scimHttpClient);
+    final String filter = "username SW \"hello\" and username CO \"_\" and username EW \"world\"";
+    listBuilder.filter(filter);
+    final String filterFromBuilder = listBuilder.getRequestParameters().get(AttributeNames.RFC7643.FILTER);
+    Assertions.assertEquals(filter, filterFromBuilder);
+    parseFilterWithAntlr(filter);
+  }
+
   @ParameterizedTest
   @MethodSource("filterBuilderParamsInteger")
   public void testBuildFilterWithIntegers(String attributeName, Comparator comparator, Integer value)
