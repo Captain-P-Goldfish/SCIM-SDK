@@ -789,7 +789,8 @@ public final class SchemaAttribute extends ScimObjectNode
   // @formatter:on
   public void setPattern(String pattern)
   {
-    if (Type.STRING.equals(getType()) || Type.REFERENCE.equals(getType()))
+    Type type = getType();
+    if (Type.STRING.equals(type) || Type.REFERENCE.equals(type))
     {
       try
       {

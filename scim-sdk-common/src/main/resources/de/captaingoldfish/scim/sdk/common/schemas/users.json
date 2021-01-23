@@ -37,7 +37,8 @@
       "uniqueness": "server",
       "multiValued": false,
       "required": true,
-      "caseExact": false
+      "caseExact": false,
+      "pattern": "^(?!\\s*$).+"
     },
     {
       "name": "name",

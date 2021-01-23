@@ -820,15 +820,15 @@ public class SchemaValidatorTest implements FileReferences
 
   /**
    * will verify that an exception is thrown if an attribute is of another type as declared in the schema. This
-   * explicit test changes the username into an integer type but the attribute in the document will send a
-   * string-username
+   * explicit test changes the nickname into an integer type but the attribute in the document will send a
+   * string-nickname
    */
   @Test
   public void testValidationWithIncorrectAttributeType()
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     TestHelper.modifyAttributeMetaData(metaSchemaNode,
-                                       AttributeNames.RFC7643.USER_NAME,
+                                       AttributeNames.RFC7643.NICK_NAME,
                                        Type.INTEGER,
                                        null,
                                        null,
@@ -837,10 +837,11 @@ public class SchemaValidatorTest implements FileReferences
                                        null,
                                        null,
                                        null);
-    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    user.setNickName("goldfish");
     Schema metaSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, HttpMethod.POST));
+                            () -> SchemaValidator.validateDocumentForRequest(metaSchema, user, HttpMethod.POST));
   }
 
   /**
@@ -851,7 +852,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     TestHelper.modifyAttributeMetaData(metaSchemaNode,
-                                       AttributeNames.RFC7643.USER_NAME,
+                                       AttributeNames.RFC7643.NICK_NAME,
                                        Type.INTEGER,
                                        null,
                                        null,
@@ -861,7 +862,7 @@ public class SchemaValidatorTest implements FileReferences
                                        null,
                                        null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.USER_NAME, new IntNode(Integer.MAX_VALUE));
+    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.NICK_NAME, new IntNode(Integer.MAX_VALUE));
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
@@ -869,7 +870,7 @@ public class SchemaValidatorTest implements FileReferences
     });
     Assertions.assertEquals(Integer.MAX_VALUE,
                             JsonHelper.getSimpleAttribute(validatedDocument,
-                                                          AttributeNames.RFC7643.USER_NAME,
+                                                          AttributeNames.RFC7643.NICK_NAME,
                                                           Integer.class)
                                       .get());
   }
@@ -882,7 +883,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     JsonNode metaSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     TestHelper.modifyAttributeMetaData(metaSchemaNode,
-                                       AttributeNames.RFC7643.USER_NAME,
+                                       AttributeNames.RFC7643.NICK_NAME,
                                        Type.DECIMAL,
                                        null,
                                        null,
@@ -892,14 +893,14 @@ public class SchemaValidatorTest implements FileReferences
                                        null,
                                        null);
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.USER_NAME, new DoubleNode(Double.MAX_VALUE));
+    JsonHelper.addAttribute(userSchema, AttributeNames.RFC7643.NICK_NAME, new DoubleNode(Double.MAX_VALUE));
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForRequest(metaSchema, userSchema, HttpMethod.POST);
     });
     Assertions.assertEquals(Double.MAX_VALUE,
                             JsonHelper.getSimpleAttribute(validatedDocument,
-                                                          AttributeNames.RFC7643.USER_NAME,
+                                                          AttributeNames.RFC7643.NICK_NAME,
                                                           Double.class)
                                       .get());
   }
