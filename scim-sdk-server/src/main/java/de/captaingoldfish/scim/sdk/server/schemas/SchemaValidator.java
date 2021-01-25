@@ -676,6 +676,11 @@ public class SchemaValidator
   private Optional<JsonNode> checkMetaAttributeOnDocument(JsonNode document, SchemaAttribute schemaAttribute)
   {
     JsonNode documentNode = document.get(schemaAttribute.getName());
+    if (documentNode != null && documentNode.isNull())
+    {
+      // simplify further validations by normalizing NullNode to null
+      documentNode = null;
+    }
     if (log.isTraceEnabled())
     {
       log.trace("validating attribute '{}' with value '{}'",
