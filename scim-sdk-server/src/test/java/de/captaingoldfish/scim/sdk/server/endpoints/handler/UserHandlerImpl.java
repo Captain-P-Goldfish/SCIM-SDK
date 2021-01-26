@@ -64,7 +64,10 @@ public class UserHandlerImpl extends ResourceHandler<User>
   }
 
   @Override
-  public User getResource(String id, Authorization authorization)
+  public User getResource(String id,
+                          Authorization authorization,
+                          List<SchemaAttribute> attributes,
+                          List<SchemaAttribute> excludedAttributes)
   {
     User user = inMemoryMap.get(id);
     if (user != null)

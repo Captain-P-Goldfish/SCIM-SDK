@@ -54,7 +54,10 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public User getResource(String id, Authorization authorization)
+    public User getResource(String id,
+                            Authorization authorization,
+                            List<SchemaAttribute> attributes,
+                            List<SchemaAttribute> excludedAttributes)
     {
       return null;
     }
@@ -98,10 +101,11 @@ public class ResourceHandlerTest
     }
 
     @Override
-    public ResourceNode getResource(String id, Authorization authorization)
+    public ResourceNode getResource(String id, Authorization authorization, List attributes, List excludedAttributes)
     {
       return null;
     }
+
 
     @Override
     public PartialListResponse<ResourceNode> listResources(long startIndex,

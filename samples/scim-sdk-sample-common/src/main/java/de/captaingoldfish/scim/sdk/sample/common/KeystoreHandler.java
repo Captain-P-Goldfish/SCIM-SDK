@@ -56,7 +56,10 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
   }
 
   @Override
-  public ScimKeystore getResource(String id, Authorization authorization)
+  public ScimKeystore getResource(String id,
+                                  Authorization authorization,
+                                  List<SchemaAttribute> attributes,
+                                  List<SchemaAttribute> excludedAttributes)
   {
     return keystoreMap.get(id);
   }

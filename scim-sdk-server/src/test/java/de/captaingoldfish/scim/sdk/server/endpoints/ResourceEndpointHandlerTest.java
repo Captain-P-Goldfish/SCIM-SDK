@@ -293,7 +293,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
     user.setId(null);
-    Mockito.doReturn(user).when(userHandler).getResource(Mockito.eq(id), Mockito.isNull());
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(id),
+                        Mockito.isNull(),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()));
     ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", id, null, getBaseUrlSupplier());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -309,7 +314,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testThrowScimExceptionOnGetResource()
   {
     ResourceNotFoundException exception = new ResourceNotFoundException("blubb", null, null);
-    Mockito.doThrow(exception).when(userHandler).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.doThrow(exception)
+           .when(userHandler)
+           .getResource(Mockito.any(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
     ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", "123456", null, getBaseUrlSupplier());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -325,12 +332,116 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testThrowRuntimeExceptionOnGetResource()
   {
     RuntimeException exception = new RuntimeException("blubb");
-    Mockito.doThrow(exception).when(userHandler).getResource(Mockito.any(), Mockito.isNull());
+    Mockito.doThrow(exception)
+           .when(userHandler)
+           .getResource(Mockito.any(),
+                        Mockito.isNull(),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()));
     ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", "123456", null, getBaseUrlSupplier());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * verifies that the attribute parameter is handed over correctly to the {@link ResourceHandler}
+   */
+  @Test
+  public void testGetResourceWithAttributesParameter()
+  {
+    final String userId = UUID.randomUUID().toString();
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    user.setId(userId);
+
+    // set attributes that should be returned
+    final List<String> attributeNames = new ArrayList<>(Arrays.asList("userName", "displayName", "externalId"));
+    ResourceType userResourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+    final String attributes = String.join(",", attributeNames);
+    List<SchemaAttribute> attributeList = RequestUtils.getAttributes(userResourceType, attributes);
+
+
+    // add meta to bypass schema validation
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    user.setMeta(meta);
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+
+    final int expectedNumberOfAttributesToBeReturned = 5;
+    MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    userId,
+                                                                    attributes,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
+    Mockito.verify(userHandler)
+           .getResource(Mockito.eq(userId),
+                        Mockito.isNull(),
+                        Mockito.eq(attributeList),
+                        Mockito.eq(Collections.emptyList()));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size());
+
+    List<String> returnedAttributeNames = new ArrayList<>();
+    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    MatcherAssert.assertThat(returnedAttributeNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
+                                                         Matchers.equalTo("id"),
+                                                         Matchers.equalTo("externalId"),
+                                                         Matchers.equalTo("userName"),
+                                                         Matchers.equalTo("displayName")));
+  }
+
+  /**
+   * verifies that the attribute parameter is handed over correctly to the {@link ResourceHandler}
+   */
+  @Test
+  public void testGetResourceWithExcludedAttributesParameter()
+  {
+    final String userId = UUID.randomUUID().toString();
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    user.setId(userId);
+    user.remove(AttributeNames.RFC7643.PASSWORD); // a read only attribute so we remove it before hand
+
+    // set attributes that should be returned
+    final List<String> excludedAttributeNames = new ArrayList<>(Arrays.asList("userName", "displayName", "externalId"));
+    ResourceType userResourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+    final String excludedAttributes = String.join(",", excludedAttributeNames);
+    List<SchemaAttribute> excludedAttributeList = RequestUtils.getAttributes(userResourceType, excludedAttributes);
+
+    // add meta to bypass schema validation
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    user.setMeta(meta);
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    userId,
+                                                                    null,
+                                                                    excludedAttributes,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
+    Mockito.verify(userHandler)
+           .getResource(Mockito.eq(userId),
+                        Mockito.isNull(),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(excludedAttributeList));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+
+    final int expectedNumberOfAttributesToBeReturned = user.size() - excludedAttributeNames.size();
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size());
+
+    List<String> returnedAttributeNames = new ArrayList<>();
+    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    MatcherAssert.assertThat(returnedAttributeNames,
+                             Matchers.not(Matchers.containsInAnyOrder(excludedAttributeNames.stream()
+                                                                                            .map(Matchers::equalTo)
+                                                                                            .collect(Collectors.toList()))));
   }
 
   /**
@@ -1793,7 +1904,11 @@ public class ResourceEndpointHandlerTest implements FileReferences
   private User getUser(String endpoint, String userId)
   {
     ScimResponse scimResponse = resourceEndpointHandler.getResource(endpoint, userId, null, getBaseUrlSupplier());
-    Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.eq(userId), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResource(Mockito.eq(userId),
+                        Mockito.isNull(),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,

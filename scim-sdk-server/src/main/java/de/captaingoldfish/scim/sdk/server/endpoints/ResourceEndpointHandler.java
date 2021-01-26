@@ -327,7 +327,12 @@ class ResourceEndpointHandler
       RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = resourceHandler.getResource(id, authorization);
+      final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
+      final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
+      ResourceNode resourceNode = resourceHandler.getResource(id,
+                                                              authorization,
+                                                              attributesList,
+                                                              excludedAttributesList);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -767,7 +772,7 @@ class ResourceEndpointHandler
       {
         ETagHandler.validateVersion(serviceProvider,
                                     resourceType,
-                                    () -> resourceHandler.getResource(id, authorization),
+                                    () -> resourceHandler.getResource(id, authorization, null, null),
                                     httpHeaders);
       }
       catch (ResourceNotFoundException ex)
@@ -863,7 +868,7 @@ class ResourceEndpointHandler
       {
         ETagHandler.validateVersion(serviceProvider,
                                     resourceType,
-                                    () -> resourceHandler.getResource(id, authorization),
+                                    () -> resourceHandler.getResource(id, authorization, null, null),
                                     httpHeaders);
       }
       catch (ResourceNotFoundException ex)
@@ -958,7 +963,13 @@ class ResourceEndpointHandler
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
       patchDocument = SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchDocument);
-      ResourceNode resourceNode = resourceHandler.getResource(id, authorization);
+      // attributes and excludedAttributes are not passed here because the update is done on the whole resource so
+      // we
+      // must also extract the whole resource now
+      ResourceNode resourceNode = resourceHandler.getResource(id,
+                                                              authorization,
+                                                              Collections.emptyList(),
+                                                              Collections.emptyList());
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "

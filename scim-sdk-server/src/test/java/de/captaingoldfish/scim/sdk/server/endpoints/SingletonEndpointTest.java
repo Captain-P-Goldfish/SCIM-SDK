@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -100,7 +101,11 @@ public class SingletonEndpointTest
 
     Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
     Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.isNull());
-    Mockito.verify(userHandler, Mockito.times(1)).getResource(Mockito.isNull(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResource(Mockito.isNull(),
+                        Mockito.isNull(),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()));
     Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.isNull());
     Mockito.verify(userHandler, Mockito.times(0))

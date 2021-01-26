@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
@@ -98,7 +99,12 @@ public class DoAfterTest extends AbstractEndpointTest
       counter.incrementAndGet();
     };
 
-    Mockito.doThrow(NullPointerException.class).when(userHandler).getResource(Mockito.anyString(), Mockito.any());
+    Mockito.doThrow(NullPointerException.class)
+           .when(userHandler)
+           .getResource(Mockito.anyString(),
+                        Mockito.any(),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()));
 
     ScimResponse scimResponse = resourceEndpoint.handleRequest(getUrl(EndpointPaths.USERS) + "/1",
                                                                HttpMethod.GET,

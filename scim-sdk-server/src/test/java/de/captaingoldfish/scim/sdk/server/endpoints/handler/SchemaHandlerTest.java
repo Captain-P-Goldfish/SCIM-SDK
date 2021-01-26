@@ -78,7 +78,7 @@ public class SchemaHandlerTest
                           SchemaUris.USER_URI, SchemaUris.ENTERPRISE_USER_URI, SchemaUris.GROUP_URI})
   public void testGetResourceTypeByName(String name)
   {
-    Schema schema = schemaHandler.getResource(name, null);
+    Schema schema = schemaHandler.getResource(name, null, null, null);
     Assertions.assertEquals(name, schema.getId().get());
   }
 
@@ -106,7 +106,7 @@ public class SchemaHandlerTest
   public void testGetResourceWithInvalidId()
   {
     Assertions.assertThrows(ResourceNotFoundException.class,
-                            () -> schemaHandler.getResource("nonExistingResource", null));
+                            () -> schemaHandler.getResource("nonExistingResource", null, null, null));
   }
 
   /**

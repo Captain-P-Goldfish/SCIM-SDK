@@ -55,7 +55,10 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
    * {@inheritDoc}
    */
   @Override
-  public ResourceType getResource(String id, Authorization authorization)
+  public ResourceType getResource(String id,
+                                  Authorization authorization,
+                                  List<SchemaAttribute> attributes,
+                                  List<SchemaAttribute> excludedAttributes)
   {
     return resourceTypeFactory.getResourceTypeByName(id).orElseThrow(() -> {
       return new ResourceNotFoundException("a ResourceType with the name '" + id + "' does not exist", null, null);

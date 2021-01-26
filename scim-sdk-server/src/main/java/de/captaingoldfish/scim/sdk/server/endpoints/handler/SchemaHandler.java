@@ -53,7 +53,10 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * {@inheritDoc}
    */
   @Override
-  public Schema getResource(String id, Authorization authorization)
+  public Schema getResource(String id,
+                            Authorization authorization,
+                            List<SchemaAttribute> attributes,
+                            List<SchemaAttribute> excludedAttributes)
   {
     Schema schema = resourceTypeFactory.getAllResourceTypes()
                                        .stream()

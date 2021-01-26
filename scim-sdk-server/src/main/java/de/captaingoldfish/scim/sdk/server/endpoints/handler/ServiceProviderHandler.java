@@ -52,10 +52,15 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    *
    * @param id the id is obsolete here should be null
    * @param authorization
+   * @param attributes
+   * @param excludedAttributes
    * @return the one and only service provider configuration
    */
   @Override
-  public ServiceProvider getResource(String id, Authorization authorization)
+  public ServiceProvider getResource(String id,
+                                     Authorization authorization,
+                                     List<SchemaAttribute> attributes,
+                                     List<SchemaAttribute> excludedAttributes)
   {
     return serviceProvider;
   }

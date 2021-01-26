@@ -87,7 +87,10 @@ public class UserHandler extends ResourceHandler<User>
    * {@inheritDoc}
    */
   @Override
-  public User getResource(String id, Authorization authorization)
+  public User getResource(String id,
+                          Authorization authorization,
+                          List<SchemaAttribute> attributes,
+                          List<SchemaAttribute> excludedAttributes)
   {
     return inMemoryMap.get(id);
   }

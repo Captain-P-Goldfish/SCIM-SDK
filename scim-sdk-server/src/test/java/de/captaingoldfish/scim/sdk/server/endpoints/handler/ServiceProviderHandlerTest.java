@@ -73,7 +73,7 @@ public class ServiceProviderHandlerTest
   @Test
   public void testGetServiceProvider()
   {
-    Assertions.assertEquals(serviceProviderHandler.getResource(null, null), serviceProvider);
+    Assertions.assertEquals(serviceProviderHandler.getResource(null, null, null, null), serviceProvider);
   }
 
   /**

@@ -106,9 +106,18 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param id the id of the resource to return
    * @param authorization should return the roles of an user and may contain arbitrary data needed in the
    *          handler implementation
+   * @param attributes the attributes that should be returned to the client. If the client sends this parameter
+   *          the evaluation of these parameters might help to improve database performance by omitting
+   *          unnecessary table joins
+   * @param excludedAttributes the attributes that should NOT be returned to the client. If the client send this
+   *          parameter the evaluation of these parameters might help to improve database performance by
+   *          omitting unnecessary table joins
    * @return the found resource
    */
-  public abstract T getResource(String id, Authorization authorization);
+  public abstract T getResource(String id,
+                                Authorization authorization,
+                                List<SchemaAttribute> attributes,
+                                List<SchemaAttribute> excludedAttributes);
 
   /**
    * queries several resources based on the following values
@@ -120,7 +129,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param filter the parsed filter expression if the client has given a filter
    * @param sortBy the attribute value that should be used for sorting
    * @param sortOrder the sort order
-   * @param attributes the attributes that should be returned to the client. If the client send this parameter
+   * @param attributes the attributes that should be returned to the client. If the client sends this parameter
    *          the evaluation of these parameters might help to improve database performance by omitting
    *          unnecessary table joins
    * @param excludedAttributes the attributes that should NOT be returned to the client. If the client send this
