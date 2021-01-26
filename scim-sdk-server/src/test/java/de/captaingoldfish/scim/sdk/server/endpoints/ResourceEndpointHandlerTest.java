@@ -591,6 +591,30 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
+   * are set at the same time on list request
+   */
+  @Test
+  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnList()
+  {
+    ScimResponse scimResponse = resourceEndpointHandler.listResources("/Users",
+                                                                      1L,
+                                                                      50,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "displayName",
+                                                                      "name",
+                                                                      getBaseUrlSupplier(),
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+  }
+
+  /**
    * will show that the excludedAttributes parameter is also correctly used on extensions
    */
   @Test

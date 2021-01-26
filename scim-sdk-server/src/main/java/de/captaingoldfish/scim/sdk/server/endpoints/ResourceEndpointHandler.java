@@ -513,6 +513,7 @@ class ResourceEndpointHandler
   {
     try
     {
+      RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       final ResourceType resourceType = getResourceType(endpoint);
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
