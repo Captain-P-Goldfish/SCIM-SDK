@@ -295,6 +295,9 @@ public class SchemaValidatorTest implements FileReferences
                                                                                     userSchema,
                                                                                     baseUrlSupplier,
                                                                                     resourceTypeFactory));
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForRequest(metaSchema,
+                                                                                   userSchema,
+                                                                                   HttpMethod.POST));
   }
 
   /**
@@ -321,6 +324,9 @@ public class SchemaValidatorTest implements FileReferences
                                                                                     userSchema,
                                                                                     baseUrlSupplier,
                                                                                     resourceTypeFactory));
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForRequest(metaSchema,
+                                                                                   userSchema,
+                                                                                   HttpMethod.POST));
   }
 
   /**
