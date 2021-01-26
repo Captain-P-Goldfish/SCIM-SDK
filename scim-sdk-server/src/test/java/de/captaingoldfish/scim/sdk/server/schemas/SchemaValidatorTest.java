@@ -281,6 +281,49 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * checks that the validation accepts JSON null for optional attribute
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.RFC7643.DESCRIPTION})
+  public void testValidationAcceptsNullForOptionalAttribute(String attributeName)
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+
+    JsonHelper.replaceNode(userSchema, attributeName, JsonNodeFactory.instance.nullNode());
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                                    userSchema,
+                                                                                    baseUrlSupplier,
+                                                                                    resourceTypeFactory));
+  }
+
+  /**
+   * checks that the validation accepts JSON null for optional sub-attribute
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.RFC7643.DESCRIPTION, // string
+                          AttributeNames.RFC7643.REQUIRED, // boolean
+                          AttributeNames.RFC7643.CANONICAL_VALUES, // string, multiple
+                          AttributeNames.RFC7643.MUTABILITY, // canonical string
+                          AttributeNames.RFC7643.SUB_ATTRIBUTES, // complex, multiple
+                          AttributeNames.Custom.MULTIPLE_OF, // decimal
+                          AttributeNames.Custom.NOT_BEFORE, // dateTime
+  })
+  public void testValidationAcceptsNullForOptionalSubAttribute(String attributeName)
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+
+    JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
+    JsonNode firstAttribute = attributes.get(0);
+    JsonHelper.replaceNode(firstAttribute, attributeName, JsonNodeFactory.instance.nullNode());
+    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(metaSchema,
+                                                                                    userSchema,
+                                                                                    baseUrlSupplier,
+                                                                                    resourceTypeFactory));
+  }
+
+  /**
    * shows that the validation will fail if a field is an array but is expected by the schema as a simple value
    */
   @Test
