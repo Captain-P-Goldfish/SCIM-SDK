@@ -238,7 +238,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
-    User updateUser = User.builder().nickName("hello world").build();
+    User updateUser = User.builder().userName(user.getUserName().get()).nickName("hello world").build();
     ServerResponse<User> response;
     if (useFullUrl)
     {
@@ -266,7 +266,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
 
-    User updateUser = User.builder().nickName("hello world").build();
+    User updateUser = User.builder().userName("goldfish").nickName("hello world").build();
     ServerResponse<User> response;
     if (useFullUrl)
     {

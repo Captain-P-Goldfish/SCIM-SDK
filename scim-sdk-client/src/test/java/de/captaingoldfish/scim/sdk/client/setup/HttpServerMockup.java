@@ -31,6 +31,7 @@ import com.sun.net.httpserver.HttpServer;
 
 import de.captaingoldfish.scim.sdk.client.setup.scim.ScimConfig;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -224,6 +225,10 @@ public abstract class HttpServerMockup
                                                          null,
                                                          null);
 
+    if (scimResponse instanceof ErrorResponse)
+    {
+      log.debug(scimResponse.toPrettyString());
+    }
     Map<String, List<String>> headerMap = new HashMap<>();
     scimResponse.getHttpHeaders().forEach((key, value) -> headerMap.put(key, Collections.singletonList(value)));
     Headers responseHeaders = httpExchange.getResponseHeaders();

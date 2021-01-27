@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -33,9 +34,8 @@ public class UpdateBuilderTest extends HttpServerMockup
   /**
    * verifies that a resource can successfully be updated
    */
-  @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void testUpdateResourceSuccess(boolean useFullUrl)
+  @Test
+  public void testUpdateResourceSuccess()
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
@@ -43,7 +43,10 @@ public class UpdateBuilderTest extends HttpServerMockup
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
-    User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder()
+                          .userName(user.getUserName().get())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
@@ -62,7 +65,7 @@ public class UpdateBuilderTest extends HttpServerMockup
   public void testUpdateResourceFail(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
-    User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ServerResponse<User> response;
@@ -109,7 +112,10 @@ public class UpdateBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder()
+                          .userName(user.getUserName().get())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
 
     ServerResponse<User> response;
     if (useFullUrl)
@@ -155,7 +161,10 @@ public class UpdateBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder()
+                          .userName(user.getUserName().get())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
     ServerResponse<User> response;
     if (useFullUrl)
     {
@@ -204,7 +213,10 @@ public class UpdateBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder()
+                          .userName(user.getUserName().get())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
     ServerResponse<User> response;
     if (useFullUrl)
     {
@@ -253,7 +265,10 @@ public class UpdateBuilderTest extends HttpServerMockup
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
-    User updateUser = User.builder().name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder()
+                          .userName(user.getUserName().get())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
     ServerResponse<User> response;
     if (useFullUrl)
     {

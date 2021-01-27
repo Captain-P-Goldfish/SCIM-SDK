@@ -1188,7 +1188,7 @@ public class SchemaValidatorTest implements FileReferences
    * </pre>
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.RFC7643.USER_NAME, AttributeNames.RFC7643.DISPLAY_NAME,
+  @ValueSource(strings = {AttributeNames.RFC7643.PHONE_NUMBERS, AttributeNames.RFC7643.DISPLAY_NAME,
                           AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
                           AttributeNames.RFC7643.EMAILS,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
@@ -1208,10 +1208,10 @@ public class SchemaValidatorTest implements FileReferences
                                        null,
                                        null,
                                        null);
-    JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonNode userDocument = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     Schema metaSchema = new Schema(metaSchemaNode);
-    JsonNode missingAttributeUser = userSchema.deepCopy();
+    JsonNode missingAttributeUser = userDocument.deepCopy();
     JsonHelper.removeAttribute(missingAttributeUser, attributeName);
     JsonNode validatedRequestDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForRequest(metaSchema, missingAttributeUser, HttpMethod.PUT);
@@ -1226,7 +1226,7 @@ public class SchemaValidatorTest implements FileReferences
                                 .build());
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       return SchemaValidator.validateDocumentForResponse(metaSchema,
-                                                         userSchema,
+                                                         userDocument,
                                                          validatedRequestDocument,
                                                          fullName,
                                                          null,
@@ -1264,7 +1264,8 @@ public class SchemaValidatorTest implements FileReferences
    * </pre>
    */
   @ParameterizedTest
-  @CsvSource({AttributeNames.RFC7643.USER_NAME + ",username", AttributeNames.RFC7643.DISPLAY_NAME + ",displayname",
+  @CsvSource({AttributeNames.RFC7643.PHONE_NUMBERS + ",phoneNumbers",
+              AttributeNames.RFC7643.DISPLAY_NAME + "," + "displayname",
               AttributeNames.RFC7643.EXTERNAL_ID + ",externalid",
               AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME + ",name.givenname",
               AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME + ",name.middlename"})
@@ -1331,7 +1332,7 @@ public class SchemaValidatorTest implements FileReferences
    * </pre>
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.RFC7643.USER_NAME, AttributeNames.RFC7643.DISPLAY_NAME,
+  @ValueSource(strings = {AttributeNames.RFC7643.PHONE_NUMBERS, AttributeNames.RFC7643.DISPLAY_NAME,
                           AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
                           AttributeNames.RFC7643.EMAILS,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
