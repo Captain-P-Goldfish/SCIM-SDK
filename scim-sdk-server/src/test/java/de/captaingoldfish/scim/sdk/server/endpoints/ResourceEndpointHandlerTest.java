@@ -752,7 +752,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
-    Assertions.assertEquals("sorry but an internal error has occurred.", errorResponse.getDetail().get());
+    Assertions.assertEquals("An internal error has occurred.", errorResponse.getDetail().get());
     log.debug(errorResponse.toPrettyString());
   }
 

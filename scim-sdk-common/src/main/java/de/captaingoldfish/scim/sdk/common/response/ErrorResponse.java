@@ -54,7 +54,7 @@ public class ErrorResponse extends ScimResponse
     if (HttpStatus.INTERNAL_SERVER_ERROR == getHttpStatus() && !useDetailMessage)
     {
       log.error(scimException.getMessage(), scimException);
-      setDetail("sorry but an internal error has occurred.");
+      setDetail("An internal error has occurred.");
     }
     else
     {
