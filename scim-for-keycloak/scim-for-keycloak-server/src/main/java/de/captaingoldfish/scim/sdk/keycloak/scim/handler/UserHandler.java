@@ -317,9 +317,17 @@ public class UserHandler extends ResourceHandler<User>
       }
     }
 
-    if (user.getLdapId().isPresent() && (!imported[0] || isCreation))
+    // Das Attribut LDAP_ID wird nur beim Anlegen gesetzt
+    if (isCreation)
     {
-      userModel.setSingleAttribute(SCIM_LDAP_ID, user.getLdapId().get());
+      if (user.getLdapId().isPresent())
+      {
+        userModel.setSingleAttribute(SCIM_LDAP_ID, user.getLdapId().get());
+      }
+      else if (user.getExternalId().isPresent())
+      {
+        userModel.setSingleAttribute(SCIM_LDAP_ID, user.getExternalId().get());
+      }
     }
     setMultiAttribute(user::getEmails, AttributeNames.RFC7643.EMAILS, userModel);
     setMultiAttribute(user::getPhoneNumbers, AttributeNames.RFC7643.PHONE_NUMBERS, userModel);
