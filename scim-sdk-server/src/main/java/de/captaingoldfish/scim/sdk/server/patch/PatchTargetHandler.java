@@ -625,7 +625,7 @@ public class PatchTargetHandler extends AbstractPatch
     {
       List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
       boolean changeWasMade = false;
-      for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+      for ( int i = matchingComplexNodes.size() - 1 ; i >= 0 ; i-- )
       {
         multiValued.remove(matchingComplexNodes.get(i).getIndex());
         changeWasMade = true;

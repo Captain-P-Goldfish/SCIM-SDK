@@ -936,6 +936,77 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that several attributes are correctly removed if attributes are removed in the order they are
+   * present in the json structure. This test shall reproduce the following issue:
+   * https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/111
+   */
+  @Test
+  public void testRemoveSeveralAttributesInOrder()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.setDecimal(1.1);
+    multicomplex.setNumber(5L);
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setDecimal(10.2);
+    multicomplex2.setNumber(6L);
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setDecimal(5.5);
+    multicomplex3.setNumber(0L);
+    allTypes.setMultiComplex(Arrays.asList(multicomplex, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex[decimal eq 10.2 or number eq 5]";
+    PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(multicomplex3,
+                            patchedAllTypes.getMultiComplex().get(0),
+                            "multicomplex and multicomplex2 should have been removed");
+  }
+
+  /**
+   * verifies that several attributes are correctly removed if attributes are removed in the order they are
+   * present in the json structure. This test shall reproduce the following issue:
+   * https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/111
+   */
+  @Test
+  public void testRemoveSeveralAttributesWithStepOverOrder()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.setDecimal(1.1);
+    multicomplex.setNumber(5L);
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setDecimal(10.2);
+    multicomplex2.setNumber(6L);
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setDecimal(5.5);
+    multicomplex3.setNumber(0L);
+    allTypes.setMultiComplex(Arrays.asList(multicomplex, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex[decimal eq 5.5 or number eq 5]";
+    PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(multicomplex2,
+                            patchedAllTypes.getMultiComplex().get(0),
+                            "multicomplex and multicomplex3 should have been removed");
+  }
+
+  /**
    * this method returns a specific attribute definition that will be added to the enterprise user that is used
    * as extension for the alltypes schema. this shall provoke a naming conflict with a complex type in the
    * extension
