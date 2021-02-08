@@ -191,7 +191,6 @@ public class PatchTargetHandler extends AbstractPatch
       return handlePatchOperationOnComplex(resource,
                                            values,
                                            fullAttributeNames,
-                                           firstAttributeName,
                                            schemaAttribute,
                                            isExtension,
                                            currentParent,
@@ -218,7 +217,6 @@ public class PatchTargetHandler extends AbstractPatch
   private boolean handlePatchOperationOnComplex(ResourceNode resource,
                                                 List<String> values,
                                                 String[] fullAttributeNames,
-                                                String firstAttributeName,
                                                 SchemaAttribute schemaAttribute,
                                                 boolean isExtension,
                                                 ObjectNode currentParent,
@@ -233,7 +231,8 @@ public class PatchTargetHandler extends AbstractPatch
       }
       else
       {
-        resource.remove(firstAttributeName);
+        currentParent.remove(schemaAttribute.getName());
+        removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
         return true;
       }
     }

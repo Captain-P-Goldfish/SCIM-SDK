@@ -547,6 +547,32 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that a complex type can be removed from the document
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"complex", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex"})
+  public void testAddRemoveComplexType(String attributeName)
+  {
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(attributeName)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setString("hello world");
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertFalse(allTypes.getComplex().isPresent(), allTypes.toPrettyString());
+    MatcherAssert.assertThat(allTypes.toPrettyString(), allTypes.getSchemas().size(), Matchers.greaterThan(0));
+    Assertions.assertTrue(allTypes.getMeta().isPresent(), allTypes.toPrettyString());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent(), allTypes.toPrettyString());
+  }
+
+  /**
    * verifies that a complex type can be set as whole object and that existing values are kept
    */
   @Test
@@ -1634,6 +1660,34 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies a remove operation will successfully remove a field from an extension if the fully qualified path
+   * is used
+   */
+  @Test
+  public void testRemoveSimpleAttributeFromExtensionComplexAndExtensionItself2()
+  {
+    final String path = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setEnterpriseUser(EnterpriseUser.builder().manager(Manager.builder().value("123456").build()).build());
+
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+                                               SchemaUris.ENTERPRISE_USER_URI));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertFalse(allTypes.getEnterpriseUser().isPresent(), allTypes.toPrettyString());
+    Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
+    MatcherAssert.assertThat(allTypes.getSchemas(),
+                             Matchers.contains("urn:gold:params:scim:schemas:custom:2.0:AllTypes"));
+  }
+
+  /**
    * verifies an add operation will also be handled on an extension that has not been set yet
    */
   @ParameterizedTest
@@ -1716,6 +1770,27 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals("values must not be set for remove operation but was: hello world", ex.getDetail());
     }
+  }
+
+  /**
+   * verifies a remove operation will correctly remove a field if the fully qualified name is used
+   */
+  @Test
+  public void testRemoveWithFullyQualifiedPath()
+  {
+    final String path = "urn:gold:params:scim:schemas:custom:2.0:AllTypes:string";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setString("hello world");
+
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, patchedResource.size(), allTypes.toPrettyString());
+    Assertions.assertFalse(patchedResource.getString().isPresent(), allTypes.toPrettyString());
   }
 
   /**
