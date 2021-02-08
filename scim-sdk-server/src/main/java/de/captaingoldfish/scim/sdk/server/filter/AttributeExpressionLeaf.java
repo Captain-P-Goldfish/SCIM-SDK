@@ -59,6 +59,12 @@ public final class AttributeExpressionLeaf extends FilterNode
   @Getter
   private final SchemaAttribute schemaAttribute;
 
+  /**
+   * tells us if the referenced value is part of an extension schema or part of the main schema
+   */
+  @Getter
+  private final boolean mainSchemaNode;
+
   public AttributeExpressionLeaf(ScimFilterParser.AttributeExpressionContext context, ResourceType resourceType)
   {
     ScimFilterParser.ValuePathContext attributeValuePath = getParentValuePath(context);
@@ -90,6 +96,7 @@ public final class AttributeExpressionLeaf extends FilterNode
     this.compareValue = context.compareValue() == null ? null
       : new CompareValue(context.compareValue(), schemaAttribute);
     validateFilterComparator();
+    this.mainSchemaNode = resourceType.getMainSchema().getId().equals(schemaAttribute.getSchema().getId());
   }
 
   public String getParentAttributeName()

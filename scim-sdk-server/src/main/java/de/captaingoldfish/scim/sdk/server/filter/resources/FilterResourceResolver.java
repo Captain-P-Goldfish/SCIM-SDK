@@ -113,12 +113,12 @@ public class FilterResourceResolver
     String[] nameParts = attributeExpressionLeaf.getShortName().split("\\.");
     if (nameParts.length == 1)
     {
-      JsonNode simpleAttribute = resourceNode.get(attributeExpressionLeaf.getSchemaAttribute().getName());
+      JsonNode simpleAttribute = retrieveSimpleAttributeNode(resourceNode, attributeExpressionLeaf);
       return checkValueEquality(simpleAttribute, attributeExpressionLeaf);
     }
     else
     {
-      JsonNode complexNode = resourceNode.get(attributeExpressionLeaf.getSchemaAttribute().getParent().getName());
+      JsonNode complexNode = retrieveComplexAttributeNode(resourceNode, attributeExpressionLeaf);
       if (complexNode != null && complexNode.isArray())
       {
         return evaluateMultiComplexNode(complexNode, attributeExpressionLeaf);
@@ -127,6 +127,48 @@ public class FilterResourceResolver
       {
         return evaluateComplexNode(complexNode, attributeExpressionLeaf);
       }
+    }
+  }
+
+  /**
+   * retrieves the attribute from either the main schema or an schema extension
+   * 
+   * @param jsonNode the json document from which the attribute should be extracted
+   * @param attributeExpressionLeaf the filter expression node that describes the node that should be extracted
+   * @return the extracted json node
+   */
+  private static JsonNode retrieveSimpleAttributeNode(JsonNode jsonNode,
+                                                      AttributeExpressionLeaf attributeExpressionLeaf)
+  {
+    if (attributeExpressionLeaf.isMainSchemaNode())
+    {
+      return jsonNode.get(attributeExpressionLeaf.getSchemaAttribute().getName());
+    }
+    else
+    {
+      JsonNode extensionNode = jsonNode.get(attributeExpressionLeaf.getSchemaAttribute().getSchema().getId().get());
+      return extensionNode.get(attributeExpressionLeaf.getSchemaAttribute().getName());
+    }
+  }
+
+  /**
+   * retrieves the attribute from either the main schema or an schema extension
+   * 
+   * @param jsonNode the json document from which the attribute should be extracted
+   * @param attributeExpressionLeaf the filter expression node that describes the node that should be extracted
+   * @return the extracted json node
+   */
+  private static JsonNode retrieveComplexAttributeNode(JsonNode jsonNode,
+                                                       AttributeExpressionLeaf attributeExpressionLeaf)
+  {
+    if (attributeExpressionLeaf.isMainSchemaNode())
+    {
+      return jsonNode.get(attributeExpressionLeaf.getSchemaAttribute().getParent().getName());
+    }
+    else
+    {
+      JsonNode extensionNode = jsonNode.get(attributeExpressionLeaf.getSchemaAttribute().getSchema().getId().get());
+      return extensionNode.get(attributeExpressionLeaf.getSchemaAttribute().getParent().getName());
     }
   }
 

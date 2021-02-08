@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -24,7 +25,9 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
+import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -1782,6 +1785,78 @@ public class FilterResourceResolverTest implements FileReferences
     log.warn(filterNode.toString());
     Assertions.assertNotNull(filterNode.getSchemaAttribute());
     Assertions.assertNotNull(filterNode.getFullName());
+  }
+
+  /**
+   * verifies that filtering works also on a simple attribute on the user enterprise extension
+   */
+  @Test
+  public void testFilterOnEnterpriseUserWithEmployeeId()
+  {
+    final String employeeNumber1 = UUID.randomUUID().toString();
+    final String employeeNumber2 = UUID.randomUUID().toString();
+    final String employeeNumber3 = UUID.randomUUID().toString();
+
+    List<User> userList = Arrays.asList(User.builder()
+                                            .enterpriseUser(EnterpriseUser.builder()
+                                                                          .employeeNumber(employeeNumber1)
+                                                                          .build())
+                                            .build(),
+                                        User.builder()
+                                            .enterpriseUser(EnterpriseUser.builder()
+                                                                          .employeeNumber(employeeNumber2)
+                                                                          .build())
+                                            .build(),
+                                        User.builder()
+                                            .enterpriseUser(EnterpriseUser.builder()
+                                                                          .employeeNumber(employeeNumber3)
+                                                                          .build())
+                                            .build());
+    final String filter = String.format("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber eq \"%s\"",
+                                        employeeNumber1);
+    final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+    Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
+    Assertions.assertEquals(userList.get(0), filteredUsers.get(0), filteredUsers.toString());
+  }
+
+  /**
+   * verifies that filtering works also on a complex attribute on the user enterprise extension
+   */
+  @Test
+  public void testFilterOnEnterpriseUserWithManagerValue()
+  {
+    final String managerId1 = UUID.randomUUID().toString();
+    final String managerId2 = UUID.randomUUID().toString();
+    final String managerId3 = UUID.randomUUID().toString();
+
+    List<User> userList = Arrays.asList(User.builder()
+                                            .enterpriseUser(EnterpriseUser.builder()
+                                                                          .manager(Manager.builder()
+                                                                                          .value(managerId1)
+                                                                                          .build())
+                                                                          .build())
+                                            .build(),
+                                        User.builder()
+                                            .enterpriseUser(EnterpriseUser.builder()
+                                                                          .manager(Manager.builder()
+                                                                                          .value(managerId2)
+                                                                                          .build())
+                                                                          .build())
+                                            .build(),
+                                        User.builder()
+                                            .enterpriseUser(EnterpriseUser.builder()
+                                                                          .manager(Manager.builder()
+                                                                                          .value(managerId3)
+                                                                                          .build())
+                                                                          .build())
+                                            .build());
+    final String filter = String.format("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value eq \"%s\"",
+                                        managerId1);
+    final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+    Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
+    Assertions.assertEquals(userList.get(0), filteredUsers.get(0), filteredUsers.toString());
   }
 
   /**
