@@ -67,17 +67,17 @@ public class AbstractEndpointTest extends AbstractBulkTest implements FileRefere
   protected ServiceProvider getServiceProviderConfig()
   {
     AuthenticationScheme authScheme = AuthenticationScheme.builder()
-                                                          .name("Basic Auth")
+                                                          .type("httpbasic")
                                                           .description("Username Password authentication challenge")
                                                           .specUri("https://tools.ietf.org/html/rfc7617")
-                                                          .type("Basic")
+                                                          .name("Basic")
                                                           .build();
     AuthenticationScheme authScheme2 = AuthenticationScheme.builder()
-                                                           .name("OAuth Bearer Token")
+                                                           .type("oauthbearertoken")
                                                            .description("Authentication scheme using the OAuth "
                                                                         + "Bearer Token Standard")
                                                            .specUri("http://www.rfc-editor.org/info/rfc6750")
-                                                           .type("Bearer")
+                                                           .name("Bearer")
                                                            .build();
     return ServiceProvider.builder()
                           .filterConfig(FilterConfig.builder().supported(true).maxResults(50).build())

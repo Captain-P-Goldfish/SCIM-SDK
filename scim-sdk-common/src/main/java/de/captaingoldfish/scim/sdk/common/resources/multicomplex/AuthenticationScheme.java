@@ -142,7 +142,7 @@ public class AuthenticationScheme extends MultiComplexNode
    */
   public String getWwwAuthenticateHeaderRepresentation(String realm)
   {
-    return getAuthenticationType() + " realm=\"" + realm + "\"";
+    return getName() + " realm=\"" + realm + "\"";
   }
 
 }
