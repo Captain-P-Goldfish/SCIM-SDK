@@ -1071,7 +1071,6 @@ public final class SchemaAttribute extends ScimObjectNode
     ArrayNode subAttributesArray = JsonHelper.getArrayAttribute(jsonNode, subAttributeName)
                                              .orElseThrow(() -> getException(errorMessage, null));
     Set<String> attributeNameSet = new HashSet<>();
-    // boolean hasTypeAttribute = false;
     boolean hasValueAttribute = false;
     boolean isResourceReference = false;
     for ( JsonNode subAttribute : subAttributesArray )
@@ -1085,10 +1084,6 @@ public final class SchemaAttribute extends ScimObjectNode
       }
       if (!Mutability.READ_ONLY.equals(this.getMutability()))
       {
-        // if (AttributeNames.RFC7643.TYPE.equals(schemaAttribute.getName()))
-        // {
-        // hasTypeAttribute = true;
-        // }
         if (AttributeNames.RFC7643.VALUE.equals(schemaAttribute.getName()))
         {
           hasValueAttribute = true;
