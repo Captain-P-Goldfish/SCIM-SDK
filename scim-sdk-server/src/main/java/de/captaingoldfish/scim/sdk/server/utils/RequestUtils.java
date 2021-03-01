@@ -345,11 +345,27 @@ public final class RequestUtils
     String[] pairs = query.split("&");
     for ( String pair : pairs )
     {
+      if (StringUtils.isBlank(pair) || pair.charAt(0) == '=')
+      {
+        continue;
+      }
       int index = pair.indexOf("=");
+      String param;
+      String value;
+      if (index == -1)
+      {
+        param = pair;
+        value = "";
+      }
+      else
+      {
+        param = pair.substring(0, index);
+        value = pair.substring(index + 1);
+      }
       try
       {
-        queryParameter.put(URLDecoder.decode(pair.substring(0, index).toLowerCase(), StandardCharsets.UTF_8.name()),
-                           URLDecoder.decode(pair.substring(index + 1), StandardCharsets.UTF_8.name()));
+        queryParameter.put(URLDecoder.decode(param.toLowerCase(), StandardCharsets.UTF_8.name()),
+                           URLDecoder.decode(value, StandardCharsets.UTF_8.name()));
       }
       catch (UnsupportedEncodingException e)
       {
