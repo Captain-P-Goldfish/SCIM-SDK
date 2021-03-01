@@ -80,4 +80,12 @@ public class RequestUtilsTest
   {
     Assertions.assertThrows(BadRequestException.class, () -> RequestUtils.getAttributes(attributes));
   }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"p1=v1", "p1=v1&p2=v2", "&p1=v1&&p2=v2&", "p1=&p2=", "p1&p2", "=v1&=v2"})
+  public void testGetQueryParameters(String query)
+  {
+    Assertions.assertDoesNotThrow(() -> RequestUtils.getQueryParameters(query));
+  }
+
 }
