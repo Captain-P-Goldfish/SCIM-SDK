@@ -43,7 +43,7 @@
       "name": "userName",
       "type": "string",
       "description": "A service provider's unique identifier for the user, typically\nused by the user to directly authenticate to the service provider.Each User MUST include a non-empty userName value.  This identifier\nMUST be unique across the service provider's entire set of Users.",
-      "mutability": "immutable",
+      "mutability": "readWrite",
       "returned": "default",
       "uniqueness": "server",
       "multiValued": false,

@@ -274,6 +274,7 @@ public class UserHandler extends ResourceHandler<User>
   private UserModel userToModel(User user, UserModel userModel, boolean isCreation)
   {
     final boolean[] imported = {false};
+    userModel.setUsername(user.getUserName().orElse(null));
     user.isImported().ifPresent(isImported -> imported[0] = isImported);
     user.isActive().ifPresent(userModel::setEnabled);
     userModel.setSingleAttribute(SCIM_IS_IMPORTED, String.valueOf(imported[0]));

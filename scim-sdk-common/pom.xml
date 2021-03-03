@@ -140,7 +140,8 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/users.json
                             </file>
-                            <checksum>e8565920a9e61b785da86f9558926b7d</checksum>
+                            <checksum>c493d638a43b587d5453c362dd25a756</checksum>
+<!--                            <checksum>e8565920a9e61b785da86f9558926b7d</checksum>-->
                             <type>md5</type>
                         </requireFileChecksum>
                     </rules>
