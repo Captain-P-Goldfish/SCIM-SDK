@@ -212,6 +212,35 @@ public class UserHandler extends ResourceHandler<User>
     {
       return null; // causes a resource not found exception you may also throw it manually
     }
+    // Prüfung: wenn userName geändert, darf es den userName noch nicht geben
+    String username = userToUpdate.getUserName().get();
+    if (username != null && !username.equals(userModel.getUsername()))
+    {
+      if (keycloakSession.users().getUserByUsername(username, keycloakSession.getContext().getRealm()) != null)
+      {
+        throw new ConflictException("the username '" + username + "' is already taken");
+      }
+    }
+    // Dito Email
+    Optional<Email> emailOpt = userToUpdate.getEmails()
+                                           .stream()
+                                           .filter(MultiComplexNode::isPrimary)
+                                           .findAny()
+                                           .filter(value -> value.getValue().isPresent());
+    if (emailOpt.isPresent())
+    {
+      String email = emailOpt.get().getValue().get();
+      if (email != null && !email.equals(userModel.getEmail()))
+      {
+        if (keycloakSession.users()
+                           .getUserByEmail(emailOpt.get().getValue().orElse("xx"),
+                                           keycloakSession.getContext().getRealm()) != null)
+        {
+          throw new ConflictException("the email '" + email + "' is already taken");
+        }
+      }
+    }
+
     userModel = userToModel(userToUpdate, userModel, false);
     User ret = modelToUser(userModel);
     log.info(this.getClass().getName() + " updateResource returns: " + ret.toPrettyString());
