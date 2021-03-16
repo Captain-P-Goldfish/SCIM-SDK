@@ -8,12 +8,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.ModelException;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserCredentialManager;
-import org.keycloak.models.UserCredentialModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.authorization.policy.evaluation.Realm;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.*;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
@@ -42,6 +41,8 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 
 /**
@@ -96,6 +97,7 @@ public class UserHandler extends ResourceHandler<User>
   public User createResource(User user, Authorization authorization)
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminEventBuilder adminEventBuilder = getAdminEventBuilder(authorization);
     final String username = user.getUserName().get();
     log.info(this.getClass().getName() + " createResource: " + username + "\n" + user.toPrettyString());
     if (KEYCLOAK_DEBUG != null)
@@ -125,6 +127,11 @@ public class UserHandler extends ResourceHandler<User>
     {
       log.info(this.getClass().getName() + " createResource returns: " + ret.toPrettyString());
     }
+    adminEventBuilder.operation(OperationType.CREATE)
+                     .resourcePath(keycloakSession.getContext().getUri(), ret.getId().get())
+                     .representation(user)
+                     .success();
+
     return ret;
   }
 
@@ -204,6 +211,8 @@ public class UserHandler extends ResourceHandler<User>
       log.info(this.getClass().getName() + " updateResource input: " + userToUpdate.toPrettyString());
     }
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminEventBuilder adminEventBuilder = getAdminEventBuilder(authorization);
+
     UserModel userModel = keycloakSession.users()
                                          .getUserById(userToUpdate.getId().get(),
                                                       keycloakSession.getContext().getRealm());
@@ -244,6 +253,11 @@ public class UserHandler extends ResourceHandler<User>
     userModel = userToModel(userToUpdate, userModel, false);
     User ret = modelToUser(userModel);
     log.info(this.getClass().getName() + " updateResource returns: " + ret.toPrettyString());
+    adminEventBuilder.operation(OperationType.UPDATE)
+                     .resourcePath(keycloakSession.getContext().getUri())
+                     .representation(userToUpdate)
+                     .success();
+
     return ret;
   }
 
@@ -254,6 +268,7 @@ public class UserHandler extends ResourceHandler<User>
   public void deleteResource(String id, Authorization authorization)
   {
     log.info(this.getClass().getName() + " deleteResource " + id);
+    AdminEventBuilder adminEventBuilder = getAdminEventBuilder(authorization);
 
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
     UserModel userModel = keycloakSession.users().getUserById(id, keycloakSession.getContext().getRealm());
@@ -261,6 +276,11 @@ public class UserHandler extends ResourceHandler<User>
     {
       throw new ResourceNotFoundException("resource with id '" + id + "' does not exist");
     }
+    adminEventBuilder.operation(OperationType.DELETE)
+                     .resourcePath(keycloakSession.getContext().getUri())
+                     .representation(modelToUser(userModel))
+                     .success();
+
     keycloakSession.users().removeUser(keycloakSession.getContext().getRealm(), userModel);
     log.info("deleted user with username: {}", userModel.getUsername());
   }
@@ -517,5 +537,16 @@ public class UserHandler extends ResourceHandler<User>
     {
       return Instant.ofEpochMilli(userModel.getCreatedTimestamp());
     }
+  }
+
+  private AdminEventBuilder getAdminEventBuilder(Authorization authorization)
+  {
+    KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminAuth auth = ((ScimAuthorization)authorization).getAuthResult();
+    RealmModel realm = keycloakSession.getContext().getRealm();
+    keycloakSession.getContext().getConnection();
+    ClientConnection clientConnection = keycloakSession.getContext().getConnection();
+    ClientModel client = auth.getClient();
+    return new AdminEventBuilder(realm, auth, keycloakSession, clientConnection).resource(ResourceType.USER);
   }
 }

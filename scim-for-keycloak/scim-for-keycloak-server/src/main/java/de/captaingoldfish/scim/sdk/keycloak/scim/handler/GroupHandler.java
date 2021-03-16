@@ -7,10 +7,10 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.keycloak.models.GroupModel;
-import org.keycloak.models.KeycloakSession;
-import org.keycloak.models.RealmModel;
-import org.keycloak.models.UserModel;
+import org.keycloak.common.ClientConnection;
+import org.keycloak.events.admin.OperationType;
+import org.keycloak.events.admin.ResourceType;
+import org.keycloak.models.*;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
@@ -25,6 +25,8 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import org.keycloak.services.resources.admin.AdminAuth;
+import org.keycloak.services.resources.admin.AdminEventBuilder;
 
 
 /**
@@ -52,6 +54,7 @@ public class GroupHandler extends ResourceHandler<Group>
   public Group createResource(Group group, Authorization authorization)
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminEventBuilder adminEventBuilder = getAdminEventBuilder(authorization);
 
     final String groupName = group.getDisplayName().get();
     log.info(this.getClass().getName() + " createResource: " + groupName);
@@ -75,6 +78,10 @@ public class GroupHandler extends ResourceHandler<Group>
     {
       log.info(this.getClass().getName() + " createResource returns: " + ret.toPrettyString());
     }
+    adminEventBuilder.operation(OperationType.CREATE)
+                     .resourcePath(keycloakSession.getContext().getUri(), ret.getId().get())
+                     .representation(group)
+                     .success();
     return ret;
   }
 
@@ -141,6 +148,8 @@ public class GroupHandler extends ResourceHandler<Group>
       log.info(this.getClass().getName() + " updateResource input: " + groupToUpdate.toPrettyString());
     }
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminEventBuilder adminEventBuilder = getAdminEventBuilder(authorization);
+
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(groupToUpdate.getId().get());
     if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
     {
@@ -152,6 +161,11 @@ public class GroupHandler extends ResourceHandler<Group>
     {
       log.info(this.getClass().getName() + " updateResource returns: " + ret.toPrettyString());
     }
+    adminEventBuilder.operation(OperationType.UPDATE)
+                     .resourcePath(keycloakSession.getContext().getUri())
+                     .representation(groupToUpdate)
+                     .success();
+
     return ret;
   }
 
@@ -162,11 +176,18 @@ public class GroupHandler extends ResourceHandler<Group>
   public void deleteResource(String id, Authorization authorization)
   {
     KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminEventBuilder adminEventBuilder = getAdminEventBuilder(authorization);
+
     GroupModel groupModel = keycloakSession.getContext().getRealm().getGroupById(id);
     if (groupModel == null || !Boolean.parseBoolean(groupModel.getFirstAttribute(SCIM_GROUP)))
     {
       throw new ResourceNotFoundException("group with id '" + id + "' does not exist");
     }
+    adminEventBuilder.operation(OperationType.DELETE)
+                     .resourcePath(keycloakSession.getContext().getUri())
+                     .representation(modelToGroup(keycloakSession, groupModel))
+                     .success();
+
     keycloakSession.getContext().getRealm().removeGroup(groupModel);
   }
 
@@ -311,5 +332,16 @@ public class GroupHandler extends ResourceHandler<Group>
     {
       return getCreated(groupModel);
     }
+  }
+
+  private AdminEventBuilder getAdminEventBuilder(Authorization authorization)
+  {
+    KeycloakSession keycloakSession = ((ScimAuthorization)authorization).getKeycloakSession();
+    AdminAuth auth = ((ScimAuthorization)authorization).getAuthResult();
+    RealmModel realm = keycloakSession.getContext().getRealm();
+    keycloakSession.getContext().getConnection();
+    ClientConnection clientConnection = keycloakSession.getContext().getConnection();
+    ClientModel client = auth.getClient();
+    return new AdminEventBuilder(realm, auth, keycloakSession, clientConnection).resource(ResourceType.GROUP);
   }
 }
