@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -25,6 +26,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
  * <br>
  * the SCIM endpoint controller
  */
+@Slf4j
 @RestController
 @RequestMapping("/scim/v2")
 public class ScimController
@@ -44,7 +46,7 @@ public class ScimController
   }
 
   /**
-   * the rest-endpoint for SCIM accessbile under the path ${basepath}/scim/v2/**
+   * the rest-endpoint for SCIM that is accessible under the path ${basepath}/scim/v2/**
    *
    * @param request the request object created by the underlying tomcat
    * @param requestBody the request body
