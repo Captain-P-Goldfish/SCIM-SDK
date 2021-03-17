@@ -60,7 +60,7 @@ public class ScimConfig
   private ServiceProvider getServiceProvider()
   {
     AuthenticationScheme authScheme = AuthenticationScheme.builder()
-                                                          .name("OAuth Bearer Token")
+                                                          .name("Bearer")
                                                           .description("Authentication scheme using the OAuth "
                                                                        + "Bearer Token Standard")
                                                           .specUri("http://www.rfc-editor.org/info/rfc6750")
