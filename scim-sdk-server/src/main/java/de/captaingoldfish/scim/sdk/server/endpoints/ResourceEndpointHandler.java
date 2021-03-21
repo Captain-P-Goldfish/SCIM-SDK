@@ -547,18 +547,23 @@ class ResourceEndpointHandler
       long totalResults = resourceList.size() != filteredResources.size() ? filteredResources.size()
         : (resources.getTotalResults() == 0 ? filteredResources.size() : resources.getTotalResults());
 
-      // this if-block will assert that no more results will be returned than the countValue allows.
-      if (effectiveStartIndex <= filteredResources.size())
+      // override filteredResources only in case of auto-filtering since we expect the implementation to handle
+      // everything if auto-filtering is deactivated
+      if (autoFiltering)
       {
-        filteredResources = filteredResources.subList((int)Math.min(effectiveStartIndex - 1,
-                                                                    filteredResources.size() - 1),
-                                                      (int)Math.min(effectiveStartIndex - 1 + effectiveCount,
-                                                                    filteredResources.size()));
-      }
-      else
-      {
-        // startIndex is greater than the number of entries available so we will return an empty list
-        filteredResources = Collections.emptyList();
+        // this if-block will assert that no more results will be returned than the countValue allows.
+        if (effectiveStartIndex <= filteredResources.size())
+        {
+          filteredResources = filteredResources.subList((int)Math.min(effectiveStartIndex - 1,
+                                                                      filteredResources.size() - 1),
+                                                        (int)Math.min(effectiveStartIndex - 1 + effectiveCount,
+                                                                      filteredResources.size()));
+        }
+        else
+        {
+          // startIndex is greater than the number of entries available so we will return an empty list
+          filteredResources = Collections.emptyList();
+        }
       }
       if (filteredResources.size() > effectiveCount)
       {

@@ -1076,6 +1076,166 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * this test will verify that the startIndex will not be evaluated by the API if the auto-filtering feature is
+   * disabled
+   */
+  @Test
+  public void testStartIndexIsIgnoredWhenSetInPartialList()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER).get().getFeatures().setAutoFiltering(false);
+    resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER).get().getFeatures().setAutoSorting(false);
+
+    final String filter = "userName sw \"ch\"";
+    final long startIndex = 3;
+    final int count = 2;
+
+    List<User> usersToReturn = new ArrayList<>();
+    List<String> usernames = Arrays.asList("chuck",
+                                           "chucky",
+                                           "charles",
+                                           "chubaka",
+                                           "chewy",
+                                           "charlie",
+                                           "goldfish",
+                                           "miriam",
+                                           "mario");
+    for ( String userName : usernames )
+    {
+      String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+      User user = User.builder().id(id).userName(userName).meta(meta).build();
+      userHandler.getInMemoryMap().put(id, user);
+      if (userName.startsWith("ch"))
+      {
+        usersToReturn.add(user);
+      }
+    }
+    List<User> strippedList = usersToReturn.subList((int)startIndex, usersToReturn.size());
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .resources(strippedList)
+                                                                       .totalResults(usersToReturn.size())
+                                                                       .build();
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      startIndex,
+                                                                      count,
+                                                                      filter,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = (ListResponse<ScimObjectNode>)scimResponse;
+    Assertions.assertEquals(usersToReturn.size(), listResponse.getTotalResults());
+    Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    Assertions.assertEquals(count, listResponse.getListedResources().size());
+
+    List<String> returnedUserNames = listResponse.getListedResources()
+                                                 .stream()
+                                                 .map(scimNode -> JsonHelper.copyResourceToObject(scimNode, User.class))
+                                                 .map(user -> user.getUserName().get())
+                                                 .collect(Collectors.toList());
+    MatcherAssert.assertThat(returnedUserNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("chubaka"), Matchers.equalTo("chewy")));
+  }
+
+  /**
+   * this test will verify that the startIndex will be evaluated by the API if auto-filtering feature is
+   * enabled. <br>
+   * The result that is returned in this method is basically wrong but the expected behaviour if not used
+   * correctly
+   */
+  @Test
+  public void testStartIndexIsNotIgnoredWhenSetInPartialList()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER).get().getFeatures().setAutoFiltering(true);
+    resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER).get().getFeatures().setAutoSorting(false);
+
+    final String filter = "userName sw \"ch\"";
+    final long startIndex = 3;
+    final int count = 2;
+
+    List<User> usersToReturn = new ArrayList<>();
+    List<String> usernames = Arrays.asList("chuck",
+                                           "chucky",
+                                           "charles",
+                                           "chubaka",
+                                           "chewy",
+                                           "charlie",
+                                           "chandler",
+                                           "christine",
+                                           "goldfish",
+                                           "miriam",
+                                           "mario");
+    for ( String userName : usernames )
+    {
+      String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+      User user = User.builder().id(id).userName(userName).meta(meta).build();
+      userHandler.getInMemoryMap().put(id, user);
+      if (userName.startsWith("ch"))
+      {
+        usersToReturn.add(user);
+      }
+    }
+    List<User> strippedList = usersToReturn.subList((int)startIndex, usersToReturn.size());
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .resources(strippedList)
+                                                                       .totalResults(usersToReturn.size())
+                                                                       .build();
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      startIndex,
+                                                                      count,
+                                                                      filter,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = (ListResponse<ScimObjectNode>)scimResponse;
+    Assertions.assertEquals(usersToReturn.size(), listResponse.getTotalResults());
+    Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    Assertions.assertEquals(count, listResponse.getListedResources().size());
+
+    List<String> returnedUserNames = listResponse.getListedResources()
+                                                 .stream()
+                                                 .map(scimNode -> JsonHelper.copyResourceToObject(scimNode, User.class))
+                                                 .map(jsonNodes -> jsonNodes.getUserName().get())
+                                                 .collect(Collectors.toList());
+    MatcherAssert.assertThat(returnedUserNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("charlie"), Matchers.equalTo("chandler")));
+  }
+
+  /**
    * this test verifies that the framework reacts with an {@link InternalServerException} wrapped in a
    * {@link ErrorResponse} if an exception is thrown in the developer implementation of listResources
    */

@@ -36,4 +36,5 @@ public class PartialListResponse<T extends ResourceNode>
    * use paging mechanisms
    */
   private long totalResults;
+
 }
