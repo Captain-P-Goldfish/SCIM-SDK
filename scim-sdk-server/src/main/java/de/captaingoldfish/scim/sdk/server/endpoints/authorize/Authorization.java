@@ -41,7 +41,7 @@ public interface Authorization
   public Set<String> getClientRoles();
 
   /**
-   * verifies if the client is authorized to access the given endpoint and will throw a forbidden except
+   * verifies if the client is authorized to access the given endpoint and will throw a forbidden exception
    *
    * @param resourceType the resource type that might hold information's about the needed authorization on the
    *          given endpoints
