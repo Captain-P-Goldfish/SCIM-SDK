@@ -17,6 +17,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
+import de.captaingoldfish.scim.sdk.client.setup.FileReferences;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
 import de.captaingoldfish.scim.sdk.client.springboot.SpringBootInitializer;
@@ -26,6 +27,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -38,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 @ActiveProfiles(SecurityConstants.BASIC_PROFILE)
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SpringBootInitializer.class})
-public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWebTest
+public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWebTest implements FileReferences
 {
 
   /**
@@ -229,4 +231,18 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
                             response.getErrorResponse().getDetail().get());
   }
 
+  /**
+   * 
+   */
+  @Test
+  public void testFailedResponse()
+  {
+    final String badResponse = readResourceFile(BROKEN_LISTRESPONSE);
+
+    TestController.responseSupplier = () -> badResponse;
+    ServerResponse<ListResponse<User>> response = scimRequestBuilder.list(User.class, EndpointPaths.USERS)
+                                                                    .get()
+                                                                    .sendRequest();
+    Assertions.assertFalse(response.isSuccess());
+  }
 }

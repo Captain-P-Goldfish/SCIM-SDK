@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.annotation.PostConstruct;
@@ -87,6 +88,7 @@ public abstract class AbstractSpringBootWebTest
   public void resetStaticContext()
   {
     headerValidator = null;
+    TestController.responseSupplier = null;
   }
 
   /**
@@ -171,6 +173,12 @@ public abstract class AbstractSpringBootWebTest
     public static BiConsumer<HttpServletRequest, String> validateRequest;
 
     /**
+     * can be used to provide a custom response. Setting this will disable the execution of the actual scim
+     * endpoint so remember to set it back to null
+     */
+    public static Supplier<String> responseSupplier;
+
+    /**
      * used to set a scim endpoint in the tests
      */
     private ScimConfig scimConfig = new ScimConfig();
@@ -239,6 +247,10 @@ public abstract class AbstractSpringBootWebTest
                                                   @RequestBody(required = false) String requestBody,
                                                   Principal principal)
     {
+      if (responseSupplier != null)
+      {
+        return responseSupplier.get();
+      }
       if (principal == null)
       {
         response.setStatus(HttpStatus.UNAUTHORIZED);

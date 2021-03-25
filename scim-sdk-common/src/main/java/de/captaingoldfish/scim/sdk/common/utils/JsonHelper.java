@@ -533,7 +533,8 @@ public final class JsonHelper
     }
     catch (IOException ex)
     {
-      log.trace(ex.getMessage());
+      log.info(ex.getMessage());
+      log.debug(ex.getMessage(), ex);
       return false;
     }
   }

@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.http.HttpHeaders;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -187,12 +188,24 @@ public class ServerResponse<T extends ScimObjectNode>
                                                   .collect(Collectors.toList());
     if (headerNameList.size() > 1)
     {
-      log.error("could not validate header value for duplicate headerName found in response: {} -> {}",
-                headerName,
-                String.join(", ", headerNameList));
+      log.info("could not validate header value for duplicate headerName found in response: {} -> {}",
+               headerName,
+               String.join(", ", headerNameList));
     }
-    return headerNameList.size() == 1
-           && StringUtils.startsWithIgnoreCase(getHttpHeaders().get(headerNameList.get(0)), expectedValue);
+    boolean isHeaderPresents = headerNameList.size() == 1
+                               && StringUtils.startsWithIgnoreCase(getHttpHeaders().get(headerNameList.get(0)),
+                                                                   expectedValue);
+    if (isHeaderPresents)
+    {
+      log.trace("Successfully validated {} header with value '{}'",
+                HttpHeaders.CONTENT_TYPE,
+                HttpHeader.SCIM_CONTENT_TYPE);
+    }
+    else
+    {
+      log.info("SCIM {} was not set in response '{}'", HttpHeaders.CONTENT_TYPE, HttpHeader.SCIM_CONTENT_TYPE);
+    }
+    return isHeaderPresents;
   }
 
   /**

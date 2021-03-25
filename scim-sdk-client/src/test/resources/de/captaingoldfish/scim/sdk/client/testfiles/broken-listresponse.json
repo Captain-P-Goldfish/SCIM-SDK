@@ -1,0 +1,25 @@
+{
+  "totalResults": 2,
+  "itemsPerPage": 2,
+  "startIndex": 1,
+  "schemas": [
+    "urn:ietf:params:scim:api:messages:2.0:ListResponse"
+  ],
+  "Resources": [
+    {
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User"
+      ],
+      "id": "a1ec9b70-8d45-11eb-8092-6b8b09f2c982",
+      "userName": "goldfish"
+    },
+    ,
+    {
+      "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:User"
+      ],
+      "id": "a1e0dba0-8d45-11eb-8092-6b8b09f2c982",
+      "userName": "mario"
+    }
+  ]
+}
