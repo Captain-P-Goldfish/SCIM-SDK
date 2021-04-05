@@ -407,6 +407,11 @@
     </dependencies>
 
     <build>
+        <!-- This is used in conjunction with the lombok-maven-plugin to generate delomboked sources, -->
+        <!-- effectively this switches the default sourceDirectory with the delomboked version. -->
+        <sourceDirectory>target/generated-sources/delombok</sourceDirectory>
+        <testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory>
+
         <finalName>${project.artifactId}-${project.version}</finalName>
 
         <pluginManagement>
@@ -436,6 +441,36 @@
 
         <plugins>
             <plugin>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok-maven-plugin</artifactId>
+                <version>${version.lombok}.0</version>
+                <executions>
+                    <execution>
+                        <id>delombok</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>delombok</goal>
+                        </goals>
+                        <configuration>
+                            <addOutputDirectory>false</addOutputDirectory>
+                            <sourceDirectory>src/main/java</sourceDirectory>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-delombok</id>
+                        <phase>generate-test-sources</phase>
+                        <goals>
+                            <goal>testDelombok</goal>
+                        </goals>
+                        <configuration>
+                            <addOutputDirectory>false</addOutputDirectory>
+                            <sourceDirectory>src/test/java</sourceDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>${version.maven.compiler.plugin}</version>
@@ -462,6 +497,10 @@
                 <configuration>
                     <configFile>${formatter-path}/formatter.xml</configFile>
                     <lineEnding>LF</lineEnding>
+                    <!-- delomboked sources do not conform to the formatter and use of the -->
+                    <!-- lombok plugin changes sourceDirectory and testSourceDirectory -->
+                    <sourceDirectory>src/main/java</sourceDirectory>
+                    <testSourceDirectory>src/test/java</testSourceDirectory>
                 </configuration>
                 <executions>
                     <execution>
