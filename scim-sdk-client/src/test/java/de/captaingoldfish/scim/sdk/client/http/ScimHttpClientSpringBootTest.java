@@ -202,7 +202,7 @@ public class ScimHttpClientSpringBootTest extends AbstractSpringBootWebTest
     {
       log.debug(ex.getMessage(), ex);
       Assertions.assertEquals("communication with server failed", ex.getMessage());
-      MatcherAssert.assertThat(ex.getCause().getMessage(), Matchers.containsString("(Connection refused)"));
+      MatcherAssert.assertThat(ex.getCause().getMessage(), Matchers.containsString("Connection refused"));
     }
   }
 
