@@ -573,13 +573,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
-   * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
-   * within this test
+   * this test must verify that an attribute that has a mutability of immutable or readOnly does not lead to a
+   * {@link BadRequestException} if tried to set to the same value.
    */
   @ParameterizedTest
   @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
-  public void testAddImmutableAndReadOnlyAttribute(Mutability mutability)
+  public void testAddImmutableAndReadOnlyAttributeWithNoChange(Mutability mutability)
   {
     JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
@@ -593,6 +592,119 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.assertTrue(allTypes.getString().isPresent());
+      Assertions.assertEquals("hello world", allTypes.getString().get());
+    }
+    catch (ScimException ex)
+    {
+      log.warn(ex.getDetail());
+      Assertions.fail("this point must not be reached");
+    }
+  }
+
+  /**
+   * this test must verify that an attribute that has a mutability of immutable or readOnly does not lead to a
+   * {@link BadRequestException} if tried to set to the same value.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
+  public void testReplaceImmutableAndReadOnlyAttributeWithNoChange(Mutability mutability)
+  {
+    JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+    TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
+    resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
+
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setString("hello world");
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setString("hello world");
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.assertTrue(allTypes.getString().isPresent());
+      Assertions.assertEquals("hello world", allTypes.getString().get());
+    }
+    catch (ScimException ex)
+    {
+      log.warn(ex.getDetail());
+      Assertions.fail("this point must not be reached");
+    }
+  }
+
+  /**
+   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
+   * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
+   * within this test
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
+  public void testAddImmutableAndReadOnlyAttributeWithChange(Mutability mutability)
+  {
+    JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+    TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
+    resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
+
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setString("hello world");
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setString("new hello world");
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    try
+    {
+      patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (ScimException ex)
+    {
+      log.warn(ex.getDetail());
+      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
+    }
+  }
+
+  /**
+   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
+   * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
+   * within this test
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
+  public void testReplaceImmutableAndReadOnlyAttributeWithChange(Mutability mutability)
+  {
+    JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+    TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
+    resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
+
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setString("hello world");
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setString("new hello world");
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();

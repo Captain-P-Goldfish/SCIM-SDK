@@ -89,22 +89,57 @@ public class PatchResourceHandler extends AbstractPatch
       else
       {
         SchemaAttribute schemaAttribute = getSchemaAttribute((extensionUri == null ? "" : extensionUri + ":") + key);
-        verifyImmutableAndReadOnly(resource, schemaAttribute);
+        boolean resourceChanged;
+        boolean isReadOnlyAndSet = isReadOnlyAndSet(resource, schemaAttribute);
         if (Type.COMPLEX.equals(schemaAttribute.getType()))
         {
-          changeWasMade.weakCompareAndSet(false, addComplexAttribute(resource, schemaAttribute, value, extensionUri));
+          resourceChanged = addComplexAttribute(resource, schemaAttribute, value, extensionUri);
         }
         else if (schemaAttribute.isMultiValued())
         {
-          changeWasMade.weakCompareAndSet(false, addMultivaluedAttribute(resource, schemaAttribute, value));
+          resourceChanged = addMultivaluedAttribute(resource, schemaAttribute, value);
         }
         else
         {
-          changeWasMade.weakCompareAndSet(false, addSimpleAttribute(resource, schemaAttribute, value));
+          resourceChanged = addSimpleAttribute(resource, schemaAttribute, value);
         }
+        verifyReadOnlyNotModified(schemaAttribute, resourceChanged, isReadOnlyAndSet);
+        changeWasMade.weakCompareAndSet(false, resourceChanged);
       }
     });
     return changeWasMade.get();
+  }
+
+  /**
+   * determines if the given json node is read-only or immutable and previously set, if so returns true
+   *
+   * @param jsonNode the node that should be verified
+   * @param schemaAttribute the schema definition of the node
+   */
+  private boolean isReadOnlyAndSet(JsonNode jsonNode, SchemaAttribute schemaAttribute)
+  {
+    return Mutability.READ_ONLY.equals(schemaAttribute.getMutability())
+           || Mutability.IMMUTABLE.equals(schemaAttribute.getMutability())
+              && jsonNode.get(schemaAttribute.getName()) != null;
+  }
+
+  /**
+   * verifies that the given json node is neither readOnly nor immutable and already set
+   *
+   * @param schemaAttribute the schema definition of the node
+   * @param resourceChanged true if the resource was modified
+   * @param isReadOnlyAndSet true if the field is read-only OR immutable and previously set
+   */
+  private void verifyReadOnlyNotModified(SchemaAttribute schemaAttribute,
+                                         boolean resourceChanged,
+                                         boolean isReadOnlyAndSet)
+  {
+    if (resourceChanged && isReadOnlyAndSet)
+    {
+      throw new BadRequestException("attribute with name '" + schemaAttribute.getFullResourceName()
+                                    + "' cannot be written it has a mutability of '" + schemaAttribute.getMutability()
+                                    + "'", null, ScimType.RFC7644.MUTABILITY);
+    }
   }
 
   /**
