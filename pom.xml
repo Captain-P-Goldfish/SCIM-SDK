@@ -63,6 +63,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
+        <source.directory>src/main/java</source.directory>
+        <source.test.directory>src/test/java</source.test.directory>
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.basedir}</formatter-path>
 
@@ -409,8 +411,8 @@
     <build>
         <!-- This is used in conjunction with the lombok-maven-plugin to generate delomboked sources, -->
         <!-- effectively this switches the default sourceDirectory with the delomboked version. -->
-        <sourceDirectory>target/generated-sources/delombok</sourceDirectory>
-        <testSourceDirectory>target/generated-test-sources/delombok</testSourceDirectory>
+        <sourceDirectory>${source.directory}</sourceDirectory>
+        <testSourceDirectory>${source.test.directory}</testSourceDirectory>
 
         <finalName>${project.artifactId}-${project.version}</finalName>
 
@@ -440,36 +442,6 @@
         </pluginManagement>
 
         <plugins>
-            <plugin>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok-maven-plugin</artifactId>
-                <version>${version.lombok}.0</version>
-                <executions>
-                    <execution>
-                        <id>delombok</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>delombok</goal>
-                        </goals>
-                        <configuration>
-                            <addOutputDirectory>false</addOutputDirectory>
-                            <sourceDirectory>src/main/java</sourceDirectory>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>test-delombok</id>
-                        <phase>generate-test-sources</phase>
-                        <goals>
-                            <goal>testDelombok</goal>
-                        </goals>
-                        <configuration>
-                            <addOutputDirectory>false</addOutputDirectory>
-                            <sourceDirectory>src/test/java</sourceDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
@@ -585,7 +557,6 @@
     </build>
 
     <profiles>
-
         <profile>
             <id>release-only</id>
             <activation>
@@ -593,6 +564,14 @@
                     <name>prepareAndPerformRelease</name>
                 </property>
             </activation>
+
+            <properties>
+                <!-- This is used in conjunction with the lombok-maven-plugin to generate delomboked sources, -->
+                <!-- effectively this switches the default sourceDirectory with the delomboked version. -->
+                <source.directory>target/generated-sources/delombok</source.directory>
+                <source.test.directory>target/generated-test-sources/delombok</source.test.directory>
+            </properties>
+
             <build>
                 <plugins>
                     <plugin>
@@ -638,6 +617,36 @@
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok-maven-plugin</artifactId>
+                        <version>${version.lombok}.0</version>
+                        <executions>
+                            <execution>
+                                <id>delombok</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>delombok</goal>
+                                </goals>
+                                <configuration>
+                                    <addOutputDirectory>false</addOutputDirectory>
+                                    <sourceDirectory>src/main/java</sourceDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>test-delombok</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>testDelombok</goal>
+                                </goals>
+                                <configuration>
+                                    <addOutputDirectory>false</addOutputDirectory>
+                                    <sourceDirectory>src/test/java</sourceDirectory>
+                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
