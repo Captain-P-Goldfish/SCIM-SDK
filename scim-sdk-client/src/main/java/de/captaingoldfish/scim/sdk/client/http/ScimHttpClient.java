@@ -8,6 +8,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLHandshakeException;
@@ -27,6 +28,7 @@ import de.captaingoldfish.scim.sdk.client.exceptions.IORuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SSLHandshakeRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.SocketTimeoutRuntimeException;
 import de.captaingoldfish.scim.sdk.client.exceptions.UnknownHostRuntimeException;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -187,6 +189,7 @@ public class ScimHttpClient implements Closeable
     {
       httpClient = getHttpClient();
     }
+    setAuthenticationIfMissing(uriRequest);
     if (log.isTraceEnabled())
     {
       log.trace("sending http request: \n\tmethod: {}\n\turi: {}",
@@ -219,6 +222,20 @@ public class ScimHttpClient implements Closeable
     {
       throw new IORuntimeException("communication with server failed", ex);
     }
+  }
+
+  /**
+   * adds basic authentication to the request if it was configured and no "Authorization" header has been set
+   * yet
+   */
+  private void setAuthenticationIfMissing(HttpUriRequest uriRequest)
+  {
+    Optional.ofNullable(scimClientConfig.getBasicAuth()).ifPresent(basicAuth -> {
+      if (null == uriRequest.getFirstHeader(HttpHeader.AUTHORIZATION))
+      {
+        uriRequest.addHeader(HttpHeader.AUTHORIZATION, scimClientConfig.getBasicAuth().getAuthorizationHeaderValue());
+      }
+    });
   }
 
   /**
