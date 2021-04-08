@@ -65,7 +65,7 @@ public class SchemaAttributeValidationTest implements FileReferences
 
     try
     {
-      SchemaValidator.validateDocumentForRequest(userResourceType, user, HttpMethod.POST);
+      SchemaValidator.validateDocumentForRequest(userResourceType, user, HttpMethod.POST, User.class);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
@@ -101,7 +101,7 @@ public class SchemaAttributeValidationTest implements FileReferences
     user.setUserName(validUsername);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForRequest(userResourceType, user, HttpMethod.POST);
+      return SchemaValidator.validateDocumentForRequest(userResourceType, user, HttpMethod.POST, User.class);
     });
 
     User validatedUser = JsonHelper.copyResourceToObject(validatedDocument, User.class);

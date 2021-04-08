@@ -26,6 +26,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 /**
@@ -35,6 +36,7 @@ import lombok.Getter;
  * this class will represent a SCIM schema definition
  */
 @Getter
+@NoArgsConstructor
 public class Schema extends ResourceNode
 {
 
