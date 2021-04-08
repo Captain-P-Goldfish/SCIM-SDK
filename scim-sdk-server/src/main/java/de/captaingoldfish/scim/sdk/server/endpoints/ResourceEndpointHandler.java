@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -202,9 +203,11 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.POST);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
+      ResourceNode resourceNode = (ResourceNode)SchemaValidator.validateDocumentForRequest(resourceType,
+                                                                                           resource,
+                                                                                           HttpMethod.POST,
+                                                                                           resourceHandler.getType());
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       meta.setResourceType(resourceType.getName());
       resourceNode.remove(AttributeNames.RFC7643.META);
@@ -236,7 +239,8 @@ class ResourceEndpointHandler
                                                                               resource,
                                                                               null,
                                                                               null,
-                                                                              baseUrlSupplier);
+                                                                              baseUrlSupplier,
+                                                                              resourceHandler.getType());
       return new CreateResponse(responseResource, location, createdMeta);
     }
     catch (ScimException ex)
@@ -366,7 +370,8 @@ class ResourceEndpointHandler
                                                                               null,
                                                                               attributes,
                                                                               excludedAttributes,
-                                                                              baseUrlSupplier);
+                                                                              baseUrlSupplier,
+                                                                              resourceHandler.getType());
       return new GetResponse(responseResource, location, resourceNode.getMeta().orElse(null));
     }
     catch (ScimException ex)
@@ -592,7 +597,8 @@ class ResourceEndpointHandler
                                                                                  null,
                                                                                  attributes,
                                                                                  excludedAttributes,
-                                                                                 baseUrlSupplier);
+                                                                                 baseUrlSupplier,
+                                                                                 resourceHandler.getType());
         validatedResourceList.add(validatedResource);
       }
 
@@ -772,14 +778,19 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      resource = SchemaValidator.validateDocumentForRequest(resourceType, resource, HttpMethod.PUT);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      ResourceNode resourceNode = (ResourceNode)SchemaValidator.validateDocumentForRequest(resourceType,
+                                                                                           resource,
+                                                                                           HttpMethod.PUT,
+                                                                                           resourceHandler.getType());
+      AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
+      Supplier<ResourceNode> oldResourceSupplier = () -> {
+        oldResourceNode.compareAndSet(null, resourceHandler.getResource(id, authorization, null, null));
+        return oldResourceNode.get();
+      };
       try
       {
-        ETagHandler.validateVersion(serviceProvider,
-                                    resourceType,
-                                    () -> resourceHandler.getResource(id, authorization, null, null),
-                                    httpHeaders);
+        ETagHandler.validateVersion(serviceProvider, resourceType, oldResourceSupplier, httpHeaders);
       }
       catch (ResourceNotFoundException ex)
       {
@@ -791,7 +802,6 @@ class ResourceEndpointHandler
         throw new BadRequestException("the request body does not contain any writable parameters", null,
                                       ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      ResourceNode resourceNode = (ResourceNode)JsonHelper.copyResourceToObject(resource, resourceHandler.getType());
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -837,7 +847,8 @@ class ResourceEndpointHandler
                                                                               resource,
                                                                               null,
                                                                               null,
-                                                                              baseUrlSupplier);
+                                                                              baseUrlSupplier,
+                                                                              resourceHandler.getType());
 
       return new UpdateResponse(responseResource, location, meta);
     }
@@ -1003,7 +1014,10 @@ class ResourceEndpointHandler
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
       try
       {
-        SchemaValidator.validateDocumentForRequest(resourceType, patchedResourceNode, HttpMethod.PATCH);
+        SchemaValidator.validateDocumentForRequest(resourceType,
+                                                   patchedResourceNode,
+                                                   HttpMethod.PATCH,
+                                                   resourceHandler.getType());
       }
       catch (DocumentValidationException ex)
       {
@@ -1033,7 +1047,8 @@ class ResourceEndpointHandler
                                                                               patchHandler.getRequestedAttributes(),
                                                                               attributes,
                                                                               excludedAttributes,
-                                                                              baseUrlSupplier);
+                                                                              baseUrlSupplier,
+                                                                              resourceHandler.getType());
 
       return new UpdateResponse(responseResource, location, meta);
     }

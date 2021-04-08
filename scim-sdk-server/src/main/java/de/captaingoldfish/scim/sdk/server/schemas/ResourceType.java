@@ -64,6 +64,11 @@ public class ResourceType extends ResourceNode
   @Setter(AccessLevel.PUBLIC)
   private ResourceHandler resourceHandlerImpl;
 
+  public ResourceType()
+  {
+    this.schemaFactory = null;
+  }
+
   protected ResourceType(SchemaFactory schemaFactory, String resourceDocument)
   {
     this(schemaFactory, JsonHelper.readJsonDocument(resourceDocument));

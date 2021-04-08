@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -455,11 +456,37 @@ public final class JsonHelper
   }
 
   /**
+   * builds a new instance of the given resource node type
+   * 
+   * @param type the type for which the instance should be build
+   * @param <T> the type must define a noArgs constructor
+   * @return the newly created instance
+   */
+  public static <T extends ResourceNode> T getNewInstance(Class<T> type)
+  {
+    try
+    {
+      Constructor<T> constructor = type.getConstructor();
+      return constructor.newInstance();
+    }
+    catch (InstantiationException | IllegalAccessException | InvocationTargetException e)
+    {
+      throw new InternalServerException("could not create instance of type '" + type + "': " + e.getMessage(), e, null);
+    }
+    catch (NoSuchMethodException e)
+    {
+      throw new InternalServerException("missing no args constructor for type '" + type + "': " + e.getMessage(), e,
+                                        null);
+    }
+  }
+
+  /**
    * creates a new instance of the given type
    *
    * @param <T> the type must define a noArgs constructor
    * @param type the type from which a new instance will be created
-   * @param resource
+   * @param resource an already existing instance that is passed as constructor param to the instance, if such a
+   *          constructor exists
    * @return the newly created instance
    */
   private static <T extends JsonNode> T getNewInstance(Class<T> type, JsonNode resource)

@@ -236,7 +236,8 @@ public class ResourceTypeTest implements FileReferences
                                                                              null,
                                                                              null,
                                                                              null,
-                                                                             () -> "http://localhost:8080/scim/v2");
+                                                                             () -> "http://localhost:8080/scim/v2",
+                                                                             null);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
@@ -257,7 +258,8 @@ public class ResourceTypeTest implements FileReferences
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(resourceType,
                                                                             enterpriseUserDocument,
-                                                                            HttpMethod.POST);
+                                                                            HttpMethod.POST,
+                                                                            null);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
