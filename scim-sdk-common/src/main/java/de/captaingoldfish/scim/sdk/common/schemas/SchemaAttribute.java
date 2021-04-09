@@ -52,7 +52,7 @@ public final class SchemaAttribute extends ScimObjectNode
   private final SchemaAttribute parent;
 
   /**
-   * the uri of the resource to which this attribute belongs
+   * the uri of the resource to which this attribute belongs e.g.: urn:ietf:params:scim:schemas:core:2.0:User
    */
   private final String resourceUri;
 
@@ -72,6 +72,17 @@ public final class SchemaAttribute extends ScimObjectNode
    * again and again
    */
   private Pattern pattern;
+
+  /**
+   * a constructor used for unit tests only to create schema-attribute instances for testing
+   */
+  public SchemaAttribute(SchemaAttribute parent, String resourceUri, String namePrefix)
+  {
+    this.schema = null;
+    this.parent = parent;
+    this.resourceUri = resourceUri;
+    this.namePrefix = namePrefix;
+  }
 
   protected SchemaAttribute(Schema schema,
                             String resourceUri,

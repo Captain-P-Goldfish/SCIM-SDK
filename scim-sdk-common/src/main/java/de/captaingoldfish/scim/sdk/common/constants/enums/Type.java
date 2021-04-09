@@ -43,7 +43,7 @@ public enum Type
   {
     for ( Type type : Type.values() )
     {
-      if (StringUtils.equals(value, type.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, type.getValue()))
       {
         return type;
       }

@@ -53,7 +53,7 @@ public enum Returned
   {
     for ( Returned returned : Returned.values() )
     {
-      if (StringUtils.equals(value, returned.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, returned.getValue()))
       {
         return returned;
       }

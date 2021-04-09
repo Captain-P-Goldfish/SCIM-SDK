@@ -45,7 +45,7 @@ public enum Mutability
   {
     for ( Mutability mutability : Mutability.values() )
     {
-      if (StringUtils.equals(value, mutability.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, mutability.getValue()))
       {
         return mutability;
       }

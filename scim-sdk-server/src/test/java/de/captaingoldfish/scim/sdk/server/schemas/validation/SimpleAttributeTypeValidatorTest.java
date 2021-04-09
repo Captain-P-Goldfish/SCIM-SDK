@@ -24,12 +24,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.JsonNodeType;
 import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
@@ -73,6 +76,205 @@ public class SimpleAttributeTypeValidatorTest
                      Arguments.arguments(new LongNode(Long.MAX_VALUE), ReferenceTypes.EXTERNAL),
                      Arguments.arguments(BooleanNode.getTrue(), ReferenceTypes.EXTERNAL),
                      Arguments.arguments(new DoubleNode(25.5), ReferenceTypes.EXTERNAL));
+  }
+
+  /**
+   * defines the arguments for test {@link #testIsSimpleNodeType(JsonNode)}
+   */
+  public static Stream<Arguments> getSimpleNodeTypes()
+  {
+    return Stream.of(Arguments.arguments(NullNode.getInstance()),
+                     Arguments.arguments(new TextNode("text")),
+                     Arguments.arguments(new IntNode(5)),
+                     Arguments.arguments(new LongNode(5L)),
+                     Arguments.arguments(new DoubleNode(5.5)),
+                     Arguments.arguments(BooleanNode.getTrue()));
+  }
+
+  /**
+   * defines the arguments for test {@link #testIsNotSimpleNodeType(JsonNode)}
+   */
+  public static Stream<Arguments> getNoneSimpleNodeTypes()
+  {
+    return Stream.of(Arguments.arguments(new ObjectNode(JsonNodeFactory.instance)),
+                     Arguments.arguments(new ArrayNode(JsonNodeFactory.instance)));
+  }
+
+  /**
+   * shows that all nodes used in this api are identified as simple node types
+   */
+  @ParameterizedTest
+  @MethodSource("getSimpleNodeTypes")
+  public void testIsSimpleNodeType(JsonNode jsonNode)
+  {
+    Assertions.assertTrue(SimpleAttributeValidator.isSimpleNode(jsonNode));
+  }
+
+  /**
+   * checks that array and object nodes are not interpreted as simple node types
+   */
+  @ParameterizedTest
+  @MethodSource("getNoneSimpleNodeTypes")
+  public void testIsNotSimpleNodeType(JsonNode jsonNode)
+  {
+    Assertions.assertFalse(SimpleAttributeValidator.isSimpleNode(jsonNode));
+  }
+
+  /**
+   * check for canonical values case insensitive
+   */
+  @Test
+  public void testCanonicalStringValuesCaseInsensitive()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.STRING)
+                                                            .canonicalValues("hello", "world")
+                                                            .caseExact(false)
+                                                            .build();
+
+    {
+      String content = "hello";
+      JsonNode attribute = new TextNode(content);
+      Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
+    }
+
+    {
+      String content = "world";
+      JsonNode attribute = new TextNode(content);
+      Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
+    }
+
+    {
+      String content = "hElLo";
+      JsonNode attribute = new TextNode(content);
+      Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
+    }
+
+    {
+      String content = "wOrLd";
+      JsonNode attribute = new TextNode(content);
+      Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
+    }
+
+    {
+      String content = "foo";
+      JsonNode attribute = new TextNode(content);
+      try
+      {
+        SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        final String errorMessage = String.format("Attribute with name '%s' does not match one of "
+                                                  + "its canonicalValues '%s' actual value is '%s'",
+                                                  schemaAttribute.getFullResourceName(),
+                                                  schemaAttribute.getCanonicalValues(),
+                                                  content);
+        Assertions.assertEquals(errorMessage, ex.getMessage());
+      }
+    }
+  }
+
+  /**
+   * check for canonical values case sensitive
+   */
+  @Test
+  public void testCanonicalStringValuesCaseSensitive()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.STRING)
+                                                            .canonicalValues("hello", "world")
+                                                            .caseExact(true)
+                                                            .build();
+
+    {
+      String content = "hello";
+      JsonNode attribute = new TextNode(content);
+      Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
+    }
+
+    {
+      String content = "world";
+      JsonNode attribute = new TextNode(content);
+      Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
+    }
+
+    {
+      String content = "hElLo";
+      JsonNode attribute = new TextNode(content);
+      try
+      {
+        SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        final String errorMessage = String.format("Attribute with name '%s' is caseExact and does not match "
+                                                  + "its canonicalValues '%s' actual value is '%s'",
+                                                  schemaAttribute.getFullResourceName(),
+                                                  schemaAttribute.getCanonicalValues(),
+                                                  content);
+        Assertions.assertEquals(errorMessage, ex.getMessage());
+      }
+    }
+
+    {
+      String content = "wOrLd";
+      JsonNode attribute = new TextNode(content);
+      try
+      {
+        SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        final String errorMessage = String.format("Attribute with name '%s' is caseExact and does not match "
+                                                  + "its canonicalValues '%s' actual value is '%s'",
+                                                  schemaAttribute.getFullResourceName(),
+                                                  schemaAttribute.getCanonicalValues(),
+                                                  content);
+        Assertions.assertEquals(errorMessage, ex.getMessage());
+      }
+    }
+
+    {
+      String content = "foo";
+      JsonNode attribute = new TextNode(content);
+      try
+      {
+        SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        final String errorMessage = String.format("Attribute with name '%s' does not match one of "
+                                                  + "its canonicalValues '%s' actual value is '%s'",
+                                                  schemaAttribute.getFullResourceName(),
+                                                  schemaAttribute.getCanonicalValues(),
+                                                  content);
+        Assertions.assertEquals(errorMessage, ex.getMessage());
+      }
+    }
+  }
+
+  /**
+   * check for canonical values case sensitive
+   */
+  @Test
+  public void testCanonicalStringValuesWithoutAnyCanonicalValues()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
+
+    String content = "hello";
+    JsonNode attribute = new TextNode(content);
+    Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
   }
 
   /**
@@ -439,19 +641,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
+      JsonNode attribute = new IntNode(0);
       try
       {
-        JsonNode attribute = new IntNode(0);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -464,19 +667,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
+      JsonNode attribute = new LongNode(1L);
       try
       {
-        JsonNode attribute = new LongNode(1L);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -489,19 +693,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
+      JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        JsonNode attribute = BooleanNode.getTrue();
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
 
@@ -515,19 +720,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
+      JsonNode attribute = new DoubleNode(2.5);
       try
       {
-        JsonNode attribute = new DoubleNode(2.5);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -548,19 +754,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
+      JsonNode attribute = new TextNode("abc");
       try
       {
-        JsonNode attribute = new TextNode("abc");
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -573,19 +780,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
+      JsonNode attribute = new TextNode("123456");
       try
       {
-        JsonNode attribute = new TextNode("123456");
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -598,19 +806,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
+      JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        JsonNode attribute = BooleanNode.getTrue();
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -623,19 +832,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
+      JsonNode attribute = new DoubleNode(2.5);
       try
       {
-        JsonNode attribute = new DoubleNode(2.5);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -656,19 +866,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
+      JsonNode attribute = new TextNode("abc");
       try
       {
-        JsonNode attribute = new TextNode("abc");
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -681,19 +892,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
+      JsonNode attribute = new IntNode(123456);
       try
       {
-        JsonNode attribute = new IntNode(123456);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -706,19 +918,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
+      JsonNode attribute = new LongNode(123456);
       try
       {
-        JsonNode attribute = new LongNode(123456);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -731,19 +944,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
+      JsonNode attribute = new DoubleNode(123456.6);
       try
       {
-        JsonNode attribute = new DoubleNode(123456.6);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -764,19 +978,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
+      JsonNode attribute = new TextNode("abc");
       try
       {
-        JsonNode attribute = new TextNode("abc");
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -790,19 +1005,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
+      JsonNode attribute = new TextNode("5.5");
       try
       {
-        JsonNode attribute = new TextNode("5.5");
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -815,19 +1031,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
+      JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        JsonNode attribute = BooleanNode.getTrue();
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -857,7 +1074,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = "Given value is not a valid dateTime: abc";
+        String expectedMessage = "Given value is not a valid dateTime 'abc'";
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -870,19 +1087,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DATE_TIME).build();
 
+      JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        JsonNode attribute = BooleanNode.getTrue();
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -895,19 +1113,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DATE_TIME).build();
 
+      JsonNode attribute = new IntNode(123456);
       try
       {
-        JsonNode attribute = new IntNode(123456);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -920,19 +1139,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DATE_TIME).build();
 
+      JsonNode attribute = new LongNode(Instant.now().getEpochSecond());
       try
       {
-        JsonNode attribute = new LongNode(Instant.now().getEpochSecond());
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -945,19 +1165,20 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DATE_TIME).build();
 
+      JsonNode attribute = new DoubleNode(Instant.now().getEpochSecond() + 0.2);
       try
       {
-        JsonNode attribute = new DoubleNode(Instant.now().getEpochSecond() + 0.2);
         SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()));
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -1017,17 +1238,17 @@ public class SimpleAttributeTypeValidatorTest
 
       try
       {
-        JsonNode attribute = jsonNode;
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeType(schemaAttribute, jsonNode);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(jsonNode.getNodeType().toString()));
+                                               StringUtils.lowerCase(jsonNode.getNodeType().toString()),
+                                               jsonNode);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
