@@ -110,7 +110,7 @@ class SchemaAttributeTest
                             + " 'complex', 'boolean', 'decimal', 'integer', 'dateTime', 'reference'.",
                             type.getDescription());
     Assertions.assertTrue(type.isRequired());
-    Assertions.assertTrue(type.isCaseExact());
+    Assertions.assertFalse(type.isCaseExact());
     Assertions.assertEquals(Mutability.READ_ONLY, type.getMutability());
     Assertions.assertEquals(Returned.DEFAULT, type.getReturned());
     Assertions.assertEquals(Uniqueness.NONE, type.getUniqueness());

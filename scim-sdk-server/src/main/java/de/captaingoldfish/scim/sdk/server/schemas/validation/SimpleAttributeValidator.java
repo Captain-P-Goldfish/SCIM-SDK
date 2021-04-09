@@ -2,7 +2,9 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -38,6 +40,21 @@ import lombok.extern.slf4j.Slf4j;
 public class SimpleAttributeValidator
 {
 
+  /**
+   * checks if the given node is a json leaf node
+   * 
+   * @param attribute the attribute from the document
+   * @return true if the attribute is a json leaf node, false else
+   */
+  public static boolean isSimpleNode(JsonNode attribute)
+  {
+    return attribute.isNull() || (!attribute.isArray() && !attribute.isObject());
+  }
+
+  /**
+   * will parse the given node type into a json representation that contains additional its schema attribute
+   * definition
+   */
   public static JsonNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
     Type type = schemaAttribute.getType();
@@ -126,10 +143,11 @@ public class SimpleAttributeValidator
     if (!isOfType)
     {
       Type type = schemaAttribute.getType();
-      final String errorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s'",
+      final String errorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                 schemaAttribute.getFullResourceName(),
                                                 type.getValue(),
-                                                StringUtils.lowerCase(valueNode.getNodeType().toString()));
+                                                StringUtils.lowerCase(valueNode.getNodeType().toString()),
+                                                valueNode);
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
   }
@@ -146,7 +164,7 @@ public class SimpleAttributeValidator
     catch (InvalidDateTimeRepresentationException ex)
     {
       throw new AttributeValidationException(schemaAttribute,
-                                             String.format("Given value is not a valid dateTime: %s", textValue));
+                                             String.format("Given value is not a valid dateTime '%s'", textValue));
     }
   }
 
@@ -199,6 +217,57 @@ public class SimpleAttributeValidator
     {
       log.debug(ex.getMessage());
       return false;
+    }
+  }
+
+  /**
+   * will verify that the current value node does define one of the canonical values of the attribute definition
+   * if some are defined
+   *
+   * @param schemaAttribute the attribute definition from the meta schema
+   * @param valueNode the value that matches to this definition
+   */
+  protected static void checkCanonicalValues(SchemaAttribute schemaAttribute, JsonNode valueNode)
+  {
+    if (schemaAttribute.getCanonicalValues().isEmpty())
+    {
+      // all values are valid
+      return;
+    }
+    final String value = valueNode.textValue();
+    AtomicBoolean caseInsensitiveMatch = new AtomicBoolean(false);
+    Predicate<String> compare = s -> {
+      if (schemaAttribute.isCaseExact())
+      {
+        caseInsensitiveMatch.compareAndSet(false, StringUtils.equalsIgnoreCase(s, value));
+        return StringUtils.equals(s, value);
+      }
+      else
+      {
+        return StringUtils.equalsIgnoreCase(s, value);
+      }
+    };
+
+    if (schemaAttribute.getCanonicalValues().stream().noneMatch(compare))
+    {
+      String errorMessage;
+      if (schemaAttribute.isCaseExact() && caseInsensitiveMatch.get())
+      {
+        errorMessage = String.format("Attribute with name '%s' is caseExact and does not match its canonicalValues "
+                                     + "'%s' actual value is '%s'",
+                                     schemaAttribute.getFullResourceName(),
+                                     schemaAttribute.getCanonicalValues(),
+                                     value);
+      }
+      else
+      {
+        errorMessage = String.format("Attribute with name '%s' does not match one of its canonicalValues "
+                                     + "'%s' actual value is '%s'",
+                                     schemaAttribute.getFullResourceName(),
+                                     schemaAttribute.getCanonicalValues(),
+                                     value);
+      }
+      throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
   }
 }

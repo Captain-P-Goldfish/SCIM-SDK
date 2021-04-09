@@ -50,7 +50,7 @@ public enum Uniqueness
   {
     for ( Uniqueness uniqueness : Uniqueness.values() )
     {
-      if (StringUtils.equals(value, uniqueness.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, uniqueness.getValue()))
       {
         return uniqueness;
       }

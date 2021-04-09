@@ -59,7 +59,7 @@
           "uniqueness": "none",
           "multiValued": false,
           "required": true,
-          "caseExact": true
+          "caseExact": false
         },
         {
           "name": "type",
@@ -70,7 +70,7 @@
           "uniqueness": "none",
           "multiValued": false,
           "required": true,
-          "caseExact": true,
+          "caseExact": false,
           "canonicalValues": [
             "string",
             "complex",
@@ -102,7 +102,7 @@
           "uniqueness": "none",
           "multiValued": false,
           "required": false,
-          "caseExact": true
+          "caseExact": false
         },
         {
           "name": "required",
@@ -124,7 +124,7 @@
           "uniqueness": "none",
           "multiValued": true,
           "required": false,
-          "caseExact": true
+          "caseExact": false
         },
         {
           "name": "caseExact",
@@ -146,7 +146,7 @@
           "uniqueness": "none",
           "multiValued": false,
           "required": false,
-          "caseExact": true,
+          "caseExact": false,
           "canonicalValues": [
             "readOnly",
             "readWrite",
@@ -163,7 +163,7 @@
           "uniqueness": "none",
           "multiValued": false,
           "required": false,
-          "caseExact": true,
+          "caseExact": false,
           "canonicalValues": [
             "always",
             "never",
@@ -180,7 +180,7 @@
           "uniqueness": "none",
           "multiValued": false,
           "required": false,
-          "caseExact": true,
+          "caseExact": false,
           "canonicalValues": [
             "none",
             "server",
@@ -196,7 +196,7 @@
           "uniqueness": "none",
           "multiValued": true,
           "required": false,
-          "caseExact": true
+          "caseExact": false
         },
         {
           "name": "multipleOf",
@@ -328,7 +328,7 @@
               "uniqueness": "none",
               "multiValued": false,
               "required": true,
-              "caseExact": true
+              "caseExact": false
             },
             {
               "name": "type",
@@ -370,7 +370,7 @@
               "uniqueness": "none",
               "multiValued": false,
               "required": false,
-              "caseExact": true
+              "caseExact": false
             },
             {
               "name": "required",
@@ -392,7 +392,7 @@
               "uniqueness": "none",
               "multiValued": true,
               "required": false,
-              "caseExact": true
+              "caseExact": false
             },
             {
               "name": "caseExact",
@@ -414,7 +414,7 @@
               "uniqueness": "none",
               "multiValued": false,
               "required": false,
-              "caseExact": true,
+              "caseExact": false,
               "canonicalValues": [
                 "readOnly",
                 "readWrite",
@@ -431,7 +431,7 @@
               "uniqueness": "none",
               "multiValued": false,
               "required": false,
-              "caseExact": true,
+              "caseExact": false,
               "canonicalValues": [
                 "always",
                 "never",
@@ -448,7 +448,7 @@
               "uniqueness": "none",
               "multiValued": false,
               "required": false,
-              "caseExact": true,
+              "caseExact": false,
               "canonicalValues": [
                 "none",
                 "server",
@@ -464,7 +464,7 @@
               "uniqueness": "none",
               "multiValued": true,
               "required": false,
-              "caseExact": true
+              "caseExact": false
             },
             {
               "name": "multipleOf",

@@ -43,7 +43,7 @@ public enum ReferenceTypes
   {
     for ( ReferenceTypes referenceTypes : ReferenceTypes.values() )
     {
-      if (StringUtils.equals(value, referenceTypes.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, referenceTypes.getValue()))
       {
         return referenceTypes;
       }
