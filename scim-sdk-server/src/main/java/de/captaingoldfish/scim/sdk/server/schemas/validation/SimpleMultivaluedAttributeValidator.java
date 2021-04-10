@@ -1,11 +1,14 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -38,6 +41,7 @@ public class SimpleMultivaluedAttributeValidator
     ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
     if (arrayNode.size() > 0)
     {
+      List<String> uniqueValueList = new ArrayList<>();
       for ( JsonNode jsonNode : arrayNode )
       {
         boolean isSimpleAttribute = SimpleAttributeValidator.isSimpleNode(jsonNode);
@@ -49,6 +53,18 @@ public class SimpleMultivaluedAttributeValidator
           throw new AttributeValidationException(schemaAttribute, errorMessage);
         }
         SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, jsonNode);
+
+        if (!Uniqueness.NONE.equals(schemaAttribute.getUniqueness()))
+        {
+          if (uniqueValueList.contains(jsonNode.textValue()))
+          {
+            String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
+                                                schemaAttribute.getUniqueness().getValue(),
+                                                arrayNode);
+            throw new AttributeValidationException(schemaAttribute, errorMessage);
+          }
+          uniqueValueList.add(jsonNode.textValue());
+        }
 
         try
         {

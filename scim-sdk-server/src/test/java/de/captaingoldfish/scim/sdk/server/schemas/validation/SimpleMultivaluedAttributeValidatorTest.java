@@ -7,6 +7,8 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -19,6 +21,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
@@ -854,6 +857,237 @@ public class SimpleMultivaluedAttributeValidatorTest
                                Matchers.typeCompatibleWith(Class.forName(classPackage + "Scim"
                                                                          + node.getClass().getSimpleName())));
       Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+    }
+  }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "string",
+   *      "multiValued": true,
+   *      "uniqueness": "server|global"
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": ["hello", "world", "world"]
+   *    }
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testValidateStringTypesUnique(Uniqueness uniqueness)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.STRING)
+                                                            .uniqueness(uniqueness)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.addAll(Arrays.asList(new TextNode("hello"), new TextNode("world"), new TextNode("world")));
+
+    try
+    {
+      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
+                                          schemaAttribute.getUniqueness().getValue(),
+                                          arrayNode);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
+    }
+  }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "integer",
+   *      "multiValued": true,
+   *      "uniqueness": "server|global"
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": [1, 1, 5]
+   *    }
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testValidateIntegerTypesUnique(Uniqueness uniqueness)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.INTEGER)
+                                                            .uniqueness(uniqueness)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.addAll(Arrays.asList(new IntNode(1), new IntNode(1), new IntNode(5)));
+
+    try
+    {
+      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
+                                          schemaAttribute.getUniqueness().getValue(),
+                                          arrayNode);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
+    }
+  }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "decimal",
+   *      "multiValued": true,
+   *      "uniqueness": "server|global"
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": [1.3, 1.3]
+   *    }
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testValidateDecimalTypesUnique(Uniqueness uniqueness)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.DECIMAL)
+                                                            .uniqueness(uniqueness)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.addAll(Arrays.asList(new DoubleNode(1.3), new DoubleNode(1.3)));
+
+    try
+    {
+      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
+                                          schemaAttribute.getUniqueness().getValue(),
+                                          arrayNode);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
+    }
+  }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "boolean",
+   *      "multiValued": true,
+   *      "uniqueness": "server|global"
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": [true, true]
+   *    }
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testValidateBooleanTypesUnique(Uniqueness uniqueness)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.BOOLEAN)
+                                                            .uniqueness(uniqueness)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.addAll(Arrays.asList(BooleanNode.getTrue(), BooleanNode.getTrue()));
+
+    try
+    {
+      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
+                                          schemaAttribute.getUniqueness().getValue(),
+                                          arrayNode);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
+    }
+  }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "dateTime",
+   *      "multiValued": true,
+   *      "uniqueness": "server|global"
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": ["2019-10-18T14:51:11+02:00", "2019-10-18T14:51:11+02:00"]
+   *    }
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"SERVER", "GLOBAL"})
+  public void testValidateDateTypesUnique(Uniqueness uniqueness)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.DATE_TIME)
+                                                            .uniqueness(uniqueness)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.addAll(Arrays.asList(new TextNode("2019-10-18T14:51:11+02:00"),
+                                   new TextNode("2019-10-18T14:51:11+02:00")));
+
+    try
+    {
+      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
+                                          schemaAttribute.getUniqueness().getValue(),
+                                          arrayNode);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
     }
   }
 }
