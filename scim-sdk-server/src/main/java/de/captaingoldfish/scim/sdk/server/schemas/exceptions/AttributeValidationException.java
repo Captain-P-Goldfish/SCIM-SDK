@@ -19,4 +19,10 @@ public class AttributeValidationException extends RuntimeException
     super(message);
     this.schemaAttribute = schemaAttribute;
   }
+
+  public AttributeValidationException(SchemaAttribute schemaAttribute, String message, Throwable cause)
+  {
+    super(message, cause);
+    this.schemaAttribute = schemaAttribute;
+  }
 }
