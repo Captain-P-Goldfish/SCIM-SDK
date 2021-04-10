@@ -46,7 +46,7 @@ public class SimpleAttributeValidator
    * @param attribute the attribute from the document
    * @return true if the attribute is a json leaf node, false else
    */
-  public static boolean isSimpleNode(JsonNode attribute)
+  protected static boolean isSimpleNode(JsonNode attribute)
   {
     return attribute.isNull() || (!attribute.isArray() && !attribute.isObject());
   }
@@ -57,6 +57,15 @@ public class SimpleAttributeValidator
    */
   public static JsonNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
+    if (!isSimpleNode(attribute))
+    {
+      String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
+                                          schemaAttribute.getFullResourceName(),
+                                          attribute);
+      throw new AttributeValidationException(schemaAttribute, errorMessage);
+    }
+    checkCanonicalValues(schemaAttribute, attribute);
+
     Type type = schemaAttribute.getType();
     switch (type)
     {

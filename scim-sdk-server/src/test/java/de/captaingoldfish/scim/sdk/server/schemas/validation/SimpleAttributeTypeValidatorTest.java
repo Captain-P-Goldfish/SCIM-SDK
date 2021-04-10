@@ -627,6 +627,60 @@ public class SimpleAttributeTypeValidatorTest
   }
 
   /**
+   * verifies that an object is not successfully validated as simple type
+   */
+  @Test
+  public void testParseObjectNodeAsSimpleNode()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
+
+    ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
+    JsonNode content = new TextNode("hello world");
+    attribute.set("bad", content);
+
+    try
+    {
+      SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      final String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
+                                                schemaAttribute.getFullResourceName(),
+                                                attribute);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
+    }
+  }
+
+  /**
+   * verifies that an array is not successfully validated as simple type
+   */
+  @Test
+  public void testParseArrayNodeAsSimpleNode()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
+
+    ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
+    JsonNode content = new TextNode("hello world");
+    attribute.add(content);
+
+    try
+    {
+      SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      Assertions.fail("this point must not be reached");
+    }
+    catch (AttributeValidationException ex)
+    {
+      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+      final String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
+                                                schemaAttribute.getFullResourceName(),
+                                                attribute);
+      Assertions.assertEquals(errorMessage, ex.getMessage());
+    }
+  }
+
+  /**
    * failing tests for string types
    */
   @Nested
@@ -1253,5 +1307,4 @@ public class SimpleAttributeTypeValidatorTest
       }
     }
   }
-
 }
