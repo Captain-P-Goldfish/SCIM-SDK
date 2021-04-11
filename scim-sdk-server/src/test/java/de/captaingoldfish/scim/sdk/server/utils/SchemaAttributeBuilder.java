@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.junit.platform.commons.util.StringUtils;
@@ -68,6 +69,8 @@ public class SchemaAttributeBuilder
   private ArrayNode canonicalValues;
 
   private ArrayNode referenceTypes;
+
+  private ArrayNode subAttributes;
 
   private Double multipleOf;
 
@@ -191,6 +194,13 @@ public class SchemaAttributeBuilder
     return this;
   }
 
+  public SchemaAttributeBuilder subAttributes(SchemaAttribute... subAttributes)
+  {
+    this.subAttributes = new ArrayNode(JsonNodeFactory.instance);
+    Optional.ofNullable(subAttributes).ifPresent(values -> this.subAttributes.addAll(Arrays.asList(values)));
+    return this;
+  }
+
   public SchemaAttributeBuilder multipleOf(double multipleOf)
   {
     this.multipleOf = multipleOf;
@@ -282,6 +292,8 @@ public class SchemaAttributeBuilder
             .ifPresent(values -> schemaAttribute.set(AttributeNames.RFC7643.CANONICAL_VALUES, values));
     Optional.ofNullable(referenceTypes)
             .ifPresent(values -> schemaAttribute.set(AttributeNames.RFC7643.REFERENCE_TYPES, values));
+    Optional.ofNullable(subAttributes)
+            .ifPresent(values -> schemaAttribute.set(AttributeNames.RFC7643.SUB_ATTRIBUTES, values));
 
     Optional.ofNullable(multipleOf).ifPresent(schemaAttribute::setMultipleOf);
     Optional.ofNullable(minimum).ifPresent(schemaAttribute::setMinimum);
