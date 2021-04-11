@@ -1,0 +1,101 @@
+package de.captaingoldfish.scim.sdk.server.schemas.validation;
+
+import java.util.Optional;
+
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+
+
+/**
+ * @author Pascal Knueppel
+ * @since 10.04.2021
+ */
+public class RequestAttributeValidator
+{
+
+  /**
+   * validates a schema attribute in the context of a client-request that is either a POST or a PUT request
+   * 
+   * @param schemaAttribute the attributes definition
+   * @param attribute the attribute to validate
+   * @param httpMethod the current request type that is either POST or PUT
+   * @return the validated json node or an empty if the attribute is not present or should be ignored
+   * @throws AttributeValidationException if the client has send an invalid attribute that does not match its
+   *           definition
+   */
+  public static Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute,
+                                                     JsonNode attribute,
+                                                     HttpMethod httpMethod)
+  {
+    ContextValidator requestContextValidator = getContextValidator(httpMethod);
+    return ValidationSelector.validateNode(schemaAttribute, attribute, requestContextValidator);
+  }
+
+  /**
+   * the validation implementation that must only be executed in the context of a client-request
+   * 
+   * @param httpMethod the http method that should either be POST or PUT since this method should only be called
+   *          in case of creating and updating objects
+   * @return the context validation for client requests
+   */
+  private static ContextValidator getContextValidator(final HttpMethod httpMethod)
+  {
+    return (schemaAttribute, attribute) -> {
+
+      // read only attributes are not accepted on request so we will simply ignore this attribute
+      if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
+      {
+        return false;
+      }
+      final boolean isNodeNull = attribute == null || attribute.isNull();
+
+      if (!schemaAttribute.isRequired())
+      {
+        // if the node is not required and null the context validator needs to return false to ignore the validation
+        // for this attribute since its definition says it is ignorable.
+        return !isNodeNull;
+      }
+
+      validateRequiredAttribute(httpMethod, schemaAttribute, isNodeNull);
+      return true;
+    };
+  }
+
+  /**
+   * validates a required attribute
+   * 
+   * @param httpMethod the http method that is necessary for immutable required attribute validation
+   * @param schemaAttribute the attributes definiton
+   * @param isNodeNull if the attribute is null or not
+   */
+  private static void validateRequiredAttribute(HttpMethod httpMethod,
+                                                SchemaAttribute schemaAttribute,
+                                                boolean isNodeNull)
+  {
+    // null nodes are not allowed for required attributes that have a mutability of readOnly or writeOnly
+    if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
+         || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
+        && isNodeNull)
+    {
+      String errorMessage = String.format("'%s' attribute '%s' is required but is missing",
+                                          schemaAttribute.getMutability(),
+                                          schemaAttribute.getFullResourceName());
+      throw new AttributeValidationException(schemaAttribute, errorMessage);
+    }
+
+    // immutable required attributes must be set on object creation therefore we check for http-method POST
+    if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && HttpMethod.POST.equals(httpMethod)
+        && isNodeNull)
+    {
+      String errorMessage = String.format("'%s' required attribute '%s' must be set on object creation",
+                                          schemaAttribute.getMutability(),
+                                          schemaAttribute.getFullResourceName());
+      throw new AttributeValidationException(schemaAttribute, errorMessage);
+    }
+  }
+
+}
