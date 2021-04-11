@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -71,6 +72,35 @@ public class ValidationSelectorTest
     }
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
     Assertions.assertTrue(validatedNode.isPresent());
+  }
+
+  /**
+   * verifies that the {@link ValidationSelector} validates successfully a complex attribute if the
+   * {@link ContextValidator} returns true and the given attribute definition and its attribute are complex
+   */
+  @Test
+  public void testValidateComplexAttribute()
+  {
+    SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder().name("firstname").type(Type.STRING).build();
+    SchemaAttribute lastnameAttribute = SchemaAttributeBuilder.builder().name("lastname").type(Type.STRING).build();
+    SchemaAttribute ageAttribute = SchemaAttributeBuilder.builder().name("age").type(Type.INTEGER).build();
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("person")
+                                                            .type(Type.COMPLEX)
+                                                            .subAttributes(firstnameAttribute,
+                                                                           lastnameAttribute,
+                                                                           ageAttribute)
+                                                            .build();
+
+    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
+    attribute.set("firstname", new TextNode("Captain"));
+    attribute.set("lastname", new TextNode("Goldfish"));
+    attribute.set("age", new IntNode(35));
+
+    Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+    Assertions.assertTrue(validatedNode.isPresent());
+    Assertions.assertEquals(attribute, validatedNode.get());
   }
 
 

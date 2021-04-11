@@ -54,7 +54,10 @@ public class ValidationSelector
     {
       if (isComplexType)
       {
-        return Optional.empty();
+        JsonNode validatedAttribute = ComplexAttributeValidator.parseNodeType(schemaAttribute,
+                                                                              attribute,
+                                                                              contextValidator);
+        return Optional.ofNullable(validatedAttribute);
       }
       else
       {
