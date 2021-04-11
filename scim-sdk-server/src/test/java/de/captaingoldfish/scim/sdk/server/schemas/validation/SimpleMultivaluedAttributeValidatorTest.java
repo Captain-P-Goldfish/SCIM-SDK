@@ -484,9 +484,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     }
     catch (AttributeValidationException ex)
     {
-      String errorMessage = String.format("Attribute '%s' is expected to hold only simple values but is '%s'",
-                                          schemaAttribute.getFullResourceName(),
-                                          arrayNode);
+      String errorMessage = String.format("Found unsupported value in multivalued attribute '%s'", arrayNode);
       Assertions.assertEquals(errorMessage, ex.getMessage());
     }
   }
@@ -528,9 +526,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     }
     catch (AttributeValidationException ex)
     {
-      String errorMessage = String.format("Attribute '%s' is expected to hold only simple values but is '%s'",
-                                          schemaAttribute.getFullResourceName(),
-                                          arrayNode);
+      String errorMessage = String.format("Found unsupported value in multivalued attribute '%s'", arrayNode);
       Assertions.assertEquals(errorMessage, ex.getMessage());
     }
   }
@@ -802,11 +798,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     catch (AttributeValidationException ex)
     {
       Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-      String errorMessage = String.format("Attribute with name '%s' does not match one of its canonicalValues "
-                                          + "'%s' actual value is '%s'",
-                                          schemaAttribute.getFullResourceName(),
-                                          schemaAttribute.getCanonicalValues(),
-                                          arrayNode.get(2).textValue());
+      String errorMessage = String.format("Found unsupported value in multivalued attribute '%s'", arrayNode);
       Assertions.assertEquals(errorMessage, ex.getMessage());
     }
   }

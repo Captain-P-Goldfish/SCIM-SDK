@@ -44,16 +44,6 @@ public class SimpleMultivaluedAttributeValidator
       List<String> uniqueValueList = new ArrayList<>();
       for ( JsonNode jsonNode : arrayNode )
       {
-        boolean isSimpleAttribute = SimpleAttributeValidator.isSimpleNode(jsonNode);
-        if (!isSimpleAttribute)
-        {
-          String errorMessage = String.format("Attribute '%s' is expected to hold only simple values but is '%s'",
-                                              schemaAttribute.getFullResourceName(),
-                                              attribute);
-          throw new AttributeValidationException(schemaAttribute, errorMessage);
-        }
-        SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, jsonNode);
-
         if (!Uniqueness.NONE.equals(schemaAttribute.getUniqueness()))
         {
           if (uniqueValueList.contains(jsonNode.textValue()))
