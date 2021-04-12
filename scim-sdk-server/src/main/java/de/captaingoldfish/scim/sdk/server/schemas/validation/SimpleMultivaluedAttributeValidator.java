@@ -68,7 +68,7 @@ public class SimpleMultivaluedAttributeValidator
         }
       }
     }
-    return scimArrayNode;
+    return scimArrayNode.isEmpty() ? null : scimArrayNode;
   }
 
   /**
