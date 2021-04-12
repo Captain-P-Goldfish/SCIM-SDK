@@ -1082,4 +1082,37 @@ public class SimpleMultivaluedAttributeValidatorTest
       Assertions.assertEquals(errorMessage, ex.getMessage());
     }
   }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "string",
+   *      "multiValued": true,
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": []
+   *    }
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"STRING", "INTEGER", "DECIMAL", "BOOLEAN", "DATE_TIME", "REFERENCE"})
+  public void testValidateEmptyArray(Type type)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(type)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
+      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+    });
+    Assertions.assertNull(scimArrayNode);
+  }
 }
