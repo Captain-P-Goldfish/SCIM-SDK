@@ -42,12 +42,15 @@ public class ValidationSelector
     {
       if (isComplexType)
       {
-        return Optional.empty();
+        JsonNode validatedAttribute = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
+                                                                                         attribute,
+                                                                                         contextValidator);
+        return Optional.ofNullable(validatedAttribute);
       }
       else
       {
         JsonNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
-        return Optional.of(validatedAttribute);
+        return Optional.ofNullable(validatedAttribute);
       }
     }
     else

@@ -9,7 +9,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
@@ -31,6 +35,82 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestAttributeValidatorTest
 {
 
+
+  /**
+   * test validating a nested complex object. This is actually forbidden by RFC7643 but this should be a
+   * restriction based on the service providers decisions when creating the schema.
+   *
+   * <pre>
+   *    {
+   *      "type": "complex",
+   *      "required": true
+   *      "subAttributes": [
+   *        {
+   *          "name": "firstname",
+   *          "type": "string",
+   *          ...
+   *        }, 
+   *        {
+   *          "name": "nested",
+   *          "type": "complex",
+   *          "subAttributes": [
+   *              "name": "lastname",
+   *              "type": "string",
+   *              ...
+   *          ]
+   *          ...
+   *          
+   *        }
+   *      ]
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   * {
+   *   "object": {
+   *     "firstname": "captain"
+   *     "nested": {
+   *       "lastname": "goldfish"
+   *     }
+   *   }
+   * }
+   * </pre>
+   */
+  @Test
+  public void testNestedComplexValidation()
+  {
+    SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder().name("firstname").type(Type.STRING).build();
+    SchemaAttribute lastnameAttribute = SchemaAttributeBuilder.builder().name("lastname").type(Type.STRING).build();
+    SchemaAttribute nestedAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("nested")
+                                                            .type(Type.COMPLEX)
+                                                            .subAttributes(lastnameAttribute)
+                                                            .build();
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("person")
+                                                            .type(Type.COMPLEX)
+                                                            .required(true)
+                                                            .subAttributes(firstnameAttribute, nestedAttribute)
+                                                            .build();
+
+    ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
+    attribute.set("firstname", new TextNode("captain"));
+    ObjectNode nested = new ObjectNode(JsonNodeFactory.instance);
+    nested.set("lastname", new TextNode("goldfish"));
+    attribute.set("nested", nested);
+
+
+    Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+      return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+    });
+    Assertions.assertTrue(validatedNode.isPresent());
+    Assertions.assertEquals(attribute, validatedNode.get());
+  }
+
+  // -------------------------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------------------------
+  // -------------------------------------------------------------------------------------------------------
 
   @Nested
   public class ReadOnlyTests
@@ -118,6 +198,162 @@ public class RequestAttributeValidatorTest
         }
       }
     }
+
+    /**
+     * tests the following structure
+     *
+     * <pre>
+     *    {
+     *      "type": "complex",
+     *      "multiValued": true,
+     *      "mutability": "readOnly"
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * {
+     *   "array": [
+     *      {
+     *        ...
+     *      }
+     *   ]
+     * }
+     * </pre>
+     */
+    @Test
+    public void testComplexMultivaluedValidationAsReadOnly()
+    {
+      SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder().name("firstname").type(Type.STRING).build();
+      SchemaAttribute primaryAttribute = SchemaAttributeBuilder.builder().name("primary").type(Type.BOOLEAN).build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("person")
+                                                              .type(Type.COMPLEX)
+                                                              .multivalued(true)
+                                                              .mutability(Mutability.READ_ONLY)
+                                                              .subAttributes(firstnameAttribute, primaryAttribute)
+                                                              .build();
+
+      // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
+      ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
+      ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
+      element.set("firstname", new TextNode("Captain"));
+      element.set("primary", BooleanNode.getTrue());
+      attribute.add(element);
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * tests the following structure and expects an empty to be returned due to the read only nature of the
+     * sub-attributes
+     *
+     * <pre>
+     *    {
+     *      "type": "complex",
+     *      "multiValued": true,
+     *      "subAttributes": [
+     *        {
+     *          "name": "firstname",
+     *          "mutability": "readOnly",
+     *          ...
+     *        }
+     *      ]
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * {
+     *   "array": [
+     *      {
+     *        "firstname": "goldfish"
+     *      }
+     *   ]
+     * }
+     * </pre>
+     */
+    @Test
+    public void testComplexMultivaluedValidationWithReadOnlySubAttributes()
+    {
+      SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder()
+                                                                 .name("firstname")
+                                                                 .type(Type.STRING)
+                                                                 .mutability(Mutability.READ_ONLY)
+                                                                 .build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("person")
+                                                              .type(Type.COMPLEX)
+                                                              .multivalued(true)
+                                                              .subAttributes(firstnameAttribute)
+                                                              .build();
+
+      // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
+      ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
+      ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
+      element.set("firstname", new TextNode("goldfish"));
+      attribute.add(element);
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * tests the following structure and expects an empty to be returned due to the read only nature of the
+     * sub-attributes
+     *
+     * <pre>
+     *    {
+     *      "type": "complex",
+     *      "multiValued": false,
+     *      "mutability": "readOnly",
+     *      "subAttributes": [
+     *        {
+     *          "name": "firstname",
+     *          "mutability": "readOnly",
+     *          ...
+     *        }
+     *      ]
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * {
+     *   "object": {
+     *     "firstname": "goldfish"
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testComplexValidationWithReadOnlySubAttributes()
+    {
+      SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder()
+                                                                 .name("firstname")
+                                                                 .type(Type.STRING)
+                                                                 .mutability(Mutability.READ_ONLY)
+                                                                 .build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("person")
+                                                              .type(Type.COMPLEX)
+                                                              .subAttributes(firstnameAttribute)
+                                                              .build();
+
+      // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
+      ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
+      attribute.set("firstname", new TextNode("goldfish"));
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
   }
 
   // -------------------------------------------------------------------------------------------------------
@@ -195,10 +431,6 @@ public class RequestAttributeValidatorTest
       Assertions.assertEquals("123456", scimTextNode.textValue());
     }
   }
-
-  // -------------------------------------------------------------------------------------------------------
-  // -------------------------------------------------------------------------------------------------------
-  // -------------------------------------------------------------------------------------------------------
 
   @Nested
   public class RequiredTrueTests
@@ -405,6 +637,78 @@ public class RequestAttributeValidatorTest
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
       Assertions.assertEquals(attribute, jsonNode);
+    }
+
+    /**
+     * tests the following structure and expects an empty to be returned due to the read only nature of the
+     * sub-attributes
+     *
+     * <pre>
+     *    {
+     *      "type": "complex",
+     *      "required": true
+     *      "subAttributes": [
+     *        {
+     *          "name": "firstname",
+     *          "mutability": "readOnly",
+     *          ...
+     *        }
+     *      ]
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * {
+     *   "object": {
+     *     "firstname": "goldfish"
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testComplexValidationWithReadOnlySubAttributes()
+    {
+      SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder()
+                                                                 .name("firstname")
+                                                                 .type(Type.STRING)
+                                                                 .mutability(Mutability.READ_ONLY)
+                                                                 .build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("person")
+                                                              .type(Type.COMPLEX)
+                                                              .required(true)
+                                                              .subAttributes(firstnameAttribute)
+                                                              .build();
+
+      // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
+      ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
+      attribute.set("firstname", new TextNode("goldfish"));
+
+
+      try
+      {
+        RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        {
+          Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+          String errorMessage = String.format("The required attribute '%s' was evaluated to an empty during "
+                                              + "schema validation but the attribute is required '%s'",
+                                              schemaAttribute.getFullResourceName(),
+                                              attribute);
+          Assertions.assertEquals(errorMessage, ex.getMessage());
+        }
+        {
+          AttributeValidationException cause = (AttributeValidationException)ex.getCause();
+          String errorMessage = String.format("'%s' attribute '%s' is required but is missing",
+                                              schemaAttribute.getMutability(),
+                                              schemaAttribute.getFullResourceName());
+          Assertions.assertEquals(errorMessage, cause.getMessage());
+        }
+      }
     }
   }
 }

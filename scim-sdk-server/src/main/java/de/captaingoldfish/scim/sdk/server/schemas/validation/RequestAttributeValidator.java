@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 
@@ -32,7 +33,27 @@ public class RequestAttributeValidator
                                                      HttpMethod httpMethod)
   {
     ContextValidator requestContextValidator = getContextValidator(httpMethod);
-    return ValidationSelector.validateNode(schemaAttribute, attribute, requestContextValidator);
+    Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute,
+                                                                       attribute,
+                                                                       requestContextValidator);
+    // checking once more for required is necessary for complex attributes and multivalued complex attributes
+    // that have been evaluated to an empty.
+    if (Type.COMPLEX.equals(schemaAttribute.getType()))
+    {
+      try
+      {
+        validateRequiredAttribute(httpMethod, schemaAttribute, !validatedNode.isPresent());
+      }
+      catch (AttributeValidationException ex)
+      {
+        String errorMessage = String.format("The required attribute '%s' was evaluated to an empty during "
+                                            + "schema validation but the attribute is required '%s'",
+                                            schemaAttribute.getFullResourceName(),
+                                            attribute);
+        throw new AttributeValidationException(schemaAttribute, errorMessage, ex);
+      }
+    }
+    return validatedNode;
   }
 
   /**
@@ -76,6 +97,10 @@ public class RequestAttributeValidator
                                                 SchemaAttribute schemaAttribute,
                                                 boolean isNodeNull)
   {
+    if (!schemaAttribute.isRequired())
+    {
+      return;
+    }
     // null nodes are not allowed for required attributes that have a mutability of readOnly or writeOnly
     if ((Mutability.READ_WRITE.equals(schemaAttribute.getMutability())
          || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
