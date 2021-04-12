@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -103,5 +104,68 @@ public class ValidationSelectorTest
     Assertions.assertEquals(attribute, validatedNode.get());
   }
 
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "complex",
+   *      "multiValued": true
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": [
+   *        {
+   *           "firstname": "goldfish",
+   *           "primary": true
+   *        },
+   *        {
+   *           "firstname": "banjo",
+   *           "primary": false
+   *        },
+   *        {
+   *           "firstname": "kazooie"
+   *        }
+   *      ]
+   *    }
+   * </pre>
+   */
+  @Test
+  public void testComplexMultivaluedValidation()
+  {
+    SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder().name("firstname").type(Type.STRING).build();
+    SchemaAttribute primaryAttribute = SchemaAttributeBuilder.builder().name("primary").type(Type.BOOLEAN).build();
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("person")
+                                                            .type(Type.COMPLEX)
+                                                            .multivalued(true)
+                                                            .subAttributes(firstnameAttribute, primaryAttribute)
+                                                            .build();
 
+    // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
+    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
+    ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
+    element.set("firstname", new TextNode("goldfish"));
+    element.set("primary", BooleanNode.getTrue());
+    attribute.add(element);
+
+    ObjectNode element2 = new ObjectNode(JsonNodeFactory.instance);
+    element2.set("firstname", new TextNode("banjo"));
+    element2.set("primary", BooleanNode.getFalse());
+    attribute.add(element2);
+
+    ObjectNode element3 = new ObjectNode(JsonNodeFactory.instance);
+    element3.set("firstname", new TextNode("kazooie"));
+    attribute.add(element3);
+
+    Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+      return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+    });
+    Assertions.assertTrue(validatedNode.isPresent());
+    Assertions.assertEquals(attribute, validatedNode.get());
+  }
 }
