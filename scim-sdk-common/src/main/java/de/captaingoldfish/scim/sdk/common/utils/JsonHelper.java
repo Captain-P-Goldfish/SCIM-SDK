@@ -418,10 +418,6 @@ public final class JsonHelper
     {
       return Optional.of((T)Double.valueOf(attribute.asDouble()));
     }
-    if (Long.class.equals(type))
-    {
-      return Optional.of((T)Long.valueOf(attribute.asLong()));
-    }
     throw new IncompatibleAttributeException("attribute '" + attribute + "' is not of type" + type.getSimpleName(),
                                              null, null, null);
   }
