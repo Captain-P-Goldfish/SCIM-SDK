@@ -10,12 +10,13 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -400,13 +401,6 @@ public class ResourceType extends ResourceNode
   public class SchemaExtension extends ScimObjectNode
   {
 
-    public SchemaExtension(String schema, boolean required)
-    {
-      super(null);
-      setSchema(schema);
-      setRequired(required);
-    }
-
     public SchemaExtension(JsonNode jsonNode)
     {
       super(null);
@@ -482,15 +476,18 @@ public class ResourceType extends ResourceNode
 
     public ResourceSchema(JsonNode resourceDocument)
     {
-      Supplier<String> errorMessage = () -> missingAttrMessage(AttributeNames.RFC7643.SCHEMAS) + " in resource "
-                                            + "document: \n" + (resourceDocument == null ? null
-                                              : JsonHelper.toPrettyJsonString(resourceDocument));
       List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.RFC7643.SCHEMAS)
-                                       .orElseThrow(() -> getBadRequestException(errorMessage.get()));
-      if (!schemas.contains(getSchema()))
+                                       .orElseGet(ArrayList::new);
+
+      if (schemas.isEmpty())
       {
-        throw getBadRequestException("main resource schema '" + getSchema() + "' is not present in resource. Main "
-                                     + "schema is: " + getSchema());
+        // if the schemas attribute is missing add it now and simply assume the
+        // resource to be the correct one
+        ObjectNode resource = (ObjectNode)resourceDocument;
+        schemas.add(getSchema());
+        ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
+        schemasNode.add(getSchema());
+        resource.set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
       }
 
       Function<String, String> missingSchema = s -> "resource schema with uri '" + s + "' is not registered";

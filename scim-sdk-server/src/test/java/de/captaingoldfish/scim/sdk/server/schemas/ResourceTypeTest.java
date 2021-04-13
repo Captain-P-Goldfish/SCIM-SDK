@@ -19,7 +19,6 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -170,7 +169,8 @@ public class ResourceTypeTest implements FileReferences
 
   /**
    * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method is missing the
-   * 'schemas'-attribute an {@link InvalidResourceTypeException} is expected
+   * 'schemas'-attribute the implementation expects the resource to be the correct one and adds the main schema
+   * manually to the resource
    */
   @Test
   public void testGetResourceSchemaWithMissingSchemasAttribute()
@@ -180,7 +180,12 @@ public class ResourceTypeTest implements FileReferences
     ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     JsonHelper.removeAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS);
-    Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
+    ResourceType.ResourceSchema resourceSchema = Assertions.assertDoesNotThrow(() -> {
+      return roleResourceType.getResourceSchema(adminRole);
+    });
+    Assertions.assertEquals(1, adminRole.get(AttributeNames.RFC7643.SCHEMAS).size());
+    Assertions.assertEquals(roleResourceType.getMainSchema().getNonNullId(),
+                            adminRole.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
   }
 
   /**
@@ -196,7 +201,12 @@ public class ResourceTypeTest implements FileReferences
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
     JsonHelper.replaceNode(adminRole, AttributeNames.RFC7643.SCHEMAS, schemasNode);
-    Assertions.assertThrows(BadRequestException.class, () -> roleResourceType.getResourceSchema(adminRole));
+    ResourceType.ResourceSchema resourceSchema = Assertions.assertDoesNotThrow(() -> {
+      return roleResourceType.getResourceSchema(adminRole);
+    });
+    Assertions.assertEquals(1, adminRole.get(AttributeNames.RFC7643.SCHEMAS).size());
+    Assertions.assertEquals(roleResourceType.getMainSchema().getNonNullId(),
+                            adminRole.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
   }
 
   /**
