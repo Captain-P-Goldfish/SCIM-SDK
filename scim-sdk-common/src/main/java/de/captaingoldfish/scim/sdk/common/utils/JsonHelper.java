@@ -410,10 +410,6 @@ public final class JsonHelper
     {
       return Optional.of((T)Long.valueOf(attribute.asLong()));
     }
-    if (Float.class.equals(type))
-    {
-      return Optional.of((T)Float.valueOf((float)attribute.asDouble()));
-    }
     if (Double.class.equals(type))
     {
       return Optional.of((T)Double.valueOf(attribute.asDouble()));
