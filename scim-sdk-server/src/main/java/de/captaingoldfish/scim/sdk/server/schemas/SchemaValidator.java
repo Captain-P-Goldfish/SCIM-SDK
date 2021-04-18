@@ -258,8 +258,8 @@ public class SchemaValidator
                                                      Class<? extends ResourceNode> resourceNodeType)
     throws DocumentValidationException
   {
-    ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
-    JsonNode validatedMainDocument = validateDocumentForResponse(resourceSchema.getMetaSchema(),
+    DocumentDescription documentDescription = new DocumentDescription(resourceType, document);
+    JsonNode validatedMainDocument = validateDocumentForResponse(documentDescription.getMetaSchema(),
                                                                  document,
                                                                  validatedRequest,
                                                                  attributes,
@@ -268,7 +268,7 @@ public class SchemaValidator
                                                                  resourceTypeFactory,
                                                                  resourceNodeType);
     validatedForMissingRequiredExtension(resourceType, document, DirectionType.RESPONSE);
-    for ( Schema schemaExtension : resourceSchema.getExtensions() )
+    for ( Schema schemaExtension : documentDescription.getExtensions() )
     {
       Supplier<String> message = () -> "the extension '" + schemaExtension.getId() + "' is referenced in the '"
                                        + AttributeNames.RFC7643.SCHEMAS + "' attribute but is "
@@ -459,7 +459,7 @@ public class SchemaValidator
                                                           Class<? extends ResourceNode> type)
     throws DocumentValidationException
   {
-    ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(document);
+    DocumentDescription resourceSchema = new DocumentDescription(resourceType, document);
     ScimObjectNode validatedMainDocument = validateDocumentForRequest(resourceSchema.getMetaSchema(),
                                                                       document,
                                                                       httpMethod,
