@@ -633,7 +633,7 @@ public class SchemaValidator
     {
       if (!JsonHelper.getObjectAttribute(document, requiredExtension.getNonNullId()).isPresent())
       {
-        String errorMessage = "required extension '" + requiredExtension.getId() + "' is missing in the document";
+        String errorMessage = "Required extension '" + requiredExtension.getId() + "' is missing in the document";
         throw new DocumentValidationException(errorMessage, null, directionType == null
           ? HttpStatus.INTERNAL_SERVER_ERROR : directionType.getHttpStatus(), null);
       }

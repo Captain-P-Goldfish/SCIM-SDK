@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidation
  * @author Pascal Knueppel
  * @since 11.04.2021
  */
+@FunctionalInterface
 public interface ContextValidator
 {
 

@@ -28,7 +28,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -2482,6 +2484,29 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     return dynamicTests;
+  }
+
+  /**
+   * verifies that a bad request is returned if the the sent body is not a json object
+   */
+  @Test
+  public void testBadRequestOnNoneObjectRequestBody()
+  {
+    final String userName = "chuck_norris";
+    final User user = User.builder().id(UUID.randomUUID().toString()).userName(userName).build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.add(user.toString());
+
+    final String url = BASE_URI + EndpointPaths.USERS;
+
+    Mockito.doReturn(user).when(userHandler).createResource(Mockito.any(), Mockito.isNull());
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, arrayNode.toString(), httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    String errorMessage = String.format("The received resource document is not an object '%s'", arrayNode);
+    Assertions.assertEquals(errorMessage, errorResponse.getDetail().get());
   }
 
   /**
