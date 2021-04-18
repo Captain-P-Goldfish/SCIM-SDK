@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -138,7 +140,8 @@ public class ResourceTypeTest implements FileReferences
 
   /**
    * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method references an unknown
-   * schema an {@link InvalidResourceTypeException} is expected
+   * schema we expect to get the correct schemas attribute back into the resource node and the wrong value
+   * should be removed
    */
   @Test
   public void testGetUnregisteredSchema()
@@ -148,7 +151,12 @@ public class ResourceTypeTest implements FileReferences
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS).get();
     schemas.add(new TextNode("urn:unknown:reference"));
-    Assertions.assertThrows(InvalidResourceTypeException.class, () -> roleResourceType.getResourceSchema(adminRole));
+    ResourceType.ResourceSchema resourceSchema = Assertions.assertDoesNotThrow(() -> roleResourceType.getResourceSchema(adminRole));
+    String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
+    Assertions.assertEquals(roleUri, resourceSchema.getMetaSchema().getNonNullId());
+    List<String> schemasList = JsonHelper.getSimpleAttributeArray(adminRole, AttributeNames.RFC7643.SCHEMAS).get();
+    Assertions.assertEquals(1, schemasList.size());
+    MatcherAssert.assertThat(schemasList, Matchers.hasItem(roleUri));
   }
 
   /**

@@ -4,12 +4,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
@@ -23,12 +20,11 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -167,6 +163,19 @@ public class ResourceType extends ResourceNode
   }
 
   /**
+   * checks if the schema with the given uri is a required extension
+   * 
+   * @param schemaUri the extension of the schema
+   * @return true if the given extension is required, false else
+   */
+  private boolean isExtensionRequired(String schemaUri)
+  {
+    return getSchemaExtensions().stream()
+                                .filter(schemaExtension -> schemaExtension.getSchema().equals(schemaUri))
+                                .anyMatch(SchemaExtension::isRequired);
+  }
+
+  /**
    * @return the not required resource schema extensions that represents this resource type
    */
   public List<Schema> getNotRequiredResourceSchemaExtensions()
@@ -228,17 +237,6 @@ public class ResourceType extends ResourceNode
   private ScimException getInvalidResourceException(String message)
   {
     return new InvalidResourceTypeException(message, null, HttpStatus.INTERNAL_SERVER_ERROR, null);
-  }
-
-  /**
-   * builds an exception for malformed requests
-   *
-   * @param message the error message
-   * @return the exception
-   */
-  private ScimException getBadRequestException(String message)
-  {
-    return new BadRequestException(message, null, null);
   }
 
   /**
@@ -474,59 +472,50 @@ public class ResourceType extends ResourceNode
      */
     private List<Schema> extensions;
 
-    public ResourceSchema(JsonNode resourceDocument)
+    public ResourceSchema(JsonNode jsonNode)
     {
-      List<String> schemas = JsonHelper.getSimpleAttributeArray(resourceDocument, AttributeNames.RFC7643.SCHEMAS)
-                                       .orElseGet(ArrayList::new);
-
-      if (schemas.isEmpty())
+      if (!jsonNode.isObject())
       {
-        // if the schemas attribute is missing add it now and simply assume the
-        // resource to be the correct one
-        ObjectNode resource = (ObjectNode)resourceDocument;
-        schemas.add(getSchema());
-        ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
-        schemasNode.add(getSchema());
-        resource.set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
+        String errorMessage = String.format("The received resource document is not an object '%s'", jsonNode);
+        throw new DocumentValidationException(errorMessage, HttpStatus.BAD_REQUEST, null);
       }
 
-      Function<String, String> missingSchema = s -> "resource schema with uri '" + s + "' is not registered";
-      this.metaSchema = Optional.ofNullable(schemaFactory.getResourceSchema(getSchema()))
-                                .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(getSchema())));
-      extensions = new ArrayList<>();
-      schemas.remove(getSchema());
-      validateDocumentForMissingExtensionUris(schemas, resourceDocument);
-      for ( String schemaUri : schemas )
+      this.extensions = new ArrayList<>();
+
+      ObjectNode resourceDocument = (ObjectNode)jsonNode;
+      for ( SchemaExtension schemaExtension : getSchemaExtensions() )
       {
-        extensions.add(Optional.ofNullable(schemaFactory.getResourceSchema(schemaUri))
-                               .orElseThrow(() -> getInvalidResourceException(missingSchema.apply(schemaUri))));
+        addPresentOrRemoveNonePresentExtensions(resourceDocument, schemaExtension);
       }
+      ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
+      final String mainSchemaUri = getSchema();
+      schemasNode.add(mainSchemaUri);
+      extensions.stream().map(Schema::getNonNullId).forEach(schemasNode::add);
+      resourceDocument.set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
+
+      this.metaSchema = getMainSchema();
     }
 
     /**
-     * this method will throw an error if the client added an extension into the document but did not reference it
-     * within the schemas-attribute
+     * checks if an extension is present in the document and adds the schema to the list of present extensions. If
+     * an extension is not set or is a null-node or an empty object the extension will be removed from the
+     * document.
+     *
+     * @param resourceDocument the sent resource document
+     * @param schemaExtension the schema extension attribute from this resource type definition
      */
-    private void validateDocumentForMissingExtensionUris(List<String> schemasAttributeList, JsonNode resourceDocument)
+    private void addPresentOrRemoveNonePresentExtensions(ObjectNode resourceDocument, SchemaExtension schemaExtension)
     {
-      int originalSize = schemasAttributeList.size();
-      getSchemaExtensions().stream().map(SchemaExtension::getSchema).forEach(schemaUri -> {
-        if (resourceDocument.get(schemaUri) != null && !schemasAttributeList.contains(schemaUri))
-        {
-          schemasAttributeList.add(schemaUri);
-        }
-      });
-      int newSize = schemasAttributeList.size();
-      // this will add the missing extension-uris to the schemas-attribute if not set
-      if (originalSize != newSize)
+      JsonNode extensionNode = resourceDocument.get(schemaExtension.getSchema());
+      boolean isExtensionPresent = extensionNode != null && !extensionNode.isNull() && !extensionNode.isEmpty();
+      if (isExtensionPresent)
       {
-        Set<String> schemas = new HashSet<>(schemasAttributeList);
-        schemas.add(getSchema());
-        log.debug("missed to add extension schemaUris to schemas-attribute. Replacing schemas attribute with: {}",
-                  schemas);
-        ScimArrayNode schemasNode = new ScimArrayNode(null);
-        schemas.forEach(schemasNode::add);
-        ((ObjectNode)resourceDocument).set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
+        Schema extensionSchema = schemaFactory.getResourceSchema(schemaExtension.getSchema());
+        this.extensions.add(extensionSchema);
+      }
+      else
+      {
+        resourceDocument.remove(schemaExtension.getSchema());
       }
     }
   }
