@@ -4,8 +4,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,9 +11,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -63,37 +58,6 @@ public class ResourceTypeTest implements FileReferences
   }
 
   /**
-   * this test will simply test if a resource type object will be built successfully and if the values are set
-   * correctly
-   */
-  @Test
-  public void testCreateResourceType()
-  {
-    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
-    Assertions.assertEquals(Collections.singletonList("urn:ietf:params:scim:schemas:core:2.0:ResourceType"),
-                            new ArrayList<>(resourceType.getSchemas()));
-    Assertions.assertEquals("User", resourceType.getId().get());
-    Assertions.assertEquals("User", resourceType.getName());
-    Assertions.assertEquals("User Account", resourceType.getDescription().get());
-    Assertions.assertEquals(SchemaUris.USER_URI, resourceType.getSchema());
-    Assertions.assertEquals("/Users", resourceType.getEndpoint());
-
-    JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    ResourceType.ResourceSchema resourceSchema = resourceType.getResourceSchema(chuckNorris);
-    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
-    Assertions.assertEquals(1, resourceType.getSchemas().size());
-    Assertions.assertEquals(schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI),
-                            schemaFactory.getMetaSchema(resourceType.getSchemas().iterator().next()));
-
-    List<Schema> schemaExtensions = resourceType.getNotRequiredResourceSchemaExtensions();
-    Assertions.assertEquals(1, schemaExtensions.size());
-    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.ENTERPRISE_USER_URI), schemaExtensions.get(0));
-
-    Assertions.assertEquals(0, resourceType.getRequiredResourceSchemaExtensions().size());
-  }
-
-  /**
    * this test will simply test if a resource type object will be built successfully
    */
   @ParameterizedTest
@@ -105,58 +69,6 @@ public class ResourceTypeTest implements FileReferences
     JsonHelper.removeAttribute(userResourceType, attributeName);
     Assertions.assertThrows(InvalidResourceTypeException.class,
                             () -> new ResourceType(schemaFactory, userResourceType));
-  }
-
-  /**
-   * will test that the enterprise user extension is correctly parsed from the json document in the resource
-   * type object
-   */
-  @Test
-  public void testGetBuildResourceSchemaWithExtension()
-  {
-    ResourceType userResourceType = new ResourceType(schemaFactory,
-                                                     JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
-    JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    ResourceType.ResourceSchema resourceSchema = userResourceType.getResourceSchema(chuckNorris);
-    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
-    Assertions.assertEquals(1, resourceSchema.getExtensions().size());
-    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.ENTERPRISE_USER_URI),
-                            resourceSchema.getExtensions().get(0));
-  }
-
-  /**
-   * will test that no extensions are read if the extension has not been used within the resource
-   */
-  @Test
-  public void testGetBuildResourceSchemaWithoutExtension()
-  {
-    ResourceType userResourceType = new ResourceType(schemaFactory,
-                                                     JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON));
-    JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    ResourceType.ResourceSchema resourceSchema = userResourceType.getResourceSchema(chuckNorris);
-    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), resourceSchema.getMetaSchema());
-    Assertions.assertEquals(0, resourceSchema.getExtensions().size());
-  }
-
-  /**
-   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method references an unknown
-   * schema we expect to get the correct schemas attribute back into the resource node and the wrong value
-   * should be removed
-   */
-  @Test
-  public void testGetUnregisteredSchema()
-  {
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    ResourceType roleResourceType = new ResourceType(schemaFactory, JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
-    JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS).get();
-    schemas.add(new TextNode("urn:unknown:reference"));
-    ResourceType.ResourceSchema resourceSchema = Assertions.assertDoesNotThrow(() -> roleResourceType.getResourceSchema(adminRole));
-    String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
-    Assertions.assertEquals(roleUri, resourceSchema.getMetaSchema().getNonNullId());
-    List<String> schemasList = JsonHelper.getSimpleAttributeArray(adminRole, AttributeNames.RFC7643.SCHEMAS).get();
-    Assertions.assertEquals(1, schemasList.size());
-    MatcherAssert.assertThat(schemasList, Matchers.hasItem(roleUri));
   }
 
   /**
@@ -173,67 +85,6 @@ public class ResourceTypeTest implements FileReferences
                                                                                      roleResourceTypeNode));
     Assertions.assertEquals(1, resourceType.getSchemas().size());
     Assertions.assertEquals(SchemaUris.RESOURCE_TYPE_URI, resourceType.getSchemas().iterator().next());
-  }
-
-  /**
-   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method is missing the
-   * 'schemas'-attribute the implementation expects the resource to be the correct one and adds the main schema
-   * manually to the resource
-   */
-  @Test
-  public void testGetResourceSchemaWithMissingSchemasAttribute()
-  {
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
-    JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
-    JsonHelper.removeAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS);
-    ResourceType.ResourceSchema resourceSchema = Assertions.assertDoesNotThrow(() -> {
-      return roleResourceType.getResourceSchema(adminRole);
-    });
-    Assertions.assertEquals(1, adminRole.get(AttributeNames.RFC7643.SCHEMAS).size());
-    Assertions.assertEquals(roleResourceType.getMainSchema().getNonNullId(),
-                            adminRole.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
-  }
-
-  /**
-   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method has an empty
-   * 'schemas'-attribute an {@link InvalidResourceTypeException} is expected
-   */
-  @Test
-  public void testGetResourceSchemaWithEmptySchemasAttribute()
-  {
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    JsonNode roleResourceTypeNode = JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE);
-    ResourceType roleResourceType = new ResourceType(schemaFactory, roleResourceTypeNode);
-    JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
-    ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
-    JsonHelper.replaceNode(adminRole, AttributeNames.RFC7643.SCHEMAS, schemasNode);
-    ResourceType.ResourceSchema resourceSchema = Assertions.assertDoesNotThrow(() -> {
-      return roleResourceType.getResourceSchema(adminRole);
-    });
-    Assertions.assertEquals(1, adminRole.get(AttributeNames.RFC7643.SCHEMAS).size());
-    Assertions.assertEquals(roleResourceType.getMainSchema().getNonNullId(),
-                            adminRole.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
-  }
-
-  /**
-   * if the document put into the {@link ResourceType#getResourceSchema(JsonNode)} method is NOT missing the
-   * required extensions the execution should be successful
-   */
-  @Test
-  public void testRequiredExtensionIsPresent()
-  {
-    schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA));
-    JsonNode customUserResourceType = JsonHelper.loadJsonDocument(USER_CUSTOM_RESOURCE_TYPE);
-    ResourceType userResourceType = new ResourceType(schemaFactory, customUserResourceType);
-    JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(chuckNorris, AttributeNames.RFC7643.SCHEMAS).get();
-    final String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
-    JsonHelper.addAttributeToArray(schemas, new TextNode(roleUri));
-    JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
-    JsonHelper.addAttribute(chuckNorris, roleUri, adminRole);
-    Assertions.assertDoesNotThrow(() -> userResourceType.getResourceSchema(chuckNorris));
   }
 
   /**
@@ -261,6 +112,37 @@ public class ResourceTypeTest implements FileReferences
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
                                                         resourceType.getSchemaExtensions().get(0).getSchema())
                                     .isPresent());
+  }
+
+  /**
+   * this test will simply test if a resource type object will be built successfully and whether the values are
+   * set correctly or not
+   */
+  @Test
+  public void testCreateResourceType()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    ResourceType resourceType = Assertions.assertDoesNotThrow(() -> new ResourceType(schemaFactory, userResourceType));
+    Assertions.assertEquals(Collections.singletonList("urn:ietf:params:scim:schemas:core:2.0:ResourceType"),
+                            new ArrayList<>(resourceType.getSchemas()));
+    Assertions.assertEquals("User", resourceType.getId().get());
+    Assertions.assertEquals("User", resourceType.getName());
+    Assertions.assertEquals("User Account", resourceType.getDescription().get());
+    Assertions.assertEquals(SchemaUris.USER_URI, resourceType.getSchema());
+    Assertions.assertEquals("/Users", resourceType.getEndpoint());
+
+    JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    DocumentDescription documentDescription = new DocumentDescription(resourceType, chuckNorris);
+    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.USER_URI), documentDescription.getMetaSchema());
+    Assertions.assertEquals(1, resourceType.getSchemas().size());
+    Assertions.assertEquals(schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI),
+                            schemaFactory.getMetaSchema(resourceType.getSchemas().iterator().next()));
+
+    List<Schema> schemaExtensions = resourceType.getNotRequiredResourceSchemaExtensions();
+    Assertions.assertEquals(1, schemaExtensions.size());
+    Assertions.assertEquals(schemaFactory.getResourceSchema(SchemaUris.ENTERPRISE_USER_URI), schemaExtensions.get(0));
+
+    Assertions.assertEquals(0, resourceType.getRequiredResourceSchemaExtensions().size());
   }
 
   /**

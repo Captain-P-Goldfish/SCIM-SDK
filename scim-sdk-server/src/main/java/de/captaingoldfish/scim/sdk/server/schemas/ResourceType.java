@@ -12,15 +12,12 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
-import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
@@ -203,18 +200,6 @@ public class ResourceType extends ResourceNode
     });
     schemaList.add(schemaFactory.getMetaSchema(SchemaUris.META));
     return schemaList;
-  }
-
-  /**
-   * will find the meta resource schema and its extensions of this resource type that apply to the given
-   * document
-   *
-   * @param resourceDocument a document that should be validated against its schemas
-   * @return a holder object that contains the meta schemata that can be used to validate the given document
-   */
-  public ResourceSchema getResourceSchema(JsonNode resourceDocument)
-  {
-    return new ResourceSchema(resourceDocument);
   }
 
   /**
@@ -451,72 +436,6 @@ public class ResourceType extends ResourceNode
     private void setRequired(boolean required)
     {
       setAttribute(AttributeNames.RFC7643.REQUIRED, required);
-    }
-  }
-
-  /**
-   * represents the schema descriptions of this resource type
-   */
-  @Getter
-  public class ResourceSchema
-  {
-
-    /**
-     * this is the main schema that will describe the resource
-     */
-    private Schema metaSchema;
-
-    /**
-     * these are the schema extensions that describe the additional attributes of this resource type. This list
-     * will only have those entries added to it that are added in the 'schemas'-attribute of the request
-     */
-    private List<Schema> extensions;
-
-    public ResourceSchema(JsonNode jsonNode)
-    {
-      if (!jsonNode.isObject())
-      {
-        String errorMessage = String.format("The received resource document is not an object '%s'", jsonNode);
-        throw new DocumentValidationException(errorMessage, HttpStatus.BAD_REQUEST, null);
-      }
-
-      this.extensions = new ArrayList<>();
-
-      ObjectNode resourceDocument = (ObjectNode)jsonNode;
-      for ( SchemaExtension schemaExtension : getSchemaExtensions() )
-      {
-        addPresentOrRemoveNonePresentExtensions(resourceDocument, schemaExtension);
-      }
-      ArrayNode schemasNode = new ArrayNode(JsonNodeFactory.instance);
-      final String mainSchemaUri = getSchema();
-      schemasNode.add(mainSchemaUri);
-      extensions.stream().map(Schema::getNonNullId).forEach(schemasNode::add);
-      resourceDocument.set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
-
-      this.metaSchema = getMainSchema();
-    }
-
-    /**
-     * checks if an extension is present in the document and adds the schema to the list of present extensions. If
-     * an extension is not set or is a null-node or an empty object the extension will be removed from the
-     * document.
-     *
-     * @param resourceDocument the sent resource document
-     * @param schemaExtension the schema extension attribute from this resource type definition
-     */
-    private void addPresentOrRemoveNonePresentExtensions(ObjectNode resourceDocument, SchemaExtension schemaExtension)
-    {
-      JsonNode extensionNode = resourceDocument.get(schemaExtension.getSchema());
-      boolean isExtensionPresent = extensionNode != null && !extensionNode.isNull() && !extensionNode.isEmpty();
-      if (isExtensionPresent)
-      {
-        Schema extensionSchema = schemaFactory.getResourceSchema(schemaExtension.getSchema());
-        this.extensions.add(extensionSchema);
-      }
-      else
-      {
-        resourceDocument.remove(schemaExtension.getSchema());
-      }
     }
   }
 }

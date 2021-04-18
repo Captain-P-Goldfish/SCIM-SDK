@@ -19,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.schemas.DocumentDescription;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -45,13 +46,13 @@ public class RequestSchemaValidator
 
   public ScimObjectNode validateDocument(JsonNode resource, HttpMethod httpMethod)
   {
-    ResourceType.ResourceSchema documentResourceSchemas = resourceType.getResourceSchema(resource);
-    checkDocumentAndMetaSchemaRelationship(documentResourceSchemas.getMetaSchema(), resource);
+    DocumentDescription documentDescription = new DocumentDescription(resourceType, resource);
+    checkDocumentAndMetaSchemaRelationship(documentDescription.getMetaSchema(), resource);
     final ResourceNode validatedResource = (ResourceNode)validateResource(JsonHelper.getNewInstance(resourceNodeType),
-                                                                          documentResourceSchemas.getMetaSchema(),
+                                                                          documentDescription.getMetaSchema(),
                                                                           resource,
                                                                           httpMethod);
-    final List<Schema> inResourcePresentExtensions = documentResourceSchemas.getExtensions();
+    final List<Schema> inResourcePresentExtensions = documentDescription.getExtensions();
     List<ValidatedExtension> validatedExtensions = validateExtensions(resourceType.getRequiredResourceSchemaExtensions(),
                                                                       inResourcePresentExtensions,
                                                                       resource,
