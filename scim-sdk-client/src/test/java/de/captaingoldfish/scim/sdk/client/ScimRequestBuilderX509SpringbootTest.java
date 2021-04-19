@@ -101,8 +101,8 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
   @Test
   public void testBuildCreateRequestWithErrorResponse()
   {
-    User user = User.builder().userName("goldfish").build();
-    user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
+    // the missing username will cause an error for missing required attribute
+    User user = User.builder().nickName("goldfish").build();
 
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
@@ -111,8 +111,8 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
     Assertions.assertNotNull(response.getErrorResponse());
-    Assertions.assertEquals("main resource schema 'urn:ietf:params:scim:schemas:core:2.0:User' is not present in "
-                            + "resource. Main schema is: urn:ietf:params:scim:schemas:core:2.0:User",
+    Assertions.assertEquals("Required 'READ_WRITE' attribute "
+                            + "'urn:ietf:params:scim:schemas:core:2.0:User:userName' is missing",
                             response.getErrorResponse().getDetail().get());
   }
 

@@ -106,7 +106,7 @@ public class RequestAttributeValidator
          || Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability()))
         && isNodeNull)
     {
-      String errorMessage = String.format("'%s' attribute '%s' is required but is missing",
+      String errorMessage = String.format("Required '%s' attribute '%s' is missing",
                                           schemaAttribute.getMutability(),
                                           schemaAttribute.getFullResourceName());
       throw new AttributeValidationException(schemaAttribute, errorMessage);
@@ -116,7 +116,7 @@ public class RequestAttributeValidator
     if (Mutability.IMMUTABLE.equals(schemaAttribute.getMutability()) && HttpMethod.POST.equals(httpMethod)
         && isNodeNull)
     {
-      String errorMessage = String.format("'%s' required attribute '%s' must be set on object creation",
+      String errorMessage = String.format("Required '%s' attribute '%s' must be set on object creation",
                                           schemaAttribute.getMutability(),
                                           schemaAttribute.getFullResourceName());
       throw new AttributeValidationException(schemaAttribute, errorMessage);
