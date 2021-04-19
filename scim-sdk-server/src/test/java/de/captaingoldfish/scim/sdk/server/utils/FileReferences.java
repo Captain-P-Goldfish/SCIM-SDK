@@ -78,6 +78,8 @@ public interface FileReferences
 
   String USER_AUTHORIZED_RESOURCE_TYPE = RESOURCE_TYPE_BASE_PATH + "/user-resource-type-authorized.json";
 
+  String VALIDATION_TEST_SCHEMA = RESOURCE_BASE_PATH + "/schemas/validation-test-schema.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

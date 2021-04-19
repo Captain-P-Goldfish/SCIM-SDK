@@ -1,0 +1,78 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:gold:params:scim:schemas:custom:2.0:ValidationType",
+  "name": "ValidationType",
+  "description": "ValidationType",
+  "attributes": [
+    {
+      "name": "minString",
+      "type": "string",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true,
+      "minLength": 5,
+      "maxLength": 10,
+      "pattern": "(?i)[a-z0-9]+"
+    },
+    {
+      "name": "number",
+      "type": "integer",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true,
+      "multipleOf": 3,
+      "minimum": 10,
+      "maximum": 100
+    },
+    {
+      "name": "decimal",
+      "type": "decimal",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true,
+      "multipleOf": 3.1,
+      "minimum": 10.5,
+      "maximum": 100.123456789
+    },
+    {
+      "name": "array",
+      "type": "string",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "none",
+      "multiValued": true,
+      "required": false,
+      "caseExact": true,
+      "minItems": 3,
+      "maxItems": 10
+    },
+    {
+      "name": "date",
+      "type": "dateTime",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true,
+      "notBefore": "2018-11-01T00:00:00Z",
+      "notAfter": "2020-12-01T00:00:00Z"
+    }
+  ]
+}

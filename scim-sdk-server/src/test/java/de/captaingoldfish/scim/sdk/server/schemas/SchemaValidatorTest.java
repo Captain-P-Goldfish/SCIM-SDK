@@ -67,6 +67,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -1979,7 +1980,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
     JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
 
-    ResourceType resourceType = resourceTypeFactory.registerResourceType(null,
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(false),
                                                                          allTypesResourceTypeJson,
                                                                          allTypesValidationSchema,
                                                                          enterpriseUserValidationSchema);
@@ -2000,7 +2001,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple string validation fails (too short)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setString("1");
-      String errorMessage = "the attribute 'string' has a minimum length of 5 characters but value is '1'";
+      String errorMessage = "The 'STRING'-attribute 'string' with value '1' must have a minimum length of '5' "
+                            + "characters but is '1' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2008,7 +2010,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple string validation fails (too long)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setString("01234567890");
-      String errorMessage = "the attribute 'string' has a maximum length of 10 characters but value is '01234567890'";
+      String errorMessage = "The 'STRING'-attribute 'string' with value '01234567890' must not be longer than "
+                            + "'10' characters but is '11' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2016,7 +2019,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple string validation fails (pattern mismatch)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setString("abcdefg");
-      String errorMessage = "the attribute 'string' must match the regular expression '[0-9]+' but value is 'abcdefg'";
+      String errorMessage = "The 'STRING'-attribute 'string' with value 'abcdefg' must match the regular expression "
+                            + "of '[0-9]+'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2037,7 +2041,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (value too low)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setNumber(1L);
-      String errorMessage = "the attribute 'number' has a minimum value of 2.0 but value is '1.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'number' with value '1.0' must have at least a value of '2.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2045,7 +2049,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (value too high)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setNumber(11L);
-      String errorMessage = "the attribute 'number' has a maximum value of 10.0 but value is '11.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'number' with value '11.0' must not be greater than '10.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2053,7 +2057,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (not multipleOf)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setNumber(7L);
-      String errorMessage = "the attribute 'number' must be multiple of 2.0 but value is '7.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'number' with value '7.0' must be a multiple of '2.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2074,7 +2078,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation fails (too low)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setDecimal(0.0);
-      String errorMessage = "the attribute 'decimal' has a minimum value of 10.8 but value is '0.0'";
+      String errorMessage = "The 'DECIMAL'-attribute 'decimal' with value '0.0' must have at least a value of '10.8'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2082,7 +2086,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation fails (too high)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setDecimal(153.09);
-      String errorMessage = "the attribute 'decimal' has a maximum value of 150.9 but value is '153.09'";
+      String errorMessage = "The 'DECIMAL'-attribute 'decimal' with value '153.09' must not be greater than '150.9'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2090,7 +2094,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple decimal validation fails (not multipleOf)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setDecimal(150.9);
-      String errorMessage = "the attribute 'decimal' must be multiple of 5.67 but value is '150.9'";
+      String errorMessage = "The 'DECIMAL'-attribute 'decimal' with value '150.9' must be a multiple of '5.67'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2108,8 +2112,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple date validation fails (before)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setDate(Instant.parse("2018-11-01T00:00:00Z").minusSeconds(1));
-      String errorMessage = "the attribute 'date' must not be before '2018-11-01T00:00:00Z' but was "
-                            + "'2018-10-31T23:59:59Z'";
+      String errorMessage = "The 'DATE_TIME'-attribute 'date' with value '2018-10-31T23:59:59Z' must not "
+                            + "be before '2018-11-01T00:00:00Z'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2117,8 +2121,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple date validation fails (after)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setDate(Instant.parse("2020-12-01T00:00:00Z").plusSeconds(1));
-      String errorMessage = "the attribute 'date' must not be after '2020-12-01T00:00:00Z' but was "
-                            + "'2020-12-01T00:00:01Z'";
+      String errorMessage = "The 'DATE_TIME'-attribute 'date' with value '2020-12-01T00:00:01Z' must not be "
+                            + "after '2020-12-01T00:00:00Z'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2133,8 +2137,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (not enough items)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setStringArray(Arrays.asList("123456"));
-      String errorMessage = "the multivalued attribute 'stringArray' must have at least 2 items but array has 1 items"
-                            + " and is: [\"123456\"]";
+      String errorMessage = "The 'ARRAY'-attribute 'stringArray' with value '[\"123456\"]' must have at least '2' "
+                            + "items but only '1' items are present";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2142,8 +2146,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (too many items)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setStringArray(Arrays.asList("123456", "12345", "1234567", "0123456", "013654", "987654"));
-      String errorMessage = "the multivalued attribute 'stringArray' must not have more than 5 items but array has 6 "
-                            + "items and is: [\"123456\",\"12345\",\"1234567\",\"0123456\",\"013654\",\"987654\"]";
+      String errorMessage = "The 'ARRAY'-attribute 'stringArray' with value '[\"123456\",\"12345\",\"1234567\","
+                            + "\"0123456\",\"013654\",\"987654\"]' must not have more than '5' items. Items found '6'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2151,7 +2155,8 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (string too short)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setStringArray(Arrays.asList("123", "12345", "1234567", "0123456", "013654", "987654"));
-      String errorMessage = "the attribute 'stringArray' has a minimum length of 5 characters but value is '123'";
+      String errorMessage = "The 'STRING'-attribute 'stringArray' with value '123' must have a minimum length of "
+                            + "'5' characters but is '3' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2175,7 +2180,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setString("1");
-      String errorMessage = "the attribute 'complex.string' has a minimum length of 5 characters but value is '1'";
+      String errorMessage = "The 'STRING'-attribute 'complex.string' with value '1' must have a minimum length "
+                            + "of '5' characters but is '1' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2185,8 +2191,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setString("01234567890");
-      String errorMessage = "the attribute 'complex.string' has a maximum length of 10 characters but value is "
-                            + "'01234567890'";
+      String errorMessage = "The 'STRING'-attribute 'complex.string' with value '01234567890' must not be longer "
+                            + "than '10' characters but is '11' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2196,8 +2202,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setString("abcdefg");
-      String errorMessage = "the attribute 'complex.string' must match the regular expression '[0-9]+' but value is "
-                            + "'abcdefg'";
+      String errorMessage = "The 'STRING'-attribute 'complex.string' with value 'abcdefg' must match the "
+                            + "regular expression of '[0-9]+'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2222,7 +2228,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setNumber(1L);
-      String errorMessage = "the attribute 'complex.number' has a minimum value of 2.0 but value is '1.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '1.0' must have at least a value "
+                            + "of '2.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2232,7 +2239,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setNumber(11L);
-      String errorMessage = "the attribute 'complex.number' has a maximum value of 10.0 but value is '11.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '11.0' must not be greater than '10.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2242,7 +2249,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setNumber(7L);
-      String errorMessage = "the attribute 'complex.number' must be multiple of 2.0 but value is '7.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '7.0' must be a multiple of '2.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2267,7 +2274,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setDecimal(0.0);
-      String errorMessage = "the attribute 'complex.decimal' has a minimum value of 10.8 but value is '0.0'";
+      String errorMessage = "The 'DECIMAL'-attribute 'complex.decimal' with value '0.0' must have at least a value "
+                            + "of '10.8'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2277,7 +2285,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setDecimal(153.09);
-      String errorMessage = "the attribute 'complex.decimal' has a maximum value of 150.9 but value is '153.09'";
+      String errorMessage = "The 'DECIMAL'-attribute 'complex.decimal' with value '153.09' must not be greater "
+                            + "than '150.9'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2287,7 +2296,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setDecimal(150.9);
-      String errorMessage = "the attribute 'complex.decimal' must be multiple of 5.67 but value is '150.9'";
+      String errorMessage = "The 'DECIMAL'-attribute 'complex.decimal' with value '150.9' must be a multiple of '5.67'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2309,8 +2318,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setDate(Instant.parse("2018-11-01T00:00:00Z").minusSeconds(1));
-      String errorMessage = "the attribute 'complex.date' must not be before '2018-11-01T00:00:00Z' but was "
-                            + "'2018-10-31T23:59:59Z'";
+      String errorMessage = "The 'DATE_TIME'-attribute 'complex.date' with value '2018-10-31T23:59:59Z' must not "
+                            + "be before '2018-11-01T00:00:00Z'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2320,8 +2329,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setDate(Instant.parse("2020-12-01T00:00:00Z").plusSeconds(1));
-      String errorMessage = "the attribute 'complex.date' must not be after '2020-12-01T00:00:00Z' but was "
-                            + "'2020-12-01T00:00:01Z'";
+      String errorMessage = "The 'DATE_TIME'-attribute 'complex.date' with value '2020-12-01T00:00:01Z' must not "
+                            + "be after '2020-12-01T00:00:00Z'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2340,8 +2349,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setStringArray(Arrays.asList("123456"));
-      String errorMessage = "the multivalued attribute 'complex.stringArray' must have at least 2 items but "
-                            + "array has 1 items and is: [\"123456\"]";
+      String errorMessage = "The 'ARRAY'-attribute 'complex.stringArray' with value '[\"123456\"]' must have at "
+                            + "least '2' items but only '1' items are present";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2351,9 +2360,9 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setStringArray(Arrays.asList("123456", "12345", "1234567", "0123456", "013654", "987654"));
-      String errorMessage = "the multivalued attribute 'complex.stringArray' must not have more than 5 items but "
-                            + "array has 6 items and is: [\"123456\",\"12345\",\"1234567\",\"0123456\",\"013654\","
-                            + "\"987654\"]";
+      String errorMessage = "The 'ARRAY'-attribute 'complex.stringArray' with value '[\"123456\",\"12345\","
+                            + "\"1234567\",\"0123456\",\"013654\",\"987654\"]' must not have more than '5' items. "
+                            + "Items found '6'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2363,8 +2372,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setStringArray(Arrays.asList("123", "12345", "1234567", "0123456", "013654", "987654"));
-      String errorMessage = "the attribute 'complex.stringArray' has a minimum length of 5 characters but value is "
-                            + "'123'";
+      String errorMessage = "The 'STRING'-attribute 'complex.stringArray' with value '123' must have a minimum length "
+                            + "of '5' characters but is '3' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2388,8 +2397,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       complex.setString("123456");
       allTypes.setMultiComplex(Arrays.asList(complex));
-      String errorMessage = "the multivalued attribute 'multiComplex' must have at least 2 items but array has 1 "
-                            + "items and is: [{\"string\":\"123456\"}]";
+      String errorMessage = "The 'ARRAY'-attribute 'multiComplex' with value '[{\"string\":\"123456\"}]' must "
+                            + "have at least '2' items but only '1' items are present";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2399,9 +2408,9 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       complex.setString("123456");
       allTypes.setMultiComplex(Arrays.asList(complex, complex, complex, complex));
-      String errorMessage = "the multivalued attribute 'multiComplex' must not have more than 3 items but array has 4"
-                            + " items and is: [{\"string\":\"123456\"},{\"string\":\"123456\"},"
-                            + "{\"string\":\"123456\"},{\"string\":\"123456\"}]";
+      String errorMessage = "The 'ARRAY'-attribute 'multiComplex' with value '[{\"string\":\"123456\"},"
+                            + "{\"string\":\"123456\"},{\"string\":\"123456\"},{\"string\":\"123456\"}]' must not "
+                            + "have more than '3' items. Items found '4'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2411,8 +2420,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setMultiComplex(Arrays.asList(complex, complex));
       complex.setString("01234567890");
-      String errorMessage = "the attribute 'multiComplex.string' has a maximum length of 10 characters but value is "
-                            + "'01234567890'";
+      String errorMessage = "The 'STRING'-attribute 'multiComplex.string' with value '01234567890' must not be "
+                            + "longer than '10' characters but is '11' characters long";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -2477,7 +2486,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      SchemaValidator.validateDocumentForRequest(resourceType, allTypes, HttpMethod.POST, User.class);
+      new RequestSchemaValidator(resourceType).validateDocument(allTypes, HttpMethod.POST);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)

@@ -43,9 +43,9 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
-import de.captaingoldfish.scim.sdk.common.utils.AttributeValidator;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.CustomAttributeValidator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -947,7 +947,7 @@ public class SchemaValidator
       checkForUniqueAttribute(schemaAttribute, scimArrayNode, jsonNode);
       handleMultivaluedNode.accept(jsonNode, scimArrayNode);
     }
-    AttributeValidator.validateArrayNode(schemaAttribute, scimArrayNode);
+    CustomAttributeValidator.validateArrayNode(schemaAttribute, scimArrayNode);
     if (scimArrayNode.size() == 0)
     {
       validateNonPresentAttributes(schemaAttribute);

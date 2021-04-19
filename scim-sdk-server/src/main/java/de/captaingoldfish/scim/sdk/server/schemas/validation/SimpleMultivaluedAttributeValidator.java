@@ -29,7 +29,7 @@ public class SimpleMultivaluedAttributeValidator
    * @param attribute the attribute to validate
    * @return the validated object that is returned as {@link ScimArrayNode} with scim node representations
    */
-  protected static JsonNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
+  protected static ArrayNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
     ArrayNode arrayNode = toArrayNode(attribute).orElseThrow(() -> {
       String errorMessage = String.format("Attribute '%s' is expected to be an array but is '%s'",
@@ -60,6 +60,7 @@ public class SimpleMultivaluedAttributeValidator
         {
           JsonNode parsedSimpleNode = SimpleAttributeValidator.parseNodeType(schemaAttribute, jsonNode);
           scimArrayNode.add(parsedSimpleNode);
+          CustomAttributeValidator.validateSimpleNode(schemaAttribute, parsedSimpleNode);
         }
         catch (AttributeValidationException ex)
         {
