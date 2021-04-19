@@ -180,7 +180,8 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @param authorization
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return the scim response for the client
    */
   protected ScimResponse createResource(String endpoint,
@@ -501,7 +502,8 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @param authorization
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return a {@link ListResponse} with all returned resources or an {@link ErrorResponse}
    */
   protected <T extends ResourceNode> ScimResponse listResources(String endpoint,
@@ -751,7 +753,8 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @param authorization
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return the scim response for the client
    */
   protected ScimResponse updateResource(String endpoint,
@@ -866,7 +869,8 @@ class ResourceEndpointHandler
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
-   * @param authorization
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return an empty response that does not create a response body
    */
   protected ScimResponse deleteResource(String endpoint,
@@ -954,7 +958,8 @@ class ResourceEndpointHandler
    *          If this parameter is not present the application will try to read a hardcoded URL from the service
    *          provider configuration that is also an optional attribute. If both ways fail an exception will be
    *          thrown
-   * @param authorization
+   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
+   *          handler implementation
    * @return the updated resource or an error response
    */
   protected ScimResponse patchResource(String endpoint,
