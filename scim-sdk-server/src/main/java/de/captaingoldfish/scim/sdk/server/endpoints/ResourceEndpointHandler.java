@@ -57,6 +57,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -204,10 +205,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)SchemaValidator.validateDocumentForRequest(resourceType,
-                                                                                           resource,
-                                                                                           HttpMethod.POST,
-                                                                                           resourceHandler.getType());
+      ResourceNode resourceNode = (ResourceNode)new RequestSchemaValidator(resourceType).validateDocument(resource,
+                                                                                                          HttpMethod.POST);
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       meta.setResourceType(resourceType.getName());
       resourceNode.remove(AttributeNames.RFC7643.META);
@@ -779,10 +778,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)SchemaValidator.validateDocumentForRequest(resourceType,
-                                                                                           resource,
-                                                                                           HttpMethod.PUT,
-                                                                                           resourceHandler.getType());
+      ResourceNode resourceNode = (ResourceNode)new RequestSchemaValidator(resourceType).validateDocument(resource,
+                                                                                                          HttpMethod.PUT);
       AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
       Supplier<ResourceNode> oldResourceSupplier = () -> {
         oldResourceNode.compareAndSet(null, resourceHandler.getResource(id, authorization, null, null));
@@ -981,8 +978,7 @@ class ResourceEndpointHandler
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
       patchDocument = SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchDocument);
       // attributes and excludedAttributes are not passed here because the update is done on the whole resource so
-      // we
-      // must also extract the whole resource now
+      // we must also extract the whole resource now
       ResourceNode resourceNode = resourceHandler.getResource(id,
                                                               authorization,
                                                               Collections.emptyList(),
@@ -1014,10 +1010,7 @@ class ResourceEndpointHandler
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
       try
       {
-        SchemaValidator.validateDocumentForRequest(resourceType,
-                                                   patchedResourceNode,
-                                                   HttpMethod.PATCH,
-                                                   resourceHandler.getType());
+        new RequestSchemaValidator(resourceType).validateDocument(patchedResourceNode, HttpMethod.PATCH);
       }
       catch (DocumentValidationException ex)
       {
