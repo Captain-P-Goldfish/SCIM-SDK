@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.client;
 
 import java.time.Instant;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,7 +24,6 @@ import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
-import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -101,8 +99,8 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   @ValueSource(booleans = {true, false})
   public void testBuildCreateRequestWithErrorResponse(boolean useFullUrl)
   {
-    User user = User.builder().userName("goldfish").build();
-    user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
+    // the missing username will cause an error for missing required attribute
+    User user = User.builder().nickName("goldfish").build();
 
     ServerResponse<User> response;
     if (useFullUrl)
@@ -119,8 +117,8 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
     Assertions.assertNotNull(response.getErrorResponse());
-    Assertions.assertEquals("main resource schema 'urn:ietf:params:scim:schemas:core:2.0:User' is not present in "
-                            + "resource. Main schema is: urn:ietf:params:scim:schemas:core:2.0:User",
+    Assertions.assertEquals("Required 'READ_WRITE' attribute "
+                            + "'urn:ietf:params:scim:schemas:core:2.0:User:userName' is missing",
                             response.getErrorResponse().getDetail().get());
   }
 

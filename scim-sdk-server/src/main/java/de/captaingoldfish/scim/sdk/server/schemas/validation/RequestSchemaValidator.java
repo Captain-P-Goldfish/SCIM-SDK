@@ -6,6 +6,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -92,8 +94,9 @@ public class RequestSchemaValidator
     }
     catch (AttributeValidationException ex)
     {
-      throw new DocumentValidationException("Validation of request document has failed", ex, HttpStatus.BAD_REQUEST,
-                                            null);
+      Throwable cause = ExceptionUtils.getRootCause(ex);
+      String errorMessage = Optional.ofNullable(cause).map(Throwable::getMessage).orElse(ex.getMessage());
+      throw new DocumentValidationException(errorMessage, ex, HttpStatus.BAD_REQUEST, null);
     }
   }
 

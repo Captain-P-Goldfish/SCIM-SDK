@@ -470,7 +470,7 @@ public class RequestAttributeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String errorMessage = String.format("'%s' attribute '%s' is required but is missing",
+        String errorMessage = String.format("Required '%s' attribute '%s' is missing",
                                             schemaAttribute.getMutability(),
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
@@ -513,7 +513,7 @@ public class RequestAttributeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String errorMessage = String.format("'%s' attribute '%s' is required but is missing",
+        String errorMessage = String.format("Required '%s' attribute '%s' is missing",
                                             schemaAttribute.getMutability(),
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
@@ -553,7 +553,7 @@ public class RequestAttributeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String errorMessage = String.format("'%s' required attribute '%s' must be set on object creation",
+        String errorMessage = String.format("Required '%s' attribute '%s' must be set on object creation",
                                             schemaAttribute.getMutability(),
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
@@ -595,7 +595,7 @@ public class RequestAttributeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String errorMessage = String.format("'%s' required attribute '%s' must be set on object creation",
+        String errorMessage = String.format("Required '%s' attribute '%s' must be set on object creation",
                                             schemaAttribute.getMutability(),
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
@@ -703,7 +703,7 @@ public class RequestAttributeValidatorTest
         }
         {
           AttributeValidationException cause = (AttributeValidationException)ex.getCause();
-          String errorMessage = String.format("'%s' attribute '%s' is required but is missing",
+          String errorMessage = String.format("Required '%s' attribute '%s' is missing",
                                               schemaAttribute.getMutability(),
                                               schemaAttribute.getFullResourceName());
           Assertions.assertEquals(errorMessage, cause.getMessage());

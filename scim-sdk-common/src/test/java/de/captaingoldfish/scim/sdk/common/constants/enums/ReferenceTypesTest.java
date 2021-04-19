@@ -20,10 +20,10 @@ public class ReferenceTypesTest
 
     Assertions.assertEquals(ReferenceTypes.RESOURCE, ReferenceTypes.getByValue(ReferenceTypes.RESOURCE.getValue()));
     Assertions.assertEquals(ReferenceTypes.RESOURCE, ReferenceTypes.getByValue("resource"));
-    Assertions.assertEquals(ReferenceTypes.EXTERNAL, ReferenceTypes.getByValue("RESOURCE"));
+    Assertions.assertEquals(ReferenceTypes.RESOURCE, ReferenceTypes.getByValue("RESOURCE"));
 
     Assertions.assertEquals(ReferenceTypes.URI, ReferenceTypes.getByValue(ReferenceTypes.URI.getValue()));
     Assertions.assertEquals(ReferenceTypes.URI, ReferenceTypes.getByValue("uri"));
-    Assertions.assertEquals(ReferenceTypes.EXTERNAL, ReferenceTypes.getByValue("URI"));
+    Assertions.assertEquals(ReferenceTypes.URI, ReferenceTypes.getByValue("URI"));
   }
 }
