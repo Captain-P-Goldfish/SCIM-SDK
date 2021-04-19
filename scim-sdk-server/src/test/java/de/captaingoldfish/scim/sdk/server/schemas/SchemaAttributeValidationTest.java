@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 
 
@@ -65,15 +66,17 @@ public class SchemaAttributeValidationTest implements FileReferences
 
     try
     {
-      SchemaValidator.validateDocumentForRequest(userResourceType, user, HttpMethod.POST, User.class);
+      new RequestSchemaValidator(userResourceType).validateDocument(user, HttpMethod.POST);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
     {
-      Assertions.assertEquals("the attribute '" + usernameAttribute.getScimNodeName()
-                              + "' must match the regular expression '" + usernameAttribute.getPattern().get() + "' "
-                              + "but value is " + "'" + emptyString + "'",
-                              ex.getMessage());
+      String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must match the regular expression of '%s'",
+                                          usernameAttribute.getType(),
+                                          usernameAttribute.getScimNodeName(),
+                                          emptyString,
+                                          usernameAttribute.getPattern().get().pattern());
+      Assertions.assertEquals(errorMessage, ex.getMessage());
     }
   }
 

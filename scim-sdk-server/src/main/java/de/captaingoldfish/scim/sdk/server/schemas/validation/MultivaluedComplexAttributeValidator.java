@@ -33,9 +33,9 @@ public class MultivaluedComplexAttributeValidator
    * @throws AttributeValidationException if the multivalued complex attribute or one of its elements do not
    *           match its attribute definition
    */
-  public static JsonNode parseNodeType(SchemaAttribute schemaAttribute,
-                                       JsonNode attribute,
-                                       ContextValidator contextValidator)
+  public static ArrayNode parseNodeType(SchemaAttribute schemaAttribute,
+                                        JsonNode attribute,
+                                        ContextValidator contextValidator)
   {
     if (attribute == null || attribute.isNull())
     {

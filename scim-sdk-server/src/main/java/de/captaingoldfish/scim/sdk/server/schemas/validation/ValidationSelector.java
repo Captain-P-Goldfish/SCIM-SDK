@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -42,14 +43,16 @@ public class ValidationSelector
     {
       if (isComplexType)
       {
-        JsonNode validatedAttribute = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                         attribute,
-                                                                                         contextValidator);
+        ArrayNode validatedAttribute = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
+                                                                                          attribute,
+                                                                                          contextValidator);
+        CustomAttributeValidator.validateArrayNode(schemaAttribute, validatedAttribute);
         return Optional.ofNullable(validatedAttribute);
       }
       else
       {
-        JsonNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        ArrayNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        CustomAttributeValidator.validateArrayNode(schemaAttribute, validatedAttribute);
         return Optional.ofNullable(validatedAttribute);
       }
     }
@@ -65,6 +68,7 @@ public class ValidationSelector
       else
       {
         JsonNode validatedAttribute = SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        CustomAttributeValidator.validateSimpleNode(schemaAttribute, validatedAttribute);
         return Optional.of(validatedAttribute);
       }
     }
