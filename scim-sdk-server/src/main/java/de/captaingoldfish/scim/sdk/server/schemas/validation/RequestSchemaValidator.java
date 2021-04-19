@@ -21,12 +21,15 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.DocumentDescription;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
 /**
+ * validates a request document against the schema of the current {@link ResourceType}
+ * 
  * @author Pascal Knueppel
  * @since 24.02.2021
  */
@@ -34,8 +37,14 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestSchemaValidator
 {
 
+  /**
+   * the resource type that is the representative for the validation that will be executed on the document
+   */
   private final ResourceType resourceType;
 
+  /**
+   * the resources class type that will tell us of which type a new instance will be created
+   */
   private final Class<? extends ResourceNode> resourceNodeType;
 
   public RequestSchemaValidator(ResourceType resourceType)
@@ -44,32 +53,66 @@ public class RequestSchemaValidator
     this.resourceNodeType = resourceType.getResourceHandlerImpl().getType();
   }
 
+  /**
+   * checks the given document against the schema definition of the {@link #resourceType}
+   * 
+   * @param resource the document that should be validated
+   * @param httpMethod the current request type which is either one of [POST, PUT or PATCH]. The validation must
+   *          be handled differently in case of POST requests if an attribute is required and has a mutability
+   *          of writeOnly or immutable
+   * @return the validated resource
+   */
   public ScimObjectNode validateDocument(JsonNode resource, HttpMethod httpMethod)
   {
-    DocumentDescription documentDescription = new DocumentDescription(resourceType, resource);
-    checkDocumentAndMetaSchemaRelationship(documentDescription.getMetaSchema(), resource);
-    final ResourceNode validatedResource = (ResourceNode)validateResource(JsonHelper.getNewInstance(resourceNodeType),
-                                                                          documentDescription.getMetaSchema(),
-                                                                          resource,
-                                                                          httpMethod);
-    final List<Schema> inResourcePresentExtensions = documentDescription.getExtensions();
-    List<ValidatedExtension> validatedExtensions = validateExtensions(resourceType.getRequiredResourceSchemaExtensions(),
-                                                                      inResourcePresentExtensions,
-                                                                      resource,
-                                                                      httpMethod);
-    for ( ValidatedExtension validatedExtension : validatedExtensions )
+    try
     {
-      if (!validatedExtension.getValidatedExtension().isEmpty())
+      DocumentDescription documentDescription = new DocumentDescription(resourceType, resource);
+      checkDocumentAndMetaSchemaRelationship(documentDescription.getMetaSchema(), resource);
+      final ResourceNode validatedResource = (ResourceNode)validateDocument(JsonHelper.getNewInstance(resourceNodeType),
+                                                                            documentDescription.getMetaSchema(),
+                                                                            resource,
+                                                                            httpMethod);
+      final List<Schema> inResourcePresentExtensions = documentDescription.getExtensions();
+      List<ValidatedExtension> validatedExtensions = validateExtensions(resourceType.getRequiredResourceSchemaExtensions(),
+                                                                        inResourcePresentExtensions,
+                                                                        resource,
+                                                                        httpMethod);
+      for ( ValidatedExtension validatedExtension : validatedExtensions )
       {
-        validatedResource.addSchema(validatedExtension.getExtensionSchema().getNonNullId());
-        validatedResource.set(validatedExtension.getExtensionSchema().getNonNullId(),
-                              validatedExtension.getValidatedExtension());
+        if (!validatedExtension.getValidatedExtension().isEmpty())
+        {
+          validatedResource.addSchema(validatedExtension.getExtensionSchema().getNonNullId());
+          validatedResource.set(validatedExtension.getExtensionSchema().getNonNullId(),
+                                validatedExtension.getValidatedExtension());
+        }
       }
+      Optional.ofNullable(resource.get(AttributeNames.RFC7643.META))
+              .ifPresent(meta -> validatedResource.set(AttributeNames.RFC7643.META, meta));
+      return validatedResource;
     }
-    return validatedResource;
+    catch (AttributeValidationException ex)
+    {
+      throw new DocumentValidationException("Validation of request document has failed", ex, HttpStatus.BAD_REQUEST,
+                                            null);
+    }
   }
 
-  protected ScimObjectNode validateResource(ScimObjectNode validatedResource,
+  /**
+   * this method will validates either a resource document or an extension document that is part of the resource
+   * document. Extensions are handled as individual schemas.
+   * 
+   * @param validatedResource The object into which the validated attributes will be added. In case of main
+   *          document validation this object will be of type {@link ResourceNode} and in case of extension
+   *          validation of type {@link ScimObjectNode}
+   * @param resourceSchema the definition of the document that is either the main schema of the
+   *          {@link #resourceType} of an extension that is present within the current document
+   * @param resource the document that should be validated
+   * @param httpMethod the current request type which is either one of [POST, PUT or PATCH]. The validation must
+   *          be handled differently in case of POST requests if an attribute is required and has a mutability
+   *          of writeOnly or immutable
+   * @return the validated document with its scim attribute representations
+   */
+  protected ScimObjectNode validateDocument(ScimObjectNode validatedResource,
                                             Schema resourceSchema,
                                             JsonNode resource,
                                             HttpMethod httpMethod)
@@ -110,6 +153,17 @@ public class RequestSchemaValidator
     return schemasNode;
   }
 
+  /**
+   * validates the extensions that are present within the document that should be validated
+   * 
+   * @param extensions all extensions that are defined within the {@link #resourceType}
+   * @param inResourcePresentExtensions all extensions that were found within the documents body
+   * @param httpMethod the current request type which is either one of [POST, PUT or PATCH]. The validation must
+   *          be handled differently in case of POST requests if an attribute is required and has a mutability
+   *          of writeOnly or immutable
+   * @return the list of validated extensions. If an extension evaluated to an empty object it will not be
+   *         present within this list
+   */
   protected List<ValidatedExtension> validateExtensions(List<Schema> extensions,
                                                         List<Schema> inResourcePresentExtensions,
                                                         JsonNode resource,
@@ -120,7 +174,7 @@ public class RequestSchemaValidator
     for ( Schema extensionSchema : inResourcePresentExtensions )
     {
       JsonNode extension = resource.get(extensionSchema.getNonNullId());
-      ScimObjectNode validatedExtension = validateResource(new ScimObjectNode(),
+      ScimObjectNode validatedExtension = validateDocument(new ScimObjectNode(),
                                                            extensionSchema,
                                                            extension,
                                                            httpMethod);
@@ -129,6 +183,12 @@ public class RequestSchemaValidator
     return validatedExtensionList;
   }
 
+  /**
+   * checks if the extensions within the documents body are missing a required extension
+   * 
+   * @param requiredExtensionList the list of extensions that are required for the {@link #resourceType}
+   * @param inResourcePresentExtensions all extensions that were found within the documents body
+   */
   protected void checkForMissingRequiredExtensions(List<Schema> requiredExtensionList,
                                                    List<Schema> inResourcePresentExtensions)
   {
@@ -146,13 +206,22 @@ public class RequestSchemaValidator
     }
   }
 
+  /**
+   * the representation of a validated extension
+   */
   @Getter
   @RequiredArgsConstructor
   protected class ValidatedExtension
   {
 
+    /**
+     * the schemas definition of the validated extension
+     */
     private final Schema extensionSchema;
 
+    /**
+     * the validated extension itself
+     */
     private final ScimObjectNode validatedExtension;
   }
 }
