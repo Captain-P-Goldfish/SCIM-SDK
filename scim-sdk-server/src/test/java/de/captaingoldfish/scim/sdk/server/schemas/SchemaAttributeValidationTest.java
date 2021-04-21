@@ -66,7 +66,7 @@ public class SchemaAttributeValidationTest implements FileReferences
 
     try
     {
-      new RequestSchemaValidator(userResourceType).validateDocument(user, HttpMethod.POST);
+      new RequestSchemaValidator(userResourceType, HttpMethod.POST).validateDocument(user);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
