@@ -2486,7 +2486,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      new RequestSchemaValidator(resourceType).validateDocument(allTypes, HttpMethod.POST);
+      new RequestSchemaValidator(resourceType, HttpMethod.POST).validateDocument(allTypes);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)

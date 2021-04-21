@@ -206,8 +206,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)new RequestSchemaValidator(resourceType).validateDocument(resource,
-                                                                                                          HttpMethod.POST);
+      ResourceNode resourceNode = (ResourceNode)new RequestSchemaValidator(resourceType,
+                                                                           HttpMethod.POST).validateDocument(resource);
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       meta.setResourceType(resourceType.getName());
       resourceNode.remove(AttributeNames.RFC7643.META);
@@ -781,8 +781,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)new RequestSchemaValidator(resourceType).validateDocument(resource,
-                                                                                                          HttpMethod.PUT);
+      ResourceNode resourceNode = (ResourceNode)new RequestSchemaValidator(resourceType,
+                                                                           HttpMethod.PUT).validateDocument(resource);
       AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
       Supplier<ResourceNode> oldResourceSupplier = () -> {
         oldResourceNode.compareAndSet(null, resourceHandler.getResource(id, authorization, null, null));
@@ -1015,7 +1015,7 @@ class ResourceEndpointHandler
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
       try
       {
-        new RequestSchemaValidator(resourceType).validateDocument(patchedResourceNode, HttpMethod.PATCH);
+        new RequestSchemaValidator(resourceType, HttpMethod.PATCH).validateDocument(patchedResourceNode);
       }
       catch (DocumentValidationException ex)
       {
