@@ -1,11 +1,19 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -19,6 +27,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
+import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -35,6 +44,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ResponseAttributeValidatorTest
 {
+
+  /**
+   * a url supplier that may be used in special cases during schema validation
+   */
+  private static final BiFunction<String, String, String> REFERENCE_URL_SUPPLIER = (resourceName, resourceId) -> {
+    return String.format("http://localhost:8080/scim/v2/%s/%s", resourceName, resourceId);
+  };
 
   /**
    * test validating a nested complex object. This is actually forbidden by RFC7643 but this should be a
@@ -102,7 +118,11 @@ public class ResponseAttributeValidatorTest
 
 
     Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-      return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+      return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                          attribute,
+                                                          null,
+                                                          null,
+                                                          REFERENCE_URL_SUPPLIER);
     });
     Assertions.assertTrue(validatedNode.isPresent());
     Assertions.assertEquals(attribute, validatedNode.get());
@@ -142,7 +162,11 @@ public class ResponseAttributeValidatorTest
                                                                 .multivalued(multiValued)
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null);
+          return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                              null,
+                                                              null,
+                                                              null,
+                                                              REFERENCE_URL_SUPPLIER);
         });
         Assertions.assertFalse(validatedNode.isPresent());
       }
@@ -194,7 +218,11 @@ public class ResponseAttributeValidatorTest
           SchemaAttribute schemaAttribute = builder.build();
           JsonNode attribute = AttributeBuilder.build(schemaAttribute, type, "2");
           Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-            return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+            return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                                attribute,
+                                                                null,
+                                                                null,
+                                                                REFERENCE_URL_SUPPLIER);
           });
           // read only attributes will be ignored even if they do not match its schema validation
           Assertions.assertFalse(validatedNode.isPresent());
@@ -245,7 +273,11 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -301,7 +333,11 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -353,7 +389,11 @@ public class ResponseAttributeValidatorTest
       attribute.set("firstname", new TextNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -393,7 +433,11 @@ public class ResponseAttributeValidatorTest
                                                                 .multivalued(multiValued)
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null);
+          return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                              null,
+                                                              null,
+                                                              null,
+                                                              REFERENCE_URL_SUPPLIER);
         });
         Assertions.assertFalse(validatedNode.isPresent());
       }
@@ -445,7 +489,11 @@ public class ResponseAttributeValidatorTest
           SchemaAttribute schemaAttribute = builder.build();
           JsonNode attribute = AttributeBuilder.build(schemaAttribute, type, "2");
           Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-            return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+            return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                                attribute,
+                                                                null,
+                                                                null,
+                                                                REFERENCE_URL_SUPPLIER);
           });
           // read only attributes will be ignored even if they do not match its schema validation
           Assertions.assertFalse(validatedNode.isPresent());
@@ -496,7 +544,11 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -552,7 +604,11 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -604,7 +660,11 @@ public class ResponseAttributeValidatorTest
       attribute.set("firstname", new TextNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -642,7 +702,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       try
       {
-        ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null);
+        ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -685,7 +745,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       try
       {
-        ResponseAttributeValidator.validateAttribute(schemaAttribute, NullNode.getInstance(), null, null);
+        ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                     NullNode.getInstance(),
+                                                     null,
+                                                     null,
+                                                     REFERENCE_URL_SUPPLIER);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -728,7 +792,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -765,7 +833,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -802,7 +874,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -857,7 +933,7 @@ public class ResponseAttributeValidatorTest
 
       try
       {
-        ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null, REFERENCE_URL_SUPPLIER);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -914,7 +990,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -951,7 +1031,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -984,7 +1068,7 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.ALWAYS)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1018,7 +1102,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1059,7 +1147,8 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             Collections.singletonList(schemaAttribute),
-                                                            null);
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1102,7 +1191,8 @@ public class ResponseAttributeValidatorTest
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
-                                                            null);
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1143,7 +1233,8 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             null,
-                                                            Collections.singletonList(schemaAttribute));
+                                                            Collections.singletonList(schemaAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1182,7 +1273,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -1215,7 +1310,7 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.DEFAULT)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1249,7 +1344,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1290,7 +1389,8 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             Collections.singletonList(schemaAttribute),
-                                                            null);
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -1335,7 +1435,8 @@ public class ResponseAttributeValidatorTest
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
-                                                            null);
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1376,7 +1477,8 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             null,
-                                                            Collections.singletonList(schemaAttribute));
+                                                            Collections.singletonList(schemaAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1419,7 +1521,8 @@ public class ResponseAttributeValidatorTest
                                                             null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
-                                                                                                            .build()));
+                                                                                                            .build()),
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -1460,7 +1563,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1491,7 +1598,7 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.REQUEST)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1525,7 +1632,11 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1566,7 +1677,8 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             Collections.singletonList(schemaAttribute),
-                                                            null);
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -1611,7 +1723,8 @@ public class ResponseAttributeValidatorTest
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
-                                                            null);
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1652,7 +1765,8 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             null,
-                                                            Collections.singletonList(schemaAttribute));
+                                                            Collections.singletonList(schemaAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1695,11 +1809,321 @@ public class ResponseAttributeValidatorTest
                                                             null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
-                                                                                                            .build()));
+                                                                                                            .build()),
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
       Assertions.assertEquals(attribute, jsonNode);
+    }
+  }
+
+  @Nested
+  public class BaseUrlTests
+  {
+
+    /**
+     * verifies that the API will set a resource url into the $ref attribute if the resource can be resolved
+     */
+    @Test
+    public void testReferenceUrlIsSetByApi()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(false);
+
+      final String id = UUID.randomUUID().toString();
+      final String resourceName = "User";
+
+      ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
+      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            members,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(3, validatedNode.get().size());
+
+      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(resourceName, id);
+      Assertions.assertEquals(expectedUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).textValue());
+    }
+
+    /**
+     * verifies that the API will NOT override a reference url that has been set by the implementation of the
+     * developer
+     */
+    @Test
+    public void testPresentReferenceUrlIsNotOverriddenByApi()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(false);
+
+      final String id = UUID.randomUUID().toString();
+      final String resourceName = "User";
+      final String resourceUrl = "http://localhost:8889/my-resource/at/" + id;
+
+      ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
+      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+      members.set(AttributeNames.RFC7643.REF, new TextNode(resourceUrl));
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            members,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(3, validatedNode.get().size());
+
+      Assertions.assertEquals(resourceUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).textValue());
+    }
+
+    /**
+     * verifies that the API will NOT set the reference url if the resource type is missing
+     */
+    @TestFactory
+    public List<DynamicTest> testReferenceUrlNotSetIfTypeIsMissing()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(false);
+
+      Consumer<JsonNode> testWithTypeNode = typeNode -> {
+        final String id = UUID.randomUUID().toString();
+
+        ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
+        members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+        if (typeNode != null)
+        {
+          members.set(AttributeNames.RFC7643.TYPE, typeNode);
+        }
+
+        Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+          return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                              members,
+                                                              null,
+                                                              null,
+                                                              REFERENCE_URL_SUPPLIER);
+        });
+        Assertions.assertTrue(validatedNode.isPresent());
+        Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.REF));
+      };
+
+      List<DynamicTest> dynamicTestList = new ArrayList<>();
+      dynamicTestList.add(DynamicTest.dynamicTest("null", () -> testWithTypeNode.accept(null)));
+      dynamicTestList.add(DynamicTest.dynamicTest("nullNode", () -> testWithTypeNode.accept(NullNode.getInstance())));
+      dynamicTestList.add(DynamicTest.dynamicTest("empty", () -> testWithTypeNode.accept(new TextNode(""))));
+      dynamicTestList.add(DynamicTest.dynamicTest("blank", () -> testWithTypeNode.accept(new TextNode("   "))));
+      return dynamicTestList;
+    }
+
+    /**
+     * verifies that the API will NOT set the reference url if the value is missing
+     */
+    @TestFactory
+    public List<DynamicTest> testReferenceUrlNotSetIfValueIsMissing()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(false);
+
+      Consumer<JsonNode> testWithTypeNode = valueNode -> {
+        final String resourceName = "User";
+
+        ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
+        members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+        if (valueNode != null)
+        {
+          members.set(AttributeNames.RFC7643.VALUE, valueNode);
+        }
+
+        Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+          return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                              members,
+                                                              null,
+                                                              null,
+                                                              REFERENCE_URL_SUPPLIER);
+        });
+        Assertions.assertTrue(validatedNode.isPresent());
+        Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.REF));
+      };
+
+      List<DynamicTest> dynamicTestList = new ArrayList<>();
+      dynamicTestList.add(DynamicTest.dynamicTest("null", () -> testWithTypeNode.accept(null)));
+      dynamicTestList.add(DynamicTest.dynamicTest("nullNode", () -> testWithTypeNode.accept(NullNode.getInstance())));
+      dynamicTestList.add(DynamicTest.dynamicTest("empty", () -> testWithTypeNode.accept(new TextNode(""))));
+      dynamicTestList.add(DynamicTest.dynamicTest("blank", () -> testWithTypeNode.accept(new TextNode("   "))));
+      return dynamicTestList;
+    }
+
+    /**
+     * verifies that the API will NOT set the reference url if either the type attribute, the $ref or the value
+     * attribute is not defined as subAttribute within the complex type
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {AttributeNames.RFC7643.TYPE, AttributeNames.RFC7643.VALUE, AttributeNames.RFC7643.REF})
+    public void testReferenceUrlNotSetIfRequiredSubAttributeIsNotDefined(String attributeName)
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(false, attributeName);
+
+      final String id = UUID.randomUUID().toString();
+      final String resourceName = "User";
+
+      ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
+      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            members,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.REF));
+    }
+
+    /**
+     * verifies that no reference url is set if the referenceUrlSupplier returns null
+     */
+    @Test
+    public void testReferenceUrlNotSetIfReferenceUrlSupplierReturnsNull()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(false);
+
+      final String id = UUID.randomUUID().toString();
+      final String resourceName = "User";
+
+      ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
+      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute, members, null, null, (s, s2) -> null);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(2, validatedNode.get().size());
+
+      Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.REF));
+    }
+
+    /**
+     * verifies that no reference url is set if the referenceUrlSupplier returns null
+     */
+    @Test
+    public void testReferenceUrlIsSetInAllComplexTypesOfAMultiValuedComplexType()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(true);
+
+      final String resourceName = "User";
+
+      ArrayNode members = new ArrayNode(JsonNodeFactory.instance);
+      for ( int i = 0 ; i < 3 ; i++ )
+      {
+        final String id = UUID.randomUUID().toString();
+        ObjectNode member = new ObjectNode(JsonNodeFactory.instance);
+        member.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+        member.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+        members.add(member);
+      }
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            members,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertTrue(validatedNode.get().isArray());
+      Assertions.assertEquals(3, validatedNode.get().size());
+
+      for ( int i = 0 ; i < members.size() ; i++ )
+      {
+        ObjectNode member = (ObjectNode)members.get(i);
+        ObjectNode validatedMember = (ObjectNode)validatedNode.get().get(i);
+
+        final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(resourceName,
+                                                                member.get(AttributeNames.RFC7643.VALUE).textValue());
+        Assertions.assertEquals(expectedUrl, validatedMember.get(AttributeNames.RFC7643.REF).textValue());
+      }
+    }
+
+    /**
+     * verifies that the reference id is set even if a multivalued complex type is set as a simple complex node
+     * and not as an array
+     */
+    @Test
+    public void testReferenceUrlIsSetInIfMultiValuedIsASingleComplexNode()
+    {
+      SchemaAttribute schemaAttribute = getComplexReferenceAttribute(true);
+
+      final String id = UUID.randomUUID().toString();
+      final String resourceName = "User";
+
+      ObjectNode member = new ObjectNode(JsonNodeFactory.instance);
+      member.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+      member.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            member,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertTrue(validatedNode.get().isArray());
+      Assertions.assertEquals(1, validatedNode.get().size());
+
+      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(resourceName,
+                                                              member.get(AttributeNames.RFC7643.VALUE).textValue());
+      Assertions.assertEquals(expectedUrl, validatedNode.get().get(0).get(AttributeNames.RFC7643.REF).textValue());
+    }
+
+    /**
+     * builds a complex type after the groups "members"-attribute template that is either multivalued or a simple
+     * complex type
+     */
+    private SchemaAttribute getComplexReferenceAttribute(boolean multivalued, String... subAttributesToIgnore)
+    {
+
+      SchemaAttribute valueAttribute = SchemaAttributeBuilder.builder()
+                                                             .name(AttributeNames.RFC7643.VALUE)
+                                                             .type(Type.STRING)
+                                                             .build();
+      SchemaAttribute typeAttribute = SchemaAttributeBuilder.builder()
+                                                            .name(AttributeNames.RFC7643.TYPE)
+                                                            .type(Type.STRING)
+                                                            .build();
+      SchemaAttribute refAttribute = SchemaAttributeBuilder.builder()
+                                                           .name(AttributeNames.RFC7643.REF)
+                                                           .type(Type.REFERENCE)
+                                                           .referenceTypes(ReferenceTypes.RESOURCE)
+                                                           .build();
+
+      SchemaAttributeBuilder attributeBuilder = SchemaAttributeBuilder.builder()
+                                                                      .name(AttributeNames.RFC7643.MEMBERS)
+                                                                      .multivalued(multivalued)
+                                                                      .type(Type.COMPLEX);
+      List<String> ignoreAttributes = Optional.ofNullable(subAttributesToIgnore)
+                                              .map(Arrays::asList)
+                                              .orElse(new ArrayList<>());
+      List<SchemaAttribute> attributeToAdd = new ArrayList<>();
+      if (!ignoreAttributes.contains(AttributeNames.RFC7643.VALUE))
+      {
+        attributeToAdd.add(valueAttribute);
+      }
+      if (!ignoreAttributes.contains(AttributeNames.RFC7643.TYPE))
+      {
+        attributeToAdd.add(typeAttribute);
+      }
+      if (!ignoreAttributes.contains(AttributeNames.RFC7643.REF))
+      {
+        attributeToAdd.add(refAttribute);
+      }
+      return attributeBuilder.subAttributes(attributeToAdd.toArray(new SchemaAttribute[0])).build();
     }
   }
 }
