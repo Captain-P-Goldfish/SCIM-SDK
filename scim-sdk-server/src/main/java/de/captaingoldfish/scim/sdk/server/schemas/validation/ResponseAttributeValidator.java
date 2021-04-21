@@ -2,14 +2,19 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
+import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.extern.slf4j.Slf4j;
@@ -215,6 +220,10 @@ class ResponseAttributeValidator
    *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
+   * @param attributesList the list of attributes within the "attributes"-parameter
+   * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
+   * @param referenceUrlSupplier accepts the name of a resource e.g. "User" or "Group" and additionally the
+   *          resource id of the resource and it will return the fully qualified url of this resource
    * @return the validated json node or an empty if the attribute is not present or should be ignored
    * @throws AttributeValidationException if the client has send an invalid attribute that does not match its
    *           definition
@@ -222,9 +231,12 @@ class ResponseAttributeValidator
   public static Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute,
                                                      JsonNode attribute,
                                                      List<SchemaAttribute> attributesList,
-                                                     List<SchemaAttribute> excludedAttributesList)
+                                                     List<SchemaAttribute> excludedAttributesList,
+                                                     BiFunction<String, String, String> referenceUrlSupplier)
   {
-    ContextValidator requestContextValidator = getContextValidator(attributesList, excludedAttributesList);
+    ContextValidator requestContextValidator = getContextValidator(attributesList,
+                                                                   excludedAttributesList,
+                                                                   referenceUrlSupplier);
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute,
                                                                        attribute,
                                                                        requestContextValidator);
@@ -253,67 +265,91 @@ class ResponseAttributeValidator
    *
    * @param attributesList the list of attributes within the "attributes"-parameter
    * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
+   * @param referenceUrlSupplier accepts the name of a resource e.g. "User" or "Group" and additionally the
+   *          resource id of the resource and it will return the fully qualified url of this resource
    * @return the context validation for responses
    */
   private static ContextValidator getContextValidator(List<SchemaAttribute> attributesList,
-                                                      List<SchemaAttribute> excludedAttributesList)
+                                                      List<SchemaAttribute> excludedAttributesList,
+                                                      BiFunction<String, String, String> referenceUrlSupplier)
   {
     return (schemaAttribute, attribute) -> {
-
-      // read only attributes are not accepted on request so we will simply ignore this attribute
-      if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability())
-          || Returned.NEVER.equals(schemaAttribute.getReturned()))
+      final boolean validateNode = validateNode(schemaAttribute, attribute, attributesList, excludedAttributesList);
+      if (validateNode && Type.COMPLEX.equals(schemaAttribute.getType()))
       {
-        return false;
+        overrideEmptyReferenceNode(schemaAttribute, attribute, referenceUrlSupplier);
       }
-      final boolean isNodeNull = attribute == null || attribute.isNull();
-      validateRequiredAttribute(schemaAttribute, isNodeNull);
-
-      if (isNodeNull)
-      {
-        return false;
-      }
-
-      if (Returned.ALWAYS.equals(schemaAttribute.getReturned()))
-      {
-        return true;
-      }
-
-      // the following two booleans are mutually exclusive meaning that only one of these boolean can evaluate to
-      // true. Both can be false but the previous evaluation must ensure that only one list is present.
-      final boolean useAttributes = attributesList != null && !attributesList.isEmpty();
-      final boolean useExcludedAttributes = excludedAttributesList != null && !excludedAttributesList.isEmpty();
-
-      if (!useAttributes && !useExcludedAttributes)
-      {
-        final boolean removeAttribute = Returned.REQUEST.equals(schemaAttribute.getReturned());
-        if (removeAttribute)
-        {
-          log.trace("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the request",
-                    schemaAttribute.getFullResourceName(),
-                    Returned.REQUEST);
-        }
-        return !removeAttribute;
-      }
-
-      final boolean removeRequestOrDefaultAttribute = useAttributes
-                                                      && !isAttributePresentInList(schemaAttribute, attributesList);
-      if (removeRequestOrDefaultAttribute)
-      {
-        log.trace("Removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
-                  + " of requested attributes",
-                  schemaAttribute.getFullResourceName(),
-                  schemaAttribute.getReturned());
-      }
-      final boolean excludeAttribute = useExcludedAttributes
-                                       && isAttributePresentInList(schemaAttribute, excludedAttributesList);
-      if (excludeAttribute)
-      {
-        log.trace("Removing attribute '{}' from response for it was excluded by the 'excludedAttributes'-parameter",
-                  schemaAttribute.getFullResourceName());
-      }
-      return !removeRequestOrDefaultAttribute && !excludeAttribute;
+      return validateNode;
     };
+  }
+
+  /**
+   * validates an attribute and will decides if the attribute should be returned to the client or not
+   * 
+   * @param schemaAttribute the attributes definition
+   * @param attribute the attribute to validate
+   * @param attributesList the list of attributes within the "attributes"-parameter
+   * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
+   * @return true if the validation of this attribute should proceed, false else
+   */
+  private static boolean validateNode(SchemaAttribute schemaAttribute,
+                                      JsonNode attribute,
+                                      List<SchemaAttribute> attributesList,
+                                      List<SchemaAttribute> excludedAttributesList)
+  {
+    // read only attributes are not accepted on request so we will simply ignore this attribute
+    if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability())
+        || Returned.NEVER.equals(schemaAttribute.getReturned()))
+    {
+      return false;
+    }
+    final boolean isNodeNull = attribute == null || attribute.isNull();
+    validateRequiredAttribute(schemaAttribute, isNodeNull);
+
+    if (isNodeNull)
+    {
+      return false;
+    }
+
+    if (Returned.ALWAYS.equals(schemaAttribute.getReturned()))
+    {
+      return true;
+    }
+
+    // the following two booleans are mutually exclusive meaning that only one of these boolean can evaluate to
+    // true. Both can be false but the previous evaluation must ensure that only one list is present.
+    final boolean useAttributes = attributesList != null && !attributesList.isEmpty();
+    final boolean useExcludedAttributes = excludedAttributesList != null && !excludedAttributesList.isEmpty();
+
+    if (!useAttributes && !useExcludedAttributes)
+    {
+      final boolean removeAttribute = Returned.REQUEST.equals(schemaAttribute.getReturned());
+      if (removeAttribute)
+      {
+        log.trace("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the request",
+                  schemaAttribute.getFullResourceName(),
+                  Returned.REQUEST);
+      }
+      return !removeAttribute;
+    }
+
+    final boolean removeRequestOrDefaultAttribute = useAttributes
+                                                    && !isAttributePresentInList(schemaAttribute, attributesList);
+    if (removeRequestOrDefaultAttribute)
+    {
+      log.trace("Removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
+                + " of requested attributes",
+                schemaAttribute.getFullResourceName(),
+                schemaAttribute.getReturned());
+    }
+    final boolean excludeAttribute = useExcludedAttributes
+                                     && isAttributePresentInList(schemaAttribute, excludedAttributesList);
+    if (excludeAttribute)
+    {
+      log.trace("Removing attribute '{}' from response for it was excluded by the 'excludedAttributes'-parameter",
+                schemaAttribute.getFullResourceName());
+    }
+    return !removeRequestOrDefaultAttribute && !excludeAttribute;
   }
 
   /**
@@ -350,5 +386,101 @@ class ResponseAttributeValidator
     return attributes.stream()
                      .map(SchemaAttribute::getFullResourceName)
                      .anyMatch(param -> StringUtils.equals(schemaAttribute.getFullResourceName(), param));
+  }
+
+  /**
+   * checks if the given complex node has a resource reference set and will add the fully qualified resource url
+   * into the "$ref"-attribute is the values is not already set.
+   * 
+   * @param schemaAttribute the complex attributes definition
+   * @param attribute the complex or multivalued complex attribute that might hold a reference to a specific
+   *          registered resource
+   * @param referenceUrlSupplier accepts the name of a resource e.g. "User" or "Group" and additionally the
+   *          resource id of the resource and it will return the fully qualified url of this resource
+   */
+  private static void overrideEmptyReferenceNode(SchemaAttribute schemaAttribute,
+                                                 JsonNode attribute,
+                                                 BiFunction<String, String, String> referenceUrlSupplier)
+  {
+    final boolean hasReferenceSubAttribute = schemaAttribute.getSubAttributes()
+                                                            .stream()
+                                                            .anyMatch(attr -> attr.getName()
+                                                                                  .equals(AttributeNames.RFC7643.REF)
+                                                                              && attr.getType().equals(Type.REFERENCE)
+                                                                              && attr.getReferenceTypes()
+                                                                                     .contains(ReferenceTypes.RESOURCE));
+    if (!hasReferenceSubAttribute)
+    {
+      return;
+    }
+
+    if (schemaAttribute.isMultiValued() && attribute.isArray())
+    {
+      for ( JsonNode complexNode : attribute )
+      {
+        overrideEmptyReferenceNodeInComplex(schemaAttribute, (ObjectNode)complexNode, referenceUrlSupplier);
+      }
+    }
+    else if (attribute.isObject())
+    {
+      overrideEmptyReferenceNodeInComplex(schemaAttribute, (ObjectNode)attribute, referenceUrlSupplier);
+    }
+  }
+
+  /**
+   * overrides the $ref attribute within the given complex attribute if not already set and enough information
+   * is available
+   *
+   * @param schemaAttribute the complex attributes definition
+   * @param attribute the complex or multivalued complex attribute that might hold a reference to a specific
+   *          registered resource
+   * @param referenceUrlSupplier accepts the name of a resource e.g. "User" or "Group" and additionally the
+   *          resource id of the resource and it will return the fully qualified url of this resource
+   */
+  private static void overrideEmptyReferenceNodeInComplex(SchemaAttribute schemaAttribute,
+                                                          ObjectNode complexAttribute,
+                                                          BiFunction<String, String, String> referenceUrlSupplier)
+  {
+    JsonNode refNode = complexAttribute.get(AttributeNames.RFC7643.REF);
+    if (refNode != null && !refNode.isNull())
+    {
+      // reference node is already set
+      return;
+    }
+    Optional<SchemaAttribute> valueAttribute = schemaAttribute.getSubAttributes().stream().filter(attr -> {
+      return attr.getName().equals(AttributeNames.RFC7643.VALUE);
+    }).findAny();
+    Optional<SchemaAttribute> typeAttribute = schemaAttribute.getSubAttributes().stream().filter(attr -> {
+      return attr.getName().equals(AttributeNames.RFC7643.TYPE);
+    }).findAny();
+
+    if (!valueAttribute.isPresent() || !typeAttribute.isPresent())
+    {
+      return;
+    }
+    String resourceId = Optional.ofNullable(complexAttribute.get(valueAttribute.get().getName()))
+                                .map(JsonNode::textValue)
+                                .orElse(null);
+    String resourceName = Optional.ofNullable(complexAttribute.get(typeAttribute.get().getName()))
+                                  .map(JsonNode::textValue)
+                                  .orElse(null);
+
+    if (StringUtils.isBlank(resourceId))
+    {
+      return;
+    }
+    if (StringUtils.isBlank(resourceName))
+    {
+      return;
+    }
+
+    String referenceUrl = referenceUrlSupplier.apply(resourceName, resourceId);
+    if (referenceUrl == null)
+    {
+      return;
+    }
+
+    JsonNode newReferencenode = new ScimTextNode(schemaAttribute, referenceUrl);
+    complexAttribute.set(AttributeNames.RFC7643.REF, newReferencenode);
   }
 }
