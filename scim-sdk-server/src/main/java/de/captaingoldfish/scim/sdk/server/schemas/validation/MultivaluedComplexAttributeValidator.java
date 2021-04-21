@@ -19,7 +19,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidation
  * @author Pascal Knueppel
  * @since 12.04.2021
  */
-public class MultivaluedComplexAttributeValidator
+class MultivaluedComplexAttributeValidator
 {
 
   /**
