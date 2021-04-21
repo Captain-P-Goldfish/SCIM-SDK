@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 19.04.2021
  */
 @Slf4j
-public class ResponseAttributeValidator
+class ResponseAttributeValidator
 {
 
   /**
