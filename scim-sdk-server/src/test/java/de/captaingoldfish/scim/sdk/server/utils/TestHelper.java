@@ -110,7 +110,7 @@ public final class TestHelper
   }
 
   /**
-   * this method extracts the the attribute with the given name from the meta schema and modifies its attributes
+   * this method extracts the attribute with the given name from the meta schema and modifies its attributes
    * with the given values
    *
    * @param metaSchema the meta schema that must contain an attribute with the given attributeName parameter

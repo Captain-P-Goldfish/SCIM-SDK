@@ -160,6 +160,17 @@ public class ResourceType extends ResourceNode
   }
 
   /**
+   * a delegation method to retrieve the schema that represents the meta-attribute. This attribute has received
+   * its own schema under the URI "urn:ietf:params:scim:schemas:core:2.0:Meta"
+   * 
+   * @return the meta schema definition
+   */
+  public Schema getMetaSchema()
+  {
+    return schemaFactory.getMetaSchema(SchemaUris.META);
+  }
+
+  /**
    * checks if the schema with the given uri is a required extension
    * 
    * @param schemaUri the extension of the schema
