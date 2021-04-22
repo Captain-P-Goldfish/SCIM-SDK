@@ -9,7 +9,6 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -170,7 +169,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     JsonNode jsonNode = this.get(attributeName);
     if (jsonNode == null)
     {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
     if (!(jsonNode instanceof ArrayNode))
     {
@@ -232,7 +231,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     JsonNode jsonNode = this.get(attributeName);
     if (jsonNode == null)
     {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
     if (!(jsonNode instanceof ArrayNode))
     {
@@ -303,7 +302,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     JsonNode jsonNode = this.get(attributeName);
     if (jsonNode == null)
     {
-      return Collections.emptySet();
+      return new HashSet<>();
     }
     if (!(jsonNode instanceof ArrayNode))
     {
