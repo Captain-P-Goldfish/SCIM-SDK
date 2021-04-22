@@ -220,6 +220,9 @@ class ResponseAttributeValidator
    *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
+   * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
+   *          returned-value of "request" or "default" should be returned if the attributes parameter is
+   *          present.
    * @param attributesList the list of attributes within the "attributes"-parameter
    * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
    * @param referenceUrlSupplier accepts the name of a resource e.g. "User" or "Group" and additionally the
@@ -230,11 +233,13 @@ class ResponseAttributeValidator
    */
   public static Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute,
                                                      JsonNode attribute,
+                                                     JsonNode requestDocument,
                                                      List<SchemaAttribute> attributesList,
                                                      List<SchemaAttribute> excludedAttributesList,
                                                      BiFunction<String, String, String> referenceUrlSupplier)
   {
     ContextValidator requestContextValidator = getContextValidator(attributesList,
+                                                                   requestDocument,
                                                                    excludedAttributesList,
                                                                    referenceUrlSupplier);
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute,
@@ -264,17 +269,25 @@ class ResponseAttributeValidator
    * the validation that checks if an attribute must be removed from the response document
    *
    * @param attributesList the list of attributes within the "attributes"-parameter
+   * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
+   *          returned-value of "request" or "default" should be returned if the attributes parameter is
+   *          present.
    * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
    * @param referenceUrlSupplier accepts the name of a resource e.g. "User" or "Group" and additionally the
    *          resource id of the resource and it will return the fully qualified url of this resource
    * @return the context validation for responses
    */
   private static ContextValidator getContextValidator(List<SchemaAttribute> attributesList,
+                                                      JsonNode requestDocument,
                                                       List<SchemaAttribute> excludedAttributesList,
                                                       BiFunction<String, String, String> referenceUrlSupplier)
   {
     return (schemaAttribute, attribute) -> {
-      final boolean validateNode = validateNode(schemaAttribute, attribute, attributesList, excludedAttributesList);
+      final boolean validateNode = validateNode(schemaAttribute,
+                                                attribute,
+                                                requestDocument,
+                                                attributesList,
+                                                excludedAttributesList);
       if (validateNode && Type.COMPLEX.equals(schemaAttribute.getType()))
       {
         overrideEmptyReferenceNode(schemaAttribute, attribute, referenceUrlSupplier);
@@ -288,12 +301,16 @@ class ResponseAttributeValidator
    * 
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
+   * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
+   *          returned-value of "request" or "default" should be returned if the attributes parameter is
+   *          present.
    * @param attributesList the list of attributes within the "attributes"-parameter
    * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
    * @return true if the validation of this attribute should proceed, false else
    */
   private static boolean validateNode(SchemaAttribute schemaAttribute,
                                       JsonNode attribute,
+                                      JsonNode requestDocument,
                                       List<SchemaAttribute> attributesList,
                                       List<SchemaAttribute> excludedAttributesList)
   {
@@ -323,10 +340,11 @@ class ResponseAttributeValidator
 
     if (!useAttributes && !useExcludedAttributes)
     {
-      final boolean removeAttribute = Returned.REQUEST.equals(schemaAttribute.getReturned());
+      final boolean removeAttribute = Returned.REQUEST.equals(schemaAttribute.getReturned())
+                                      && !isAttributePresentInRequest(schemaAttribute, requestDocument);
       if (removeAttribute)
       {
-        log.trace("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the request",
+        log.trace("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the clients request",
                   schemaAttribute.getFullResourceName(),
                   Returned.REQUEST);
       }
@@ -334,22 +352,74 @@ class ResponseAttributeValidator
     }
 
     final boolean removeRequestOrDefaultAttribute = useAttributes
-                                                    && !isAttributePresentInList(schemaAttribute, attributesList);
+                                                    && !isAttributePresentInList(schemaAttribute, attributesList)
+                                                    && !isAttributePresentInRequest(schemaAttribute, requestDocument);
     if (removeRequestOrDefaultAttribute)
     {
       log.trace("Removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes",
                 schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned());
+      return false;
     }
     final boolean excludeAttribute = useExcludedAttributes
-                                     && isAttributePresentInList(schemaAttribute, excludedAttributesList);
+                                     && (isExcludedAttributePresentInList(schemaAttribute, excludedAttributesList)
+                                         || Returned.REQUEST.equals(schemaAttribute.getReturned()));
     if (excludeAttribute)
     {
       log.trace("Removing attribute '{}' from response for it was excluded by the 'excludedAttributes'-parameter",
                 schemaAttribute.getFullResourceName());
+      return false;
     }
-    return !removeRequestOrDefaultAttribute && !excludeAttribute;
+    return true;
+  }
+
+  /**
+   * validates if the currently validated attribute was present in the request-document. If so the attribute
+   * must be returned by a returned value of "request" or "default"
+   * 
+   * @param schemaAttribute the attributes definition
+   * @param requestDocument the document that holds the attributes from the request
+   * @return true if the attribute is present within the request, false else
+   */
+  private static boolean isAttributePresentInRequest(SchemaAttribute schemaAttribute, JsonNode requestDocument)
+  {
+    if (requestDocument == null)
+    {
+      return false;
+    }
+    JsonNode extensionNode = Optional.ofNullable(schemaAttribute.getResourceUri())
+                                     .map(requestDocument::get)
+                                     .orElse(null);
+    final boolean isExtensionNode = extensionNode != null;
+
+    JsonNode document = isExtensionNode ? extensionNode : requestDocument;
+    return isAttributePresentInDocument(schemaAttribute, document);
+  }
+
+  /**
+   * checks if the given current validated attribute is present within the given json complex node that is
+   * either the original request document or an extension node
+   * 
+   * @param schemaAttribute the attributes definition
+   * @param document the request document or an extension node
+   * @return true if the attribute is present within the given complex json node
+   */
+  private static boolean isAttributePresentInDocument(SchemaAttribute schemaAttribute, JsonNode document)
+  {
+    String[] nameParts = schemaAttribute.getScimNodeName().split("\\.");
+    JsonNode currentNode = document;
+    boolean isPresent;
+    for ( String namePart : nameParts )
+    {
+      currentNode = currentNode.get(namePart);
+      isPresent = currentNode != null;
+      if (!isPresent)
+      {
+        return false;
+      }
+    }
+    return true;
   }
 
   /**
@@ -378,14 +448,42 @@ class ResponseAttributeValidator
    * checks if the given schema attribute definition is present within the attributes list
    *
    * @param schemaAttribute the attribute to check for presence in the attributes list
-   * @param attributes the attribute list that might also be the excludedAttributes list
+   * @param attributes the attributes-parameter list
    * @return true if the given attribute is present within the list, false else
    */
   private static boolean isAttributePresentInList(SchemaAttribute schemaAttribute, List<SchemaAttribute> attributes)
   {
-    return attributes.stream()
-                     .map(SchemaAttribute::getFullResourceName)
-                     .anyMatch(param -> StringUtils.equals(schemaAttribute.getFullResourceName(), param));
+    for ( SchemaAttribute attribute : attributes )
+    {
+      boolean isPresentInList = attribute.getFullResourceName().startsWith(schemaAttribute.getFullResourceName())
+                                || schemaAttribute.getFullResourceName().startsWith(attribute.getFullResourceName());
+      if (isPresentInList)
+      {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * checks if the given schema attribute definition is present within the excludedAttributes list
+   *
+   * @param schemaAttribute the attribute to check for presence in the excludedAttributes list
+   * @param excludedAttributes the excludedAttributes-parameter list
+   * @return true if the given attribute is present within the list, false else
+   */
+  private static boolean isExcludedAttributePresentInList(SchemaAttribute schemaAttribute,
+                                                          List<SchemaAttribute> excludedAttributes)
+  {
+    for ( SchemaAttribute attribute : excludedAttributes )
+    {
+      boolean isPresentInList = attribute.getFullResourceName().equals(schemaAttribute.getFullResourceName());
+      if (isPresentInList)
+      {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

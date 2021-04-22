@@ -26,14 +26,20 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.AttributeBuilder;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
+import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -122,6 +128,7 @@ public class ResponseAttributeValidatorTest
                                                           attribute,
                                                           null,
                                                           null,
+                                                          null,
                                                           REFERENCE_URL_SUPPLIER);
     });
     Assertions.assertTrue(validatedNode.isPresent());
@@ -163,6 +170,7 @@ public class ResponseAttributeValidatorTest
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
           return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                              null,
                                                               null,
                                                               null,
                                                               null,
@@ -222,6 +230,7 @@ public class ResponseAttributeValidatorTest
                                                                 attribute,
                                                                 null,
                                                                 null,
+                                                                null,
                                                                 REFERENCE_URL_SUPPLIER);
           });
           // read only attributes will be ignored even if they do not match its schema validation
@@ -275,6 +284,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -337,6 +347,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
@@ -393,6 +404,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
@@ -434,6 +446,7 @@ public class ResponseAttributeValidatorTest
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
           return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                              null,
                                                               null,
                                                               null,
                                                               null,
@@ -493,6 +506,7 @@ public class ResponseAttributeValidatorTest
                                                                 attribute,
                                                                 null,
                                                                 null,
+                                                                null,
                                                                 REFERENCE_URL_SUPPLIER);
           });
           // read only attributes will be ignored even if they do not match its schema validation
@@ -546,6 +560,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -608,6 +623,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
@@ -664,6 +680,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
@@ -702,7 +719,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       try
       {
-        ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
+        ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, null, REFERENCE_URL_SUPPLIER);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -747,6 +764,7 @@ public class ResponseAttributeValidatorTest
       {
         ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                      NullNode.getInstance(),
+                                                     null,
                                                      null,
                                                      null,
                                                      REFERENCE_URL_SUPPLIER);
@@ -796,6 +814,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -837,6 +856,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -876,6 +896,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -933,7 +954,12 @@ public class ResponseAttributeValidatorTest
 
       try
       {
-        ResponseAttributeValidator.validateAttribute(schemaAttribute, attribute, null, null, REFERENCE_URL_SUPPLIER);
+        ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                     attribute,
+                                                     null,
+                                                     null,
+                                                     null,
+                                                     REFERENCE_URL_SUPPLIER);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -994,6 +1020,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -1035,6 +1062,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -1068,7 +1096,12 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.ALWAYS)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1104,6 +1137,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -1146,6 +1180,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             Collections.singletonList(schemaAttribute),
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -1188,6 +1223,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
@@ -1233,6 +1269,7 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             null,
+                                                            null,
                                                             Collections.singletonList(schemaAttribute),
                                                             REFERENCE_URL_SUPPLIER);
       });
@@ -1277,6 +1314,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -1310,7 +1348,12 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.DEFAULT)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1346,6 +1389,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -1388,6 +1432,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             Collections.singletonList(schemaAttribute),
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -1432,6 +1477,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
@@ -1477,6 +1523,7 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             null,
+                                                            null,
                                                             Collections.singletonList(schemaAttribute),
                                                             REFERENCE_URL_SUPPLIER);
       });
@@ -1518,6 +1565,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
@@ -1567,6 +1615,7 @@ public class ResponseAttributeValidatorTest
                                                             attribute,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
@@ -1598,7 +1647,12 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.REQUEST)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, null, null, null, REFERENCE_URL_SUPPLIER);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -1634,6 +1688,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -1676,6 +1731,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             Collections.singletonList(schemaAttribute),
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -1720,6 +1776,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
@@ -1765,6 +1822,7 @@ public class ResponseAttributeValidatorTest
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
                                                             null,
+                                                            null,
                                                             Collections.singletonList(schemaAttribute),
                                                             REFERENCE_URL_SUPPLIER);
       });
@@ -1782,7 +1840,6 @@ public class ResponseAttributeValidatorTest
      *    {
      *      "type": "*",
      *      "required": false,
-     *      "returned": "request"
      *      ...
      *    }
      * </pre>
@@ -1797,15 +1854,12 @@ public class ResponseAttributeValidatorTest
     @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
     public void testReturnedRequestAttributeWithExcludedAttributesParamNotContainingTheName(Type type)
     {
-      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
-                                                              .name("id")
-                                                              .type(type)
-                                                              .returned(Returned.REQUEST)
-                                                              .build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(type).build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
+                                                            null,
                                                             null,
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
@@ -1842,6 +1896,7 @@ public class ResponseAttributeValidatorTest
                                                             members,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -1874,6 +1929,7 @@ public class ResponseAttributeValidatorTest
                                                             members,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -1903,6 +1959,7 @@ public class ResponseAttributeValidatorTest
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
           return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                               members,
+                                                              null,
                                                               null,
                                                               null,
                                                               REFERENCE_URL_SUPPLIER);
@@ -1942,6 +1999,7 @@ public class ResponseAttributeValidatorTest
                                                               members,
                                                               null,
                                                               null,
+                                                              null,
                                                               REFERENCE_URL_SUPPLIER);
         });
         Assertions.assertTrue(validatedNode.isPresent());
@@ -1978,6 +2036,7 @@ public class ResponseAttributeValidatorTest
                                                             members,
                                                             null,
                                                             null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
@@ -2000,7 +2059,12 @@ public class ResponseAttributeValidatorTest
       members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(schemaAttribute, members, null, null, (s, s2) -> null);
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            members,
+                                                            null,
+                                                            null,
+                                                            null,
+                                                            (s, s2) -> null);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       Assertions.assertEquals(2, validatedNode.get().size());
@@ -2031,6 +2095,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             members,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -2069,6 +2134,7 @@ public class ResponseAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             member,
+                                                            null,
                                                             null,
                                                             null,
                                                             REFERENCE_URL_SUPPLIER);
@@ -2125,5 +2191,592 @@ public class ResponseAttributeValidatorTest
       }
       return attributeBuilder.subAttributes(attributeToAdd.toArray(new SchemaAttribute[0])).build();
     }
+  }
+
+  /**
+   * checks that values with a returned-value of "request" and "default" are correctly returned
+   */
+  @Nested
+  public class PresentInRequestTests
+  {
+
+    /**
+     * shows that the attribute "lastname" of the following structure is correctly returned if the attribute was
+     * present within the request
+     *
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testRequestSubAttributeIsPresentInRequest()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String attributeName = String.format("%s.%s",
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.FAMILY_NAME);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         attributeName,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+
+      Name name = Name.builder().familyName("goldfish").build();
+      User user = User.builder().userName("captain").name(name).build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            user,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(name, validatedNode.get());
+    }
+
+    /**
+     * shows that the attribute "lastname" of the following structure is correctly returned if the attribute was
+     * present within the request but is not explicitly requested in the attributes-parameter
+     *
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testRequestSubAttributeIsPresentInRequestButNotInAttributes()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String attributeName = String.format("%s.%s",
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.FAMILY_NAME);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         attributeName,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+      User user = User.builder().userName("captain").name(name).build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            user,
+                                                            Collections.singletonList(nameAttribute),
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(name, validatedNode.get());
+    }
+
+
+    /**
+     * shows that the attribute "lastname" of the following structure is removed from the node if the attribute
+     * was not present within the request
+     *
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testRequestSubAttributeIsNotPresentInRequestAndNotInAttributes()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String attributeName = String.format("%s.%s",
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.FAMILY_NAME);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         attributeName,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+      User user = User.builder().userName("captain").name(Name.builder().givenName("goldfish").build()).build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            user,
+                                                            null,
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertNotEquals(name, validatedNode.get());
+      Assertions.assertEquals(1, validatedNode.get().size());
+      Assertions.assertNotNull(validatedNode.get().get(AttributeNames.RFC7643.MIDDLE_NAME));
+    }
+
+    /**
+     * shows that the attribute "lastname" of the following structure is removed from the node if the attribute
+     * was not present within the request and also not present within the attributes parameter
+     *
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testRequestSubAttributeIsNotPresentInRequest()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String attributeName = String.format("%s.%s",
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.FAMILY_NAME);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         attributeName,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+      SchemaAttribute middleNameAttribute = userSchema.getSchemaAttribute(String.format("%s.%s",
+                                                                                        AttributeNames.RFC7643.NAME,
+                                                                                        AttributeNames.RFC7643.MIDDLE_NAME));
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+      User user = User.builder().userName("captain").name(Name.builder().givenName("goldfish").build()).build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            user,
+                                                            Collections.singletonList(middleNameAttribute),
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertNotEquals(name, validatedNode.get());
+      Assertions.assertEquals(1, validatedNode.get().size());
+      Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.FAMILY_NAME));
+      Assertions.assertNotNull(validatedNode.get().get(AttributeNames.RFC7643.MIDDLE_NAME));
+    }
+
+  }
+
+  @Nested
+  public class AttributesParameterTests
+  {
+
+    /**
+     * shows that the attribute "nickName" of the following structure is correctly returned if the attributes
+     * parameter does reference this attribute
+     *
+     * <pre>
+     *   attributes: ["nickName"]
+     * </pre>
+     *
+     * <pre>
+     *   "nickName": "captain"
+     * </pre>
+     */
+    @Test
+    public void testRequestAttributesParentIsInAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         AttributeNames.RFC7643.NICK_NAME,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
+
+      JsonNode nickName = new TextNode("goldfish");
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nickNameAttribute,
+                                                            nickName,
+                                                            null,
+                                                            Collections.singletonList(nickNameAttribute),
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(nickName, validatedNode.get());
+    }
+
+    /**
+     * shows that the attribute "nickName" of the following structure is not returned if the attributes parameter
+     * does not reference it
+     * 
+     * <pre>
+     *   attributes: ["displayName"]
+     * </pre>
+     * 
+     * <pre>
+     *   "nickName": "captain"
+     * </pre>
+     */
+    @Test
+    public void testRequestAttributeIsNotInAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         AttributeNames.RFC7643.NICK_NAME,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
+      SchemaAttribute displayNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
+
+      JsonNode nickName = new TextNode("goldfish");
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nickNameAttribute,
+                                                            nickName,
+                                                            null,
+                                                            Collections.singletonList(displayNameAttribute),
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * shows that the attribute "lastname" of the following structure is correctly returned if the attributes
+     * parameter has its parent "name" referenced
+     * 
+     * <pre>
+     *   attributes: ["name"]
+     * </pre>
+     * 
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish",
+     *     "middleName": "captain"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testRequestSubAttributesParentIsInAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String attributeName = String.format("%s.%s",
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.FAMILY_NAME);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         attributeName,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+      User user = User.builder().userName("captain").build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            user,
+                                                            Collections.singletonList(nameAttribute),
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(name, validatedNode.get());
+      Assertions.assertNotNull(validatedNode.get().get(AttributeNames.RFC7643.FAMILY_NAME));
+      Assertions.assertNotNull(validatedNode.get().get(AttributeNames.RFC7643.MIDDLE_NAME));
+    }
+
+    /**
+     * shows that the attribute "lastname" of the following structure is correctly returned if the attributes
+     * parameter has its parent "name" referenced
+     * 
+     * <pre>
+     *   attributes: ["name.familyName"]
+     * </pre>
+     * 
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish",
+     *     "middleName": "captain"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testRequestSubAttributeIsInAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String familyAttributeName = String.format("%s.%s",
+                                                       AttributeNames.RFC7643.NAME,
+                                                       AttributeNames.RFC7643.FAMILY_NAME);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         familyAttributeName,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+      SchemaAttribute familyNameAttribute = userSchema.getSchemaAttribute(familyAttributeName);
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+      User user = User.builder().userName("captain").build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            user,
+                                                            Collections.singletonList(familyNameAttribute),
+                                                            null,
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertNotEquals(name, validatedNode.get());
+      Assertions.assertNotNull(validatedNode.get().get(AttributeNames.RFC7643.FAMILY_NAME));
+      Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.MIDDLE_NAME));
+    }
+
+  }
+
+  @Nested
+  public class ExcludedAttributesParameterTests
+  {
+
+    /**
+     * shows that the attribute "nickName" of the following structure is correctly removed if it is referenced in
+     * the excluded attributes parameter
+     *
+     * <pre>
+     *   excludedAttributes: ["nickName"]
+     * </pre>
+     *
+     * <pre>
+     *   "nickName": "captain"
+     * </pre>
+     */
+    @Test
+    public void testRequestAttributesParentIsInExcludedAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
+
+      JsonNode nickName = new TextNode("goldfish");
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nickNameAttribute,
+                                                            nickName,
+                                                            null,
+                                                            null,
+                                                            Collections.singletonList(nickNameAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * shows that the attribute "nickName" of the following structure is correctly removed if its returned-value
+     * is request but not referenced in the excludedAttributes parameter the excluded attributes parameter
+     *
+     * <pre>
+     *   excludedAttributes: ["displayName"]
+     * </pre>
+     *
+     * <pre>
+     *   "nickName": "captain"
+     * </pre>
+     */
+    @Test
+    public void testRequestAttributeIsNotInExcludedAttributesParameterButReturnedIsRequest()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      TestHelper.modifyAttributeMetaData(userSchema,
+                                         AttributeNames.RFC7643.NICK_NAME,
+                                         null,
+                                         null,
+                                         Returned.REQUEST,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null);
+      SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
+      SchemaAttribute displayNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
+
+      JsonNode nickName = new TextNode("goldfish");
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nickNameAttribute,
+                                                            nickName,
+                                                            null,
+                                                            null,
+                                                            Collections.singletonList(displayNameAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * shows that the attribute "nickName" of the following structure is not removed if it is not referenced in
+     * the excludedAttributes parameter
+     *
+     * <pre>
+     *   excludedAttributes: ["displayName"]
+     * </pre>
+     *
+     * <pre>
+     *   "nickName": "captain"
+     * </pre>
+     */
+    @Test
+    public void testAttributeIsNotExcludedIfNotInExcludedAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+
+      SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
+      SchemaAttribute displayNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
+
+      JsonNode nickName = new TextNode("goldfish");
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nickNameAttribute,
+                                                            nickName,
+                                                            null,
+                                                            null,
+                                                            Collections.singletonList(displayNameAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertEquals(nickName, validatedNode.get());
+    }
+
+    /**
+     * shows that the attribute "name" is completely excluded if referenced in the excludedAttributes parameter
+     *
+     * <pre>
+     *   excludedAttributes: ["name"]
+     * </pre>
+     *
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish",
+     *     "middleName": "captain"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testComplexAttributeIsExcludedIfInExcludedAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            null,
+                                                            null,
+                                                            Collections.singletonList(nameAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * shows that the attribute "lastname" is excluded if it is referenced in the excludedAttributes parameter
+     *
+     * <pre>
+     *   excludedAttributes: ["name.familyName"]
+     * </pre>
+     *
+     * <pre>
+     *   "name": {
+     *     "familyName": "goldfish",
+     *     "middleName": "captain"
+     *   }
+     * </pre>
+     */
+    @Test
+    public void testSubAttributeIsExcludedIfInExcludedAttributesParameter()
+    {
+      JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+      Schema userSchema = new Schema(userSchemaNode);
+      final String familyAttributeName = String.format("%s.%s",
+                                                       AttributeNames.RFC7643.NAME,
+                                                       AttributeNames.RFC7643.FAMILY_NAME);
+      SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+      SchemaAttribute familyNameAttribute = userSchema.getSchemaAttribute(familyAttributeName);
+
+      Name name = Name.builder().familyName("goldfish").middlename("captain").build();
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(nameAttribute,
+                                                            name,
+                                                            null,
+                                                            null,
+                                                            Collections.singletonList(familyNameAttribute),
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertTrue(validatedNode.isPresent());
+      Assertions.assertNotEquals(name, validatedNode.get());
+      Assertions.assertNull(validatedNode.get().get(AttributeNames.RFC7643.FAMILY_NAME));
+      Assertions.assertNotNull(validatedNode.get().get(AttributeNames.RFC7643.MIDDLE_NAME));
+    }
+
   }
 }
