@@ -7,12 +7,14 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * @author Pascal Knueppel
  * @since 10.04.2021
  */
+@Slf4j
 class ComplexAttributeValidator
 {
 
@@ -49,6 +51,10 @@ class ComplexAttributeValidator
       {
         scimObjectNode.set(subAttribute.getName(), validatedNode.get());
       }
+    }
+    if (scimObjectNode.isEmpty())
+    {
+      log.trace("Evaluated complex node '{}' to an empty object.", schemaAttribute.getFullResourceName());
     }
     return scimObjectNode.isEmpty() ? null : scimObjectNode;
   }
