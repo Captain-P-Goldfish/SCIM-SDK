@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -58,6 +59,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -233,14 +235,9 @@ class ResourceEndpointHandler
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
-      JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                              resourceType,
-                                                                              resourceNode,
-                                                                              resource,
-                                                                              null,
-                                                                              null,
-                                                                              baseUrlSupplier,
-                                                                              resourceHandler.getType());
+      ResponseSchemaValidator responseValidator = new ResponseSchemaValidator(resourceType, null, null, resourceNode,
+                                                                              getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
       return new CreateResponse(responseResource, location, createdMeta);
     }
     catch (ScimException ex)
@@ -364,14 +361,10 @@ class ResourceEndpointHandler
         meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       });
-      JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                              resourceType,
-                                                                              resourceNode,
-                                                                              null,
-                                                                              attributes,
-                                                                              excludedAttributes,
-                                                                              baseUrlSupplier,
-                                                                              resourceHandler.getType());
+      ResponseSchemaValidator responseValidator = new ResponseSchemaValidator(resourceType, attributesList,
+                                                                              excludedAttributesList, null,
+                                                                              getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
       return new GetResponse(responseResource, location, resourceNode.getMeta().orElse(null));
     }
     catch (ScimException ex)
@@ -592,14 +585,10 @@ class ResourceEndpointHandler
           meta.setResourceType(resourceType.getName());
           ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
         });
-        JsonNode validatedResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                                 resourceType,
-                                                                                 resourceNode,
-                                                                                 null,
-                                                                                 attributes,
-                                                                                 excludedAttributes,
-                                                                                 baseUrlSupplier,
-                                                                                 resourceHandler.getType());
+        ResponseSchemaValidator responseValidator = new ResponseSchemaValidator(resourceType, attributesList,
+                                                                                excludedAttributesList, null,
+                                                                                getReferenceUrlSupplier(baseUrlSupplier));
+        JsonNode validatedResource = responseValidator.validateDocument(resourceNode);
         validatedResourceList.add(validatedResource);
       }
 
@@ -841,14 +830,9 @@ class ResourceEndpointHandler
                                           null, null);
       }
 
-      JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                              resourceType,
-                                                                              resourceNode,
-                                                                              resource,
-                                                                              null,
-                                                                              null,
-                                                                              baseUrlSupplier,
-                                                                              resourceHandler.getType());
+      ResponseSchemaValidator responseValidator = new ResponseSchemaValidator(resourceType, null, null, resourceNode,
+                                                                              getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
 
       return new UpdateResponse(responseResource, location, meta);
     }
@@ -1039,14 +1023,13 @@ class ResourceEndpointHandler
         meta.setResourceType(resourceType.getName());
         meta.setLocation(location);
       }
-      JsonNode responseResource = SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                              resourceType,
-                                                                              patchedResourceNode,
+      final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
+      final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
+      ResponseSchemaValidator responseValidator = new ResponseSchemaValidator(resourceType, attributesList,
+                                                                              excludedAttributesList,
                                                                               patchHandler.getRequestedAttributes(),
-                                                                              attributes,
-                                                                              excludedAttributes,
-                                                                              baseUrlSupplier,
-                                                                              resourceHandler.getType());
+                                                                              getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
 
       return new UpdateResponse(responseResource, location, meta);
     }
@@ -1101,5 +1084,21 @@ class ResourceEndpointHandler
       baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
     }
     return baseUrl + resourceType.getEndpoint() + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
+  }
+
+  /**
+   * resolves the given baseUrl to a reference url based on the given resourceName and resourceId. This is used
+   * to set absolute urls in resource attribute nodes that define the "$ref" attribute but did not set it
+   * previously
+   * 
+   * @param baseUrl the base url of this resource endpoint
+   * @return the fully qualified url to the given resource or null
+   */
+  private BiFunction<String, String, String> getReferenceUrlSupplier(Supplier<String> baseUrl)
+  {
+    return (resourceName, resourceId) -> {
+      Optional<ResourceType> resourceType = resourceTypeFactory.getResourceTypeByName(resourceName);
+      return resourceType.map(jsonNodes -> baseUrl.get() + jsonNodes.getEndpoint() + "/" + resourceId).orElse(null);
+    };
   }
 }

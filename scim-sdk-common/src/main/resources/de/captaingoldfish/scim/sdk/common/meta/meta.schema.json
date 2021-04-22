@@ -14,7 +14,7 @@
       "returned": "default",
       "uniqueness": "none",
       "multiValued": false,
-      "required": true,
+      "required": false,
       "caseExact": true,
       "subAttributes": [
         {
@@ -25,7 +25,7 @@
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,
-          "required": true,
+          "required": false,
           "caseExact": true
         },
         {
@@ -36,7 +36,7 @@
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,
-          "required": true,
+          "required": false,
           "caseExact": false
         },
         {
@@ -47,7 +47,7 @@
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,
-          "required": true,
+          "required": false,
           "caseExact": false
         },
         {
@@ -58,7 +58,7 @@
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,
-          "required": true,
+          "required": false,
           "caseExact": true,
           "referenceTypes": [
             "uri"

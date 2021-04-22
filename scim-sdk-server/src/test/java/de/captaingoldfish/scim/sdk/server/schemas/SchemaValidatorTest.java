@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -68,6 +69,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +88,10 @@ public class SchemaValidatorTest implements FileReferences
    * a url supplier that may be used in special cases during schema validation
    */
   private Supplier<String> baseUrlSupplier = () -> "http://localhost:8080/scim/v2";
+
+  private BiFunction<String, String, String> referenceUrlSupplier = (resourceName, resourceId) -> {
+    return String.format("http://localhost:8080/scim/v2/%s/%s", resourceName, resourceId);
+  };
 
   /**
    * the factory that builds and holds all registered resource-types
@@ -2444,14 +2450,8 @@ public class SchemaValidatorTest implements FileReferences
    */
   private void successfulValidationForResponse(ResourceType resourceType, AllTypes allTypes)
   {
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                                                    resourceType,
-                                                                                    allTypes,
-                                                                                    null,
-                                                                                    null,
-                                                                                    null,
-                                                                                    baseUrlSupplier,
-                                                                                    User.class));
+    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(resourceType, null, null, null,
+                                                                    referenceUrlSupplier).validateDocument(allTypes));
   }
 
   /**
@@ -2461,14 +2461,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      SchemaValidator.validateDocumentForResponse(resourceTypeFactory,
-                                                  resourceType,
-                                                  allTypes,
-                                                  null,
-                                                  null,
-                                                  null,
-                                                  baseUrlSupplier,
-                                                  User.class);
+      new ResponseSchemaValidator(resourceType, null, null, null, referenceUrlSupplier).validateDocument(allTypes);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)

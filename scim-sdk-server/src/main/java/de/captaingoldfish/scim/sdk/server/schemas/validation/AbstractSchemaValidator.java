@@ -23,6 +23,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.DocumentDescription;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,6 +40,7 @@ abstract class AbstractSchemaValidator
   /**
    * the resource type that is the representative for the validation that will be executed on the document
    */
+  @Getter(AccessLevel.PROTECTED)
   private final ResourceType resourceType;
 
   /**
@@ -95,8 +97,6 @@ abstract class AbstractSchemaValidator
                                 validatedExtension.getValidatedExtension());
         }
       }
-      Optional.ofNullable(resource.get(AttributeNames.RFC7643.META))
-              .ifPresent(meta -> validatedResource.set(AttributeNames.RFC7643.META, meta));
       return validatedResource;
     }
     catch (AttributeValidationException ex)

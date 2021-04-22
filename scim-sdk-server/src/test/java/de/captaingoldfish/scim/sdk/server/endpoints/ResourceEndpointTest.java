@@ -347,7 +347,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.any(),
                           Mockito.isNull());
     Assertions.assertEquals(BASE_URI + EndpointPaths.USERS + "/" + returnedUser.getId().get(),
-                            returnedUser.getMeta().get().getLocation().get());
+                            returnedUser.getMeta().flatMap(Meta::getLocation).get());
   }
 
   /**
