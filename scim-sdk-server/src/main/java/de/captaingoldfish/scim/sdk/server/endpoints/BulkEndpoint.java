@@ -49,7 +49,7 @@ import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaFactory;
-import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.Getter;
@@ -792,7 +792,9 @@ class BulkEndpoint
       JsonNode jsonNode = JsonHelper.readJsonDocument(requestBody);
       SchemaFactory schemaFactory = getResourceTypeFactory().getSchemaFactory();
       Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
-      JsonNode validatedRequest = SchemaValidator.validateSchemaDocumentForRequest(bulkRequestSchema, jsonNode);
+      JsonNode validatedRequest = new RequestSchemaValidator(ScimObjectNode.class,
+                                                             HttpMethod.POST).validateDocument(bulkRequestSchema,
+                                                                                               jsonNode);
       BulkRequest bulkRequest = JsonHelper.copyResourceToObject(validatedRequest, BulkRequest.class);
       if (bulkConfig.getMaxOperations() < bulkRequest.getBulkRequestOperations().size())
       {

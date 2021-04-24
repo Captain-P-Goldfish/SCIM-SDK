@@ -919,7 +919,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
     MatcherAssert.assertThat(errorResponse.getDetail().get(),
-                             Matchers.containsString("document does not have a 'schemas'-attribute"));
+                             Matchers.containsString("Document does not have a 'schemas'-attribute"));
   }
 
   /**
@@ -1145,8 +1145,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
-    Assertions.assertEquals("the attribute 'urn:ietf:params:scim:api:messages:2.0:BulkRequest:Operations' "
-                            + "is required \n\tmutability: 'WRITE_ONLY'\n\treturned: 'NEVER'",
+    Assertions.assertEquals("Required 'WRITE_ONLY' attribute "
+                            + "'urn:ietf:params:scim:api:messages:2.0:BulkRequest:Operations' is missing",
                             errorResponse.getDetail().get());
   }
 

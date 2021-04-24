@@ -105,7 +105,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/bulk-request.json
                             </file>
-                            <checksum>26f925f7c412690e0e83a402ea298e1c</checksum>
+                            <checksum>63f3ba5d38d9a5809a60d0bb9a274649</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

@@ -69,7 +69,7 @@
         },
         {
           "name": "data",
-          "type": "string",
+          "type": "any",
           "description": "The resource data as it would appear for a single SCIM POST, PUT, or PATCH operation. REQUIRED in a request when \"method\" is \"POST\", \"PUT\", or \"PATCH\".",
           "mutability": "writeOnly",
           "returned": "never",
