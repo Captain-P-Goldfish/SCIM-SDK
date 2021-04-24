@@ -3,9 +3,7 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -14,10 +12,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -561,69 +557,6 @@ public class SimpleAttributeTypeValidatorTest
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
-  }
-
-  /**
-   * tests that an any-type field is parsed to any type as long as the data type matches
-   */
-  @TestFactory
-  public List<DynamicTest> testAnyTypeAsString()
-  {
-    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.ANY).build();
-
-    List<DynamicTest> dynamicTests = new ArrayList<>();
-    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsString", () -> {
-      String content = "hello-world";
-      JsonNode attribute = new TextNode(content);
-      JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                       attribute));
-      Assertions.assertNotNull(parsedNode);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-      Assertions.assertEquals(content, parsedNode.textValue());
-    }));
-    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsInteger", () -> {
-      int content = 5;
-      JsonNode attribute = new IntNode(content);
-      JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                       attribute));
-      Assertions.assertNotNull(parsedNode);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
-      Assertions.assertEquals(content, parsedNode.intValue());
-    }));
-    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsLong", () -> {
-      long content = Long.MAX_VALUE;
-      JsonNode attribute = new LongNode(content);
-      JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                       attribute));
-      Assertions.assertNotNull(parsedNode);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
-      Assertions.assertEquals(content, parsedNode.longValue());
-    }));
-    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsDecimal", () -> {
-      double content = 17.9;
-      JsonNode attribute = new DoubleNode(content);
-      JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                       attribute));
-      Assertions.assertNotNull(parsedNode);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
-      Assertions.assertEquals(content, parsedNode.doubleValue());
-    }));
-    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsBoolean", () -> {
-      JsonNode attribute = BooleanNode.getTrue();
-      JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                       attribute));
-      Assertions.assertNotNull(parsedNode);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
-      Assertions.assertTrue(parsedNode.booleanValue());
-    }));
-    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsNull", () -> {
-      JsonNode attribute = NullNode.getInstance();
-      JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                       attribute));
-      Assertions.assertNotNull(parsedNode);
-      Assertions.assertTrue(parsedNode.isNull());
-    }));
-    return dynamicTests;
   }
 
   /**

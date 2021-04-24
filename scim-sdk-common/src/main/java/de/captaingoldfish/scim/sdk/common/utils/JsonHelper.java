@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
-import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -458,7 +458,7 @@ public final class JsonHelper
    * @param <T> the type must define a noArgs constructor
    * @return the newly created instance
    */
-  public static <T extends ResourceNode> T getNewInstance(Class<T> type)
+  public static <T extends ScimObjectNode> T getNewInstance(Class<T> type)
   {
     try
     {
