@@ -4,8 +4,14 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 
@@ -38,6 +44,13 @@ class ValidationSelector
     {
       return Optional.empty();
     }
+
+    boolean isAnyNode = Type.ANY.equals(schemaAttribute.getType());
+    if (isAnyNode)
+    {
+      return Optional.of(handleAnyAttribute(schemaAttribute, attribute));
+    }
+
     boolean isComplexType = Type.COMPLEX.equals(schemaAttribute.getType());
     if (schemaAttribute.isMultiValued())
     {
@@ -72,6 +85,61 @@ class ValidationSelector
         return Optional.of(validatedAttribute);
       }
     }
+  }
+
+  /**
+   * handles an any attribute. Since we cannot forecast what type of attribute we will get we will simply accept
+   * anything. So any nodes must define canonicalTypes or specific sub-attributes
+   * 
+   * @param schemaAttribute the attribute definition of the any node
+   * @param attribute the attribute to validate
+   * @return the attribute or an empty
+   */
+  private static JsonNode handleAnyAttribute(SchemaAttribute schemaAttribute, JsonNode attribute)
+  {
+    if (schemaAttribute.isMultiValued() && !attribute.isArray())
+    {
+      ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
+      scimArrayNode.add(attribute);
+      return scimArrayNode;
+    }
+
+    if (attribute.isArray() || attribute.isObject())
+    {
+      return attribute;
+    }
+
+    return getSimpleAnyAttribute(schemaAttribute, attribute);
+  }
+
+  /**
+   * converts simple any attributes in the corresponding attribute representation. This is not done for array or
+   * object type attribute
+   * 
+   * @param schemaAttribute the any types attribute definition
+   * @param attribute the simple attribute
+   * @return the {@link de.captaingoldfish.scim.sdk.common.resources.base.ScimNode} representation of the
+   *         attribute
+   */
+  private static JsonNode getSimpleAnyAttribute(SchemaAttribute schemaAttribute, JsonNode attribute)
+  {
+    if (attribute.isTextual())
+    {
+      return new ScimTextNode(schemaAttribute, attribute.textValue());
+    }
+    if (attribute.isBoolean())
+    {
+      return new ScimBooleanNode(schemaAttribute, attribute.booleanValue());
+    }
+    if (attribute.isDouble() || attribute.isFloat())
+    {
+      return new ScimDoubleNode(schemaAttribute, attribute.doubleValue());
+    }
+    if (attribute.isNumber() || attribute.isLong())
+    {
+      return new ScimLongNode(schemaAttribute, attribute.longValue());
+    }
+    return NullNode.getInstance();
   }
 
 

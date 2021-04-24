@@ -9,7 +9,6 @@ import java.util.function.Predicate;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.NullNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -69,8 +68,6 @@ class SimpleAttributeValidator
     Type type = schemaAttribute.getType();
     switch (type)
     {
-      case ANY:
-        return parseAnyNode(schemaAttribute, attribute);
       case STRING:
         isNodeOfExpectedType(schemaAttribute, attribute, jsonNode -> jsonNode.isTextual() || jsonNode.isObject());
         return new ScimTextNode(schemaAttribute, attribute.isTextual() ? attribute.textValue() : attribute.toString());
@@ -106,34 +103,6 @@ class SimpleAttributeValidator
         validateValueNodeWithReferenceTypes(schemaAttribute, attribute);
         return new ScimTextNode(schemaAttribute, attribute.textValue());
     }
-  }
-
-  /**
-   * tries to parse an any node into the correct representation
-   * 
-   * @param schemaAttribute the attribute definition
-   * @param attribute the attribute that is of type "any"
-   * @return the parsed json node
-   */
-  private static JsonNode parseAnyNode(SchemaAttribute schemaAttribute, JsonNode attribute)
-  {
-    if (attribute.isTextual())
-    {
-      return new ScimTextNode(schemaAttribute, attribute.textValue());
-    }
-    if (attribute.isBoolean())
-    {
-      return new ScimBooleanNode(schemaAttribute, attribute.booleanValue());
-    }
-    if (attribute.isDouble() || attribute.isFloat())
-    {
-      return new ScimDoubleNode(schemaAttribute, attribute.doubleValue());
-    }
-    if (attribute.isNumber() || attribute.isLong())
-    {
-      return new ScimLongNode(schemaAttribute, attribute.longValue());
-    }
-    return NullNode.getInstance();
   }
 
   /**

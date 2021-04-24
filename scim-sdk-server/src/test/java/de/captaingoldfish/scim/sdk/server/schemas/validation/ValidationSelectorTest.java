@@ -1,22 +1,36 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Optional;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
+import lombok.SneakyThrows;
 
 
 /**
@@ -167,5 +181,122 @@ public class ValidationSelectorTest
     });
     Assertions.assertTrue(validatedNode.isPresent());
     Assertions.assertEquals(attribute, validatedNode.get());
+  }
+
+  /**
+   * tests that an any-type field is parsed to any type as long as the data type matches
+   */
+  @TestFactory
+  public List<DynamicTest> testAnyTypeAsString()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.ANY).build();
+    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsString", () -> {
+      String content = "hello-world";
+      JsonNode attribute = new TextNode(content);
+      Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
+        return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+      });
+      Assertions.assertTrue(parsedNode.isPresent());
+      MatcherAssert.assertThat(parsedNode.get().getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
+      Assertions.assertEquals(content, parsedNode.get().textValue());
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsInteger", () -> {
+      int content = 5;
+      JsonNode attribute = new IntNode(content);
+      Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
+        return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+      });
+      Assertions.assertTrue(parsedNode.isPresent());
+      MatcherAssert.assertThat(parsedNode.get().getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
+      Assertions.assertEquals(content, parsedNode.get().intValue());
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsLong", () -> {
+      long content = Long.MAX_VALUE;
+      JsonNode attribute = new LongNode(content);
+      Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
+        return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+      });
+      Assertions.assertTrue(parsedNode.isPresent());
+      MatcherAssert.assertThat(parsedNode.get().getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
+      Assertions.assertEquals(content, parsedNode.get().longValue());
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsDecimal", () -> {
+      double content = 17.9;
+      JsonNode attribute = new DoubleNode(content);
+      Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
+        return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+      });
+      Assertions.assertTrue(parsedNode.isPresent());
+      MatcherAssert.assertThat(parsedNode.get().getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+      Assertions.assertEquals(content, parsedNode.get().doubleValue());
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsBoolean", () -> {
+      JsonNode attribute = BooleanNode.getTrue();
+      Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
+        return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+      });
+      Assertions.assertTrue(parsedNode.isPresent());
+      MatcherAssert.assertThat(parsedNode.get().getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
+      Assertions.assertTrue(parsedNode.get().booleanValue());
+    }));
+    dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsNull", () -> {
+      JsonNode attribute = NullNode.getInstance();
+      Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
+        return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
+      });
+      Assertions.assertTrue(parsedNode.isPresent());
+      Assertions.assertTrue(parsedNode.get().isNull());
+    }));
+    return dynamicTests;
+  }
+
+  /**
+   * tests the following structure
+   *
+   * <pre>
+   *    {
+   *      "type": "any",
+   *      "multiValued": true,
+   *      ...
+   *    }
+   * </pre>
+   *
+   * <pre>
+   *    {
+   *      "array": ["hello", 1, 2.5, false, "2019-09-29T24:00:00Z"]
+   *    }
+   * </pre>
+   */
+  @SneakyThrows
+  @Test
+  public void testValidateAnyType()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.ANY)
+                                                            .multivalued(true)
+                                                            .build();
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.addAll(Arrays.asList(new TextNode("hello"),
+                                   new LongNode(1),
+                                   new DoubleNode(2.5),
+                                   BooleanNode.getFalse(),
+                                   new TextNode("2019-09-29T24:00:00Z")));
+
+    ContextValidator contextValidator = (schemaAttribute1, jsonNode) -> true;
+    Optional<JsonNode> scimArrayNode = Assertions.assertDoesNotThrow(() -> {
+      return ValidationSelector.validateNode(schemaAttribute, arrayNode, contextValidator);
+    });
+    Assertions.assertTrue(scimArrayNode.isPresent());
+    Assertions.assertEquals(arrayNode.size(), scimArrayNode.get().size());
+    for ( int i = 0 ; i < arrayNode.size() ; i++ )
+    {
+      JsonNode node = arrayNode.get(i);
+      JsonNode parsedNode = scimArrayNode.get().get(i);
+      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+    }
   }
 }

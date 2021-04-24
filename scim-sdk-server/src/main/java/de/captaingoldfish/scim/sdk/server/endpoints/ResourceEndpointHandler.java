@@ -34,6 +34,7 @@ import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
@@ -56,9 +57,9 @@ import de.captaingoldfish.scim.sdk.server.patch.PatchHandler;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
-import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
 import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
@@ -967,7 +968,8 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
-      patchDocument = SchemaValidator.validateSchemaDocumentForRequest(patchSchema, patchDocument);
+      patchDocument = new RequestSchemaValidator(ScimObjectNode.class,
+                                                 HttpMethod.PATCH).validateDocument(patchSchema, patchDocument);
       // attributes and excludedAttributes are not passed here because the update is done on the whole resource so
       // we must also extract the whole resource now
       ResourceNode resourceNode = resourceHandler.getResource(id,

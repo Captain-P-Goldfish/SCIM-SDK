@@ -16,7 +16,6 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
@@ -30,7 +29,6 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
-import lombok.SneakyThrows;
 
 
 /**
@@ -800,55 +798,6 @@ public class SimpleMultivaluedAttributeValidatorTest
       Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
       String errorMessage = String.format("Found unsupported value in multivalued attribute '%s'", arrayNode);
       Assertions.assertEquals(errorMessage, ex.getMessage());
-    }
-  }
-
-  /**
-   * tests the following structure
-   *
-   * <pre>
-   *    {
-   *      "type": "any",
-   *      "multiValued": true,
-   *      ...
-   *    }
-   * </pre>
-   *
-   * <pre>
-   *    {
-   *      "array": ["hello", 1, 2.5, false, "2019-09-29T24:00:00Z"]
-   *    }
-   * </pre>
-   */
-  @SneakyThrows
-  @Test
-  public void testValidateAnyType()
-  {
-    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
-                                                            .name("id")
-                                                            .type(Type.ANY)
-                                                            .multivalued(true)
-                                                            .build();
-    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"),
-                                   new LongNode(1),
-                                   new DoubleNode(2.5),
-                                   BooleanNode.getFalse(),
-                                   new TextNode("2019-09-29T24:00:00Z")));
-
-    ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
-    });
-    Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
-    for ( int i = 0 ; i < arrayNode.size() ; i++ )
-    {
-      JsonNode node = arrayNode.get(i);
-      JsonNode parsedNode = scimArrayNode.get(i);
-      final String classPackage = "de.captaingoldfish.scim.sdk.common.resources.base.";
-      MatcherAssert.assertThat(parsedNode.getClass(),
-                               Matchers.typeCompatibleWith(Class.forName(classPackage + "Scim"
-                                                                         + node.getClass().getSimpleName())));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
     }
   }
 
