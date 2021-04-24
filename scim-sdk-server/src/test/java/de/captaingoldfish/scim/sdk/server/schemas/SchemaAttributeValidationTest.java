@@ -15,7 +15,7 @@ import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
-import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 
 
@@ -66,7 +66,7 @@ public class SchemaAttributeValidationTest implements FileReferences
 
     try
     {
-      new RequestSchemaValidator(userResourceType, HttpMethod.POST).validateDocument(user);
+      new RequestResourceValidator(userResourceType, HttpMethod.POST).validateDocument(user);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)

@@ -68,8 +68,8 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
-import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
-import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseSchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -2450,8 +2450,8 @@ public class SchemaValidatorTest implements FileReferences
    */
   private void successfulValidationForResponse(ResourceType resourceType, AllTypes allTypes)
   {
-    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(resourceType, null, null, null,
-                                                                    referenceUrlSupplier).validateDocument(allTypes));
+    Assertions.assertDoesNotThrow(() -> new ResponseResourceValidator(resourceType, null, null, null,
+                                                                      referenceUrlSupplier).validateDocument(allTypes));
   }
 
   /**
@@ -2461,7 +2461,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      new ResponseSchemaValidator(resourceType, null, null, null, referenceUrlSupplier).validateDocument(allTypes);
+      new ResponseResourceValidator(resourceType, null, null, null, referenceUrlSupplier).validateDocument(allTypes);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
@@ -2479,7 +2479,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      new RequestSchemaValidator(resourceType, HttpMethod.POST).validateDocument(allTypes);
+      new RequestResourceValidator(resourceType, HttpMethod.POST).validateDocument(allTypes);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)

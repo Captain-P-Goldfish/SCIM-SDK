@@ -47,7 +47,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 13.04.2021
  */
 @Slf4j
-public class RequestSchemaValidatorTest implements FileReferences
+public class RequestResourceValidatorTest implements FileReferences
 {
 
   /**
@@ -117,9 +117,9 @@ public class RequestSchemaValidatorTest implements FileReferences
                                                                       .primary(true)
                                                                       .build()))
                                       .build();
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     Assertions.assertEquals(userResource, user);
@@ -144,9 +144,9 @@ public class RequestSchemaValidatorTest implements FileReferences
                                   .userName("max")
                                   .groups(Arrays.asList(GroupNode.builder().value("head-directory").build()))
                                   .build();
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     Assertions.assertNotEquals(userResource, user);
@@ -176,9 +176,9 @@ public class RequestSchemaValidatorTest implements FileReferences
     userResource.setSchemas((Set<String>)null);
     Assertions.assertNull(userResource.get(AttributeNames.RFC7643.SCHEMAS));
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     Assertions.assertEquals(userResource, user);
@@ -207,9 +207,9 @@ public class RequestSchemaValidatorTest implements FileReferences
                                                   .manager(Manager.builder().value("852963").build())
                                                   .build();
     final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     Assertions.assertEquals(userResource, user);
@@ -245,9 +245,9 @@ public class RequestSchemaValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
     userResource.setSchemas((Set<String>)null);
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     Assertions.assertEquals(userResource, user);
@@ -285,9 +285,9 @@ public class RequestSchemaValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
     userResource.setSchemas((Set<String>)null);
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User validatedUser = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(validatedUser);
     Assertions.assertNotEquals(userResource, validatedUser);
@@ -318,9 +318,9 @@ public class RequestSchemaValidatorTest implements FileReferences
     Assertions.assertEquals(1, userResource.getSchemas().size(), userResource.getSchemas().toString());
     MatcherAssert.assertThat(userResource.getSchemas(), Matchers.containsInAnyOrder(SchemaUris.ENTERPRISE_USER_URI));
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     // the equality succeeds because the documents schemas attribute given to the validation is being altered
@@ -349,9 +349,9 @@ public class RequestSchemaValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").build();
     userResource.addSchema(SchemaUris.ENTERPRISE_USER_URI);
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
-      return requestSchemaValidator.validateDocument(userResource);
+      return requestResourceValidator.validateDocument(userResource);
     });
     Assertions.assertNotNull(user);
     // the equality succeeds because the documents schemas attribute given to the validation is being altered
@@ -380,10 +380,10 @@ public class RequestSchemaValidatorTest implements FileReferences
 
     final User userResource = User.builder().externalId("123").userName("max").build();
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     try
     {
-      requestSchemaValidator.validateDocument(userResource);
+      requestResourceValidator.validateDocument(userResource);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
@@ -415,10 +415,10 @@ public class RequestSchemaValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").build();
     userResource.addSchema("urn:gold:params:scim:schemas:custom:2.0:Role");
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
     try
     {
-      requestSchemaValidator.validateDocument(userResource);
+      requestResourceValidator.validateDocument(userResource);
       Assertions.fail("this point must not be reached");
     }
     catch (DocumentValidationException ex)
@@ -454,8 +454,8 @@ public class RequestSchemaValidatorTest implements FileReferences
     roleNode.remove(AttributeNames.RFC7643.SCHEMAS);
     userResource.set(roleUri, roleNode);
 
-    RequestSchemaValidator requestSchemaValidator = new RequestSchemaValidator(userResourceType, HttpMethod.POST);
-    User validatedUser = (User)Assertions.assertDoesNotThrow(() -> requestSchemaValidator.validateDocument(userResource));
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    User validatedUser = (User)Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(userResource));
     // the schemas in the resources may have a different order here so we will do the comparisons of the resource
     // and the schemas attribute in separate steps
     Set<String> originalSchemas = userResource.getSchemas();
