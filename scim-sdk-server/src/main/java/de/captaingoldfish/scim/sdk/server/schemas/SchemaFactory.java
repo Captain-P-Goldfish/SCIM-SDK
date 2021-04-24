@@ -13,6 +13,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
 import lombok.AccessLevel;
 import lombok.Getter;
 
@@ -81,7 +82,7 @@ public final class SchemaFactory
     Schema metaSchema = getMetaSchema(SchemaUris.SCHEMA_URI);
     try
     {
-      SchemaValidator.validateSchemaDocument(metaSchema, jsonSchema);
+      MetaSchemaValidator.getInstance().validateDocument(metaSchema, jsonSchema);
       Schema schema = new Schema(jsonSchema);
       // a schema that is already within the meta schemas should not be set as duplicate within the resource schemas
       if (metaSchemas.get(schema.getNonNullId()) == null)

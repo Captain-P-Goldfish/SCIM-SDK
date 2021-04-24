@@ -22,6 +22,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeExceptio
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -79,7 +80,8 @@ public final class ResourceTypeFactory
                                            JsonNode... resourceSchemaExtensions)
   {
     Schema resourceTypeSchema = schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
-    JsonNode validatedResourceType = SchemaValidator.validateSchemaDocument(resourceTypeSchema, resourceType);
+    JsonNode validatedResourceType = MetaSchemaValidator.getInstance()
+                                                        .validateDocument(resourceTypeSchema, resourceType);
     ResourceType resourceTypeObject = new ResourceType(schemaFactory, resourceType);
     addSchemaExtensions(validatedResourceType, resourceSchemaExtensions);
     checkResourceSchema(resourceTypeObject, resourceSchema);

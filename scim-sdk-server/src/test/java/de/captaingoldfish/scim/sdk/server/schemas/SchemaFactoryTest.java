@@ -7,7 +7,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -94,19 +93,6 @@ class SchemaFactoryTest implements FileReferences
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS);
-    Assertions.assertThrows(InvalidSchemaException.class,
-                            () -> schemaFactory.registerResourceSchema(userResourceSchema));
-  }
-
-  /**
-   * will verify that schemas cannot be registered if the schemas-attribute is empty
-   */
-  @Test
-  public void testRegisterSchemasWithEmptySchemasAttribute()
-  {
-    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    ArrayNode schemas = JsonHelper.getArrayAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS).get();
-    schemas.removeAll();
     Assertions.assertThrows(InvalidSchemaException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
