@@ -205,7 +205,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     }
     catch (BadRequestException ex)
     {
-      MatcherAssert.assertThat(ex.getDetail(), Matchers.containsString("document does not have a 'schemas'-attribute"));
+      MatcherAssert.assertThat(ex.getDetail(), Matchers.containsString("Document does not have a 'schemas'-attribute"));
     }
   }
 
@@ -416,8 +416,8 @@ public class BulkEndpointTest extends AbstractBulkTest
     }
     catch (BadRequestException ex)
     {
-      Assertions.assertEquals("the attribute 'urn:ietf:params:scim:api:messages:2.0:BulkRequest:Operations' "
-                              + "is required \n\tmutability: 'WRITE_ONLY'\n\treturned: 'NEVER'",
+      Assertions.assertEquals("Required 'WRITE_ONLY' attribute "
+                              + "'urn:ietf:params:scim:api:messages:2.0:BulkRequest:Operations' is missing",
                               ex.getDetail());
     }
   }
