@@ -16,7 +16,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactoryUtil;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaFactory;
-import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 
 
@@ -51,6 +51,7 @@ public class BulkRequestTest implements FileReferences
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     SchemaFactory schemaFactory = ResourceTypeFactoryUtil.getSchemaFactory(resourceTypeFactory);
     Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(bulkRequestSchema, bulkRequest));
+    Assertions.assertDoesNotThrow(() -> MetaSchemaValidator.getInstance()
+                                                           .validateDocument(bulkRequestSchema, bulkRequest));
   }
 }

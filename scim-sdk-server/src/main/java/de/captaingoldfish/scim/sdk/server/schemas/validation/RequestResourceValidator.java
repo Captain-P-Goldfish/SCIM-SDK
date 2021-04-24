@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
@@ -40,6 +41,16 @@ public class RequestResourceValidator extends AbstractResourceValidator
     if (resource.has(AttributeNames.RFC7643.META))
     {
       validatedResource.set(AttributeNames.RFC7643.META, resource.get(AttributeNames.RFC7643.META));
+    }
+    boolean containsOnlyAttributesSchemasAndMeta = validatedResource.size() == 2
+                                                   && validatedResource.has(AttributeNames.RFC7643.SCHEMAS)
+                                                   && validatedResource.has(AttributeNames.RFC7643.META);
+    boolean isEmpty = validatedResource.isEmpty() || containsOnlyAttributesSchemasAndMeta;
+    if (isEmpty)
+    {
+      String errorMessage = String.format("Request document is invalid it does not contain processable data '%s'",
+                                          resource);
+      throw new DocumentValidationException(errorMessage, getHttpStatusCode(), null);
     }
     return validatedResource;
   }

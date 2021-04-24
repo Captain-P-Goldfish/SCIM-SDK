@@ -19,8 +19,12 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.SchemaValidatorTest;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -96,19 +100,15 @@ public class ResourceTypeTest implements FileReferences
   {
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     ResourceType resourceType = new ResourceType(schemaFactory, userResourceTypeJson);
+    resourceType.setResourceHandlerImpl(new UserHandlerImpl(false));
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     TestHelper.addMetaToDocument(enterpriseUserDocument);
-    JsonNode validatedDocument = SchemaValidator.validateDocumentForResponse(schemaFactory.getResourceTypeFactory(),
-                                                                             resourceType,
-                                                                             enterpriseUserDocument,
-                                                                             null,
-                                                                             null,
-                                                                             null,
-                                                                             () -> "http://localhost:8080/scim/v2",
-                                                                             null);
+    JsonNode validatedDocument = new ResponseResourceValidator(resourceType, null, null, null,
+                                                               (s, s2) -> "http://localhost")
+                                                                                             .validateDocument(enterpriseUserDocument);
 
-    SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
+    SchemaValidatorTest.validateJsonNodeIsScimNode(null, validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
                                                         resourceType.getSchemaExtensions().get(0).getSchema())
                                     .isPresent());
@@ -154,14 +154,13 @@ public class ResourceTypeTest implements FileReferences
   {
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     ResourceType resourceType = new ResourceType(schemaFactory, userResourceTypeJson);
+    resourceType.setResourceHandlerImpl(new UserHandlerImpl(false));
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode validatedDocument = SchemaValidator.validateDocumentForRequest(resourceType,
-                                                                            enterpriseUserDocument,
-                                                                            HttpMethod.POST,
-                                                                            null);
+    JsonNode validatedDocument = new RequestResourceValidator(resourceType,
+                                                              HttpMethod.POST).validateDocument(enterpriseUserDocument);
 
-    SchemaValidatorTest.validateJsonNodeIsScimNode(validatedDocument);
+    SchemaValidatorTest.validateJsonNodeIsScimNode(null, validatedDocument);
     Assertions.assertTrue(JsonHelper.getObjectAttribute(validatedDocument,
                                                         resourceType.getSchemaExtensions().get(0).getSchema())
                                     .isPresent());

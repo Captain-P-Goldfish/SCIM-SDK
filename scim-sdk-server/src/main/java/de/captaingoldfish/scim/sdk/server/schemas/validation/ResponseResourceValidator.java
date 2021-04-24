@@ -47,6 +47,14 @@ public class ResponseResourceValidator extends AbstractResourceValidator
       JsonNode metaNode = metaAttributeWrapper.get(AttributeNames.RFC7643.META);
       validatedResource.set(AttributeNames.RFC7643.META, metaNode);
     }
+    boolean containsOnlyAttributesSchemasAndMeta = validatedResource.size() == 2
+                                                   && validatedResource.has(AttributeNames.RFC7643.SCHEMAS)
+                                                   && validatedResource.has(AttributeNames.RFC7643.META);
+    boolean isEmpty = validatedResource.isEmpty() || containsOnlyAttributesSchemasAndMeta;
+    if (isEmpty)
+    {
+      return null;
+    }
     return validatedResource;
   }
 

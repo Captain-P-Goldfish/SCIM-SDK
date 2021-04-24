@@ -46,4 +46,6 @@ public final class ClassPathReferences
   public static final String BULK_RESPONSE_SCHEMA = "/de/captaingoldfish/scim/sdk/common/response/bulk-response.json";
 
   public static final String PATCH_REQUEST_SCHEMA = "/de/captaingoldfish/scim/sdk/common/request/patch-request.json";
+
+  public static final String SCHEMAS_ATTRIBUTE_DEFINITION = "/de/captaingoldfish/scim/sdk/common/meta/schemas-attribute.json";
 }

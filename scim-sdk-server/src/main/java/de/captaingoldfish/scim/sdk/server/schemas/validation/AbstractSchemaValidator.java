@@ -55,7 +55,8 @@ public abstract class AbstractSchemaValidator
     try
     {
       checkDocumentAndMetaSchemaRelationship(schema, resource);
-      return validateDocument(JsonHelper.getNewInstance(resourceNodeType), schema, resource);
+      ScimObjectNode scimObjectNode = JsonHelper.getNewInstance(resourceNodeType);
+      return validateDocument(scimObjectNode, schema, resource);
     }
     catch (AttributeValidationException ex)
     {

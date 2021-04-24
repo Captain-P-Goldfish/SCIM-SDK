@@ -21,7 +21,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactoryUtil;
 import de.captaingoldfish.scim.sdk.server.schemas.SchemaFactory;
-import de.captaingoldfish.scim.sdk.server.schemas.SchemaValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
 
 
 /**
@@ -41,7 +41,7 @@ public class BulkResponseTest
     final HttpMethod method = HttpMethod.POST;
     final String bulkId = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
-    final String location = EndpointPaths.USERS + "/" + UUID.randomUUID().toString();
+    final String location = EndpointPaths.USERS + "/" + UUID.randomUUID();
     final Integer status = HttpStatus.OK;
     final ErrorResponse response = new ErrorResponse(new InvalidSchemaException("invalid syntax", null,
                                                                                 HttpStatus.BAD_REQUEST,
@@ -63,6 +63,7 @@ public class BulkResponseTest
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     SchemaFactory schemaFactory = ResourceTypeFactoryUtil.getSchemaFactory(resourceTypeFactory);
     Schema bulkResponseSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_RESPONSE_URI);
-    Assertions.assertDoesNotThrow(() -> SchemaValidator.validateSchemaDocument(bulkResponseSchema, bulkResponse));
+    Assertions.assertDoesNotThrow(() -> MetaSchemaValidator.getInstance()
+                                                           .validateDocument(bulkResponseSchema, bulkResponse));
   }
 }
