@@ -24,6 +24,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
@@ -33,6 +34,7 @@ import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -40,6 +42,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResponseException;
@@ -81,6 +84,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
+import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -2507,6 +2511,276 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     String errorMessage = String.format("The received resource document is not an object '%s'", arrayNode);
     Assertions.assertEquals(errorMessage, errorResponse.getDetail().get());
+  }
+
+  /**
+   * This test will verify that an attribute with a returned value of request is returned if the attribute was
+   * on the request. Meaning the attribute was set during creation or modified on a PUT or PATCH request.<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @Test
+  public void testRequestAttributeIsReturnedAfterPutPostOrPatchRequest()
+  {
+    final String attributeName = AttributeNames.RFC7643.USER_NAME;
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    TestHelper.modifyAttributeMetaData(userSchemaNode,
+                                       attributeName,
+                                       null,
+                                       null,
+                                       Returned.REQUEST,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
+                                                             Collections.singletonList(enterpriseUserSchemaNode),
+                                                             new UserHandlerImpl(false)));
+
+    JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
+
+    final String url = BASE_URI + EndpointPaths.USERS;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
+
+    Assertions.assertNotNull(scimResponse.get(attributeName));
+    Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the full URI of the attribute name was used in
+   * the attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.RFC7643.PHONE_NUMBERS, AttributeNames.RFC7643.DISPLAY_NAME,
+                          AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
+                          AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
+  public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName)
+  {
+    final String fullName = SchemaUris.USER_URI + ":" + attributeName;
+
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    TestHelper.modifyAttributeMetaData(userSchemaNode,
+                                       attributeName,
+                                       null,
+                                       null,
+                                       Returned.REQUEST,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
+                                                             Collections.singletonList(enterpriseUserSchemaNode),
+                                                             new UserHandlerImpl(false)));
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+
+    final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + fullName;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
+
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNotNull(scimResponse.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = scimResponse.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+    }
+    Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the full URI of the attribute name was used in
+   * the attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @ParameterizedTest
+  @CsvSource({AttributeNames.RFC7643.PHONE_NUMBERS + ",phoneNumbers",
+              AttributeNames.RFC7643.DISPLAY_NAME + "," + "displayname",
+              AttributeNames.RFC7643.EXTERNAL_ID + ",externalid",
+              AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME + ",name.givenname",
+              AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME + ",name.middlename"})
+  public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName,
+                                                                              String caseInsensitiveName)
+  {
+    final String fullName = SchemaUris.USER_URI + ":" + caseInsensitiveName;
+
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    TestHelper.modifyAttributeMetaData(userSchemaNode,
+                                       attributeName,
+                                       null,
+                                       null,
+                                       Returned.REQUEST,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
+                                                             Collections.singletonList(enterpriseUserSchemaNode),
+                                                             new UserHandlerImpl(false)));
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+
+    final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + fullName;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
+
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNotNull(scimResponse.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = scimResponse.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+    }
+    Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the short name of the attribute was used in the
+   * attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {AttributeNames.RFC7643.PHONE_NUMBERS, AttributeNames.RFC7643.DISPLAY_NAME,
+                          AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
+                          AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
+                          AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
+  public void testAttributeIsReturnedIfShortNameIsUsedOnAttributesParameter(String attributeName)
+  {
+    final String fullName = attributeName;
+
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    TestHelper.modifyAttributeMetaData(userSchemaNode,
+                                       attributeName,
+                                       null,
+                                       null,
+                                       Returned.REQUEST,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
+                                                             Collections.singletonList(enterpriseUserSchemaNode),
+                                                             new UserHandlerImpl(false)));
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+
+    final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + fullName;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
+
+    String[] attributeNameParts = attributeName.split("\\.");
+    if (attributeNameParts.length == 1)
+    {
+      Assertions.assertNotNull(scimResponse.get(attributeName));
+    }
+    else
+    {
+      JsonNode complexAttribute = scimResponse.get(attributeNameParts[0]);
+      Assertions.assertNotNull(complexAttribute);
+      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+    }
+    Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * This test will verify that an attribute is also returned if the URI of the resource was used in the
+   * attributes parameter<br>
+   * from RFC7643 chapter 7
+   *
+   * <pre>
+   *   request  The attribute is returned in response to any PUT,
+   *             POST, or PATCH operations if the attribute was specified by
+   *             the client (for example, the attribute was modified).  The
+   *             attribute is returned in a SCIM query operation only if
+   *             specified in the "attributes" parameter.
+   * </pre>
+   */
+  @Test
+  public void testAttributeIsReturnedIfResourceUriIsUsedOnAttributesParameter()
+  {
+    final String attributeName = AttributeNames.RFC7643.NAME;
+
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    TestHelper.modifyAttributeMetaData(userSchemaNode,
+                                       attributeName,
+                                       null,
+                                       null,
+                                       Returned.REQUEST,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
+                                                             Collections.singletonList(enterpriseUserSchemaNode),
+                                                             new UserHandlerImpl(false)));
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+
+    final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + SchemaUris.USER_URI;
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
+
+    Assertions.assertNotNull(scimResponse.get(attributeName));
+    Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
   }
 
   /**

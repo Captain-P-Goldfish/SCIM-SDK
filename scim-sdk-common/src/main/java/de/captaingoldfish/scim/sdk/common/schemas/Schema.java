@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
@@ -39,6 +40,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class Schema extends ResourceNode
 {
+
+  /**
+   * the attribute definition for the schemas-attribute that is part of each schema
+   */
+  public static final SchemaAttribute SCHEMAS_ATTRIBUTE = new SchemaAttribute(JsonHelper.loadJsonDocument(ClassPathReferences.SCHEMAS_ATTRIBUTE_DEFINITION));
 
   /**
    * this register shall be a simple reference map that is used for scim filter expressions to find the

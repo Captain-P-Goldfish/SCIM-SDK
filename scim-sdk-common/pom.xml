@@ -119,7 +119,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/response/bulk-response.json
                             </file>
-                            <checksum>242ed6f72eb8d88c07039d1c646b87eb</checksum>
+                            <checksum>ceb7d5fe5dbd14d91e6b69673637131f</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

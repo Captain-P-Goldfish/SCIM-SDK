@@ -1,0 +1,11 @@
+{
+  "name": "schemas",
+  "type": "string",
+  "description": "List of identifiers that reference the schema definition of the resource.",
+  "mutability": "readWrite",
+  "returned": "always",
+  "uniqueness": "server",
+  "multiValued": true,
+  "required": true,
+  "caseExact": true
+}

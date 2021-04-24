@@ -104,7 +104,7 @@ public class SchemaAttributeValidationTest implements FileReferences
     user.setUserName(validUsername);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return SchemaValidator.validateDocumentForRequest(userResourceType, user, HttpMethod.POST, User.class);
+      return new RequestResourceValidator(userResourceType, HttpMethod.POST).validateDocument(user);
     });
 
     User validatedUser = JsonHelper.copyResourceToObject(validatedDocument, User.class);

@@ -84,6 +84,11 @@ public final class SchemaAttribute extends ScimObjectNode
     this.namePrefix = namePrefix;
   }
 
+  protected SchemaAttribute(JsonNode attributeDefinition)
+  {
+    this(null, null, null, attributeDefinition, null);
+  }
+
   protected SchemaAttribute(Schema schema,
                             String resourceUri,
                             SchemaAttribute parent,
@@ -133,7 +138,7 @@ public final class SchemaAttribute extends ScimObjectNode
     setSubAttributes(resolveSubAttributes(jsonNode));
     this.parent = parent;
     validateAttribute();
-    schema.addSchemaAttribute(this);
+    Optional.ofNullable(schema).ifPresent(schemaDefinition -> schemaDefinition.addSchemaAttribute(this));
   }
 
   public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)

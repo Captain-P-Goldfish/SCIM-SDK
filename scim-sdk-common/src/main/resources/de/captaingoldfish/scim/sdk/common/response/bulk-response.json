@@ -69,7 +69,7 @@
         },
         {
           "name": "response",
-          "type": "string",
+          "type": "any",
           "description": "The HTTP response body for the specified request operation. When indicating a response with an HTTP status other than a 200-series response, the response body MUST be included. For normal completion, the server MAY elect to omit the response body.",
           "mutability": "readOnly",
           "returned": "default",

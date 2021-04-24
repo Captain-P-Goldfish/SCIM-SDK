@@ -236,8 +236,7 @@ class ResourceEndpointHandler
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, null, null,
-                                                                                  resourceNode,
+      ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, null, null, resource,
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
       return new CreateResponse(responseResource, location, createdMeta);

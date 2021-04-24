@@ -75,6 +75,10 @@ abstract class AbstractResourceValidator
           validatedResource.set(validatedExtension.getExtensionSchema().getNonNullId(),
                                 validatedExtension.getValidatedExtension());
         }
+        else
+        {
+          validatedResource.removeSchema(validatedExtension.getExtensionSchema().getNonNullId());
+        }
       }
       return validatedResource;
     }
