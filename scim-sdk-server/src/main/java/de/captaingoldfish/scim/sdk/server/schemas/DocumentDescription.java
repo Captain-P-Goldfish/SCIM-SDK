@@ -13,6 +13,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -22,6 +23,7 @@ import lombok.Getter;
  * @author Pascal Knueppel
  * @since 18.04.2021
  */
+@Slf4j
 @Getter
 public class DocumentDescription
 {
