@@ -98,6 +98,7 @@ public final class SchemaAttribute extends ScimObjectNode
     super(null);
     this.schema = schema;
     this.resourceUri = resourceUri;
+    this.parent = parent;
     this.namePrefix = namePrefix;
     Function<String, String> errorMessageBuilder = attribute -> "could not find required attribute '" + attribute
                                                                 + "' in meta-schema for attribute: "
@@ -135,8 +136,8 @@ public final class SchemaAttribute extends ScimObjectNode
                                 .orElse(Type.REFERENCE.equals(type) ? Collections.singletonList(ReferenceTypes.EXTERNAL)
                                   : Collections.emptyList()));
     setValidationAttributes(jsonNode);
-    setSubAttributes(resolveSubAttributes(jsonNode));
-    this.parent = parent;
+    final List<SchemaAttribute> subAttributes = resolveSubAttributes(jsonNode);
+    setSubAttributes(subAttributes);
     validateAttribute();
     Optional.ofNullable(schema).ifPresent(schemaDefinition -> schemaDefinition.addSchemaAttribute(this));
   }
