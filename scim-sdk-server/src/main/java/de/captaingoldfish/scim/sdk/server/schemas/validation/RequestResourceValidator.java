@@ -1,12 +1,18 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.util.Optional;
+
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
+import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +29,18 @@ public class RequestResourceValidator extends AbstractResourceValidator
 
   public RequestResourceValidator(ResourceType resourceType, HttpMethod httpMethod)
   {
-    super(resourceType, new RequestSchemaValidator(resourceType.getResourceHandlerImpl().getType(), httpMethod));
+    super(resourceType, new RequestSchemaValidator(resourceType.getResourceHandlerImpl().getType(), httpMethod,
+                                                   new ValidationContext(resourceType)));
+  }
+
+  /**
+   * @return the validation context on the current schema validation
+   */
+  public ValidationContext getValidationContext()
+  {
+    return Optional.ofNullable(((RequestSchemaValidator)getSchemaValidator()))
+                   .map(RequestSchemaValidator::getValidationContext)
+                   .orElse(null);
   }
 
   /**
@@ -37,22 +54,34 @@ public class RequestResourceValidator extends AbstractResourceValidator
   @Override
   public ScimObjectNode validateDocument(JsonNode resource)
   {
-    ScimObjectNode validatedResource = super.validateDocument(resource);
-    if (resource.has(AttributeNames.RFC7643.META))
+    try
     {
-      validatedResource.set(AttributeNames.RFC7643.META, resource.get(AttributeNames.RFC7643.META));
+      ScimObjectNode validatedResource = super.validateDocument(resource);
+      if (resource.has(AttributeNames.RFC7643.META))
+      {
+        validatedResource.set(AttributeNames.RFC7643.META, resource.get(AttributeNames.RFC7643.META));
+      }
+      boolean containsOnlyAttributesSchemasAndMeta = validatedResource.size() == 2
+                                                     && validatedResource.has(AttributeNames.RFC7643.SCHEMAS)
+                                                     && validatedResource.has(AttributeNames.RFC7643.META);
+      boolean isEmpty = validatedResource.isEmpty() || containsOnlyAttributesSchemasAndMeta;
+      if (isEmpty)
+      {
+        String errorMessage = String.format("Request document is invalid it does not contain processable data '%s'",
+                                            resource);
+        getValidationContext().addError(errorMessage);
+      }
+      return validatedResource;
     }
-    boolean containsOnlyAttributesSchemasAndMeta = validatedResource.size() == 2
-                                                   && validatedResource.has(AttributeNames.RFC7643.SCHEMAS)
-                                                   && validatedResource.has(AttributeNames.RFC7643.META);
-    boolean isEmpty = validatedResource.isEmpty() || containsOnlyAttributesSchemasAndMeta;
-    if (isEmpty)
+    catch (DocumentValidationException ex)
     {
-      String errorMessage = String.format("Request document is invalid it does not contain processable data '%s'",
-                                          resource);
-      throw new DocumentValidationException(errorMessage, getHttpStatusCode(), null);
+      ValidationContext validationContext = getValidationContext();
+      Optional.ofNullable(validationContext).ifPresent(context -> context.addExceptionMessages(ex));
+      ResourceNode resourceNode = (ResourceNode)JsonHelper.getNewInstance(getResourceType().getResourceHandlerImpl()
+                                                                                           .getType());
+      resourceNode.setMeta(Meta.builder().build());
+      return resourceNode;
     }
-    return validatedResource;
   }
 
   /**

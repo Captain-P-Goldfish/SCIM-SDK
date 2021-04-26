@@ -3,10 +3,9 @@ package de.captaingoldfish.scim.sdk.server.endpoints.validation;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import de.captaingoldfish.scim.sdk.common.constants.ScimType;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
 
 
 /**
@@ -28,10 +27,10 @@ public class RequestValidatorHandler
    */
   private final RequestValidator requestValidator;
 
-  public RequestValidatorHandler(ResourceType resourceType, RequestValidator requestValidator)
+  public RequestValidatorHandler(ResourceHandler resourceHandler, RequestResourceValidator requestResourceValidator)
   {
-    this.requestValidator = requestValidator;
-    this.validationContext = new ValidationContext(resourceType);
+    this.requestValidator = resourceHandler.getRequestValidator();
+    this.validationContext = requestResourceValidator.getValidationContext();
   }
 
   /**
@@ -42,16 +41,6 @@ public class RequestValidatorHandler
   public void validateCreate(ResourceNode resourceNode)
   {
     validateRequest(validator -> validator.validateCreate(resourceNode, validationContext));
-  }
-
-  /**
-   * execute the validation for getting a resource
-   * 
-   * @param id the id of the resource to retrieve
-   */
-  public void validateGet(String id)
-  {
-    validateRequest(validator -> validator.validateGet(id, validationContext));
   }
 
   /**
@@ -67,16 +56,6 @@ public class RequestValidatorHandler
   }
 
   /**
-   * execute the validation for deleting a resource
-   * 
-   * @param id the id of the resource to delete
-   */
-  public void validateDelete(String id)
-  {
-    validateRequest(validator -> validator.validateDelete(id, validationContext));
-  }
-
-  /**
    * a wrapper method for the validation methods. The validation methods will not be called of no validation
    * implementation is present. And the execution will be aborted if the validation returns with any errors
    * 
@@ -86,14 +65,23 @@ public class RequestValidatorHandler
   {
     if (requestValidator == null)
     {
+      checkForErrors();
       return;
     }
     validate.accept(requestValidator);
+    checkForErrors();
+  }
+
+  /**
+   * checks whether an error is present within the validation context and throws an exception if errors are
+   * present
+   */
+  private void checkForErrors()
+  {
     if (validationContext.hasErrors())
     {
       validationContext.logErrors();
-      // todo bind validation context errors to error response
-      throw new BadRequestException("Validation of resource has failed", ScimType.Custom.INVALID_PARAMETERS);
+      throw new RequestContextException(validationContext);
     }
   }
 }

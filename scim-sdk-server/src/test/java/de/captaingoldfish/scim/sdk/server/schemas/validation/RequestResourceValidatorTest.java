@@ -18,11 +18,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
-import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
-import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
@@ -381,17 +379,12 @@ public class RequestResourceValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").build();
 
     RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
-    try
-    {
-      requestResourceValidator.validateDocument(userResource);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (DocumentValidationException ex)
-    {
-      String errorMessage = "Required extension 'urn:gold:params:scim:schemas:custom:2.0:Role' is missing";
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals(errorMessage, ex.getMessage());
-    }
+    Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(userResource));
+
+    String errorMessage = "Required extension 'urn:gold:params:scim:schemas:custom:2.0:Role' is missing";
+    Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
+    MatcherAssert.assertThat(requestResourceValidator.getValidationContext().getErrors(),
+                             Matchers.containsInAnyOrder(errorMessage));
   }
 
   /**
@@ -416,17 +409,12 @@ public class RequestResourceValidatorTest implements FileReferences
     userResource.addSchema("urn:gold:params:scim:schemas:custom:2.0:Role");
 
     RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
-    try
-    {
-      requestResourceValidator.validateDocument(userResource);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (DocumentValidationException ex)
-    {
-      String errorMessage = "Required extension 'urn:gold:params:scim:schemas:custom:2.0:Role' is missing";
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals(errorMessage, ex.getMessage());
-    }
+    Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(userResource));
+
+    String errorMessage = "Required extension 'urn:gold:params:scim:schemas:custom:2.0:Role' is missing";
+    Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
+    MatcherAssert.assertThat(requestResourceValidator.getValidationContext().getErrors(),
+                             Matchers.containsInAnyOrder(errorMessage));
   }
 
   /**

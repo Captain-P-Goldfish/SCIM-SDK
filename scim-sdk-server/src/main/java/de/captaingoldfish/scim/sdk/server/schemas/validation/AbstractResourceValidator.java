@@ -35,6 +35,9 @@ abstract class AbstractResourceValidator
   @Getter(AccessLevel.PROTECTED)
   private final ResourceType resourceType;
 
+  /**
+   * the schema validator implementation to use
+   */
   @Getter(AccessLevel.PROTECTED)
   private final AbstractSchemaValidator schemaValidator;
 

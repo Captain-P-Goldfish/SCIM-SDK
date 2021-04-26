@@ -79,7 +79,9 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.EndpointControlFeature;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorization;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
@@ -2508,9 +2510,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, arrayNode.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    log.warn(errorResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     String errorMessage = String.format("The received resource document is not an object '%s'", arrayNode);
     Assertions.assertEquals(errorMessage, errorResponse.getDetail().get());
+    MatcherAssert.assertThat(errorResponse.getFieldErrors(), Matchers.anEmptyMap());
+    MatcherAssert.assertThat(errorResponse.getErrorMessages(), Matchers.hasItem(errorMessage));
   }
 
   /**
@@ -2781,6 +2786,42 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     Assertions.assertNotNull(scimResponse.get(attributeName));
     Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * verifies that the document validation fails in case of request if the document evaluates to an empty
+   * document. For example: this happens if the attributes within the document are not writable
+   */
+  @Test
+  public void testValidateReceivedDocumentToEmptyDocumentForRequest()
+  {
+    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
+    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+    ResourceTypeFactory resourceTypeFactory = resourceEndpoint.getResourceTypeFactory();
+    UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(false));
+    Mockito.doReturn(null).when(userHandler).createResource(Mockito.any(), Mockito.any());
+    resourceTypeFactory.registerResourceType(userHandler,
+                                             allTypesResourceTypeJson,
+                                             allTypesValidationSchema,
+                                             enterpriseUserValidationSchema);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
+
+
+    final String url = BASE_URI + "/AllTypes";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, allTypes.toString(), httpHeaders);
+
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, scimResponse.getHttpStatus());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    String errorMessage = String.format("Request document is invalid it does not contain processable data '%s'",
+                                        allTypes);
+    Assertions.assertEquals(0, errorResponse.getFieldErrors().size(), errorResponse.toPrettyString());
+    Assertions.assertEquals(1, errorResponse.getErrorMessages().size(), errorResponse.toPrettyString());
+    Assertions.assertEquals(errorMessage, errorResponse.getErrorMessages().get(0), errorResponse.toPrettyString());
   }
 
   /**

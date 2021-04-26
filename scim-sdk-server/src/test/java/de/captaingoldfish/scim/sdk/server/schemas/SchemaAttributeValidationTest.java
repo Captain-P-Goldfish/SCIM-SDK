@@ -1,5 +1,9 @@
 package de.captaingoldfish.scim.sdk.server.schemas;
 
+import java.util.List;
+
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -10,7 +14,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
-import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -64,20 +67,25 @@ public class SchemaAttributeValidationTest implements FileReferences
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
     user.setUserName(emptyString);
 
-    try
-    {
-      new RequestResourceValidator(userResourceType, HttpMethod.POST).validateDocument(user);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (DocumentValidationException ex)
-    {
-      String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must match the regular expression of '%s'",
-                                          usernameAttribute.getType(),
-                                          usernameAttribute.getScimNodeName(),
-                                          emptyString,
-                                          usernameAttribute.getPattern().get().pattern());
-      Assertions.assertEquals(errorMessage, ex.getMessage());
-    }
+
+
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
+
+    Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
+    MatcherAssert.assertThat(requestResourceValidator.getValidationContext().getErrors(), Matchers.empty());
+    Assertions.assertEquals(1, requestResourceValidator.getValidationContext().getFieldErrors().size());
+    List<String> fieldErrors = requestResourceValidator.getValidationContext()
+                                                       .getFieldErrors()
+                                                       .get(usernameAttribute.getName());
+    Assertions.assertNotNull(fieldErrors);
+    Assertions.assertEquals(1, fieldErrors.size());
+    String expectedErrorMessage = String.format("The '%s'-attribute '%s' with value '%s' must match the regular expression of '%s'",
+                                                usernameAttribute.getType(),
+                                                usernameAttribute.getScimNodeName(),
+                                                emptyString,
+                                                usernameAttribute.getPattern().get().pattern());
+    MatcherAssert.assertThat(fieldErrors, Matchers.hasItem(expectedErrorMessage));
   }
 
   /**

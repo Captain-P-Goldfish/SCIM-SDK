@@ -1290,14 +1290,21 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    log.warn(bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperations.size());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             responseOperations.get(0).getStatus(),
                             bulkResponse.toPrettyString());
-    MatcherAssert.assertThat(responseOperations.get(0).getResponse().get().getDetail().get(),
-                             Matchers.startsWith("your patch operation created a malformed resource"));
+    ErrorResponse errorResponse = responseOperations.get(0).getResponse().get();
+    String expectedMessage = "Required 'READ_WRITE' attribute "
+                             + "'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value' is missing";
+    MatcherAssert.assertThat(errorResponse.getDetail().get(), Matchers.startsWith(expectedMessage));
+    MatcherAssert.assertThat(errorResponse.getErrorMessages(), Matchers.empty());
+    Assertions.assertEquals(1, errorResponse.getFieldErrors().size());
+    List<String> managerValueErrors = errorResponse.getFieldErrors().get("manager.value");
+    MatcherAssert.assertThat(managerValueErrors, Matchers.containsInAnyOrder(expectedMessage));
   }
 
   /**

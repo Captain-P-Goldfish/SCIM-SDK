@@ -12,6 +12,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.AccessLevel;
@@ -191,5 +192,14 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public final int getMaxResults()
   {
     return Optional.ofNullable(maxResults).map(Supplier::get).orElse(Integer.MAX_VALUE);
+  }
+
+  /**
+   * @return allows to define a custom request validator that is executed after schema validation and before the
+   *         call to the actual {@link ResourceHandler} implementation.
+   */
+  public RequestValidator<T> getRequestValidator()
+  {
+    return null;
   }
 }

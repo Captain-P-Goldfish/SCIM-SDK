@@ -6,6 +6,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.AccessLevel;
+import lombok.Getter;
 
 
 /**
@@ -20,12 +24,25 @@ public class RequestSchemaValidator extends AbstractSchemaValidator
    * differently in case of POST requests if an attribute is required and has a mutability of writeOnly or
    * immutable
    */
-  private HttpMethod httpMethod;
+  private final HttpMethod httpMethod;
+
+  /**
+   * the current validation context for the request. If any error occurs the execution must be aborted before
+   * the {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler} implementation is called
+   */
+  @Getter(AccessLevel.PROTECTED)
+  private final ValidationContext validationContext;
 
   public RequestSchemaValidator(Class resourceNodeType, HttpMethod httpMethod)
   {
+    this(resourceNodeType, httpMethod, null);
+  }
+
+  public RequestSchemaValidator(Class resourceNodeType, HttpMethod httpMethod, ValidationContext validationContext)
+  {
     super(resourceNodeType);
     this.httpMethod = httpMethod;
+    this.validationContext = validationContext;
   }
 
   /**
@@ -34,6 +51,18 @@ public class RequestSchemaValidator extends AbstractSchemaValidator
   @Override
   protected Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
-    return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, httpMethod);
+    try
+    {
+      return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, httpMethod);
+    }
+    catch (AttributeValidationException ex)
+    {
+      if (validationContext == null)
+      {
+        throw ex;
+      }
+      validationContext.addExceptionMessages(ex);
+      return Optional.empty();
+    }
   }
 }

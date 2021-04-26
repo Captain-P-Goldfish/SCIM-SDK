@@ -18,13 +18,11 @@ import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
-import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
-import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.IOException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
@@ -50,6 +48,8 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ResourceTypeEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.SchemaEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ServiceProviderEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorHandler;
 import de.captaingoldfish.scim.sdk.server.etag.ETagHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.resources.FilterResourceResolver;
@@ -209,26 +209,28 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)new RequestResourceValidator(resourceType,
-                                                                             HttpMethod.POST).validateDocument(resource);
+      RequestResourceValidator resourceValidator = new RequestResourceValidator(resourceType, HttpMethod.POST);
+      ResourceNode resourceNode = (ResourceNode)resourceValidator.validateDocument(resource);
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       meta.setResourceType(resourceType.getName());
       resourceNode.remove(AttributeNames.RFC7643.META);
       resourceNode.setMeta(meta);
+      new RequestValidatorHandler(resourceHandler, resourceValidator).validateCreate(resourceNode);
       resourceNode = resourceHandler.createResource(resourceNode, authorization);
       if (resourceNode == null)
       {
         throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
                                           + "'");
       }
-      Supplier<String> errorMessage = () -> "ID attribute not set on created resource";
-      String resourceId = resourceNode.getId()
-                                      .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
+      String resourceId = resourceNode.getId().orElseThrow(() -> {
+        String errorMessage = "ID attribute not set on created resource";
+        return new InternalServerException(errorMessage, null, null);
+      });
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
-      Supplier<String> metaErrorMessage = () -> "Meta attribute not set on created resource";
-      Meta createdMeta = resourceNode.getMeta()
-                                     .orElseThrow(() -> new InternalServerException(metaErrorMessage.get(), null,
-                                                                                    null));
+      Meta createdMeta = resourceNode.getMeta().orElseThrow(() -> {
+        String metaErrorMessage = "Meta attribute not set on created resource";
+        return new InternalServerException(metaErrorMessage, null, null);
+      });
       if (!createdMeta.getLastModified().isPresent())
       {
         createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
@@ -240,6 +242,12 @@ class ResourceEndpointHandler
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
       return new CreateResponse(responseResource, location, createdMeta);
+    }
+    catch (RequestContextException ex)
+    {
+      ErrorResponse errorResponse = new ErrorResponse(ex);
+      ex.getValidationContext().writeToErrorResponse(errorResponse);
+      return errorResponse;
     }
     catch (ScimException ex)
     {
@@ -771,8 +779,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      ResourceNode resourceNode = (ResourceNode)new RequestResourceValidator(resourceType,
-                                                                             HttpMethod.PUT).validateDocument(resource);
+      RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType, HttpMethod.PUT);
+      ResourceNode resourceNode = (ResourceNode)requestResourceValidator.validateDocument(resource);
       AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
       Supplier<ResourceNode> oldResourceSupplier = () -> {
         oldResourceNode.compareAndSet(null, resourceHandler.getResource(id, authorization, null, null));
@@ -804,6 +812,8 @@ class ResourceEndpointHandler
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
       resourceNode.setMeta(meta);
+      new RequestValidatorHandler(resourceHandler, requestResourceValidator).validateUpdate(oldResourceSupplier,
+                                                                                            resourceNode);
       resourceNode = resourceHandler.updateResource(resourceNode, authorization);
       if (resourceNode == null)
       {
@@ -837,6 +847,12 @@ class ResourceEndpointHandler
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
 
       return new UpdateResponse(responseResource, location, meta);
+    }
+    catch (RequestContextException ex)
+    {
+      ErrorResponse errorResponse = new ErrorResponse(ex);
+      ex.getValidationContext().writeToErrorResponse(errorResponse);
+      return errorResponse;
     }
     catch (ScimException ex)
     {
@@ -1000,21 +1016,25 @@ class ResourceEndpointHandler
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
       PatchHandler patchHandler = new PatchHandler(resourceType);
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
-      try
+
+      // validates the patched resource and throws an exception if an error was found
       {
-        new RequestResourceValidator(resourceType, HttpMethod.PATCH).validateDocument(patchedResourceNode);
+        RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType,
+                                                                                         HttpMethod.PATCH);
+        requestResourceValidator.validateDocument(patchedResourceNode);
+        Supplier<ResourceNode> oldResourceSupplier = () -> resourceHandler.getResource(id,
+                                                                                       authorization,
+                                                                                       Collections.emptyList(),
+                                                                                       Collections.emptyList());
+        new RequestValidatorHandler(resourceHandler, requestResourceValidator).validateUpdate(oldResourceSupplier,
+                                                                                              resourceNode);
       }
-      catch (DocumentValidationException ex)
-      {
-        throw new DocumentValidationException("your patch operation created a malformed resource. The original message"
-                                              + " is: \n\t" + ex.getDetail() + "\nthe patched resource has the "
-                                              + "following structure: \n\t" + patchedResourceNode.toPrettyString(), ex,
-                                              HttpStatus.BAD_REQUEST, null);
-      }
+
       if (patchHandler.isChangedResource())
       {
         // a security call In case that someone finds a way to manipulate the id within a patch operation
         patchedResourceNode.setId(id);
+
         patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, authorization);
         meta = patchedResourceNode.getMeta().orElseThrow(() -> {
           return new InternalServerException("The mandatory meta attribute is missing in the updated user");
@@ -1035,6 +1055,12 @@ class ResourceEndpointHandler
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
 
       return new UpdateResponse(responseResource, location, meta);
+    }
+    catch (RequestContextException ex)
+    {
+      ErrorResponse errorResponse = new ErrorResponse(ex);
+      ex.getValidationContext().writeToErrorResponse(errorResponse);
+      return errorResponse;
     }
     catch (ScimException ex)
     {

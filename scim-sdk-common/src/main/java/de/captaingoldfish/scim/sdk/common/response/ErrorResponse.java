@@ -1,11 +1,18 @@
 package de.captaingoldfish.scim.sdk.common.response;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -115,6 +122,54 @@ public class ErrorResponse extends ScimResponse
   public void setDetail(String detail)
   {
     setAttribute(AttributeNames.RFC7643.DETAIL, detail);
+  }
+
+  /**
+   * @return the unspecific error messages from the schema validation that could not be mapped to a specific
+   *         field
+   */
+  public List<String> getErrorMessages()
+  {
+    ObjectNode errors = (ObjectNode)this.get(AttributeNames.Custom.ERRORS);
+    if (errors == null)
+    {
+      return Collections.emptyList();
+    }
+    ArrayNode errorMessages = Optional.ofNullable((ArrayNode)errors.get(AttributeNames.Custom.ERROR_MESSAGES))
+                                      .orElse(new ArrayNode(JsonNodeFactory.instance));
+    if (errorMessages.isEmpty())
+    {
+      return Collections.emptyList();
+    }
+    List<String> errorMessageList = new ArrayList<>();
+    errorMessages.forEach(node -> errorMessageList.add(node.textValue()));
+    return errorMessageList;
+  }
+
+  /**
+   * @return the field errors from the schema validation that indicate errors directly on specific resource
+   *         fields
+   */
+  public Map<String, List<String>> getFieldErrors()
+  {
+    ObjectNode errors = (ObjectNode)this.get(AttributeNames.Custom.ERRORS);
+    if (errors == null)
+    {
+      return new HashMap<>();
+    }
+    ObjectNode fieldErrors = Optional.ofNullable((ObjectNode)errors.get(AttributeNames.Custom.FIELD_ERRORS))
+                                     .orElse(new ObjectNode(JsonNodeFactory.instance));
+    if (fieldErrors.isEmpty())
+    {
+      return new HashMap<>();
+    }
+    Map<String, List<String>> errorMessageList = new HashMap<>();
+    fieldErrors.fields().forEachRemaining(nodeDefinition -> {
+      List<String> errorMessages = new ArrayList<>();
+      nodeDefinition.getValue().forEach(node -> errorMessages.add(node.textValue()));
+      errorMessageList.put(nodeDefinition.getKey(), errorMessages);
+    });
+    return errorMessageList;
   }
 
   /**

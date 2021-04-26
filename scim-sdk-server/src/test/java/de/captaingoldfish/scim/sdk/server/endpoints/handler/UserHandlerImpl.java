@@ -19,10 +19,10 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -33,14 +33,26 @@ import lombok.extern.slf4j.Slf4j;
  * a simple user resource handler for testing
  */
 @Slf4j
-@RequiredArgsConstructor
 public class UserHandlerImpl extends ResourceHandler<User>
 {
 
   private final boolean returnETags;
 
+  private final RequestValidator<User> requestValidator;
+
   @Getter
   private Map<String, User> inMemoryMap = new HashMap<>();
+
+  public UserHandlerImpl(boolean returnETags)
+  {
+    this(returnETags, null);
+  }
+
+  public UserHandlerImpl(boolean returnETags, RequestValidator<User> requestValidator)
+  {
+    this.returnETags = returnETags;
+    this.requestValidator = requestValidator;
+  }
 
   @Override
   public User createResource(User resource, Authorization authorization)
@@ -80,7 +92,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
                        .version(returnETags ? meta.getVersion().orElse(null) : null)
                        .build());
     }
-    return user;
+    return user; // JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
   }
 
   @Override
@@ -150,5 +162,11 @@ public class UserHandlerImpl extends ResourceHandler<User>
     {
       throw new ResourceNotFoundException("resource with id '" + id + "' does not exist", null, null);
     }
+  }
+
+  @Override
+  public RequestValidator<User> getRequestValidator()
+  {
+    return requestValidator;
   }
 }

@@ -4,12 +4,22 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
-import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -25,11 +35,13 @@ public class ValidationContext
   /**
    * contains errors that are not bound to any specific fields
    */
+  @Getter
   private final List<String> errors;
 
   /**
    * contains all error messages that are bound to a specific field
    */
+  @Getter
   private final Map<String, List<String>> fieldErrors;
 
   /**
@@ -48,7 +60,7 @@ public class ValidationContext
   /**
    * @return true if any errors have been set, false else
    */
-  protected boolean hasErrors()
+  public boolean hasErrors()
   {
     boolean hasError;
     hasError = !errors.isEmpty() || !fieldErrors.isEmpty();
@@ -58,7 +70,7 @@ public class ValidationContext
   /**
    * logs all reported errors on debug level
    */
-  protected void logErrors()
+  public void logErrors()
   {
     errors.forEach(log::debug);
     fieldErrors.forEach((fieldName, errorList) -> {
@@ -91,17 +103,111 @@ public class ValidationContext
    */
   public void addError(String fieldName, String errorMessage)
   {
-    SchemaAttribute schemaAttribute = resourceType.getMainSchema().getSchemaAttribute(fieldName);
-    if (schemaAttribute == null)
+    Optional<SchemaAttribute> schemaAttributeList = resourceType.getAllSchemas()
+                                                                .stream()
+                                                                .map(schema -> schema.getSchemaAttribute(fieldName))
+                                                                .filter(Objects::nonNull)
+                                                                .findAny();
+    boolean attributeNotFound = !schemaAttributeList.isPresent();
+    if (attributeNotFound)
     {
       String error = String.format("Cannot bind field with name '%s' on error constraint because no such field "
                                    + "exists for resource '%s'",
                                    fieldName,
                                    resourceType.getMainSchema().getNonNullId());
-      throw new InternalServerException(error);
+      throw new BadRequestException(error);
     }
-    List<String> fieldErrorList = fieldErrors.computeIfAbsent(fieldName, k -> new ArrayList<>());
+    List<String> fieldErrorList = fieldErrors.computeIfAbsent(fieldName, getOrCreateList -> new ArrayList<>());
     fieldErrorList.add(errorMessage);
   }
 
+  /**
+   * adds specific field errors to the validation context
+   * 
+   * @param ex the definition of the error that occurred
+   */
+  public void addExceptionMessages(AttributeValidationException ex)
+  {
+    final String fieldName = ex.getSchemaAttribute().getScimNodeName();
+    Throwable cause = ex;
+    while (cause != null)
+    {
+      addError(fieldName, cause.getMessage());
+      cause = cause.getCause();
+    }
+  }
+
+  /**
+   * adds other more unspecific error messages to the context that are not directly related to any fields
+   * 
+   * @param ex the definition of the error that occurred
+   */
+  public void addExceptionMessages(ScimException ex)
+  {
+    Throwable cause = ex;
+    while (cause != null)
+    {
+      addError(cause.getMessage());
+      cause = cause.getCause();
+    }
+  }
+
+  /**
+   * adds the current errors of this validation context to the given error response
+   */
+  public void writeToErrorResponse(ErrorResponse errorResponse)
+  {
+    Optional<ArrayNode> errorMessagesArray = addUnspecificErrorMessages();
+    Optional<ObjectNode> fieldErrorsObject = addFieldSpecificErrorMessages();
+
+    if (errorMessagesArray.isPresent())
+    {
+      errorResponse.setDetail(errorMessagesArray.get().get(0).textValue());
+    }
+    else
+    {
+      String firstErrorMessage = fieldErrors.get(fieldErrors.keySet().iterator().next()).get(0);
+      errorResponse.setDetail(firstErrorMessage);
+    }
+
+    ObjectNode errorNode = new ObjectNode(JsonNodeFactory.instance);
+    errorMessagesArray.ifPresent(array -> errorNode.set(AttributeNames.Custom.ERROR_MESSAGES, array));
+    fieldErrorsObject.ifPresent(object -> errorNode.set(AttributeNames.Custom.FIELD_ERRORS, object));
+    errorResponse.set(AttributeNames.Custom.ERRORS, errorNode);
+  }
+
+  /**
+   * if unspecific errors are present an array node will be created with the error messages
+   */
+  private Optional<ArrayNode> addUnspecificErrorMessages()
+  {
+    if (errors.isEmpty())
+    {
+      return Optional.empty();
+    }
+    ArrayNode errorMessages = new ArrayNode(JsonNodeFactory.instance);
+    errors.forEach(errorMessages::add);
+    return Optional.of(errorMessages);
+  }
+
+  /**
+   * if field errors are present an object node will be created and the field errors will be added into the
+   * specific object node
+   * 
+   * @return an empty if no field errors are present or an object node that represents the field errors
+   */
+  private Optional<ObjectNode> addFieldSpecificErrorMessages()
+  {
+    if (fieldErrors.isEmpty())
+    {
+      return Optional.empty();
+    }
+    ObjectNode fieldErrorNode = new ObjectNode(JsonNodeFactory.instance);
+    fieldErrors.forEach((fieldName, errorMessageList) -> {
+      ArrayNode errorMessages = new ArrayNode(JsonNodeFactory.instance);
+      errorMessageList.forEach(errorMessages::add);
+      fieldErrorNode.set(fieldName, errorMessages);
+    });
+    return Optional.of(fieldErrorNode);
+  }
 }

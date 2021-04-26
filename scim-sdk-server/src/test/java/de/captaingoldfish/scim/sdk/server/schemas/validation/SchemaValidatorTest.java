@@ -71,6 +71,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -1031,9 +1032,13 @@ public class SchemaValidatorTest implements FileReferences
                                                                          enterpriseUserExtension);
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
-    Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestResourceValidator(resourceType, HttpMethod.POST).validateDocument(user);
-    });
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType, HttpMethod.POST);
+    Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
+
+    String errorMessage = "Required extension 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User' is missing";
+    Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
+    MatcherAssert.assertThat(requestResourceValidator.getValidationContext().getErrors(),
+                             Matchers.containsInAnyOrder(errorMessage));
   }
 
   /**
@@ -1719,10 +1724,14 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("string array validation fails (string too short)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setStringArray(Arrays.asList("123", "12345", "1234567", "0123456", "013654", "987654"));
-      String errorMessage = "The 'STRING'-attribute 'stringArray' with value '123' must have a minimum length of "
-                            + "'5' characters but is '3' characters long";
-      failValidationForRequest(resourceType, allTypes, errorMessage);
-      failValidationForResponse(resourceType, allTypes, errorMessage);
+
+      final String errorMessage1 = "Found unsupported value in multivalued attribute "
+                                   + "'[\"123\",\"12345\",\"1234567\",\"0123456\",\"013654\",\"987654\"]'";
+      final String errorMessage2 = "The 'STRING'-attribute 'stringArray' with value '123' must have a minimum length "
+                                   + "of '5' characters but is '3' characters long";
+      String[] errorMessages = new String[]{errorMessage1, errorMessage2};
+      failValidationForRequest(resourceType, allTypes, errorMessages);
+      failValidationForResponse(resourceType, allTypes, errorMessage2);
     }));
     /* *********************************************************************************************************/
     /* *********************************************************************************************************/
@@ -1936,10 +1945,13 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setStringArray(Arrays.asList("123", "12345", "1234567", "0123456", "013654", "987654"));
-      String errorMessage = "The 'STRING'-attribute 'complex.stringArray' with value '123' must have a minimum length "
-                            + "of '5' characters but is '3' characters long";
-      failValidationForRequest(resourceType, allTypes, errorMessage);
-      failValidationForResponse(resourceType, allTypes, errorMessage);
+      final String errorMessage1 = "Found unsupported value in multivalued attribute "
+                                   + "'[\"123\",\"12345\",\"1234567\",\"0123456\",\"013654\",\"987654\"]'";
+      final String errorMessage2 = "The 'STRING'-attribute 'complex.stringArray' with value '123' must have a minimum "
+                                   + "length of '5' characters but is '3' characters long";
+      String[] errorMessages = new String[]{errorMessage1, errorMessage2};
+      failValidationForRequest(resourceType, allTypes, errorMessages);
+      failValidationForResponse(resourceType, allTypes, errorMessage2);
     }));
     /* *********************************************************************************************************/
     /* *********************************************************************************************************/
@@ -1984,10 +1996,14 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setMultiComplex(Arrays.asList(complex, complex));
       complex.setString("01234567890");
-      String errorMessage = "The 'STRING'-attribute 'multiComplex.string' with value '01234567890' must not be "
-                            + "longer than '10' characters but is '11' characters long";
-      failValidationForRequest(resourceType, allTypes, errorMessage);
-      failValidationForResponse(resourceType, allTypes, errorMessage);
+
+      final String errorMessage1 = "Found unsupported value in multivalued complex attribute "
+                                   + "'[{\"string\":\"01234567890\"},{\"string\":\"01234567890\"}]'";
+      final String errorMessage2 = "The 'STRING'-attribute 'multiComplex.string' with value '01234567890' must not be "
+                                   + "longer than '10' characters but is '11' characters long";
+      String[] errorMessages = new String[]{errorMessage1, errorMessage2};
+      failValidationForRequest(resourceType, allTypes, errorMessages);
+      failValidationForResponse(resourceType, allTypes, errorMessage2);
     }));
     return dynamicTests;
   }
@@ -2031,19 +2047,27 @@ public class SchemaValidatorTest implements FileReferences
   /**
    * verifies that an exception occurs if the given document is validated for request
    */
-  private void failValidationForRequest(ResourceType resourceType, AllTypes allTypes, String errorMessage)
+  private void failValidationForRequest(ResourceType resourceType, AllTypes allTypes, String... errorMessages)
   {
-    try
-    {
-      new RequestResourceValidator(resourceType, HttpMethod.POST).validateDocument(allTypes);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (DocumentValidationException ex)
-    {
-      log.debug(ex.getDetail(), ex);
-      Assertions.assertEquals(errorMessage, ex.getDetail());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType, HttpMethod.POST);
+    requestResourceValidator.validateDocument(allTypes);
+
+    ValidationContext validationContext = requestResourceValidator.getValidationContext();
+    Assertions.assertTrue(validationContext.hasErrors());
+
+    Assertions.assertEquals(1,
+                            validationContext.getFieldErrors().size(),
+                            validationContext.getFieldErrors().toString());
+    List<String> fieldErrorMessages = validationContext.getFieldErrors()
+                                                       .get(validationContext.getFieldErrors()
+                                                                             .keySet()
+                                                                             .iterator()
+                                                                             .next());
+    Assertions.assertEquals(errorMessages.length, fieldErrorMessages.size(), fieldErrorMessages.toString());
+    MatcherAssert.assertThat(fieldErrorMessages,
+                             Matchers.containsInAnyOrder(Arrays.stream(errorMessages)
+                                                               .map(Matchers::equalTo)
+                                                               .collect(Collectors.toList())));
   }
 
   /**
@@ -2086,50 +2110,22 @@ public class SchemaValidatorTest implements FileReferences
     ArrayNode email = new ArrayNode(JsonNodeFactory.instance);
     email.add("hello world");
     user.set(AttributeNames.RFC7643.EMAILS, email);
-    try
-    {
-      new RequestResourceValidator(resourceType, HttpMethod.POST).validateDocument(user);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (DocumentValidationException ex)
-    {
-      log.debug(ex.getDetail(), ex);
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      String expectedErrorMessage = "Attribute 'urn:ietf:params:scim:schemas:core:2.0:User:emails' is expected to "
-                                    + "hold only complex attributes but is '[\"hello world\"]'";
-      Assertions.assertEquals(expectedErrorMessage, ex.getDetail());
-    }
-  }
 
-  /**
-   * verifies that the document validation fails in case of request if the document evaluates to an empty
-   * document. For example: this happens if the attributes within the document are not writable
-   */
-  @Test
-  public void testValidateReceivedDocumentToEmptyDocumentForRequest()
-  {
-    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
-    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
-    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
 
-    ResourceType resourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(false),
-                                                                         allTypesResourceTypeJson,
-                                                                         allTypesValidationSchema,
-                                                                         enterpriseUserValidationSchema);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType, HttpMethod.POST);
+    Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
 
-    AllTypes allTypes = buildAllTypesForValidation();
-    try
-    {
-      new RequestResourceValidator(resourceType, HttpMethod.POST).validateDocument(allTypes);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (DocumentValidationException ex)
-    {
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      String errorMessage = String.format("Request document is invalid it does not contain processable data '%s'",
-                                          allTypes);
-      Assertions.assertEquals(errorMessage, ex.getDetail());
-    }
+    Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
+    MatcherAssert.assertThat(requestResourceValidator.getValidationContext().getErrors(), Matchers.empty());
+    Assertions.assertEquals(1, requestResourceValidator.getValidationContext().getFieldErrors().size());
+    List<String> fieldErrors = requestResourceValidator.getValidationContext()
+                                                       .getFieldErrors()
+                                                       .get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(fieldErrors);
+    Assertions.assertEquals(1, fieldErrors.size());
+    String expectedErrorMessage = "Attribute 'urn:ietf:params:scim:schemas:core:2.0:User:emails' is expected to "
+                                  + "hold only complex attributes but is '[\"hello world\"]'";
+    MatcherAssert.assertThat(fieldErrors, Matchers.hasItem(expectedErrorMessage));
   }
 
   /**

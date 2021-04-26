@@ -1,6 +1,5 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.validation;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -35,18 +34,6 @@ public interface RequestValidator<T extends ResourceNode>
 
   /**
    * validate the resource for valid input before it is reached through to the
-   * {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler#getResource(String, Authorization, List, List)}
-   * implementation
-   *
-   * @param id the id of the resource to retrieve
-   * @param validationContext add as much errors to this context as you like. If at least one error is present
-   *          the execution will abort with a
-   *          {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException}
-   */
-  public void validateGet(String id, ValidationContext validationContext);
-
-  /**
-   * validate the resource for valid input before it is reached through to the
    * {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler#updateResource(ResourceNode, Authorization)}
    * implementation
    *
@@ -60,16 +47,5 @@ public interface RequestValidator<T extends ResourceNode>
    */
   public void validateUpdate(Supplier<T> oldResourceSupplier, T newResource, ValidationContext validationContext);
 
-  /**
-   * validate the resource for valid input before it is reached through to the
-   * {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler#deleteResource(String, Authorization)}
-   * implementation
-   *
-   * @param id the id of the resource to delete
-   * @param validationContext add as much errors to this context as you like. If at least one error is present
-   *          the execution will abort with a
-   *          {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException}
-   */
-  public void validateDelete(String id, ValidationContext validationContext);
 
 }

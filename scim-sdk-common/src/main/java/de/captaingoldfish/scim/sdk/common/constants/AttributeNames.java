@@ -161,6 +161,23 @@ public final class AttributeNames
      * not
      */
     public static final String AUTHENTICATED = "authenticated";
+
+    /**
+     * used in error responses to display the list of messages that have been added to the requests validation
+     * error context that could not be directly issued to a resource field
+     */
+    public static final String ERROR_MESSAGES = "errorMessages";
+
+    /**
+     * used in error responses to display a map of messages that are bound to specific resource fields
+     */
+    public static final String FIELD_ERRORS = "fieldErrors";
+
+    /**
+     * used as a key for a wrapper node in error responses. This wrapper object node will optionally hold the keys
+     * {@link #ERROR_MESSAGES} or {@link #FIELD_ERRORS} or both
+     */
+    public static final String ERRORS = "errors";
   }
 
   /**
