@@ -14,7 +14,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -115,7 +115,7 @@ public class ValidationContext
                                    + "exists for resource '%s'",
                                    fieldName,
                                    resourceType.getMainSchema().getNonNullId());
-      throw new BadRequestException(error);
+      throw new InternalServerException(error);
     }
     List<String> fieldErrorList = fieldErrors.computeIfAbsent(fieldName, getOrCreateList -> new ArrayList<>());
     fieldErrorList.add(errorMessage);
