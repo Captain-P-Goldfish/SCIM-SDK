@@ -78,6 +78,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.SingletonUserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -1419,6 +1420,46 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
+  }
+
+  /**
+   * Verifies that a patch operation can be executed on a singleton resource type
+   */
+  @Test
+  public void testPatchResourceOnSingletonEndpoint()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    SingletonUserHandlerImpl singletonUserHandler = new SingletonUserHandlerImpl();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(singletonUserHandler));
+    userResourceType.getFeatures().setSingletonEndpoint(true);
+
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
+    singletonUserHandler.setUser(user);
+
+    final String url = BASE_URI + EndpointPaths.USERS;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
   }
 
   /**

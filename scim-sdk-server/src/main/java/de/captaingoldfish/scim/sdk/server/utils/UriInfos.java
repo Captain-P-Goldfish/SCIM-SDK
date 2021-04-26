@@ -93,7 +93,7 @@ public class UriInfos
     this.queryParameters = queryParameters == null ? new HashMap<>() : RequestUtils.getQueryParameters(queryParameters);
     this.resourceType = resourceType;
     this.httpMethod = Objects.requireNonNull(httpMethod);
-    validateUriInfos();
+    validateUriInfos(resourceType);
     this.httpHeaders = validateHttpHeaders(httpHeaders);
   }
 
@@ -253,8 +253,10 @@ public class UriInfos
 
   /**
    * this method will verify that the parsed data of the request is valid for accessing SCIM endpoint
+   * 
+   * @param resourceType used to allow empty path ids on singleton endpoints
    */
-  private void validateUriInfos()
+  private void validateUriInfos(ResourceType resourceType)
   {
     switch (httpMethod)
     {
@@ -268,7 +270,7 @@ public class UriInfos
       case PUT:
       case PATCH:
       case DELETE:
-        if (StringUtils.isBlank(getResourceId()))
+        if (!resourceType.getFeatures().isSingletonEndpoint() && StringUtils.isBlank(getResourceId()))
         {
           throw new BadRequestException("missing ID value in request path for method '" + httpMethod + "'", null,
                                         ScimType.Custom.INVALID_PARAMETERS);

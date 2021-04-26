@@ -997,15 +997,6 @@ class ResourceEndpointHandler
                                             + "not exist", null, null);
       }
       ETagHandler.validateVersion(serviceProvider, resourceType, () -> resourceNode, httpHeaders);
-      Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
-      String resourceId = resourceNode.getId()
-                                      .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
-      if (!resourceId.equals(id))
-      {
-        throw new InternalServerException("the id of the returned resource does not match the "
-                                          + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
-                                          null, null);
-      }
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       resourceNode.remove(AttributeNames.RFC7643.META);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
@@ -1032,8 +1023,13 @@ class ResourceEndpointHandler
 
       if (patchHandler.isChangedResource())
       {
-        // a security call In case that someone finds a way to manipulate the id within a patch operation
-        patchedResourceNode.setId(id);
+        // in case of singleton endpoints we do allow to omit the id from the url so the id to set would be null. And
+        // since the id is still a required attribute we must not override an existing id with a null value
+        if (!resourceType.getFeatures().isSingletonEndpoint())
+        {
+          // a security call In case that someone finds a way to manipulate the id within a patch operation
+          patchedResourceNode.setId(id);
+        }
 
         patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, authorization);
         meta = patchedResourceNode.getMeta().orElseThrow(() -> {
