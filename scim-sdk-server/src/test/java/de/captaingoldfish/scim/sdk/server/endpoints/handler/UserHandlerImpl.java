@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
@@ -17,6 +18,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
@@ -92,7 +94,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
                        .version(returnETags ? meta.getVersion().orElse(null) : null)
                        .build());
     }
-    return user; // JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    return Optional.ofNullable(user).map(u -> JsonHelper.copyResourceToObject(u.deepCopy(), User.class)).orElse(null);
   }
 
   @Override

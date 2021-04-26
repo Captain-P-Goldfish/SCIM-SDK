@@ -1627,6 +1627,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    copiedUser.setName(name);
+
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
       return resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                    id,
@@ -1637,11 +1640,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
-    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    copiedUser.setName(name);
+    updateResponse.remove(AttributeNames.RFC7643.META);
+    copiedUser.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(copiedUser, updateResponse);
 
     GetResponse getResponse = (GetResponse)resourceEndpointHandler.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
   }

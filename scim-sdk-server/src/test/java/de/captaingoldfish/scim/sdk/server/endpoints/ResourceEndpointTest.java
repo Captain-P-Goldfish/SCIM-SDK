@@ -1232,6 +1232,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    copiedUser.setName(name);
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
@@ -1241,12 +1243,13 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    updateResponse.remove(AttributeNames.RFC7643.META);
+    copiedUser.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
-    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    copiedUser.setName(name);
     Assertions.assertEquals(copiedUser, updateResponse);
 
     GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
   }
@@ -1293,6 +1296,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = User.builder().id(id).userName("goldfish").nickName("captain").active(false).meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
@@ -1300,8 +1304,9 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
-    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    Assertions.assertTrue(copiedUser.isActive().get());
+    Assertions.assertTrue(JsonHelper.copyResourceToObject(scimResponse, User.class).isActive().get());
+    Assertions.assertTrue(userHandler.getInMemoryMap().get(id).isActive().get());
+    Assertions.assertFalse(copiedUser.isActive().get());
   }
 
   /**
@@ -1346,6 +1351,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = User.builder().id(id).userName("goldfish").nickName("captain").active(false).meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
@@ -1353,8 +1359,9 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
-    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    Assertions.assertTrue(copiedUser.isActive().get());
+    Assertions.assertTrue(JsonHelper.copyResourceToObject(scimResponse, User.class).isActive().get());
+    Assertions.assertTrue(userHandler.getInMemoryMap().get(id).isActive().get());
+    Assertions.assertFalse(copiedUser.isActive().get());
   }
 
   /**
@@ -1384,6 +1391,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
+    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    copiedUser.setName(name);
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
@@ -1401,12 +1410,13 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    updateResponse.remove(AttributeNames.RFC7643.META);
+    copiedUser.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
-    User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
-    copiedUser.setName(name);
     Assertions.assertEquals(copiedUser, updateResponse);
 
     GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
   }

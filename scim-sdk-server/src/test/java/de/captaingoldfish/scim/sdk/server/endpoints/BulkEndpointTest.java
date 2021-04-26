@@ -952,7 +952,6 @@ public class BulkEndpointTest extends AbstractBulkTest
                                        .data(patchedUser.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    log.trace(bulkRequest.toPrettyString());
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
@@ -967,6 +966,12 @@ public class BulkEndpointTest extends AbstractBulkTest
                                      .filter(u -> !u.getEnterpriseUser().isPresent())
                                      .findAny()
                                      .get();
+    user = userHandler.getInMemoryMap()
+                      .values()
+                      .stream()
+                      .filter(u -> u.getEnterpriseUser().isPresent())
+                      .findAny()
+                      .get();
     Assertions.assertEquals(newCreatedUser.getId().get(),
                             user.getEnterpriseUser().get().getManager().get().getValue().get());
   }
