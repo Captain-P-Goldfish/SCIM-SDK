@@ -164,15 +164,14 @@ public class ValidationContextTest
                                  User newResource,
                                  ValidationContext validationContext)
       {
-        // TODO
-        // Assertions.assertEquals(updateUser.getUserName().get(), newResource.getUserName().get());
-        // Assertions.assertTrue(updateUser.getNickName().isPresent());
-        // Assertions.assertEquals(updateUser.getNickName().get(), newResource.getNickName().get());
-        // User oldUser = oldResourceSupplier.get();
-        // Assertions.assertEquals(user, oldUser);
-        // Assertions.assertEquals(user.getUserName().get(), oldUser.getUserName().get());
-        // Assertions.assertFalse(user.getNickName().isPresent());
-        // Assertions.assertFalse(oldUser.getNickName().isPresent());
+        Assertions.assertEquals(updateUser.getUserName().get(), newResource.getUserName().get());
+        Assertions.assertTrue(updateUser.getNickName().isPresent());
+        Assertions.assertEquals(updateUser.getNickName().get(), newResource.getNickName().get());
+        User oldUser = oldResourceSupplier.get();
+        Assertions.assertEquals(user, oldUser);
+        Assertions.assertEquals(user.getUserName().get(), oldUser.getUserName().get());
+        Assertions.assertFalse(user.getNickName().isPresent());
+        Assertions.assertFalse(oldUser.getNickName().isPresent());
       }
     });
     UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
