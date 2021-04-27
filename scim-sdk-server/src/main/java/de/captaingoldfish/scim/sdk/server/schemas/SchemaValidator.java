@@ -450,7 +450,7 @@ public class SchemaValidator
       JsonNode extensionNode = null;
       if (extension != null)
       {
-        validateExtensionForRequest(schemaExtension, extension, httpMethod);
+        extensionNode = validateExtensionForRequest(schemaExtension, extension, httpMethod);
       }
       if (extensionNode == null)
       {
