@@ -448,6 +448,7 @@ public class SchemaValidator
                                        + "not present within the document";
       JsonNode extension = document.get(schemaExtension.getNonNullId());
       JsonNode extensionNode = null;
+      log.info("validateDocumentForRequest extension: ", (extension != null ? extension.toPrettyString() : null));
       if (extension != null)
       {
         extensionNode = validateExtensionForRequest(schemaExtension, extension, httpMethod);
