@@ -1,7 +1,11 @@
 package de.captaingoldfish.scim.sdk.translator.classbuilder;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,12 +29,13 @@ public class SchemaToClassBuilder
     String className = StringUtils.capitalize(schema.getName().orElse("Unknown"));
 
     String classStructure = buildClassStructure(schema);
-    return String.format("%s\n\n%s\n\n/** %s */\npublic class %s extends ResourceNode\n{\n  %s\n}",
+    return String.format("%s\n\n%s\n\n/** %s */\npublic class %s extends ResourceNode\n{\n  %s\n  %s\n}",
                          packageName,
                          imports,
                          javadoc,
                          className,
-                         classStructure);
+                         classStructure,
+                         getFieldNames(schema));
   }
 
   private String getImports()
@@ -83,7 +88,13 @@ public class SchemaToClassBuilder
       getterAndSetterMethodCalls.append(getterAndSetterDefinition).append('\n');
     }
 
-    return String.format("%s%s", constructor, getterAndSetterMethodCalls);
+    StringBuilder complexAttributeStringBuilder = new StringBuilder();
+    for ( String complexAttributeDefinition : complexAttributeDefinitions )
+    {
+      complexAttributeStringBuilder.append(complexAttributeDefinition);
+    }
+
+    return String.format("%s%s%s", constructor, getterAndSetterMethodCalls, complexAttributeStringBuilder);
   }
 
   private String getConstructor(Schema schema, List<String> constructorAttributes, List<String> setterMethodCalls)
@@ -92,5 +103,38 @@ public class SchemaToClassBuilder
     String setterCalls = String.join("\n  ", setterMethodCalls);
     String constructorName = StringUtils.capitalize(schema.getName().orElse(null));
     return String.format("public %s(%s) \n  {\n  %s\n  }\n", constructorName, constructorParams, setterCalls);
+  }
+
+  private String getFieldNames(Schema schema)
+  {
+    Set<String> attributeNames = getAttributeNames(schema);
+    final String fieldNamesString = attributeNames.stream()
+                                                  .map(name -> String.format("public static final String %s = \"%s\";",
+                                                                             attributeNameToFieldName(name),
+                                                                             name))
+                                                  .collect(Collectors.joining("\n"));
+    return String.format("public static class FieldNames \n{\n%s\n}", fieldNamesString);
+  }
+
+  private Set<String> getAttributeNames(Schema schema)
+  {
+    Set<String> attributeNames = new HashSet<>();
+    for ( SchemaAttribute attribute : schema.getAttributes() )
+    {
+      attributeNames.add(attribute.getName());
+      if (Type.COMPLEX.equals(attribute.getType()))
+      {
+        for ( SchemaAttribute subAttribute : attribute.getSubAttributes() )
+        {
+          attributeNames.add(subAttribute.getName());
+        }
+      }
+    }
+    return attributeNames;
+  }
+
+  private String attributeNameToFieldName(String name)
+  {
+    return name.replaceAll("([A-Z])", "_$1").toUpperCase(Locale.ROOT);
   }
 }
