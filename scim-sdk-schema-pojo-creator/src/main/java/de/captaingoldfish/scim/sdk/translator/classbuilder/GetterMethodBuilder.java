@@ -40,7 +40,7 @@ public class GetterMethodBuilder
     String returnType = SharedMethods.getReturnTypeAttribute(schemaAttribute);
     if (schemaAttribute.isMultiValued())
     {
-      if (Uniqueness.NONE.equals(schemaAttribute.getUniqueness()))
+      if (Uniqueness.NONE.equals(schemaAttribute.getUniqueness()) || Type.COMPLEX.equals(schemaAttribute.getType()))
       {
         return String.format("List<%s>", returnType);
       }

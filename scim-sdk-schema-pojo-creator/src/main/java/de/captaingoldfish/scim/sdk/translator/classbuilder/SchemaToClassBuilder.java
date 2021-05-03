@@ -24,7 +24,7 @@ public class SchemaToClassBuilder
   public String generateClassFromSchema(Schema schema)
   {
     String packageName = "package ???";
-    String imports = String.format("import %s", getImports());
+    String imports = getImports();
     String javadoc = schema.getDescription().orElse("");
     String className = StringUtils.capitalize(schema.getName().orElse("Unknown"));
 
@@ -41,12 +41,11 @@ public class SchemaToClassBuilder
   private String getImports()
   {
     // @formatter:off
-    return "import java.util.Arrays;\n" +
-            "import java.util.List;\n" +
-            "import java.util.Optional;\n" +
-            "import java.util.Set;\n" +
-            "import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;\n" +
-            "import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;";
+    return "import java.util.List;\n" +
+           "import java.util.Optional;\n" +
+           "import java.util.Set;\n" +
+           "import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;\n" +
+           "import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;";
     // @formatter:on
   }
 
@@ -59,6 +58,10 @@ public class SchemaToClassBuilder
 
     for ( SchemaAttribute attribute : schema.getAttributes() )
     {
+      if ("id".equals(attribute.getName()))
+      {
+        continue;
+      }
       if (Type.COMPLEX.equals(attribute.getType()))
       {
         final ComplexAttributeToInnerClassBuilder complexBuilder = new ComplexAttributeToInnerClassBuilder();

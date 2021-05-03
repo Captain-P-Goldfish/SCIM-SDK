@@ -744,7 +744,7 @@ public class GetterMethodBuilderTest
       String method = pojoTranslator.generateSimpleGetterMethod(schemaAttribute);
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
-                              "  public Set<HelloWorld> getHelloWorld()\n" +
+                              "  public List<HelloWorld> getHelloWorld()\n" +
                               "  {\n" +
                               "     return getArrayAttribute(FieldNames.HELLO_WORLD, HelloWorld.class);\n" +
                               "  }\n", method);
@@ -765,7 +765,7 @@ public class GetterMethodBuilderTest
       String method = pojoTranslator.generateSimpleGetterMethod(schemaAttribute);
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
-                              "  public Set<HelloWorld> getHelloWorld()\n" +
+                              "  public List<HelloWorld> getHelloWorld()\n" +
                               "  {\n" +
                               "     return getArrayAttribute(FieldNames.HELLO_WORLD, HelloWorld.class);\n" +
                               "  }\n", method);
