@@ -27,7 +27,7 @@ public class ComplexAttributeToInnerClassBuilderTest
                                                              .build();
     SchemaAttribute anIntegerAttribute = SchemaAttributeBuilder.builder()
                                                                .name("anInteger")
-                                                               .type(Type.STRING)
+                                                               .type(Type.INTEGER)
                                                                .required(true)
                                                                .build();
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -53,9 +53,9 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public static class HelloWorld\n" +
+    "  public static class HelloWorld extends ScimObjectNode\n" +
     "  {\n" +
-    "    public HelloWorld(AString aString, AnInteger anInteger) \n" +
+    "    public HelloWorld(String aString, Long anInteger) \n" +
     "    {\n" +
     "    setAString(aString);\n" +
     "    setAnInteger(anInteger);\n" +
@@ -73,13 +73,13 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public String getAnInteger()\n" +
+    "  public Long getAnInteger()\n" +
     "  {\n" +
-    "     return getStringAttribute(FieldNames.AN_INTEGER).orElse(null);\n" +
+    "     return getLongAttribute(FieldNames.AN_INTEGER).orElse(null);\n" +
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public void setAnInteger(String anInteger)\n" +
+    "  public void setAnInteger(Long anInteger)\n" +
     "  {\n" +
     "     setAttribute(FieldNames.AN_INTEGER, anInteger);\n" +
     "  }\n" +
@@ -99,7 +99,7 @@ public class ComplexAttributeToInnerClassBuilderTest
                                                              .build();
     SchemaAttribute anIntegerAttribute = SchemaAttributeBuilder.builder()
                                                                .name("anInteger")
-                                                               .type(Type.STRING)
+                                                               .type(Type.INTEGER)
                                                                .required(true)
                                                                .build();
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -126,9 +126,9 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public static class HelloWorld\n" +
+    "  public static class HelloWorld extends ScimObjectNode\n" +
     "  {\n" +
-    "    public HelloWorld(AString aString, AnInteger anInteger) \n" +
+    "    public HelloWorld(String aString, Long anInteger) \n" +
     "    {\n" +
     "    setAString(aString);\n" +
     "    setAnInteger(anInteger);\n" +
@@ -146,13 +146,13 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public String getAnInteger()\n" +
+    "  public Long getAnInteger()\n" +
     "  {\n" +
-    "     return getStringAttribute(FieldNames.AN_INTEGER).orElse(null);\n" +
+    "     return getLongAttribute(FieldNames.AN_INTEGER).orElse(null);\n" +
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public void setAnInteger(String anInteger)\n" +
+    "  public void setAnInteger(Long anInteger)\n" +
     "  {\n" +
     "     setAttribute(FieldNames.AN_INTEGER, anInteger);\n" +
     "  }\n" +
@@ -172,7 +172,7 @@ public class ComplexAttributeToInnerClassBuilderTest
                                                              .build();
     SchemaAttribute anIntegerAttribute = SchemaAttributeBuilder.builder()
                                                                .name("anInteger")
-                                                               .type(Type.STRING)
+                                                               .type(Type.INTEGER)
                                                                .required(true)
                                                                .build();
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -199,9 +199,9 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public static class HelloWorld\n" +
+    "  public static class HelloWorld extends ScimObjectNode\n" +
     "  {\n" +
-    "    public HelloWorld(AString aString, AnInteger anInteger) \n" +
+    "    public HelloWorld(String aString, Long anInteger) \n" +
     "    {\n" +
     "    setAString(aString);\n" +
     "    setAnInteger(anInteger);\n" +
@@ -219,13 +219,13 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public String getAnInteger()\n" +
+    "  public Long getAnInteger()\n" +
     "  {\n" +
-    "     return getStringAttribute(FieldNames.AN_INTEGER).orElse(null);\n" +
+    "     return getLongAttribute(FieldNames.AN_INTEGER).orElse(null);\n" +
     "  }\n" +
     "\n" +
     "  /** A description */\n" +
-    "  public void setAnInteger(String anInteger)\n" +
+    "  public void setAnInteger(Long anInteger)\n" +
     "  {\n" +
     "     setAttribute(FieldNames.AN_INTEGER, anInteger);\n" +
     "  }\n" +

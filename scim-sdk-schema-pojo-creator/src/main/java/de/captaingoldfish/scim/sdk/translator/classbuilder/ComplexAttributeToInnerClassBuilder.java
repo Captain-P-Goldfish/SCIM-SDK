@@ -36,7 +36,7 @@ public class ComplexAttributeToInnerClassBuilder
     final String className = StringUtils.capitalize(schemaAttribute.getName());
     final String innerClassStructure = buildInnerClassStructure(schemaAttribute);
 
-    return String.format("  %s\n  %s\n  %s\n  public static class %s\n  {\n    %s\n  }",
+    return String.format("  %s\n  %s\n  %s\n  public static class %s extends ScimObjectNode\n  {\n    %s\n  }",
                          getterMethod,
                          setterMethod,
                          javadoc,
