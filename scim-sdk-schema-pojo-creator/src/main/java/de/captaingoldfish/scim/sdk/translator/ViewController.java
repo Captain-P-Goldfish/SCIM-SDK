@@ -7,6 +7,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.SchemaToClassBuilder;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.TextArea;
@@ -19,7 +20,7 @@ import javafx.scene.control.TextArea;
 public class ViewController
 {
 
-  private static final Schema META_SCHEMA = new Schema(JsonHelper.readJsonDocument(ClassPathReferences.META_SCHEMA_JSON));
+  private static final Schema META_SCHEMA = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
 
   @FXML
   private TextArea schemaTextArea;
@@ -44,7 +45,7 @@ public class ViewController
 
   public String parseSchema(Schema schema)
   {
-    return null;
+    return new SchemaToClassBuilder().generateClassFromSchema(schema);
   }
 
 

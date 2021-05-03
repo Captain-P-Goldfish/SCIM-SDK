@@ -29,6 +29,6 @@
             </HBox>
          </children>
       </HBox>
-      <TextArea fx:id="pojoTextArea" prefHeight="200.0" prefWidth="200.0" />
+      <TextArea fx:id="pojoTextArea" prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS" />
    </children>
 </VBox>

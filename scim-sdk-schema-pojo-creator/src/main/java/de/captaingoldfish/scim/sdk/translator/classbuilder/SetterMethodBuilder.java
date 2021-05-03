@@ -31,7 +31,9 @@ public class SetterMethodBuilder
     String javadoc = StringUtils.isBlank(schemaAttribute.getDescription()) ? ""
       : String.format("  /** %s */\n", schemaAttribute.getDescription());
     this.setterCall = String.format("set%s(%s);", capitalizedAttributeName, attributeName);
-    this.setterParameter = String.format("%s %s", capitalizedAttributeName, getAttributeName(schemaAttribute));
+    this.setterParameter = String.format("%s %s",
+                                         getSetterMethodParameterType(schemaAttribute),
+                                         getAttributeName(schemaAttribute));
     // @formatter:off
     return String.format("%s  public void set%s(%s %s)\n" +
                          "  {\n " +

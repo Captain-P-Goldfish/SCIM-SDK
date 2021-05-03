@@ -6,6 +6,7 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -17,11 +18,19 @@ import lombok.extern.slf4j.Slf4j;
 public class ComplexAttributeToInnerClassBuilder
 {
 
+  @Getter
+  private String setterParameter;
+
+  @Getter
+  private String setterMethodCall;
+
   protected String generateComplexAttributeClass(SchemaAttribute schemaAttribute)
   {
     final String getterMethod = new GetterMethodBuilder().generateSimpleGetterMethod(schemaAttribute);
     final SetterMethodBuilder setterMethodBuilder = new SetterMethodBuilder();
     final String setterMethod = setterMethodBuilder.generateSimpleSetterMethod(schemaAttribute);
+    this.setterMethodCall = setterMethodBuilder.getSetterCall();
+    this.setterParameter = setterMethodBuilder.getSetterParameter();
 
     final String javadoc = String.format("/** %s */", schemaAttribute.getDescription());
     final String className = StringUtils.capitalize(schemaAttribute.getName());
