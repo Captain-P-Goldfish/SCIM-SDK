@@ -19,16 +19,19 @@ public class SetterMethodBuilder
   @Getter
   private String setterCall;
 
+  @Getter
+  private String setterParameter;
+
   protected String generateSimpleSetterMethod(SchemaAttribute schemaAttribute)
   {
     final String capitalizedAttributeName = StringUtils.capitalize(schemaAttribute.getName());
     String setterMethodParameterType = getSetterMethodParameterType(schemaAttribute);
     String setterMethodCall = getSetterMethodCall(schemaAttribute);
-    String attributeName = schemaAttribute.isMultiValued() ? schemaAttribute.getName() + "List"
-      : schemaAttribute.getName();
+    String attributeName = getAttributeName(schemaAttribute);
     String javadoc = StringUtils.isBlank(schemaAttribute.getDescription()) ? ""
       : String.format("  /** %s */\n", schemaAttribute.getDescription());
     this.setterCall = String.format("set%s(%s);", capitalizedAttributeName, attributeName);
+    this.setterParameter = String.format("%s %s", capitalizedAttributeName, getAttributeName(schemaAttribute));
     // @formatter:off
     return String.format("%s  public void set%s(%s %s)\n" +
                          "  {\n " +
@@ -47,14 +50,18 @@ public class SetterMethodBuilder
     String attributeTypeForSetter = Type.DATE_TIME.equals(schemaAttribute.getType()) && !schemaAttribute.isMultiValued()
       ? "DateTime" : "";
     String fieldName = schemaAttribute.getName().replaceAll("([A-Z])", "_$1").toUpperCase(Locale.ROOT);
-    String attributeName = schemaAttribute.isMultiValued() ? schemaAttribute.getName() + "List"
-      : schemaAttribute.getName();
+    String attributeName = getAttributeName(schemaAttribute);
     String methodNameSuffix = getMethodNameSuffix(schemaAttribute);
     return String.format("set%sAttribute%s(FieldNames.%s, %s);",
                          attributeTypeForSetter,
                          methodNameSuffix,
                          fieldName,
                          attributeName);
+  }
+
+  private String getAttributeName(SchemaAttribute schemaAttribute)
+  {
+    return schemaAttribute.isMultiValued() ? schemaAttribute.getName() + "List" : schemaAttribute.getName();
   }
 
   private String getMethodNameSuffix(SchemaAttribute schemaAttribute)
