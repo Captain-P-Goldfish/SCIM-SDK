@@ -12,7 +12,9 @@
     <artifactId>scim-sdk-schema-pojo-creator</artifactId>
 
     <properties>
-        <version.javafx>8</version.javafx>
+        <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
+
+        <version.javafx>11</version.javafx>
     </properties>
 
     <dependencyManagement>
