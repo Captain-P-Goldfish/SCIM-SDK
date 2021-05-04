@@ -31,6 +31,8 @@ You will find a pretty detailed explanation on how to use the server implementat
 
 And a pretty detailed explanation on how to use the client can be found here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-client-implementation
 
+**Note:** You do not need to fork this project in order to make adjustments to the `User`-schema or the `User`-class implementation. Find a more detailed explanation in the wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-practices)
+
 ---
 **This project requires JDK 8 or higher**
 
@@ -77,6 +79,7 @@ for any registered resource
 - [x] authorization for specific endpoints 
 (@see [authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authorization))
 - [x] attribute validation (@see [attribute validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation)) 
+- [x] custom resource validation [similiar to bean validation in JEE] (@see [resource validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Validation-of-resources)) 
 
 ## Client implementation
 
