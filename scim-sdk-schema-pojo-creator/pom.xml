@@ -14,7 +14,7 @@
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
 
-        <version.javafx>11</version.javafx>
+        <version.javafx>16</version.javafx>
     </properties>
 
     <dependencyManagement>
