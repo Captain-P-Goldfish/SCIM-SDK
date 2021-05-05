@@ -113,7 +113,7 @@
         <version.maven.versions.plugin>2.8.1</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.2.0</version.maven.jar.plugin>
         <version.gmaven.plugin>1.5</version.gmaven.plugin>
-        <version.jacoco>0.8.6</version.jacoco>
+        <version.jacoco>0.8.7</version.jacoco>
     </properties>
 
     <dependencyManagement>
