@@ -44,6 +44,7 @@ public class SchemaToClassBuilder
     return "import java.util.List;\n" +
            "import java.util.Optional;\n" +
            "import java.util.Set;\n" +
+           "import java.util.Collections;\n" +
            "import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;\n" +
            "import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;";
     // @formatter:on
@@ -103,6 +104,7 @@ public class SchemaToClassBuilder
   private String getConstructor(Schema schema, List<String> constructorAttributes, List<String> setterMethodCalls)
   {
     String constructorParams = String.join(", ", constructorAttributes);
+    setterMethodCalls.add(0, "setSchemas(Collections.singletonList(FieldNames.SCHEMA_ID));");
     String setterCalls = String.join("\n  ", setterMethodCalls);
     String constructorName = StringUtils.capitalize(schema.getName().orElse(null));
     return String.format("public %s(%s) \n  {\n  %s\n  }\n", constructorName, constructorParams, setterCalls);
@@ -116,7 +118,9 @@ public class SchemaToClassBuilder
                                                                              attributeNameToFieldName(name),
                                                                              name))
                                                   .collect(Collectors.joining("\n"));
-    return String.format("public static class FieldNames \n{\n%s\n}", fieldNamesString);
+    final String schemaIdField = String.format("public static final String SCHEMA_ID = \"%s\";\n",
+                                               schema.getNonNullId());
+    return String.format("public static class FieldNames \n{\n%s%s\n}", schemaIdField, fieldNamesString);
   }
 
   private Set<String> getAttributeNames(Schema schema)
