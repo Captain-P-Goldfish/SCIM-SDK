@@ -55,7 +55,8 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  /** A description */\n" +
     "  public static class HelloWorld extends ScimObjectNode\n" +
     "  {\n" +
-    "    public HelloWorld(String aString, Long anInteger) \n" +
+    "    public HelloWorld() { }\n" +
+    "public HelloWorld(String aString, Long anInteger) \n" +
     "    {\n" +
     "    setAString(aString);\n" +
     "    setAnInteger(anInteger);\n" +
@@ -128,7 +129,8 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  /** A description */\n" +
     "  public static class HelloWorld extends ScimObjectNode\n" +
     "  {\n" +
-    "    public HelloWorld(String aString, Long anInteger) \n" +
+    "    public HelloWorld() { }\n" +
+    "public HelloWorld(String aString, Long anInteger) \n" +
     "    {\n" +
     "    setAString(aString);\n" +
     "    setAnInteger(anInteger);\n" +
@@ -201,7 +203,8 @@ public class ComplexAttributeToInnerClassBuilderTest
     "  /** A description */\n" +
     "  public static class HelloWorld extends ScimObjectNode\n" +
     "  {\n" +
-    "    public HelloWorld(String aString, Long anInteger) \n" +
+    "    public HelloWorld() { }\n" +
+    "public HelloWorld(String aString, Long anInteger) \n" +
     "    {\n" +
     "    setAString(aString);\n" +
     "    setAnInteger(anInteger);\n" +

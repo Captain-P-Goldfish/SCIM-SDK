@@ -63,7 +63,8 @@ public class ComplexAttributeToInnerClassBuilder
       constructorAttributes.add(setterMethodBuilder.getSetterParameter());
     }
 
-    String constructor = getConstructor(schemaAttribute, constructorAttributes, setterMethodCalls);
+    String noArgsConstructor = getNoArgsConstructor(schemaAttribute);
+    String allArgsConstructor = getAllArgsConstructor(schemaAttribute, constructorAttributes, setterMethodCalls);
     StringBuilder getterAndSetterMethodCalls = new StringBuilder();
     for ( int i = 0 ; i < getterAndSetterMethodDefinitions.size() ; i++ )
     {
@@ -71,12 +72,18 @@ public class ComplexAttributeToInnerClassBuilder
       getterAndSetterMethodCalls.append(getterAndSetterDefinition).append('\n');
     }
 
-    return String.format("%s%s", constructor, getterAndSetterMethodCalls);
+    return String.format("%s%s%s", noArgsConstructor, allArgsConstructor, getterAndSetterMethodCalls);
   }
 
-  private String getConstructor(SchemaAttribute schemaAttribute,
-                                List<String> constructorAttributes,
-                                List<String> setterMethodCalls)
+  private String getNoArgsConstructor(SchemaAttribute schemaAttribute)
+  {
+    String constructorName = StringUtils.capitalize(schemaAttribute.getName());
+    return String.format("public %s() { }\n", constructorName);
+  }
+
+  private String getAllArgsConstructor(SchemaAttribute schemaAttribute,
+                                       List<String> constructorAttributes,
+                                       List<String> setterMethodCalls)
   {
     String constructorParams = String.join(", ", constructorAttributes);
     String setterCalls = String.join("\n    ", setterMethodCalls);

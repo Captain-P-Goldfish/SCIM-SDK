@@ -84,7 +84,8 @@ public class SchemaToClassBuilder
       }
     }
 
-    String constructor = getConstructor(schema, constructorAttributes, setterMethodCalls);
+    String noArgsConstructor = getNoArgsConstructor(schema);
+    String allArgsConstructor = getAllArgsConstructor(schema, constructorAttributes, setterMethodCalls);
     StringBuilder getterAndSetterMethodCalls = new StringBuilder();
     for ( int i = 0 ; i < getterAndSetterMethodDefinitions.size() ; i++ )
     {
@@ -98,10 +99,22 @@ public class SchemaToClassBuilder
       complexAttributeStringBuilder.append(complexAttributeDefinition);
     }
 
-    return String.format("%s%s%s", constructor, getterAndSetterMethodCalls, complexAttributeStringBuilder);
+    return String.format("%s%s%s%s",
+                         noArgsConstructor,
+                         allArgsConstructor,
+                         getterAndSetterMethodCalls,
+                         complexAttributeStringBuilder);
   }
 
-  private String getConstructor(Schema schema, List<String> constructorAttributes, List<String> setterMethodCalls)
+  private String getNoArgsConstructor(Schema schema)
+  {
+    String constructorName = StringUtils.capitalize(schema.getName().orElse(null));
+    return String.format("public %s() { }\n", constructorName);
+  }
+
+  private String getAllArgsConstructor(Schema schema,
+                                       List<String> constructorAttributes,
+                                       List<String> setterMethodCalls)
   {
     String constructorParams = String.join(", ", constructorAttributes);
     setterMethodCalls.add(0, "setSchemas(Collections.singletonList(FieldNames.SCHEMA_ID));");
