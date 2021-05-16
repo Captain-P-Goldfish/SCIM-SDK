@@ -576,6 +576,75 @@
             <build>
                 <plugins>
                     <plugin>
+                        <groupId>org.projectlombok</groupId>
+                        <artifactId>lombok-maven-plugin</artifactId>
+                        <version>${version.lombok}.0</version>
+                        <executions>
+                            <execution>
+                                <id>delombok</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <goal>delombok</goal>
+                                </goals>
+                                <configuration>
+                                    <addOutputDirectory>false</addOutputDirectory>
+                                    <sourceDirectory>src/main/java</sourceDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>test-delombok</id>
+                                <phase>generate-test-sources</phase>
+                                <goals>
+                                    <goal>testDelombok</goal>
+                                </goals>
+                                <configuration>
+                                    <addOutputDirectory>false</addOutputDirectory>
+                                    <sourceDirectory>src/test/java</sourceDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>net.revelc.code.formatter</groupId>
+                        <artifactId>formatter-maven-plugin</artifactId>
+                        <version>${version.maven.formatter.plugin}</version>
+                        <configuration>
+                            <configFile>${formatter-path}/formatter.xml</configFile>
+                            <lineEnding>LF</lineEnding>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>validate main sources and test sources</id>
+                                <goals>
+                                    <!-- make sure that no unformatted code is released -->
+                                    <goal>validate</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- delomboked sources do not conform to the formatter and use of the -->
+                                    <!-- lombok plugin changes sourceDirectory and testSourceDirectory -->
+                                    <sourceDirectory>src/main/java</sourceDirectory>
+                                    <testSourceDirectory>src/test/java</testSourceDirectory>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>format delomboked source code</id>
+                                <phase>generate-sources</phase>
+                                <goals>
+                                    <!-- this should format the generated delomboked source code -->
+                                    <goal>format</goal>
+                                </goals>
+                                <configuration>
+                                    <!-- delomboked sources do not conform to the formatter and use of the -->
+                                    <!-- lombok plugin changes sourceDirectory and testSourceDirectory -->
+                                    <sourceDirectory>${source.directory}</sourceDirectory>
+                                    <testSourceDirectory>${source.test.directory}</testSourceDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+
+                    <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-source-plugin</artifactId>
                         <version>${version.maven.source.plugin}</version>
@@ -618,36 +687,6 @@
                                 <goals>
                                     <goal>sign</goal>
                                 </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.projectlombok</groupId>
-                        <artifactId>lombok-maven-plugin</artifactId>
-                        <version>${version.lombok}.0</version>
-                        <executions>
-                            <execution>
-                                <id>delombok</id>
-                                <phase>generate-sources</phase>
-                                <goals>
-                                    <goal>delombok</goal>
-                                </goals>
-                                <configuration>
-                                    <addOutputDirectory>false</addOutputDirectory>
-                                    <sourceDirectory>src/main/java</sourceDirectory>
-                                </configuration>
-                            </execution>
-                            <execution>
-                                <id>test-delombok</id>
-                                <phase>generate-test-sources</phase>
-                                <goals>
-                                    <goal>testDelombok</goal>
-                                </goals>
-                                <configuration>
-                                    <addOutputDirectory>false</addOutputDirectory>
-                                    <sourceDirectory>src/test/java</sourceDirectory>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
