@@ -66,6 +66,7 @@ abstract class AbstractResourceValidator
       DocumentDescription documentDescription = new DocumentDescription(resourceType, document);
       final Schema documentSchema = documentDescription.getMetaSchema();
       final ResourceNode validatedResource = (ResourceNode)schemaValidator.validateDocument(documentSchema, document);
+      validatedResource.addSchema(documentDescription.getMetaSchema().getNonNullId());
       final List<Schema> inResourcePresentExtensions = documentDescription.getExtensions();
       List<ValidatedExtension> validatedExtensions = validateExtensions(resourceType.getRequiredResourceSchemaExtensions(),
                                                                         inResourcePresentExtensions,
