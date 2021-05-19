@@ -117,10 +117,12 @@ public class SchemaToClassBuilder
                                        List<String> constructorAttributes,
                                        List<String> setterMethodCalls)
   {
+    constructorAttributes.add(0, "String id");
     constructorAttributes.add("Meta meta");
     setterMethodCalls.add("setMeta(meta);");
 
     String constructorParams = String.join(", ", constructorAttributes);
+    setterMethodCalls.add(0, "setId(id);");
     setterMethodCalls.add(0, "setSchemas(Collections.singletonList(FieldNames.SCHEMA_ID));");
     String setterCalls = String.join("\n  ", setterMethodCalls);
     String constructorName = StringUtils.capitalize(schema.getName().orElse(null));
