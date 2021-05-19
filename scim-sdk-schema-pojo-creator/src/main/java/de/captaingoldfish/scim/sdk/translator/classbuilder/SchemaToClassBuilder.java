@@ -46,7 +46,8 @@ public class SchemaToClassBuilder
            "import java.util.Set;\n" +
            "import java.util.Collections;\n" +
            "import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;\n" +
-           "import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;";
+           "import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;\n" +
+           "import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;";
     // @formatter:on
   }
 
@@ -116,6 +117,9 @@ public class SchemaToClassBuilder
                                        List<String> constructorAttributes,
                                        List<String> setterMethodCalls)
   {
+    constructorAttributes.add("Meta meta");
+    setterMethodCalls.add("setMeta(meta);");
+
     String constructorParams = String.join(", ", constructorAttributes);
     setterMethodCalls.add(0, "setSchemas(Collections.singletonList(FieldNames.SCHEMA_ID));");
     String setterCalls = String.join("\n  ", setterMethodCalls);
