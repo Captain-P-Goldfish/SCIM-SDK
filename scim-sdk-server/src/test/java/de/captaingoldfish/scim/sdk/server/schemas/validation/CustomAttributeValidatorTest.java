@@ -94,7 +94,7 @@ public class CustomAttributeValidatorTest implements FileReferences
     List<DynamicTest> dynamicTests = new ArrayList<>();
 
     /* ****************************************************************************************************** */
-    String expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '0.0' must have at least a value of '10.0'";
+    String expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '0' must have at least a value of '10'";
     dynamicTests.add(getAttributeValidationTest("minimum value not reached for int",
                                                 () -> CustomAttributeValidator.validateNumberNode(numberAttribute,
                                                                                                   new IntNode(0)),
@@ -127,7 +127,7 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                 expectedErrorMessage));
 
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '101.0' must not be greater than '100.0'";
+    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '101' must not be greater than '100'";
     dynamicTests.add(getAttributeValidationTest("maximum value exceeded for int",
                                                 () -> CustomAttributeValidator.validateNumberNode(numberAttribute,
                                                                                                   new IntNode(101)),
@@ -138,7 +138,7 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                                                                   new LongNode(101)),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '101.5' must not be greater than '100.0'";
+    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '101' must not be greater than '100'";
     dynamicTests.add(getAttributeValidationTest("maximum value exceeded for double",
                                                 () -> CustomAttributeValidator.validateNumberNode(numberAttribute,
                                                                                                   new DoubleNode(101.5)),
@@ -162,19 +162,19 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                 expectedErrorMessage));
 
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '10.0' must be a multiple of '3.0'";
+    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '10' must be a multiple of '3.0'";
     dynamicTests.add(getAttributeValidationTest("not multipleOf for int",
                                                 () -> CustomAttributeValidator.validateNumberNode(numberAttribute,
                                                                                                   new IntNode(10)),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '31.0' must be a multiple of '3.0'";
+    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '31' must be a multiple of '3.0'";
     dynamicTests.add(getAttributeValidationTest("not multipleOf for long",
                                                 () -> CustomAttributeValidator.validateNumberNode(numberAttribute,
                                                                                                   new LongNode(31)),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '11.4' must be a multiple of '3.0'";
+    expectedErrorMessage = "The 'INTEGER'-attribute 'number' with value '11' must be a multiple of '3.0'";
     dynamicTests.add(getAttributeValidationTest("not multipleOf for double",
                                                 () -> CustomAttributeValidator.validateNumberNode(numberAttribute,
                                                                                                   new DoubleNode(11.4)),

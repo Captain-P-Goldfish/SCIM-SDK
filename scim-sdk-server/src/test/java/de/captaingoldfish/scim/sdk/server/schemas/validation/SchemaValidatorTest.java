@@ -1610,7 +1610,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (value too low)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setNumber(1L);
-      String errorMessage = "The 'INTEGER'-attribute 'number' with value '1.0' must have at least a value of '2.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'number' with value '1' must have at least a value of '2'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -1618,7 +1618,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (value too high)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setNumber(11L);
-      String errorMessage = "The 'INTEGER'-attribute 'number' with value '11.0' must not be greater than '10.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'number' with value '11' must not be greater than '10'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -1626,7 +1626,7 @@ public class SchemaValidatorTest implements FileReferences
     dynamicTests.add(DynamicTest.dynamicTest("simple number validation fails (not multipleOf)", () -> {
       AllTypes allTypes = buildAllTypesForValidation();
       allTypes.setNumber(7L);
-      String errorMessage = "The 'INTEGER'-attribute 'number' with value '7.0' must be a multiple of '2.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'number' with value '7' must be a multiple of '2.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -1801,8 +1801,8 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setNumber(1L);
-      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '1.0' must have at least a value "
-                            + "of '2.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '1' must have at least a value "
+                            + "of '2'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -1812,7 +1812,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setNumber(11L);
-      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '11.0' must not be greater than '10.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '11' must not be greater than '10'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
@@ -1822,7 +1822,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
       complex.setNumber(7L);
-      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '7.0' must be a multiple of '2.0'";
+      String errorMessage = "The 'INTEGER'-attribute 'complex.number' with value '7' must be a multiple of '2.0'";
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));

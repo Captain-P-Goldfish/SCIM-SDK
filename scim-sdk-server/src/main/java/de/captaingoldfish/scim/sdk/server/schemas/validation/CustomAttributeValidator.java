@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -193,6 +194,10 @@ public final class CustomAttributeValidator
    */
   protected static void validateNumberNode(SchemaAttribute schemaAttribute, DoubleNode valueNode)
   {
+    final boolean isInteger = schemaAttribute.getType().equals(Type.INTEGER);
+    final Function<Double, String> toNumberType = (value) -> isInteger ? String.valueOf(value.longValue())
+      : String.valueOf(value);
+
     final double value = valueNode.doubleValue();
     schemaAttribute.getMinimum().ifPresent(minimum -> {
       if (minimum > value)
@@ -200,8 +205,8 @@ public final class CustomAttributeValidator
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must have at least a value of '%s'",
                                             schemaAttribute.getType(),
                                             schemaAttribute.getScimNodeName(),
-                                            value,
-                                            minimum);
+                                            toNumberType.apply(value),
+                                            toNumberType.apply(minimum));
         throw new AttributeValidationException(schemaAttribute, errorMessage);
       }
     });
@@ -211,8 +216,8 @@ public final class CustomAttributeValidator
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must not be greater than '%s'",
                                             schemaAttribute.getType(),
                                             schemaAttribute.getScimNodeName(),
-                                            value,
-                                            maximum);
+                                            toNumberType.apply(value),
+                                            toNumberType.apply(maximum));
         throw new AttributeValidationException(schemaAttribute, errorMessage);
       }
     });
@@ -222,7 +227,7 @@ public final class CustomAttributeValidator
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must be a multiple of '%s'",
                                             schemaAttribute.getType(),
                                             schemaAttribute.getScimNodeName(),
-                                            value,
+                                            toNumberType.apply(value),
                                             multipleOf);
         throw new AttributeValidationException(schemaAttribute, errorMessage);
       }
