@@ -1,7 +1,9 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -163,6 +165,9 @@ class SimpleAttributeValidator
         case URI:
           isValidReferenceType = parseUri(valueNode.textValue());
           break;
+        case URL:
+          isValidReferenceType = parseUrl(valueNode.textValue());
+          break;
         default:
           isValidReferenceType = true;
       }
@@ -174,10 +179,27 @@ class SimpleAttributeValidator
     if (!isValidReferenceType)
     {
       String errorMessage = String.format("Given value is not a valid reference type. The value '%s' is expected to "
-                                          + "be of one of the following values: %s",
+                                          + "be of one of the following types: %s",
                                           valueNode.textValue(),
                                           schemaAttribute.getReferenceTypes());
       throw new AttributeValidationException(schemaAttribute, errorMessage);
+    }
+  }
+
+  /**
+   * tries to parse the given text into a URL
+   */
+  private static boolean parseUrl(String textValue)
+  {
+    try
+    {
+      new URL(textValue);
+      return true;
+    }
+    catch (MalformedURLException ex)
+    {
+      log.debug(ex.getMessage());
+      return false;
     }
   }
 

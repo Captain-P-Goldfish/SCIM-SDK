@@ -449,6 +449,27 @@ public class SimpleAttributeTypeValidatorTest
   }
 
   /**
+   * shows that a reference of type url is correctly parsed to a string node
+   */
+  @Test
+  public void testReferenceTypeUrl()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name("id")
+                                                            .type(Type.REFERENCE)
+                                                            .referenceTypes(ReferenceTypes.URL)
+                                                            .build();
+
+    String content = "http://localhost:8080/hello-world?name=goldfish#type=work";
+    JsonNode attribute = new TextNode(content);
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
+                                                                                                     attribute));
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
+    Assertions.assertEquals(content, parsedNode.textValue());
+  }
+
+  /**
    * shows that a reference of type external is correctly parsed to a string node
    */
   @Test
@@ -1182,7 +1203,7 @@ public class SimpleAttributeTypeValidatorTest
      * will verify that an error occurs if a resource locator is expected but not given
      */
     @ParameterizedTest
-    @ValueSource(strings = {"RESOURCE", "URI"})
+    @ValueSource(strings = {"RESOURCE", "URI", "URL"})
     public void testAsNoResourceLocator(ReferenceTypes referenceType)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1202,7 +1223,7 @@ public class SimpleAttributeTypeValidatorTest
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
         String expectedMessage = String.format("Given value is not a valid reference type. The value '%s' is "
-                                               + "expected to be of one of the following values: %s",
+                                               + "expected to be of one of the following types: %s",
                                                content,
                                                Collections.singletonList(referenceType));
         Assertions.assertEquals(expectedMessage, ex.getMessage());

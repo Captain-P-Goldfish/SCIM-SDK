@@ -196,7 +196,13 @@
           "uniqueness": "none",
           "multiValued": true,
           "required": false,
-          "caseExact": false
+          "caseExact": false,
+          "canonicalValues": [
+            "resource",
+            "external",
+            "uri",
+            "url"
+          ]
         },
         {
           "name": "multipleOf",
@@ -464,7 +470,13 @@
               "uniqueness": "none",
               "multiValued": true,
               "required": false,
-              "caseExact": false
+              "caseExact": false,
+              "canonicalValues": [
+                "resource",
+                "external",
+                "uri",
+                "url"
+              ]
             },
             {
               "name": "multipleOf",
