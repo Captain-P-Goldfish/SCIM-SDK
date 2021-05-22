@@ -20,6 +20,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointFeatureHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
 
@@ -324,8 +325,8 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
           String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);
           return listResources(uriInfos.getResourceEndpoint(),
-                               startIndex == null ? null : Long.parseLong(startIndex),
-                               count == null ? null : Integer.parseInt(count),
+                               RequestUtils.parseStartIndex(startIndex).orElse(null),
+                               RequestUtils.parseCount(count).orElse(null),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.FILTER),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_BY.toLowerCase()),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()),

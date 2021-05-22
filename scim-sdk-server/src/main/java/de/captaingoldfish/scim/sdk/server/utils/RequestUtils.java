@@ -187,6 +187,52 @@ public final class RequestUtils
   }
 
   /**
+   * tries to parse the incoming startIndex value as long number
+   *
+   * @param countQueryParameter the query parameter that should be a number
+   * @return the parsed startIndex value or an empty if the parameter is missing
+   */
+  public static Optional<Long> parseStartIndex(String startIndexQueryParameter)
+  {
+    if (StringUtils.isEmpty(startIndexQueryParameter))
+    {
+      return Optional.empty();
+    }
+    try
+    {
+      return Optional.of(Long.parseLong(startIndexQueryParameter));
+    }
+    catch (NumberFormatException ex)
+    {
+      throw new BadRequestException(String.format("Got invalid startIndex value '%s'. StartIndex must be a number",
+                                                  startIndexQueryParameter));
+    }
+  }
+
+  /**
+   * tries to parse the incoming count value as integer number
+   * 
+   * @param countQueryParameter the query parameter that should be a number
+   * @return the parsed count value or an empty if the parameter is missing
+   */
+  public static Optional<Integer> parseCount(String countQueryParameter)
+  {
+    if (StringUtils.isEmpty(countQueryParameter))
+    {
+      return Optional.empty();
+    }
+    try
+    {
+      return Optional.of(Integer.parseInt(countQueryParameter));
+    }
+    catch (NumberFormatException ex)
+    {
+      throw new BadRequestException(String.format("Got invalid count value '%s'. Count must be a number",
+                                                  countQueryParameter));
+    }
+  }
+
+  /**
    * The 1-based index of the first query result. A value less than 1 SHALL be interpreted as 1.
    *
    * @param startIndex the index to start with to list the resources

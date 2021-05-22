@@ -617,6 +617,38 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
+   * this test will assure that a {@link BadRequestException} with an appropriate error message if the
+   * startIndex value is not a number
+   */
+  @Test
+  public void testQueryResourcesWithInvalidStartIndex()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS + "?startIndex=NaN";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, scimResponse.getHttpStatus());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals("Got invalid startIndex value 'NaN'. StartIndex must be a number",
+                            errorResponse.getDetail().orElseThrow(IllegalStateException::new));
+  }
+
+  /**
+   * this test will assure that a {@link BadRequestException} with an appropriate error message if the cont
+   * value is not a number
+   */
+  @Test
+  public void testQueryResourcesWithInvalidCount()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS + "?count=NaN";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, scimResponse.getHttpStatus());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals("Got invalid count value 'NaN'. Count must be a number",
+                            errorResponse.getDetail().orElseThrow(IllegalStateException::new));
+  }
+
+  /**
    * this test will create 5 users and will then send a filter request with get that verifies that the request
    * is correctly processed and a resource type consumer is set
    */
