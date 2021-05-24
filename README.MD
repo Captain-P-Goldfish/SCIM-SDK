@@ -79,7 +79,8 @@ for any registered resource
 - [x] authorization for specific endpoints 
 (@see [authorization](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authorization))
 - [x] attribute validation (@see [attribute validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation)) 
-- [x] custom resource validation [similiar to bean validation in JEE] (@see [resource validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Validation-of-resources)) 
+- [x] custom resource validation [similiar to bean validation in JEE] (@see [resource validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Validation-of-resources))
+- [x] automatic POJO creation from SCIM schema resources. (@see [schema pojo creator](https://github.com/Captain-P-Goldfish/SCIM-SDK/tree/master/scim-sdk-schema-pojo-creator))
 
 ## Client implementation
 
