@@ -569,7 +569,8 @@ class ResourceEndpointHandler
         }
         else
         {
-          // startIndex is greater than the number of entries available so we will return an empty list
+          log.warn("startIndex {} > than number of entries available after autofiltering {}. Returning empty list", 
+                   effectiveStartIndex, filteredResources.size());
           filteredResources = Collections.emptyList();
         }
       }
