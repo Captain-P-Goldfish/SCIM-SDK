@@ -1497,7 +1497,7 @@ public class SchemaValidatorTest implements FileReferences
     catch (DocumentValidationException ex)
     {
       log.debug(ex.getDetail(), ex);
-      String errorMessage = "Value of field 'urn:ietf:params:scim:schemas:core:2.0:User:userName' is not of type "
+      String errorMessage = "Value of attribute 'urn:ietf:params:scim:schemas:core:2.0:User:userName' is not of type "
                             + "'string' but of type 'number' with value '5'";
       MatcherAssert.assertThat(ex.getDetail(), Matchers.containsString(errorMessage));
     }
@@ -1507,13 +1507,13 @@ public class SchemaValidatorTest implements FileReferences
    * this test will verify that a field that is defined as multivalued attribute can be set as simple single
    * valued attribute and is then converted automatically into a one-size array.<br>
    * <br>
-   * 
+   *
    * <pre>
    *   "strings": "123456"
    * </pre>
-   * 
+   *
    * should become
-   * 
+   *
    * <pre>
    *   "strings": ["123456"]
    * </pre>

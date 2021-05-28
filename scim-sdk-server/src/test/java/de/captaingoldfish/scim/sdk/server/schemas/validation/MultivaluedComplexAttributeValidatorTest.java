@@ -427,7 +427,7 @@ public class MultivaluedComplexAttributeValidatorTest
       {
         AttributeValidationException cause = (AttributeValidationException)ex.getCause();
         Assertions.assertEquals(lastnameAttribute, cause.getSchemaAttribute());
-        String errorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String errorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                             lastnameAttribute.getFullResourceName(),
                                             lastnameAttribute.getType().getValue(),
                                             StringUtils.lowerCase(illegalNode.getNodeType().toString()),
@@ -661,7 +661,7 @@ public class MultivaluedComplexAttributeValidatorTest
    *
    * <pre>
    * {
-   * 
+   *
    * }
    * </pre>
    */

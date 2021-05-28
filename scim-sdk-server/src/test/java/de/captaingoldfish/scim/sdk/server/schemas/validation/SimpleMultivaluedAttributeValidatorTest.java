@@ -40,7 +40,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
   /**
    * tests the following structure
-   * 
+   *
    * <pre>
    *    {
    *      "type": "string",
@@ -48,7 +48,7 @@ public class SimpleMultivaluedAttributeValidatorTest
    *      ...
    *    }
    * </pre>
-   * 
+   *
    * <pre>
    *    {
    *      "array": ["hello", "world", "foo", "bar"]
@@ -83,7 +83,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
   /**
    * tests the following structure
-   * 
+   *
    * <pre>
    *    {
    *      "type": "dateTime",
@@ -91,7 +91,7 @@ public class SimpleMultivaluedAttributeValidatorTest
    *      ...
    *    }
    * </pre>
-   * 
+   *
    * <pre>
    *    {
    *      "array": ["2019-09-29T24:00:00", "2019-09-29T24:00:00.0000000-14:00",
@@ -287,7 +287,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       Assertions.assertEquals(errorMessage, ex.getMessage());
       AttributeValidationException cause = (AttributeValidationException)ex.getCause();
       Assertions.assertEquals(schemaAttribute, cause.getSchemaAttribute());
-      String causeErrorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+      String causeErrorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(arrayNode.get(1).getNodeType().toString()),
@@ -380,7 +380,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       Assertions.assertEquals(errorMessage, ex.getMessage());
       AttributeValidationException cause = (AttributeValidationException)ex.getCause();
       Assertions.assertEquals(schemaAttribute, cause.getSchemaAttribute());
-      String causeErrorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+      String causeErrorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(arrayNode.get(0).getNodeType().toString()),
@@ -432,7 +432,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       Assertions.assertEquals(errorMessage, ex.getMessage());
       AttributeValidationException cause = (AttributeValidationException)ex.getCause();
       Assertions.assertEquals(schemaAttribute, cause.getSchemaAttribute());
-      String causeErrorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+      String causeErrorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(arrayNode.get(2).getNodeType().toString()),

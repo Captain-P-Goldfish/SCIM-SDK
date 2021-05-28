@@ -43,7 +43,7 @@ class SimpleAttributeValidator
 
   /**
    * checks if the given node is a json leaf node
-   * 
+   *
    * @param attribute the attribute from the document
    * @return true if the attribute is a json leaf node, false else
    */
@@ -123,7 +123,7 @@ class SimpleAttributeValidator
     if (!isOfType)
     {
       Type type = schemaAttribute.getType();
-      final String errorMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+      final String errorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                 schemaAttribute.getFullResourceName(),
                                                 type.getValue(),
                                                 StringUtils.lowerCase(valueNode.getNodeType().toString()),
@@ -178,10 +178,11 @@ class SimpleAttributeValidator
     }
     if (!isValidReferenceType)
     {
-      String errorMessage = String.format("Given value is not a valid reference type. The value '%s' is expected to "
-                                          + "be of one of the following types: %s",
-                                          valueNode.textValue(),
-                                          schemaAttribute.getReferenceTypes());
+      String errorMessage = String.format("Attribute '%s' is a referenceType and must apply to one of the following "
+                                          + "types '%s' but value is '%s'",
+                                          schemaAttribute.getFullResourceName(),
+                                          schemaAttribute.getReferenceTypes(),
+                                          valueNode.textValue());
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
   }

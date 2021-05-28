@@ -658,7 +658,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -684,7 +684,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -710,7 +710,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
@@ -737,7 +737,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -771,7 +771,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.STRING.toString()),
@@ -797,7 +797,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.STRING.toString()),
@@ -823,7 +823,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
@@ -849,7 +849,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -883,7 +883,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.STRING.toString()),
@@ -909,7 +909,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -935,7 +935,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -961,7 +961,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -995,7 +995,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.STRING.toString()),
@@ -1022,7 +1022,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.STRING.toString()),
@@ -1048,7 +1048,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
@@ -1104,7 +1104,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
@@ -1130,7 +1130,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -1156,7 +1156,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -1182,7 +1182,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
@@ -1222,10 +1222,11 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Given value is not a valid reference type. The value '%s' is "
-                                               + "expected to be of one of the following types: %s",
-                                               content,
-                                               Collections.singletonList(referenceType));
+        String expectedMessage = String.format("Attribute '%s' is a referenceType and must apply to one of the following "
+                                               + "types '%s' but value is '%s'",
+                                               schemaAttribute.getFullResourceName(),
+                                               Collections.singletonList(referenceType),
+                                               content);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }
@@ -1252,7 +1253,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of field '%s' is not of type '%s' but of type '%s' with value '%s'",
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                schemaAttribute.getFullResourceName(),
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(jsonNode.getNodeType().toString()),
