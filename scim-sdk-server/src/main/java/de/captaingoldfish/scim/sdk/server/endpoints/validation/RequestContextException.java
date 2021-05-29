@@ -1,6 +1,5 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.validation;
 
-import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import lombok.Getter;
 
@@ -17,7 +16,8 @@ public class RequestContextException extends ScimException
 
   public RequestContextException(ValidationContext validationContext)
   {
-    super("The request document contains errors", null, HttpStatus.BAD_REQUEST, null);
+    super("The request document contains errors", null, validationContext.getHttpResponseStatus(), null,
+          validationContext.getResponseHttpHeaders());
     this.validationContext = validationContext;
   }
 }
