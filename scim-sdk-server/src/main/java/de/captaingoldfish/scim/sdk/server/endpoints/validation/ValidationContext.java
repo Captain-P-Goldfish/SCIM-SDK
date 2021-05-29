@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
@@ -21,6 +22,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -50,11 +52,26 @@ public class ValidationContext
   @Getter
   private final ResourceType resourceType;
 
+  /**
+   * additional headers that may be returned in case of validation error
+   */
+  @Getter
+  private final Map<String, String> responseHttpHeaders;
+
+  /**
+   * the response status that should be returned to the client. Is bad request (400) by default
+   */
+  @Getter
+  @Setter
+  private int httpResponseStatus;
+
   public ValidationContext(ResourceType resourceType)
   {
     this.errors = new ArrayList<>();
     this.fieldErrors = new HashMap<>();
     this.resourceType = resourceType;
+    this.httpResponseStatus = HttpStatus.BAD_REQUEST;
+    this.responseHttpHeaders = new HashMap<>();
   }
 
   /**
@@ -174,6 +191,10 @@ public class ValidationContext
     errorMessagesArray.ifPresent(array -> errorNode.set(AttributeNames.Custom.ERROR_MESSAGES, array));
     fieldErrorsObject.ifPresent(object -> errorNode.set(AttributeNames.Custom.FIELD_ERRORS, object));
     errorResponse.set(AttributeNames.Custom.ERRORS, errorNode);
+    errorResponse.setStatus(httpResponseStatus);
+    responseHttpHeaders.forEach((headerKey, headerValue) -> {
+      errorResponse.getHttpHeaders().put(headerKey, headerValue);
+    });
   }
 
   /**

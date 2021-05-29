@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
+import org.apache.http.HttpHeaders;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -481,5 +482,86 @@ public class ValidationContextTest
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getStatus());
     Assertions.assertEquals("An internal error has occurred.", errorResponse.getDetail().get());
+  }
+
+  /**
+   * shows that the configured http response status is returned that was set by the user
+   */
+  @Test
+  public void testCorrectHttpResponseStatusIsReturned()
+  {
+    final String userName = "goldfish";
+    final User user = User.builder().userName(userName).build();
+    final String url = BASE_URI + EndpointPaths.USERS;
+
+    RequestValidator<User> requestValidator = Mockito.spy(new RequestValidator<User>()
+    {
+
+      @Override
+      public void validateCreate(User resource, ValidationContext validationContext)
+      {
+        validationContext.setHttpResponseStatus(HttpStatus.CONFLICT);
+        validationContext.addError("blubb");
+      }
+
+      @Override
+      public void validateUpdate(Supplier<User> oldResourceSupplier,
+                                 User newResource,
+                                 ValidationContext validationContext)
+      {
+        // is not used in this test
+      }
+    });
+    UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
+    resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.any(), Mockito.notNull());
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.CONFLICT, errorResponse.getStatus());
+    Assertions.assertEquals("blubb", errorResponse.getDetail().get());
+  }
+
+  /**
+   * shows that the configured http response headers are returned if set in the validation context
+   */
+  @Test
+  public void testCorrectHttpHeadersAreReturned()
+  {
+    final String userName = "goldfish";
+    final User user = User.builder().userName(userName).build();
+    final String url = BASE_URI + EndpointPaths.USERS;
+
+    RequestValidator<User> requestValidator = Mockito.spy(new RequestValidator<User>()
+    {
+
+      @Override
+      public void validateCreate(User resource, ValidationContext validationContext)
+      {
+        validationContext.getResponseHttpHeaders().put(HttpHeaders.CACHE_CONTROL, "no-cache");
+        validationContext.getResponseHttpHeaders().put(HttpHeaders.CONTENT_LENGTH, "5");
+        validationContext.addError("blubb");
+      }
+
+      @Override
+      public void validateUpdate(Supplier<User> oldResourceSupplier,
+                                 User newResource,
+                                 ValidationContext validationContext)
+      {
+        // is not used in this test
+      }
+    });
+    UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
+    resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.any(), Mockito.notNull());
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
+    Assertions.assertEquals("blubb", errorResponse.getDetail().get());
+    Assertions.assertTrue(errorResponse.getHttpHeaders().containsKey(HttpHeaders.CACHE_CONTROL));
+    Assertions.assertEquals("no-cache", errorResponse.getHttpHeaders().get(HttpHeaders.CACHE_CONTROL));
+    Assertions.assertTrue(errorResponse.getHttpHeaders().containsKey(HttpHeaders.CONTENT_LENGTH));
+    Assertions.assertEquals("5", errorResponse.getHttpHeaders().get(HttpHeaders.CONTENT_LENGTH));
   }
 }
