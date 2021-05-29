@@ -164,7 +164,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        final String errorMessage = String.format("Attribute with name '%s' does not match one of "
+        final String errorMessage = String.format("Attribute '%s' does not match one of "
                                                   + "its canonicalValues '%s' actual value is '%s'",
                                                   schemaAttribute.getFullResourceName(),
                                                   schemaAttribute.getCanonicalValues(),
@@ -210,7 +210,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        final String errorMessage = String.format("Attribute with name '%s' is caseExact and does not match "
+        final String errorMessage = String.format("Attribute '%s' is caseExact and does not match "
                                                   + "its canonicalValues '%s' actual value is '%s'",
                                                   schemaAttribute.getFullResourceName(),
                                                   schemaAttribute.getCanonicalValues(),
@@ -230,7 +230,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        final String errorMessage = String.format("Attribute with name '%s' is caseExact and does not match "
+        final String errorMessage = String.format("Attribute '%s' is caseExact and does not match "
                                                   + "its canonicalValues '%s' actual value is '%s'",
                                                   schemaAttribute.getFullResourceName(),
                                                   schemaAttribute.getCanonicalValues(),
@@ -250,7 +250,7 @@ public class SimpleAttributeTypeValidatorTest
       catch (AttributeValidationException ex)
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        final String errorMessage = String.format("Attribute with name '%s' does not match one of "
+        final String errorMessage = String.format("Attribute '%s' does not match one of "
                                                   + "its canonicalValues '%s' actual value is '%s'",
                                                   schemaAttribute.getFullResourceName(),
                                                   schemaAttribute.getCanonicalValues(),

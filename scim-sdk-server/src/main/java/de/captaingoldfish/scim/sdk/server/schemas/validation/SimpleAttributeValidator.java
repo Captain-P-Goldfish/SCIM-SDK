@@ -254,7 +254,7 @@ class SimpleAttributeValidator
       String errorMessage;
       if (schemaAttribute.isCaseExact() && caseInsensitiveMatch.get())
       {
-        errorMessage = String.format("Attribute with name '%s' is caseExact and does not match its canonicalValues "
+        errorMessage = String.format("Attribute '%s' is caseExact and does not match its canonicalValues "
                                      + "'%s' actual value is '%s'",
                                      schemaAttribute.getFullResourceName(),
                                      schemaAttribute.getCanonicalValues(),
@@ -262,7 +262,7 @@ class SimpleAttributeValidator
       }
       else
       {
-        errorMessage = String.format("Attribute with name '%s' does not match one of its canonicalValues "
+        errorMessage = String.format("Attribute '%s' does not match one of its canonicalValues "
                                      + "'%s' actual value is '%s'",
                                      schemaAttribute.getFullResourceName(),
                                      schemaAttribute.getCanonicalValues(),
