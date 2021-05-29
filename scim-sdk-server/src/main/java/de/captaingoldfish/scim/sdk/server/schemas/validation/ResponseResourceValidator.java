@@ -10,12 +10,14 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * @author Pascal Knueppel
  * @since 21.04.2021
  */
+@Slf4j
 public class ResponseResourceValidator extends AbstractResourceValidator
 {
 
@@ -38,6 +40,7 @@ public class ResponseResourceValidator extends AbstractResourceValidator
   @Override
   public ScimObjectNode validateDocument(JsonNode resource)
   {
+    log.trace("Start validating response resource");
     ScimObjectNode validatedResource = super.validateDocument(resource);
     final JsonNode metaAttributeWrapper = getSchemaValidator().validateDocument(new ScimObjectNode(null),
                                                                                 getResourceType().getMetaSchema(),
@@ -53,6 +56,7 @@ public class ResponseResourceValidator extends AbstractResourceValidator
     boolean isEmpty = validatedResource.isEmpty() || containsOnlyAttributesSchemasAndMeta;
     if (isEmpty)
     {
+      log.debug("Validated response resource is empty");
       return null;
     }
     return validatedResource;

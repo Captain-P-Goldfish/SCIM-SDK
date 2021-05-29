@@ -588,6 +588,7 @@ class ResourceEndpointHandler
       for ( ResourceNode resourceNode : filteredResources )
       {
         final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
+        log.trace("Determined resource location at '{}'", location);
         resourceNode.getMeta().ifPresent(meta -> {
           if (!meta.getLastModified().isPresent())
           {
@@ -636,6 +637,9 @@ class ResourceEndpointHandler
       log.trace("Auto-sorting skipped for auto-sorting is not supported or missing sortBy attribute");
       return filteredResources;
     }
+    log.trace("Starting auto sorting resources by attribute '{}' in order '{}'",
+              sortByAttribute.getFullResourceName(),
+              sortOrdering);
     return filteredResources.parallelStream()
                             .sorted(new ResourceNodeComparator(sortByAttribute, sortOrdering))
                             .collect(Collectors.toList());
@@ -658,10 +662,12 @@ class ResourceEndpointHandler
     List<T> filteredResourceType;
     if (isApplicationFilteringEnabled && filterNode != null)
     {
+      log.trace("Starting with auto filtering resources");
       filteredResourceType = FilterResourceResolver.filterResources(resourceList, filterNode);
     }
     else
     {
+      log.trace("No filtering performed");
       filteredResourceType = resourceList;
     }
     return filteredResourceType;
@@ -679,10 +685,12 @@ class ResourceEndpointHandler
   {
     if (StringUtils.isBlank(filter))
     {
+      log.trace("No filter expression found in request");
       return null;
     }
     if (serviceProvider.getFilterConfig().isSupported())
     {
+      log.trace("Evaluating filter expression '{}' for resourceType '{}'", filter, resourceType.getName());
       return RequestUtils.parseFilter(resourceType, filter);
     }
     log.debug("Filter expression '{}' is not evaluated because filter support is disabled", filter);
@@ -701,10 +709,12 @@ class ResourceEndpointHandler
   {
     if (StringUtils.isBlank(sortBy))
     {
+      log.trace("No sortBy attribute found in request");
       return null;
     }
     if (serviceProvider.getSortConfig().isSupported())
     {
+      log.trace("Evaluating sortBy attribute '{}' for resourceType '{}'", sortBy, resourceType.getName());
       return RequestUtils.getSchemaAttributeByAttributeName(resourceType, sortBy);
     }
     log.debug("sortBy value '{}' is ignored because sorting support is disabled", sortBy);
@@ -726,15 +736,17 @@ class ResourceEndpointHandler
     {
       if (sortBy != null)
       {
+        log.trace("No sortBy attribute found in request. Using default '{}'", SortOrder.ASCENDING);
         // If a value for "sortBy" is provided and no "sortOrder" is specified, "sortOrder" SHALL default to ascending
         return SortOrder.ASCENDING;
       }
     }
     if (serviceProvider.getSortConfig().isSupported())
     {
+      log.trace("Evaluating sortOrder attribute '{}'", sortOrder);
       return SortOrder.getByValue(sortOrder);
     }
-    log.debug("sortOrder value '{}' is ignored because sorting support is disabled", sortOrder);
+    log.debug("SortOrder value '{}' is ignored because sorting support is disabled", sortOrder);
     return null;
   }
 
@@ -1083,6 +1095,7 @@ class ResourceEndpointHandler
     ResourceType resourceType = Optional.ofNullable(resourceTypeFactory.getResourceType(endpoint))
                                         .orElseThrow(() -> new BadRequestException(errorMessage.get(), null,
                                                                                    ScimType.Custom.UNKNOWN_RESOURCE));
+    log.trace("Determined resource type '{}'", resourceType.getName());
     return resourceType;
   }
 
