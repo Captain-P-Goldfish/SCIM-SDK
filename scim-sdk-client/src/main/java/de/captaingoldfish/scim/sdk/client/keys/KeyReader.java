@@ -35,7 +35,7 @@ public class KeyReader
   @SneakyThrows
   public static PrivateKey readPrivateRSAKey(byte[] privateKey)
   {
-    log.trace("trying to create private key. privateKey.length: {}-bytes", privateKey.length);
+    log.trace("Trying to create private key. privateKey.length: {}-bytes", privateKey.length);
     KeyFactory keyFactory = KeyFactory.getInstance("RSA", SecurityProvider.BOUNCY_CASTLE_PROVIDER);
     EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(privateKey);
     return keyFactory.generatePrivate(privateKeySpec);

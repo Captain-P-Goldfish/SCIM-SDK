@@ -66,7 +66,7 @@ public class EndpointFeatureHandler
     }
     else
     {
-      log.trace("no authorization information for the current client on resource endpoint '{}' for endpoint-type "
+      log.trace("No authorization information for the current client on resource endpoint '{}' for endpoint-type "
                 + "'{}'. Using default authorization handler",
                 resourceType.getEndpoint(),
                 endpointType);

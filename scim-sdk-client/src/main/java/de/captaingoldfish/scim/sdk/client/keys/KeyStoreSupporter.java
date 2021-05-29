@@ -101,15 +101,15 @@ public final class KeyStoreSupporter
                                     String keystorePassword,
                                     KeyStoreType keyStoreType)
   {
-    log.trace("putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
+    log.trace("Putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
 
     if (privateKey == null)
     {
-      throw new KeyStoreEntryException("private key is null and cannot be added into a keystore!");
+      throw new KeyStoreEntryException("Private key is null and cannot be added into a keystore!");
     }
     if (certificate == null)
     {
-      throw new KeyStoreEntryException("certificate is null and thus the given private key cannot be added to"
+      throw new KeyStoreEntryException("Certificate is null and thus the given private key cannot be added to"
                                        + " the keystore!");
     }
 
@@ -117,7 +117,7 @@ public final class KeyStoreSupporter
 
     addCertificateEntryToKeyStore(keyStore, certificate, alias);
 
-    log.trace("adding the private key to the keystore with alias '{}'", alias);
+    log.trace("Adding the private key to the keystore with alias '{}'", alias);
     Certificate[] certificateChain = {certificate};
     keyStore.setEntry(alias,
                       new KeyStore.PrivateKeyEntry(privateKey, certificateChain),
@@ -142,11 +142,11 @@ public final class KeyStoreSupporter
                                     String keystorePassword,
                                     KeyStoreType keyStoreType)
   {
-    log.trace("putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
+    log.trace("Putting private key and certificate into a keystore of type '{}'", keyStoreType.name());
 
     if (certificate == null)
     {
-      throw new KeyStoreEntryException("certificate is null and thus the given private key cannot be added to"
+      throw new KeyStoreEntryException("Certificate is null and thus the given private key cannot be added to"
                                        + " the keystore!");
     }
 
@@ -210,7 +210,7 @@ public final class KeyStoreSupporter
   {
     KeyStore keyStore;
     Provider provider = selectProvider(keyStoreType);
-    log.trace("creating a {} keystore with '{}' Provider", keyStoreType, provider.getName());
+    log.trace("Creating a {} keystore with '{}' Provider", keyStoreType, provider.getName());
     keyStore = KeyStore.getInstance(keyStoreType.name(), provider);
     keyStore.load(null, keystorePassword == null ? null : keystorePassword.toCharArray());
     return keyStore;
@@ -252,7 +252,7 @@ public final class KeyStoreSupporter
   public static KeyStore addCertificateEntry(KeyStore keyStore, String alias, Certificate certificate)
   {
     keyStore.setCertificateEntry(alias, certificate);
-    log.trace("successfully added certificate entry under alias '{}' to keystore '{}'", alias, keyStore);
+    log.trace("Successfully added certificate entry under alias '{}' to keystore '{}'", alias, keyStore);
     return keyStore;
   }
 
@@ -316,7 +316,7 @@ public final class KeyStoreSupporter
     {
       keyStore.setKeyEntry(alias, key, password.toCharArray(), certificateChain);
     }
-    log.trace("successfully added key-entry under alias '{}' to keystore '{}'", alias, keyStore);
+    log.trace("Successfully added key-entry under alias '{}' to keystore '{}'", alias, keyStore);
     return keyStore;
   }
 
@@ -333,14 +333,14 @@ public final class KeyStoreSupporter
   {
     if (keyStore.getType().equals(keyStoreType.name()))
     {
-      log.warn("you tried to convert type '{}' to type '{}', this is unnecessary and the original "
+      log.warn("You tried to convert type '{}' to type '{}', this is unnecessary and the original "
                + "keystore will be returned.",
                keyStore.getType(),
                keyStoreType.name());
       return keyStore;
     }
 
-    log.trace("converting '{}'-keystore to '{}'-type", keyStore.getType(), keyStoreType.name());
+    log.trace("Converting '{}'-keystore to '{}'-type", keyStore.getType(), keyStoreType.name());
     Enumeration<String> aliases = getAliases(keyStore);
 
     KeyStore newKeyStore = createEmptyKeyStore(keyStoreType, keyStorePassword);
@@ -370,7 +370,7 @@ public final class KeyStoreSupporter
                                   KeyStore newKeyStore,
                                   String alias)
   {
-    log.trace("adding key-entry of alias '{}' to new keystore of type '{}'", alias, keyStoreType.name());
+    log.trace("Adding key-entry of alias '{}' to new keystore of type '{}'", alias, keyStoreType.name());
     Optional<Certificate[]> certificateChainOptional = getCertificateChain(keyStore, alias);
     Optional<Certificate> certificateOptional = getCertificate(keyStore, alias);
     Optional<Key> key = getKeyEntry(keyStore, alias, keyPassword);
@@ -385,7 +385,7 @@ public final class KeyStoreSupporter
     }
     else
     {
-      log.warn("could not find any entries to copy under the alias '{}'", alias);
+      log.warn("Could not find any entries to copy under the alias '{}'", alias);
     }
   }
 
@@ -399,11 +399,11 @@ public final class KeyStoreSupporter
   @SneakyThrows
   public static void keyStoreToFile(File file, KeyStore keyStore, String keystorePassword)
   {
-    log.trace("creating file '{}' for keystore of type '{}'.", file.getAbsolutePath(), keyStore.getType());
+    log.trace("Creating file '{}' for keystore of type '{}'.", file.getAbsolutePath(), keyStore.getType());
     try (OutputStream outputStream = new FileOutputStream(file))
     {
       keyStore.store(outputStream, keystorePassword.toCharArray());
-      log.trace("keystore was successfully saved in file '{}'", file.getAbsolutePath());
+      log.trace("Keystore was successfully saved in file '{}'", file.getAbsolutePath());
     }
   }
 
@@ -417,7 +417,7 @@ public final class KeyStoreSupporter
    */
   public static void keyStoreToFile(File directory, String filename, KeyStore keyStore, String keystorePassword)
   {
-    log.trace("creating file '{}/{}.{}' for keystore of type '{}'.",
+    log.trace("Creating file '{}/{}.{}' for keystore of type '{}'.",
               directory.getAbsolutePath(),
               filename,
               KeyStoreType.valueOf(keyStore.getType()).getFileExtension(),
@@ -612,7 +612,7 @@ public final class KeyStoreSupporter
                                         KeyStoreType keyStoreType,
                                         String mergedKeyStoreKeyPassword)
   {
-    log.trace("trying to merge the following keystores {}-{} and {}-{}",
+    log.trace("Trying to merge the following keystores {}-{} and {}-{}",
               keyStore1.getType(),
               keyStore1,
               keyStore2.getType(),
@@ -624,7 +624,7 @@ public final class KeyStoreSupporter
     List<String> aliasMap = new ArrayList<>();
 
     Enumeration<String> aliases1 = getAliases(keyStore1);
-    log.trace("adding the entries of keystore1 '{}'", keyStore1);
+    log.trace("Adding the entries of keystore1 '{}'", keyStore1);
     while (aliases1.hasMoreElements())
     {
       String alias = aliases1.nextElement();
@@ -633,7 +633,7 @@ public final class KeyStoreSupporter
     }
 
     Enumeration<String> aliases2 = getAliases(keyStore2);
-    log.trace("adding the entries of keystore2 '{}'", keyStore2);
+    log.trace("Adding the entries of keystore2 '{}'", keyStore2);
     while (aliases2.hasMoreElements())
     {
       String alias = aliases2.nextElement();
@@ -718,7 +718,7 @@ public final class KeyStoreSupporter
     {
       Throwable root = ExceptionUtils.getRootCause(e);
       String rootMessage = root == null ? e.getMessage() : root.getMessage();
-      log.debug("could not recover key: {}", rootMessage);
+      log.debug("Could not recover key: {}", rootMessage);
       return Optional.empty();
     }
   }

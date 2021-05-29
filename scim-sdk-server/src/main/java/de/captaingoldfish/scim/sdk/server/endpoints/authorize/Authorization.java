@@ -103,12 +103,12 @@ public interface Authorization
                  .map(clientRoles -> clientRoles.containsAll(effectiveRoles))
                  .orElse(false))
     {
-      log.debug("the client '{}' tried to execute an action without proper authorization. "
+      log.debug("The client '{}' tried to execute an action without proper authorization. "
                 + "Required authorization is '{}' but the client has '{}'",
                 getClientId(),
                 effectiveRoles,
                 getClientRoles());
-      throw new ForbiddenException("you are not authorized to access the '" + endpointType
+      throw new ForbiddenException("You are not authorized to access the '" + endpointType
                                    + "' endpoint on resource type '" + resourceType.getName() + "'");
     }
   }

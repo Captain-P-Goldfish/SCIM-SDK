@@ -204,7 +204,7 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
     Assertions.assertFalse(response.isSuccess());
     Assertions.assertNull(response.getResource());
     Assertions.assertNotNull(response.getErrorResponse());
-    Assertions.assertEquals("you are not authorized to access the 'CREATE' endpoint on resource type 'User'",
+    Assertions.assertEquals("You are not authorized to access the 'CREATE' endpoint on resource type 'User'",
                             response.getErrorResponse().getDetail().get());
   }
 

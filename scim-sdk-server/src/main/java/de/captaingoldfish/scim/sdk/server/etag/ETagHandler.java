@@ -51,18 +51,18 @@ public class ETagHandler
   {
     if (!serviceProvider.getETagConfig().isSupported())
     {
-      log.trace("not handling eTags for service provider support for eTags is set to false");
+      log.trace("Not handling eTags for service provider support for eTags is set to false");
       return Optional.empty();
     }
     else if (!resourceType.getFeatures().getETagFeature().isEnabled())
     {
-      log.trace("not handling eTags for support on resource type {} is disabled", resourceType.getName());
+      log.trace("Not handling eTags for support on resource type {} is disabled", resourceType.getName());
       return Optional.empty();
     }
     Optional<ETag> version = resourceNode.getMeta().flatMap(Meta::getVersion);
     if (version.isPresent())
     {
-      log.trace("version already set to: {}", version.get().getEntityTag());
+      log.trace("Version already set to: {}", version.get().getEntityTag());
       return version;
     }
     return Optional.of(generateVersionOfResource(resourceNode));
@@ -107,12 +107,12 @@ public class ETagHandler
   {
     if (!serviceProvider.getETagConfig().isSupported())
     {
-      log.trace("not handling eTags for service provider support for eTags is set to false");
+      log.trace("Not handling eTags for service provider support for eTags is set to false");
       return;
     }
     else if (!resourceType.getFeatures().getETagFeature().isEnabled())
     {
-      log.trace("not handling eTags for for support on resource type {} is disabled", resourceType.getName());
+      log.trace("Not handling eTags for for support on resource type {} is disabled", resourceType.getName());
       return;
     }
     Optional<ETag> ifNoneMatchEtag = getETagFromHeader(httpHeaders, true);

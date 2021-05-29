@@ -188,7 +188,7 @@ public class ServerResponse<T extends ScimObjectNode>
                                                   .collect(Collectors.toList());
     if (headerNameList.size() > 1)
     {
-      log.info("could not validate header value for duplicate headerName found in response: {} -> {}",
+      log.info("Could not validate header value for duplicate headerName found in response: {} -> {}",
                headerName,
                String.join(", ", headerNameList));
     }

@@ -2923,7 +2923,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.FORBIDDEN, errorResponse.getHttpStatus());
-      Assertions.assertEquals("you are not authorized to access the '" + endpointType + "' endpoint on resource type '"
+      Assertions.assertEquals("You are not authorized to access the '" + endpointType + "' endpoint on resource type '"
                               + resourceType.getName() + "'",
                               errorResponse.getDetail().get());
     });

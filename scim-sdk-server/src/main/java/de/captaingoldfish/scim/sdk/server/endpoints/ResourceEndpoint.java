@@ -413,7 +413,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       boolean isAuthenticated = authorization.authenticate(uriInfos.getHttpHeaders(), uriInfos.getQueryParameters());
       if (!isAuthenticated)
       {
-        log.error("authentication has failed");
+        log.debug("Authentication has failed");
         throw new UnauthenticatedException("not authenticated", getServiceProvider().getAuthenticationSchemes(),
                                            authorization.getRealm());
       }

@@ -150,17 +150,17 @@ public class ScimHttpClient implements Closeable
     if (scimClientConfig.getConnectTimeout() > 0)
     {
       configBuilder.setConnectTimeout(scimClientConfig.getConnectTimeout() * TIMEOUT_MILLIS);
-      log.debug("connection timeout '{}' seconds", scimClientConfig.getConnectTimeout());
+      log.debug("Connection timeout '{}' seconds", scimClientConfig.getConnectTimeout());
     }
     if (scimClientConfig.getSocketTimeout() > 0)
     {
       configBuilder.setSocketTimeout(scimClientConfig.getSocketTimeout() * TIMEOUT_MILLIS);
-      log.debug("socket timeout '{}' seconds", scimClientConfig.getSocketTimeout());
+      log.debug("Socket timeout '{}' seconds", scimClientConfig.getSocketTimeout());
     }
     if (scimClientConfig.getRequestTimeout() > 0)
     {
       configBuilder.setConnectionRequestTimeout(scimClientConfig.getRequestTimeout() * TIMEOUT_MILLIS);
-      log.debug("request timeout '{}' seconds", scimClientConfig.getRequestTimeout());
+      log.debug("Request timeout '{}' seconds", scimClientConfig.getRequestTimeout());
     }
 
     if (scimClientConfig.getConfigManipulator() != null)
@@ -192,7 +192,7 @@ public class ScimHttpClient implements Closeable
     setAuthenticationIfMissing(uriRequest);
     if (log.isTraceEnabled())
     {
-      log.trace("sending http request: \n\tmethod: {}\n\turi: {}",
+      log.trace("Sending http request: \n\tmethod: {}\n\turi: {}",
                 uriRequest.getMethod(),
                 uriRequest.getURI().toString());
     }

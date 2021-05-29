@@ -205,8 +205,8 @@ public class ServiceProvider extends ResourceNode
   {
     if (authenticationSchemes == null || authenticationSchemes.isEmpty())
     {
-      log.warn("no authentication scheme has been set, this will cause a DocumentValidationException on the "
-               + "\"/ServiceProviderConfig\" endpoint!");
+      log.error("No authentication scheme has been set, this will cause a DocumentValidationException on the "
+                + "'/ServiceProviderConfig' endpoint!");
     }
     setAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, authenticationSchemes);
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));

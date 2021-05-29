@@ -577,9 +577,10 @@ class ResourceEndpointHandler
       }
       if (filteredResources.size() > effectiveCount)
       {
-        log.warn("the service provider tried to return more results than allowed. Tried to return '"
-                 + filteredResources.size() + "' results. The list will be reduced to '" + effectiveCount
-                 + "' results");
+        log.warn("The service provider tried to return more results than allowed. Tried to return '{}' results. "
+                 + "The list will be reduced to '{}' results",
+                 filteredResources.size(),
+                 effectiveCount);
         filteredResources = filteredResources.subList(0, effectiveCount);
       }
 
@@ -632,7 +633,7 @@ class ResourceEndpointHandler
     if (!serviceProvider.getSortConfig().isSupported() || sortByAttribute == null
         || !resourceType.getFeatures().isAutoSorting())
     {
-      log.trace("auto-sorting skipped for auto-sorting is not supported or missing sortBy attribute");
+      log.trace("Auto-sorting skipped for auto-sorting is not supported or missing sortBy attribute");
       return filteredResources;
     }
     return filteredResources.parallelStream()
@@ -684,7 +685,7 @@ class ResourceEndpointHandler
     {
       return RequestUtils.parseFilter(resourceType, filter);
     }
-    log.debug("filter expression '{}' is not evaluated because filter support is disabled", filter);
+    log.debug("Filter expression '{}' is not evaluated because filter support is disabled", filter);
     return null;
   }
 

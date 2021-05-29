@@ -108,7 +108,7 @@ public class ValidationContext
     }
     else
     {
-      log.debug("Not adding empty messages to error context.");
+      log.trace("Not adding empty messages to error context.");
     }
   }
 

@@ -50,7 +50,7 @@ public final class JsonHelper
    */
   public static JsonNode loadJsonDocument(String classPathLocation)
   {
-    log.trace("trying to read classpath resource from: {}", classPathLocation);
+    log.trace("Trying to read classpath resource from: {}", classPathLocation);
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
       return new ObjectMapper().readTree(inputStream);
@@ -69,7 +69,7 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T loadJsonDocument(String classPathLocation, Class<T> type)
   {
-    log.trace("trying to read classpath resource from: {}", classPathLocation);
+    log.trace("Trying to read classpath resource from: {}", classPathLocation);
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
       JsonNode jsonNode = new ObjectMapper().readTree(inputStream);
@@ -89,7 +89,7 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T loadJsonDocument(File file, Class<T> type)
   {
-    log.trace("trying to read classpath resource from: {}", file.getAbsolutePath());
+    log.trace("Trying to read classpath resource from: {}", file.getAbsolutePath());
     try (InputStream inputStream = new FileInputStream(file))
     {
       JsonNode jsonNode = new ObjectMapper().readTree(inputStream);
@@ -109,7 +109,7 @@ public final class JsonHelper
    */
   public static JsonNode loadJsonDocument(File file)
   {
-    log.trace("trying to read classpath resource from: {}", file.getAbsolutePath());
+    log.trace("Trying to read classpath resource from: {}", file.getAbsolutePath());
     try (InputStream inputStream = new FileInputStream(file))
     {
       return new ObjectMapper().readTree(inputStream);
@@ -132,7 +132,7 @@ public final class JsonHelper
     {
       return null;
     }
-    log.trace("trying to read json document: {}", jsonDocument);
+    log.trace("Trying to read json document: {}", jsonDocument);
     try (Reader reader = new StringReader(jsonDocument))
     {
       return new ObjectMapper().readTree(reader);
@@ -152,7 +152,7 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T readJsonDocument(String jsonDocument, Class<T> type)
   {
-    log.trace("trying to read json document: {}", jsonDocument);
+    log.trace("Trying to read json document: {}", jsonDocument);
     try (Reader reader = new StringReader(jsonDocument))
     {
       JsonNode jsonNode = new ObjectMapper().readTree(reader);
@@ -309,7 +309,7 @@ public final class JsonHelper
     }
     if (!jsonNode.isArray())
     {
-      log.error("cannot remove value '{}' from a json node that is not a simple array", value);
+      log.info("Cannot remove value '{}' from a json node that is not a simple array", value);
       return jsonNode;
     }
     int index = -1;
@@ -332,7 +332,7 @@ public final class JsonHelper
     }
     else
     {
-      log.error("could not remove value '{}' from json array because its sub-elements are not primitive types", value);
+      log.info("Could not remove value '{}' from json array because its sub-elements are not primitive types", value);
     }
     return jsonNode;
   }

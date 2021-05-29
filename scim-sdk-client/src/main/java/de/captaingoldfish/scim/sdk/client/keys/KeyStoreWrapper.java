@@ -220,13 +220,13 @@ public class KeyStoreWrapper
       }
       if (privateKey == null && log.isWarnEnabled())
       {
-        log.warn("no private key found for alias: {}", alias);
+        log.warn("No private key found for alias: {}", alias);
       }
       return Optional.ofNullable(privateKey);
     }
     catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e)
     {
-      throw new KeyStoreReadingException("could not read keystore entry with alias: " + alias, e);
+      throw new KeyStoreReadingException("Could not read keystore entry with alias: " + alias, e);
     }
   }
 
@@ -248,13 +248,13 @@ public class KeyStoreWrapper
       PrivateKey privateKey = (PrivateKey)keyStore.getKey(alias, password.toCharArray());
       if (privateKey == null && log.isWarnEnabled())
       {
-        log.warn("no private key found for alias: {}", alias);
+        log.warn("No private key found for alias: {}", alias);
       }
       return Optional.ofNullable(privateKey);
     }
     catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e)
     {
-      throw new KeyStoreReadingException("could not read keystore entry with alias: " + alias, e);
+      throw new KeyStoreReadingException("Could not read keystore entry with alias: " + alias, e);
     }
   }
 
@@ -275,13 +275,13 @@ public class KeyStoreWrapper
       X509Certificate x509Certificate = (X509Certificate)keyStore.getCertificate(alias);
       if (x509Certificate == null && log.isWarnEnabled())
       {
-        log.warn("no certificate entry found for alias: {}", alias);
+        log.warn("No certificate entry found for alias: {}", alias);
       }
       return Optional.ofNullable(x509Certificate);
     }
     catch (KeyStoreException e)
     {
-      throw new KeyStoreReadingException("could not read certificate with alias: " + alias, e);
+      throw new KeyStoreReadingException("Could not read certificate with alias: " + alias, e);
     }
   }
 

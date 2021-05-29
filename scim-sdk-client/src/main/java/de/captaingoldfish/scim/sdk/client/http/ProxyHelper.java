@@ -67,12 +67,12 @@ public class ProxyHelper
   {
     if (StringUtils.isBlank(getSystemProxyUsername()))
     {
-      log.trace("proxy username is empty cannot create client credentials");
+      log.trace("Proxy username is empty cannot create client credentials");
       return null;
     }
     if (getSystemProxyPassword() == null)
     {
-      log.debug("proxy password is null cannot create client credentials");
+      log.debug("Proxy password is null cannot create client credentials");
       return null;
     }
     CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
@@ -92,7 +92,7 @@ public class ProxyHelper
     if (StringUtils.isNotBlank(systemProxyHost))
     {
       HttpHost systemProxy = new HttpHost(systemProxyHost, systemProxyPort);
-      log.debug("using proxy configuration: {}", systemProxy);
+      log.debug("Using proxy configuration: {}", systemProxy);
       return RequestConfig.custom().setProxy(systemProxy).build();
     }
     return RequestConfig.DEFAULT;
