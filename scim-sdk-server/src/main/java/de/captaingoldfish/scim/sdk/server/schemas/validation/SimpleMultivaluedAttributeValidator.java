@@ -12,12 +12,14 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * @author Pascal Knueppel
  * @since 10.04.2021
  */
+@Slf4j
 class SimpleMultivaluedAttributeValidator
 {
 
@@ -31,6 +33,7 @@ class SimpleMultivaluedAttributeValidator
    */
   protected static ArrayNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
+    log.trace("Validating simple multivalued attribute '{}'", schemaAttribute.getScimNodeName());
     ArrayNode arrayNode = toArrayNode(attribute).orElseThrow(() -> {
       String errorMessage = String.format("Attribute '%s' is expected to be an array but is '%s'",
                                           schemaAttribute.getFullResourceName(),

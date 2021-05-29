@@ -9,12 +9,14 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * @author Pascal Knueppel
  * @since 10.04.2021
  */
+@Slf4j
 class RequestAttributeValidator
 {
 
@@ -70,6 +72,12 @@ class RequestAttributeValidator
       // read only attributes are not accepted on request so we will simply ignore this attribute
       if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
       {
+        if (attribute != null && !attribute.isNull())
+        {
+          log.debug("Removing '{}' attribute '{}' from request document",
+                    Mutability.READ_ONLY,
+                    schemaAttribute.getScimNodeName());
+        }
         return false;
       }
       final boolean isNodeNull = attribute == null || attribute.isNull();

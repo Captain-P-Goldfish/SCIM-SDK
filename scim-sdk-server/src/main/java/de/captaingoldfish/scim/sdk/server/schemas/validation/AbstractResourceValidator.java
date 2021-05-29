@@ -115,6 +115,7 @@ abstract class AbstractResourceValidator
     checkForMissingRequiredExtensions(extensions, inResourcePresentExtensions);
     for ( Schema extensionSchema : inResourcePresentExtensions )
     {
+      log.trace("Validating extension '{}'", extensionSchema.getNonNullId());
       JsonNode extension = resource.get(extensionSchema.getNonNullId());
       ScimObjectNode validatedExtension = schemaValidator.validateDocument(new ScimObjectNode(),
                                                                            extensionSchema,

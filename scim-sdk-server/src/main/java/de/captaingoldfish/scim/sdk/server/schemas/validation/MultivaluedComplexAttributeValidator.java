@@ -13,12 +13,14 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
  * @author Pascal Knueppel
  * @since 12.04.2021
  */
+@Slf4j
 class MultivaluedComplexAttributeValidator
 {
 
@@ -37,6 +39,7 @@ class MultivaluedComplexAttributeValidator
                                         JsonNode attribute,
                                         ContextValidator contextValidator)
   {
+    log.trace("Validating multivalued complex attribute '{}'", schemaAttribute.getScimNodeName());
     if (attribute == null || attribute.isNull())
     {
       return null;

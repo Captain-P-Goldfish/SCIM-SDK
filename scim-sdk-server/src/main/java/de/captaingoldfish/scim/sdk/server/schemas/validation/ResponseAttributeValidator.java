@@ -318,6 +318,13 @@ class ResponseAttributeValidator
     if (Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability())
         || Returned.NEVER.equals(schemaAttribute.getReturned()))
     {
+      if (attribute != null && !attribute.isNull())
+      {
+        log.debug("Removing attribute '{}' from document due to its definition of mutability '{}' and returned '{}'",
+                  schemaAttribute.getScimNodeName(),
+                  schemaAttribute.getMutability(),
+                  schemaAttribute.getReturned());
+      }
       return false;
     }
     final boolean isNodeNull = attribute == null || attribute.isNull();
@@ -344,7 +351,7 @@ class ResponseAttributeValidator
                                       && !isAttributePresentInRequest(schemaAttribute, requestDocument);
       if (removeAttribute)
       {
-        log.trace("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the clients request",
+        log.debug("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the clients request",
                   schemaAttribute.getFullResourceName(),
                   Returned.REQUEST);
       }
@@ -356,7 +363,7 @@ class ResponseAttributeValidator
                                                     && !isAttributePresentInRequest(schemaAttribute, requestDocument);
     if (removeRequestOrDefaultAttribute)
     {
-      log.trace("Removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
+      log.debug("Removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
                 + " of requested attributes",
                 schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned());
@@ -367,7 +374,7 @@ class ResponseAttributeValidator
                                          || Returned.REQUEST.equals(schemaAttribute.getReturned()));
     if (excludeAttribute)
     {
-      log.trace("Removing attribute '{}' from response for it was excluded by the 'excludedAttributes'-parameter",
+      log.debug("Removing attribute '{}' from response for it was excluded by the 'excludedAttributes'-parameter",
                 schemaAttribute.getFullResourceName());
       return false;
     }

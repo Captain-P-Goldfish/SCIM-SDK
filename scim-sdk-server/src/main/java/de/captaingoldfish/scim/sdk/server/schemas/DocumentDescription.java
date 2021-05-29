@@ -61,6 +61,8 @@ public class DocumentDescription
     resourceDocument.set(AttributeNames.RFC7643.SCHEMAS, schemasNode);
 
     this.metaSchema = resourceType.getMainSchema();
+    log.trace("Determined main schema as '{}'", metaSchema.getNonNullId());
+    log.trace("Determined present extensions '{}'", extensions);
   }
 
   /**

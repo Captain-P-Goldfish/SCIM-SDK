@@ -54,6 +54,12 @@ public class RequestResourceValidator extends AbstractResourceValidator
   @Override
   public ScimObjectNode validateDocument(JsonNode resource)
   {
+    if (log.isTraceEnabled())
+    {
+      log.trace("Validating resource '{}' for resourceType '{}'",
+                resource.toPrettyString(),
+                getResourceType().getName());
+    }
     try
     {
       ScimObjectNode validatedResource = super.validateDocument(resource);

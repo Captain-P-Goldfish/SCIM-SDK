@@ -34,6 +34,7 @@ class ComplexAttributeValidator
                                        JsonNode attribute,
                                        ContextValidator contextValidator)
   {
+    log.trace("Validating complex attribute '{}'", schemaAttribute.getScimNodeName());
     if (!attribute.isObject())
     {
       String errorMessage = String.format("Attribute '%s' must be of type object but is '%s'",

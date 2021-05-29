@@ -104,6 +104,7 @@ public abstract class AbstractSchemaValidator
   {
     for ( SchemaAttribute schemaAttribute : resourceSchema.getAttributes() )
     {
+      log.trace("Validating attribute '{}'", schemaAttribute.getScimNodeName());
       final String attributeName = schemaAttribute.getName();
       JsonNode attribute = resource.get(attributeName);
       Optional<JsonNode> validatedAttributeOptional = validateAttribute(schemaAttribute, attribute);

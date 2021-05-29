@@ -58,6 +58,7 @@ class SimpleAttributeValidator
    */
   public static JsonNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
+    log.trace("Validating simple attribute '{}'", schemaAttribute.getScimNodeName());
     if (!isSimpleNode(attribute))
     {
       String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
