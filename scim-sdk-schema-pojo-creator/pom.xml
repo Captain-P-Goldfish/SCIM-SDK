@@ -11,10 +11,14 @@
 
     <artifactId>scim-sdk-schema-pojo-creator</artifactId>
 
+    <name>SCIM SDK schema to pojo translator</name>
+
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
 
         <version.javafx>16</version.javafx>
+
+        <version.maven.assembly.plugin>3.3.0</version.maven.assembly.plugin>
     </properties>
 
     <dependencyManagement>
@@ -55,5 +59,36 @@
             <artifactId>javafx-fxml</artifactId>
         </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>${version.maven.assembly.plugin}</version>
+
+                <configuration>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                    <archive>
+                        <manifest>
+                            <mainClass>de.captaingoldfish.scim.sdk.translator.SchemaPojoTranslatorController</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>
