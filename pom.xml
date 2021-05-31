@@ -435,8 +435,7 @@
                         <pushChanges>false</pushChanges>
                         <mavenExecutorId>forked-path</mavenExecutorId>
                         <!--suppress UnresolvedMavenProperty -->
-                        <arguments>-Dgpg.passphrase=${gpg.passphrase} -DprepareAndPerformRelease -Dintegration-tests
-                        </arguments>
+                        <arguments>-Dgpg.passphrase=${gpg.passphrase} -DprepareAndPerformRelease</arguments>
                     </configuration>
                 </plugin>
             </plugins>
