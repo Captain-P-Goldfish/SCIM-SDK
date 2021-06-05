@@ -36,6 +36,19 @@ And a pretty detailed explanation on how to use the client can be found here: ht
 ---
 **This project requires JDK 8 or higher**
 
+```xml
+<dependency>
+    <groupId>de.captaingoldfish</groupId>
+    <artifactId>scim-sdk-server</artifactId>
+    <version>${project.version}</version>
+</dependency>
+<dependency>
+    <groupId>de.captaingoldfish</groupId>
+    <artifactId>scim-sdk-client</artifactId>
+    <version>${project.version}</version>
+</dependency>
+```
+
 ---
 
 ---
