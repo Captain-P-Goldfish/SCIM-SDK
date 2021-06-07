@@ -147,8 +147,15 @@ public class PatchHandler
 
     if (target.isPresent())
     {
-      PatchTargetHandler patchTargetHandler = new PatchTargetHandler(resourceType, operation.getOp(), target.get());
-      boolean changeWasMade = patchTargetHandler.addOperationValues(resource, operation.getValues());
+      String path = target.get();
+      if (PatchOp.REMOVE.equals(operation.getOp()))
+      {
+        MsAzureWorkaroundHandler msAzureWorkaroundHandler = new MsAzureWorkaroundHandler(operation.getOp(), path,
+                                                                                         values);
+        path = msAzureWorkaroundHandler.fixPath();
+      }
+      PatchTargetHandler patchTargetHandler = new PatchTargetHandler(resourceType, operation.getOp(), path);
+      boolean changeWasMade = patchTargetHandler.addOperationValues(resource, values);
       setAttributeFromPath(operation, patchTargetHandler.getPath());
       return changeWasMade;
     }

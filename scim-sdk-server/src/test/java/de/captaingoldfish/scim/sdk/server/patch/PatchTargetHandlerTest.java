@@ -18,6 +18,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -33,11 +36,13 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
@@ -3237,4 +3242,83 @@ public class PatchTargetHandlerTest implements FileReferences
                               ex.getDetail());
     }
   }
+
+  /**
+   * Verifies that the broken patch-remove requests from Azure are accepted. Such a request is setup as follows:
+   *
+   * <pre>
+   * PATCH /scim/Groups/2752513
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "op": "Remove",
+   *             "path": "members",
+   *             "value": [
+   *                 {
+   *                     "value": "2392066"
+   *                 }
+   *             ]
+   *         }
+   *     ]
+   * }
+   * </pre>
+   *
+   * the value in the request must not be present. Instead the request should look like this:
+   *
+   * <pre>
+   * PATCH /scim/Groups/2752513
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "op": "Remove",
+   *             "path": "members[value eq \"2392066\"]"
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testMsAzureWorkaround()
+  {
+    JsonNode groupResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_RESOURCE_TYPE_JSON);
+    JsonNode groupSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.GROUP_SCHEMA_JSON);
+    ResourceType groupResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                              groupResourceTypeNode,
+                                                                              groupSchemaNode);
+
+
+
+
+    final String path = AttributeNames.RFC7643.MEMBERS;
+    final String value = "123456";
+    final ObjectNode valueNode = new ObjectNode(JsonNodeFactory.instance);
+    valueNode.set("value", new TextNode(value));
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .valueNode(valueNode)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(groupResourceType);
+    Group group = Group.builder()
+                       .displayName("admin")
+                       .members(Arrays.asList(Member.builder().value(UUID.randomUUID().toString()).build(),
+                                              Member.builder().value(value).build(),
+                                              Member.builder().value(UUID.randomUUID().toString()).build()))
+                       .build();
+
+    Group patchedResource = patchHandler.patchResource(group, patchOpRequest);
+    Assertions.assertEquals(4, patchedResource.size(), group.toPrettyString());
+    Assertions.assertEquals(2, patchedResource.getMembers().size(), group.toPrettyString());
+    Assertions.assertFalse(patchedResource.getMembers()
+                                          .stream()
+                                          .anyMatch(member -> member.getValue().get().equals(value)));
+  }
+
 }
