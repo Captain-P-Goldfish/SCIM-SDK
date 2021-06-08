@@ -1,7 +1,11 @@
 package de.captaingoldfish.scim.sdk.server.filter.resources;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +14,7 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -1857,6 +1862,39 @@ public class FilterResourceResolverTest implements FileReferences
     List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
     Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
     Assertions.assertEquals(userList.get(0), filteredUsers.get(0), filteredUsers.toString());
+  }
+
+  @Test
+  public void testFilterOnMetaValue()
+  {
+    final String id1 = UUID.randomUUID().toString();
+    final String id2 = UUID.randomUUID().toString();
+    final String id3 = UUID.randomUUID().toString();
+    final Instant instant = Instant.parse("2000-01-01T00:00:00.000Z");
+
+    final List<User> userList = Arrays.asList(User.builder()
+                                                  .id(id1)
+                                                  .meta(Meta.builder()
+                                                            .created(instant.minus(Duration.ofMillis(100)))
+                                                            .build())
+                                                  .build(),
+                                              User.builder()
+                                                  .id(id2)
+                                                  .meta(Meta.builder().created(instant).build())
+                                                  .build(),
+                                              User.builder()
+                                                  .id(id3)
+                                                  .meta(Meta.builder()
+                                                            .created(instant.plus(Duration.ofMillis(100)))
+                                                            .build())
+                                                  .build());
+
+
+    final String filter = String.format("meta.created eq \"%s\"", DateTimeFormatter.ISO_INSTANT.format(instant));
+    final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+    Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
+    Assertions.assertEquals(userList.get(1), filteredUsers.get(0), filteredUsers.toString());
   }
 
   /**

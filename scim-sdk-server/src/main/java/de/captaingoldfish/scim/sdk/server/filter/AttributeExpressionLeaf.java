@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.apache.commons.lang3.StringUtils;
 
@@ -96,7 +97,10 @@ public final class AttributeExpressionLeaf extends FilterNode
     this.compareValue = context.compareValue() == null ? null
       : new CompareValue(context.compareValue(), schemaAttribute);
     validateFilterComparator();
-    this.mainSchemaNode = resourceType.getMainSchema().getId().equals(schemaAttribute.getSchema().getId());
+    final Optional<String> attrSchemaId = schemaAttribute.getSchema().getId();
+    // meta attribute has no schema ID per RFC 7643 (3.1 Common Attributes)
+    this.mainSchemaNode = resourceType.getMainSchema().getId().equals(attrSchemaId)
+                          || SchemaUris.META.equals(attrSchemaId.orElse(null));
   }
 
   public String getParentAttributeName()
