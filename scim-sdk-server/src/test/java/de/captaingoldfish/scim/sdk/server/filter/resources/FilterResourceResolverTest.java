@@ -5,16 +5,15 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -31,8 +30,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -72,6 +73,11 @@ public class FilterResourceResolverTest implements FileReferences
   private ResourceType allTypesResourceType;
 
   /**
+   * the service provider is used here to provide a thread pool for filtering
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * initializes a new {@link ResourceTypeFactory} for the following tests
    */
   @BeforeEach
@@ -92,6 +98,7 @@ public class FilterResourceResolverTest implements FileReferences
                                                                          allTypesResourceType,
                                                                          allTypesSchema,
                                                                          enterpriseUser);
+    serviceProvider = ServiceProvider.builder().forkJoinPool(new ForkJoinPool(6)).build();
   }
 
   /**
@@ -186,7 +193,7 @@ public class FilterResourceResolverTest implements FileReferences
                     + (value == null ? "" : " \"" + value + "\"") + (useNot ? ")" : "");
     return DynamicTest.dynamicTest(filter, () -> {
       final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
-      List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+      List<User> filteredUsers = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
       List<String> userNames = filteredUsers.stream()
                                             .map(user -> user.getUserName().orElse(null))
                                             .collect(Collectors.toList());
@@ -1691,7 +1698,7 @@ public class FilterResourceResolverTest implements FileReferences
     final String filter = "number eq 1 or number eq 3";
 
     final FilterNode filterNode = RequestUtils.parseFilter(allTypesResourceType, filter);
-    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(allTypesList, filterNode);
+    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(serviceProvider, allTypesList, filterNode);
     Assertions.assertEquals(2, filteredAllTypes.size());
     MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(allTypesArray[0], allTypesArray[2]));
   }
@@ -1714,7 +1721,7 @@ public class FilterResourceResolverTest implements FileReferences
     final String filter = "number eq 1 and string eq \"hello\" or number co 2 and string sw \"world\"";
 
     final FilterNode filterNode = RequestUtils.parseFilter(allTypesResourceType, filter);
-    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(allTypesList, filterNode);
+    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(serviceProvider, allTypesList, filterNode);
     Assertions.assertEquals(2, filteredAllTypes.size());
     MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(allTypesArray[0], allTypesArray[1]));
   }
@@ -1739,7 +1746,7 @@ public class FilterResourceResolverTest implements FileReferences
 
     final String filter = "multicomplex[number eq 1 and string eq \"hello\" or number eq 2 and string eq \"world\"]";
     final FilterNode filterNode = RequestUtils.parseFilter(allTypesResourceType, filter);
-    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(allTypesList, filterNode);
+    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(serviceProvider, allTypesList, filterNode);
     Assertions.assertEquals(2, filteredAllTypes.size());
     MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(allTypesArray[0], allTypesArray[1]));
   }
@@ -1767,7 +1774,7 @@ public class FilterResourceResolverTest implements FileReferences
                           + "." + subAttributeName;
     final FilterNode filterNode = RequestUtils.parseFilter(allTypesResourceType, filter);
     Assertions.assertEquals(subAttributeName, filterNode.getSubAttributeName());
-    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(allTypesList, filterNode);
+    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(serviceProvider, allTypesList, filterNode);
     Assertions.assertEquals(2, filteredAllTypes.size());
     MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(allTypesArray[0], allTypesArray[1]));
   }
@@ -1820,7 +1827,7 @@ public class FilterResourceResolverTest implements FileReferences
     final String filter = String.format("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber eq \"%s\"",
                                         employeeNumber1);
     final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
-    List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
     Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
     Assertions.assertEquals(userList.get(0), filteredUsers.get(0), filteredUsers.toString());
   }
@@ -1859,7 +1866,7 @@ public class FilterResourceResolverTest implements FileReferences
     final String filter = String.format("urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value eq \"%s\"",
                                         managerId1);
     final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
-    List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
     Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
     Assertions.assertEquals(userList.get(0), filteredUsers.get(0), filteredUsers.toString());
   }
@@ -1892,7 +1899,7 @@ public class FilterResourceResolverTest implements FileReferences
 
     final String filter = String.format("meta.created eq \"%s\"", DateTimeFormatter.ISO_INSTANT.format(instant));
     final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
-    List<User> filteredUsers = FilterResourceResolver.filterResources(userList, filterNode);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
     Assertions.assertEquals(1, filteredUsers.size(), filteredUsers.toString());
     Assertions.assertEquals(userList.get(1), filteredUsers.get(0), filteredUsers.toString());
   }
@@ -1927,7 +1934,9 @@ public class FilterResourceResolverTest implements FileReferences
         doBefore.run();
       }
       final FilterNode filterNode = RequestUtils.parseFilter(allTypesResourceType, filter);
-      List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(allTypesList, filterNode);
+      List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(serviceProvider,
+                                                                               allTypesList,
+                                                                               filterNode);
       if (expectedValues == null)
       {
         MatcherAssert.assertThat(filteredAllTypes, Matchers.empty());
@@ -1991,7 +2000,7 @@ public class FilterResourceResolverTest implements FileReferences
                           + (value == null ? "" : (isBoolean ? " " + value : " \"" + value + "\""));
     return DynamicTest.dynamicTest(filter, () -> {
       final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
-      List<User> users = FilterResourceResolver.filterResources(userList, filterNode);
+      List<User> users = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
       if (expectedValues == null)
       {
         MatcherAssert.assertThat(users, Matchers.empty());

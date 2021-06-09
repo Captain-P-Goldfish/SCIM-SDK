@@ -16,6 +16,11 @@ public class InternalServerException extends ScimException
     this(message, null, null);
   }
 
+  public InternalServerException(Throwable cause)
+  {
+    this(null, cause, null);
+  }
+
   public InternalServerException(String message, String scimType)
   {
     this(message, null, scimType);
@@ -30,4 +35,6 @@ public class InternalServerException extends ScimException
   {
     super(message, cause, HttpStatus.INTERNAL_SERVER_ERROR, scimType);
   }
+
+
 }

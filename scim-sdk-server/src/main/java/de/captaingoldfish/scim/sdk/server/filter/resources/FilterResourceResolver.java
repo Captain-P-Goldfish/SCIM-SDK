@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -17,6 +18,7 @@ import com.fasterxml.jackson.databind.node.LongNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
@@ -46,9 +48,22 @@ public class FilterResourceResolver
    * @param <T> a {@link ResourceNode} type
    * @return the filtered resources
    */
-  public static <T extends ResourceNode> List<T> filterResources(List<T> resources, FilterNode filterNode)
+  public static <T extends ResourceNode> List<T> filterResources(ServiceProvider serviceProvider,
+                                                                 List<T> resources,
+                                                                 FilterNode filterNode)
   {
-    return resources.parallelStream().filter(getResourcePredicate(filterNode)).collect(Collectors.toList());
+    try
+    {
+      return serviceProvider.getThreadPool()
+                            .submit(() -> resources.parallelStream()
+                                                   .filter(getResourcePredicate(filterNode))
+                                                   .collect(Collectors.toList()))
+                            .get();
+    }
+    catch (InterruptedException | ExecutionException e)
+    {
+      throw new InternalServerException(e);
+    }
   }
 
   /**

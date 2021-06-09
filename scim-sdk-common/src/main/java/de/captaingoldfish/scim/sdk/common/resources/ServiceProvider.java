@@ -3,7 +3,9 @@ package de.captaingoldfish.scim.sdk.common.resources;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ForkJoinPool;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
@@ -17,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import lombok.Builder;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,6 +40,13 @@ import lombok.extern.slf4j.Slf4j;
 public class ServiceProvider extends ResourceNode
 {
 
+  /**
+   * this thread pool can be set to override the default thread pool when resources are auto-sorted or
+   * auto-filtered
+   */
+  @Getter
+  private ForkJoinPool threadPool = ForkJoinPool.commonPool();
+
   @Builder
   public ServiceProvider(String documentationUri,
                          PatchConfig patchConfig,
@@ -45,7 +55,8 @@ public class ServiceProvider extends ResourceNode
                          ETagConfig eTagConfig,
                          FilterConfig filterConfig,
                          BulkConfig bulkConfig,
-                         List<AuthenticationScheme> authenticationSchemes)
+                         List<AuthenticationScheme> authenticationSchemes,
+                         ForkJoinPool forkJoinPool)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -62,6 +73,7 @@ public class ServiceProvider extends ResourceNode
                     .lastModified(LocalDateTime.now())
                     .build();
     setMeta(meta);
+    Optional.ofNullable(forkJoinPool).ifPresent(this::setThreadPool);
   }
 
   /**
@@ -210,5 +222,13 @@ public class ServiceProvider extends ResourceNode
     }
     setAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, authenticationSchemes);
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
+  }
+
+  /**
+   * @see #threadPool
+   */
+  public void setThreadPool(ForkJoinPool threadPool)
+  {
+    this.threadPool = Objects.requireNonNull(threadPool);
   }
 }

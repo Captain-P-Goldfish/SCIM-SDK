@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -640,9 +641,19 @@ class ResourceEndpointHandler
     log.trace("Starting auto sorting resources by attribute '{}' in order '{}'",
               sortByAttribute.getFullResourceName(),
               sortOrdering);
-    return filteredResources.parallelStream()
-                            .sorted(new ResourceNodeComparator(sortByAttribute, sortOrdering))
-                            .collect(Collectors.toList());
+    try
+    {
+      return serviceProvider.getThreadPool()
+                            .submit(() -> filteredResources.parallelStream()
+                                                           .sorted(new ResourceNodeComparator(sortByAttribute,
+                                                                                              sortOrdering))
+                                                           .collect(Collectors.toList()))
+                            .get();
+    }
+    catch (InterruptedException | ExecutionException e)
+    {
+      throw new InternalServerException(e);
+    }
   }
 
   /**
@@ -663,7 +674,7 @@ class ResourceEndpointHandler
     if (isApplicationFilteringEnabled && filterNode != null)
     {
       log.trace("Starting with auto filtering resources");
-      filteredResourceType = FilterResourceResolver.filterResources(resourceList, filterNode);
+      filteredResourceType = FilterResourceResolver.filterResources(serviceProvider, resourceList, filterNode);
     }
     else
     {
