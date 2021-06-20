@@ -6,8 +6,8 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.Getter;
@@ -26,7 +26,7 @@ public class SingletonUserHandlerImpl extends ResourceHandler<User>
   private User user;
 
   @Override
-  public User createResource(User resource, Authorization authorization)
+  public User createResource(User resource, Context context)
   {
     this.user = resource;
     return JsonHelper.copyResourceToObject(user, User.class);
@@ -34,9 +34,9 @@ public class SingletonUserHandlerImpl extends ResourceHandler<User>
 
   @Override
   public User getResource(String id,
-                          Authorization authorization,
                           List<SchemaAttribute> attributes,
-                          List<SchemaAttribute> excludedAttributes)
+                          List<SchemaAttribute> excludedAttributes,
+                          Context context)
   {
     return JsonHelper.copyResourceToObject(user, User.class);
   }
@@ -49,21 +49,21 @@ public class SingletonUserHandlerImpl extends ResourceHandler<User>
                                                  SortOrder sortOrder,
                                                  List<SchemaAttribute> attributes,
                                                  List<SchemaAttribute> excludedAttributes,
-                                                 Authorization authorization)
+                                                 Context context)
   {
     // not supported on singleton endpoints
     return null;
   }
 
   @Override
-  public User updateResource(User resourceToUpdate, Authorization authorization)
+  public User updateResource(User resourceToUpdate, Context context)
   {
     this.user = resourceToUpdate;
     return JsonHelper.copyResourceToObject(user, User.class);
   }
 
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
     this.user = null;
   }

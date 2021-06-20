@@ -13,8 +13,8 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 
@@ -32,7 +32,7 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
   private Map<String, ScimKeystore> keystoreMap = new HashMap<>();
 
   @Override
-  public ScimKeystore createResource(ScimKeystore resource, Authorization authorization)
+  public ScimKeystore createResource(ScimKeystore resource, Context context)
   {
     // names should be unique so find if the name of the new resource is already taken
     ScimKeystore oldResource = keystoreMap.values()
@@ -57,9 +57,9 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
 
   @Override
   public ScimKeystore getResource(String id,
-                                  Authorization authorization,
                                   List<SchemaAttribute> attributes,
-                                  List<SchemaAttribute> excludedAttributes)
+                                  List<SchemaAttribute> excludedAttributes,
+                                  Context context)
   {
     return keystoreMap.get(id);
   }
@@ -82,7 +82,7 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
                                                          SortOrder sortOrder,
                                                          List<SchemaAttribute> attributes,
                                                          List<SchemaAttribute> excludedAttributes,
-                                                         Authorization authorization)
+                                                         Context context)
   {
     // filtering is not performed here. Note that the api provides an auto-filtering feature
     // sorting is not performed here. Note that the api provides an auto-sorting feature
@@ -97,7 +97,7 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
   }
 
   @Override
-  public ScimKeystore updateResource(ScimKeystore resourceToUpdate, Authorization authorization)
+  public ScimKeystore updateResource(ScimKeystore resourceToUpdate, Context context)
   {
     final String id = resourceToUpdate.getId().orElse(null);
     ScimKeystore oldResource = keystoreMap.get(id);
@@ -111,7 +111,7 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
   }
 
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
     ScimKeystore oldResource = keystoreMap.get(id);
     if (oldResource == null)

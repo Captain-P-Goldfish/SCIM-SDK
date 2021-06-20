@@ -18,8 +18,8 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.Getter;
@@ -67,7 +67,7 @@ public class UserHandler extends ResourceHandler<User>
    * {@inheritDoc}
    */
   @Override
-  public User createResource(User resource, Authorization authorization)
+  public User createResource(User resource, Context context)
   {
     final String userId = UUID.randomUUID().toString();
     if (inMemoryMap.containsKey(userId))
@@ -88,9 +88,9 @@ public class UserHandler extends ResourceHandler<User>
    */
   @Override
   public User getResource(String id,
-                          Authorization authorization,
                           List<SchemaAttribute> attributes,
-                          List<SchemaAttribute> excludedAttributes)
+                          List<SchemaAttribute> excludedAttributes,
+                          Context context)
   {
     return inMemoryMap.get(id);
   }
@@ -106,7 +106,7 @@ public class UserHandler extends ResourceHandler<User>
                                                  SortOrder sortOrder,
                                                  List<SchemaAttribute> attributes,
                                                  List<SchemaAttribute> excludedAttributes,
-                                                 Authorization authorization)
+                                                 Context context)
   {
     List<User> resourceNodes = new ArrayList<>(inMemoryMap.values());
     return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
@@ -116,7 +116,7 @@ public class UserHandler extends ResourceHandler<User>
    * {@inheritDoc}
    */
   @Override
-  public User updateResource(User resource, Authorization authorization)
+  public User updateResource(User resource, Context context)
   {
     String userId = resource.getId().get();
     User oldUser = inMemoryMap.get(userId);
@@ -136,7 +136,7 @@ public class UserHandler extends ResourceHandler<User>
    * {@inheritDoc}
    */
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
     if (inMemoryMap.containsKey(id))
     {

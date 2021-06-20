@@ -27,7 +27,6 @@ import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -162,10 +161,10 @@ public class ETagRequestTests
      * method
      */
     @Override
-    public User updateResource(User resource, Authorization authorization)
+    public User updateResource(User resource, Context context)
     {
       Assertions.assertTrue(resource.getMeta().flatMap(Meta::getVersion).isPresent());
-      return super.updateResource(resource, authorization);
+      return super.updateResource(resource, context);
     }
   }
 

@@ -33,6 +33,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import lombok.Getter;
@@ -267,7 +268,7 @@ public abstract class AbstractSpringBootWebTest
                                                                  HttpMethod.valueOf(request.getMethod()),
                                                                  requestBody,
                                                                  httpHeaders,
-                                                                 new Auth(principal));
+                                                                 new Context(new Auth(principal)));
       response.setContentType(HttpHeader.SCIM_CONTENT_TYPE);
       scimResponse.getHttpHeaders().forEach(response::setHeader);
       response.setStatus(scimResponse.getHttpStatus());

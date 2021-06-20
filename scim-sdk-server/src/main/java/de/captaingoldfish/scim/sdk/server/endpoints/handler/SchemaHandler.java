@@ -10,8 +10,8 @@ import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -44,7 +44,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * creating of schemas not supported
    */
   @Override
-  public Schema createResource(Schema resource, Authorization authorization)
+  public Schema createResource(Schema resource, Context context)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("create"));
   }
@@ -54,9 +54,9 @@ public class SchemaHandler extends ResourceHandler<Schema>
    */
   @Override
   public Schema getResource(String id,
-                            Authorization authorization,
                             List<SchemaAttribute> attributes,
-                            List<SchemaAttribute> excludedAttributes)
+                            List<SchemaAttribute> excludedAttributes,
+                            Context context)
   {
     Schema schema = resourceTypeFactory.getAllResourceTypes()
                                        .stream()
@@ -84,7 +84,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
                                                    SortOrder sortOrder,
                                                    List<SchemaAttribute> attributes,
                                                    List<SchemaAttribute> excludedAttributes,
-                                                   Authorization authorization)
+                                                   Context context)
   {
     List<Schema> allSchemas = resourceTypeFactory.getAllResourceTypes()
                                                  .stream()
@@ -99,7 +99,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * updating of schemas not supported
    */
   @Override
-  public Schema updateResource(Schema schema, Authorization authorization)
+  public Schema updateResource(Schema schema, Context context)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("update"));
   }
@@ -108,7 +108,7 @@ public class SchemaHandler extends ResourceHandler<Schema>
    * deleting of schemas not supported
    */
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("delete"));
   }

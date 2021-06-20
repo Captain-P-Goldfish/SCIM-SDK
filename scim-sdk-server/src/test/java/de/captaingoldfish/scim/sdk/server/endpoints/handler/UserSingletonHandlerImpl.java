@@ -4,7 +4,7 @@ import java.util.List;
 
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 
 
 /**
@@ -32,9 +32,9 @@ public class UserSingletonHandlerImpl extends UserHandlerImpl
    */
   @Override
   public User getResource(String id,
-                          Authorization authorization,
                           List<SchemaAttribute> attributes,
-                          List<SchemaAttribute> excludedAttributes)
+                          List<SchemaAttribute> excludedAttributes,
+                          Context context)
   {
     return getInMemoryMap().get(getInMemoryMap().keySet().iterator().next());
   }

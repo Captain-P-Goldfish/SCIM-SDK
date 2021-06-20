@@ -9,8 +9,8 @@ import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -46,7 +46,7 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
    * creating of resource types not supported
    */
   @Override
-  public ResourceType createResource(ResourceType resource, Authorization authorization)
+  public ResourceType createResource(ResourceType resource, Context context)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("create"));
   }
@@ -56,9 +56,9 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
    */
   @Override
   public ResourceType getResource(String id,
-                                  Authorization authorization,
                                   List<SchemaAttribute> attributes,
-                                  List<SchemaAttribute> excludedAttributes)
+                                  List<SchemaAttribute> excludedAttributes,
+                                  Context context)
   {
     return resourceTypeFactory.getResourceTypeByName(id).orElseThrow(() -> {
       return new ResourceNotFoundException("a ResourceType with the name '" + id + "' does not exist", null, null);
@@ -76,7 +76,7 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
                                            SortOrder sortOrder,
                                            List<SchemaAttribute> attributes,
                                            List<SchemaAttribute> excludedAttributes,
-                                           Authorization authorization)
+                                           Context context)
   {
     List<ResourceNode> resourceTypeList = new ArrayList<>(resourceTypeFactory.getAllResourceTypes());
     return PartialListResponse.builder().resources(resourceTypeList).totalResults(resourceTypeList.size()).build();
@@ -86,7 +86,7 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
    * updating of resource types not supported
    */
   @Override
-  public ResourceType updateResource(ResourceType resourceToUpdate, Authorization authorization)
+  public ResourceType updateResource(ResourceType resourceToUpdate, Context context)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("update"));
   }
@@ -95,7 +95,7 @@ public class ResourceTypeHandler extends ResourceHandler<ResourceType>
    * deleting of resource types not supported
    */
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
     throw new NotImplementedException(ERROR_MESSAGE_SUPPLIER.apply("delete"));
   }

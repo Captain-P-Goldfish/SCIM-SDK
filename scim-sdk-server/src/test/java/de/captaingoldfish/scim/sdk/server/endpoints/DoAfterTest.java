@@ -49,7 +49,8 @@ public class DoAfterTest extends AbstractEndpointTest
                                                                HttpMethod.GET,
                                                                null,
                                                                httpHeaders,
-                                                               doAfterExecution);
+                                                               doAfterExecution,
+                                                               null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
   }
@@ -75,7 +76,8 @@ public class DoAfterTest extends AbstractEndpointTest
                                                                HttpMethod.GET,
                                                                null,
                                                                httpHeaders,
-                                                               doAfterExecution);
+                                                               doAfterExecution,
+                                                               null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
   }
@@ -102,15 +104,16 @@ public class DoAfterTest extends AbstractEndpointTest
     Mockito.doThrow(NullPointerException.class)
            .when(userHandler)
            .getResource(Mockito.anyString(),
-                        Mockito.any(),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.eq(Collections.emptyList()));
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.notNull());
 
     ScimResponse scimResponse = resourceEndpoint.handleRequest(getUrl(EndpointPaths.USERS) + "/1",
                                                                HttpMethod.GET,
                                                                null,
                                                                httpHeaders,
-                                                               doAfterExecution);
+                                                               doAfterExecution,
+                                                               null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
   }
@@ -136,7 +139,8 @@ public class DoAfterTest extends AbstractEndpointTest
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
                                                                httpHeaders,
-                                                               doAfterExecution);
+                                                               doAfterExecution,
+                                                               null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
   }
@@ -167,7 +171,8 @@ public class DoAfterTest extends AbstractEndpointTest
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
                                                                httpHeaders,
-                                                               doAfterExecution);
+                                                               doAfterExecution,
+                                                               null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
   }
@@ -198,7 +203,8 @@ public class DoAfterTest extends AbstractEndpointTest
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
                                                                httpHeaders,
-                                                               doAfterExecution);
+                                                               doAfterExecution,
+                                                               null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
   }

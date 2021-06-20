@@ -18,8 +18,8 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import lombok.Getter;
@@ -68,7 +68,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public Group createResource(Group resource, Authorization authorization)
+  public Group createResource(Group resource, Context context)
   {
     final String groupId = UUID.randomUUID().toString();
     if (inMemoryMap.containsKey(groupId))
@@ -89,9 +89,9 @@ public class GroupHandler extends ResourceHandler<Group>
    */
   @Override
   public Group getResource(String id,
-                           Authorization authorization,
                            List<SchemaAttribute> attributes,
-                           List<SchemaAttribute> excludedAttributes)
+                           List<SchemaAttribute> excludedAttributes,
+                           Context context)
   {
     return inMemoryMap.get(id);
   }
@@ -107,7 +107,7 @@ public class GroupHandler extends ResourceHandler<Group>
                                                   SortOrder sortOrder,
                                                   List<SchemaAttribute> attributes,
                                                   List<SchemaAttribute> excludedAttributes,
-                                                  Authorization authorization)
+                                                  Context context)
   {
     List<Group> resourceNodes = new ArrayList<>(inMemoryMap.values());
     return PartialListResponse.<Group> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
@@ -117,7 +117,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public Group updateResource(Group resource, Authorization authorization)
+  public Group updateResource(Group resource, Context context)
   {
     String groupId = resource.getId().get();
     Group oldGroup = inMemoryMap.get(groupId);
@@ -137,7 +137,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * {@inheritDoc}
    */
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
     if (inMemoryMap.containsKey(id))
     {

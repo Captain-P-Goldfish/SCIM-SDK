@@ -63,6 +63,8 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param httpMethod the http method that was used by in the request
    * @param requestBody the request body of the request, may be null
    * @param httpHeaders the http request headers, may be null
+   * @param context an optional context object that will be expanded with additional information of the current
+   *          request
    * @return the resolved SCIM response
    */
   public ScimResponse handleRequest(String requestUrl,
@@ -88,46 +90,17 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param httpMethod the http method that was used by in the request
    * @param requestBody the request body of the request, may be null
    * @param httpHeaders the http request headers, may be null
-   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
-   *          to execute authentication on dedicated resource types
+   * @param context an optional context object that will be expanded with additional information of the current
+   *          request
    * @return the resolved SCIM response
    */
   public ScimResponse handleRequest(String requestUrl,
                                     HttpMethod httpMethod,
                                     String requestBody,
                                     Map<String, String> httpHeaders,
-                                    Consumer<ResourceType> doBeforeExecution)
+                                    Context context)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doBeforeExecution, null);
-  }
-
-  /**
-   * this method will resolve the SCIM request based on the given information
-   *
-   * @param requestUrl the fully qualified resource URL e.g.:
-   *
-   *          <pre>
-   *             https://localhost/v2/scim/Users<br>
-   *             https://localhost/v2/scim/Users/123456<br>
-   *             https://localhost/v2/scim/Users/.search<br>
-   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
-   *          </pre>
-   *
-   * @param httpMethod the http method that was used by in the request
-   * @param requestBody the request body of the request, may be null
-   * @param httpHeaders the http request headers, may be null
-   * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
-   *          execution of the request has been finished. First parameter is the response object second is a
-   *          boolean that tells if the request failed or succeeded.
-   * @return the resolved SCIM response
-   */
-  public ScimResponse handleRequest(String requestUrl,
-                                    HttpMethod httpMethod,
-                                    String requestBody,
-                                    Map<String, String> httpHeaders,
-                                    BiConsumer<ScimResponse, Boolean> doAfterExecution)
-  {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null, doAfterExecution);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null, context);
   }
 
   /**
@@ -147,9 +120,8 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param httpHeaders the http request headers, may be null
    * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
    *          to execute authentication on dedicated resource types
-   * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
-   *          execution of the request has been finished. First parameter is the response object second is a
-   *          boolean that tells if the request failed or succeeded.
+   * @param context an optional context object that will be expanded with additional information of the current
+   *          request
    * @return the resolved SCIM response
    */
   public ScimResponse handleRequest(String requestUrl,
@@ -157,9 +129,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     String requestBody,
                                     Map<String, String> httpHeaders,
                                     Consumer<ResourceType> doBeforeExecution,
-                                    BiConsumer<ScimResponse, Boolean> doAfterExecution)
+                                    Context context)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doBeforeExecution, doAfterExecution);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, doBeforeExecution, null, context);
   }
 
   /**
@@ -177,48 +149,21 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param httpMethod the http method that was used by in the request
    * @param requestBody the request body of the request, may be null
    * @param httpHeaders the http request headers, may be null
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
+   * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
+   *          execution of the request has been finished. First parameter is the response object second is a
+   *          boolean that tells if the request failed or succeeded.
+   * @param context an optional context object that will be expanded with additional information of the current
+   *          request
    * @return the resolved SCIM response
    */
   public ScimResponse handleRequest(String requestUrl,
                                     HttpMethod httpMethod,
                                     String requestBody,
                                     Map<String, String> httpHeaders,
-                                    Authorization authorization)
+                                    BiConsumer<ScimResponse, Boolean> doAfterExecution,
+                                    Context context)
   {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, authorization, null, null);
-  }
-
-  /**
-   * this method will resolve the SCIM request based on the given information
-   *
-   * @param requestUrl the fully qualified resource URL e.g.:
-   *
-   *          <pre>
-   *             https://localhost/v2/scim/Users<br>
-   *             https://localhost/v2/scim/Users/123456<br>
-   *             https://localhost/v2/scim/Users/.search<br>
-   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
-   *          </pre>
-   *
-   * @param httpMethod the http method that was used by in the request
-   * @param requestBody the request body of the request, may be null
-   * @param httpHeaders the http request headers, may be null
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
-   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used *
-   *          to execute authentication on dedicated resource types
-   * @return the resolved SCIM response
-   */
-  public ScimResponse handleRequest(String requestUrl,
-                                    HttpMethod httpMethod,
-                                    String requestBody,
-                                    Map<String, String> httpHeaders,
-                                    Authorization authorization,
-                                    Consumer<ResourceType> doBeforeExecution)
-  {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, authorization, doBeforeExecution, null);
+    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, doAfterExecution, context);
   }
 
   /**
@@ -243,15 +188,17 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param doAfterExecution an optional implementation that can be used to execute arbitrary code after the
    *          execution of the request has been finished. First parameter is the response object second is a
    *          boolean that tells if the request failed or succeeded.
+   * @param context an optional context object that will be expanded with additional information of the current
+   *          request
    * @return the resolved SCIM response
    */
   public ScimResponse handleRequest(String requestUrl,
                                     HttpMethod httpMethod,
                                     String requestBody,
                                     Map<String, String> httpHeaders,
-                                    Authorization authorization,
                                     Consumer<ResourceType> doBeforeExecution,
-                                    BiConsumer<ScimResponse, Boolean> doAfterExecution)
+                                    BiConsumer<ScimResponse, Boolean> doAfterExecution,
+                                    Context context)
   {
     ScimResponse scimResponse;
 
@@ -263,10 +210,10 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),
                                                      uriInfos.getHttpHeaders(), uriInfos.getQueryParameters(),
                                                      doBeforeExecution);
-        scimResponse = bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, authorization);
+        scimResponse = bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, context);
         break handleScimRequest;
       }
-      scimResponse = resolveRequest(httpMethod, requestBody, uriInfos, authorization, doBeforeExecution);
+      scimResponse = resolveRequest(httpMethod, requestBody, uriInfos, doBeforeExecution, context);
     }
     catch (ScimException ex)
     {
@@ -300,28 +247,35 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   protected ScimResponse resolveRequest(HttpMethod httpMethod,
                                         String requestBody,
                                         UriInfos uriInfos,
-                                        Authorization authorization,
-                                        Consumer<ResourceType> doBeforeExecution)
+                                        Consumer<ResourceType> doBeforeExecution,
+                                        Context context)
   {
     Optional.ofNullable(doBeforeExecution).ifPresent(consumer -> consumer.accept(uriInfos.getResourceType()));
-    authenticateClient(uriInfos, authorization);
+    Context effectiveContext = getEffectiveContext(uriInfos, context);
+    authenticateClient(uriInfos, effectiveContext.getAuthorization());
     switch (httpMethod)
     {
       case POST:
         if (uriInfos.isSearchRequest())
         {
-          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.LIST, authorization);
-          return listResources(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri, authorization);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                        EndpointType.LIST,
+                                                        effectiveContext.getAuthorization());
+          return listResources(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri, effectiveContext);
         }
         else
         {
-          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.CREATE, authorization);
-          return createResource(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri, authorization);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                        EndpointType.CREATE,
+                                                        effectiveContext.getAuthorization());
+          return createResource(uriInfos.getResourceEndpoint(), requestBody, uriInfos::getBaseUri, effectiveContext);
         }
       case GET:
         if (uriInfos.isSearchRequest() && !uriInfos.getResourceType().getFeatures().isSingletonEndpoint())
         {
-          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.LIST, authorization);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                        EndpointType.LIST,
+                                                        effectiveContext.getAuthorization());
           String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);
           return listResources(uriInfos.getResourceEndpoint(),
@@ -334,11 +288,13 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                uriInfos.getQueryParameters()
                                        .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                                uriInfos::getBaseUri,
-                               authorization);
+                               effectiveContext);
         }
         else
         {
-          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.GET, authorization);
+          EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                        EndpointType.GET,
+                                                        effectiveContext.getAuthorization());
           return getResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
@@ -346,18 +302,22 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                              uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri,
-                             authorization);
+                             effectiveContext);
         }
       case PUT:
-        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.UPDATE, authorization);
+        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                      EndpointType.UPDATE,
+                                                      effectiveContext.getAuthorization());
         return updateResource(uriInfos.getResourceEndpoint(),
                               uriInfos.getResourceId(),
                               requestBody,
                               uriInfos.getHttpHeaders(),
                               uriInfos::getBaseUri,
-                              authorization);
+                              effectiveContext);
       case PATCH:
-        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.UPDATE, authorization);
+        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                      EndpointType.UPDATE,
+                                                      effectiveContext.getAuthorization());
         return patchResource(uriInfos.getResourceEndpoint(),
                              uriInfos.getResourceId(),
                              requestBody,
@@ -366,14 +326,36 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                              uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri,
-                             authorization);
+                             effectiveContext);
       default:
-        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(), EndpointType.DELETE, authorization);
+        EndpointFeatureHandler.handleEndpointFeatures(uriInfos.getResourceType(),
+                                                      EndpointType.DELETE,
+                                                      effectiveContext.getAuthorization());
         return deleteResource(uriInfos.getResourceEndpoint(),
                               uriInfos.getResourceId(),
                               uriInfos.getHttpHeaders(),
-                              authorization);
+                              effectiveContext);
     }
+  }
+
+  /**
+   * expands the currently existing context passed by the developer or creates a new context and adds the
+   * current context data to it
+   * 
+   * @param uriInfos the current uri infos of the request
+   * @param context the context created by the developer (might be null)
+   * @return an expanded or new context
+   */
+  private Context getEffectiveContext(UriInfos uriInfos, Context context)
+  {
+    Context effectiveContext = Optional.ofNullable(context).orElse(new Context());
+    effectiveContext.setResourceReferenceUrl(id -> {
+      return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(uriInfos.getResourceType().getName(), id);
+    });
+    effectiveContext.setCrossResourceReferenceUrl((resourceName, id) -> {
+      return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, resourceName);
+    });
+    return effectiveContext;
   }
 
   /**

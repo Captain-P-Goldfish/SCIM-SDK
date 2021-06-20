@@ -11,7 +11,6 @@ import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
@@ -95,11 +94,11 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * permanently create a resource
    *
    * @param resource the resource to store
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
+   * @param context the current request context that holds additional useful information. This object is never
+   *          null
    * @return the stored resource with additional meta information as id, created, lastModified timestamps etc.
    */
-  public abstract T createResource(T resource, Authorization authorization);
+  public abstract T createResource(T resource, Context context);
 
   /**
    * extract a resource by its id
@@ -113,12 +112,14 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param excludedAttributes the attributes that should NOT be returned to the client. If the client send this
    *          parameter the evaluation of these parameters might help to improve database performance by
    *          omitting unnecessary table joins
+   * @param context the current request context that holds additional useful information. This object is never
+   *          null
    * @return the found resource
    */
   public abstract T getResource(String id,
-                                Authorization authorization,
                                 List<SchemaAttribute> attributes,
-                                List<SchemaAttribute> excludedAttributes);
+                                List<SchemaAttribute> excludedAttributes,
+                                Context context);
 
   /**
    * queries several resources based on the following values
@@ -136,8 +137,8 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param excludedAttributes the attributes that should NOT be returned to the client. If the client send this
    *          parameter the evaluation of these parameters might help to improve database performance by
    *          omitting unnecessary table joins
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
+   * @param context the current request context that holds additional useful information. This object is never
+   *          null
    * @return a list of several resources and a total results value. You may choose to leave the totalResults
    *         value blank but this might lead to erroneous results on the client side
    */
@@ -148,7 +149,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                                        SortOrder sortOrder,
                                                        List<SchemaAttribute> attributes,
                                                        List<SchemaAttribute> excludedAttributes,
-                                                       Authorization authorization);
+                                                       Context context);
 
   /**
    * should update an existing resource with the given one. Simply use the id of the given resource and override
@@ -160,20 +161,20 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * have been executed and the given resource is the already updated resource.
    *
    * @param resourceToUpdate the resource that should override an existing one
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
+   * @param context the current request context that holds additional useful information. This object is never
+   *          null
    * @return the updated resource with the values changed and a new lastModified value
    */
-  public abstract T updateResource(T resourceToUpdate, Authorization authorization);
+  public abstract T updateResource(T resourceToUpdate, Context context);
 
   /**
    * permanently deletes the resource with the given id
    *
    * @param id the id of the resource to delete
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
+   * @param context the current request context that holds additional useful information. This object is never
+   *          null
    */
-  public abstract void deleteResource(String id, Authorization authorization);
+  public abstract void deleteResource(String id, Context context);
 
   /**
    * @return true if the value in the in the corresponding value in the

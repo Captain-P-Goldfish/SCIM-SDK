@@ -72,7 +72,7 @@ public class AuthenticationTest extends AbstractEndpointTest
                                                                HttpMethod.GET,
                                                                null,
                                                                unauthorizedHttpHeaders,
-                                                               scimAuthorization);
+                                                               new Context(scimAuthorization));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Mockito.verify(scimAuthorization, Mockito.times(0)).authenticate(Mockito.anyMap(), Mockito.anyMap());
   }
@@ -90,7 +90,7 @@ public class AuthenticationTest extends AbstractEndpointTest
                                                                HttpMethod.GET,
                                                                null,
                                                                unauthorizedHttpHeaders,
-                                                               scimAuthorization);
+                                                               new Context(scimAuthorization));
     Assertions.assertEquals(HttpStatus.UNAUTHORIZED, scimResponse.getHttpStatus());
     Mockito.verify(scimAuthorization, Mockito.times(1)).authenticate(Mockito.anyMap(), Mockito.anyMap());
 
@@ -113,7 +113,7 @@ public class AuthenticationTest extends AbstractEndpointTest
                                                                HttpMethod.GET,
                                                                null,
                                                                authorizedHttpHeaders,
-                                                               scimAuthorization);
+                                                               new Context(scimAuthorization));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Mockito.verify(scimAuthorization, Mockito.times(1)).authenticate(Mockito.anyMap(), Mockito.anyMap());
 
@@ -139,7 +139,7 @@ public class AuthenticationTest extends AbstractEndpointTest
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
                                                                unauthorizedHttpHeaders,
-                                                               scimAuthorization);
+                                                               new Context(scimAuthorization));
 
     Assertions.assertEquals(HttpStatus.UNAUTHORIZED, scimResponse.getHttpStatus());
     Mockito.verify(scimAuthorization, Mockito.times(1)).authenticate(Mockito.anyMap(), Mockito.anyMap());
@@ -167,7 +167,7 @@ public class AuthenticationTest extends AbstractEndpointTest
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
                                                                authorizedHttpHeaders,
-                                                               scimAuthorization);
+                                                               new Context(scimAuthorization));
 
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Mockito.verify(scimAuthorization, Mockito.times(numberOfOperations))

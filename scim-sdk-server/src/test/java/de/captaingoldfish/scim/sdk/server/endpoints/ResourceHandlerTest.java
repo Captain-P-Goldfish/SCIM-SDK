@@ -10,7 +10,6 @@ import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 
@@ -48,16 +47,16 @@ public class ResourceHandlerTest
   {
 
     @Override
-    public User createResource(User resource, Authorization authorization)
+    public User createResource(User resource, Context context)
     {
       return null;
     }
 
     @Override
     public User getResource(String id,
-                            Authorization authorization,
                             List<SchemaAttribute> attributes,
-                            List<SchemaAttribute> excludedAttributes)
+                            List<SchemaAttribute> excludedAttributes,
+                            Context context)
     {
       return null;
     }
@@ -70,19 +69,19 @@ public class ResourceHandlerTest
                                              SortOrder sortOrder,
                                              List<SchemaAttribute> attributes,
                                              List<SchemaAttribute> excludedAttributes,
-                                             Authorization authorization)
+                                             Context context)
     {
       return null;
     }
 
     @Override
-    public User updateResource(User resource, Authorization authorization)
+    public User updateResource(User resource, Context context)
     {
       return null;
     }
 
     @Override
-    public void deleteResource(String id, Authorization authorization)
+    public void deleteResource(String id, Context context)
     {
 
     }
@@ -95,13 +94,13 @@ public class ResourceHandlerTest
   {
 
     @Override
-    public ResourceNode createResource(ResourceNode resource, Authorization authorization)
+    public ResourceNode createResource(ResourceNode resource, Context context)
     {
       return null;
     }
 
     @Override
-    public ResourceNode getResource(String id, Authorization authorization, List attributes, List excludedAttributes)
+    public ResourceNode getResource(String id, List attributes, List excludedAttributes, Context context)
     {
       return null;
     }
@@ -115,20 +114,20 @@ public class ResourceHandlerTest
                                                            SortOrder sortOrder,
                                                            List list,
                                                            List excludedAttributes,
-                                                           Authorization authorization)
+                                                           Context context)
     {
       return null;
     }
 
 
     @Override
-    public ResourceNode updateResource(ResourceNode resource, Authorization authorization)
+    public ResourceNode updateResource(ResourceNode resource, Context context)
     {
       return null;
     }
 
     @Override
-    public void deleteResource(String id, Authorization authorization)
+    public void deleteResource(String id, Context context)
     {
 
     }

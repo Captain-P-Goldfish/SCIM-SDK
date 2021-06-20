@@ -139,7 +139,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).createResource(Mockito.any(), Mockito.notNull());
     Assertions.assertEquals(bulkResponse.getBulkResponseOperations().size(), executionCounter[0]);
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
@@ -160,8 +160,8 @@ public class BulkEndpointTest extends AbstractBulkTest
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any(), Mockito.isNull());
-    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).updateResource(Mockito.any(), Mockito.notNull());
+    Mockito.verify(userHandler, Mockito.times(maxOperations)).deleteResource(Mockito.any(), Mockito.notNull());
 
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     for ( BulkResponseOperation bulkResponseOperation : responseOperations.subList(0, maxOperations - 1) )
@@ -302,7 +302,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
     Mockito.doThrow(new BadRequestException("something bad", null, null))
            .when(userHandler)
-           .createResource(Mockito.any(), Mockito.isNull());
+           .createResource(Mockito.any(), Mockito.any());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder()
                                          .failOnErrors(failOnErrors)
@@ -433,7 +433,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
     Mockito.doThrow(new BadRequestException("something bad", null, null))
            .when(userHandler)
-           .createResource(Mockito.any(), Mockito.isNull());
+           .createResource(Mockito.any(), Mockito.any());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);

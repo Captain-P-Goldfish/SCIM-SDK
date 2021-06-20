@@ -31,8 +31,8 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -186,7 +186,7 @@ public class ResponseResoureValidatorTest implements FileReferences
     private Map<String, TestUser> inMemoryMap = new HashMap<>();
 
     @Override
-    public TestUser createResource(TestUser resource, Authorization authorization)
+    public TestUser createResource(TestUser resource, Context context)
     {
       Assertions.assertTrue(resource.getMeta().isPresent());
       Meta meta = resource.getMeta().get();
@@ -208,9 +208,9 @@ public class ResponseResoureValidatorTest implements FileReferences
 
     @Override
     public TestUser getResource(String id,
-                                Authorization authorization,
                                 List<SchemaAttribute> attributes,
-                                List<SchemaAttribute> excludedAttributes)
+                                List<SchemaAttribute> excludedAttributes,
+                                Context context)
     {
       TestUser user = inMemoryMap.get(id);
       if (user != null)
@@ -235,7 +235,7 @@ public class ResponseResoureValidatorTest implements FileReferences
                                                        SortOrder sortOrder,
                                                        List<SchemaAttribute> attributes,
                                                        List<SchemaAttribute> excludedAttributes,
-                                                       Authorization authorization)
+                                                       Context context)
     {
       List<TestUser> resourceNodes = new ArrayList<>(inMemoryMap.values());
       resourceNodes.forEach(user -> {
@@ -253,7 +253,7 @@ public class ResponseResoureValidatorTest implements FileReferences
     }
 
     @Override
-    public TestUser updateResource(TestUser resource, Authorization authorization)
+    public TestUser updateResource(TestUser resource, Context context)
     {
       Assertions.assertTrue(resource.getMeta().isPresent());
       Meta meta = resource.getMeta().get();
@@ -282,7 +282,7 @@ public class ResponseResoureValidatorTest implements FileReferences
     }
 
     @Override
-    public void deleteResource(String id, Authorization authorization)
+    public void deleteResource(String id, Context context)
     {
       if (inMemoryMap.containsKey(id))
       {

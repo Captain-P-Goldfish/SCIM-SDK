@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Assertions;
 
@@ -19,8 +20,8 @@ import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
-import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
@@ -42,6 +43,8 @@ public class UserHandlerImpl extends ResourceHandler<User>
 
   private final RequestValidator<User> requestValidator;
 
+  private Consumer<Context> contextVerifier;
+
   @Getter
   private Map<String, User> inMemoryMap = new HashMap<>();
 
@@ -54,11 +57,19 @@ public class UserHandlerImpl extends ResourceHandler<User>
   {
     this.returnETags = returnETags;
     this.requestValidator = requestValidator;
+    this.contextVerifier = context -> {};
+  }
+
+  public UserHandlerImpl(Consumer<Context> contextVerifier)
+  {
+    this(false, null);
+    this.contextVerifier = Optional.ofNullable(contextVerifier).orElse(context -> {});
   }
 
   @Override
-  public User createResource(User resource, Authorization authorization)
+  public User createResource(User resource, Context context)
   {
+    Optional.ofNullable(context).ifPresent(contextVerifier);
     Assertions.assertTrue(resource.getMeta().isPresent());
     Meta meta = resource.getMeta().get();
     Assertions.assertFalse(meta.getLocation().isPresent());
@@ -79,10 +90,11 @@ public class UserHandlerImpl extends ResourceHandler<User>
 
   @Override
   public User getResource(String id,
-                          Authorization authorization,
                           List<SchemaAttribute> attributes,
-                          List<SchemaAttribute> excludedAttributes)
+                          List<SchemaAttribute> excludedAttributes,
+                          Context context)
   {
+    Optional.ofNullable(context).ifPresent(contextVerifier);
     User user = inMemoryMap.get(id);
     if (user != null)
     {
@@ -105,8 +117,9 @@ public class UserHandlerImpl extends ResourceHandler<User>
                                                  SortOrder sortOrder,
                                                  List<SchemaAttribute> attributes,
                                                  List<SchemaAttribute> excludedAttributes,
-                                                 Authorization authorization)
+                                                 Context context)
   {
+    Optional.ofNullable(context).ifPresent(contextVerifier);
     List<User> resourceNodes = new ArrayList<>(inMemoryMap.values());
     resourceNodes.forEach(user -> {
       Meta meta = user.getMeta().get();
@@ -121,8 +134,9 @@ public class UserHandlerImpl extends ResourceHandler<User>
   }
 
   @Override
-  public User updateResource(User resource, Authorization authorization)
+  public User updateResource(User resource, Context context)
   {
+    Optional.ofNullable(context).ifPresent(contextVerifier);
     Assertions.assertTrue(resource.getMeta().isPresent());
     Meta meta = resource.getMeta().get();
     Assertions.assertTrue(meta.getLocation().isPresent());
@@ -154,8 +168,9 @@ public class UserHandlerImpl extends ResourceHandler<User>
   }
 
   @Override
-  public void deleteResource(String id, Authorization authorization)
+  public void deleteResource(String id, Context context)
   {
+    Optional.ofNullable(context).ifPresent(contextVerifier);
     if (inMemoryMap.containsKey(id))
     {
       inMemoryMap.remove(id);
