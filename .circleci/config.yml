@@ -1,7 +1,7 @@
 version: 2.1
 
-orbs:
-  codecov: codecov/codecov@1.2.3
+#orbs:
+#  codecov: codecov/codecov@1.2.3
 
 jobs:
   build:
@@ -14,8 +14,8 @@ jobs:
           command: mvn clean package
       - store_artifacts:
           path: target/site/jacoco-aggregate/index.html
-      - codecov/upload:
-          file: ./target/site/jacoco-aggregate/index.html
+#      - codecov/upload:
+#          file: ./target/site/jacoco-aggregate/index.html
 
 workflows:
   build-and-test-project:
