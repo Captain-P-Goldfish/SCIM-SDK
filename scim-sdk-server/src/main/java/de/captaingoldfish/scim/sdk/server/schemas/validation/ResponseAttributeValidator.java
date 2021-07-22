@@ -495,7 +495,7 @@ class ResponseAttributeValidator
 
   /**
    * checks if the given complex node has a resource reference set and will add the fully qualified resource url
-   * into the "$ref"-attribute is the values is not already set.
+   * into the "$ref"-attribute if the values is not already set.
    * 
    * @param schemaAttribute the complex attributes definition
    * @param attribute the complex or multivalued complex attribute that might hold a reference to a specific

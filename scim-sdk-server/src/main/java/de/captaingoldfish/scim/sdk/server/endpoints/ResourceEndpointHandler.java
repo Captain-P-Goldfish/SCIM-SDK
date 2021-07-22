@@ -1068,7 +1068,7 @@ class ResourceEndpointHandler
                                                                                   excludedAttributesList,
                                                                                   patchHandler.getRequestedAttributes(),
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
+      JsonNode responseResource = responseValidator.validateDocument(patchedResourceNode);
 
       return new UpdateResponse(responseResource, location, meta);
     }

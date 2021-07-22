@@ -1295,6 +1295,62 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
+   * This test adds the name-attribute to a user and lets the name.familyName attribute not be returned by the
+   * developer implementation. This test will assure that the name.familyName attribute in this case will not be
+   * returned to the client if this happens. <br>
+   * <br>
+   * This test is reproducing issue #188
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/188
+   */
+  @Test
+  public void testPatchResourceWithFamilyNameNotReturnedByImplementation()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    // at first we create a user that does not have a name-attribute
+    Meta meta = Meta.builder()
+                    .resourceType(ResourceTypeNames.USER)
+                    .created(LocalDateTime.now())
+                    .lastModified(LocalDateTime.now())
+                    .build();
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    // now create a patch-operation that will add a name-attribute to the just created user
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    // make the user handler return the the copied user that has the familyName removed upon response
+    User userToReturn = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    Name copiedName = JsonHelper.copyResourceToObject(name.deepCopy(), Name.class);
+    copiedName.setFamilyName(null);
+    userToReturn.setName(copiedName);
+    Mockito.doReturn(userToReturn).when(userHandler).updateResource(Mockito.any(), Mockito.any());
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpRequest.toString(),
+                                                               httpHeaders);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    updateResponse.remove(AttributeNames.RFC7643.META);
+    userToReturn.remove(AttributeNames.RFC7643.META);
+    Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
+    Assertions.assertEquals(userToReturn, updateResponse);
+  }
+
+  /**
    * verifies that a patch operation request with a none string type value is processed successfully:
    *
    * <pre>
