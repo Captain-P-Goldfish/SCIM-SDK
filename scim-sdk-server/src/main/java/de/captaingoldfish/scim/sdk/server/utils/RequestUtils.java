@@ -124,7 +124,7 @@ public final class RequestUtils
   }
 
   /**
-   * parsed the filter of a list request
+   * parses the filter of a list request
    *
    * @param resourceType the resource type that describes the endpoint on which the filter is used so that the
    *          filter expression can be correctly resolved
