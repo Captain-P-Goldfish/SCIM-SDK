@@ -489,7 +489,17 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       return;
     }
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    attributeValue.forEach(arrayNode::add);
+    for ( T jsonNodes : attributeValue )
+    {
+      if (jsonNodes.isArray())
+      {
+        arrayNode.addAll((ArrayNode)jsonNodes);
+      }
+      else
+      {
+        arrayNode.add(jsonNodes);
+      }
+    }
     JsonHelper.addAttribute(this, attributeName, arrayNode);
   }
 

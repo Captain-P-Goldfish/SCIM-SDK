@@ -227,7 +227,8 @@ public class PatchTargetHandler extends AbstractPatch
       evaluatePatchPathOperation(schemaAttribute, firstAttribute);
       if (firstAttribute == null)
       {
-        return false;
+        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                      ScimType.RFC7644.NO_TARGET);
       }
       else
       {
@@ -273,6 +274,11 @@ public class PatchTargetHandler extends AbstractPatch
       if (sizeBefore > currentParent.size() && removedNode.size() != 0)
       {
         effectiveChangeMade = true;
+      }
+      else
+      {
+        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                      ScimType.RFC7644.NO_TARGET);
       }
       removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
       return effectiveChangeMade;
@@ -352,7 +358,8 @@ public class PatchTargetHandler extends AbstractPatch
     {
       if (oldNode == null)
       {
-        return false;
+        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                      ScimType.RFC7644.NO_TARGET);
       }
       else
       {
@@ -433,7 +440,8 @@ public class PatchTargetHandler extends AbstractPatch
     if (complexNode != null && hasFilterExpression
         && !filterResolver.isNodeMatchingFilter(complexNode, path).isPresent())
     {
-      return false;
+      throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                    ScimType.RFC7644.NO_TARGET);
     }
     boolean changeWasMade = false;
     if (PatchOp.ADD.equals(patchOp))
@@ -475,11 +483,8 @@ public class PatchTargetHandler extends AbstractPatch
     Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path);
     if (!matchingNode.isPresent())
     {
-      if (complexNode.size() == 0)
-      {
-        resource.remove(schemaAttribute.getName());
-      }
-      return false;
+      throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                    ScimType.RFC7644.NO_TARGET);
     }
     if (handleInnerComplexAttribute(subAttribute, complexNode, values))
     {
@@ -524,7 +529,12 @@ public class PatchTargetHandler extends AbstractPatch
       {
         boolean effectiveChange = complexNode.get(subAttribute.getName()).size() != 0;
         complexNode.remove(subAttribute.getName());
-        return effectiveChange;
+        if (!effectiveChange)
+        {
+          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                        ScimType.RFC7644.NO_TARGET);
+        }
+        return true;
       }
       else
       {
@@ -612,7 +622,7 @@ public class PatchTargetHandler extends AbstractPatch
   }
 
   /**
-   * handles a direct multi valued complex path reference e.g. "emails" or "emails[type eq "work"]"
+   * handles a direct multivalued complex path reference e.g. "emails" or "emails[type eq "work"]"
    *
    * @param multiValued the multi values array node that holds the complex nodes
    * @param values the values that should be added or replaced on all matching nodes
@@ -620,9 +630,9 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private boolean handleDirectMultiValuedComplexPathReference(ArrayNode multiValued, List<String> values)
   {
+    List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
     if (PatchOp.REMOVE.equals(patchOp))
     {
-      List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
       boolean changeWasMade = false;
       for ( int i = matchingComplexNodes.size() - 1 ; i >= 0 ; i-- )
       {
@@ -631,9 +641,19 @@ public class PatchTargetHandler extends AbstractPatch
       }
       return changeWasMade;
     }
+    if (matchingComplexNodes.isEmpty() && path.getChild() != null)
+    {
+      throw new BadRequestException(String.format("Cannot '%s' value on path '%s' for no matching object was found",
+                                                  patchOp,
+                                                  path),
+                                    null, ScimType.RFC7644.NO_TARGET);
+    }
     if (PatchOp.REPLACE.equals(patchOp))
     {
-      multiValued.removeAll();
+      for ( IndexNode indexNode : matchingComplexNodes )
+      {
+        multiValued.remove(indexNode.getIndex());
+      }
     }
     for ( String value : values )
     {
@@ -672,10 +692,10 @@ public class PatchTargetHandler extends AbstractPatch
   }
 
   /**
-   * handles a multi valued complex type with a path reference that points to a sub attribute of the
-   * multi-valued complex type e.g. emails.value
+   * handles a multivalued complex type with a path reference that points to a sub attribute of the multi-valued
+   * complex type e.g. emails.value
    *
-   * @param multiValued the array of the multi valued complex node
+   * @param multiValued the array of the multivalued complex node
    * @param fullAttributeName the full name of the sub attribute
    * @param values the values that should be added or replaced
    * @return true if an effective change has been made, false else
@@ -694,6 +714,12 @@ public class PatchTargetHandler extends AbstractPatch
     if (AttributeNames.RFC7643.PRIMARY.equals(subAttribute.getName()))
     {
       checkForPrimary(multiValued, Boolean.parseBoolean(values.get(0)));
+    }
+    if ((path.getChild() != null && matchingComplexNodes.isEmpty())
+        || (path.getChild() == null && matchingComplexNodes.isEmpty() && PatchOp.REMOVE.equals(patchOp)))
+    {
+      throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                    ScimType.RFC7644.NO_TARGET);
     }
     for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
     {
@@ -858,8 +884,8 @@ public class PatchTargetHandler extends AbstractPatch
     if (path.getChild() == null && Type.COMPLEX.equals(path.getSchemaAttribute().getType()) && namePath.length == 1
         && !values.stream().allMatch(JsonHelper::isValidJson))
     {
-      throw new BadRequestException("the value parameters must be valid json representations but was\n'"
-                                    + String.join(",\n", values) + "'", null, ScimType.RFC7644.INVALID_PATH);
+      throw new BadRequestException("the value parameters must be valid json representations but was '"
+                                    + String.join(",", values) + "'", null, ScimType.RFC7644.INVALID_VALUE);
 
     }
   }

@@ -250,7 +250,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
@@ -430,7 +429,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail(), ex);
       Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
@@ -505,7 +503,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
     }
@@ -531,7 +528,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
     }
@@ -604,7 +600,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.fail("this point must not be reached");
     }
   }
@@ -678,7 +673,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
     }
@@ -716,7 +710,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
     }
@@ -770,7 +763,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
     }
@@ -820,7 +812,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
     }
@@ -870,7 +861,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail(), ex);
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
     }
@@ -939,7 +929,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      log.warn(ex.getDetail(), ex);
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
@@ -1045,77 +1034,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("hello world", allTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
-  }
-
-  /**
-   * verifies that several attributes are correctly removed if attributes are removed in the order they are
-   * present in the json structure. This test shall reproduce the following issue:
-   * https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/111
-   */
-  @Test
-  public void testRemoveSeveralAttributesInOrder()
-  {
-    AllTypes allTypes = new AllTypes(true);
-
-    AllTypes multicomplex = new AllTypes(false);
-    multicomplex.setDecimal(1.1);
-    multicomplex.setNumber(5L);
-    AllTypes multicomplex2 = new AllTypes(false);
-    multicomplex2.setDecimal(10.2);
-    multicomplex2.setNumber(6L);
-    AllTypes multicomplex3 = new AllTypes(false);
-    multicomplex3.setDecimal(5.5);
-    multicomplex3.setNumber(0L);
-    allTypes.setMultiComplex(Arrays.asList(multicomplex, multicomplex2, multicomplex3));
-
-    final String path = "multicomplex[decimal eq 10.2 or number eq 5]";
-    PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
-    List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
-
-
-    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
-
-    AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
-    Assertions.assertEquals(multicomplex3,
-                            patchedAllTypes.getMultiComplex().get(0),
-                            "multicomplex and multicomplex2 should have been removed");
-  }
-
-  /**
-   * verifies that several attributes are correctly removed if attributes are removed in the order they are
-   * present in the json structure. This test shall reproduce the following issue:
-   * https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/111
-   */
-  @Test
-  public void testRemoveSeveralAttributesWithStepOverOrder()
-  {
-    AllTypes allTypes = new AllTypes(true);
-
-    AllTypes multicomplex = new AllTypes(false);
-    multicomplex.setDecimal(1.1);
-    multicomplex.setNumber(5L);
-    AllTypes multicomplex2 = new AllTypes(false);
-    multicomplex2.setDecimal(10.2);
-    multicomplex2.setNumber(6L);
-    AllTypes multicomplex3 = new AllTypes(false);
-    multicomplex3.setDecimal(5.5);
-    multicomplex3.setNumber(0L);
-    allTypes.setMultiComplex(Arrays.asList(multicomplex, multicomplex2, multicomplex3));
-
-    final String path = "multicomplex[decimal eq 5.5 or number eq 5]";
-    PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
-    List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
-
-    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
-
-    AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
-    Assertions.assertEquals(multicomplex2,
-                            patchedAllTypes.getMultiComplex().get(0),
-                            "multicomplex and multicomplex3 should have been removed");
   }
 
   /**
