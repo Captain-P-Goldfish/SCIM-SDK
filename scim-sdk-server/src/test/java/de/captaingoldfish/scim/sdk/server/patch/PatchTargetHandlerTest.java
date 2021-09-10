@@ -3903,4 +3903,82 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals("hello goldfish", multiComplexNodes.get(1).getString().get());
     Assertions.assertEquals("hello pool", multiComplexNodes.get(2).getString().get());
   }
+
+  /**
+   * verifies that a multivalued subattribute can be removed from a multivalued complex attribute if the path
+   * has a filter
+   */
+  @Test
+  public void testRemoveMultivaluedSubAttributeWithFilterFromMultivaluedComplex()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex1 = new AllTypes(false);
+    multicomplex1.setString("hello world");
+    multicomplex1.setNumberArray(Arrays.asList(1L, 2L));
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("hello goldfish");
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("hello pool");
+    multicomplex3.setNumberArray(Arrays.asList(1L, 2L));
+    allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex[numberArray co 1].numberArray";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, patchedResource.size());
+    Assertions.assertEquals(1, patchedResource.getSchemas().size());
+    Assertions.assertTrue(patchedResource.getMeta().isPresent());
+
+    List<AllTypes> multiComplexNodes = patchedResource.getMultiComplex();
+    Assertions.assertEquals(3, multiComplexNodes.size());
+    Assertions.assertEquals("hello world", multiComplexNodes.get(0).getString().get());
+    Assertions.assertEquals("hello goldfish", multiComplexNodes.get(1).getString().get());
+    Assertions.assertEquals("hello pool", multiComplexNodes.get(2).getString().get());
+  }
+
+  /**
+   * verifies that a remove operation on a multivalued subattribute of a multivalued complex attribute causes a
+   * bad request exception if the given filter expression does not match any targets
+   */
+  @Test
+  public void testRemoveMultivaluedSubAttributeWithFilterFromMultivaluedComplex2()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex1 = new AllTypes(false);
+    multicomplex1.setString("hello world");
+    multicomplex1.setNumberArray(Arrays.asList(1L, 2L));
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("hello goldfish");
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("hello pool");
+    multicomplex3.setNumberArray(Arrays.asList(1L, 2L));
+    allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex[numberArray co 3].numberArray";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    try
+    {
+      AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.fail(String.format("this point must not be reached: %s", patchedResource.toPrettyString()));
+    }
+    catch (BadRequestException ex)
+    {
+      Assertions.assertEquals(BadRequestException.class, ex.getClass());
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
+      Assertions.assertEquals("No target found for path-filter 'multicomplex[numberArray co 3].numberArray'",
+                              ex.getMessage());
+    }
+  }
 }

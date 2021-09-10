@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.filter.resources;
 
 import java.util.Optional;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
@@ -101,8 +102,12 @@ public class PatchFilterResolver
    */
   private Optional<ObjectNode> resolveExpression(ObjectNode complexNode, AttributeExpressionLeaf expressionLeaf)
   {
-    if (FilterResourceResolver.checkValueEquality(complexNode.get(expressionLeaf.getSchemaAttribute().getName()),
-                                                  expressionLeaf))
+    JsonNode attribute = complexNode.get(expressionLeaf.getSchemaAttribute().getName());
+    if (attribute == null)
+    {
+      return Optional.empty();
+    }
+    if (FilterResourceResolver.checkValueEquality(attribute, expressionLeaf))
     {
       return Optional.of(complexNode);
     }
