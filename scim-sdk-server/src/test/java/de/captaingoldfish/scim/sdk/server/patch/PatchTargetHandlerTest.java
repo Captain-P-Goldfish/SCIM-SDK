@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -3980,5 +3981,53 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertEquals("No target found for path-filter 'multicomplex[numberArray co 3].numberArray'",
                               ex.getMessage());
     }
+  }
+
+  /**
+   * verifies that on a replace operation with filter all matching multivalued nodes are removed and exchanged
+   * for the given nodes
+   */
+  @Test
+  public void testReplaceMultivaluedComplexWithFilterAndSeveralMatches()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex1 = new AllTypes(false);
+    multicomplex1.setString("hello world");
+    multicomplex1.setNumberArray(Arrays.asList(1L, 2L));
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("hello goldfish");
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("hello pool");
+    multicomplex3.setNumberArray(Arrays.asList(1L, 2L));
+    allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
+
+    AllTypes replacement = new AllTypes(false);
+    replacement.setNumber(999L);
+    replacement.setDate(Instant.now());
+    final String path = "multicomplex[numberArray co 1 or numberArray co 2]";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder()
+                                                                .op(PatchOp.REPLACE)
+                                                                .path(path)
+                                                                .valueNode(replacement)
+                                                                .build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, patchedResource.size());
+    Assertions.assertEquals(1, patchedResource.getSchemas().size());
+    Assertions.assertTrue(patchedResource.getMeta().isPresent());
+
+    List<AllTypes> multiComplexNodes = patchedResource.getMultiComplex();
+    Assertions.assertEquals(2, multiComplexNodes.size());
+    Assertions.assertEquals("hello goldfish", multiComplexNodes.get(0).getString().get());
+    Assertions.assertFalse(multiComplexNodes.get(1).getString().isPresent());
+    Assertions.assertTrue(multiComplexNodes.get(1).getNumberArray().isEmpty());
+    Assertions.assertTrue(multiComplexNodes.get(1).getDate().isPresent());
+    Assertions.assertTrue(multiComplexNodes.get(1).getNumber().isPresent());
+    Assertions.assertEquals(999L, multiComplexNodes.get(1).getNumber().get());
   }
 }

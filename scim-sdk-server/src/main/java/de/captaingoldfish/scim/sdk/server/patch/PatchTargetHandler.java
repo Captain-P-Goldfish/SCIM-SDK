@@ -658,8 +658,9 @@ public class PatchTargetHandler extends AbstractPatch
     }
     if (PatchOp.REPLACE.equals(patchOp))
     {
-      for ( IndexNode indexNode : matchingComplexNodes )
+      for ( int i = matchingComplexNodes.size() - 1 ; i >= 0 ; i-- )
       {
+        IndexNode indexNode = matchingComplexNodes.get(i);
         multiValued.remove(indexNode.getIndex());
       }
     }
