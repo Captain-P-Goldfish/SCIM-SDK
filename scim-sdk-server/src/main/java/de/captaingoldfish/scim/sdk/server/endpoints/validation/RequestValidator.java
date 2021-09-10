@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.endpoints.validation;
 import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 
 
@@ -24,13 +25,14 @@ public interface RequestValidator<T extends ResourceNode>
    * validate the resource for valid input before it is reached through to the
    * {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler#createResource(ResourceNode, Authorization)}
    * implementation
-   * 
+   *
    * @param resource the resource to validate
    * @param validationContext add as much errors to this context as you like. If at least one error is present
    *          the execution will abort with a
    *          {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException}
+   * @param requestContext the current request context
    */
-  public void validateCreate(T resource, ValidationContext validationContext);
+  public void validateCreate(T resource, ValidationContext validationContext, Context requestContext);
 
   /**
    * validate the resource for valid input before it is reached through to the
@@ -44,8 +46,12 @@ public interface RequestValidator<T extends ResourceNode>
    * @param validationContext add as much errors to this context as you like. If at least one error is present
    *          the execution will abort with a
    *          {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException}
+   * @param requestContext the current request context
    */
-  public void validateUpdate(Supplier<T> oldResourceSupplier, T newResource, ValidationContext validationContext);
+  public void validateUpdate(Supplier<T> oldResourceSupplier,
+                             T newResource,
+                             ValidationContext validationContext,
+                             Context requestContext);
 
 
 }

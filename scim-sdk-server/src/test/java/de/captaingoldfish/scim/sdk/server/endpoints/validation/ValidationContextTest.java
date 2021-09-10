@@ -30,6 +30,7 @@ import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -90,7 +91,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         Assertions.assertNotNull(validationContext);
         Assertions.assertNotNull(validationContext.getResourceType());
@@ -101,7 +102,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         // is not used in this test
       }
@@ -110,7 +112,8 @@ public class ValidationContextTest
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
     User storedUser = userHandler.getInMemoryMap().get(userHandler.getInMemoryMap().keySet().iterator().next());
-    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.eq(storedUser), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateCreate(Mockito.eq(storedUser), Mockito.notNull(), Mockito.notNull());
   }
 
   /**
@@ -131,7 +134,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         // is not used in this test
       }
@@ -139,7 +142,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         Assertions.assertNotNull(validationContext);
         Assertions.assertNotNull(validationContext.getResourceType());
@@ -164,7 +168,7 @@ public class ValidationContextTest
     resourceEndpoint.handleRequest(url, HttpMethod.PUT, updateUser.toString(), httpHeaders);
 
     Mockito.verify(requestValidator, Mockito.times(1))
-           .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull());
+           .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull(), Mockito.notNull());
   }
 
   /**
@@ -188,7 +192,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         // is not used in this test
       }
@@ -196,7 +200,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         Assertions.assertNotNull(validationContext);
         Assertions.assertNotNull(validationContext.getResourceType());
@@ -223,7 +228,7 @@ public class ValidationContextTest
     resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString(), httpHeaders);
 
     Mockito.verify(requestValidator, Mockito.times(1))
-           .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull());
+           .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull(), Mockito.notNull());
   }
 
   /**
@@ -244,7 +249,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         Assertions.assertTrue(validationContext.hasErrors());
         Assertions.assertEquals(0, validationContext.getErrors().size());
@@ -261,7 +266,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         // is not used in this test
       }
@@ -271,7 +277,8 @@ public class ValidationContextTest
 
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
-    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.any(), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
 
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -310,7 +317,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         // is not used in this test
       }
@@ -318,7 +325,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         Assertions.assertTrue(validationContext.hasErrors());
         Assertions.assertEquals(0, validationContext.getErrors().size());
@@ -343,7 +351,8 @@ public class ValidationContextTest
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PUT, updateUser.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
 
-    Mockito.verify(requestValidator, Mockito.times(1)).validateUpdate(Mockito.any(), Mockito.any(), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateUpdate(Mockito.any(), Mockito.any(), Mockito.notNull(), Mockito.notNull());
 
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     List<String> errors = errorResponse.getErrorMessages();
@@ -383,7 +392,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         // is not used in this test
       }
@@ -391,7 +400,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         Assertions.assertTrue(validationContext.hasErrors());
         Assertions.assertEquals(0, validationContext.getErrors().size());
@@ -427,7 +437,8 @@ public class ValidationContextTest
                                                                httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
 
-    Mockito.verify(requestValidator, Mockito.times(1)).validateUpdate(Mockito.any(), Mockito.any(), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateUpdate(Mockito.any(), Mockito.any(), Mockito.notNull(), Mockito.notNull());
 
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     List<String> errors = errorResponse.getErrorMessages();
@@ -461,7 +472,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         validationContext.addError("unknown-attribute", "blubb");
       }
@@ -469,7 +480,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         // is not used in this test
       }
@@ -478,7 +490,8 @@ public class ValidationContextTest
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.any(), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getStatus());
     Assertions.assertEquals("An internal error has occurred.", errorResponse.getDetail().get());
@@ -498,7 +511,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         validationContext.setHttpResponseStatus(HttpStatus.CONFLICT);
         validationContext.addError("blubb");
@@ -507,7 +520,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         // is not used in this test
       }
@@ -516,7 +530,8 @@ public class ValidationContextTest
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.any(), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.CONFLICT, errorResponse.getStatus());
     Assertions.assertEquals("blubb", errorResponse.getDetail().get());
@@ -536,7 +551,7 @@ public class ValidationContextTest
     {
 
       @Override
-      public void validateCreate(User resource, ValidationContext validationContext)
+      public void validateCreate(User resource, ValidationContext validationContext, Context requestContext)
       {
         validationContext.getResponseHttpHeaders().put(HttpHeaders.CACHE_CONTROL, "no-cache");
         validationContext.getResponseHttpHeaders().put(HttpHeaders.CONTENT_LENGTH, "5");
@@ -546,7 +561,8 @@ public class ValidationContextTest
       @Override
       public void validateUpdate(Supplier<User> oldResourceSupplier,
                                  User newResource,
-                                 ValidationContext validationContext)
+                                 ValidationContext validationContext,
+                                 Context requestContext)
       {
         // is not used in this test
       }
@@ -555,7 +571,8 @@ public class ValidationContextTest
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    Mockito.verify(requestValidator, Mockito.times(1)).validateCreate(Mockito.any(), Mockito.notNull());
+    Mockito.verify(requestValidator, Mockito.times(1))
+           .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
     Assertions.assertEquals("blubb", errorResponse.getDetail().get());

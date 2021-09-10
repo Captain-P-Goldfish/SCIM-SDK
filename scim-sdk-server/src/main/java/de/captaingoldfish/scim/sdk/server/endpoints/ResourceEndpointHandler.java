@@ -215,7 +215,7 @@ class ResourceEndpointHandler
       meta.setResourceType(resourceType.getName());
       resourceNode.remove(AttributeNames.RFC7643.META);
       resourceNode.setMeta(meta);
-      new RequestValidatorHandler(resourceHandler, resourceValidator).validateCreate(resourceNode);
+      new RequestValidatorHandler(resourceHandler, resourceValidator, context).validateCreate(resourceNode);
       resourceNode = resourceHandler.createResource(resourceNode, context);
       if (resourceNode == null)
       {
@@ -835,8 +835,8 @@ class ResourceEndpointHandler
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
       resourceNode.setMeta(meta);
-      new RequestValidatorHandler(resourceHandler, requestResourceValidator).validateUpdate(oldResourceSupplier,
-                                                                                            resourceNode);
+      new RequestValidatorHandler(resourceHandler, requestResourceValidator,
+                                  context).validateUpdate(oldResourceSupplier, resourceNode);
       resourceNode = resourceHandler.updateResource(resourceNode, context);
       if (resourceNode == null)
       {
@@ -1037,8 +1037,8 @@ class ResourceEndpointHandler
                                                                                        Collections.emptyList(),
                                                                                        Collections.emptyList(),
                                                                                        context);
-        new RequestValidatorHandler(resourceHandler, requestResourceValidator).validateUpdate(oldResourceSupplier,
-                                                                                              resourceNode);
+        new RequestValidatorHandler(resourceHandler, requestResourceValidator,
+                                    context).validateUpdate(oldResourceSupplier, resourceNode);
       }
 
       if (patchHandler.isChangedResource())
@@ -1136,7 +1136,7 @@ class ResourceEndpointHandler
    * resolves the given baseUrl to a reference url based on the given resourceName and resourceId. This is used
    * to set absolute urls in resource attribute nodes that define the "$ref" attribute but did not set it
    * previously
-   * 
+   *
    * @param baseUrl the base url of this resource endpoint
    * @return the fully qualified url to the given resource or null
    */
