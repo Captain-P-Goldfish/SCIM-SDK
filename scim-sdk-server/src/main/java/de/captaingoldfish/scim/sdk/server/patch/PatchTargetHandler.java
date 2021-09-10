@@ -356,7 +356,10 @@ public class PatchTargetHandler extends AbstractPatch
     evaluatePatchPathOperation(schemaAttribute, oldNode);
     if (PatchOp.REMOVE.equals(patchOp))
     {
-      if (oldNode == null)
+      boolean isSimpleNode = schemaAttribute.getParent() == null;
+      boolean isSimpleNodeInMultivaluedComplex = schemaAttribute.getParent() != null
+                                                 && schemaAttribute.getParent().isMultiValued();
+      if ((oldNode == null && isSimpleNode) || (oldNode == null && !isSimpleNodeInMultivaluedComplex))
       {
         throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
                                       ScimType.RFC7644.NO_TARGET);
@@ -529,10 +532,15 @@ public class PatchTargetHandler extends AbstractPatch
       {
         boolean effectiveChange = complexNode.get(subAttribute.getName()).size() != 0;
         complexNode.remove(subAttribute.getName());
-        if (!effectiveChange)
+        boolean isParentMultivalued = subAttribute.getParent().isMultiValued();
+        if (!effectiveChange && !isParentMultivalued)
         {
           throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
                                         ScimType.RFC7644.NO_TARGET);
+        }
+        else if (!effectiveChange && isParentMultivalued)
+        {
+          return false;
         }
         return true;
       }
@@ -715,11 +723,16 @@ public class PatchTargetHandler extends AbstractPatch
     {
       checkForPrimary(multiValued, Boolean.parseBoolean(values.get(0)));
     }
-    if ((path.getChild() != null && matchingComplexNodes.isEmpty())
-        || (path.getChild() == null && matchingComplexNodes.isEmpty() && PatchOp.REMOVE.equals(patchOp)))
+    if (path.getChild() != null && matchingComplexNodes.isEmpty())
     {
+      // a filter expression was present and no matches were found e.g. (emails[type eq "work"].type)
       throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
                                     ScimType.RFC7644.NO_TARGET);
+    }
+    if (path.getChild() == null && matchingComplexNodes.isEmpty() && PatchOp.REMOVE.equals(patchOp))
+    {
+      // no filter expression was present e.g. (emails.type)
+      return false;
     }
     for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
     {

@@ -1948,8 +1948,7 @@ public class PatchTargetHandlerTest implements FileReferences
    * verifies that an exception is thrown if the target does not exist
    */
   @ParameterizedTest
-  @ValueSource(strings = {"string", "stringArray", "complex", "complex.string", "complex.stringarray", "multicomplex",
-                          "multicomplex.string", "multicomplex.stringarray"})
+  @ValueSource(strings = {"string", "stringArray", "complex", "complex.string", "complex.stringarray", "multicomplex"})
   public void testRemoveNotExistingTarget(String path)
   {
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1971,6 +1970,26 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
       Assertions.assertEquals(String.format("No target found for path-filter '%s'", path), ex.getMessage());
     }
+  }
+
+  /**
+   * verifies that a remove operation without filter on a multivalued complex attribute does not cause an error
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"multicomplex.string", "multicomplex.stringarray"})
+  public void testRemoveNotExistingTargetOnMultivaluedComplex(String path)
+  {
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(path)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                              patchOpRequest));
+    Assertions.assertEquals(allTypes, patchedResource);
   }
 
   /**
@@ -3768,6 +3787,120 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals("hello goldfish", multiComplexNodes.get(0).getString().get());
     Assertions.assertEquals("hello pool", multiComplexNodes.get(1).getString().get());
     Assertions.assertEquals("replace it", multiComplexNodes.get(2).getString().get());
+  }
 
+  /**
+   * verifies that all attributes are removed from the multivalued complex attributes if the path is set and the
+   * attribute is present on each node
+   */
+  @Test
+  public void testRemoveAllAttributesOnMultiComplex()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex1 = new AllTypes(false);
+    multicomplex1.setString("hello world");
+    multicomplex1.setNumber(1L);
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("hello goldfish");
+    multicomplex2.setNumber(2L);
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("hello pool");
+    multicomplex3.setNumber(3L);
+    allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex.number";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, patchedResource.size());
+    Assertions.assertEquals(1, patchedResource.getSchemas().size());
+    Assertions.assertTrue(patchedResource.getMeta().isPresent());
+
+    List<AllTypes> multiComplexNodes = patchedResource.getMultiComplex();
+    Assertions.assertEquals(3, multiComplexNodes.size());
+    Assertions.assertEquals("hello world", multiComplexNodes.get(0).getString().get());
+    Assertions.assertEquals("hello goldfish", multiComplexNodes.get(1).getString().get());
+    Assertions.assertEquals("hello pool", multiComplexNodes.get(2).getString().get());
+  }
+
+  /**
+   * verifies that all attributes are removed from the multivalued complex attributes if the path is set and the
+   * attribute is only present on two from three of the multivalued nodes
+   */
+  @Test
+  public void testRemoveAllAttributesOnMultiComplexWithoutHavingAttributeOnAllNodes()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex1 = new AllTypes(false);
+    multicomplex1.setString("hello world");
+    multicomplex1.setNumber(1L);
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("hello goldfish");
+    multicomplex2.setNumber(2L);
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("hello pool");
+    allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex.number";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, patchedResource.size());
+    Assertions.assertEquals(1, patchedResource.getSchemas().size());
+    Assertions.assertTrue(patchedResource.getMeta().isPresent());
+
+    List<AllTypes> multiComplexNodes = patchedResource.getMultiComplex();
+    Assertions.assertEquals(3, multiComplexNodes.size());
+    Assertions.assertEquals("hello world", multiComplexNodes.get(0).getString().get());
+    Assertions.assertEquals("hello goldfish", multiComplexNodes.get(1).getString().get());
+    Assertions.assertEquals("hello pool", multiComplexNodes.get(2).getString().get());
+  }
+
+  /**
+   * verifies that all array attributes are removed from the multivalued complex attributes if the path is set
+   * and the attribute is only present on two from three of the multivalued nodes
+   */
+  @Test
+  public void testRemoveAllAttributesOnMultiComplexWithoutHavingArrayAttributeOnAllNodes()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex1 = new AllTypes(false);
+    multicomplex1.setString("hello world");
+    multicomplex1.setNumberArray(Arrays.asList(1L, 2L));
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("hello goldfish");
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("hello pool");
+    multicomplex3.setNumberArray(Arrays.asList(3L, 4L));
+    allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
+
+    final String path = "multicomplex.numberArray";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder().op(PatchOp.REMOVE).path(path).build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, patchedResource.size());
+    Assertions.assertEquals(1, patchedResource.getSchemas().size());
+    Assertions.assertTrue(patchedResource.getMeta().isPresent());
+
+    List<AllTypes> multiComplexNodes = patchedResource.getMultiComplex();
+    Assertions.assertEquals(3, multiComplexNodes.size());
+    Assertions.assertEquals("hello world", multiComplexNodes.get(0).getString().get());
+    Assertions.assertEquals("hello goldfish", multiComplexNodes.get(1).getString().get());
+    Assertions.assertEquals("hello pool", multiComplexNodes.get(2).getString().get());
   }
 }
