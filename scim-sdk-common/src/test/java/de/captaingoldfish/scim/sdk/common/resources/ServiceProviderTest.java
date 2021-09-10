@@ -26,7 +26,6 @@ public class ServiceProviderTest
   public void testBuildServiceProviderConfigNoParameters()
   {
     ServiceProvider serviceProvider = ServiceProvider.builder().build();
-    log.warn(serviceProvider.toPrettyString());
     MatcherAssert.assertThat(serviceProvider, Matchers.not(Matchers.emptyIterable()));
     Assertions.assertEquals(8, serviceProvider.size());
     Assertions.assertNotNull(serviceProvider.get(AttributeNames.RFC7643.SCHEMAS));

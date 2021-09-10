@@ -127,11 +127,9 @@ public class ResponseResoureValidatorTest implements FileReferences
     Assertions.assertEquals(0, testUser.getSchemas().size());
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      log.error(testUser.toPrettyString());
       return new ResponseResourceValidator(resourceType, null, null, null,
                                            referenceUrlSupplier).validateDocument(testUser);
     });
-    log.warn(validatedDocument.toPrettyString());
     TestUser validatedTestUser = (TestUser)validatedDocument;
     Set<String> schemas = validatedTestUser.getSchemas();
     MatcherAssert.assertThat(schemas, Matchers.containsInAnyOrder(SchemaUris.USER_URI, SchemaUris.ENTERPRISE_USER_URI));

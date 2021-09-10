@@ -14,7 +14,6 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -588,7 +587,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       }
       userHandler.getInMemoryMap().put(id, user);
     }
-    log.warn("counter: {}", counter);
     final String url = BASE_URI + EndpointPaths.USERS
                        + String.format("?startIndex=1&count=%d&filter=%s",
                                        maxUsers,
@@ -613,11 +611,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.notNull());
-    log.warn(listResponse.getListedResources()
-                         .stream()
-                         .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
-                         .collect(Collectors.joining("\n")));
-    log.warn(listResponse.toPrettyString());
   }
 
   /**
@@ -682,7 +675,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       }
       userHandler.getInMemoryMap().put(id, user);
     }
-    log.warn("counter: {}", counter);
     final String url = BASE_URI + EndpointPaths.USERS
                        + String.format("?startIndex=1&count=%d&filter=%s",
                                        maxUsers,
@@ -720,11 +712,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.notNull());
-    log.warn(listResponse.getListedResources()
-                         .stream()
-                         .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
-                         .collect(Collectors.joining("\n")));
-    log.warn(listResponse.toPrettyString());
   }
 
   /**
@@ -757,7 +744,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       }
       userHandler.getInMemoryMap().put(id, user);
     }
-    log.warn("counter: {}", counter);
     final String url = BASE_URI + EndpointPaths.USERS + EndpointPaths.SEARCH;
     SearchRequest searchRequest = SearchRequest.builder()
                                                .startIndex(1L)
@@ -787,11 +773,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.notNull());
-    log.warn(listResponse.getListedResources()
-                         .stream()
-                         .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
-                         .collect(Collectors.joining("\n")));
-    log.warn(listResponse.toPrettyString());
   }
 
   /**
@@ -824,7 +805,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       }
       userHandler.getInMemoryMap().put(id, user);
     }
-    log.warn("counter: {}", counter);
     final String url = BASE_URI + EndpointPaths.USERS + EndpointPaths.SEARCH;
     SearchRequest searchRequest = SearchRequest.builder()
                                                .startIndex(1L)
@@ -864,11 +844,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.notNull());
-    log.warn(listResponse.getListedResources()
-                         .stream()
-                         .map(userNode -> userNode.get(AttributeNames.RFC7643.ID).textValue())
-                         .collect(Collectors.joining("\n")));
-    log.warn(listResponse.toPrettyString());
   }
 
   /**
@@ -1090,8 +1065,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
       Assertions.assertEquals("something bad", errorResponse.getDetail().get());
     });
-
-    log.warn(bulkResponse.toPrettyString());
   }
 
   /**
@@ -2676,7 +2649,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, arrayNode.toString(), httpHeaders);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    log.warn(errorResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     String errorMessage = String.format("The received resource document is not an object '%s'", arrayNode);
     Assertions.assertEquals(errorMessage, errorResponse.getDetail().get());

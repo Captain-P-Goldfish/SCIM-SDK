@@ -192,7 +192,6 @@ public class UriInfosTest
     }
     catch (ScimException ex)
     {
-      log.debug(ex.getDetail(), ex);
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
                               + HttpHeader.SCIM_CONTENT_TYPE,
@@ -218,7 +217,6 @@ public class UriInfosTest
     }
     catch (ScimException ex)
     {
-      log.debug(ex.getDetail(), ex);
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
                               + HttpHeader.SCIM_CONTENT_TYPE,

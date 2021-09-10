@@ -1794,7 +1794,6 @@ public class FilterResourceResolverTest implements FileReferences
   {
     final AttributePathRoot filterNode = RequestUtils.parsePatchPath(allTypesResourceType, path);
     Assertions.assertNotNull(filterNode);
-    log.warn(filterNode.toString());
     Assertions.assertNotNull(filterNode.getSchemaAttribute());
     Assertions.assertNotNull(filterNode.getFullName());
   }
@@ -1928,7 +1927,6 @@ public class FilterResourceResolverTest implements FileReferences
   {
     final String filter = attributeName + " " + comparator + toFilterStringValue(comparator, value);
     return DynamicTest.dynamicTest(filter, () -> {
-      log.debug("executing filter: {}", filter);
       if (doBefore != null)
       {
         doBefore.run();

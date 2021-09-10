@@ -70,7 +70,6 @@ public class ResourceTypeHandlerTest
   {
     ResourceType resourceType = resourceTypeHandler.getResource(name, null, null, null);
     Assertions.assertEquals(name, resourceType.getName());
-    log.debug(resourceType.toPrettyString());
     Assertions.assertTrue(resourceType.getMeta().isPresent());
     Assertions.assertTrue(resourceType.getMeta().get().getLocation().isPresent());
     Assertions.assertTrue(resourceType.getMeta().get().getResourceType().isPresent());

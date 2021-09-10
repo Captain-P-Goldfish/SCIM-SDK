@@ -70,7 +70,6 @@ public class ProxyHelperTest
     {
       Assertions.fail("proxy was not set");
     }
-    log.warn(proxyHelper.getProxyAddress());
   }
 
   /**
@@ -111,7 +110,6 @@ public class ProxyHelperTest
     {
       Assertions.fail("proxy was not set");
     }
-    log.warn(proxyHelper.getProxyAddress());
   }
 
   /**

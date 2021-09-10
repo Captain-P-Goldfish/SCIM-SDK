@@ -221,8 +221,6 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     BulkResponseOperation createGroupOperation = bulkResponse.getBulkResponseOperations().get(1);
     Assertions.assertEquals(HttpStatus.CREATED, createGroupOperation.getStatus());
     Assertions.assertTrue(createGroupOperation.getBulkId().isPresent());
-
-    log.warn(bulkResponse.toPrettyString());
   }
 
   /**

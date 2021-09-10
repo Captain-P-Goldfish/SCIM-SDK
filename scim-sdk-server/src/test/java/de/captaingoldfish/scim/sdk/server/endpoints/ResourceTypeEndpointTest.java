@@ -34,7 +34,6 @@ public class ResourceTypeEndpointTest extends AbstractEndpointTest
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus(), scimResponse.toPrettyString());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
-    log.debug(scimResponse.toPrettyString());
 
     ResourceType resourceType = ResourceTypeFactoryUtil.getResourceType(resourceEndpoint.getResourceTypeFactory(),
                                                                         scimResponse);

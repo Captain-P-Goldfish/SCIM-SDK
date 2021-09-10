@@ -706,7 +706,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
                             getResponse.get(AttributeNames.RFC7643.META)
                                        .get(AttributeNames.RFC7643.LOCATION)
                                        .textValue());
-    log.debug(getResponse.toPrettyString());
   }
 
   /**
@@ -734,7 +733,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
                             getResponse.get(AttributeNames.RFC7643.META)
                                        .get(AttributeNames.RFC7643.LOCATION)
                                        .textValue());
-    log.debug(getResponse.toPrettyString());
   }
 
   /**
@@ -753,7 +751,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
     Assertions.assertEquals("An internal error has occurred.", errorResponse.getDetail().get());
-    log.debug(errorResponse.toPrettyString());
   }
 
   /**
@@ -1373,7 +1370,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
       MatcherAssert.assertThat(listResponse.getListedResources().size(), Matchers.lessThanOrEqualTo(count));
       Assertions.assertEquals(totalResults, listResponse.getTotalResults());
       Assertions.assertEquals(Math.min(totalResults - startIndex, count), listResponse.getItemsPerPage());
-      log.debug("returned entries: {}", listResponse.getListedResources().size());
     }
   }
 
@@ -1404,7 +1400,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                    .distinct()
                                                    .collect(Collectors.toList());
       Assertions.assertEquals(allSchemas.size(), listResponse.getTotalResults());
-      log.debug("returned entries: {}", listResponse.getListedResources().size());
     }
   }
 
@@ -1699,9 +1694,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(1, listResponse.getTotalResults());
     Assertions.assertEquals(1, listResponse.getListedResources().size());
     Assertions.assertEquals(1, listResponse.getItemsPerPage());
-    log.debug(listResponse.toPrettyString());
   }
-
 
   /**
    * this test will verify that the autoSorting attribute is set by default on the resource types endpoint and

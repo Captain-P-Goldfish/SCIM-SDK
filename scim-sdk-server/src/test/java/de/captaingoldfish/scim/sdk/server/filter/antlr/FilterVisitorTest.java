@@ -123,7 +123,6 @@ public class FilterVisitorTest
     final String expression = "userName eq \"false\" and (name.givenName PR OR nickName eq \"blubb\") and "
                               + "displayName co \"chuck\" or meta.created gt \"2019-10-17T01:07:00Z\"";
     FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
-    log.warn(filterNode.toString());
     MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(OrExpressionNode.class));
 
     OrExpressionNode orExpressionNode = (OrExpressionNode)filterNode;
@@ -170,7 +169,6 @@ public class FilterVisitorTest
     final String expression = "userName eq \"false\" and (name.givenName PR OR nickName eq \"blubb\") and "
                               + "displayName co \"chuck\"";
     FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
-    log.warn(filterNode.toString());
     MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(AndExpressionNode.class));
 
     AndExpressionNode andExpressionNode = (AndExpressionNode)filterNode;
@@ -207,7 +205,6 @@ public class FilterVisitorTest
     final String expression = "userName eq \"false\" and name.givenName PR OR nickName eq \"blubb\" and "
                               + "displayName co \"chuck\"";
     FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
-    log.warn(filterNode.toString());
     MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(OrExpressionNode.class));
 
     OrExpressionNode orExpressionNode = (OrExpressionNode)filterNode;
@@ -245,7 +242,6 @@ public class FilterVisitorTest
     final String dateTime = "2019-10-17T01:07:00Z";
     final String expression = "meta.created gt \"" + dateTime + "\"";
     FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
-    log.warn(filterNode.toString());
     MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
     AttributeExpressionLeaf expressionLeaf = (AttributeExpressionLeaf)filterNode;
     Assertions.assertEquals(Type.DATE_TIME, expressionLeaf.getType());
@@ -279,7 +275,6 @@ public class FilterVisitorTest
     }
     catch (InvalidFilterException ex)
     {
-      log.debug(ex.getMessage(), ex);
       MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString(ambiguousAttributeName));
     }
   }
@@ -394,7 +389,8 @@ public class FilterVisitorTest
     }
     catch (InvalidFilterException ex)
     {
-      log.debug(ex.getMessage(), ex);
+      Assertions.assertEquals("the attribute with the name 'unknownAttribute' is unknown to resource type 'User'",
+                              ex.getMessage());
     }
   }
 
@@ -416,7 +412,6 @@ public class FilterVisitorTest
                                                                                          paranthesisFilterExpression));
 
     Assertions.assertEquals(firstTree, secondTree);
-    log.debug("{}\n{}", firstTree.toString(), secondTree.toString());
   }
 
   /**
@@ -459,7 +454,9 @@ public class FilterVisitorTest
     }
     catch (InvalidFilterException ex)
     {
-      log.debug(ex.getMessage(), ex);
+      Assertions.assertEquals(String.format("the comparator '%s' is not allowed on attribute type 'BOOLEAN'",
+                                            comparator),
+                              ex.getMessage());
     }
   }
 
@@ -495,7 +492,6 @@ public class FilterVisitorTest
   {
     final String filter = "emails[type eq \"work\" and value co \"@example.com\" or display co \"hello world\"]";
     FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
-    log.warn(filterNode.toString());
   }
 
 }

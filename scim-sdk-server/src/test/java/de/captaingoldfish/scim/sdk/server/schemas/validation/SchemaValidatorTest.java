@@ -1425,7 +1425,6 @@ public class SchemaValidatorTest implements FileReferences
     }
     catch (DocumentValidationException ex)
     {
-      log.debug(ex.getDetail());
       String errorMessage = "Attribute 'urn:ietf:params:scim:schemas:core:2.0:User:name' must be of type object "
                             + "but is '[{\"familyName\":\"norris\"},{\"familyName\":\"goldfish\"}]'";
       MatcherAssert.assertThat(ex.getDetail(), Matchers.containsString(errorMessage));
@@ -1496,7 +1495,6 @@ public class SchemaValidatorTest implements FileReferences
     }
     catch (DocumentValidationException ex)
     {
-      log.debug(ex.getDetail(), ex);
       String errorMessage = "Value of attribute 'urn:ietf:params:scim:schemas:core:2.0:User:userName' is not of type "
                             + "'string' but of type 'number' with value '5'";
       MatcherAssert.assertThat(ex.getDetail(), Matchers.containsString(errorMessage));
@@ -2038,7 +2036,6 @@ public class SchemaValidatorTest implements FileReferences
     }
     catch (DocumentValidationException ex)
     {
-      log.debug(ex.getDetail(), ex);
       Assertions.assertEquals(errorMessage, ex.getDetail());
       Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ex.getStatus());
     }
