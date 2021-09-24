@@ -57,15 +57,20 @@ If the project does not compile within your IDE install the "lombok" plugin for 
 
 ---
 
+## Release Notes
+
+To see the current release-notes take a look into the release
+section: https://github.com/Captain-P-Goldfish/SCIM-SDK/releases
+
 ## Server implementation
 
 This API is highly generic and allows the definition of your own schema representations for resources. You will even be
-able to override the default User or Group core schemata if you want to. This might be useful if you do not want to 
+able to override the default User or Group core schemata if you want to. This might be useful if you do not want to
 support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is simply to write two json documents.
 
 1. a schema definition that describes the resource you want to supply
 2. a resource type definition that describes the endpoint and the additional schema extensions that may be used within
- the schema definition  
+   the schema definition
 
 ### The following features are supported
 
