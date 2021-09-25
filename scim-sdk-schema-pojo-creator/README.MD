@@ -11,7 +11,12 @@ The tests of this module are pretty much crafted by hand and this module might b
 ## How to use
 
 Simply start the JavaFX mainclass `SchemaPojoTranslatorController`. This should start the UI with two text areas that
-are described by labels. Paste your schema into the upper area and press the Button `translate` on the right side 
+are described by labels. Paste your schema into the upper area and press the Button `translate` on the right side
 between these two text areas. The output should immediately appear in the below output.
 
-Please note that the pasted schema is validated before parsed and exceptions will only be visible on system out. 
+Please note that the pasted schema is validated before parsed and exceptions will only be visible on system out.
+
+# No Releases
+
+This tool is meant to be used directly within the development environment and will get no releases. Simply start the
+tool directly from your IDE or build the jar with maven and start from command line.
