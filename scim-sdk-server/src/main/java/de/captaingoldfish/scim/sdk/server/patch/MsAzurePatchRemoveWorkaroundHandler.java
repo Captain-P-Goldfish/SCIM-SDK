@@ -52,15 +52,15 @@ import lombok.extern.slf4j.Slf4j;
  *     ]
  * }
  * </pre>
- * 
+ *
  * This class will try its best to fix the bad request and turn it into a valid request
- * 
+ *
  * @author Pascal Knueppel
  * @since 07.06.2021
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class MsAzureWorkaroundHandler
+public final class MsAzurePatchRemoveWorkaroundHandler
 {
 
   /**
@@ -81,7 +81,7 @@ public final class MsAzureWorkaroundHandler
   /**
    * tries to build a valid path operation from the illegal Azure request. If a new path is created it will also
    * clear the {@link #values} list in order to bypass the validation successfully
-   * 
+   *
    * @return the original path if the request not illegal or the path could not be fixed or a new fixed path
    */
   public String fixPath()

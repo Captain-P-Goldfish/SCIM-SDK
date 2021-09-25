@@ -57,34 +57,51 @@ public class PatchResourceHandler extends AbstractPatch
    * adds the values of the patch operation into the given resource node
    *
    * @param resource the resource node into which the values should be added
-   * @param readJsonDocument the patch operation resource from which the values should be added into the
+   * @param patchJsonDocument the patch operation resource from which the values should be added into the
    *          resource node
    * @param extensionUri this extensionUri is used for resolving extensions in the resource if name conflicts do
    *          exist we need the fully qualified name for verifying the attributes.
    */
-  public boolean addResourceValues(ObjectNode resource, JsonNode readJsonDocument, String extensionUri)
+  public boolean addResourceValues(ObjectNode resource, JsonNode patchJsonDocument, String extensionUri)
   {
-    if (readJsonDocument == null || readJsonDocument.size() == 0)
+    if (patchJsonDocument == null || patchJsonDocument.size() == 0)
     {
       throw new BadRequestException("no attributes present in value-resource in patch operation", null,
                                     ScimType.RFC7644.INVALID_VALUE);
     }
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
-    JsonHelper.removeAttribute(readJsonDocument, AttributeNames.RFC7643.SCHEMAS);
-    readJsonDocument.fields().forEachRemaining(stringJsonNodeEntry -> {
+    JsonHelper.removeAttribute(patchJsonDocument, AttributeNames.RFC7643.SCHEMAS);
+    patchJsonDocument.fields().forEachRemaining(stringJsonNodeEntry -> {
       String key = stringJsonNodeEntry.getKey();
       JsonNode value = stringJsonNodeEntry.getValue();
-      boolean isExtension = resourceType.getSchemaExtensions().stream().anyMatch(ext -> ext.getSchema().equals(key));
-      if (isExtension)
+      ResourceType.SchemaExtension extensionRef = resourceType.getSchemaExtensions()
+                                                              .stream()
+                                                              .filter(ext -> key.equals(ext.getSchema())
+                                                                             // ms azure workaround
+                                                                             // https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/193
+                                                                             || key.startsWith(ext.getSchema()))
+                                                              .findAny()
+                                                              .orElse(null);
+      if (extensionRef != null)
       {
-        JsonNode complex = resource.get(key);
+        JsonNode complex = resource.get(extensionRef.getSchema());
         if (complex == null)
         {
           complex = new ScimObjectNode();
-          resource.set(key, complex);
+          resource.set(extensionRef.getSchema(), complex);
           ((ResourceNode)resource).addSchema(key);
         }
-        changeWasMade.set(addResourceValues((ObjectNode)complex, value, key));
+        // ms azure workaround
+        // https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/193
+        JsonNode effectiveValue = value;
+        boolean executeMsAzureWorkaround = !key.equals(extensionRef.getSchema())
+                                           && key.startsWith(extensionRef.getSchema());
+        if (executeMsAzureWorkaround)
+        {
+          MsAzurePatchResourceWorkaroundHandler workaroundHandler = new MsAzurePatchResourceWorkaroundHandler(resourceType);
+          effectiveValue = workaroundHandler.rebuildResource(extensionRef, key, value);
+        }
+        changeWasMade.set(addResourceValues((ObjectNode)complex, effectiveValue, extensionRef.getSchema()));
       }
       else
       {

@@ -220,7 +220,8 @@ public class Schema extends ResourceNode
    * gets a {@link SchemaAttribute} definition by its scimNodeName e.g. "userName" or "name.givenName". <br>
    * <br>
    * This method is for resolving filter expressions and therefore the {@code scimNodeName} values are evaluated
-   * as case insensitive.<br>
+   * as case-insensitive. It is also allowed to use the complete schema-uri as prefix before the attributes
+   * name<br>
    *
    * <pre>
    *    Attribute names and attribute operators used in filters are case
@@ -234,7 +235,11 @@ public class Schema extends ResourceNode
    */
   public SchemaAttribute getSchemaAttribute(String scimNodeName)
   {
-    return attributeRegister.get(StringUtils.stripToEmpty(scimNodeName).toLowerCase());
+    return Optional.ofNullable(attributeRegister.get(StringUtils.stripToEmpty(scimNodeName).toLowerCase()))
+                   .orElseGet(() -> {
+                     String nodeName = scimNodeName.replaceFirst(String.format("^%s:", getNonNullId()), "");
+                     return attributeRegister.get(StringUtils.stripToEmpty(nodeName).toLowerCase());
+                   });
   }
 
   /**

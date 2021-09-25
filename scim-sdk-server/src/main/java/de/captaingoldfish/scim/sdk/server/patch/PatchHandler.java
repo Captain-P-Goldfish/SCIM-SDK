@@ -150,9 +150,10 @@ public class PatchHandler
       String path = target.get();
       if (PatchOp.REMOVE.equals(operation.getOp()))
       {
-        MsAzureWorkaroundHandler msAzureWorkaroundHandler = new MsAzureWorkaroundHandler(operation.getOp(), path,
-                                                                                         values);
-        path = msAzureWorkaroundHandler.fixPath();
+        MsAzurePatchRemoveWorkaroundHandler msAzurePatchRemoveWorkaroundHandler = new MsAzurePatchRemoveWorkaroundHandler(operation.getOp(),
+                                                                                                                          path,
+                                                                                                                          values);
+        path = msAzurePatchRemoveWorkaroundHandler.fixPath();
       }
       PatchTargetHandler patchTargetHandler = new PatchTargetHandler(resourceType, operation.getOp(), path);
       boolean changeWasMade = patchTargetHandler.addOperationValues(resource, values);

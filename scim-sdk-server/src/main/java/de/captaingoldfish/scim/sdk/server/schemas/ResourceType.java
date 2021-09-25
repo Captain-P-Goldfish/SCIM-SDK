@@ -18,6 +18,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
@@ -162,7 +163,7 @@ public class ResourceType extends ResourceNode
   /**
    * a delegation method to retrieve the schema that represents the meta-attribute. This attribute has received
    * its own schema under the URI "urn:ietf:params:scim:schemas:core:2.0:Meta"
-   * 
+   *
    * @return the meta schema definition
    */
   public Schema getMetaSchema()
@@ -172,7 +173,7 @@ public class ResourceType extends ResourceNode
 
   /**
    * checks if the schema with the given uri is a required extension
-   * 
+   *
    * @param schemaUri the extension of the schema
    * @return true if the given extension is required, false else
    */
@@ -211,6 +212,28 @@ public class ResourceType extends ResourceNode
     });
     schemaList.add(schemaFactory.getMetaSchema(SchemaUris.META));
     return schemaList;
+  }
+
+  /**
+   * gets a member schema of this resource type by its uri
+   *
+   * @param schemaUri the uri of the schema that is wanted
+   * @return the schema if it does exist and is a member of this resource type
+   * @throws BadRequestException if the schemaUri is not a member of this resource type
+   */
+  public final Schema getSchemaByUri(String schemaUri)
+  {
+    boolean doesUriBelongToResourceType = schemaUri.equals(getSchema())
+                                          || getSchemaExtensions().stream()
+                                                                  .anyMatch(extension -> extension.getSchema()
+                                                                                                  .equals(schemaUri));
+    if (!doesUriBelongToResourceType)
+    {
+      throw new BadRequestException(String.format("Schema URI '%s' is not part of resource type '%s'",
+                                                  schemaUri,
+                                                  getName()));
+    }
+    return schemaFactory.getResourceSchema(schemaUri);
   }
 
   /**
