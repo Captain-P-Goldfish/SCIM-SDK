@@ -141,5 +141,16 @@ public class EnterpriseUser extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.MANAGER, manager);
   }
 
+  /**
+   * override lombok builder
+   */
+  public static class EnterpriseUserBuilder
+  {
 
+    /**
+     * make builder constructor public in order to allow inheritance for this builder
+     */
+    public EnterpriseUserBuilder()
+    {}
+  }
 }

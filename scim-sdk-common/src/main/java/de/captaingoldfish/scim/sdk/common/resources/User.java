@@ -838,4 +838,18 @@ public class User extends ResourceNode
     setAttribute(SchemaUris.ENTERPRISE_USER_URI, enterpriseUser);
   }
 
+
+  /**
+   * override lombok builder
+   */
+  public static class UserBuilder
+  {
+
+    /**
+     * make builder constructor public in order to allow inheritance for this builder
+     */
+    public UserBuilder()
+    {}
+  }
+
 }

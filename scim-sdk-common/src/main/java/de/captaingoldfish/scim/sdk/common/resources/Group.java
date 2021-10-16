@@ -100,4 +100,17 @@ public class Group extends ResourceNode
   {
     addAttribute(AttributeNames.RFC7643.MEMBERS, member);
   }
+
+  /**
+   * override lombok builder
+   */
+  public static class GroupBuilder
+  {
+
+    /**
+     * make builder constructor public in order to allow inheritance for this builder
+     */
+    public GroupBuilder()
+    {}
+  }
 }

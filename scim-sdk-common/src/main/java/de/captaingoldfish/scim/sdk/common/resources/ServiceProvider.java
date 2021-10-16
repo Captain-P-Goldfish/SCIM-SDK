@@ -231,4 +231,17 @@ public class ServiceProvider extends ResourceNode
   {
     this.threadPool = Objects.requireNonNull(threadPool);
   }
+
+  /**
+   * override lombok builder
+   */
+  public static class ServiceProviderBuilder
+  {
+
+    /**
+     * make builder constructor public in order to allow inheritance for this builder
+     */
+    public ServiceProviderBuilder()
+    {}
+  }
 }
