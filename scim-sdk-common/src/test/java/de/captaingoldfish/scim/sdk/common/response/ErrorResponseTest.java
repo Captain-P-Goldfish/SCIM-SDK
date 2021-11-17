@@ -93,8 +93,8 @@ public class ErrorResponseTest
     Assertions.assertNull(errorResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
                             errorResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
-    Assertions.assertNull(errorResponse.toString());
-    Assertions.assertNull(errorResponse.toPrettyString());
+    Assertions.assertEquals("", errorResponse.toString());
+    Assertions.assertEquals("", errorResponse.toPrettyString());
 
     Response response = errorResponse.buildResponse();
     Assertions.assertEquals(1, response.getHeaders().size());
@@ -102,6 +102,6 @@ public class ErrorResponseTest
                             response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpStatus.NOT_MODIFIED, response.getStatus());
-    Assertions.assertNull(response.getEntity());
+    Assertions.assertEquals("", response.getEntity());
   }
 }
