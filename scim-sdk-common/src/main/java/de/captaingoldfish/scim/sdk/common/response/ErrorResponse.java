@@ -199,7 +199,7 @@ public class ErrorResponse extends ScimResponse
   {
     if (useEmptyBody())
     {
-      return null;
+      return "";
     }
     return super.toString();
   }
@@ -209,7 +209,7 @@ public class ErrorResponse extends ScimResponse
   {
     if (useEmptyBody())
     {
-      return null;
+      return "";
     }
     return super.toPrettyString();
   }
