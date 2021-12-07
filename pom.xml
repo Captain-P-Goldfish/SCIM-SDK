@@ -78,7 +78,7 @@
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.antlr>4.9.3</version.antlr>
         <version.apache.http.client>4.5.13</version.apache.http.client>
-        <version.apache.http.core>4.4.14</version.apache.http.core>
+        <version.apache.http.core>4.4.15</version.apache.http.core>
         <version.bouncy.castle>1.69</version.bouncy.castle>
 
         <!-- dependency conflicts -->
