@@ -1037,6 +1037,42 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * this will test that PatchHandler.isChangedResource is true if any attribute is changed, and not just if the
+   * last attributes is changed.
+   */
+  @Test
+  public void testIsChangedResourceForExtensionValueInMsAzureAdStyle()
+  {
+    String employeeNumber = "1111";
+    String employeeNumberChanged = "2222";
+    String costCenter = "2222";
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
+                                                   .employeeNumber(employeeNumber)
+                                                   .costCenter(costCenter)
+                                                   .build());
+
+    // @formatter:off
+    String valueNode = "{" +
+      "  \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber\": \"" +
+      employeeNumberChanged+ "\"," +
+      "  \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter\": \"" +
+      costCenter+ "\"" +
+      "}";
+    // @formatter:on
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .value(valueNode)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    patchHandler.patchResource(allTypeChanges, patchOpRequest);
+    Assertions.assertTrue(patchHandler.isChangedResource());
+  }
+
+  /**
    * this method returns a specific attribute definition that will be added to the enterprise user that is used
    * as extension for the alltypes schema. this shall provoke a naming conflict with a complex type in the
    * extension
