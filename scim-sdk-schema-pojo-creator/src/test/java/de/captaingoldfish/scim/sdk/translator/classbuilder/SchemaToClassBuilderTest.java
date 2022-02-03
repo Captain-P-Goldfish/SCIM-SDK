@@ -18,9 +18,9 @@ public class SchemaToClassBuilderTest
   @Test
   public void testSchemaToClassBuilderTest()
   {
-    SchemaToClassBuilder schemaToClassBuilder = new SchemaToClassBuilder();
     Schema userSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
-    String generatedUserClass = schemaToClassBuilder.generateClassFromSchema(userSchema);
+    SchemaToClassBuilder schemaToClassBuilder = new SchemaToClassBuilder(userSchema, null, "???");
+    String generatedUserClass = schemaToClassBuilder.generateClassFromSchema();
     Assertions.assertEquals("package ???\n" + "\n" + "import java.util.List;\n" + "import java.util.Optional;\n"
                             + "import java.util.Set;\nimport java.util.Collections;\n"
                             + "import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;\n"

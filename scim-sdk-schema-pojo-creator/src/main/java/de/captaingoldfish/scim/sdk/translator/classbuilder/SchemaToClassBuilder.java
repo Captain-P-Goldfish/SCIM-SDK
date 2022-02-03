@@ -1,41 +1,50 @@
 package de.captaingoldfish.scim.sdk.translator.classbuilder;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.fieldnames.FieldnamesClassBuilder;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.setter.SetterMethod;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.setter.SetterMethodBuilder;
+import de.captaingoldfish.scim.sdk.translator.utils.SharedMethods;
+import lombok.RequiredArgsConstructor;
 
 
 /**
  * @author Pascal Knueppel
  * @since 03.05.2021
  */
+@RequiredArgsConstructor
 public class SchemaToClassBuilder
 {
 
-  public String generateClassFromSchema(Schema schema)
-  {
-    String packageName = "package ???";
-    String imports = getImports();
-    String javadoc = schema.getDescription().orElse("");
-    String className = StringUtils.capitalize(schema.getName().orElse("Unknown"));
+  private final Schema resourceSchema;
 
-    String classStructure = buildClassStructure(schema);
+  private final List<Schema> schemaExtensions;
+
+  private final String packageDir;
+
+  public String generateClassFromSchema()
+  {
+    String packageName = "package " + packageDir;
+    String imports = getImports();
+    String javadoc = resourceSchema.getDescription().orElse("");
+    String className = SharedMethods.getSchemaClassname(resourceSchema);
+    FieldnamesClassBuilder fieldnamesClassBuilder = new FieldnamesClassBuilder(resourceSchema);
+
+    String classStructure = buildClassStructure(resourceSchema);
     return String.format("%s\n\n%s\n\n/** %s */\npublic class %s extends ResourceNode\n{\n  %s\n  %s\n}",
                          packageName,
                          imports,
                          javadoc,
                          className,
                          classStructure,
-                         getFieldNames(schema));
+                         fieldnamesClassBuilder);
   }
 
   private String getImports()
@@ -77,11 +86,11 @@ public class SchemaToClassBuilder
         final GetterMethodBuilder getterMethodBuilder = new GetterMethodBuilder();
         final SetterMethodBuilder setterMethodBuilder = new SetterMethodBuilder();
         String getterMethod = getterMethodBuilder.generateSimpleGetterMethod(attribute);
-        String setterMethod = setterMethodBuilder.generateSimpleSetterMethod(attribute);
+        SetterMethod setterMethod = setterMethodBuilder.generateSimpleSetterMethod(attribute);
 
-        getterAndSetterMethodDefinitions.add(String.format("%s\n%s", getterMethod, setterMethod));
-        setterMethodCalls.add(setterMethodBuilder.getSetterCall());
-        constructorAttributes.add(setterMethodBuilder.getSetterParameter());
+        getterAndSetterMethodDefinitions.add(String.format("%s\n%s", getterMethod, setterMethod.toString()));
+        setterMethodCalls.add(setterMethod.getCallSetter());
+        constructorAttributes.add(setterMethod.getMethodParameter());
       }
     }
 
@@ -129,38 +138,4 @@ public class SchemaToClassBuilder
     return String.format("public %s(%s) \n  {\n  %s\n  }\n", constructorName, constructorParams, setterCalls);
   }
 
-  private String getFieldNames(Schema schema)
-  {
-    Set<String> attributeNames = getAttributeNames(schema);
-    final String fieldNamesString = attributeNames.stream()
-                                                  .map(name -> String.format("public static final String %s = \"%s\";",
-                                                                             attributeNameToFieldName(name),
-                                                                             name))
-                                                  .collect(Collectors.joining("\n"));
-    final String schemaIdField = String.format("public static final String SCHEMA_ID = \"%s\";\n",
-                                               schema.getNonNullId());
-    return String.format("public static class FieldNames \n{\n%s%s\n}", schemaIdField, fieldNamesString);
-  }
-
-  private Set<String> getAttributeNames(Schema schema)
-  {
-    Set<String> attributeNames = new HashSet<>();
-    for ( SchemaAttribute attribute : schema.getAttributes() )
-    {
-      attributeNames.add(attribute.getName());
-      if (Type.COMPLEX.equals(attribute.getType()))
-      {
-        for ( SchemaAttribute subAttribute : attribute.getSubAttributes() )
-        {
-          attributeNames.add(subAttribute.getName());
-        }
-      }
-    }
-    return attributeNames;
-  }
-
-  private String attributeNameToFieldName(String name)
-  {
-    return name.replaceAll("([A-Z])", "_$1").toUpperCase(Locale.ROOT);
-  }
 }

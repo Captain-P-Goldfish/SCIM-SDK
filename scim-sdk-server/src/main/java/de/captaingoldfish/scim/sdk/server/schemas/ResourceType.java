@@ -20,6 +20,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.exceptions.InvalidConfigException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -206,7 +207,17 @@ public class ResourceType extends ResourceNode
   public List<Schema> getAllSchemas()
   {
     List<Schema> schemaList = new ArrayList<>();
-    schemaList.add(schemaFactory.getResourceSchema(getSchema()));
+    Schema resourceSchema = schemaFactory.getResourceSchema(getSchema());
+    if (resourceSchema == null)
+    {
+      String error = String.format("Noticed a mismatch of referenced schema in resource-type definition and actual "
+                                   + "registration. SchemaId in resource-type definition '%s' was not found in "
+                                   + "schema factory. Registered schemas are: %s",
+                                   getSchema(),
+                                   schemaFactory.getResourceSchemas().keySet());
+      throw new InvalidConfigException(error);
+    }
+    schemaList.add(resourceSchema);
     getSchemaExtensions().forEach(schemaExtension -> {
       schemaList.add(schemaFactory.getResourceSchema(schemaExtension.getSchema()));
     });

@@ -8,6 +8,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.translator.SchemaAttributeBuilder;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.setter.SetterMethodBuilder;
 
 
 /**
@@ -30,7 +31,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.STRING)
                                                               .required(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(String helloWorld)\n" +
@@ -49,7 +50,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.STRING)
                                                               .required(false)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(String helloWorld)\n" +
@@ -69,7 +70,7 @@ public class SetterMethodBuilderTest
                                                               .required(true)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<String> helloWorldList)\n" +
@@ -89,7 +90,7 @@ public class SetterMethodBuilderTest
                                                               .required(false)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<String> helloWorldList)\n" +
@@ -110,7 +111,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<String> helloWorldList)\n" +
@@ -131,7 +132,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<String> helloWorldList)\n" +
@@ -155,7 +156,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.INTEGER)
                                                               .required(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Long helloWorld)\n" +
@@ -174,7 +175,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.INTEGER)
                                                               .required(false)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Long helloWorld)\n" +
@@ -194,7 +195,7 @@ public class SetterMethodBuilderTest
                                                               .required(true)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Long> helloWorldList)\n" +
@@ -214,7 +215,7 @@ public class SetterMethodBuilderTest
                                                               .required(false)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Long> helloWorldList)\n" +
@@ -235,7 +236,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Long> helloWorldList)\n" +
@@ -256,7 +257,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Long> helloWorldList)\n" +
@@ -280,7 +281,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.DECIMAL)
                                                               .required(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Double helloWorld)\n" +
@@ -299,7 +300,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.DECIMAL)
                                                               .required(false)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Double helloWorld)\n" +
@@ -319,7 +320,7 @@ public class SetterMethodBuilderTest
                                                               .required(true)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Double> helloWorldList)\n" +
@@ -339,7 +340,7 @@ public class SetterMethodBuilderTest
                                                               .required(false)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Double> helloWorldList)\n" +
@@ -360,7 +361,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Double> helloWorldList)\n" +
@@ -381,7 +382,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Double> helloWorldList)\n" +
@@ -405,7 +406,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.BOOLEAN)
                                                               .required(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Boolean helloWorld)\n" +
@@ -424,7 +425,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.BOOLEAN)
                                                               .required(false)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Boolean helloWorld)\n" +
@@ -444,7 +445,7 @@ public class SetterMethodBuilderTest
                                                               .required(true)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Boolean> helloWorldList)\n" +
@@ -464,7 +465,7 @@ public class SetterMethodBuilderTest
                                                               .required(false)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Boolean> helloWorldList)\n" +
@@ -485,7 +486,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Boolean> helloWorldList)\n" +
@@ -506,7 +507,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Boolean> helloWorldList)\n" +
@@ -530,7 +531,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.DATE_TIME)
                                                               .required(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Instant helloWorld)\n" +
@@ -549,7 +550,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.DATE_TIME)
                                                               .required(false)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(Instant helloWorld)\n" +
@@ -569,7 +570,7 @@ public class SetterMethodBuilderTest
                                                               .required(true)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Instant> helloWorldList)\n" +
@@ -589,7 +590,7 @@ public class SetterMethodBuilderTest
                                                               .required(false)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Instant> helloWorldList)\n" +
@@ -610,7 +611,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Instant> helloWorldList)\n" +
@@ -631,7 +632,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<Instant> helloWorldList)\n" +
@@ -663,7 +664,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.COMPLEX)
                                                               .required(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(HelloWorld helloWorld)\n" +
@@ -682,7 +683,7 @@ public class SetterMethodBuilderTest
                                                               .type(Type.COMPLEX)
                                                               .required(false)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(HelloWorld helloWorld)\n" +
@@ -702,7 +703,7 @@ public class SetterMethodBuilderTest
                                                               .required(true)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<HelloWorld> helloWorldList)\n" +
@@ -722,7 +723,7 @@ public class SetterMethodBuilderTest
                                                               .required(false)
                                                               .multivalued(true)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<HelloWorld> helloWorldList)\n" +
@@ -743,7 +744,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<HelloWorld> helloWorldList)\n" +
@@ -764,7 +765,7 @@ public class SetterMethodBuilderTest
                                                               .multivalued(true)
                                                               .uniqueness(Uniqueness.SERVER)
                                                               .build();
-      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute);
+      String method = pojoTranslator.generateSimpleSetterMethod(schemaAttribute).toString();
       // @formatter:off
       Assertions.assertEquals("  /** A description */\n" +
                               "  public void setHelloWorld(List<HelloWorld> helloWorldList)\n" +

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.translator.utils.SharedMethods;
 
 
 /**

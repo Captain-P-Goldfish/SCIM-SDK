@@ -6,6 +6,8 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.setter.SetterMethod;
+import de.captaingoldfish.scim.sdk.translator.classbuilder.setter.SetterMethodBuilder;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -28,9 +30,9 @@ public class ComplexAttributeToInnerClassBuilder
   {
     final String getterMethod = new GetterMethodBuilder().generateSimpleGetterMethod(schemaAttribute);
     final SetterMethodBuilder setterMethodBuilder = new SetterMethodBuilder();
-    final String setterMethod = setterMethodBuilder.generateSimpleSetterMethod(schemaAttribute);
-    this.setterMethodCall = setterMethodBuilder.getSetterCall();
-    this.setterParameter = setterMethodBuilder.getSetterParameter();
+    final SetterMethod setterMethod = setterMethodBuilder.generateSimpleSetterMethod(schemaAttribute);
+    this.setterMethodCall = setterMethod.getCallSetter();
+    this.setterParameter = setterMethod.getMethodParameter();
 
     final String javadoc = String.format("/** %s */", schemaAttribute.getDescription());
     final String className = StringUtils.capitalize(schemaAttribute.getName());
@@ -56,11 +58,11 @@ public class ComplexAttributeToInnerClassBuilder
       final GetterMethodBuilder getterMethodBuilder = new GetterMethodBuilder();
       final SetterMethodBuilder setterMethodBuilder = new SetterMethodBuilder();
       String getterMethod = getterMethodBuilder.generateSimpleGetterMethod(subAttribute);
-      String setterMethod = setterMethodBuilder.generateSimpleSetterMethod(subAttribute);
+      SetterMethod setterMethod = setterMethodBuilder.generateSimpleSetterMethod(subAttribute);
 
       getterAndSetterMethodDefinitions.add(String.format("%s\n%s", getterMethod, setterMethod));
-      setterMethodCalls.add(setterMethodBuilder.getSetterCall());
-      constructorAttributes.add(setterMethodBuilder.getSetterParameter());
+      setterMethodCalls.add(setterMethod.getCallSetter());
+      constructorAttributes.add(setterMethod.getMethodParameter());
     }
 
     String noArgsConstructor = getNoArgsConstructor(schemaAttribute);

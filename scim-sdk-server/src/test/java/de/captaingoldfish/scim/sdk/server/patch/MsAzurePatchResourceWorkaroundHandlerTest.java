@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
+import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -327,5 +328,42 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
       String expectedMessage = String.format("Unsupported patch operation with key-reference: %s", key);
       Assertions.assertEquals(expectedMessage, ex.getMessage());
     }
+  }
+
+  /**
+   * this will test that PatchHandler.isChangedResource is true if any attribute is changed, and not just if the
+   * last attributes is changed.
+   */
+  @Test
+  public void testIsChangedResourceForExtensionValueInMsAzureAdStyle()
+  {
+    String employeeNumber = "1111";
+    String employeeNumberChanged = "2222";
+    String costCenter = "2222";
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
+                                                   .employeeNumber(employeeNumber)
+                                                   .costCenter(costCenter)
+                                                   .build());
+
+    // @formatter:off
+    String valueNode = "{" +
+      "  \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber\": \"" +
+      employeeNumberChanged+ "\"," +
+      "  \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter\": \"" +
+      costCenter+ "\"" +
+      "}";
+    // @formatter:on
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .value(valueNode)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes newAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
+    Assertions.assertEquals(employeeNumberChanged, newAllTypes.getEnterpriseUser().get().getEmployeeNumber().get());
+    Assertions.assertTrue(patchHandler.isChangedResource());
   }
 }
