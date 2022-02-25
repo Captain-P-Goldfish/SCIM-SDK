@@ -1,9 +1,11 @@
 # Create POJO from SCIM schema file
 
+works currently only with JDK 8
+
 This module is a simple helper that I created more or less in rush since I was sick of creating POJO's from schema
 definitions. This has become hard work if done for several services and therefore this module provides a very simple
-JavaFX UI that you can use to paste your schema and to generate a java POJO from it. 
-            
+JavaFX UI that you can use to paste your schema and to generate a java POJO from it.
+
 Caution:
 
 The tests of this module are pretty much crafted by hand and this module might break in future versions.
