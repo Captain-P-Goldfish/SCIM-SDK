@@ -12,16 +12,14 @@ A simple description of SCIM can be found here http://www.simplecloud.info/
 
 ### Why and when you should use this library
 
-The SCIM specification is well suited for designing resource management servers where the resources need to be
-regularly updated by other remote applications.
- 
-**For example:**
+SCIM is more than just users and groups. SCIM could be seen as a standardization of RESTful services and that is exactly
+what this library does offer: An API for defining dynamic endpoints on a RESTful basis compatible with any
+REST-framework on the market.
 
-If you create an application that uses a database configuration that might be updated by different clients or even by
-just a single remote application this library is what you are looking for. It uses a standard protocol that should also
-be understood by other libraries in other languages that implement the SCIM standard.
+Define some JSON-schemas that describe the endpoint you want to create and get a lot of features that will support you
+during development.
 
-**This lib supports the full feature set of both client and server side of the SCIM specification.** 
+**This lib supports the full feature set of both client and server side of the SCIM specification.**
 
 ### Documentation
 
