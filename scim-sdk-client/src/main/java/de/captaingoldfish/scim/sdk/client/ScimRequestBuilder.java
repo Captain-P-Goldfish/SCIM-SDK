@@ -125,6 +125,18 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
+   * builds a delete builder class based on the given type used to delete a singleton entry at the provider
+   *
+   * @param type the type that should be created
+   * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
+   * @return a delete-request builder for the given resource type
+   */
+  public <T extends ResourceNode> DeleteBuilder<T> delete(Class<T> type, String endpoint)
+  {
+    return new DeleteBuilder<>(baseUrl, endpoint, null, type, scimHttpClient);
+  }
+
+  /**
    * builds a delete builder class based on the given type
    *
    * @param fullyQualifiedUrl if the builder should not build the url on the baseUrl but use another fully
@@ -138,7 +150,7 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
-   * builds an update builder class based on the given type
+   * builds an update builder class used to update a singleton entry at the provider
    *
    * @param type the type that should be created
    * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
@@ -149,6 +161,18 @@ public class ScimRequestBuilder implements AutoCloseable
   public <T extends ResourceNode> UpdateBuilder<T> update(Class<T> type, String endpoint, String resourceId)
   {
     return new UpdateBuilder<>(baseUrl, endpoint, resourceId, type, scimHttpClient);
+  }
+
+  /**
+   * builds an update builder class based on the given type
+   *
+   * @param type the type that should be created
+   * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
+   * @return a update-request builder for the given resource type
+   */
+  public <T extends ResourceNode> UpdateBuilder<T> update(Class<T> type, String endpoint)
+  {
+    return new UpdateBuilder<>(baseUrl, endpoint, null, type, scimHttpClient);
   }
 
   /**
@@ -223,6 +247,18 @@ public class ScimRequestBuilder implements AutoCloseable
   public <T extends ResourceNode> PatchBuilder<T> patch(Class<T> type, String endpoint, String resourceId)
   {
     return new PatchBuilder<>(baseUrl, endpoint, resourceId, type, scimHttpClient);
+  }
+
+  /**
+   * builds a patch request builder used to patch a singleton entry at the provider
+   *
+   * @param type the type that should be created
+   * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
+   * @return a patch-request builder
+   */
+  public <T extends ResourceNode> PatchBuilder<T> patch(Class<T> type, String endpoint)
+  {
+    return new PatchBuilder<>(baseUrl, endpoint, null, type, scimHttpClient);
   }
 
   /**

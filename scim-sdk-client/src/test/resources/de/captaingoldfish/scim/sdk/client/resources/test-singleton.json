@@ -1,0 +1,38 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:core:2.0:TestSingleton",
+  "name": "TestSingleton",
+  "description": "TestSingleton",
+  "attributes": [
+    {
+      "name": "id",
+      "type": "string",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "server",
+      "multiValued": false,
+      "required": true,
+      "caseExact": true
+    },
+    {
+      "name": "singletonAttribute",
+      "type": "string",
+      "description": "any string.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/Schemas/TestSingleton"
+  }
+}

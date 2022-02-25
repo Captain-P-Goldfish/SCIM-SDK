@@ -20,7 +20,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.TestSingletonHandler;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
+import de.captaingoldfish.scim.sdk.client.setup.scim.resources.ScimTestSingleton;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -30,6 +32,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -328,6 +331,22 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   }
 
   /**
+   * verifies that a delete-request can successfully be built for a singleton entry
+   */
+  @Test
+  public void testBuildDeleteRequestForSingleton()
+  {
+    TestSingletonHandler.scimTestSingleton = ScimTestSingleton.builder().build();
+
+    ServerResponse<User> response = scimRequestBuilder.delete(User.class, TestSingletonHandler.ENDPOINT).sendRequest();
+
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+  }
+
+  /**
    * verifies that a response for a get-request is correctly returned if the user was not found
    */
   @ParameterizedTest
@@ -382,6 +401,35 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
     Assertions.assertNull(response.getErrorResponse());
+  }
+
+  /**
+   * verifies that a delete-request can successfully be built for singletons
+   */
+  @Test
+
+  public void testBuildUpdateRequest()
+  {
+    TestSingletonHandler.scimTestSingleton = ScimTestSingleton.builder()
+                                                              .singletonAttribute("blubb")
+                                                              .meta(Meta.builder()
+                                                                        .created(Instant.now())
+                                                                        .lastModified(Instant.now())
+                                                                        .build())
+                                                              .build();
+
+    ScimTestSingleton updatedResource = JsonHelper.copyResourceToObject(TestSingletonHandler.scimTestSingleton,
+                                                                        ScimTestSingleton.class);
+    final String updatedValue = "hello world";
+    updatedResource.setSingletonAttribute(updatedValue);
+    ServerResponse<ScimTestSingleton> response = scimRequestBuilder.update(ScimTestSingleton.class,
+                                                                           TestSingletonHandler.ENDPOINT)
+                                                                   .setResource(updatedResource)
+                                                                   .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertNotNull(response.getResource());
+    ScimTestSingleton patchedResource = response.getResource();
+    Assertions.assertEquals(updatedValue, patchedResource.getSingletonAttribute().orElse(null));
   }
 
   /**

@@ -2,7 +2,9 @@ package de.captaingoldfish.scim.sdk.client.setup.scim;
 
 import java.util.Collections;
 
+import de.captaingoldfish.scim.sdk.client.setup.scim.endpoints.TestSingletonEndpoint;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.GroupHandler;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.TestSingletonHandler;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
@@ -55,6 +57,7 @@ public class ScimConfig
     this.resourceEndpoint = new ResourceEndpoint(serviceProvider);
     this.userResourceType = getUserResourceType(resourceEndpoint);
     this.groupResourceType = getGroupResourceType(resourceEndpoint);
+    resourceEndpoint.registerEndpoint(new TestSingletonEndpoint(new TestSingletonHandler()));
   }
 
   /**

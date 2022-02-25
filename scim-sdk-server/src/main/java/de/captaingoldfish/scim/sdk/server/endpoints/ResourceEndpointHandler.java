@@ -857,7 +857,7 @@ class ResourceEndpointHandler
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
       String resourceId = resourceNode.getId()
                                       .orElseThrow(() -> new InternalServerException(errorMessage.get(), null, null));
-      if (!resourceId.equals(id))
+      if (!resourceId.equals(id) && !resourceType.getFeatures().isSingletonEndpoint())
       {
         throw new InternalServerException("the id of the returned resource does not match the "
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
@@ -1144,7 +1144,8 @@ class ResourceEndpointHandler
   {
     return (resourceName, resourceId) -> {
       Optional<ResourceType> resourceType = resourceTypeFactory.getResourceTypeByName(resourceName);
-      return resourceType.map(jsonNodes -> baseUrl.get() + jsonNodes.getEndpoint() + "/" + resourceId).orElse(null);
+      String id = StringUtils.isBlank(resourceId) ? "" : "/" + resourceId;
+      return resourceType.map(jsonNodes -> baseUrl.get() + jsonNodes.getEndpoint() + id).orElse(null);
     };
   }
 }

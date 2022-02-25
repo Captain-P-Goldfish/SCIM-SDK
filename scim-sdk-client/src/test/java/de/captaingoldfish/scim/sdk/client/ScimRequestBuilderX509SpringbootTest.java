@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.client;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
@@ -17,6 +18,8 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 import de.captaingoldfish.scim.sdk.client.builder.BulkBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.PatchBuilder;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.TestSingletonHandler;
+import de.captaingoldfish.scim.sdk.client.setup.scim.resources.ScimTestSingleton;
 import de.captaingoldfish.scim.sdk.client.springboot.AbstractSpringBootWebTest;
 import de.captaingoldfish.scim.sdk.client.springboot.SecurityConstants;
 import de.captaingoldfish.scim.sdk.client.springboot.SpringBootInitializer;
@@ -29,6 +32,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
@@ -285,6 +289,35 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     Assertions.assertEquals(emailValue, patchedUser.getEmails().get(0).getValue().orElse(null));
     Assertions.assertEquals(emailType, patchedUser.getEmails().get(0).getType().orElse(null));
     Assertions.assertEquals(emailPrimary, patchedUser.getEmails().get(0).isPrimary());
+  }
+
+  /**
+   * tests that patch requests are correctly send to the server for singleton resources
+   */
+  @Test
+  public void testPatchRequestForSingleton()
+  {
+    TestSingletonHandler.scimTestSingleton = ScimTestSingleton.builder()
+                                                              .singletonAttribute("blubb")
+                                                              .meta(Meta.builder()
+                                                                        .created(Instant.now())
+                                                                        .lastModified(Instant.now())
+                                                                        .build())
+                                                              .build();
+
+    final String updatedValue = "hello world";
+    PatchBuilder<ScimTestSingleton> patchBuilder = scimRequestBuilder.patch(ScimTestSingleton.class,
+                                                                            TestSingletonHandler.ENDPOINT);
+    ServerResponse<ScimTestSingleton> response = patchBuilder.addOperation()
+                                                             .path("singletonAttribute")
+                                                             .op(PatchOp.ADD)
+                                                             .value(updatedValue)
+                                                             .build()
+                                                             .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertNotNull(response.getResource());
+    ScimTestSingleton patchedResource = response.getResource();
+    Assertions.assertEquals(updatedValue, patchedResource.getSingletonAttribute().orElse(null));
   }
 
 }

@@ -19,6 +19,11 @@ public interface FileReferences
 
   public static final String BROKEN_LISTRESPONSE = BASE_PATH + "/testfiles/broken-listresponse.json";
 
+  public static final String TEST_SINGLTON_RESOURCE_SCHEMA_JSON = BASE_PATH + "/resources/test-singleton.json";
+
+  public static final String TEST_SINGLTON_RESOURCE_TYPE_JSON = BASE_PATH
+                                                                + "/resourcetypes/test-singleton-resourcetype.json";
+
   /**
    * reads a file from the test-resources and modifies the content
    *
