@@ -10,7 +10,7 @@ This is an open source implementation of the SCIM (System for Cross-domain Ident
 
 A simple description of SCIM can be found here http://www.simplecloud.info/
 
-### Why and when you should use this library
+### Create RESTful services with SCIM
 
 SCIM is more than just users and groups. SCIM could be seen as a standardization of RESTful services and that is exactly
 what this library does offer: An API for defining dynamic endpoints on a RESTful basis compatible with any
@@ -21,15 +21,25 @@ during development.
 
 **This lib supports the full feature set of both client and server side of the SCIM specification.**
 
+#### What exactly is a RESTful service?
+
+RESTful is not a standard but a convention for services that define the HTTP-Methods [POST, GET, UPDATE, DELETE] to
+manage resources on the server. Use this API to create such services and benefit from several features that make your
+life easier.
+
 ### Documentation
 
 for a documentation take a look into the github wiki https://github.com/Captain-P-Goldfish/SCIM/wiki
 
-You will find a pretty detailed explanation on how to use the server implementation here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-server-implementation
+You will find a pretty detailed explanation on how to use the server implementation
+here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-server-implementation
 
-And a pretty detailed explanation on how to use the client can be found here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-client-implementation
+And a pretty detailed explanation on how to use the client can be found
+here: https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-client-implementation
 
-**Note:** You do not need to fork this project in order to make adjustments to the `User`-schema or the `User`-class implementation. Find a more detailed explanation in the wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-practices)
+**Note:** You do not need to fork this project in order to make adjustments to the `User`-schema or the `User`-class
+implementation. Find a more detailed explanation in the
+wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-practices)
 
 ---
 **This project requires JDK 8 or higher**
