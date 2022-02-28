@@ -150,7 +150,7 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
-   * builds an update builder class used to update a singleton entry at the provider
+   * builds an update builder class based on the given type
    *
    * @param type the type that should be created
    * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
@@ -164,7 +164,7 @@ public class ScimRequestBuilder implements AutoCloseable
   }
 
   /**
-   * builds an update builder class based on the given type
+   * builds an update builder class used to update a singleton entry at the provider
    *
    * @param type the type that should be created
    * @param endpoint the endpoint path to the resource e.g. "/Users" or "/Groups"
