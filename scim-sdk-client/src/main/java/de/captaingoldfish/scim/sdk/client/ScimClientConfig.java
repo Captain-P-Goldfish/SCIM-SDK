@@ -50,6 +50,11 @@ public class ScimClientConfig
   private int connectTimeout;
 
   /**
+   * if cookie management should be enabled or not. Default is false.
+   */
+  private boolean enableCookieManagement;
+
+  /**
    * the hostname verifier that should be used in the requests
    */
   private HostnameVerifier hostnameVerifier;
@@ -88,6 +93,7 @@ public class ScimClientConfig
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
                           Integer connectTimeout,
+                          boolean enableCookieManagement,
                           HostnameVerifier hostnameVerifier,
                           ProxyHelper proxy,
                           KeyStoreWrapper clientAuth,
@@ -100,6 +106,7 @@ public class ScimClientConfig
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
     this.connectTimeout = connectTimeout == null ? DEFAULT_TIMEOUT : connectTimeout;
+    this.enableCookieManagement = enableCookieManagement;
     this.hostnameVerifier = hostnameVerifier;
     this.proxy = proxy;
     this.clientAuth = clientAuth;

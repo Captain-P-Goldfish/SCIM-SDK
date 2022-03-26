@@ -122,6 +122,10 @@ public class ScimHttpClient implements Closeable
       clientBuilder.setSSLHostnameVerifier(scimClientConfig.getHostnameVerifier());
     }
     clientBuilder.setDefaultRequestConfig(getRequestConfig());
+    if (!scimClientConfig.isEnableCookieManagement())
+    {
+      clientBuilder.disableCookieManagement();
+    }
     if (scimClientConfig.getConfigManipulator() != null)
     {
       scimClientConfig.getConfigManipulator().modifyHttpClientConfig(clientBuilder);

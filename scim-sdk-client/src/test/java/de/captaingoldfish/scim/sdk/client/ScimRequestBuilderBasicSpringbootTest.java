@@ -1,14 +1,10 @@
 package de.captaingoldfish.scim.sdk.client;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
@@ -66,63 +62,56 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
   }
 
   /**
-   * verifies that a create request can be successfully built and send to the scim service provider
+   * verifies that a create request can be successfully built and send to the scim service provider if the
+   * required authentication has been set
    */
-  @TestFactory
-  public List<DynamicTest> testBuildCreateRequest()
+  @Test
+  public void testAccessEndpointWithAuthentication()
   {
-    List<DynamicTest> dynamicTests = new ArrayList<>();
-    dynamicTests.add(sendAuthorizationRequest(true));
-    dynamicTests.add(sendAuthorizationRequest(false));
-    return dynamicTests;
+    AtomicBoolean wasConsumerExecuted = new AtomicBoolean(false);
+    scimRequestBuilder.getScimClientConfig()
+                      .setBasicAuth(BasicAuth.builder()
+                                             .username(SecurityConstants.AUTHORIZED_USERNAME)
+                                             .password(SecurityConstants.PASSWORD)
+                                             .build());
+    AbstractSpringBootWebTest.headerValidator = headers -> {
+      Assertions.assertTrue(headers.containsKey(HttpHeader.AUTHORIZATION.toLowerCase()));
+      Assertions.assertFalse(headers.containsKey("cookie"));
+      wasConsumerExecuted.set(true);
+    };
+    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
+    Assertions.assertTrue(wasConsumerExecuted.get());
+    Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+
+    User returnedUser = response.getResource();
+    Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
+    Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
+                            response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
   }
 
   /**
-   * sends a request to the server either with basic authentication or without
+   * sends a request to the server without the required authentication
    */
-  private DynamicTest sendAuthorizationRequest(boolean withBasicAuth)
+  @Test
+  public void testAccessEndpointWithoutAuthentication()
   {
-    final String descriptionString = (withBasicAuth ? "enabled" : "disabled");
-    return DynamicTest.dynamicTest("basic auth: " + descriptionString, () -> {
-      AtomicBoolean wasConsumerExecuted = new AtomicBoolean(false);
-      if (withBasicAuth)
-      {
-        scimRequestBuilder.getScimClientConfig()
-                          .setBasicAuth(BasicAuth.builder()
-                                                 .username(SecurityConstants.AUTHORIZED_USERNAME)
-                                                 .password(SecurityConstants.PASSWORD)
-                                                 .build());
-        AbstractSpringBootWebTest.headerValidator = headers -> {
-          Assertions.assertTrue(headers.containsKey(HttpHeader.AUTHORIZATION.toLowerCase()));
-          Assertions.assertFalse(headers.containsKey("cookie"));
-          wasConsumerExecuted.set(true);
-        };
-      }
-      else
-      {
-        scimRequestBuilder.getScimClientConfig().setBasicAuth(null);
-        AbstractSpringBootWebTest.headerValidator = headers -> {
-          Assertions.assertFalse(headers.containsKey(HttpHeader.AUTHORIZATION.toLowerCase()));
-          Assertions.assertTrue(headers.containsKey("cookie"));
-          wasConsumerExecuted.set(true);
-        };
-      }
-      User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
-      ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
-                                                        .setResource(user)
-                                                        .sendRequest();
-      Assertions.assertTrue(wasConsumerExecuted.get());
-      Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
-      Assertions.assertTrue(response.isSuccess());
-      Assertions.assertNotNull(response.getResource());
-      Assertions.assertNull(response.getErrorResponse());
-      Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
-
-      User returnedUser = response.getResource();
-      Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
-      Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
-                              response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
-    });
+    scimRequestBuilder.getScimClientConfig().setBasicAuth(null);
+    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
+                                                      .setResource(user)
+                                                      .sendRequest();
+    Assertions.assertEquals(HttpStatus.UNAUTHORIZED, response.getHttpStatus());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    Assertions.assertNotNull(response.getResponseBody());
   }
 
   /**
