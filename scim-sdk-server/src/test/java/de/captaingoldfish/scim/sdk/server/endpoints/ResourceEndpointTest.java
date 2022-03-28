@@ -964,11 +964,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     int responseSize = bulkResponse.getBulkResponseOperations().size();
     BulkResponseOperation bulkResponseOperation = bulkResponse.getBulkResponseOperations().get(responseSize - 1);
-    MatcherAssert.assertThat(bulkResponseOperation.getResponse().get().getScimException().getClass(),
+    MatcherAssert.assertThat(bulkResponseOperation.getResponse(ErrorResponse.class).get().getScimException().getClass(),
                              Matchers.typeCompatibleWith(ResponseException.class));
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponseOperation.getStatus());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponseOperation.getResponse().get().getStatus());
-    MatcherAssert.assertThat(bulkResponseOperation.getResponse().get().getDetail().get(),
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            bulkResponseOperation.getResponse(ErrorResponse.class).get().getStatus());
+    MatcherAssert.assertThat(bulkResponseOperation.getResponse(ErrorResponse.class).get().getDetail().get(),
                              Matchers.equalTo("missing 'bulkId' on BULK-POST request"));
 
     for ( int i = 0 ; i < bulkResponse.getBulkResponseOperations().size() - 1 ; i++ )
@@ -1059,7 +1060,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     bulkResponse.getBulkResponseOperations().forEach(operation -> {
       Assertions.assertTrue(operation.getResponse().isPresent());
-      ErrorResponse errorResponse = operation.getResponse().get();
+      ErrorResponse errorResponse = operation.getResponse(ErrorResponse.class).get();
       MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                                Matchers.typeCompatibleWith(ResponseException.class));
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());

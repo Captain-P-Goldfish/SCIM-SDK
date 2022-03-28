@@ -51,7 +51,12 @@ public class BulkRequestOperation extends ScimObjectNode
   }
 
   @Builder
-  public BulkRequestOperation(HttpMethod method, String bulkId, String path, String data, ETag version)
+  public BulkRequestOperation(HttpMethod method,
+                              String bulkId,
+                              String path,
+                              String data,
+                              ETag version,
+                              Boolean returnResource)
   {
     this();
     setMethod(method);
@@ -59,6 +64,7 @@ public class BulkRequestOperation extends ScimObjectNode
     setPath(path);
     setData(data);
     setVersion(version);
+    setReturnResource(returnResource);
   }
 
   /**
@@ -200,5 +206,23 @@ public class BulkRequestOperation extends ScimObjectNode
     {
       set(AttributeNames.RFC7643.VERSION, version);
     }
+  }
+
+  /**
+   * this field allows clients to explicitly ask to return the created or modified resource in the bulk
+   * response.
+   */
+  public Optional<Boolean> isReturnResource()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.RETURN_RESOURCE);
+  }
+
+  /**
+   * this field allows clients to explicitly ask to return the created or modified resource in the bulk
+   * response.
+   */
+  public void setReturnResource(Boolean returnResource)
+  {
+    setAttribute(AttributeNames.Custom.RETURN_RESOURCE, returnResource);
   }
 }

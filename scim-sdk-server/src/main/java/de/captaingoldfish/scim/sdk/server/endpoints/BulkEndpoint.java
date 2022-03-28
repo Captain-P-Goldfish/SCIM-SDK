@@ -269,7 +269,15 @@ class BulkEndpoint
                                                                 doBeforeExecution,
                                                                 context);
     final boolean isErrorResponse = ErrorResponse.class.isAssignableFrom(scimResponse.getClass());
-    responseBuilder.status(scimResponse.getHttpStatus()).response(isErrorResponse ? (ErrorResponse)scimResponse : null);
+    responseBuilder.status(scimResponse.getHttpStatus());
+    if (isErrorResponse)
+    {
+      responseBuilder.response(scimResponse);
+    }
+    else
+    {
+      addResponse(operation, scimResponse, operationUriInfo.getResourceType(), responseBuilder);
+    }
 
     if (isErrorResponse)
     {
@@ -313,6 +321,41 @@ class BulkEndpoint
       resolvedBulkIds.put(operation.getBulkId().get(), id.substring(1));
     }
     return responseBuilder.build();
+  }
+
+  /**
+   * adds the response to the bulk response builder if allowed based on the service-provider and resource type
+   * configuration
+   *
+   * @param operation the request operation that might have an attribute that tells us that the user wants the
+   *          resource to be returned
+   * @param scimResponse the response object from the {@link ResourceEndpointHandler}
+   * @param resourceType the specific configuration for the current resource type
+   * @param responseBuilder the response object that is being extended by the response if the configuration
+   *          allows it
+   */
+  private void addResponse(BulkRequestOperation operation,
+                           ScimResponse scimResponse,
+                           ResourceType resourceType,
+                           BulkResponseOperation.BulkResponseOperationBuilder responseBuilder)
+  {
+
+    if (!serviceProvider.getBulkConfig().isReturnResourcesEnabled())
+    {
+      return;
+    }
+
+    if (resourceType.getFeatures().isBlockReturnResourcesOnBulk())
+    {
+      return;
+    }
+
+    final boolean returnResourceByDefault = serviceProvider.getBulkConfig().isReturnResourcesByDefault();
+    final boolean doesClientWantResourceBack = operation.isReturnResource().orElse(returnResourceByDefault);
+    if (doesClientWantResourceBack)
+    {
+      responseBuilder.response(scimResponse);
+    }
   }
 
   /**

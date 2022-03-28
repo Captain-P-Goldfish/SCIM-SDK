@@ -220,6 +220,17 @@
           "required": false
         }
       ]
+    },
+    {
+      "name": "blockReturnResourcesOnBulk",
+      "type": "boolean",
+      "description": "This attribute allows the service provider to not return a resource on bulk-responses even if the client explicitly asked for it. Default is false so that resources will be returned if the client asks for them.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "caseExact": false,
+      "required": false
     }
   ]
 }

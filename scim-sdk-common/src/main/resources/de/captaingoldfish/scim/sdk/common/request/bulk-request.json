@@ -88,6 +88,17 @@
           "multiValued": false,
           "caseExact": true,
           "required": false
+        },
+        {
+          "name": "returnResource",
+          "type": "boolean",
+          "description": "this field allows clients to explicitly ask to return the created or modified resource in the bulk response.",
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
         }
       ]
     }

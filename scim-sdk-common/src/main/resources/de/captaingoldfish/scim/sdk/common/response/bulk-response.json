@@ -35,6 +35,17 @@
           "required": true
         },
         {
+          "name": "id",
+          "type": "string",
+          "description": "The resource of the ID that was affected by the request-operation.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
           "name": "bulkId",
           "type": "string",
           "description": "The transient identifier of a newly created resource, unique within a bulk request and created by the client. The bulkId serves as a surrogate resource id enabling clients to uniquely identify newly created resources in the response and cross-reference new resources in and across operations within a bulk request.  REQUIRED when \"method\" is \"POST\".",

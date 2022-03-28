@@ -178,6 +178,33 @@ public final class AttributeNames
      * {@link #ERROR_MESSAGES} or {@link #FIELD_ERRORS} or both
      */
     public static final String ERRORS = "errors";
+
+    /**
+     * a field for bulk-requests that allow clients to explicitly ask for the resource that was created or
+     * modified to be returned.
+     */
+    public static final String RETURN_RESOURCE = "returnResource";
+
+    /**
+     * a configuration field for the service provider object in the
+     * {@link de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig} that allows resources to be
+     * returned from the bulk endpoint.
+     */
+    public static final String RETURN_RESOURCES_ENABLED = "returnResourcesEnabled";
+
+    /**
+     * a configuration field for the service provider object in the
+     * {@link de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig} that allows the service provider to
+     * return resources at all endpoints by default on bulk-requests even if the client did not explicitly ask for
+     * them. The client will still be capable to ask the service provider to not return the resource.
+     */
+    public static final String RETURN_RESOURCES_BY_DEFAULT_ON_BULK = "returnResourcesByDefaultOnBulk";
+
+    /**
+     * a field for the service provider configuration. If set to true the service provider will not return
+     * resources from the explicit resource-type if the client asks for them in the request.
+     */
+    public static final String BLOCK_RETURN_RESOURCES_ON_BULK = "blockReturnResourcesOnBulk";
   }
 
   /**

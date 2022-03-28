@@ -111,6 +111,28 @@
           "multiValued": false,
           "required": true,
           "caseExact": false
+        },
+        {
+          "name": "returnResourcesEnabled",
+          "type": "boolean",
+          "description": "Enable return resources at bulk endpoint. If a resource gets created or modified the bulk-endpoint will return the resource if the client explicitly asked for it in the response.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
+          "name": "returnResourcesByDefault",
+          "type": "boolean",
+          "description": "Allows the service provider to return resources at all endpoints by default on bulk-requests even if the client did not explicitly asked for them.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
         }
       ]
     },

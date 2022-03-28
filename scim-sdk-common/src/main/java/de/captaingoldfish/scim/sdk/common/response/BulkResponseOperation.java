@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
 
 
@@ -44,7 +45,7 @@ public class BulkResponseOperation extends ScimObjectNode
                                ETag version,
                                String location,
                                Integer status,
-                               ErrorResponse response)
+                               ScimObjectNode response)
   {
     this();
     setMethod(method);
@@ -212,9 +213,11 @@ public class BulkResponseOperation extends ScimObjectNode
    * other than a 200-series response, the response body MUST be included. For normal completion, the server MAY
    * elect to omit the response body.
    */
-  public Optional<ErrorResponse> getResponse()
+  public Optional<ScimObjectNode> getResponse()
   {
-    return Optional.ofNullable(get(AttributeNames.RFC7643.RESPONSE)).map(ErrorResponse::new);
+    return getStringAttribute(AttributeNames.RFC7643.RESPONSE).map(value -> {
+      return JsonHelper.readJsonDocument(value, ScimObjectNode.class);
+    });
   }
 
   /**
@@ -222,9 +225,24 @@ public class BulkResponseOperation extends ScimObjectNode
    * other than a 200-series response, the response body MUST be included. For normal completion, the server MAY
    * elect to omit the response body.
    */
-  public void setResponse(ErrorResponse response)
+  public void setResponse(ScimObjectNode response)
   {
     setAttribute(AttributeNames.RFC7643.RESPONSE, response);
+  }
+
+  /**
+   * The HTTP response body for the specified request operation. When indicating a response with an HTTP status
+   * other than a 200-series response, the response body MUST be included. For normal completion, the server MAY
+   * elect to omit the response body.
+   */
+  public <T extends ScimObjectNode> Optional<T> getResponse(Class<T> type)
+  {
+    if (ErrorResponse.class.isAssignableFrom(type))
+    {
+      return (Optional<T>)Optional.ofNullable(get(AttributeNames.RFC7643.RESPONSE)).map(ErrorResponse::new);
+    }
+    return Optional.ofNullable(get(AttributeNames.RFC7643.RESPONSE))
+                   .map(value -> JsonHelper.copyResourceToObject(value, type));
   }
 
 }

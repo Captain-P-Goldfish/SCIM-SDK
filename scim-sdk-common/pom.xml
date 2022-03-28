@@ -42,7 +42,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
                             </file>
-                            <checksum>ac6e391fc0daf4d00892b39c372edcea</checksum>
+                            <checksum>8c7c0686d07a75f7728123712bfe91b5</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -56,7 +56,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/resource-type-feature-ext.json
                             </file>
-                            <checksum>f685f254f6785afd3656fdfb55517ac6</checksum>
+                            <checksum>55fc94b18bde1670dc6b3e8d6d6af43c</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -105,7 +105,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/bulk-request.json
                             </file>
-                            <checksum>63f3ba5d38d9a5809a60d0bb9a274649</checksum>
+                            <checksum>9bfcb9de95ab5b844e9f97e9f6e864ef</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -119,7 +119,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/response/bulk-response.json
                             </file>
-                            <checksum>ceb7d5fe5dbd14d91e6b69673637131f</checksum>
+                            <checksum>980fd747ff170bbdfbbd7fa64ca841e6</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

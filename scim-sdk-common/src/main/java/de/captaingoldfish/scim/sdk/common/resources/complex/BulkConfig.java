@@ -33,12 +33,18 @@ public class BulkConfig extends ScimObjectNode
   protected static final Long DEFAULT_MAX_PAYLOAD_SIZE = (long)(Math.pow(1024, 2) * 2);
 
   @Builder
-  public BulkConfig(Boolean supported, Integer maxOperations, Long maxPayloadSize)
+  public BulkConfig(Boolean supported,
+                    Integer maxOperations,
+                    Long maxPayloadSize,
+                    Boolean returnResourcesEnabled,
+                    Boolean returnResourcesByDefault)
   {
     super(null);
     setSupported(supported);
     setMaxOperations(maxOperations);
     setMaxPayloadSize(maxPayloadSize);
+    setReturnResourcesEnabled(returnResourcesEnabled);
+    setReturnResourcesByDefault(returnResourcesByDefault);
   }
 
   /**
@@ -91,5 +97,48 @@ public class BulkConfig extends ScimObjectNode
   {
     setAttribute(AttributeNames.RFC7643.MAX_PAYLOAD_SIZE,
                  Optional.ofNullable(maxPayloadSize).orElse(DEFAULT_MAX_PAYLOAD_SIZE));
+  }
+
+  /**
+   * Enable return resources at bulk endpoint. If a resource gets created or modified the bulk-endpoint will
+   * return the resource if the client explicitly asked for it in the response.
+   */
+  public boolean isReturnResourcesEnabled()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.RETURN_RESOURCES_ENABLED).orElse(false);
+  }
+
+  /**
+   * Enable return resources at bulk endpoint. If a resource gets created or modified the bulk-endpoint will
+   * return the resource if the client explicitly asked for it in the response.
+   */
+  public void setReturnResourcesEnabled(Boolean returnResourcesEnabled)
+  {
+    setAttribute(AttributeNames.Custom.RETURN_RESOURCES_ENABLED,
+                 Optional.ofNullable(returnResourcesEnabled).orElse(false));
+  }
+
+  /**
+   * Allows the service provider to return resources at all endpoints by default on bulk-requests even if the
+   * client did not explicitly asked for them.
+   */
+  public boolean isReturnResourcesByDefault()
+  {
+    return isReturnResourcesEnabled()
+           && getBooleanAttribute(AttributeNames.Custom.RETURN_RESOURCES_BY_DEFAULT_ON_BULK).orElse(false);
+  }
+
+  /**
+   * Allows the service provider to return resources at all endpoints by default on bulk-requests even if the
+   * client did not explicitly asked for them.
+   */
+  public void setReturnResourcesByDefault(Boolean returnResourcesByDefault)
+  {
+    final boolean effectiveValue = Optional.ofNullable(returnResourcesByDefault).orElse(false);
+    if (effectiveValue)
+    {
+      setReturnResourcesEnabled(true);
+    }
+    setAttribute(AttributeNames.Custom.RETURN_RESOURCES_BY_DEFAULT_ON_BULK, effectiveValue);
   }
 }

@@ -35,7 +35,7 @@ public class BulkResponseOperationTest implements FileReferences
     final HttpMethod method = HttpMethod.POST;
     final String bulkId = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
-    final String location = EndpointPaths.USERS + "/" + UUID.randomUUID().toString();
+    final String location = EndpointPaths.USERS + "/" + UUID.randomUUID();
     final Integer status = HttpStatus.OK;
     final ErrorResponse response = new ErrorResponse(new InvalidSchemaException("invalid syntax", null,
                                                                                 HttpStatus.BAD_REQUEST,
@@ -55,7 +55,7 @@ public class BulkResponseOperationTest implements FileReferences
     Assertions.assertEquals(eTag, operations.getVersion().get());
     Assertions.assertEquals(location, operations.getLocation().get());
     Assertions.assertEquals(status, operations.getStatus());
-    Assertions.assertEquals(response, operations.getResponse().get());
+    Assertions.assertEquals(response, operations.getResponse(ErrorResponse.class).get());
 
     Assertions.assertEquals(method.name(), operations.get("method").textValue());
     Assertions.assertEquals(bulkId, operations.get("bulkId").textValue());

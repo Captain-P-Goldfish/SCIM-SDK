@@ -25,6 +25,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
+import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -188,6 +189,148 @@ public class BulkEndpointTest extends AbstractBulkTest
   }
 
   /**
+   * will verify that the server does not respond with the resources on bulk-responses if the feature is
+   * disabled even if the client explicitly asks for the resources
+   */
+  @Test
+  public void testServerDoesNotAllowResourceToBeReturnedOnBulk()
+  {
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(false);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations, true);
+    operations.addAll(createOperations);
+    final int failOnErrors = 0;
+    BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+    }
+  }
+
+  /**
+   * will verify that the created resources are returned on a bulk-response if the client did explicitly ask for
+   * the resource to be returned. This works only if the feature is enabled.
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testServerDoesAllowResourceToBeReturnedAndClientAsksForIt(boolean returnResource)
+  {
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations, returnResource);
+    operations.addAll(createOperations);
+    final int failOnErrors = 0;
+    BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertEquals(returnResource, bulkResponseOperation.getResponse().isPresent());
+      if (returnResource)
+      {
+        User user = bulkResponseOperation.getResponse(User.class).orElse(null);
+        Assertions.assertEquals(SchemaUris.USER_URI, user.getSchemas().iterator().next());
+      }
+    }
+  }
+
+  /**
+   * will verify that the server does not respond with the resource if the explicit resource type has disabled
+   * returning of resources
+   */
+  @Test
+  public void testServerDoesNotReturnBlockedResources()
+  {
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+    serviceProvider.getBulkConfig().setReturnResourcesByDefault(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    ResourceType userResourceType = bulkEndpoint.getResourceTypeFactory().getResourceType(EndpointPaths.USERS);
+    userResourceType.getFeatures().setBlockReturnResourcesOnBulk(true);
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations, true);
+    operations.addAll(createOperations);
+    final int failOnErrors = 0;
+    BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+    }
+  }
+
+  /**
+   * will verify that the server does put the resources into the response by default if the configuration is set
+   * to true and the resource is not blocked even if the client did not ask for the resource
+   */
+  @Test
+  public void testServerDoesReturnResourcesByDefault()
+  {
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setReturnResourcesByDefault(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations, null);
+    operations.addAll(createOperations);
+    final int failOnErrors = 0;
+    BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertTrue(bulkResponseOperation.getResponse().isPresent());
+    }
+  }
+
+  /**
+   * verifies that the client can tell the server that the resources should not be returned if the resources are
+   * returned by default.
+   */
+  @Test
+  public void testClientCanDenyReturnOfResources()
+  {
+    final int maxOperations = 10;
+    serviceProvider.getBulkConfig().setReturnResourcesByDefault(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations, false);
+    operations.addAll(createOperations);
+    final int failOnErrors = 0;
+    BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
+    Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
+    }
+  }
+
+  /**
    * shows that the request is validated and an exception is thrown if the bulk request is not conform to its
    * definition
    */
@@ -229,11 +372,12 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     int responseSize = bulkResponse.getBulkResponseOperations().size();
     BulkResponseOperation bulkResponseOperation = bulkResponse.getBulkResponseOperations().get(responseSize - 1);
-    MatcherAssert.assertThat(bulkResponseOperation.getResponse().get().getScimException().getClass(),
+    MatcherAssert.assertThat(bulkResponseOperation.getResponse(ErrorResponse.class).get().getScimException().getClass(),
                              Matchers.typeCompatibleWith(ResponseException.class));
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponseOperation.getStatus());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponseOperation.getResponse().get().getStatus());
-    MatcherAssert.assertThat(bulkResponseOperation.getResponse().get().getDetail().get(),
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+                            bulkResponseOperation.getResponse(ErrorResponse.class).get().getStatus());
+    MatcherAssert.assertThat(bulkResponseOperation.getResponse(ErrorResponse.class).get().getDetail().get(),
                              Matchers.equalTo("missing 'bulkId' on BULK-POST request"));
 
     for ( int i = 0 ; i < bulkResponse.getBulkResponseOperations().size() - 1 ; i++ )
@@ -316,7 +460,7 @@ public class BulkEndpointTest extends AbstractBulkTest
 
     bulkResponse.getBulkResponseOperations().forEach(operation -> {
       Assertions.assertTrue(operation.getResponse().isPresent());
-      ErrorResponse errorResponse = operation.getResponse().get();
+      ErrorResponse errorResponse = operation.getResponse(ErrorResponse.class).get();
       MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                                Matchers.typeCompatibleWith(ResponseException.class));
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
@@ -539,7 +683,10 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponse.getBulkResponseOperations().get(0).getStatus());
     Assertions.assertEquals(bulkId, bulkResponse.getBulkResponseOperations().get(0).getBulkId().get());
-    ErrorResponse errorResponse = bulkResponse.getBulkResponseOperations().get(0).getResponse().get();
+    ErrorResponse errorResponse = bulkResponse.getBulkResponseOperations()
+                                              .get(0)
+                                              .getResponse(ErrorResponse.class)
+                                              .get();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
     Assertions.assertEquals("the bulkId '" + bulkId + "' is a self-reference. Self-references will not be resolved",
                             errorResponse.getDetail().get());
@@ -669,14 +816,20 @@ public class BulkEndpointTest extends AbstractBulkTest
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());
-    ErrorResponse firstResponse = bulkResponse.getBulkResponseOperations().get(0).getResponse().get();
+    ErrorResponse firstResponse = bulkResponse.getBulkResponseOperations()
+                                              .get(0)
+                                              .getResponse(ErrorResponse.class)
+                                              .get();
     Assertions.assertEquals("the bulkIds '" + bulkId2 + "' and '" + bulkId + "' do form a circular "
                             + "reference that cannot be resolved.",
                             firstResponse.getDetail().get(),
                             bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.CONFLICT, firstResponse.getHttpStatus());
 
-    ErrorResponse secondResponse = bulkResponse.getBulkResponseOperations().get(1).getResponse().get();
+    ErrorResponse secondResponse = bulkResponse.getBulkResponseOperations()
+                                               .get(1)
+                                               .getResponse(ErrorResponse.class)
+                                               .get();
     Assertions.assertEquals("the bulkIds '" + bulkId + "' and '" + bulkId2 + "' do form a circular "
                             + "reference that cannot be resolved.",
                             secondResponse.getDetail().get());
@@ -775,12 +928,13 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             responseOperationList.get(0).getStatus(),
                             bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().isPresent(),
                           bulkResponse.toPrettyString());
     Assertions.assertEquals("the operation could not be resolved because the following bulkId-references "
                             + "could not be resolved 'bulkId:" + bulkId + "'",
-                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().get(),
                             bulkResponse.toPrettyString());
   }
 
@@ -814,12 +968,13 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             responseOperationList.get(0).getStatus(),
                             bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().isPresent(),
                           bulkResponse.toPrettyString());
     Assertions.assertEquals("the operation could not be resolved because the following bulkId-reference "
                             + "could not be resolved 'bulkId:" + bulkId + "'",
-                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().get(),
                             bulkResponse.toPrettyString());
   }
 
@@ -853,11 +1008,12 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             responseOperationList.get(0).getStatus(),
                             bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().isPresent(),
                           bulkResponse.toPrettyString());
     Assertions.assertEquals("the value '" + invalidBulkId + "' is not a valid bulkId reference",
-                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().get(),
                             bulkResponse.toPrettyString());
   }
 
@@ -896,11 +1052,12 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             responseOperationList.get(0).getStatus(),
                             bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().isPresent(), bulkResponse.toPrettyString());
-    Assertions.assertTrue(responseOperationList.get(0).getResponse().get().getDetail().isPresent(),
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).isPresent(),
+                          bulkResponse.toPrettyString());
+    Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().isPresent(),
                           bulkResponse.toPrettyString());
     Assertions.assertEquals("the value '" + invalidBulkId + "' is not a valid bulkId reference",
-                            responseOperationList.get(0).getResponse().get().getDetail().get(),
+                            responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().get(),
                             bulkResponse.toPrettyString());
   }
 
@@ -1043,12 +1200,12 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.CONFLICT, responseOperations.get(0).getStatus());
     Assertions.assertEquals("the bulkIds '" + createBulkId + "' and '" + patchBulkId + "' do form a circular "
                             + "reference that cannot be resolved.",
-                            responseOperations.get(0).getResponse().get().getDetail().get());
+                            responseOperations.get(0).getResponse(ErrorResponse.class).get().getDetail().get());
 
     Assertions.assertEquals(HttpStatus.CONFLICT, responseOperations.get(1).getStatus());
     Assertions.assertEquals("the bulkIds '" + patchBulkId + "' and '" + createBulkId + "' do form a circular "
                             + "reference that cannot be resolved.",
-                            responseOperations.get(1).getResponse().get().getDetail().get());
+                            responseOperations.get(1).getResponse(ErrorResponse.class).get().getDetail().get());
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
   }
 
@@ -1102,7 +1259,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, responseOperation.getStatus());
     Assertions.assertTrue(responseOperation.getResponse().isPresent());
     Assertions.assertEquals("the bulkId '" + bulkId + "' is a self-reference. Self-references will not be resolved",
-                            responseOperation.getResponse().get().getDetail().get());
+                            responseOperation.getResponse(ErrorResponse.class).get().getDetail().get());
   }
 
   /**
@@ -1300,7 +1457,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.BAD_REQUEST,
                             responseOperations.get(0).getStatus(),
                             bulkResponse.toPrettyString());
-    ErrorResponse errorResponse = responseOperations.get(0).getResponse().get();
+    ErrorResponse errorResponse = responseOperations.get(0).getResponse(ErrorResponse.class).get();
     String expectedMessage = "Required 'READ_WRITE' attribute "
                              + "'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.value' is missing";
     MatcherAssert.assertThat(errorResponse.getDetail().get(), Matchers.startsWith(expectedMessage));
@@ -1346,7 +1503,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(1, responses.size());
     BulkResponseOperation responseOperation = responses.get(0);
     Assertions.assertTrue(responseOperation.getResponse().isPresent(), bulkResponse.toPrettyString());
-    ErrorResponse errorResponse = responseOperation.getResponse().get();
+    ErrorResponse errorResponse = responseOperation.getResponse(ErrorResponse.class).get();
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getHttpStatus());
     Assertions.assertEquals("eTag status of resource has changed. Current value is: W/\"123456\"",
                             errorResponse.getDetail().get());

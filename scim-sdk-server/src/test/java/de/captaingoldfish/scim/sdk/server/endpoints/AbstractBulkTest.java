@@ -89,6 +89,16 @@ public abstract class AbstractBulkTest
    */
   protected List<BulkRequestOperation> getCreateUserBulkOperations(int numberOfOperations)
   {
+    return getCreateUserBulkOperations(numberOfOperations, null);
+  }
+
+  /**
+   * creates several create operations for a bulk operations
+   *
+   * @param numberOfOperations number of operations to create
+   */
+  protected List<BulkRequestOperation> getCreateUserBulkOperations(int numberOfOperations, Boolean returnResource)
+  {
     List<BulkRequestOperation> operations = new ArrayList<>();
     for ( int i = 0 ; i < numberOfOperations ; i++ )
     {
@@ -99,6 +109,7 @@ public abstract class AbstractBulkTest
                                          .method(HttpMethod.POST)
                                          .path(EndpointPaths.USERS)
                                          .data(user.toString())
+                                         .returnResource(returnResource)
                                          .build());
     }
     return operations;
