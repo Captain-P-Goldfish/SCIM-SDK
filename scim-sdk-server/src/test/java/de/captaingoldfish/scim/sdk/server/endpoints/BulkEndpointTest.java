@@ -183,6 +183,7 @@ public class BulkEndpointTest extends AbstractBulkTest
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getResourceId().isPresent());
     }
   }
 
@@ -475,6 +476,11 @@ public class BulkEndpointTest extends AbstractBulkTest
     final int maxOperations = 2;
     serviceProvider.getBulkConfig().setSupported(true);
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+    serviceProvider.getETagConfig().setSupported(true);
+    ResourceType usersResourceType = bulkEndpoint.getResourceTypeFactory().getResourceType(EndpointPaths.USERS);
+    usersResourceType.getFeatures().getETagFeature().setEnabled(true);
+    ResourceType groupsResourceType = bulkEndpoint.getResourceTypeFactory().getResourceType(EndpointPaths.GROUPS);
+    groupsResourceType.getFeatures().getETagFeature().setEnabled(true);
 
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(1);
 
@@ -499,6 +505,10 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(1, createGroup.getMembers().size());
     User user = userHandler.getInMemoryMap().values().iterator().next();
     Assertions.assertEquals(user.getId().get(), createGroup.getMembers().get(0).getValue().get());
+    responseOperations.forEach(operation -> {
+      Assertions.assertTrue(operation.getResourceId().isPresent());
+      Assertions.assertTrue(operation.getVersion().isPresent());
+    });
   }
 
   /**

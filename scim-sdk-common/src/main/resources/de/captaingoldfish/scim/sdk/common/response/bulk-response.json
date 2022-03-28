@@ -49,7 +49,7 @@
           "name": "version",
           "type": "string",
           "description": "The current resource version. Version MAY be used if the service provider supports entity-tags (ETags) (Section 2.3 of [RFC7232]) and \"method\" is \"PUT\", \"PATCH\", or \"DELETE\".",
-          "mutability": "readOnly",
+          "mutability": "readWrite",
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,

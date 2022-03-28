@@ -26,6 +26,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
@@ -37,6 +38,7 @@ import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
@@ -266,10 +268,10 @@ class BulkEndpoint
                                                                 operationUriInfo,
                                                                 doBeforeExecution,
                                                                 context);
-    responseBuilder.status(scimResponse.getHttpStatus())
-                   .response(ErrorResponse.class.isAssignableFrom(scimResponse.getClass()) ? (ErrorResponse)scimResponse
-                     : null);
-    if (ErrorResponse.class.isAssignableFrom(scimResponse.getClass()))
+    final boolean isErrorResponse = ErrorResponse.class.isAssignableFrom(scimResponse.getClass());
+    responseBuilder.status(scimResponse.getHttpStatus()).response(isErrorResponse ? (ErrorResponse)scimResponse : null);
+
+    if (isErrorResponse)
     {
       if (HttpMethod.POST.equals(operation.getMethod()))
       {
@@ -285,6 +287,26 @@ class BulkEndpoint
                    .orElse("");
       location = baseUri + operationUriInfo.getResourceEndpoint() + id;
       responseBuilder.location(location);
+      final boolean isResourceDeleted = HttpMethod.DELETE.equals(operationUriInfo.getHttpMethod());
+      if (isResourceDeleted)
+      {
+        responseBuilder.resourceId(operationUriInfo.getResourceId());
+      }
+      else
+      {
+        final ETag resourceVersion = Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.META))
+                                             .map(JsonNode::toString)
+                                             .map(metaResource -> {
+                                               Meta meta = JsonHelper.readJsonDocument(metaResource, Meta.class);
+                                               return meta.getVersion().orElse(null);
+                                             })
+                                             .orElse(null);
+        responseBuilder.version(resourceVersion);
+        final String resourceId = Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.ID))
+                                          .map(JsonNode::textValue)
+                                          .orElse(null);
+        responseBuilder.resourceId(resourceId);
+      }
     }
     if (StringUtils.isNotBlank(id) && operation.getBulkId().isPresent())
     {

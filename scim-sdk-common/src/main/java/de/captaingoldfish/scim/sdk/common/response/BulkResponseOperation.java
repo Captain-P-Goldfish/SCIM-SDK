@@ -40,6 +40,7 @@ public class BulkResponseOperation extends ScimObjectNode
   @Builder
   public BulkResponseOperation(HttpMethod method,
                                String bulkId,
+                               String resourceId,
                                ETag version,
                                String location,
                                Integer status,
@@ -48,6 +49,7 @@ public class BulkResponseOperation extends ScimObjectNode
     this();
     setMethod(method);
     setBulkId(bulkId);
+    setResourceId(resourceId);
     setVersion(version);
     setLocation(location);
     setStatus(status);
@@ -99,6 +101,24 @@ public class BulkResponseOperation extends ScimObjectNode
   public void setBulkId(String bulkId)
   {
     setAttribute(AttributeNames.RFC7643.BULK_ID, bulkId);
+  }
+
+  /**
+   * the unique identifier of the resource that is added to the response in order for the client to simplify the
+   * parsing of the id element. This is a custom field not defined by SCIM.
+   */
+  public Optional<String> getResourceId()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.ID);
+  }
+
+  /**
+   * the unique identifier of the resource that is added to the response in order for the client to simplify the
+   * parsing of the id element. This is a custom field not defined by SCIM.
+   */
+  public void setResourceId(String resourceId)
+  {
+    setAttribute(AttributeNames.RFC7643.ID, resourceId);
   }
 
   /**
