@@ -55,6 +55,13 @@ public class ScimClientConfig
   private boolean enableCookieManagement;
 
   /**
+   * if large request operation lists should automatically be split into several requests based on the
+   * maxOperations value from the service provider. Please note that a failed request in the middle of the
+   * process might cause unwanted results on the server that need to be resolved manually.
+   */
+  private boolean enableAutomaticBulkRequestSplitting;
+
+  /**
    * the hostname verifier that should be used in the requests
    */
   private HostnameVerifier hostnameVerifier;
@@ -94,6 +101,7 @@ public class ScimClientConfig
                           Integer socketTimeout,
                           Integer connectTimeout,
                           boolean enableCookieManagement,
+                          boolean enableAutomaticBulkRequestSplitting,
                           HostnameVerifier hostnameVerifier,
                           ProxyHelper proxy,
                           KeyStoreWrapper clientAuth,
@@ -107,6 +115,7 @@ public class ScimClientConfig
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
     this.connectTimeout = connectTimeout == null ? DEFAULT_TIMEOUT : connectTimeout;
     this.enableCookieManagement = enableCookieManagement;
+    this.enableAutomaticBulkRequestSplitting = enableAutomaticBulkRequestSplitting;
     this.hostnameVerifier = hostnameVerifier;
     this.proxy = proxy;
     this.clientAuth = clientAuth;

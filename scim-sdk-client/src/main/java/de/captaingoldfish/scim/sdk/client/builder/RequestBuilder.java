@@ -55,6 +55,7 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   /**
    * an apache http client wrapper that offers some convenience methods
    */
+  @Getter(AccessLevel.PROTECTED)
   private ScimHttpClient scimHttpClient;
 
   public RequestBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)

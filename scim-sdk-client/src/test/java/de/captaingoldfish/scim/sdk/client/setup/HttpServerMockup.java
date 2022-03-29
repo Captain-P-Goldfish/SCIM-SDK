@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.commons.io.IOUtils;
@@ -112,6 +113,13 @@ public abstract class HttpServerMockup
   private Supplier<String> getResponseBody;
 
   /**
+   * gets the actual response produced by the mock server and returns a changed response
+   */
+  @Getter(AccessLevel.PUBLIC)
+  @Setter(AccessLevel.PUBLIC)
+  private Function<String, String> manipulateResponse;
+
+  /**
    * used to add or override http headers in the response
    */
   @Setter(AccessLevel.PUBLIC)
@@ -187,9 +195,12 @@ public abstract class HttpServerMockup
         log.trace("calling server behaviour changer");
       }
       responseBodyOptional.ifPresent(responseBody -> {
+        String actualResponse = Optional.ofNullable(manipulateResponse)
+                                        .map(function -> function.apply(responseBody))
+                                        .orElse(responseBody);
         try (OutputStream outputStream = httpExchange.getResponseBody())
         {
-          outputStream.write(responseBody.getBytes());
+          outputStream.write(actualResponse.getBytes());
         }
         catch (IOException e)
         {

@@ -3,8 +3,6 @@ package de.captaingoldfish.scim.sdk.common.tree;
 import java.util.HashSet;
 import java.util.Set;
 
-import lombok.Getter;
-
 
 /**
  * this implementation represents a tree with several root-nodes and each node might have several parents and
@@ -13,7 +11,6 @@ import lombok.Getter;
  * @author Pascal Knueppel
  * @since 25.03.2022
  */
-@Getter
 public class GenericTree<T>
 {
 
@@ -85,7 +82,7 @@ public class GenericTree<T>
    * removes a single node from the tree. If the node was somewhere in the middle of the tree we will basically
    * get a second tree because its branch was cut off from the first tree
    */
-  protected void removeNodeFromTree(TreeNode<T> treeNode)
+  public void removeNodeFromTree(TreeNode<T> treeNode)
   {
     roots.remove(treeNode);
     leafs.remove(treeNode);
@@ -95,10 +92,10 @@ public class GenericTree<T>
 
   /**
    * removes the branch from the tree represented by the given treenode
-   * 
+   *
    * @param treeNode the branch to remove
    */
-  protected void removeBranchFromTree(TreeNode<T> treeNode)
+  public void removeBranchFromTree(TreeNode<T> treeNode)
   {
     Set<TreeNode<T>> branchNodes = treeNode.getAllBranchNodes();
     branchNodes.add(treeNode);
@@ -112,5 +109,46 @@ public class GenericTree<T>
       leafs.remove(node);
       allNodes.remove(node);
     }
+  }
+
+  /**
+   * creates a new node if a node with the same value does not exist yet and returns the existing node if a node
+   * with an identical value does already exist
+   */
+  public TreeNode<T> addDistinctNode(T value)
+  {
+    return allNodes.stream().filter(node -> node.getValue().equals(value)).findAny().orElseGet(() -> addNewNode(value));
+  }
+
+  /**
+   * if this tree still has any nodes left
+   */
+  public boolean hasNodes()
+  {
+    return !getAllNodes().isEmpty();
+  }
+
+  /**
+   * @see #allNodes
+   */
+  public Set<TreeNode<T>> getAllNodes()
+  {
+    return new HashSet<>(allNodes);
+  }
+
+  /**
+   * @see #roots
+   */
+  public Set<TreeNode<T>> getRoots()
+  {
+    return new HashSet<>(roots);
+  }
+
+  /**
+   * @see #leafs
+   */
+  public Set<TreeNode<T>> getLeafs()
+  {
+    return new HashSet<>(leafs);
   }
 }

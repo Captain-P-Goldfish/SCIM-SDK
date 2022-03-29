@@ -863,7 +863,9 @@ class BulkEndpoint
       if (bulkConfig.getMaxOperations() < bulkRequest.getBulkRequestOperations().size())
       {
         throw new BadRequestException("too many operations maximum number of operations is '"
-                                      + bulkConfig.getMaxOperations() + "'", null, ScimType.RFC7644.TOO_MANY);
+                                      + bulkConfig.getMaxOperations() + "' but got '"
+                                      + bulkRequest.getBulkRequestOperations().size() + "'", null,
+                                      ScimType.RFC7644.TOO_MANY);
       }
       if (bulkConfig.getMaxPayloadSize() < requestBody.getBytes().length)
       {

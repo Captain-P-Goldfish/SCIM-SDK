@@ -8,9 +8,14 @@ import de.captaingoldfish.scim.sdk.client.builder.ListBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.PatchBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
+import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -19,6 +24,7 @@ import lombok.Getter;
  * <br>
  * this class can be used to build any type of request for SCIM
  */
+@Slf4j
 public class ScimRequestBuilder implements AutoCloseable
 {
 
@@ -39,11 +45,46 @@ public class ScimRequestBuilder implements AutoCloseable
   @Getter(AccessLevel.PROTECTED) // for unit tests
   private ScimHttpClient scimHttpClient;
 
+  /**
+   * the service provider configuration from the SCIM provider application
+   */
+  @Getter
+  @Setter
+  private ServiceProvider serviceProvider;
+
   public ScimRequestBuilder(String baseUrl, ScimClientConfig scimClientConfig)
   {
     this.baseUrl = baseUrl.replaceFirst("/$", "");
     this.scimClientConfig = scimClientConfig;
     this.scimHttpClient = new ScimHttpClient(scimClientConfig);
+    this.serviceProvider = loadServiceProviderConfiguration();
+  }
+
+  /**
+   * tries to load the service provider configuration from the SCIM provider, but it will not cause any aborts
+   * if loading of the configuration does fail
+   */
+  public ServiceProvider loadServiceProviderConfiguration()
+  {
+    try
+    {
+      log.info("Trying to load service provider configuration from SCIM provider");
+      ServerResponse<ServiceProvider> response = this.get(ServiceProvider.class, EndpointPaths.SERVICE_PROVIDER_CONFIG)
+                                                     .sendRequest();
+      boolean isError = !response.isSuccess();
+      if (isError)
+      {
+        log.warn("Failed to load service provider configuration: status: '{}' responseBody: '{}'",
+                 response.getHttpStatus(),
+                 response.getResponseBody());
+      }
+      return response.getResource();
+    }
+    catch (Exception ex)
+    {
+      log.warn("Failed to load service provider configuration from SCIM provider", ex);
+      return null;
+    }
   }
 
   /**
@@ -220,7 +261,7 @@ public class ScimRequestBuilder implements AutoCloseable
    */
   public BulkBuilder bulk()
   {
-    return new BulkBuilder(baseUrl, scimHttpClient, false);
+    return new BulkBuilder(baseUrl, scimHttpClient, false, serviceProvider);
   }
 
   /**
@@ -232,7 +273,7 @@ public class ScimRequestBuilder implements AutoCloseable
    */
   public BulkBuilder bulk(String fullyQualifiedUrl)
   {
-    return new BulkBuilder(fullyQualifiedUrl, scimHttpClient, true);
+    return new BulkBuilder(fullyQualifiedUrl, scimHttpClient, true, serviceProvider);
   }
 
   /**

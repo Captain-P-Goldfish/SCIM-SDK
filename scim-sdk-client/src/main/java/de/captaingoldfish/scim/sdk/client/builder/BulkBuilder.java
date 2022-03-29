@@ -2,10 +2,17 @@ package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpPost;
@@ -17,6 +24,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -24,9 +32,16 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequestOperation;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
-import lombok.AccessLevel;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
+import de.captaingoldfish.scim.sdk.common.tree.GenericTree;
+import de.captaingoldfish.scim.sdk.common.tree.TreeNode;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -34,6 +49,7 @@ import lombok.Getter;
  * created at: 08.03.2020 <br>
  * <br>
  */
+@Slf4j
 public class BulkBuilder extends RequestBuilder<BulkResponse>
 {
 
@@ -45,7 +61,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   /**
    * the bulk request operations that should be executed
    */
-  @Getter(AccessLevel.PROTECTED)
+  @Getter
   private final List<BulkRequestOperation> bulkRequestOperationList;
 
   /**
@@ -54,13 +70,24 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   private final String fullUrl;
 
   /**
+   * contains the configuration of the service provider that is used to determine the max-operations of a bulk
+   * request and to help to split the operations into several requests if necessary. <br>
+   * This object might be null
+   */
+  private final ServiceProvider serviceProvider;
+
+  /**
    * if the resource should be retrieved by using the fully qualified url
    *
    * @param baseUrl the fully qualified url to the required resource
    * @param scimHttpClient the http client instance
    * @param isFullUrl if the given base url is the fully qualified url or not
+   * @param serviceProvider contains the configuration of the service provider that is used to determine the
+   *          max-operations of a bulk request and to help to split the operations into several requests if
+   *          necessary. <br>
+   *          This object might be null
    */
-  public BulkBuilder(String baseUrl, ScimHttpClient scimHttpClient, boolean isFullUrl)
+  public BulkBuilder(String baseUrl, ScimHttpClient scimHttpClient, boolean isFullUrl, ServiceProvider serviceProvider)
   {
     super(isFullUrl ? null : baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
 
@@ -68,6 +95,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     bulkRequestOperationList = new ArrayList<>();
     builder.bulkRequestOperation(bulkRequestOperationList);
     this.fullUrl = isFullUrl ? baseUrl : null;
+    this.serviceProvider = serviceProvider;
   }
 
   /**
@@ -155,6 +183,444 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   {
     String idPath = StringUtils.isBlank(id) ? "" : "/" + id;
     return new BulkRequestOperationCreator(this, path + idPath);
+  }
+
+  /**
+   * adds the given list of operations
+   */
+  public BulkBuilder addOperations(List<BulkRequestOperation> requestOperations)
+  {
+    bulkRequestOperationList.addAll(requestOperations);
+    return this;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
+  {
+    final int maxNumberOfOperationns = getMaxNumberOfOperationns();
+    final boolean isSplittingFeatureDisabled = !getScimHttpClient().getScimClientConfig()
+                                                                   .isEnableAutomaticBulkRequestSplitting();
+    final boolean fitsIntoASingleRequest = bulkRequestOperationList.size() <= maxNumberOfOperationns;
+    if (isSplittingFeatureDisabled || fitsIntoASingleRequest)
+    {
+      return super.sendRequestWithMultiHeaders(httpHeaders);
+    }
+    return sendMultipleBulkRequests(httpHeaders);
+  }
+
+  /**
+   * retrieves the current maximum number of operations allowed at the bulk endpoint
+   */
+  private int getMaxNumberOfOperationns()
+  {
+    return Optional.ofNullable(serviceProvider)
+                   .map(ServiceProvider::getBulkConfig)
+                   .map(BulkConfig::getMaxOperations)
+                   .orElse(Integer.MAX_VALUE);
+  }
+
+  /**
+   * splits the currently created bulk-request into several requests and tries to sort them based on their
+   * dependencies of other resources. Afterwards all responses will be put together into a single response
+   * object.
+   *
+   * @param httpHeaders allows the user to add additional http headers to the request
+   * @return a composed response object that results from several responses of the different requests
+   */
+  private ServerResponse<BulkResponse> sendMultipleBulkRequests(Map<String, String[]> httpHeaders)
+  {
+    boolean containsBulkIdReferences = getResource().contains(String.format("\"%s:", AttributeNames.RFC7643.BULK_ID));
+
+    BulkRequestIdResolverWrapper bulkRequestIdResolverWrapper;
+    if (containsBulkIdReferences)
+    {
+      // sort operations and split with relations preserved
+      bulkRequestIdResolverWrapper = splitRequestsWithRelationOrderPreserved();
+    }
+    else
+    {
+      // simply split the requests
+      List<List<BulkRequestOperation>> bulkRequestOperationRequestList = splitRequestsSimple(bulkRequestOperationList);
+      bulkRequestIdResolverWrapper = new BulkRequestIdResolverWrapper(bulkRequestOperationRequestList, new HashMap<>());
+    }
+
+    BulkResponse compositeBulkResponse = new BulkResponse();
+    List<ServerResponse<BulkResponse>> serverResponseList = new ArrayList<>();
+    for ( List<BulkRequestOperation> bulkRequestOperations : bulkRequestIdResolverWrapper.getRequestsList() )
+    {
+      boolean isFullUrl = getBaseUrl() == null;
+      replaceBulkRequestOperations(bulkRequestOperations, bulkRequestIdResolverWrapper);
+      BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl, serviceProvider);
+      splitBulkBuilder.getBulkRequestOperationList().addAll(bulkRequestOperations);
+      // the request in the super-class is created from the builder so we need to replace the original here. and
+      // afterwards we are changing it back to restore the original state
+      List<BulkRequestOperation> originalOperations = bulkRequestOperationList;
+      builder.bulkRequestOperation(bulkRequestOperations);
+      ServerResponse<BulkResponse> response = super.sendRequestWithMultiHeaders(httpHeaders);
+      builder.bulkRequestOperation(originalOperations);
+
+      validateResponseAndResolveResults(bulkRequestOperations,
+                                        bulkRequestIdResolverWrapper,
+                                        response,
+                                        compositeBulkResponse);
+      serverResponseList.add(response);
+    }
+
+    // validate responses and also content of responses
+    // if no error occurred until now everything is fine and all operations completed successfully
+    HttpResponse httpResponse = HttpResponse.builder()
+                                            .httpStatusCode(HttpStatus.OK)
+                                            .responseBody(compositeBulkResponse.toString())
+                                            // take the response headers from any request they will probably be the same
+                                            .responseHeaders(serverResponseList.get(0).getHttpHeaders())
+                                            .build();
+    return new ServerResponse<>(httpResponse, true, BulkResponse.class, isResponseParseable());
+  }
+
+  /**
+   * replaces the bulkId references with the children ids from previous requests
+   *
+   * @param bulkRequestOperations the current operations that should be executed next
+   * @param bulkRequestIdResolverWrapper this object contains the results from previous requests that need to be
+   *          added into the new structure
+   */
+  private void replaceBulkRequestOperations(List<BulkRequestOperation> bulkRequestOperations,
+                                            BulkRequestIdResolverWrapper bulkRequestIdResolverWrapper)
+  {
+    for ( int i = 0 ; i < bulkRequestOperations.size() ; i++ )
+    {
+      BulkRequestOperation bulkRequestOperation = bulkRequestOperations.get(i);
+      String operationString = bulkRequestOperation.toString();
+      List<BulkRequestOperation> childOperationList = bulkRequestIdResolverWrapper.getParentChildRelationMap()
+                                                                                  .get(bulkRequestOperation.getBulkId()
+                                                                                                           .get());
+      if (childOperationList == null)
+      {
+        break;
+      }
+      for ( BulkRequestOperation childOperation : childOperationList )
+      {
+        final String childBulkId = childOperation.getBulkId().get();
+        final String childResourceId = bulkRequestIdResolverWrapper.getResolvedBulkIds().get(childBulkId);
+
+        final String oldReference = String.format("\"%s:%s\"", AttributeNames.RFC7643.BULK_ID, childBulkId);
+        final String newReference = String.format("\"%s\"", childResourceId);
+        operationString = operationString.replaceAll(oldReference, newReference);
+      }
+
+      bulkRequestOperations.remove(i);
+      BulkRequestOperation newOperation = JsonHelper.readJsonDocument(operationString, BulkRequestOperation.class);
+      bulkRequestOperations.add(i, newOperation);
+    }
+  }
+
+  /**
+   * validates the response from the server and resolves the necessary for upcoming secondary requests
+   *
+   * @param bulkRequestOperations the list of operations that were just executed
+   * @param bulkRequestIdResolverWrapper the wrapper object that shall be extended by the created ids of
+   *          previous requests
+   * @param response the response from the server
+   * @param compositeBulkResponse a composition of response-operations. Since we are sending several requests we
+   *          will gather all response-operations in a single BulkResponse that will be returned
+   */
+  private void validateResponseAndResolveResults(List<BulkRequestOperation> bulkRequestOperations,
+                                                 BulkRequestIdResolverWrapper bulkRequestIdResolverWrapper,
+                                                 ServerResponse<BulkResponse> response,
+                                                 BulkResponse compositeBulkResponse)
+  {
+    if (!response.isSuccess())
+    {
+      log.error("Bulk error on automatically splitted requests. Please note that this might cause unwanted results "
+                + "on the server that need to be fixed manually. The following log messages shall help identifying "
+                + "the problem:");
+      log.error("The following request operations were not successful: \n{}",
+                bulkRequestOperationList.stream()
+                                        .map(ScimObjectNode::toPrettyString)
+                                        .collect(Collectors.joining("\n")));
+      final int indexOfFailedRequest = bulkRequestIdResolverWrapper.getRequestsList().indexOf(bulkRequestOperations);
+      if (indexOfFailedRequest > 0)
+      {
+        String successOperations = bulkRequestIdResolverWrapper.getRequestsList()
+                                                               .subList(0, indexOfFailedRequest)
+                                                               .stream()
+                                                               .flatMap(Collection::stream)
+                                                               .map(ScimObjectNode::toPrettyString)
+                                                               .collect(Collectors.joining("\n"));
+        log.error("The following operations were executed successfully on the server and were persisted: \n{}",
+                  successOperations);
+      }
+      throw new IllegalStateException(String.format("The bulk request failed with status: %s and message: %s",
+                                                    response.getHttpStatus(),
+                                                    response.getResponseBody()));
+    }
+
+    BulkResponse bulkResponse = response.getResource();
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      final String bulkId = bulkResponseOperation.getBulkId().orElseThrow(() -> {
+        return new IllegalStateException("Missing bulkId in response cannot resolve relations of split operations.");
+      });
+      final String resourceId = bulkResponseOperation.getResourceId().orElseGet(() -> {
+        return getIdFromLocationAttribute(bulkResponseOperation);
+      });
+      bulkRequestIdResolverWrapper.getResolvedBulkIds().put(bulkId, resourceId);
+      List<BulkResponseOperation> compositeOperations = compositeBulkResponse.getBulkResponseOperations();
+      compositeOperations.add(bulkResponseOperation);
+      compositeBulkResponse.setBulkResponseOperations(compositeOperations);
+    }
+  }
+
+  /**
+   * extracted into its own method for unit tests.
+   */
+  protected String getIdFromLocationAttribute(BulkResponseOperation bulkResponseOperation)
+  {
+    String[] locationParts = bulkResponseOperation.getLocation().map(s -> s.split("/")).get();
+    return locationParts[locationParts.length - 1];
+  }
+
+  /**
+   * splits the list of operations into several lists with the relation order intact. This means that requests
+   * containing bulkId relations will be put together. If this is not possible because the resulting list is
+   * still too large we will try to send a first request in order to resolve the parent-child relationship step
+   * by step.<br>
+   * <br>
+   * the method code is build with the following tree in mind and the service provider having a maxOperations
+   * value. The relationships are based on the bulkId references meaning that node 488 has a value-field with a
+   * string representation of "bulkId:111" and another one with "bulkId:523"
+   *
+   * <pre>
+   *     ServiceProviderConfig.BulkConfig.maxOperations = 5
+   *
+   *     (936)              (619)              (219)              (333)              (987)              (222)
+   *       |                                     |                  |
+   *       |                                     |                  |
+   *     (123)                                  / \                 |
+   *       |  \                                /   \               /|
+   *       |   \                              /     \             / |
+   *       |    ---------- (443)--------------       - (488) -----  |
+   *       |                                             |          |
+   *       |                                             |          |
+   *       |                                            / \         |
+   *     (582)                                         /   \        |
+   *                                                  /     \       |
+   *                                                 /       \      |
+   *                                               (523)      |     |
+   *                                                 |        |     |
+   *                                                  \       |     |
+   *                                                   \      |     |
+   *                                                     -- (111) --
+   * </pre>
+   *
+   * unparented leaf-nodes are (619), (987) and (222). These nodes can be isolated and do not need any specific
+   * attention, so we store the operations in a separate list and remove them from the tree. <br>
+   * Then we will isolate the leaf-nodes which are (582), (443) and (111). We will create a {@link Map} element
+   * that uses the bulkIds of the roots as keys and stores their children under the key. Afterwards the leafs
+   * will be deleted from the tree and so parent-child relationship will no longer be represented by this tree
+   * but by the created {@link Map} <br>
+   * Now we are doing this again until the number of maximum operations is reached. We will create a first list
+   * of operations. In the end we will return a wrapper object with two objects. First a two-dimensional list
+   * that contains the operations in the order they should be executed and the number of lists represents the
+   * number of requests that will be sent to the server. The second object is the {@link Map} that represents
+   * the parent-child relations, so that we can replace bulkId-references after each request within the map.
+   */
+  private BulkRequestIdResolverWrapper splitRequestsWithRelationOrderPreserved()
+  {
+    final int maxNumberOfOperationns = getMaxNumberOfOperationns();
+
+    // determine parent-child relations. We need this to build an operation-relation-chain
+    GenericTree<BulkRequestOperation> childParentRelationsTree = getParentChildRelationsOfRequest();
+
+
+    List<BulkRequestOperation> unparentedOperations = extractUnparentedOperationsFromTree(childParentRelationsTree);
+    // now we removed the unparented operations. In the tree-example above this would be (619), (987) and (222)
+
+    // this nested list will represent the requests that will eventually be sent to the server. Each list
+    // represents a single request
+    List<List<BulkRequestOperation>> requestLists = new ArrayList<>();
+
+    // the children of any node will be put with its bulkId into this map
+    Map<String, List<BulkRequestOperation>> parentChildRelationMap = new HashMap<>();
+    for ( TreeNode<BulkRequestOperation> treeNode : childParentRelationsTree.getAllNodes() )
+    {
+      if (treeNode.isLeaf())
+      {
+        continue;
+      }
+      parentChildRelationMap.put(treeNode.getValue().getBulkId().get(),
+                                 treeNode.getChildren().stream().map(TreeNode::getValue).collect(Collectors.toList()));
+    }
+
+    // now iterate for as long as the tree has still nodes left
+    while (childParentRelationsTree.hasNodes())
+    {
+      List<BulkRequestOperation> operationList = new ArrayList<>();
+
+      // iterate for as long as the tree has nodes left and the operation-list is not full
+      while (operationList.size() != maxNumberOfOperationns && childParentRelationsTree.hasNodes())
+      {
+        // iterate over the tree-leafs and enter them into the operations list until the list matches its maximum
+        // number of operations
+        for ( TreeNode<BulkRequestOperation> leaf : childParentRelationsTree.getLeafs() )
+        {
+          childParentRelationsTree.removeNodeFromTree(leaf);
+          operationList.add(leaf.getValue());
+          if (operationList.size() == maxNumberOfOperationns)
+          {
+            break;
+          }
+        }
+        // if no nodes are left anymore we are finished. This will end both loops inner and outer
+        if (!childParentRelationsTree.hasNodes())
+        {
+          requestLists.add(operationList);
+          break;
+        }
+        // if the operations-list is not full yet, we go into the next iteration and add more operations to the list
+        boolean areMoreOperationsAvailable = operationList.size() < maxNumberOfOperationns;
+        if (areMoreOperationsAvailable)
+        {
+          continue;
+        }
+        // this case represents the case that the operation list is full so we will go into the next iteration phase
+        // of the outer-loop, so add the operations-list to the requests-list.
+        requestLists.add(operationList);
+      }
+    }
+
+    /*
+     * taking the example tree above when iterating from left to right we will get the following result:
+     *
+     * // @formatter:off
+     * unparentedOperations:
+     *   [(619), (987), (222)]
+     *
+     * requestLists:
+     *   [0] (582), (443), (111), (123), (523)
+     *   [1] (936), (488), (219), (333)
+     * // @formatter:on
+     *
+     * as last operation we need to merge the unparented operations at the end of the list to get the following result:
+     *
+     * // @formatter:off
+     * requestLists:
+     *   [0] (582), (443), (111), (123), (523)
+     *   [1] (936), (488), (219), (333), (619)
+     *   [2] (987), (222)
+     * // @formatter:on
+     */
+
+    List<BulkRequestOperation> lastParentedList = requestLists.get(requestLists.size() - 1);
+    // fill the last list with the unparented operations list
+    if (lastParentedList.size() < maxNumberOfOperationns)
+    {
+      while (!unparentedOperations.isEmpty() && lastParentedList.size() < maxNumberOfOperationns)
+      {
+        BulkRequestOperation bulkRequestOperation = unparentedOperations.get(0);
+        unparentedOperations.remove(0);
+        lastParentedList.add(bulkRequestOperation);
+      }
+    }
+    // if the unparented operationslist is still not empty we need to add additional lists to the requests-list
+    if (!unparentedOperations.isEmpty())
+    {
+      List<List<BulkRequestOperation>> splittedLists = splitRequestsSimple(unparentedOperations);
+      requestLists.addAll(splittedLists);
+    }
+
+    return new BulkRequestIdResolverWrapper(requestLists, parentChildRelationMap);
+  }
+
+  /**
+   * gets all nodes from the tree that are leafs and roots and the same time and removes them from the tree
+   */
+  private List<BulkRequestOperation> extractUnparentedOperationsFromTree(GenericTree<BulkRequestOperation> childParentRelationsTree)
+  {
+    List<BulkRequestOperation> unparentedOperations = new ArrayList<>();
+    // first isolate all operations that do not have parents and thus do not have other operations referenced
+    for ( TreeNode<BulkRequestOperation> leaf : childParentRelationsTree.getLeafs() )
+    {
+      boolean isNodeWithoutRelationsships = leaf.isLeaf() && leaf.isRoot();
+      if (isNodeWithoutRelationsships)
+      {
+        unparentedOperations.add(leaf.getValue());
+        childParentRelationsTree.removeNodeFromTree(leaf);
+      }
+    }
+    return unparentedOperations;
+  }
+
+  /**
+   * this method tries its best to identify parent-child relations in the request and will place them in a map
+   * based on the child-entry so that we can identify the parents of the operation. For example if one operation
+   * has several bulkId references set within the code each reference is expected to be a parent of the current
+   * operation because this operation relies on the existence of the other resources.
+   *
+   * @return a multi-parent-tree representation of the child-parent-relationships within the request
+   */
+  private GenericTree<BulkRequestOperation> getParentChildRelationsOfRequest()
+  {
+    final String regex = String.format("\"%s:(.*?)\"", AttributeNames.RFC7643.BULK_ID);
+    Pattern bulkIdPattern = Pattern.compile(regex);
+
+    GenericTree<BulkRequestOperation> childParentRelations = new GenericTree<>();
+
+    for ( BulkRequestOperation bulkRequestOperation : getBulkRequestOperationList() )
+    {
+      final String currentResource = bulkRequestOperation.toString();
+      Matcher bulkIdMatcher = bulkIdPattern.matcher(currentResource);
+
+      TreeNode<BulkRequestOperation> parentNode = childParentRelations.addDistinctNode(bulkRequestOperation);
+      while (bulkIdMatcher.find())
+      {
+        final String bulkId = bulkIdMatcher.group(1);
+        BulkRequestOperation operation = bulkRequestOperationList.stream()
+                                                                 .filter(op -> bulkId.equals(op.getBulkId()
+                                                                                               .orElse(null)))
+                                                                 .findAny()
+                                                                 .orElseThrow(() -> {
+                                                                   String error = "found illegal bulkId in request '"
+                                                                                  + bulkId + "':  has no parent.";
+                                                                   return new IllegalStateException(error);
+                                                                 });
+
+        TreeNode<BulkRequestOperation> childNode = childParentRelations.addDistinctNode(operation);
+        parentNode.addChild(childNode);
+      }
+    }
+    return childParentRelations;
+  }
+
+  /**
+   * splits the list of operations into several lists so that all lists contain equal or fewer operations than
+   * the maximum number of allowed requests at the service provider
+   */
+  private List<List<BulkRequestOperation>> splitRequestsSimple(List<BulkRequestOperation> operationsToSplit)
+  {
+    final int maxNumberOfOperationns = getMaxNumberOfOperationns();
+
+    List<List<BulkRequestOperation>> splittedListParts = new ArrayList<>();
+    if (operationsToSplit.size() <= maxNumberOfOperationns)
+    {
+      splittedListParts.add(operationsToSplit);
+      return splittedListParts;
+    }
+
+    int currentIndex = 0;
+    while (currentIndex < operationsToSplit.size())
+    {
+      final int nextIndex = currentIndex + maxNumberOfOperationns;
+      final int effectiveListIndex = Math.min(nextIndex, operationsToSplit.size());
+      List<BulkRequestOperation> subList = operationsToSplit.subList(currentIndex, effectiveListIndex);
+      splittedListParts.add(new ArrayList<>(subList));
+      currentIndex += subList.size();
+    }
+
+    return splittedListParts;
   }
 
   /**
@@ -255,6 +721,38 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
     {
       return next().sendRequestWithMultiHeaders(httpHeaders);
+    }
+  }
+
+  /**
+   * this wrapper object is used when resolving bulkId-requests into several requests
+   */
+  @Getter
+  private static class BulkRequestIdResolverWrapper
+  {
+
+    /**
+     * an ordered list that must be executed in the order presented
+     */
+    private final List<List<BulkRequestOperation>> requestsList;
+
+    /**
+     * a parent child relationship map that uses the bulkId of the parents as keys and has its children as values
+     */
+    private final Map<String, List<BulkRequestOperation>> parentChildRelationMap;
+
+    /**
+     * after each request the results will be stored within this map in order to resolve the references of the
+     * next request
+     */
+    private final Map<String, String> resolvedBulkIds;
+
+    public BulkRequestIdResolverWrapper(List<List<BulkRequestOperation>> requestsList,
+                                        Map<String, List<BulkRequestOperation>> parentChildRelationMap)
+    {
+      this.requestsList = Objects.requireNonNull(requestsList);
+      this.parentChildRelationMap = Objects.requireNonNull(parentChildRelationMap);
+      this.resolvedBulkIds = new HashMap<>();
     }
   }
 }
