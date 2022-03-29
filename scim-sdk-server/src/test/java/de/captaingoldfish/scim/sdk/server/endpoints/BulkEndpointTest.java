@@ -509,7 +509,8 @@ public class BulkEndpointTest extends AbstractBulkTest
     }
     catch (BadRequestException ex)
     {
-      Assertions.assertEquals("too many operations maximum number of operations is '" + maxOperations + "'",
+      Assertions.assertEquals("too many operations maximum number of operations is '" + maxOperations + "' but got '"
+                              + createOperations.size() + "'",
                               ex.getDetail());
     }
   }

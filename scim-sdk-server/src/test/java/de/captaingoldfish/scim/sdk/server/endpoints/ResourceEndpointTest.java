@@ -1111,7 +1111,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
-    Assertions.assertEquals("too many operations maximum number of operations is '" + maxOperations + "'",
+    Assertions.assertEquals("too many operations maximum number of operations is '" + maxOperations + "' but got '"
+                            + createOperations.size() + "'",
                             errorResponse.getDetail().get());
   }
 
