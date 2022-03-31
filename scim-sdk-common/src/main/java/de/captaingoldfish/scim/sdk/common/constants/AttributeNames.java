@@ -198,7 +198,7 @@ public final class AttributeNames
      * return resources at all endpoints by default on bulk-requests even if the client did not explicitly ask for
      * them. The client will still be capable to ask the service provider to not return the resource.
      */
-    public static final String RETURN_RESOURCES_BY_DEFAULT_ON_BULK = "returnResourcesByDefaultOnBulk";
+    public static final String RETURN_RESOURCES_BY_DEFAULT_ON_BULK = "returnResourcesByDefault";
 
     /**
      * a field for the service provider configuration. If set to true the service provider will not return
