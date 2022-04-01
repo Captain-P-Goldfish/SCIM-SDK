@@ -167,7 +167,7 @@ class BulkEndpoint
         break;
       }
       iterations++;
-      BulkRequestOperation operation = operations.get(0);
+      BulkRequestOperation requestOperation = operations.get(0);
       if (errorCounter >= failOnErrors)
       {
         // The service provider stops processing the bulk operation and immediately returns a response to the client
@@ -175,7 +175,7 @@ class BulkEndpoint
       }
       try
       {
-        validateOperation(operation);
+        validateOperation(requestOperation);
       }
       catch (BadRequestException ex)
       {
@@ -185,23 +185,24 @@ class BulkEndpoint
         operations.remove(0);
         continue;
       }
-      BulkResponseOperation bulkResponseOperation = handleSingleBulkOperation(baseUri, operation, context);
+      BulkResponseOperation bulkResponseOperation = handleSingleBulkOperation(baseUri, requestOperation, context);
       if (bulkResponseOperation == null)
       {
         // mark this operation as already handled once
         String operationIdentifier = UUID.randomUUID().toString();
-        operation.setUniqueIdentifier(operationIdentifier);
+        requestOperation.setUniqueIdentifier(operationIdentifier);
         // the bulk operation references another operation that was not resolved yet so we move the operation for
         // another run to the end of the line
         operations.remove(0);
-        operations.add(operation);
+        operations.add(requestOperation);
         continue;
       }
       else
       {
         operations.remove(0);
       }
-      if (bulkResponseOperation.getResponse().isPresent())
+      boolean isSuccessfulResponseCode = isSuccessResponseCode(requestOperation, bulkResponseOperation);
+      if (!isSuccessfulResponseCode)
       {
         errorCounter++;
       }
@@ -218,6 +219,26 @@ class BulkEndpoint
       httpStatus = HttpStatus.INTERNAL_SERVER_ERROR;
     }
     return httpStatus;
+  }
+
+  /**
+   * verifies that the correct response code is returned based on the given http method
+   *
+   * @param requestOperation the operation that contains the method to execute
+   * @param responseOperation the response operation that contains the result of the processed operation
+   * @return true if the success-response code was returned, false else
+   */
+  private boolean isSuccessResponseCode(BulkRequestOperation requestOperation, BulkResponseOperation responseOperation)
+  {
+    switch (requestOperation.getMethod())
+    {
+      case POST:
+        return HttpStatus.CREATED == responseOperation.getStatus();
+      case DELETE:
+        return HttpStatus.NO_CONTENT == responseOperation.getStatus();
+      default:
+        return HttpStatus.OK == responseOperation.getStatus();
+    }
   }
 
   /**

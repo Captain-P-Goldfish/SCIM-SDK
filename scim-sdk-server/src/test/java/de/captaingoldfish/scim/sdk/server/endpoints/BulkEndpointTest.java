@@ -297,6 +297,7 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
       Assertions.assertTrue(bulkResponseOperation.getResponse().isPresent());
