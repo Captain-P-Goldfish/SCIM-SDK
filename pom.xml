@@ -74,7 +74,7 @@
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.12.0</version.apache.commons.lang3>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.jackson>2.13.2</version.jackson>
+        <version.jackson>2.13.3</version.jackson>
         <version.jacksondatabind>2.13.2.2</version.jacksondatabind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.antlr>4.9.3</version.antlr>
