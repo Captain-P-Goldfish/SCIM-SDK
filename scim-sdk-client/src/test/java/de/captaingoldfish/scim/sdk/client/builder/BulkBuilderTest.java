@@ -214,7 +214,7 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = ScimClientConfig.builder().enableAutomaticBulkRequestSplitting(true).build();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
-                                                          scimConfig.getServiceProvider()));
+                                                          scimConfig::getServiceProvider));
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0).addOperations(requestOperations).sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     BulkResponse bulkResponse = response.getResource();
@@ -244,7 +244,7 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = ScimClientConfig.builder().enableAutomaticBulkRequestSplitting(true).build();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
-                                                          scimConfig.getServiceProvider()));
+                                                          scimConfig::getServiceProvider));
     IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class,
                                                        () -> bulkBuilder.failOnErrors(0)
                                                                         .addOperations(requestOperations)
@@ -280,7 +280,7 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = ScimClientConfig.builder().enableAutomaticBulkRequestSplitting(true).build();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
-                                                          scimConfig.getServiceProvider()));
+                                                          scimConfig::getServiceProvider));
     IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class,
                                                        () -> bulkBuilder.failOnErrors(0)
                                                                         .addOperations(requestOperations)
@@ -315,7 +315,7 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = ScimClientConfig.builder().enableAutomaticBulkRequestSplitting(true).build();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
-                                                          scimConfig.getServiceProvider()));
+                                                          scimConfig::getServiceProvider));
     bulkBuilder.failOnErrors(0).addOperations(requestOperations).sendRequest();
     Mockito.verify(bulkBuilder, Mockito.times(requestOperations.size())).getIdFromLocationAttribute(Mockito.any());
   }
@@ -338,7 +338,7 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimClientConfig scimClientConfig = ScimClientConfig.builder().enableAutomaticBulkRequestSplitting(true).build();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
-                                                          scimConfig.getServiceProvider()));
+                                                          scimConfig::getServiceProvider));
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0).addOperations(requestOperations).sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     BulkResponse bulkResponse = response.getResource();

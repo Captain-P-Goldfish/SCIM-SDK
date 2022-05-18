@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -41,6 +42,7 @@ import de.captaingoldfish.scim.sdk.common.tree.GenericTree;
 import de.captaingoldfish.scim.sdk.common.tree.TreeNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Getter;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -74,7 +76,8 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    * request and to help to split the operations into several requests if necessary. <br>
    * This object might be null
    */
-  private final ServiceProvider serviceProvider;
+  @Setter
+  private Supplier<ServiceProvider> serviceProviderSupplier;
 
   /**
    * if the resource should be retrieved by using the fully qualified url
@@ -82,12 +85,15 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    * @param baseUrl the fully qualified url to the required resource
    * @param scimHttpClient the http client instance
    * @param isFullUrl if the given base url is the fully qualified url or not
-   * @param serviceProvider contains the configuration of the service provider that is used to determine the
-   *          max-operations of a bulk request and to help to split the operations into several requests if
+   * @param serviceProviderSupplier contains the configuration of the service provider that is used to determine
+   *          the max-operations of a bulk request and to help to split the operations into several requests if
    *          necessary. <br>
    *          This object might be null
    */
-  public BulkBuilder(String baseUrl, ScimHttpClient scimHttpClient, boolean isFullUrl, ServiceProvider serviceProvider)
+  public BulkBuilder(String baseUrl,
+                     ScimHttpClient scimHttpClient,
+                     boolean isFullUrl,
+                     Supplier<ServiceProvider> serviceProviderSupplier)
   {
     super(isFullUrl ? null : baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
 
@@ -95,7 +101,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     bulkRequestOperationList = new ArrayList<>();
     builder.bulkRequestOperation(bulkRequestOperationList);
     this.fullUrl = isFullUrl ? baseUrl : null;
-    this.serviceProvider = serviceProvider;
+    this.serviceProviderSupplier = Optional.ofNullable(serviceProviderSupplier).orElse(() -> null);
   }
 
   /**
@@ -216,7 +222,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   private int getMaxNumberOfOperationns()
   {
-    return Optional.ofNullable(serviceProvider)
+    return Optional.ofNullable(serviceProviderSupplier.get())
                    .map(ServiceProvider::getBulkConfig)
                    .map(BulkConfig::getMaxOperations)
                    .orElse(Integer.MAX_VALUE);
@@ -253,7 +259,8 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     {
       boolean isFullUrl = getBaseUrl() == null;
       replaceBulkRequestOperations(bulkRequestOperations, bulkRequestIdResolverWrapper);
-      BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl, serviceProvider);
+      BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl,
+                                                     serviceProviderSupplier);
       splitBulkBuilder.getBulkRequestOperationList().addAll(bulkRequestOperations);
       // the request in the super-class is created from the builder so we need to replace the original here. and
       // afterwards we are changing it back to restore the original state

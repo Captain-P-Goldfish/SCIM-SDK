@@ -57,7 +57,6 @@ public class ScimRequestBuilder implements AutoCloseable
     this.baseUrl = baseUrl.replaceFirst("/$", "");
     this.scimClientConfig = scimClientConfig;
     this.scimHttpClient = new ScimHttpClient(scimClientConfig);
-    this.serviceProvider = loadServiceProviderConfiguration();
   }
 
   /**
@@ -66,6 +65,10 @@ public class ScimRequestBuilder implements AutoCloseable
    */
   public ServiceProvider loadServiceProviderConfiguration()
   {
+    if (serviceProvider != null)
+    {
+      return serviceProvider;
+    }
     try
     {
       log.info("Trying to load service provider configuration from SCIM provider");
@@ -261,7 +264,7 @@ public class ScimRequestBuilder implements AutoCloseable
    */
   public BulkBuilder bulk()
   {
-    return new BulkBuilder(baseUrl, scimHttpClient, false, serviceProvider);
+    return new BulkBuilder(baseUrl, scimHttpClient, false, this::loadServiceProviderConfiguration);
   }
 
   /**
@@ -273,7 +276,7 @@ public class ScimRequestBuilder implements AutoCloseable
    */
   public BulkBuilder bulk(String fullyQualifiedUrl)
   {
-    return new BulkBuilder(fullyQualifiedUrl, scimHttpClient, true, serviceProvider);
+    return new BulkBuilder(fullyQualifiedUrl, scimHttpClient, true, this::loadServiceProviderConfiguration);
   }
 
   /**
