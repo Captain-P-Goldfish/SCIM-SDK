@@ -74,8 +74,7 @@
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.12.0</version.apache.commons.lang3>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.jackson>2.13.2</version.jackson>
-        <version.jacksondatabind>2.13.2.2</version.jacksondatabind>
+        <version.jackson>2.13.3</version.jackson>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.antlr>4.9.3</version.antlr>
         <version.apache.http.client>4.5.13</version.apache.http.client>
@@ -83,7 +82,7 @@
         <version.bouncy.castle>1.70</version.bouncy.castle>
 
         <!-- dependency conflicts -->
-        <version.javassist>3.28.0-GA</version.javassist>
+        <version.javassist>3.29.0-GA</version.javassist>
         <version.jboss.jaxb.api>2.0.1.Final</version.jboss.jaxb.api>
 
         <!-- logging dependencies -->
@@ -97,7 +96,7 @@
         <version.mockito>4.4.0</version.mockito>
         <version.resteasy.jaxrs>3.15.3.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.10</version.equalsverifier>
-        <version.springboot>2.6.6</version.springboot>
+        <version.springboot>2.6.7</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
 
         <!-- version conflicts -->
@@ -107,9 +106,9 @@
         <version.maven.compiler.plugin>3.10.1</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.17.1</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.0.0-M3</version.maven.enforcer.plugin>
-        <version.maven.surefire.plugin>3.0.0-M5</version.maven.surefire.plugin>
+        <version.maven.surefire.plugin>3.0.0-M6</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.2.1</version.maven.source.plugin>
-        <version.maven.javadoc.plugin>3.3.2</version.maven.javadoc.plugin>
+        <version.maven.javadoc.plugin>3.4.0</version.maven.javadoc.plugin>
         <version.maven.gpg.plugin>3.0.1</version.maven.gpg.plugin>
         <version.maven.deploy.plugin>3.0.0-M2</version.maven.deploy.plugin>
         <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
@@ -117,7 +116,7 @@
         <version.maven.versions.plugin>2.10.0</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.2.2</version.maven.jar.plugin>
         <version.gmaven.plugin>1.5</version.gmaven.plugin>
-        <version.jacoco>0.8.7</version.jacoco>
+        <version.jacoco>0.8.8</version.jacoco>
     </properties>
 
     <dependencyManagement>
@@ -161,7 +160,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${version.jacksondatabind}</version>
+                <version>${version.jackson}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
