@@ -10,6 +10,9 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Stream;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -302,6 +305,29 @@ public class ScimObjectNodeTest implements FileReferences
                               .orElseThrow(() -> new IllegalStateException("fail"));
     Assertions.assertEquals(tag, eTag.getTag());
     Assertions.assertTrue(eTag.isWeak());
+  }
+
+  /**
+   * verifies that attributes set to JSON null are recognized
+   */
+  @Test
+  public void testRecognizeNullValue() throws JsonProcessingException
+  {
+    JsonNode jsonNode = new ObjectMapper().readTree("{\"attr\": null}");
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    scimObjectNode.setAll((ObjectNode)jsonNode);
+    final String attributeName = "attr";
+
+    Assertions.assertFalse(scimObjectNode.getObjectAttribute(attributeName, AllTypes.class).isPresent());
+
+    Assertions.assertFalse(scimObjectNode.getStringAttribute(attributeName).isPresent());
+
+    Assertions.assertTrue(scimObjectNode.getArrayAttribute(attributeName, AllTypes.class).isEmpty());
+
+    Assertions.assertTrue(scimObjectNode.getSimpleArrayAttribute(attributeName, String.class).isEmpty());
+
+    Assertions.assertTrue(scimObjectNode.getSimpleArrayAttributeSet(attributeName, String.class).isEmpty());
+
   }
 
 }
