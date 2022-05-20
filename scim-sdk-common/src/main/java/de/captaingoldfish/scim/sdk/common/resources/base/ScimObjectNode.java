@@ -112,7 +112,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   protected <T extends TextNode> Optional<T> getStringAttribute(String attributeName, Class<T> type)
   {
     JsonNode jsonNode = this.get(attributeName);
-    if (jsonNode == null)
+    if (jsonNode == null || jsonNode.isNull())
     {
       return Optional.empty();
     }
@@ -143,7 +143,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   protected <T extends ObjectNode> Optional<T> getObjectAttribute(String attributeName, Class<T> type)
   {
     JsonNode jsonNode = this.get(attributeName);
-    if (jsonNode == null)
+    if (jsonNode == null || jsonNode.isNull())
     {
       return Optional.empty();
     }
@@ -167,7 +167,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   protected <T extends ObjectNode> List<T> getArrayAttribute(String attributeName, Class<T> type)
   {
     JsonNode jsonNode = this.get(attributeName);
-    if (jsonNode == null)
+    if (jsonNode == null || jsonNode.isNull())
     {
       return new ArrayList<>();
     }
@@ -229,7 +229,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
                                         null);
     }
     JsonNode jsonNode = this.get(attributeName);
-    if (jsonNode == null)
+    if (jsonNode == null || jsonNode.isNull())
     {
       return new ArrayList<>();
     }
@@ -300,7 +300,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
                                         null);
     }
     JsonNode jsonNode = this.get(attributeName);
-    if (jsonNode == null)
+    if (jsonNode == null || jsonNode.isNull())
     {
       return new HashSet<>();
     }
