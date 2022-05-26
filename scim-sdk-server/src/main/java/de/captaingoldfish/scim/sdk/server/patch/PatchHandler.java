@@ -172,6 +172,14 @@ public class PatchHandler
                                       + " a single value must be present in the values list which represents the "
                                       + "resource itself", null, ScimType.RFC7644.INVALID_VALUE);
       }
+
+      if (PatchOp.REPLACE.equals(operation.getOp()))
+      {
+        MsAzurePatchReplaceWorkaroundHandler msAzurePatchReplaceWorkaroundHandler = new MsAzurePatchReplaceWorkaroundHandler(operation.getOp(),
+                                                                                                                             values);
+        values = msAzurePatchReplaceWorkaroundHandler.fixValues();
+      }
+
       PatchResourceHandler patchResourceHandler = new PatchResourceHandler(resourceType, operation.getOp());
       boolean changeWasMade = patchResourceHandler.addResourceValues(resource,
                                                                      JsonHelper.readJsonDocument(values.get(0)),
