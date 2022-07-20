@@ -14,7 +14,7 @@
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
 
-        <version.javafx>17.0.2</version.javafx>
+        <version.javafx>18.0.2</version.javafx>
 
         <version.maven.assembly.plugin>3.3.0</version.maven.assembly.plugin>
     </properties>
