@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 
 
@@ -38,13 +39,14 @@ public class ResponseSchemaValidator extends AbstractSchemaValidator
    */
   private final BiFunction<String, String, String> referenceUrlSupplier;
 
-  public ResponseSchemaValidator(Class resourceNodeType,
+  public ResponseSchemaValidator(ServiceProvider serviceProvider,
+                                 Class resourceNodeType,
                                  List<SchemaAttribute> attributesList,
                                  List<SchemaAttribute> excludedAttributesList,
                                  JsonNode requestDocument,
                                  BiFunction<String, String, String> referenceUrlSupplier)
   {
-    super(resourceNodeType);
+    super(serviceProvider, resourceNodeType);
     this.attributesList = attributesList;
     this.excludedAttributesList = excludedAttributesList;
     this.requestDocument = requestDocument;

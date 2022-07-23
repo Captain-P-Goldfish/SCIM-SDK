@@ -26,7 +26,7 @@ public class MetaSchemaValidator extends AbstractSchemaValidator
 
   private MetaSchemaValidator()
   {
-    super(ScimObjectNode.class);
+    super(null, ScimObjectNode.class);
   }
 
   /**

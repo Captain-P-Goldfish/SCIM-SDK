@@ -877,7 +877,7 @@ class BulkEndpoint
       JsonNode jsonNode = JsonHelper.readJsonDocument(requestBody);
       SchemaFactory schemaFactory = getResourceTypeFactory().getSchemaFactory();
       Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
-      JsonNode validatedRequest = new RequestSchemaValidator(ScimObjectNode.class,
+      JsonNode validatedRequest = new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
                                                              HttpMethod.POST).validateDocument(bulkRequestSchema,
                                                                                                jsonNode);
       BulkRequest bulkRequest = JsonHelper.copyResourceToObject(validatedRequest, BulkRequest.class);

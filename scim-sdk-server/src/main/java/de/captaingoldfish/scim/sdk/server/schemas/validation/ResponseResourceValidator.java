@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -21,14 +22,16 @@ import lombok.extern.slf4j.Slf4j;
 public class ResponseResourceValidator extends AbstractResourceValidator
 {
 
-  public ResponseResourceValidator(ResourceType resourceType,
+  public ResponseResourceValidator(ServiceProvider serviceProvider,
+                                   ResourceType resourceType,
                                    List<SchemaAttribute> attributesList,
                                    List<SchemaAttribute> excludedAttributesList,
                                    JsonNode requestDocument,
                                    BiFunction<String, String, String> referenceUrlSupplier)
   {
-    super(resourceType, new ResponseSchemaValidator(resourceType.getResourceHandlerImpl().getType(), attributesList,
-                                                    excludedAttributesList, requestDocument, referenceUrlSupplier));
+    super(resourceType,
+          new ResponseSchemaValidator(serviceProvider, resourceType.getResourceHandlerImpl().getType(), attributesList,
+                                      excludedAttributesList, requestDocument, referenceUrlSupplier));
   }
 
   /**

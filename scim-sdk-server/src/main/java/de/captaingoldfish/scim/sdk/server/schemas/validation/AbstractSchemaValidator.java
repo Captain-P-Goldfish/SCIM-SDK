@@ -13,11 +13,15 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.AttributeExtractor;
+import de.captaingoldfish.scim.sdk.common.utils.CaseInsensitiveAttributeExtractor;
+import de.captaingoldfish.scim.sdk.common.utils.CaseSensitiveAttributeExtractor;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +36,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public abstract class AbstractSchemaValidator
 {
+
+  /**
+   * the service provider configuration in order to check if case-insensitive attribute extraction is enabled or
+   * not
+   */
+  private final ServiceProvider serviceProvider;
 
   protected final Class resourceNodeType;
 
@@ -102,16 +112,39 @@ public abstract class AbstractSchemaValidator
    */
   protected ScimObjectNode validateDocument(ScimObjectNode validatedResource, Schema resourceSchema, JsonNode resource)
   {
+    AttributeExtractor attributeExtractor = getAttributeExtractor(resource);
+
     for ( SchemaAttribute schemaAttribute : resourceSchema.getAttributes() )
     {
       log.trace("Validating attribute '{}'", schemaAttribute.getScimNodeName());
       final String attributeName = schemaAttribute.getName();
-      JsonNode attribute = resource.get(attributeName);
+      JsonNode attribute = attributeExtractor.getAttribute(schemaAttribute).orElse(null);
       Optional<JsonNode> validatedAttributeOptional = validateAttribute(schemaAttribute, attribute);
       validatedAttributeOptional.ifPresent(validatedAttribute -> {
         validatedResource.set(attributeName, validatedAttribute);
       });
     }
     return validatedResource;
+  }
+
+  /**
+   * retrieves the attribute extractor that should be used based on the service providers configuration
+   * 
+   * @param resource the resource that acts as the attribute extractors base document
+   * @return the attribute extractor to use. Default is the case-sensitive attribute extractor
+   */
+  public AttributeExtractor getAttributeExtractor(JsonNode resource)
+  {
+    final boolean caseInsensitiveValidation = Optional.ofNullable(serviceProvider)
+                                                      .map(ServiceProvider::isCaseSensitiveValidation)
+                                                      .orElse(false);
+    if (caseInsensitiveValidation)
+    {
+      return new CaseInsensitiveAttributeExtractor(resource);
+    }
+    else
+    {
+      return new CaseSensitiveAttributeExtractor(resource);
+    }
   }
 }

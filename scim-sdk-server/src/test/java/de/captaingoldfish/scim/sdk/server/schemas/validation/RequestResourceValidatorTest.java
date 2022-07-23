@@ -22,6 +22,7 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
@@ -33,6 +34,7 @@ import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PhoneNumber;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Photo;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
@@ -53,10 +55,16 @@ public class RequestResourceValidatorTest implements FileReferences
    */
   private ResourceTypeFactory resourceTypeFactory;
 
+  /**
+   * a basic service provider configuration
+   */
+  private ServiceProvider serviceProvider;
+
   @BeforeEach
   public void initialize()
   {
     this.resourceTypeFactory = new ResourceTypeFactory();
+    this.serviceProvider = new ServiceProvider();
   }
 
   /**
@@ -115,7 +123,8 @@ public class RequestResourceValidatorTest implements FileReferences
                                                                       .primary(true)
                                                                       .build()))
                                       .build();
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -142,7 +151,8 @@ public class RequestResourceValidatorTest implements FileReferences
                                   .userName("max")
                                   .groups(Arrays.asList(GroupNode.builder().value("head-directory").build()))
                                   .build();
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -174,7 +184,8 @@ public class RequestResourceValidatorTest implements FileReferences
     userResource.setSchemas((Set<String>)null);
     Assertions.assertNull(userResource.get(AttributeNames.RFC7643.SCHEMAS));
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -205,7 +216,8 @@ public class RequestResourceValidatorTest implements FileReferences
                                                   .manager(Manager.builder().value("852963").build())
                                                   .build();
     final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -243,7 +255,8 @@ public class RequestResourceValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
     userResource.setSchemas((Set<String>)null);
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -283,7 +296,8 @@ public class RequestResourceValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
     userResource.setSchemas((Set<String>)null);
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User validatedUser = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -316,7 +330,8 @@ public class RequestResourceValidatorTest implements FileReferences
     Assertions.assertEquals(1, userResource.getSchemas().size(), userResource.getSchemas().toString());
     MatcherAssert.assertThat(userResource.getSchemas(), Matchers.containsInAnyOrder(SchemaUris.ENTERPRISE_USER_URI));
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -347,7 +362,8 @@ public class RequestResourceValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").build();
     userResource.addSchema(SchemaUris.ENTERPRISE_USER_URI);
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {
       return requestResourceValidator.validateDocument(userResource);
     });
@@ -378,7 +394,8 @@ public class RequestResourceValidatorTest implements FileReferences
 
     final User userResource = User.builder().externalId("123").userName("max").build();
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(userResource));
 
     String errorMessage = "Required extension 'urn:gold:params:scim:schemas:custom:2.0:Role' is missing";
@@ -408,7 +425,8 @@ public class RequestResourceValidatorTest implements FileReferences
     final User userResource = User.builder().externalId("123").userName("max").build();
     userResource.addSchema("urn:gold:params:scim:schemas:custom:2.0:Role");
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(userResource));
 
     String errorMessage = "Required extension 'urn:gold:params:scim:schemas:custom:2.0:Role' is missing";
@@ -442,7 +460,8 @@ public class RequestResourceValidatorTest implements FileReferences
     roleNode.remove(AttributeNames.RFC7643.SCHEMAS);
     userResource.set(roleUri, roleNode);
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     User validatedUser = (User)Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(userResource));
     // the schemas in the resources may have a different order here so we will do the comparisons of the resource
     // and the schemas attribute in separate steps
@@ -455,5 +474,100 @@ public class RequestResourceValidatorTest implements FileReferences
                              Matchers.containsInAnyOrder(originalSchemas.stream()
                                                                         .map(Matchers::equalTo)
                                                                         .collect(Collectors.toList())));
+  }
+
+  /**
+   * verifies that a json document is correctly validated if its attributes are in CamelCase and are not
+   * according to the resource-schemas specification.
+   */
+  @Test
+  public void testResourceAttributesAreInCamelCaseSuccess()
+  {
+    // @formatter:off
+    final String userString = "{\n" +
+                              "  \"UserName\": \"UserName123\",\n" +
+                              "  \"externalId\": \"1\",\n" +
+                              "  \"active\": true,\n" +
+                              "  \"DisplayName\": \"BobIsAmazing\",\n" +
+                              "  \"preferredLanguage\": \"DE\",\n" +
+                              "  \"Timezone\": \"Europe/Berlin\",\n" +
+                              "  \"Schemas\": [\n" +
+                              "    \"urn:ietf:params:scim:schemas:core:2.0:User\"\n" +
+                              "  ]\n" +
+                              "}\n";
+    // @formatter:on
+
+    final JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    final JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    final JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(true),
+                                                                             userResourceTypeNode,
+                                                                             userSchemaNode,
+                                                                             enterpriseUser);
+
+    JsonNode jsonDocument = JsonHelper.readJsonDocument(userString);
+    ServiceProvider customizedServiceProvider = ServiceProvider.builder().caseSensitiveValidation(true).build();
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(customizedServiceProvider,
+                                                                                     userResourceType, HttpMethod.POST);
+    User user = (User)Assertions.assertDoesNotThrow(() -> {
+      return requestResourceValidator.validateDocument(jsonDocument);
+    });
+
+    Assertions.assertEquals("UserName123", user.getUserName().get());
+    Assertions.assertEquals("1", user.getExternalId().get());
+    Assertions.assertTrue(user.isActive().get());
+    Assertions.assertEquals("BobIsAmazing", user.getDisplayName().get());
+    Assertions.assertEquals("DE", user.getPreferredLanguage().get());
+    Assertions.assertEquals("Europe/Berlin", user.getTimezone().get());
+    Assertions.assertEquals(SchemaUris.USER_URI, user.getSchemas().iterator().next());
+  }
+
+  /**
+   * verifies that a json document is not parsed if case insensitivity in the service provider configuration is
+   * disabled
+   */
+  @Test
+  public void testResourceAttributesAreInCamelCaseFail()
+  {
+    // @formatter:off
+    final String userString = "{\n" +
+                              "  \"UserName\": \"UserName123\",\n" +
+                              "  \"externalId\": \"1\",\n" +
+                              "  \"active\": true,\n" +
+                              "  \"DisplayName\": \"BobIsAmazing\",\n" +
+                              "  \"preferredLanguage\": \"DE\",\n" +
+                              "  \"Timezone\": \"Europe/Berlin\",\n" +
+                              "  \"Schemas\": [\n" +
+                              "    \"urn:ietf:params:scim:schemas:core:2.0:User\"\n" +
+                              "  ]\n" +
+                              "}\n";
+    // @formatter:on
+
+    final JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    final JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    final JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(true),
+                                                                             userResourceTypeNode,
+                                                                             userSchemaNode,
+                                                                             enterpriseUser);
+
+    JsonNode jsonDocument = JsonHelper.readJsonDocument(userString);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
+    User user = (User)Assertions.assertDoesNotThrow(() -> {
+      return requestResourceValidator.validateDocument(jsonDocument);
+    });
+
+    ValidationContext validationContext = requestResourceValidator.getValidationContext();
+    Assertions.assertTrue(validationContext.hasErrors());
+    Assertions.assertEquals(1, validationContext.getFieldErrors().size());
+
+    Assertions.assertFalse(user.getUserName().isPresent());
+    Assertions.assertEquals("1", user.getExternalId().get());
+    Assertions.assertTrue(user.isActive().get());
+    Assertions.assertFalse(user.getDisplayName().isPresent());
+    Assertions.assertEquals("DE", user.getPreferredLanguage().get());
+    Assertions.assertFalse(user.getTimezone().isPresent());
+    Assertions.assertEquals(SchemaUris.USER_URI, user.getSchemas().iterator().next());
   }
 }

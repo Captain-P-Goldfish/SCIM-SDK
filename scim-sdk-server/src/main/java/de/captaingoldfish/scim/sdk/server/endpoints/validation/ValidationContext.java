@@ -152,6 +152,7 @@ public class ValidationContext
       addError(fieldName, cause.getMessage());
       cause = cause.getCause();
     }
+    log.debug(ex.getMessage(), ex);
   }
 
   /**

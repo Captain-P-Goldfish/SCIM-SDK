@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -45,11 +46,17 @@ public class ResourceTypeTest implements FileReferences
   private SchemaFactory schemaFactory;
 
   /**
+   * a basic service provider configuration
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * initializes the schema factory instance for unit tests
    */
   @BeforeEach
   public void initialize()
   {
+    serviceProvider = new ServiceProvider();
     ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
     schemaFactory = Assertions.assertDoesNotThrow(resourceTypeFactory::getSchemaFactory);
     resourceTypeFactory.registerResourceType(null,
@@ -104,7 +111,7 @@ public class ResourceTypeTest implements FileReferences
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     TestHelper.addMetaToDocument(enterpriseUserDocument);
-    JsonNode validatedDocument = new ResponseResourceValidator(resourceType, null, null, null,
+    JsonNode validatedDocument = new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
                                                                (s, s2) -> "http://localhost")
                                                                                              .validateDocument(enterpriseUserDocument);
 
@@ -157,7 +164,7 @@ public class ResourceTypeTest implements FileReferences
     resourceType.setResourceHandlerImpl(new UserHandlerImpl(false));
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode validatedDocument = new RequestResourceValidator(resourceType,
+    JsonNode validatedDocument = new RequestResourceValidator(serviceProvider, resourceType,
                                                               HttpMethod.POST).validateDocument(enterpriseUserDocument);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(null, validatedDocument);

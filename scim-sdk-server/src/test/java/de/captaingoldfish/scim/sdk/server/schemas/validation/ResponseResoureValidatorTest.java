@@ -27,6 +27,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -60,6 +61,11 @@ public class ResponseResoureValidatorTest implements FileReferences
   private ResourceTypeFactory resourceTypeFactory;
 
   /**
+   * a basic service provider configuration
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * creates a endpoint reference url to a specific resource that was registered within the
    * {@link #resourceTypeFactory}
    */
@@ -75,6 +81,7 @@ public class ResponseResoureValidatorTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
+    this.serviceProvider = new ServiceProvider();
     this.resourceTypeFactory = new ResourceTypeFactory();
 
     TestUser testUser = TestUser.class.getConstructor().newInstance();
@@ -127,7 +134,7 @@ public class ResponseResoureValidatorTest implements FileReferences
     Assertions.assertEquals(0, testUser.getSchemas().size());
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(resourceType, null, null, null,
+      return new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
                                            referenceUrlSupplier).validateDocument(testUser);
     });
     TestUser validatedTestUser = (TestUser)validatedDocument;

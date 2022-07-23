@@ -9,6 +9,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -27,10 +28,10 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestResourceValidator extends AbstractResourceValidator
 {
 
-  public RequestResourceValidator(ResourceType resourceType, HttpMethod httpMethod)
+  public RequestResourceValidator(ServiceProvider serviceProvider, ResourceType resourceType, HttpMethod httpMethod)
   {
-    super(resourceType, new RequestSchemaValidator(resourceType.getResourceHandlerImpl().getType(), httpMethod,
-                                                   new ValidationContext(resourceType)));
+    super(resourceType, new RequestSchemaValidator(serviceProvider, resourceType.getResourceHandlerImpl().getType(),
+                                                   httpMethod, new ValidationContext(resourceType)));
   }
 
   /**

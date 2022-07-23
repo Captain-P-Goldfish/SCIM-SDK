@@ -209,7 +209,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      RequestResourceValidator resourceValidator = new RequestResourceValidator(resourceType, HttpMethod.POST);
+      RequestResourceValidator resourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+                                                                                HttpMethod.POST);
       ResourceNode resourceNode = (ResourceNode)resourceValidator.validateDocument(resource);
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       meta.setResourceType(resourceType.getName());
@@ -238,7 +239,8 @@ class ResourceEndpointHandler
       createdMeta.setLocation(location);
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, null, null, resource,
+      ResponseResourceValidator responseValidator = new ResponseResourceValidator(null, resourceType, null, null,
+                                                                                  resource,
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
       return new CreateResponse(responseResource, location, createdMeta);
@@ -368,7 +370,8 @@ class ResourceEndpointHandler
         meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       });
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, attributesList,
+      ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType,
+                                                                                  attributesList,
                                                                                   excludedAttributesList, null,
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
@@ -596,7 +599,8 @@ class ResourceEndpointHandler
           meta.setResourceType(resourceType.getName());
           ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
         });
-        ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, attributesList,
+        ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType,
+                                                                                    attributesList,
                                                                                     excludedAttributesList, null,
                                                                                     getReferenceUrlSupplier(baseUrlSupplier));
         JsonNode validatedResource = responseValidator.validateDocument(resourceNode);
@@ -802,7 +806,8 @@ class ResourceEndpointHandler
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType, HttpMethod.PUT);
+      RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+                                                                                       HttpMethod.PUT);
       ResourceNode resourceNode = (ResourceNode)requestResourceValidator.validateDocument(resource);
       AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
       Supplier<ResourceNode> oldResourceSupplier = () -> {
@@ -864,8 +869,8 @@ class ResourceEndpointHandler
                                           null, null);
       }
 
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, null, null,
-                                                                                  resourceNode,
+      ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType, null,
+                                                                                  null, resourceNode,
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));
       JsonNode responseResource = responseValidator.validateDocument(resourceNode);
 
@@ -1003,7 +1008,7 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
-      patchDocument = new RequestSchemaValidator(ScimObjectNode.class,
+      patchDocument = new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
                                                  HttpMethod.PATCH).validateDocument(patchSchema, patchDocument);
       // attributes and excludedAttributes are not passed here because the update is done on the whole resource so
       // we must also extract the whole resource now
@@ -1030,7 +1035,7 @@ class ResourceEndpointHandler
 
       // validates the patched resource and throws an exception if an error was found
       {
-        RequestResourceValidator requestResourceValidator = new RequestResourceValidator(resourceType,
+        RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
                                                                                          HttpMethod.PATCH);
         requestResourceValidator.validateDocument(patchedResourceNode);
         Supplier<ResourceNode> oldResourceSupplier = () -> resourceHandler.getResource(id,
@@ -1064,7 +1069,8 @@ class ResourceEndpointHandler
       }
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(resourceType, attributesList,
+      ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType,
+                                                                                  attributesList,
                                                                                   excludedAttributesList,
                                                                                   patchHandler.getRequestedAttributes(),
                                                                                   getReferenceUrlSupplier(baseUrlSupplier));

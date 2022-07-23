@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -36,10 +37,17 @@ public class SchemaAttributeValidationTest implements FileReferences
    */
   private ResourceTypeFactory resourceTypeFactory;
 
+  /**
+   * a basic service provider configuration
+   */
+  private ServiceProvider serviceProvider;
+
+
   @BeforeEach
   public void initialize()
   {
     this.resourceTypeFactory = new ResourceTypeFactory();
+    this.serviceProvider = new ServiceProvider();
   }
 
   /**
@@ -69,7 +77,8 @@ public class SchemaAttributeValidationTest implements FileReferences
 
 
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(userResourceType, HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.POST);
     Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
 
     Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
@@ -112,7 +121,7 @@ public class SchemaAttributeValidationTest implements FileReferences
     user.setUserName(validUsername);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestResourceValidator(userResourceType, HttpMethod.POST).validateDocument(user);
+      return new RequestResourceValidator(serviceProvider, userResourceType, HttpMethod.POST).validateDocument(user);
     });
 
     User validatedUser = JsonHelper.copyResourceToObject(validatedDocument, User.class);

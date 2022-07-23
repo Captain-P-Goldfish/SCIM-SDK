@@ -47,6 +47,13 @@ public class ServiceProvider extends ResourceNode
   @Getter
   private ForkJoinPool threadPool = ForkJoinPool.commonPool();
 
+  /**
+   * if the attributes within the resource objects should be extracted case-insensitive or case exact by their
+   * attribute-names
+   */
+  @Getter
+  private boolean caseSensitiveValidation;
+
   @Builder
   public ServiceProvider(String documentationUri,
                          PatchConfig patchConfig,
@@ -56,7 +63,8 @@ public class ServiceProvider extends ResourceNode
                          FilterConfig filterConfig,
                          BulkConfig bulkConfig,
                          List<AuthenticationScheme> authenticationSchemes,
-                         ForkJoinPool forkJoinPool)
+                         ForkJoinPool forkJoinPool,
+                         boolean caseSensitiveValidation)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -74,6 +82,7 @@ public class ServiceProvider extends ResourceNode
                     .build();
     setMeta(meta);
     Optional.ofNullable(forkJoinPool).ifPresent(this::setThreadPool);
+    this.caseSensitiveValidation = caseSensitiveValidation;
   }
 
   /**
