@@ -506,7 +506,7 @@ public class RequestResourceValidatorTest implements FileReferences
                                                                              enterpriseUser);
 
     JsonNode jsonDocument = JsonHelper.readJsonDocument(userString);
-    ServiceProvider customizedServiceProvider = ServiceProvider.builder().caseSensitiveValidation(true).build();
+    ServiceProvider customizedServiceProvider = ServiceProvider.builder().caseInsensitiveValidation(true).build();
     RequestResourceValidator requestResourceValidator = new RequestResourceValidator(customizedServiceProvider,
                                                                                      userResourceType, HttpMethod.POST);
     User user = (User)Assertions.assertDoesNotThrow(() -> {

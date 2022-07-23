@@ -52,7 +52,7 @@ public class ServiceProvider extends ResourceNode
    * attribute-names
    */
   @Getter
-  private boolean caseSensitiveValidation;
+  private boolean caseInsensitiveValidation;
 
   @Builder
   public ServiceProvider(String documentationUri,
@@ -64,7 +64,7 @@ public class ServiceProvider extends ResourceNode
                          BulkConfig bulkConfig,
                          List<AuthenticationScheme> authenticationSchemes,
                          ForkJoinPool forkJoinPool,
-                         boolean caseSensitiveValidation)
+                         boolean caseInsensitiveValidation)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -82,7 +82,7 @@ public class ServiceProvider extends ResourceNode
                     .build();
     setMeta(meta);
     Optional.ofNullable(forkJoinPool).ifPresent(this::setThreadPool);
-    this.caseSensitiveValidation = caseSensitiveValidation;
+    this.caseInsensitiveValidation = caseInsensitiveValidation;
   }
 
   /**

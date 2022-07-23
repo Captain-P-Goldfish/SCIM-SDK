@@ -136,7 +136,7 @@ public abstract class AbstractSchemaValidator
   public AttributeExtractor getAttributeExtractor(JsonNode resource)
   {
     final boolean caseInsensitiveValidation = Optional.ofNullable(serviceProvider)
-                                                      .map(ServiceProvider::isCaseSensitiveValidation)
+                                                      .map(ServiceProvider::isCaseInsensitiveValidation)
                                                       .orElse(false);
     if (caseInsensitiveValidation)
     {
