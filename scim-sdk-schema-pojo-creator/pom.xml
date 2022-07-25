@@ -16,7 +16,7 @@
 
         <version.javafx>17.0.2</version.javafx>
 
-        <version.maven.assembly.plugin>3.3.0</version.maven.assembly.plugin>
+        <version.maven.assembly.plugin>3.4.2</version.maven.assembly.plugin>
     </properties>
 
     <dependencyManagement>
