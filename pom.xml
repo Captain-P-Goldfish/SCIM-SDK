@@ -90,7 +90,7 @@
         <version.slf4j>1.7.36</version.slf4j>
 
         <!-- test dependencies -->
-        <version.junit.jupiter>5.8.2</version.junit.jupiter>
+        <version.junit.jupiter>5.9.0</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.10.2</version.reflections>
         <version.mockito>4.4.0</version.mockito>
