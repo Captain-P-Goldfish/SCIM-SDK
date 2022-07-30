@@ -49,7 +49,8 @@ public class ServiceProvider extends ResourceNode
 
   /**
    * if the attributes within the resource objects should be extracted case-insensitive or case exact by their
-   * attribute-names
+   * attribute-names.<br>
+   * This feature does not work for patch requests
    */
   @Getter
   private boolean caseInsensitiveValidation;
