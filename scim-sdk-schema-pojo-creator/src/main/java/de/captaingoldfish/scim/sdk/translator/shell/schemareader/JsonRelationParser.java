@@ -90,11 +90,19 @@ public class JsonRelationParser
         }
       }
       JsonNode resourceSchema = getResourceSchemaByUri(resourceSchemaUri).orElse(null);
+      if (resourceSchema == null)
+      {
+        final String resourceTypeName = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.NAME).textValue();
+        log.warn("ResourceType \"{}\" is ignored because the referenced schema \"{}\" could not be found",
+                 resourceTypeName,
+                 resourceSchemaUri);
+        continue;
+      }
       List<Schema> extensionNodes = extensionUris.stream().map(resourceSchemaUri1 -> {
         return getResourceSchemaByUri(resourceSchemaUri1).orElse(null);
       }).filter(Objects::nonNull).map(Schema::new).collect(Collectors.toList());
       SchemaRelation schemaRelationWrapper = new SchemaRelation(resourceTypeWrapper.getJsonNode(),
-                                                                  new Schema(resourceSchema), extensionNodes);
+                                                                new Schema(resourceSchema), extensionNodes);
       schemaRelationWrapperList.add(schemaRelationWrapper);
     }
     return schemaRelationWrapperList;

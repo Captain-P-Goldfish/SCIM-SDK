@@ -2,6 +2,7 @@
 <#import "functions.ftl" as functions>
 package ${packageName};
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -17,7 +18,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 
 
 <@makros.addJavadoc javadoc=resource.description.get() indent=0 />
-public class ${resource.name.get()?cap_first} extends <#rt>
+public class ${resource.name.get()?cap_first?replace(" ", "")} extends <#rt>
 <#lt><#if isExtension>
     <#lt>ScimObjectNode
 <#else>
@@ -25,7 +26,7 @@ public class ${resource.name.get()?cap_first} extends <#rt>
 </#if>
 {
 
-<@makros.addConstructor name=resource.name.get()
+<@makros.addConstructor name=resource.name.get()?replace(" ", "")
                         attributesList=resource.attributes
                         isResourceNode=!isExtension
                         extensionList=extensionList

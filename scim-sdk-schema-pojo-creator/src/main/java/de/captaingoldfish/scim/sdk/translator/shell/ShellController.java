@@ -30,9 +30,8 @@ public class ShellController
 {
 
   /**
-   * // @formatter:off
-   * translate -r -l E:/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-common/src/main/resources/de/captaingoldfish  /scim/sdk/common -o E:/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-schema-pojo-creator/target
-   * // @formatter:on
+   * will translate the schemas at the given location into java pojos representing the necessary structures for
+   * the SCIM-SDK implementation
    */
   @SneakyThrows
   @ShellMethod(key = "translate", value = "Translate SCIM schemas to Java POJOs for SCIM SDK")

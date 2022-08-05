@@ -38,7 +38,7 @@
         <#lt>${typeIndent}return getDoubleAttribute(FieldNames.${attribute.name?upper_case})<#rt>
         <#lt><#if functions.isRequired(attribute)>.get()</#if>;
     <#elseif  attribute.type == 'DATE_TIME'>
-        <#lt>$${typeIndent}return getDateTimeAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+        <#lt>${typeIndent}return getDateTimeAttribute(FieldNames.${attribute.name?upper_case})<#rt>
         <#lt><#if functions.isRequired(attribute)>.get()</#if>;
     <#elseif  attribute.type == 'COMPLEX'><#rt>
         <#if attribute.multiValued>

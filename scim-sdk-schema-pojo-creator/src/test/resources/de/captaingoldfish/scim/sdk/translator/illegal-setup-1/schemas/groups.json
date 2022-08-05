@@ -1,0 +1,109 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:ietf:params:scim:schemas:core:2.0:Group",
+  "name": "Group",
+  "description": "Group",
+  "attributes": [
+    {
+      "name": "id",
+      "type": "string",
+      "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+      "mutability": "readOnly",
+      "returned": "always",
+      "uniqueness": "server",
+      "multiValued": false,
+      "required": true,
+      "caseExact": true
+    },
+    {
+      "name": "externalId",
+      "type": "string",
+      "description": "A String that is an identifier for the resource as defined by the provisioning client.The service provider MUST always interpret the externalId as scoped to the provisioning domain.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true
+    },
+    {
+      "name": "displayName",
+      "type": "string",
+      "description": "A human-readable name for the Group. REQUIRED.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": true,
+      "caseExact": false
+    },
+    {
+      "name": "members",
+      "type": "complex",
+      "description": "A list of members of the Group.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": true,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [
+        {
+          "name": "value",
+          "type": "string",
+          "description": "Identifier of the member of this Group.",
+          "mutability": "immutable",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": true,
+          "caseExact": false
+        },
+        {
+          "name": "$ref",
+          "type": "reference",
+          "description": "The uri corresponding to a SCIM resource that is a member of this Group.",
+          "mutability": "immutable",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false,
+          "referenceTypes": [
+            "resource"
+          ]
+        },
+        {
+          "name": "display",
+          "type": "string",
+          "description": "A human-readable name for the Member",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
+          "name": "type",
+          "type": "string",
+          "description": "A label indicating the type of resource, e.g. 'User' or 'Group'",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        }
+      ]
+    }
+  ],
+  "meta": {
+    "resourceType": "Schema",
+    "created": "2019-10-18T14:51:11+02:00",
+    "lastModified": "2019-10-18T14:51:11+02:00",
+    "location": "/Schemas/Group"
+  }
+}
