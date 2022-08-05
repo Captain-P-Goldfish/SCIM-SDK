@@ -1,9 +1,8 @@
-package de.captaingoldfish.scim.sdk.translator.parser;
+package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -15,7 +14,7 @@ import org.apache.commons.io.IOUtils;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import de.captaingoldfish.scim.sdk.translator.utils.FileInfoWrapper;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -27,7 +26,8 @@ import lombok.extern.slf4j.Slf4j;
 public class FileSystemJsonReader
 {
 
-  public static List<FileInfoWrapper> parseFileToJsonNode(File file, boolean recursive) throws IOException
+  @SneakyThrows
+  public static List<FileInfoWrapper> parseFileToJsonNode(File file, boolean recursive)
   {
     List<FileInfoWrapper> schemaList = new ArrayList<>();
     if (file.isDirectory() && recursive)

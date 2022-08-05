@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.translator.parser;
+package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -16,8 +16,6 @@ import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
-import de.captaingoldfish.scim.sdk.translator.utils.FileInfoWrapper;
-import de.captaingoldfish.scim.sdk.translator.utils.SchemaRelations;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -71,9 +69,9 @@ public class JsonRelationParser
     return validateResourceSchemas(tmpResourceTypes);
   }
 
-  public List<SchemaRelations> getSchemaRelations()
+  public List<SchemaRelation> getSchemaRelations()
   {
-    List<SchemaRelations> schemaRelationWrapperList = new ArrayList<>();
+    List<SchemaRelation> schemaRelationWrapperList = new ArrayList<>();
     for ( FileInfoWrapper resourceTypeWrapper : resourceTypes )
     {
       String resourceSchemaUri = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.SCHEMA).textValue();
@@ -95,7 +93,7 @@ public class JsonRelationParser
       List<Schema> extensionNodes = extensionUris.stream().map(resourceSchemaUri1 -> {
         return getResourceSchemaByUri(resourceSchemaUri1).orElse(null);
       }).filter(Objects::nonNull).map(Schema::new).collect(Collectors.toList());
-      SchemaRelations schemaRelationWrapper = new SchemaRelations(resourceTypeWrapper.getJsonNode(),
+      SchemaRelation schemaRelationWrapper = new SchemaRelation(resourceTypeWrapper.getJsonNode(),
                                                                   new Schema(resourceSchema), extensionNodes);
       schemaRelationWrapperList.add(schemaRelationWrapper);
     }

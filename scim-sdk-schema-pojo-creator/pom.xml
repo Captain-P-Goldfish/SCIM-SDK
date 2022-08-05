@@ -15,7 +15,8 @@
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
 
-        <version.spring.shell>2.0.1.RELEASE</version.spring.shell>
+        <version.spring.shell>2.1.0</version.spring.shell>
+        <version.apache.freemarker>2.3.31</version.apache.freemarker>
 
         <version.maven.assembly.plugin>3.3.0</version.maven.assembly.plugin>
     </properties>
@@ -33,6 +34,11 @@
                 <groupId>org.springframework.shell</groupId>
                 <artifactId>spring-shell-starter</artifactId>
                 <version>${version.spring.shell}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.freemarker</groupId>
+                <artifactId>freemarker</artifactId>
+                <version>${version.apache.freemarker}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -59,6 +65,32 @@
         <dependency>
             <groupId>org.springframework.shell</groupId>
             <artifactId>spring-shell-starter</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.freemarker</groupId>
+            <artifactId>freemarker</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <scope>compile</scope>
+            <optional>false</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <scope>compile</scope>
+            <optional>false</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>${version.slf4j}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${version.log4j2}</version>
         </dependency>
     </dependencies>
 

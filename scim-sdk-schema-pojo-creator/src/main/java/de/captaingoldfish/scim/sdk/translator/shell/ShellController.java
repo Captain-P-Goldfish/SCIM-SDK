@@ -1,23 +1,21 @@
-package de.captaingoldfish.scim.sdk.translator;
+package de.captaingoldfish.scim.sdk.translator.shell;
 
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
-import de.captaingoldfish.scim.sdk.translator.parser.FileSystemJsonReader;
-import de.captaingoldfish.scim.sdk.translator.parser.JsonRelationParser;
-import de.captaingoldfish.scim.sdk.translator.utils.FileInfoWrapper;
-import de.captaingoldfish.scim.sdk.translator.utils.SchemaRelations;
+import de.captaingoldfish.scim.sdk.translator.shell.parser.FreemarkerParser;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileSystemJsonReader;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.JsonRelationParser;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.PojoWriter;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -33,7 +31,7 @@ public class ShellController
 
   /**
    * // @formatter:off
-   * translate -r -l C:/Users/capta/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-common/src/main/resources/de/captaingoldfish/scim/sdk/common -o C:/Users/capta/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-schema-pojo-creator/target
+   * translate -r -l E:/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-common/src/main/resources/de/captaingoldfish  /scim/sdk/common -o E:/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-schema-pojo-creator/target
    * // @formatter:on
    */
   @SneakyThrows
@@ -49,32 +47,19 @@ public class ShellController
                                  defaultValue = ".") String outputDir,
                                @ShellOption(value = {"-p", "--package"}, //
                                  help = "The name of the package that will be added to the generated POJOs", //
-                                 defaultValue = "my.scim.sdk.app") String packageDir)
+                                 defaultValue = "my.scim.sdk.app") String packageDir,
+                               @ShellOption(value = {"--useLombok"}, //
+                                 help = "Add lombok @Builder annotations to constructors", //
+                                 defaultValue = "false") boolean useLombok)
   {
     File file = new File(schemaLocation);
     List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, recursive);
     JsonRelationParser relationParser = new JsonRelationParser(fileInfoWrapperList);
-    List<SchemaRelations> schemaRelations = relationParser.getSchemaRelations();
+    List<SchemaRelation> schemaRelations = relationParser.getSchemaRelations();
 
-    log.warn("test");
-  }
-
-  private void buildPojoFromSchema(String outputDir, String packageDir, Schema schema) throws IOException
-  {
-    String javaPojoContent = parseSchemaToPojo(schema, packageDir);
-    final String filename = StringUtils.capitalize(schema.getName().get().replaceAll("\\s", ""));
-    final String outputDirectory = outputDir.endsWith("/") ? outputDir : outputDir + "/";
-    File outputFile = new File(String.format("%s%s.java", outputDirectory, filename));
-    try (OutputStream outputStream = new FileOutputStream(outputFile))
-    {
-      outputStream.write(javaPojoContent.getBytes(StandardCharsets.UTF_8));
-    }
-    log.info("Created POJO at '{}'", outputFile.getAbsolutePath());
-  }
-
-  public String parseSchemaToPojo(Schema schema, String packageDir)
-  {
-    return null; // new SchemaToClassBuilder().generateClassFromSchema(schema, packageDir);
+    FreemarkerParser freemarkerParser = new FreemarkerParser(useLombok);
+    Map<Schema, String> pojoMap = freemarkerParser.createJavaResourcePojos(packageDir, schemaRelations);
+    PojoWriter.writePojosToFileSystem(pojoMap, outputDir);
   }
 
 }

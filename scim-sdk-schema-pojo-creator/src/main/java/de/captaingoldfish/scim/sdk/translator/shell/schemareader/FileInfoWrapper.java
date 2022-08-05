@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.translator.utils;
+package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.io.File;
 

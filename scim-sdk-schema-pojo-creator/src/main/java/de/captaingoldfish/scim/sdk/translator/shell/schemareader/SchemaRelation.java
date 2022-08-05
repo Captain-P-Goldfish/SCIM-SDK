@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.translator.utils;
+package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.util.List;
 
@@ -17,7 +17,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @RequiredArgsConstructor
-public class SchemaRelations
+public class SchemaRelation
 {
 
   private final JsonNode resourceType;
