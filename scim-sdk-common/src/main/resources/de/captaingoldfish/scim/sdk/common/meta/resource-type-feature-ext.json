@@ -3,7 +3,7 @@
     "urn:ietf:params:scim:schemas:core:2.0:Schema"
   ],
   "id": "urn:gold:params:scim:schemas:extension:url:2.0:ResourceTypeFeatures",
-  "name": "ResourceTypeFilter",
+  "name": "ResourceTypeFeatures",
   "description": "An extension that enables additional features for single resource types",
   "attributes": [
     {
