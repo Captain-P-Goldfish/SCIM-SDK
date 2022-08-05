@@ -49,7 +49,7 @@ public class RequestAttributeValidatorTest
    *          "name": "firstname",
    *          "type": "string",
    *          ...
-   *        }, 
+   *        },
    *        {
    *          "name": "nested",
    *          "type": "complex",
@@ -59,7 +59,7 @@ public class RequestAttributeValidatorTest
    *              ...
    *          ]
    *          ...
-   *          
+   *
    *        }
    *      ]
    *      ...

@@ -24,7 +24,7 @@ public abstract class AttributeExtractor
 
   /**
    * used to get an attribute extractor for resource validation
-   * 
+   *
    * @param schemaAttribute the attributes-definition of the attribute that should be extracted from the
    *          document
    * @return the extracted attribute or null

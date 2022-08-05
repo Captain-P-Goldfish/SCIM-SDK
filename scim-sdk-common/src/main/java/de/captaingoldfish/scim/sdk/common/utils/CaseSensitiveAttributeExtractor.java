@@ -25,7 +25,7 @@ public class CaseSensitiveAttributeExtractor extends AttributeExtractor
 
   /**
    * extracts the attribute case-sensitive from the given json document
-   * 
+   *
    * @param schemaAttribute the attributes-definition of the attribute that should be extracted from the
    *          document
    * @return the attribute from the json document or an empty

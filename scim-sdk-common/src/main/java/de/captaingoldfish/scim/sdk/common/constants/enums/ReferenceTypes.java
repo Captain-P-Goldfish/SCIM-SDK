@@ -24,7 +24,7 @@ import lombok.Getter;
  *
  * This attribute is only applicable for attributes that are of
  * type "reference" (Section 2.3.7).
- *  
+ *
  *
  * NOTE:
  * the type "URL" is a customized type that is not part of RFC7643

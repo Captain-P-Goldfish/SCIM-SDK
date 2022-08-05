@@ -32,7 +32,7 @@ class ResponseAttributeValidator
    * validates a schema attribute in the context of a server-response. There are a lot of things that must be
    * checked:<br>
    * An attribute definition looks like this:<br>
-   * 
+   *
    * <pre>
    *  {
    *    "name": "myAttribute",
@@ -46,9 +46,9 @@ class ResponseAttributeValidator
    *     "caseExact": false
    *   }
    * </pre>
-   * 
+   *
    * The important values that must be validated specifically in a response context are: <br>
-   * 
+   *
    * <pre>
    *   {
    *     "mutability": "readWrite",
@@ -64,35 +64,35 @@ class ResponseAttributeValidator
    * validation:
    * <ol>
    * <li>
-   * 
+   *
    * <pre>
    *      {
    *        "mutability": "writeOnly",
    *        "returned": "never"
    *      }
-   *   
+   *
    *      if an attribute has either one these values the attribute must not be returned to the client even if the
-   *      attribute is required. These two values must always stand together but the evaluation for this is not done 
+   *      attribute is required. These two values must always stand together but the evaluation for this is not done
    *      here.
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *      {
    *        "required": true
    *      }
-   *   
+   *
    *      <b>attribute is null:</b><br>
    *         an internal exception will be thrown<br>
    *      <b>attribute is not null:</b><br>
    *         everything is okay
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     {
    *       "returned": "always"
@@ -102,10 +102,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is returned
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"attributes"</b>-parameter is empty:
    *     {
@@ -116,10 +116,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is returned
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"attributes"</b>-parameter is not empty and contains the name of the current attribute:
    *     {
@@ -130,10 +130,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is returned
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"attributes"</b>-parameter is not empty and does not contain the name of the current attribute:
    *     {
@@ -144,10 +144,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is ignored
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"attributes"</b>-parameter is empty:
    *     {
@@ -158,10 +158,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is ignored
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"attributes"</b>-parameter is not empty and contains the name of the current attribute:
    *     {
@@ -172,10 +172,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is returned
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"attributes"</b>-parameter is not empty and does not contain the name of the current attribute:
    *     {
@@ -186,10 +186,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is ignored
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"excludedAttributes"</b>-parameter is not empty and contains the name of the current attribute:
    *     {
@@ -200,10 +200,10 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is ignored
    * </pre>
-   * 
+   *
    * </li>
    * <li>
-   * 
+   *
    * <pre>
    *     <b>"excludedAttributes"</b>-parameter is not empty and contains the name of the current attribute:
    *     {
@@ -214,7 +214,7 @@ class ResponseAttributeValidator
    *     <b>attribute is not null:</b><br>
    *        attribute is ignored
    * </pre>
-   * 
+   *
    * </li>
    * </ol>
    *
@@ -298,7 +298,7 @@ class ResponseAttributeValidator
 
   /**
    * validates an attribute and will decides if the attribute should be returned to the client or not
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
@@ -384,7 +384,7 @@ class ResponseAttributeValidator
   /**
    * validates if the currently validated attribute was present in the request-document. If so the attribute
    * must be returned by a returned value of "request" or "default"
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param requestDocument the document that holds the attributes from the request
    * @return true if the attribute is present within the request, false else
@@ -407,7 +407,7 @@ class ResponseAttributeValidator
   /**
    * checks if the given current validated attribute is present within the given json complex node that is
    * either the original request document or an extension node
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param document the request document or an extension node
    * @return true if the attribute is present within the given complex json node
@@ -496,7 +496,7 @@ class ResponseAttributeValidator
   /**
    * checks if the given complex node has a resource reference set and will add the fully qualified resource url
    * into the "$ref"-attribute if the values is not already set.
-   * 
+   *
    * @param schemaAttribute the complex attributes definition
    * @param attribute the complex or multivalued complex attribute that might hold a reference to a specific
    *          registered resource

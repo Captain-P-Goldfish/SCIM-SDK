@@ -147,7 +147,7 @@ public class FilterResourceResolver
 
   /**
    * retrieves the attribute from either the main schema or an schema extension
-   * 
+   *
    * @param jsonNode the json document from which the attribute should be extracted
    * @param attributeExpressionLeaf the filter expression node that describes the node that should be extracted
    * @return the extracted json node
@@ -168,7 +168,7 @@ public class FilterResourceResolver
 
   /**
    * retrieves the attribute from either the main schema or an schema extension
-   * 
+   *
    * @param jsonNode the json document from which the attribute should be extracted
    * @param attributeExpressionLeaf the filter expression node that describes the node that should be extracted
    * @return the extracted json node

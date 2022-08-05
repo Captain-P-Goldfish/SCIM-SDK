@@ -129,7 +129,7 @@ public abstract class AbstractSchemaValidator
 
   /**
    * retrieves the attribute extractor that should be used based on the service providers configuration
-   * 
+   *
    * @param resource the resource that acts as the attribute extractors base document
    * @return the attribute extractor to use. Default is the case-sensitive attribute extractor
    */

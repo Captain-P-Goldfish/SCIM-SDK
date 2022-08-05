@@ -36,7 +36,7 @@ public class ResponseResourceValidator extends AbstractResourceValidator
 
   /**
    * Does validate the meta-attribute after the document itself has been validated
-   * 
+   *
    * @param resource the document that should be validated
    * @return the validated document with the also validated meta attribute
    */

@@ -38,7 +38,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
 
   /**
    * create a resource endpoint with default meta-endpoints
-   * 
+   *
    * @param serviceProvider the service provider configuration of this SCIM provider setup
    * @param endpointDefinitions the endpoint definitions that should be registered additionally to the meta
    *          endpoint "/ServiceProviderConfig, /ResourceTypes, /Schemas"
@@ -341,7 +341,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   /**
    * expands the currently existing context passed by the developer or creates a new context and adds the
    * current context data to it
-   * 
+   *
    * @param uriInfos the current uri infos of the request
    * @param context the context created by the developer (might be null)
    * @return an expanded or new context
@@ -360,7 +360,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
 
   /**
    * checks if the given response is an error response or a successful response
-   * 
+   *
    * @return true if the result is an error, false else
    */
   private boolean isErrorResponse(ScimResponse scimResponse)

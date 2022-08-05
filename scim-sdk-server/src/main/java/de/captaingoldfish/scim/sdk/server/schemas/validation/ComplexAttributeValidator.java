@@ -21,7 +21,7 @@ class ComplexAttributeValidator
   /**
    * validates a complex attribute by validating the complex attribute itself and all its children by calling
    * the {@link ValidationSelector} with the appropriate {@code contextValidator} for each of these children
-   * 
+   *
    * @param schemaAttribute the complex attributes definition
    * @param attribute the complex attribute
    * @param contextValidator the context validation that must also be executed for any children of the complex

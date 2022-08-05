@@ -25,7 +25,7 @@ import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 
 /**
  * this test class will provide tests for specific attributes that have been marked with attribute validations
- * 
+ *
  * @author Pascal Knueppel
  * @since 23.01.2021
  */
@@ -55,7 +55,7 @@ public class SchemaAttributeValidationTest implements FileReferences
    * <br>
    * RFC7643 defines the username as required value that must not be empty, so an attribute validation pattern
    * has been added to the username attribute of the user-resource-schema
-   * 
+   *
    * @see <a href=
    *      "https://tools.ietf.org/html/rfc7643#section-8.7.1">https://tools.ietf.org/html/rfc7643#section-8.7.1</a>
    */
@@ -102,7 +102,7 @@ public class SchemaAttributeValidationTest implements FileReferences
    * <br>
    * RFC7643 defines the username as required value that must not be empty, so an attribute validation pattern
    * has been added to the username attribute of the user-resource-schema
-   * 
+   *
    * @see <a href=
    *      "https://tools.ietf.org/html/rfc7643#section-8.7.1">https://tools.ietf.org/html/rfc7643#section-8.7.1</a>
    */

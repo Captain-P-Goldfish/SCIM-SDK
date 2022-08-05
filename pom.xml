@@ -90,13 +90,13 @@
         <version.slf4j>1.7.36</version.slf4j>
 
         <!-- test dependencies -->
-        <version.junit.jupiter>5.7.2</version.junit.jupiter>
+        <version.junit.jupiter>5.9.0</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.10.2</version.reflections>
         <version.mockito>4.4.0</version.mockito>
         <version.resteasy.jaxrs>3.15.3.Final</version.resteasy.jaxrs>
-        <version.equalsverifier>3.10</version.equalsverifier>
-        <version.springboot>2.7.1</version.springboot>
+        <version.equalsverifier>3.10.1</version.equalsverifier>
+        <version.springboot>2.7.2</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
 
         <!-- version conflicts -->
@@ -104,13 +104,13 @@
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.10.1</version.maven.compiler.plugin>
-        <version.maven.formatter.plugin>2.17.1</version.maven.formatter.plugin>
+        <version.maven.formatter.plugin>2.20.0</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.1.0</version.maven.enforcer.plugin>
         <version.maven.surefire.plugin>3.0.0-M7</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.2.1</version.maven.source.plugin>
         <version.maven.javadoc.plugin>3.4.0</version.maven.javadoc.plugin>
         <version.maven.gpg.plugin>3.0.1</version.maven.gpg.plugin>
-        <version.maven.deploy.plugin>3.0.0-M2</version.maven.deploy.plugin>
+        <version.maven.deploy.plugin>3.0.0</version.maven.deploy.plugin>
         <version.maven.release.plugin>2.5.3</version.maven.release.plugin>
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
         <version.maven.versions.plugin>2.11.0</version.maven.versions.plugin>

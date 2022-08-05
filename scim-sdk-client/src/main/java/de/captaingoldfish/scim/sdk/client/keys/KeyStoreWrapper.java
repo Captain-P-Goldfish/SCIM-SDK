@@ -59,7 +59,7 @@ public class KeyStoreWrapper
    * constructor to befill the entries for this class<br>
    * it is expected that the keystore-password has already been entered into the keystore object therefore we
    * wont need it anymore for the keystore.
-   * 
+   *
    * @param keyStore the keystore that should be accessible
    * @param privateKeyPassword the password used to access the private keys (the keystore is expected to contain
    *          a single entry)
@@ -196,7 +196,7 @@ public class KeyStoreWrapper
 
   /**
    * will extract the private key for the given alias
-   * 
+   *
    * @param alias the keystore entry to get the private key from
    * @return the private key of the alias
    */
@@ -232,7 +232,7 @@ public class KeyStoreWrapper
 
   /**
    * this method will extract a private key with the given alias and the given password
-   * 
+   *
    * @param alias the alias that holds the private key
    * @param password the password to access the private key
    * @return the private key or null if no entry was found
@@ -260,7 +260,7 @@ public class KeyStoreWrapper
 
   /**
    * will read the certificate from the given alias
-   * 
+   *
    * @param alias the keystore entry to read
    * @return the certificate under the given keystore entry
    */

@@ -46,7 +46,7 @@ public class EndpointFeatureHandler
 
   /**
    * handles the authorization feature
-   * 
+   *
    * @param resourceType the resource type that represents the accessed endpoint
    * @param endpointType the endpoint type that was called e.g. create or update
    * @param authorization the authorization implementation from the provider

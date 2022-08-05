@@ -38,7 +38,7 @@ public class CaseInsensitiveAttributeExtractor extends AttributeExtractor
    * <li>if not found iterate over the document and store each found element with its key value in lowercase in
    * the {@link #attributeMap} until found</li>
    * </ol>
-   * 
+   *
    * @param schemaAttribute the attribute that should be extracted from the document
    * @return the attribute or an empty if not found
    */
@@ -86,7 +86,7 @@ public class CaseInsensitiveAttributeExtractor extends AttributeExtractor
   /**
    * tries to extract an attribute from the json document by checking the attribute map if the attribute names
    * is stored in there in lowercase
-   * 
+   *
    * @param schemaAttribute the attribute definition that should be extracted from the json document
    * @return the extracted node or an empty if the node is not present within the document
    */

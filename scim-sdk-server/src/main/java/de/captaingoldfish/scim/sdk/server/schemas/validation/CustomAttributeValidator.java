@@ -32,7 +32,7 @@ public final class CustomAttributeValidator
 
   /**
    * validates a simple attribute that is neither an object nor an array against its custom schema validation
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param validatedAttribute the attribute to validate
    */

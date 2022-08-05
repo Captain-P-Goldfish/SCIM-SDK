@@ -453,7 +453,7 @@ public final class JsonHelper
 
   /**
    * builds a new instance of the given resource node type
-   * 
+   *
    * @param type the type for which the instance should be build
    * @param <T> the type must define a noArgs constructor
    * @return the newly created instance

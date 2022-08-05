@@ -26,7 +26,7 @@ class SimpleMultivaluedAttributeValidator
   /**
    * will validate that an array attribute contains only simple values of the specified type in
    * {@code schemaAttribute}
-   * 
+   *
    * @param schemaAttribute the attribute definition of the array
    * @param attribute the attribute to validate
    * @return the validated object that is returned as {@link ScimArrayNode} with scim node representations
@@ -78,7 +78,7 @@ class SimpleMultivaluedAttributeValidator
   /**
    * parses an incoming attribute to an array. If the attribute is a simple attribute not of type array this
    * method will add this single attribute into an array and return this array
-   * 
+   *
    * @param attribute the attribute that should either be an array or a simple attribute
    * @return an array or an empty if the attribute was neither an array nor a simple attribute
    */

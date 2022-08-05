@@ -20,7 +20,7 @@ interface ContextValidator
    * jsonNode the attribute to validate @return true if the validation was successful, false if the attribute is
    * ignorable and should not be validated. This might be in a request context due to the readOnly mutability
    * modifier.
-   * 
+   *
    * @throws AttributeValidationException if the attribute does not match its definition
    */
   public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)

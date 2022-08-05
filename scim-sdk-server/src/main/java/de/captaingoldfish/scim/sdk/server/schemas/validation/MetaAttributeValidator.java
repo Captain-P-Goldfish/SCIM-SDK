@@ -19,7 +19,7 @@ public class MetaAttributeValidator
   /**
    * will validate an attribute in the context of meta-attribute validation. In such a context attributes like
    * "returned", "mutability" etc. will have no effect
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @return the validated node or an empty if the node can be ignored
@@ -53,7 +53,7 @@ public class MetaAttributeValidator
   /**
    * checks if the given current attribute is required and throws an exception if the the attribute is required
    * and not present
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param isNodeNull if the attribute is null or present
    */

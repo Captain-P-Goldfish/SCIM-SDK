@@ -22,7 +22,7 @@ class RequestAttributeValidator
 
   /**
    * validates a schema attribute in the context of a client-request that is either a POST or a PUT request
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param httpMethod the current request type that is either POST or PUT
@@ -60,7 +60,7 @@ class RequestAttributeValidator
 
   /**
    * the validation implementation that must only be executed in the context of a client-request
-   * 
+   *
    * @param httpMethod the http method that should either be POST or PUT since this method should only be called
    *          in case of creating and updating objects
    * @return the context validation for client requests
@@ -96,7 +96,7 @@ class RequestAttributeValidator
 
   /**
    * validates a required attribute
-   * 
+   *
    * @param httpMethod the http method that is necessary for immutable required attribute validation
    * @param schemaAttribute the attributes definiton
    * @param isNodeNull if the attribute is null or not

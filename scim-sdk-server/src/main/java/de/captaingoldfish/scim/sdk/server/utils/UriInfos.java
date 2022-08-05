@@ -253,7 +253,7 @@ public class UriInfos
 
   /**
    * this method will verify that the parsed data of the request is valid for accessing SCIM endpoint
-   * 
+   *
    * @param resourceType used to allow empty path ids on singleton endpoints
    */
   private void validateUriInfos(ResourceType resourceType)

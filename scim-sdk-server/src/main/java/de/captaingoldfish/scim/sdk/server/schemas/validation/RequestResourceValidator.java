@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * validates a request document against the schema of the current {@link ResourceType}
- * 
+ *
  * @author Pascal Knueppel
  * @since 24.02.2021
  */
@@ -48,7 +48,7 @@ public class RequestResourceValidator extends AbstractResourceValidator
    * assures that the meta-attribute that is sent by the client is added into the validated document. This meta
    * information might be important to the {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler}
    * implementation
-   * 
+   *
    * @param resource the document that should be validated
    * @return the validated document with the original meta attribute
    */

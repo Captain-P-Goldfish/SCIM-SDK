@@ -16,7 +16,7 @@ import lombok.Setter;
  * a context object that may be optionally added to the request. If a null instance is used on the
  * {@link ResourceEndpoint#handleRequest(...)} methods the API will instantiate an instance by itself which
  * will then be used
- * 
+ *
  * @author Pascal Knueppel
  * @since 19.06.2021
  */
@@ -53,7 +53,7 @@ public class Context
    * getExternalResourceReferenceUrl().apply("User", "123456")
    * => http://localhost:8080/scim/v2/Users/123456
    * </pre>
-   * 
+   *
    * <pre>
    * </pre>
    */
@@ -76,7 +76,7 @@ public class Context
    *     getResourceReferenceUrl("123456")
    *     => http://localhost:8080/scim/v2/Users/123456
    * </pre>
-   * 
+   *
    * @param id the id of the resource. The id is not checked if a resource with this id does exist or not
    * @return the fully qualified url to the specific resource with the given id
    */
@@ -90,12 +90,12 @@ public class Context
    * <br>
    * e.g. if called on the {@link ResourceHandler} implementation for Groups to create a reference to a user
    * member of the group
-   * 
+   *
    * <pre>
    *     getExternalResourceReferenceUrl("123456", "User")
    *     => http://localhost:8080/scim/v2/Users/123456
    * </pre>
-   * 
+   *
    * @param id the id of the resource. The id is not checked if a resource with this id does exist or not
    * @return the fully qualified url to the specific resource with the given id or an empty if no resource with
    *         the given name was registered

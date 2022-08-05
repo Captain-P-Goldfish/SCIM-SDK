@@ -40,7 +40,7 @@ public class MetaSchemaValidator extends AbstractSchemaValidator
 
   /**
    * validates the document and additionally adds the schemas-attribute to the validated document.
-   * 
+   *
    * @param schema the schemas definition
    * @param resource the document that should be validated
    * @return the validated schema document

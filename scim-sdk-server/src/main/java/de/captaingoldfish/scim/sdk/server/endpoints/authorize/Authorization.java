@@ -116,7 +116,7 @@ public interface Authorization
   /**
    * this method can be used to authenticate a user. This method is called on a request-base which means that
    * the authentication method is executed once for each request that requires authentication
-   * 
+   *
    * @param httpHeaders in case that the authentication details are sent in the http headers
    * @param queryParams in case that authentication identifier are used in the query
    * @return true if the user / client was successfully be authenticated, false else

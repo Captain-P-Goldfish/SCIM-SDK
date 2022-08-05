@@ -1147,11 +1147,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   attributes: ["id"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1190,11 +1190,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   attributes: ["another"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1235,11 +1235,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   excludedAttributes: ["id"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1399,11 +1399,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   attributes: ["id"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1444,11 +1444,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   attributes: ["another"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1489,11 +1489,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   excludedAttributes: ["id"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1532,11 +1532,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   excludedAttributes: ["another"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1698,11 +1698,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   attributes: ["id"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1743,11 +1743,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   attributes: ["another"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1788,11 +1788,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   excludedAttributes: ["id"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -1831,11 +1831,11 @@ public class ResponseAttributeValidatorTest
 
     /**
      * tests the following structure
-     * 
+     *
      * <pre>
      *   excludedAttributes: ["another"]
      * </pre>
-     * 
+     *
      * <pre>
      *    {
      *      "type": "*",
@@ -2441,11 +2441,11 @@ public class ResponseAttributeValidatorTest
     /**
      * shows that the attribute "nickName" of the following structure is not returned if the attributes parameter
      * does not reference it
-     * 
+     *
      * <pre>
      *   attributes: ["displayName"]
      * </pre>
-     * 
+     *
      * <pre>
      *   "nickName": "captain"
      * </pre>
@@ -2484,11 +2484,11 @@ public class ResponseAttributeValidatorTest
     /**
      * shows that the attribute "lastname" of the following structure is correctly returned if the attributes
      * parameter has its parent "name" referenced
-     * 
+     *
      * <pre>
      *   attributes: ["name"]
      * </pre>
-     * 
+     *
      * <pre>
      *   "name": {
      *     "familyName": "goldfish",
@@ -2536,11 +2536,11 @@ public class ResponseAttributeValidatorTest
     /**
      * shows that the attribute "lastname" of the following structure is correctly returned if the attributes
      * parameter has its parent "name" referenced
-     * 
+     *
      * <pre>
      *   attributes: ["name.familyName"]
      * </pre>
-     * 
+     *
      * <pre>
      *   "name": {
      *     "familyName": "goldfish",

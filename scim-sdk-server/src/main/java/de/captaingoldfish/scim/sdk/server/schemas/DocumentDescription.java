@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * will describe a request document by identifying the present extensions and setting the schemas-attribute
  * accordingly
- * 
+ *
  * @author Pascal Knueppel
  * @since 18.04.2021
  */

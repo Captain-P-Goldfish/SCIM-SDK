@@ -97,7 +97,7 @@ public class ValidationContext
 
   /**
    * adds an error that is not bound to a specific resource field
-   * 
+   *
    * @param errorMessage the error message
    */
   public void addError(String errorMessage)
@@ -114,7 +114,7 @@ public class ValidationContext
 
   /**
    * adds an error that is bound to a specific resource field
-   * 
+   *
    * @param fieldName the name of the field to which the error is bound
    * @param errorMessage the error message
    */
@@ -140,7 +140,7 @@ public class ValidationContext
 
   /**
    * adds specific field errors to the validation context
-   * 
+   *
    * @param ex the definition of the error that occurred
    */
   public void addExceptionMessages(AttributeValidationException ex)
@@ -157,7 +157,7 @@ public class ValidationContext
 
   /**
    * adds other more unspecific error messages to the context that are not directly related to any fields
-   * 
+   *
    * @param ex the definition of the error that occurred
    */
   public void addExceptionMessages(ScimException ex)
@@ -215,7 +215,7 @@ public class ValidationContext
   /**
    * if field errors are present an object node will be created and the field errors will be added into the
    * specific object node
-   * 
+   *
    * @return an empty if no field errors are present or an object node that represents the field errors
    */
   private Optional<ObjectNode> addFieldSpecificErrorMessages()

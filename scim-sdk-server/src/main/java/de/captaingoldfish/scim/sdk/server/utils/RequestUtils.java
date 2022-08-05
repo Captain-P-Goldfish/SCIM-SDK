@@ -211,7 +211,7 @@ public final class RequestUtils
 
   /**
    * tries to parse the incoming count value as integer number
-   * 
+   *
    * @param countQueryParameter the query parameter that should be a number
    * @return the parsed count value or an empty if the parameter is missing
    */

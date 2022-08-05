@@ -219,7 +219,7 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
   }
 
   /**
-   * 
+   *
    */
   @Test
   public void testFailedResponse()

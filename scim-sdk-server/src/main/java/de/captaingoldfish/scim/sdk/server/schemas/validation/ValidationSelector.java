@@ -27,7 +27,7 @@ class ValidationSelector
    * decides how an attribute must be validated, meaning that it checks if the attribute is a simple attribute,
    * a simple multivalued attribute, a complex attribute or a multivalued complex attribute and lets the
    * attribute be validated by the corresponding implementation
-   * 
+   *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to be validated
    * @param contextValidator the validation context must validate the attribute different by one of the
@@ -90,7 +90,7 @@ class ValidationSelector
   /**
    * handles an any attribute. Since we cannot forecast what type of attribute we will get we will simply accept
    * anything. So any nodes must define canonicalTypes or specific sub-attributes
-   * 
+   *
    * @param schemaAttribute the attribute definition of the any node
    * @param attribute the attribute to validate
    * @return the attribute or an empty
@@ -115,7 +115,7 @@ class ValidationSelector
   /**
    * converts simple any attributes in the corresponding attribute representation. This is not done for array or
    * object type attribute
-   * 
+   *
    * @param schemaAttribute the any types attribute definition
    * @param attribute the simple attribute
    * @return the {@link de.captaingoldfish.scim.sdk.common.resources.base.ScimNode} representation of the

@@ -28,7 +28,7 @@ public class ParameterBuilder
 
   /**
    * adds the given name value pair and returns the builder instance
-   * 
+   *
    * @param name the name of the parameter
    * @param value the value of the parameter
    * @return the builder instance

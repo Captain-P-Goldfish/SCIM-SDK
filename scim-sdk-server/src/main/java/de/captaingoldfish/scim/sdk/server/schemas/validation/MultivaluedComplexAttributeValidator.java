@@ -26,7 +26,7 @@ class MultivaluedComplexAttributeValidator
 
   /**
    * validates a multivalued complex attribute by validating all complex attributes within its array
-   * 
+   *
    * @param schemaAttribute the multivalued complex attributes definition
    * @param attribute the multivalued complex attribute
    * @param contextValidator the context validation that must also be executed for any element of the attribute
@@ -86,7 +86,7 @@ class MultivaluedComplexAttributeValidator
   /**
    * verifies that no duplicate values are present within the multivalued complex type if the uniqueness has
    * another values than NONE
-   * 
+   *
    * @param uniqueValueList the list of elements within the multi valued complex type over which the loop has
    *          iterated so far
    * @param jsonNode the current complex attribute that is checked for being a duplicate of another element
@@ -115,7 +115,7 @@ class MultivaluedComplexAttributeValidator
 
   /**
    * simply verifies that the given element of the multi complex parent attribute is an object
-   * 
+   *
    * @param multivaluedComplexParentElement the element of the multivalued complex attribute
    * @param schemaAttribute the multi valued complex attributes definition (only used for exception)
    * @param multivaluedComplexParent the multivalued complex attribute (only used for exception)
@@ -136,7 +136,7 @@ class MultivaluedComplexAttributeValidator
   /**
    * checks if the current given json node is a primary value and if the parameter {@code primaryValueFound} is
    * already true an exception will be thrown
-   * 
+   *
    * @param primaryValueFound if there was already a primary object in the multivaluedComplexParent
    * @param jsonNode the node to check for a primary value
    * @param schemaAttribute the attributes definition (only used for exception)
@@ -164,7 +164,7 @@ class MultivaluedComplexAttributeValidator
 
   /**
    * gets the value of the optional primary field in the given complex node
-   * 
+   *
    * @param jsonNode the complex node that might hold a primary value
    * @return true if the primary value is present and set to true
    */

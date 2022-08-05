@@ -30,7 +30,7 @@ public class SpringBootInitializer extends SpringBootServletInitializer
   /**
    * this bean will automatically be added into the servlet context and ensure that the request- and
    * response-encoding is set to UTF-8
-   * 
+   *
    * @return the UTF-8 filter
    */
   @Bean
