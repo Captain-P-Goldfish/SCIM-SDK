@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.translator.shell;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
@@ -13,9 +14,10 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -75,10 +77,13 @@ public class ShellControllerTest
    */
   @SneakyThrows
   @ParameterizedTest
-  @ValueSource(strings = {"./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1",
-                          "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2",
-                          "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3"})
-  public void testFreemarkerParserTest(String pathToSchemas)
+  @CsvSource({"./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1,false",
+              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2,false",
+              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3,false",
+              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1,true",
+              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2,true",
+              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3,true"})
+  public void testParseSchemasToJavaPojos(String pathToSchemas, boolean useLombok)
   {
     File file = new File(pathToSchemas);
     File targetDirectory = new File(OUTPUT_DIR);
@@ -89,15 +94,15 @@ public class ShellControllerTest
                                                      true,
                                                      targetDirectory.getAbsolutePath(),
                                                      packageDir,
-                                                     true);
+                                                     useLombok);
     log.info(result);
 
     Mockito.verify(shellController)
-           .getCreatedFiles(Mockito.eq(file.getAbsolutePath()),
-                            Mockito.eq(true),
-                            Mockito.eq(targetDirectory.getAbsolutePath()),
-                            Mockito.eq(packageDir),
-                            Mockito.eq(true));
+           .createdFiles(Mockito.eq(file.getAbsolutePath()),
+                         Mockito.eq(true),
+                         Mockito.eq(targetDirectory.getAbsolutePath()),
+                         Mockito.eq(packageDir),
+                         Mockito.eq(useLombok));
 
     Assertions.assertNotNull(targetDirectory.listFiles());
     String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
@@ -109,10 +114,128 @@ public class ShellControllerTest
                                    .map(File::new)
                                    .map(File::getName)
                                    .collect(Collectors.toList()),
-                             Matchers.containsInAnyOrder("User.java", "Group.java", "EnterpriseUser.java"));
+                             Matchers.containsInAnyOrder("User.java",
+                                                         "Group.java",
+                                                         "EnterpriseUser.java",
+                                                         "ServiceProviderConfiguration.java"));
 
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     int compilerResult = compiler.run(null, System.out, System.err, filesToCompile);
     Assertions.assertEquals(0, compilerResult, "compilation failed: " + compilerResult);
+  }
+
+  /**
+   * references a schema directly with its absolute path and will parse it
+   */
+  @Test
+  public void testParseSingleSchemaToJavaFile()
+  {
+    File file = new File("./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1/schemas/users.json");
+    File targetDirectory = new File(OUTPUT_DIR);
+    final String packageDir = "de.captaingoldfish.example.resources";
+    boolean recursive = false;
+    boolean useLombok = false;
+
+    String result = shellController.translateSchemas(file.getAbsolutePath(),
+                                                     recursive,
+                                                     targetDirectory.getAbsolutePath(),
+                                                     packageDir,
+                                                     useLombok);
+
+    log.info(result);
+
+    Assertions.assertNotNull(targetDirectory.listFiles());
+    String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
+                                    .filter(f -> f.getName().endsWith(".java"))
+                                    .map(File::getAbsolutePath)
+                                    .toArray(String[]::new);
+
+    MatcherAssert.assertThat(Arrays.stream(filesToCompile)
+                                   .map(File::new)
+                                   .map(File::getName)
+                                   .collect(Collectors.toList()),
+                             Matchers.containsInAnyOrder("User.java"));
+  }
+
+  /**
+   * references a file that is a json file but not a SCIM schema representation
+   */
+  @Test
+  public void testTryToParseNonScimJsonFile()
+  {
+    File file = new File("./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-4/test.json");
+    File targetDirectory = new File(OUTPUT_DIR);
+    final String packageDir = "de.captaingoldfish.example.resources";
+    boolean recursive = false;
+    boolean useLombok = false;
+
+    String result = shellController.translateSchemas(file.getAbsolutePath(),
+                                                     recursive,
+                                                     targetDirectory.getAbsolutePath(),
+                                                     packageDir,
+                                                     useLombok);
+
+    log.info(result);
+    Assertions.assertEquals(0,
+                            Arrays.stream(targetDirectory.listFiles())
+                                  .filter(f -> f.getName().endsWith(".java"))
+                                  .count());
+    Assertions.assertEquals("No files were created!", result);
+  }
+
+  /**
+   * references a file that is a directory and makes sure that the correct error message is printed
+   */
+  @Test
+  public void testTryToParseADirectory()
+  {
+    File file = new File("./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-5");
+    File targetDirectory = new File(OUTPUT_DIR);
+    final String packageDir = "de.captaingoldfish.example.resources";
+    boolean recursive = false;
+    boolean useLombok = false;
+
+    FileNotFoundException ex = Assertions.assertThrows(FileNotFoundException.class,
+                                                       () -> shellController.translateSchemas(file.getAbsolutePath(),
+                                                                                              recursive,
+                                                                                              targetDirectory.getAbsolutePath(),
+                                                                                              packageDir,
+                                                                                              useLombok));
+    Assertions.assertEquals(String.format("Path to '%s' is a directory and cannot be translated. Use '-r'"
+                                          + " option to recursively iterate through directories.",
+                                          file.getAbsolutePath()),
+                            ex.getMessage());
+  }
+
+  /**
+   * references a directory and tries to recursively parse the sub-files where a single SCIM file is present
+   */
+  @Test
+  public void testTryToParseADirectoryRecursively()
+  {
+    File file = new File("./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-6");
+    File targetDirectory = new File(OUTPUT_DIR);
+    final String packageDir = "de.captaingoldfish.example.resources";
+    boolean recursive = true;
+    boolean useLombok = false;
+
+    String result = shellController.translateSchemas(file.getAbsolutePath(),
+                                                     recursive,
+                                                     targetDirectory.getAbsolutePath(),
+                                                     packageDir,
+                                                     useLombok);
+    log.info(result);
+
+    Assertions.assertNotNull(targetDirectory.listFiles());
+    String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
+                                    .filter(f -> f.getName().endsWith(".java"))
+                                    .map(File::getAbsolutePath)
+                                    .toArray(String[]::new);
+
+    MatcherAssert.assertThat(Arrays.stream(filesToCompile)
+                                   .map(File::new)
+                                   .map(File::getName)
+                                   .collect(Collectors.toList()),
+                             Matchers.containsInAnyOrder("Group.java"));
   }
 }

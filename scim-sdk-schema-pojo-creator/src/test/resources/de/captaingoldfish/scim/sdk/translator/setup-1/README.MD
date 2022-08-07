@@ -1,0 +1,1 @@
+All schemas are referenced within a resource-type and no additional files are present

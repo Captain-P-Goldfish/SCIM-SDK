@@ -1,0 +1,1 @@
+Contains files that are no SCIM resources but valid json files

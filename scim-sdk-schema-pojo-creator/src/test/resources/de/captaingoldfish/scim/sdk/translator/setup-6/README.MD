@@ -1,0 +1,1 @@
+contains a subdirectory with an unsupported file type and a supported schema

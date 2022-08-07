@@ -1,0 +1,1 @@
+The group-resource-type and the service-provider-resource-type is missing in this setup
