@@ -52,6 +52,23 @@ public class JsonRelationParser
     this.fileInfoWrapperList = fileInfoWrapperList;
     this.resourceTypes = extractResourceTypes();
     this.resourceSchemas = extractResourceSchemas();
+    logUnparseableFiles();
+  }
+
+  /**
+   * will log the files that are being ignored because they are not valid SCIM schema representations
+   */
+  private void logUnparseableFiles()
+  {
+    for ( FileInfoWrapper fileInfoWrapper : fileInfoWrapperList )
+    {
+      if (resourceSchemas.stream().noneMatch(f -> f.getResourceFile().equals(f))
+          && resourceTypes.stream().noneMatch(f -> f.getResourceFile().equals(f)))
+      {
+        log.warn("File '{}' is not a valid SCIM file and is being ignored",
+                 fileInfoWrapper.getResourceFile().getAbsolutePath());
+      }
+    }
   }
 
   /**

@@ -51,9 +51,16 @@ public class ShellController
                                    help = "Add lombok @Builder annotations to constructors", //
                                    defaultValue = "false") boolean useLombok)
   {
-    List<String> createdFiles = getCreatedFiles(schemaLocation, recursive, outputDir, packageDir, useLombok);
+    List<String> createdFiles = createdFiles(schemaLocation, recursive, outputDir, packageDir, useLombok);
 
-    return String.format("Successfully created the following files:\n- %s", String.join("\n- ", createdFiles));
+    if (createdFiles.isEmpty())
+    {
+      return "No files were created!";
+    }
+    else
+    {
+      return String.format("Successfully created the following files:\n- %s", String.join("\n- ", createdFiles));
+    }
   }
 
   /**
@@ -61,11 +68,11 @@ public class ShellController
    * 
    * @return the list of absolute paths that were created
    */
-  protected List<String> getCreatedFiles(String schemaLocation,
-                                         boolean recursive,
-                                         String outputDir,
-                                         String packageDir,
-                                         boolean useLombok)
+  protected List<String> createdFiles(String schemaLocation,
+                                      boolean recursive,
+                                      String outputDir,
+                                      String packageDir,
+                                      boolean useLombok)
   {
     File file = new File(schemaLocation);
     List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, recursive);
