@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.translator.shell.parser;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,14 +61,16 @@ public class SchemaHolder
 
     // leave only those schemas within the extensionNodesToParse Set that are extensions only and are not directly
     // referenced by any resource-type
+    final List<String> entriesToRemove = new ArrayList<>();
     for ( Map.Entry<String, Schema> idSchemaEntry : extensionNodesToParse.entrySet() )
     {
       Schema extensionSchema = idSchemaEntry.getValue();
       if (resourceNodesToParse.containsKey(extensionSchema.getNonNullId()))
       {
-        extensionNodesToParse.remove(extensionSchema.getNonNullId());
+        entriesToRemove.add(extensionSchema.getNonNullId());
       }
     }
+    entriesToRemove.forEach(extensionNodesToParse::remove);
     return new SchemaHolder(resourceNodesToParse, extensionNodesToParse);
   }
 }

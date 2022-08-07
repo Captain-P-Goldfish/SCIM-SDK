@@ -70,6 +70,8 @@ now execute the `translate` command e.g.:
 
 ```
 translate -r -l /opt/development/my-project/src/main/resources/scim -o /opt/development/my-project/src/main/java/de/captaingoldfish/myproject/scim -p de.captaingoldfish.myproject.scim --useLombok
+
+translate -r -l E:/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-common/src/main/resources/de/captaingoldfish/scim/sdk/common -o E:/Dropbox/projekte/java/scim-sdk-parent/scim-sdk-schema-pojo-creator/target/generated-sources -p de.captaingoldfish.myproject.scim --useLombok
 ```
 
 The given directory will be recursively searched and json-resources of the following types will be gathered:

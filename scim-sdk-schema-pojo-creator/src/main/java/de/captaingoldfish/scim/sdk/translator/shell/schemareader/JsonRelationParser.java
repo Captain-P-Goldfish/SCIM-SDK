@@ -35,9 +35,15 @@ public class JsonRelationParser
 
   private final List<FileInfoWrapper> fileInfoWrapperList;
 
+  /**
+   * a list of all json contents that represent SCIM "urn:ietf:params:scim:schemas:core:2.0:Schema"
+   */
   @Getter
   private final List<FileInfoWrapper> resourceTypes;
 
+  /**
+   * a list of all json contents that represent SCIM "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+   */
   @Getter
   private final List<FileInfoWrapper> resourceSchemas;
 
@@ -48,6 +54,9 @@ public class JsonRelationParser
     this.resourceSchemas = extractResourceSchemas();
   }
 
+  /**
+   * @return all resource types from the found json files
+   */
   private List<FileInfoWrapper> extractResourceTypes()
   {
     List<FileInfoWrapper> tmpResourceSchemas = fileInfoWrapperList.stream().filter(fileInfoWrapper -> {
@@ -59,6 +68,9 @@ public class JsonRelationParser
     return validateResourceTypes(tmpResourceSchemas);
   }
 
+  /**
+   * @return all resources from the found json files
+   */
   private List<FileInfoWrapper> extractResourceSchemas()
   {
     List<FileInfoWrapper> tmpResourceTypes = fileInfoWrapperList.stream().filter(fileInfoWrapper -> {
@@ -70,6 +82,12 @@ public class JsonRelationParser
     return validateResourceSchemas(tmpResourceTypes);
   }
 
+  /**
+   * tries to identify relations between resource-types and resource-schemas and wraps them together. If a
+   * resource-schema has no relation to any resource-type it will be added anyway
+   * 
+   * @return the list of all resource schema relations with their resource types and extensions.
+   */
   public List<SchemaRelation> getSchemaRelations()
   {
     List<SchemaRelation> schemaRelationWrapperList = new ArrayList<>();
@@ -133,6 +151,9 @@ public class JsonRelationParser
     }
   }
 
+  /**
+   * tries to find a resource schema from the {@link #resourceSchemas} by its id attribute
+   */
   private Optional<JsonNode> getResourceSchemaByUri(String resourceSchemaUri)
   {
     return resourceSchemas.stream()
@@ -143,6 +164,9 @@ public class JsonRelationParser
                           .findAny();
   }
 
+  /**
+   * validates if the given resource schema is valid and does apply to its meta schema definition
+   */
   private List<FileInfoWrapper> validateResourceSchemas(List<FileInfoWrapper> tmpResourceSchemas)
   {
     return tmpResourceSchemas.stream().filter(fileInfoWrapper -> {
@@ -162,6 +186,9 @@ public class JsonRelationParser
     }).collect(Collectors.toList());
   }
 
+  /**
+   * validates if the given resource-type is valid and does apply to its meta schema definition
+   */
   private List<FileInfoWrapper> validateResourceTypes(List<FileInfoWrapper> tmpResourceTypes)
   {
     return tmpResourceTypes.stream().filter(fileInfoWrapper -> {
@@ -181,7 +208,10 @@ public class JsonRelationParser
     }).collect(Collectors.toList());
   }
 
-  public static enum SchemaType
+  /**
+   * supported types that are parseable into java pojos
+   */
+  public enum SchemaType
   {
 
     RESOURCE_TYPE, RESOURCE_SCHEMA, UNPARSEABLE;

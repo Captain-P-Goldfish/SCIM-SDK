@@ -27,10 +27,19 @@ import lombok.SneakyThrows;
 public class FreemarkerParser
 {
 
+  /**
+   * the template to parse resources into java classes
+   */
   private final Template resourceNodeTemplate;
 
+  /**
+   * if the lombok builder annotations should be used
+   */
   private final boolean useLombok;
 
+  /**
+   * creates a freemarker template to create ResourceNode implementations
+   */
   @SneakyThrows
   public FreemarkerParser(boolean useLombok)
   {
@@ -56,6 +65,13 @@ public class FreemarkerParser
     this.resourceNodeTemplate = configuration.getTemplate("resource-node.ftl");
   }
 
+  /**
+   * creates the java pojos and keeps them as string representation within the map
+   * 
+   * @param packageName the packagename of the class
+   * @param schemaRelations the schema relation representation from which the resources should be created
+   * @return the created pojos as string representation
+   */
   @SneakyThrows
   public Map<Schema, String> createJavaResourcePojos(String packageName, List<SchemaRelation> schemaRelations)
   {
@@ -86,6 +102,15 @@ public class FreemarkerParser
     return javaPojos;
   }
 
+  /**
+   * builds the java class for a specific schema representation
+   * 
+   * @param packageName the package where the java class is being located
+   * @param schema the schema that is being translated into a java pojo
+   * @param extensions the extensions that are related to this schema
+   * @param isExtension if the schema itself is an extension or a resource node
+   * @return the java pojo class representation as string
+   */
   @SneakyThrows
   private String createResourceJavaClassFromSchema(String packageName,
                                                    Schema schema,

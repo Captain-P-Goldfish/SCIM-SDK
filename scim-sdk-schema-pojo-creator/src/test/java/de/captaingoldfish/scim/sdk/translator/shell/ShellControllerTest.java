@@ -1,32 +1,26 @@
-package de.captaingoldfish.scim.sdk.translator.shell.parser;
+package de.captaingoldfish.scim.sdk.translator.shell;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import javax.tools.JavaCompiler;
 import javax.tools.ToolProvider;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 
-import de.captaingoldfish.scim.sdk.common.schemas.Schema;
-import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
-import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileSystemJsonReader;
-import de.captaingoldfish.scim.sdk.translator.shell.schemareader.JsonRelationParser;
-import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -37,11 +31,19 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class FreemarkerParserTest
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = {ShellController.class})
+public class ShellControllerTest
 {
 
   private static final String OUTPUT_DIR = "target/pojos";
 
+  @SpyBean
+  private ShellController shellController;
+
+  /**
+   * delete the created and compiled classes
+   */
   @BeforeEach
   public void deleteExistingPojos()
   {
@@ -63,6 +65,14 @@ public class FreemarkerParserTest
     }
   }
 
+  /**
+   * make sure that the files are correctly created under the following conditions:
+   * <ol>
+   * <li>resource-types exist with schema and one schema is referenced in two resource-types</li>
+   * <li>resource-types do exist that reference non-existing schemas</li>
+   * <li>resource-node classes are created even if the corresponding resource-type does not exist</li>
+   * </ol>
+   */
   @SneakyThrows
   @ParameterizedTest
   @ValueSource(strings = {"./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1",
@@ -71,27 +81,23 @@ public class FreemarkerParserTest
   public void testFreemarkerParserTest(String pathToSchemas)
   {
     File file = new File(pathToSchemas);
-    List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, true);
-    JsonRelationParser relationParser = new JsonRelationParser(fileInfoWrapperList);
-    List<SchemaRelation> schemaRelations = relationParser.getSchemaRelations();
-
-    FreemarkerParser freemarkerParser = new FreemarkerParser(true);
-    final Map<Schema, String> javaPojos = freemarkerParser.createJavaResourcePojos("de.captaingoldfish.example.resources",
-                                                                                   schemaRelations);
-
     File targetDirectory = new File(OUTPUT_DIR);
     targetDirectory.mkdirs();
-    for ( Map.Entry<Schema, String> schemaPojoEntry : javaPojos.entrySet() )
-    {
-      Schema schema = schemaPojoEntry.getKey();
-      final String fileName = String.format("%s/%s.java",
-                                            OUTPUT_DIR,
-                                            StringUtils.capitalize(schema.getName().get().replaceAll(" ", "")));
-      try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName)))
-      {
-        outputStream.write(schemaPojoEntry.getValue().getBytes());
-      }
-    }
+    final String packageDir = "de.captaingoldfish.example.resources";
+
+    String result = shellController.translateSchemas(file.getAbsolutePath(),
+                                                     true,
+                                                     targetDirectory.getAbsolutePath(),
+                                                     packageDir,
+                                                     true);
+    log.info(result);
+
+    Mockito.verify(shellController)
+           .getCreatedFiles(Mockito.eq(file.getAbsolutePath()),
+                            Mockito.eq(true),
+                            Mockito.eq(targetDirectory.getAbsolutePath()),
+                            Mockito.eq(packageDir),
+                            Mockito.eq(true));
 
     Assertions.assertNotNull(targetDirectory.listFiles());
     String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())

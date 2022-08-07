@@ -17,7 +17,13 @@ import lombok.RequiredArgsConstructor;
 public class FileInfoWrapper
 {
 
+  /**
+   * the file that was read
+   */
   private final File resourceFile;
 
+  /**
+   * the json representation of the read file
+   */
   private final JsonNode jsonNode;
 }

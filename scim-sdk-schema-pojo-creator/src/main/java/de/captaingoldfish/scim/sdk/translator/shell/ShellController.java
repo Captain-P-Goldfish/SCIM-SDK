@@ -35,21 +35,37 @@ public class ShellController
    */
   @SneakyThrows
   @ShellMethod(key = "translate", value = "Translate SCIM schemas to Java POJOs for SCIM SDK")
-  public void translateSchemas(@ShellOption(value = {"-l", "--location"}, // @formatter:off
+  public String translateSchemas(@ShellOption(value = {"-l", "--location"}, // @formatter:off
                                 help = "a directory containing resource schemas and resource types or a "
                                   + "direct file location of a resource schema") String schemaLocation, // @formatter:on
-                               @ShellOption(value = {"-r", "--recursive"}, //
-                                 help = "if the given directory should be searched recursively", //
-                                 defaultValue = "false") boolean recursive, //
-                               @ShellOption(value = {"-o", "--output"}, //
-                                 help = "the output directory where the java POJOs will be placed", //
-                                 defaultValue = ".") String outputDir,
-                               @ShellOption(value = {"-p", "--package"}, //
-                                 help = "The name of the package that will be added to the generated POJOs", //
-                                 defaultValue = "my.scim.sdk.app") String packageDir,
-                               @ShellOption(value = {"--useLombok"}, //
-                                 help = "Add lombok @Builder annotations to constructors", //
-                                 defaultValue = "false") boolean useLombok)
+                                 @ShellOption(value = {"-r", "--recursive"}, //
+                                   help = "if the given directory should be searched recursively", //
+                                   defaultValue = "false") boolean recursive, //
+                                 @ShellOption(value = {"-o", "--output"}, //
+                                   help = "the output directory where the java POJOs will be placed", //
+                                   defaultValue = ".") String outputDir,
+                                 @ShellOption(value = {"-p", "--package"}, //
+                                   help = "The name of the package that will be added to the generated POJOs", //
+                                   defaultValue = "my.scim.sdk.app") String packageDir,
+                                 @ShellOption(value = {"--useLombok"}, //
+                                   help = "Add lombok @Builder annotations to constructors", //
+                                   defaultValue = "false") boolean useLombok)
+  {
+    List<String> createdFiles = getCreatedFiles(schemaLocation, recursive, outputDir, packageDir, useLombok);
+
+    return String.format("Successfully created the following files:\n- %s", String.join("\n- ", createdFiles));
+  }
+
+  /**
+   * creates the java pojos and stores them within the filesystem
+   * 
+   * @return the list of absolute paths that were created
+   */
+  protected List<String> getCreatedFiles(String schemaLocation,
+                                         boolean recursive,
+                                         String outputDir,
+                                         String packageDir,
+                                         boolean useLombok)
   {
     File file = new File(schemaLocation);
     List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, recursive);
@@ -58,7 +74,8 @@ public class ShellController
 
     FreemarkerParser freemarkerParser = new FreemarkerParser(useLombok);
     Map<Schema, String> pojoMap = freemarkerParser.createJavaResourcePojos(packageDir, schemaRelations);
-    PojoWriter.writePojosToFileSystem(pojoMap, outputDir);
+    return PojoWriter.writePojosToFileSystem(pojoMap, outputDir);
   }
+
 
 }

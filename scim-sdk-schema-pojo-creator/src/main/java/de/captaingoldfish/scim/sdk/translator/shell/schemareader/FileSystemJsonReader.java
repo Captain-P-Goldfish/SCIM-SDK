@@ -1,10 +1,10 @@
 package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,6 +26,14 @@ import lombok.extern.slf4j.Slf4j;
 public class FileSystemJsonReader
 {
 
+  /**
+   * tries to parse the content of the given file into a json node
+   * 
+   * @param file the file that should be parsed into a JSON representation
+   * @param recursive if the file is a directory and recursive is true then the directory will be searched for
+   *          files that represent json nodes
+   * @return the list of file contents that represented json nodes
+   */
   @SneakyThrows
   public static List<FileInfoWrapper> parseFileToJsonNode(File file, boolean recursive)
   {
@@ -56,7 +64,7 @@ public class FileSystemJsonReader
         log.info("Ignoring file '{}' because it does not end with '.json'", file.getAbsolutePath());
         return schemaList;
       }
-      try (InputStream inputStream = new FileInputStream(file))
+      try (InputStream inputStream = Files.newInputStream(file.toPath()))
       {
         String schemaString = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
         final JsonNode currentSchema;
