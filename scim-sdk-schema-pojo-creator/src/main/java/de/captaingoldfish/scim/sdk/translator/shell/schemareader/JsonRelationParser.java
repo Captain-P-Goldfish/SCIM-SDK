@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -72,6 +73,7 @@ public class JsonRelationParser
   public List<SchemaRelation> getSchemaRelations()
   {
     List<SchemaRelation> schemaRelationWrapperList = new ArrayList<>();
+
     for ( FileInfoWrapper resourceTypeWrapper : resourceTypes )
     {
       String resourceSchemaUri = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.SCHEMA).textValue();
@@ -105,7 +107,30 @@ public class JsonRelationParser
                                                                 new Schema(resourceSchema), extensionNodes);
       schemaRelationWrapperList.add(schemaRelationWrapper);
     }
+
+    addSchemaRelationsWithoutResourceType(schemaRelationWrapperList);
+
     return schemaRelationWrapperList;
+  }
+
+  /**
+   * add schemas that have no resource-type so that the java pojos for those will also be created
+   */
+  private void addSchemaRelationsWithoutResourceType(List<SchemaRelation> schemaRelationWrapperList)
+  {
+    for ( FileInfoWrapper resourceSchema : resourceSchemas )
+    {
+      String schemaId = resourceSchema.getJsonNode().get(AttributeNames.RFC7643.ID).textValue();
+      boolean added = schemaRelationWrapperList.stream()
+                                               .anyMatch(relation -> relation.getResourceSchema()
+                                                                             .getNonNullId()
+                                                                             .equals(schemaId));
+      if (!added)
+      {
+        schemaRelationWrapperList.add(new SchemaRelation(null, new Schema(resourceSchema.getJsonNode()),
+                                                         Collections.emptyList()));
+      }
+    }
   }
 
   private Optional<JsonNode> getResourceSchemaByUri(String resourceSchemaUri)
