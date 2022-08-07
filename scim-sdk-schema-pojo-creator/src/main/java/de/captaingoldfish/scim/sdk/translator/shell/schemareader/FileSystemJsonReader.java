@@ -28,7 +28,7 @@ public class FileSystemJsonReader
 
   /**
    * tries to parse the content of the given file into a json node
-   * 
+   *
    * @param file the file that should be parsed into a JSON representation
    * @param recursive if the file is a directory and recursive is true then the directory will be searched for
    *          files that represent json nodes

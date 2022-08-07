@@ -65,7 +65,7 @@ public class ShellController
 
   /**
    * creates the java pojos and stores them within the filesystem
-   * 
+   *
    * @return the list of absolute paths that were created
    */
   protected List<String> createdFiles(String schemaLocation,

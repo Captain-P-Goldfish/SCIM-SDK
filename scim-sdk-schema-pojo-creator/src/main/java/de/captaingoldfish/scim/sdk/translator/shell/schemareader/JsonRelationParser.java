@@ -102,7 +102,7 @@ public class JsonRelationParser
   /**
    * tries to identify relations between resource-types and resource-schemas and wraps them together. If a
    * resource-schema has no relation to any resource-type it will be added anyway
-   * 
+   *
    * @return the list of all resource schema relations with their resource types and extensions.
    */
   public List<SchemaRelation> getSchemaRelations()

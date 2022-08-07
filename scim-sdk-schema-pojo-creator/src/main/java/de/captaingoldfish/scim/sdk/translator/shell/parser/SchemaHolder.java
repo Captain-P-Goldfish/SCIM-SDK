@@ -43,7 +43,7 @@ public class SchemaHolder
   /**
    * analyzes the {@link SchemaRelation} objects and puts the schemas that are extensions only and that are
    * resource nodes into different maps
-   * 
+   *
    * @param schemaRelations the previously analyzed schema relations based on their resource types
    */
   public static SchemaHolder PartSchemas(List<SchemaRelation> schemaRelations)

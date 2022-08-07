@@ -67,7 +67,7 @@ public class FreemarkerParser
 
   /**
    * creates the java pojos and keeps them as string representation within the map
-   * 
+   *
    * @param packageName the packagename of the class
    * @param schemaRelations the schema relation representation from which the resources should be created
    * @return the created pojos as string representation
@@ -104,7 +104,7 @@ public class FreemarkerParser
 
   /**
    * builds the java class for a specific schema representation
-   * 
+   *
    * @param packageName the package where the java class is being located
    * @param schema the schema that is being translated into a java pojo
    * @param extensions the extensions that are related to this schema

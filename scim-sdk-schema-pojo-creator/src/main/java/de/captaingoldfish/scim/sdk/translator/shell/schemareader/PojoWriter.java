@@ -29,7 +29,7 @@ public final class PojoWriter
 
   /**
    * will write the given java pojos into the filesystem at the given output directory
-   * 
+   *
    * @param pojoMap the map of pojos that were created
    * @param outputDir the target directory where the pojos should be saved
    * @return the absolute file paths of all files that were created
