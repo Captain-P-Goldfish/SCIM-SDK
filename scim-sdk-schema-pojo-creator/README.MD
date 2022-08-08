@@ -42,11 +42,11 @@ NAME
        translate - Translate SCIM schemas to Java POJOs for SCIM SDK
 
 SYNOPSIS
-       translate [--location String] --recursive boolean --output String --package String --useLombok boolean
+       translate [--location String] --recursive boolean --output String --package String --useLombok boolean --override boolean
 
 OPTIONS
        --location or -l String
-       a directory containing resource schemas and resource types or a direct file location of a resource schema
+       a directory containing resource-schemas and resource-types or a direct file location of a resource-schema
        [Mandatory]
 
        --recursive or -r boolean
@@ -54,29 +54,88 @@ OPTIONS
        [Optional, default = false]
 
        --output or -o String
-       the output directory where the java POJOs will be placed
+       the output directory where the java POJOs will be placed. This directory should point to your 'src/main/java' directory
        [Optional, default = .]
 
        --package or -p String
-       The name of the package that will be added to the generated POJOs
+       The name of the package for the generated POJOs
        [Optional, default = my.scim.sdk.app]
 
        --useLombok boolean
        Add lombok @Builder annotations to constructors
        [Optional, default = false]
+
+       --override boolean
+       Replace already existing files
+       [Optional, default = false]
 ```
-                                        
-now execute the `translate` command e.g.:
+            
+The `translate` command will process the following steps:
+
+1. gather `resource-schema` files and `resource-type` files within the given location under option `-l` or `--location`
+2. search for files recursively within the location under `-l` if the `recursive` option is enabled
+3. validate the found `resource-schemas` and `resource-types` and analyze their relations with each other.
+4. take the `output`-directory and add the `package`-path to it and this will be the actual output directory
+5. create the resource files
+6. write the files into their target directories
+
+                            
+if you e.g. execute the following command:
 
 ```
-translate -r -l /opt/development/my-project/src/main/resources/scim -o /opt/development/my-project/src/main/java/de/captaingoldfish/myproject/scim -p de.captaingoldfish.myproject.scim --useLombok
+translate -r -l /opt/development/my-project/src/main/resources/scim -o /opt/development/my-project/src/main/java -p de.captaingoldfish.scim.example --useLombok
 ```
 
-The given directory will be recursively searched and json-resources of the following types will be gathered:
+and the `location`-directory contains the following input:
 
- 1. resources
- 2. resource-types
+```
+├── resourcetypes
+│   ├── group.json
+│   ├── me.json
+│   ├── service-provider.json
+│   └── user.json
+└── schemas
+    ├── enterprise-user.json
+    ├── groups.json
+    ├── service-provider.json
+    └── users.json
+```
 
-The resource-types define the extensions bound to other resources so make sure that the resource-types are also
-available under the given location. The program will then try its best to construct all resource-pojos together with its
-extensions if present.
+
+the generated output will look like this:
+
+```
+src
+    └── main
+        └── java
+            └── de
+                └── captaingoldfish
+                    └── scim
+                        └── example
+                            ├── endpoints
+                            │   ├── GroupEndpointDefinition.java
+                            │   ├── MeEndpointDefinition.java
+                            │   ├── ServiceProviderConfigEndpointDefinition.java
+                            │   └── UserEndpointDefinition.java
+                            ├── resourcehandler
+                            │   ├── GroupResourceHandler.java
+                            │   ├── ServiceProviderConfigurationResourceHandler.java
+                            │   └── UserResourceHandler.java
+                            └── resources
+                                ├── EnterpriseUser.java
+                                ├── Group.java
+                                ├── ServiceProviderConfiguration.java
+                                └── User.java
+```
+                       
+## Expected resources are not generated
+
+There are some rules that must be met in order for the source-code generation to work:
+
+1. `ResourceHandler` and `EndpointDefinition` implementations can only be created if the corresponding `resource-type`
+    json definition is present.
+2. The schemas will be validated against their meta-schema-representations so invalid schemas will not work
+3. `resource-schema`-filenames and `resource-type`-filenames must end with `.json` otherwise the files will be ignored.
+4. `resource-type`-files that contain `resource-schema`-references in their `schema`-attribute that have not been found
+    will be ignored and nothing will be generated because the underlying resource-base is missing.
+

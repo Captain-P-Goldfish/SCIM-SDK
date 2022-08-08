@@ -40,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ShellControllerTest
 {
 
-  private static final String OUTPUT_DIR = "target/pojos";
+  private static final String OUTPUT_DIR = "target/pojos/src/main/java";
 
   private static final String DEFAULT_PACKAGE_NAME = "de.captaingoldfish.scim.example";
 

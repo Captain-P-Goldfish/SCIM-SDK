@@ -40,16 +40,17 @@ public class ShellController
   @SneakyThrows
   @ShellMethod(key = "translate", value = "Translate SCIM schemas to Java POJOs for SCIM SDK")
   public String translateSchemas(@ShellOption(value = {"-l", "--location"}, // @formatter:off
-                                help = "a directory containing resource schemas and resource types or a "
-                                  + "direct file location of a resource schema") String schemaLocation, // @formatter:on
+                                help = "a directory containing resource-schemas and resource-types or a "
+                                  + "direct file location of a resource-schema") String schemaLocation, // @formatter:on
                                  @ShellOption(value = {"-r", "--recursive"}, //
                                    help = "if the given directory should be searched recursively", //
                                    defaultValue = "false") boolean recursive, //
                                  @ShellOption(value = {"-o", "--output"}, //
-                                   help = "the output directory where the java POJOs will be placed", //
+                                   help = "the output directory where the java POJOs will be placed. This directory "
+                                          + "should point to your 'src/main/java' directory", //
                                    defaultValue = ".") String outputDir,
                                  @ShellOption(value = {"-p", "--package"}, //
-                                   help = "The name of the package that will be added to the generated POJOs", //
+                                   help = "The name of the package for the generated POJOs", //
                                    defaultValue = "my.scim.sdk.app") String packageDir,
                                  @ShellOption(value = {"--useLombok"}, //
                                    help = "Add lombok @Builder annotations to constructors", //
