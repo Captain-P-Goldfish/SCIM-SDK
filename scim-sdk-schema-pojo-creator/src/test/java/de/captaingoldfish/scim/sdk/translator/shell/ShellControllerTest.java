@@ -2,7 +2,6 @@ package de.captaingoldfish.scim.sdk.translator.shell;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.nio.file.FileSystemException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -84,6 +83,7 @@ public class ShellControllerTest
   {
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1";
     parseSetup(useLombok,
+               true,
                pathToSchema,
                Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
                Arrays.asList("UserEndpointDefinition.java",
@@ -108,6 +108,7 @@ public class ShellControllerTest
   {
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2";
     parseSetup(useLombok,
+               true,
                pathToSchema,
                Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
                Arrays.asList("UserEndpointDefinition.java",
@@ -132,6 +133,7 @@ public class ShellControllerTest
   {
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3";
     parseSetup(useLombok,
+               true,
                pathToSchema,
                Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
                Arrays.asList("UserEndpointDefinition.java"),
@@ -142,6 +144,7 @@ public class ShellControllerTest
    * parses a predefined setup and verifies if all expected files are present
    */
   private void parseSetup(boolean useLombok,
+                          boolean overrideExistingFiles,
                           String pathToSchema,
                           List<String> expectedResources,
                           List<String> expectedEndpoints,
@@ -166,7 +169,8 @@ public class ShellControllerTest
                                                      true,
                                                      targetDirectory.getAbsolutePath(),
                                                      DEFAULT_PACKAGE_NAME,
-                                                     useLombok);
+                                                     useLombok,
+                                                     overrideExistingFiles);
     log.info(result);
 
     Mockito.verify(shellController)
@@ -174,7 +178,8 @@ public class ShellControllerTest
                         Mockito.eq(true),
                         Mockito.eq(targetDirectory.getAbsolutePath()),
                         Mockito.eq(DEFAULT_PACKAGE_NAME),
-                        Mockito.eq(useLombok));
+                        Mockito.eq(useLombok),
+                        Mockito.eq(overrideExistingFiles));
 
     Assertions.assertNotNull(resourceDirectory.listFiles());
     String[] resourcesToCompile = Arrays.stream(resourceDirectory.listFiles())
@@ -232,7 +237,8 @@ public class ShellControllerTest
                                                      recursive,
                                                      targetDirectory.getAbsolutePath(),
                                                      DEFAULT_PACKAGE_NAME,
-                                                     useLombok);
+                                                     useLombok,
+                                                     true);
 
     log.info(result);
 
@@ -268,7 +274,8 @@ public class ShellControllerTest
                                                      recursive,
                                                      targetDirectory.getAbsolutePath(),
                                                      packageDir,
-                                                     useLombok);
+                                                     useLombok,
+                                                     true);
 
     log.info(result);
     Assertions.assertEquals(0,
@@ -295,7 +302,8 @@ public class ShellControllerTest
                                                                                               recursive,
                                                                                               targetDirectory.getAbsolutePath(),
                                                                                               packageDir,
-                                                                                              useLombok));
+                                                                                              useLombok,
+                                                                                              true));
     Assertions.assertEquals(String.format("Path to '%s' is a directory and cannot be translated. Use '-r'"
                                           + " option to recursively iterate through directories.",
                                           file.getAbsolutePath()),
@@ -317,7 +325,8 @@ public class ShellControllerTest
                                                      recursive,
                                                      targetDirectory.getAbsolutePath(),
                                                      DEFAULT_PACKAGE_NAME,
-                                                     useLombok);
+                                                     useLombok,
+                                                     true);
     log.info(result);
 
     File resourceDirectory = new File(String.format("%s/%s",

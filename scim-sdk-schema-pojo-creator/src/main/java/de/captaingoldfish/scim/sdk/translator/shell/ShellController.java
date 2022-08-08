@@ -53,9 +53,17 @@ public class ShellController
                                    defaultValue = "my.scim.sdk.app") String packageDir,
                                  @ShellOption(value = {"--useLombok"}, //
                                    help = "Add lombok @Builder annotations to constructors", //
-                                   defaultValue = "false") boolean useLombok)
+                                   defaultValue = "false") boolean useLombok,
+                                 @ShellOption(value = {"--override"}, //
+                                   help = "Replace already existing files", //
+                                   defaultValue = "false") boolean overrideExistingFiles)
   {
-    List<String> createdFiles = createPojos(schemaLocation, recursive, outputDir, packageDir, useLombok);
+    List<String> createdFiles = createPojos(schemaLocation,
+                                            recursive,
+                                            outputDir,
+                                            packageDir,
+                                            useLombok,
+                                            overrideExistingFiles);
 
     if (createdFiles.isEmpty())
     {
@@ -76,7 +84,8 @@ public class ShellController
                                      boolean recursive,
                                      String outputDir,
                                      String packageName,
-                                     boolean useLombok)
+                                     boolean useLombok,
+                                     boolean overrideExistingFiles)
   {
     File file = new File(schemaLocation);
     List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, recursive);
@@ -98,7 +107,8 @@ public class ShellController
                                              packageName,
                                              resourceSchemaPojoMap,
                                              endpointDefinitionPojoMap,
-                                             resourceHandlerPojoMap);
+                                             resourceHandlerPojoMap,
+                                             overrideExistingFiles);
   }
 
   /**
@@ -108,18 +118,22 @@ public class ShellController
                                                                 String packageName,
                                                                 Map<Schema, String> resourceSchemaPojoMap,
                                                                 Map<JsonNode, String> endpointDefinitionPojoMap,
-                                                                Map<SchemaRelation, String> resourceHandlerPojoMap)
+                                                                Map<SchemaRelation, String> resourceHandlerPojoMap,
+                                                                boolean overrideExistingFiles)
   {
     List<String> resourceNodeFiles = PojoWriter.writeResourceNodesToFileSystem(resourceSchemaPojoMap,
                                                                                outputDir,
-                                                                               packageName);
+                                                                               packageName,
+                                                                               overrideExistingFiles);
     List<String> endpointDefinitionFiles = PojoWriter.writeEndpointDefinitionsToFileSystem(endpointDefinitionPojoMap,
                                                                                            outputDir,
-                                                                                           packageName);
+                                                                                           packageName,
+                                                                                           overrideExistingFiles);
     resourceNodeFiles.addAll(endpointDefinitionFiles);
     List<String> resourceHandlerFiles = PojoWriter.writeResourceHandlerToFileSystem(resourceHandlerPojoMap,
                                                                                     outputDir,
-                                                                                    packageName);
+                                                                                    packageName,
+                                                                                    overrideExistingFiles);
     resourceNodeFiles.addAll(resourceHandlerFiles);
     return resourceNodeFiles;
   }

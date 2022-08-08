@@ -36,12 +36,14 @@ public final class PojoWriter
    *
    * @param pojoMap the map of pojos that were created
    * @param outputDir the target directory where the pojos should be saved
+   * @param overrideExistingFiles if already existing files should be replaced or not
    * @return the absolute file paths of all files that were created
    */
   @SneakyThrows
   public static List<String> writeResourceNodesToFileSystem(Map<Schema, String> pojoMap,
                                                             String outputDir,
-                                                            String packageName)
+                                                            String packageName,
+                                                            boolean overrideExistingFiles)
   {
     final String targetDirectoryPath = String.format("%s/%s",
                                                      outputDir,
@@ -59,6 +61,10 @@ public final class PojoWriter
       Schema schema = schemaPojoEntry.getKey();
       final String fileName = StringUtils.capitalize(schema.getName().get()).replaceAll("\\s", "");
       final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
+      if (!overrideExistingFiles && new File(filePath).exists())
+      {
+        continue;
+      }
       try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
       {
         outputStream.write(schemaPojoEntry.getValue().getBytes());
@@ -73,12 +79,14 @@ public final class PojoWriter
    *
    * @param pojoMap the map of pojos that were created
    * @param outputDir the target directory where the pojos should be saved
+   * @param overrideExistingFiles if already existing files should be replaced or not
    * @return the absolute file paths of all files that were created
    */
   @SneakyThrows
   public static List<String> writeEndpointDefinitionsToFileSystem(Map<JsonNode, String> pojoMap,
                                                                   String outputDir,
-                                                                  String packageName)
+                                                                  String packageName,
+                                                                  boolean overrideExistingFiles)
   {
     final String targetDirectoryPath = String.format("%s/%s",
                                                      outputDir,
@@ -97,7 +105,10 @@ public final class PojoWriter
                                                 resourceType.get(AttributeNames.RFC7643.NAME).textValue());
       final String fileName = StringUtils.capitalize(endpointName).replaceAll("\\s", "");
       final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
-
+      if (!overrideExistingFiles && new File(filePath).exists())
+      {
+        continue;
+      }
       try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
       {
         outputStream.write(schemaPojoEntry.getValue().getBytes());
@@ -112,12 +123,14 @@ public final class PojoWriter
    *
    * @param resourceHandlerPojoMap the map of pojos that were created
    * @param outputDir the target directory where the pojos should be saved
+   * @param overrideExistingFiles if already existing files should be replaced or not
    * @return the absolute file paths of all files that were created
    */
   @SneakyThrows
   public static List<String> writeResourceHandlerToFileSystem(Map<SchemaRelation, String> resourceHandlerPojoMap,
                                                               String outputDir,
-                                                              String packageName)
+                                                              String packageName,
+                                                              boolean overrideExistingFiles)
   {
     final String targetDirectoryPath = String.format("%s/%s",
                                                      outputDir,
@@ -140,6 +153,10 @@ public final class PojoWriter
                                                                    .textValue())
                                          .replaceAll("\\s", "");
       final String filePath = String.format("%s/%sResourceHandler.java", targetDirectory, fileName);
+      if (!overrideExistingFiles && new File(filePath).exists())
+      {
+        continue;
+      }
       try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
       {
         outputStream.write(pojo.getBytes());
