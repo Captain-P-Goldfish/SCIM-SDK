@@ -4,6 +4,7 @@ package de.captaingoldfish.scim.sdk.translator.shell;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
@@ -15,6 +16,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.EndpointDefinitionBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.ResourceHandlerBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.ResourceNodeBuilder;
+import de.captaingoldfish.scim.sdk.translator.shell.parser.ScimConfigBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileSystemJsonReader;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.JsonRelationParser;
@@ -57,14 +59,18 @@ public class ShellController
                                    defaultValue = "false") boolean useLombok,
                                  @ShellOption(value = {"--override"}, //
                                    help = "Replace already existing files", //
-                                   defaultValue = "false") boolean overrideExistingFiles)
+                                   defaultValue = "false") boolean overrideExistingFiles,
+                                 @ShellOption(value = {"--create-config"}, //
+                                   help = "Creates a predefined SCIM configuration file with a ResourceEndpoint", //
+                                   defaultValue = "false") boolean createScimConfig)
   {
     List<String> createdFiles = createPojos(schemaLocation,
                                             recursive,
                                             outputDir,
                                             packageDir,
                                             useLombok,
-                                            overrideExistingFiles);
+                                            overrideExistingFiles,
+                                            createScimConfig);
 
     if (createdFiles.isEmpty())
     {
@@ -86,7 +92,8 @@ public class ShellController
                                      String outputDir,
                                      String packageName,
                                      boolean useLombok,
-                                     boolean overrideExistingFiles)
+                                     boolean overrideExistingFiles,
+                                     boolean createScimConfig)
   {
     File file = new File(schemaLocation);
     List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, recursive);
@@ -104,11 +111,20 @@ public class ShellController
     ResourceHandlerBuilder resourceHandlerBuilder = new ResourceHandlerBuilder();
     Map<SchemaRelation, String> resourceHandlerPojoMap = resourceHandlerBuilder.createResourceHandlerPojos(packageName,
                                                                                                            schemaRelations);
+
+    String scimConfigPojo = null;
+    if (createScimConfig)
+    {
+      ScimConfigBuilder scimConfigBuilder = new ScimConfigBuilder();
+      scimConfigPojo = scimConfigBuilder.createScimConfigPojo(packageName, schemaRelations, useLombok);
+    }
+
     return writeCreatedResourcesToFileSystem(outputDir,
                                              packageName,
                                              resourceSchemaPojoMap,
                                              endpointDefinitionPojoMap,
                                              resourceHandlerPojoMap,
+                                             scimConfigPojo,
                                              overrideExistingFiles);
   }
 
@@ -120,6 +136,7 @@ public class ShellController
                                                                 Map<Schema, String> resourceSchemaPojoMap,
                                                                 Map<JsonNode, String> endpointDefinitionPojoMap,
                                                                 Map<SchemaRelation, String> resourceHandlerPojoMap,
+                                                                String scimConfigPojo,
                                                                 boolean overrideExistingFiles)
   {
     List<String> resourceNodeFiles = PojoWriter.writeResourceNodesToFileSystem(resourceSchemaPojoMap,
@@ -136,6 +153,11 @@ public class ShellController
                                                                                     packageName,
                                                                                     overrideExistingFiles);
     resourceNodeFiles.addAll(resourceHandlerFiles);
+
+    Optional.ofNullable(scimConfigPojo)
+            .flatMap(pojo -> PojoWriter.writeScimConfig(outputDir, packageName, pojo, overrideExistingFiles))
+            .ifPresent(resourceNodeFiles::add);
+
     return resourceNodeFiles;
   }
 

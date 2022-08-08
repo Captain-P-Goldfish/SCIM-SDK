@@ -48,6 +48,12 @@ public final class UtilityMethods
     return filePath ? toFilePath(packagePath) : packagePath;
   }
 
+  public static String getScimConfigPackage(String packageName, boolean filePath)
+  {
+    String packagePath = String.format("%s.projectconfig", packageName);
+    return filePath ? toFilePath(packagePath) : packagePath;
+  }
+
   private static String toFilePath(String packagePath)
   {
     return packagePath.replaceAll("\\.", "/");
@@ -58,4 +64,13 @@ public final class UtilityMethods
     return StringUtils.capitalize(resourceJsonName).replaceAll("\\s", "");
   }
 
+  public static String getEndpointDefinitionName(String resourceTypeName)
+  {
+    return String.format("%sEndpointDefinition", getResourceName(resourceTypeName));
+  }
+
+  public static String getResourceHandlerName(String resourceJsonName)
+  {
+    return String.format("%sResourceHandler", getResourceName(resourceJsonName));
+  }
 }

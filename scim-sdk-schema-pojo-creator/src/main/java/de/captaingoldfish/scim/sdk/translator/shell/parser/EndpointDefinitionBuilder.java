@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -81,12 +79,11 @@ public class EndpointDefinitionBuilder extends AbstractPojoBuilder
   private String createEndpointDefinitionJavaClass(String packageName, SchemaRelation schemaRelation)
   {
     JsonNode resourceTypeNode = schemaRelation.getResourceType().getJsonNode();
-    String resourceTypeName = StringUtils.capitalize(resourceTypeNode.get(AttributeNames.RFC7643.NAME).textValue())
-                                         .replace("\\s", "");
+    String resourceTypeName = UtilityMethods.getResourceName(resourceTypeNode.get(AttributeNames.RFC7643.NAME)
+                                                                             .textValue());
     resourceTypeName = String.format("%s", resourceTypeName);
-    String resourceName = StringUtils.capitalize(new Schema(schemaRelation.getResourceSchema().getJsonNode()).getName()
-                                                                                                             .get())
-                                     .replaceAll("\\s", "");
+    String resourceName = UtilityMethods.getResourceName(new Schema(schemaRelation.getResourceSchema()
+                                                                                  .getJsonNode()).getName().get());
     String resourceImport = String.format("%s.%s",
                                           UtilityMethods.getResourcesPackage(packageName, false),
                                           resourceName);
@@ -95,7 +92,7 @@ public class EndpointDefinitionBuilder extends AbstractPojoBuilder
     input.put("packageName", UtilityMethods.getEndpointsPackage(packageName, false));
     input.put("resourceName", resourceName);
     input.put("resourceImport", resourceImport);
-    input.put("resourceTypeName", resourceTypeName);
+    input.put("resourceTypeName", UtilityMethods.getEndpointDefinitionName(resourceTypeName));
     input.put("resourceTypeClasspath", UtilityMethods.toClasspath(schemaRelation.getResourceType().getResourceFile()));
     input.put("resourceTypeSchemaClasspath",
               UtilityMethods.toClasspath(schemaRelation.getResourceSchema().getResourceFile()));

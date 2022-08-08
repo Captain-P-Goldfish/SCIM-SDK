@@ -8,10 +8,10 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 
 import ${resourceImport};
 
-public class ${resourceTypeName}EndpointDefinition extends EndpointDefinition
+public class ${resourceTypeName} extends EndpointDefinition
 {
 
-  public ${resourceTypeName}EndpointDefinition(ResourceHandler<${resourceName}> resourceHandler)
+  public ${resourceTypeName}(ResourceHandler<${resourceName}> resourceHandler)
   {
     super(JsonHelper.loadJsonDocument("${resourceTypeClasspath?replace("\\", "/")}"),
           JsonHelper.loadJsonDocument("${resourceTypeSchemaClasspath?replace("\\", "/")}"),

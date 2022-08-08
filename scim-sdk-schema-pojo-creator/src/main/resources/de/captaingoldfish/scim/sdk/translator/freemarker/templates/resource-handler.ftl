@@ -16,7 +16,7 @@ import ${resourceImport};
 /**
  *
  */
-public class ${resourceName}ResourceHandler extends ResourceHandler<${resourceName}>
+public class ${className} extends ResourceHandler<${resourceName}>
 {
 
   /**

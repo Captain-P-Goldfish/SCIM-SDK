@@ -7,8 +7,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.commons.lang3.StringUtils;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -59,7 +58,7 @@ public final class PojoWriter
     for ( Map.Entry<Schema, String> schemaPojoEntry : pojoMap.entrySet() )
     {
       Schema schema = schemaPojoEntry.getKey();
-      final String fileName = StringUtils.capitalize(schema.getName().get()).replaceAll("\\s", "");
+      final String fileName = UtilityMethods.getResourceName(schema.getName().get());
       final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
       if (!overrideExistingFiles && new File(filePath).exists())
       {
@@ -103,7 +102,7 @@ public final class PojoWriter
       JsonNode resourceType = schemaPojoEntry.getKey();
       final String endpointName = String.format("%sEndpointDefinition",
                                                 resourceType.get(AttributeNames.RFC7643.NAME).textValue());
-      final String fileName = StringUtils.capitalize(endpointName).replaceAll("\\s", "");
+      final String fileName = UtilityMethods.getResourceName(endpointName);
       final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
       if (!overrideExistingFiles && new File(filePath).exists())
       {
@@ -147,11 +146,10 @@ public final class PojoWriter
       final SchemaRelation schemaRelation = createdPojoEntry.getKey();
       final String pojo = createdPojoEntry.getValue();
 
-      final String fileName = StringUtils.capitalize(schemaRelation.getResourceSchema()
-                                                                   .getJsonNode()
-                                                                   .get(AttributeNames.RFC7643.NAME)
-                                                                   .textValue())
-                                         .replaceAll("\\s", "");
+      final String fileName = UtilityMethods.getResourceName(schemaRelation.getResourceType()
+                                                                           .getJsonNode()
+                                                                           .get(AttributeNames.RFC7643.NAME)
+                                                                           .textValue());
       final String filePath = String.format("%s/%sResourceHandler.java", targetDirectory, fileName);
       if (!overrideExistingFiles && new File(filePath).exists())
       {
@@ -164,5 +162,34 @@ public final class PojoWriter
       }
     }
     return createdFilesPaths;
+  }
+
+  @SneakyThrows
+  public static Optional<String> writeScimConfig(String outputDir,
+                                                 String packageName,
+                                                 String scimConfigPojo,
+                                                 boolean overrideExistingFiles)
+  {
+    final String targetDirectoryPath = String.format("%s/%s",
+                                                     outputDir,
+                                                     UtilityMethods.getScimConfigPackage(packageName, true)
+                                                                   .replaceAll("\\.", "/"));
+    final File targetDirectory = new File(targetDirectoryPath);
+    if (!targetDirectory.exists())
+    {
+      targetDirectory.mkdirs();
+    }
+
+    final String fileName = "ScimConfig";
+    final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
+    if (!overrideExistingFiles && new File(filePath).exists())
+    {
+      return Optional.empty();
+    }
+    try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
+    {
+      outputStream.write(scimConfigPojo.getBytes());
+    }
+    return Optional.of(filePath);
   }
 }

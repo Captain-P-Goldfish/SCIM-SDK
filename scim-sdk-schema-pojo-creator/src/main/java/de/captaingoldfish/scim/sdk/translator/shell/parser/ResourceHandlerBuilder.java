@@ -24,7 +24,7 @@ public class ResourceHandlerBuilder extends AbstractPojoBuilder
 {
 
   /**
-   * the template to parse resources into {@link de.captaingoldfish.scim.sdk.common.resources.ResourceNode}s
+   * the template to create {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler}s
    */
   private final Template resourceHandlerTemplate;
 
@@ -70,10 +70,16 @@ public class ResourceHandlerBuilder extends AbstractPojoBuilder
   @SneakyThrows
   private String createResourceHandlerJavaClass(String packageName, SchemaRelation schemaRelation)
   {
-    final String resourceName = UtilityMethods.getResourceName(schemaRelation.getResourceSchema()
-                                                                             .getJsonNode()
-                                                                             .get(AttributeNames.RFC7643.NAME)
-                                                                             .textValue());
+    final String resourceTypeName = schemaRelation.getResourceType()
+                                                  .getJsonNode()
+                                                  .get(AttributeNames.RFC7643.NAME)
+                                                  .textValue();
+    final String resourceNodeName = schemaRelation.getResourceSchema()
+                                                  .getJsonNode()
+                                                  .get(AttributeNames.RFC7643.NAME)
+                                                  .textValue();
+    final String className = UtilityMethods.getResourceHandlerName(resourceTypeName);
+    final String resourceName = UtilityMethods.getResourceName(resourceNodeName);
     final String resourceImport = String.format("%s.%s",
                                                 UtilityMethods.getResourcesPackage(packageName, false),
                                                 resourceName);
@@ -81,6 +87,7 @@ public class ResourceHandlerBuilder extends AbstractPojoBuilder
     Map<String, Object> input = new HashMap<>();
     input.put("packageName", UtilityMethods.getResourceHandlerPackage(packageName, false));
     input.put("resourceName", resourceName);
+    input.put("className", className);
     input.put("resourceImport", resourceImport);
 
     final String processedTemplate;

@@ -42,7 +42,7 @@ NAME
        translate - Translate SCIM schemas to Java POJOs for SCIM SDK
 
 SYNOPSIS
-       translate [--location String] --recursive boolean --output String --package String --useLombok boolean --override boolean
+       translate [--location String] --recursive boolean --output String --package String --useLombok boolean --override boolean --create-config boolean
 
 OPTIONS
        --location or -l String
@@ -68,6 +68,10 @@ OPTIONS
        --override boolean
        Replace already existing files
        [Optional, default = false]
+
+       --create-config boolean
+       Creates a predefined SCIM configuration file with a ResourceEndpoint
+       [Optional, default = false]
 ```
             
 The `translate` command will process the following steps:
@@ -83,7 +87,7 @@ The `translate` command will process the following steps:
 if you e.g. execute the following command:
 
 ```
-translate -r -l /opt/development/my-project/src/main/resources/scim -o /opt/development/my-project/src/main/java -p de.captaingoldfish.scim.example --useLombok
+translate -r -l /opt/development/my-project/src/main/resources/scim -o /opt/development/my-project/src/main/java -p de.captaingoldfish.scim.example --useLombok --create-config
 ```
 
 and the `location`-directory contains the following input:
@@ -103,29 +107,34 @@ and the `location`-directory contains the following input:
 
 
 the generated output will look like this:
+(In case that the `create-config` option is enabled a `ScimConfig` will be created that prepares a `ResourceEndpoint`
+instance with all the generated classes already registered. See package `projectconfig`)
 
 ```
 src
-    └── main
-        └── java
-            └── de
-                └── captaingoldfish
-                    └── scim
-                        └── example
-                            ├── endpoints
-                            │   ├── GroupEndpointDefinition.java
-                            │   ├── MeEndpointDefinition.java
-                            │   ├── ServiceProviderConfigEndpointDefinition.java
-                            │   └── UserEndpointDefinition.java
-                            ├── resourcehandler
-                            │   ├── GroupResourceHandler.java
-                            │   ├── ServiceProviderConfigurationResourceHandler.java
-                            │   └── UserResourceHandler.java
-                            └── resources
-                                ├── EnterpriseUser.java
-                                ├── Group.java
-                                ├── ServiceProviderConfiguration.java
-                                └── User.java
+└── main
+    └── java
+        └── de
+            └── captaingoldfish
+                └── scim
+                    └── example
+                        ├── endpoints
+                        │   ├── GroupEndpointDefinition.java
+                        │   ├── MeEndpointDefinition.java
+                        │   ├── ServiceProviderConfigEndpointDefinition.java
+                        │   └── UserEndpointDefinition.java
+                        ├── projectconfig
+                        │   └── ScimConfig.java
+                        ├── resourcehandler
+                        │   ├── GroupResourceHandler.java
+                        │   ├── MeResourceHandler.java
+                        │   ├── ServiceProviderConfigResourceHandler.java
+                        │   └── UserResourceHandler.java
+                        └── resources
+                            ├── EnterpriseUser.java
+                            ├── Group.java
+                            ├── ServiceProviderConfiguration.java
+                            └── User.java
 ```
                        
 ## Expected resources are not generated

@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -78,8 +79,8 @@ public class ShellControllerTest
    */
   @SneakyThrows
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void testParseSetup1(boolean useLombok)
+  @CsvSource({"true,true", "false,false", "false,true", "true,false"})
+  public void testParseSetup1(boolean useLombok, boolean createConfig)
   {
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1";
     parseSetup(useLombok,
@@ -91,8 +92,10 @@ public class ShellControllerTest
                              "MeEndpointDefinition.java",
                              "ServiceProviderConfigEndpointDefinition.java"),
                Arrays.asList("UserResourceHandler.java",
+                             "MeResourceHandler.java",
                              "GroupResourceHandler.java",
-                             "ServiceProviderConfigurationResourceHandler.java"));
+                             "ServiceProviderConfigResourceHandler.java"),
+               createConfig);
   }
 
   /**
@@ -103,8 +106,8 @@ public class ShellControllerTest
    */
   @SneakyThrows
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void testParseSetup2(boolean useLombok)
+  @CsvSource({"true,true", "false,false", "false,true", "true,false"})
+  public void testParseSetup2(boolean useLombok, boolean createConfig)
   {
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2";
     parseSetup(useLombok,
@@ -117,7 +120,9 @@ public class ShellControllerTest
                              "ServiceProviderConfigEndpointDefinition.java"),
                Arrays.asList("UserResourceHandler.java",
                              "GroupResourceHandler.java",
-                             "ServiceProviderConfigurationResourceHandler.java"));
+                             "MeResourceHandler.java",
+                             "ServiceProviderConfigResourceHandler.java"),
+               createConfig);
   }
 
   /**
@@ -128,8 +133,8 @@ public class ShellControllerTest
    */
   @SneakyThrows
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
-  public void testParseSetup3(boolean useLombok)
+  @CsvSource({"true,true", "false,false", "false,true", "true,false"})
+  public void testParseSetup3(boolean useLombok, boolean createConfig)
   {
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3";
     parseSetup(useLombok,
@@ -137,7 +142,8 @@ public class ShellControllerTest
                pathToSchema,
                Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
                Arrays.asList("UserEndpointDefinition.java"),
-               Arrays.asList("UserResourceHandler.java"));
+               Arrays.asList("UserResourceHandler.java"),
+               createConfig);
   }
 
   /**
@@ -148,7 +154,8 @@ public class ShellControllerTest
                           String pathToSchema,
                           List<String> expectedResources,
                           List<String> expectedEndpoints,
-                          List<String> expectedResourceHandler)
+                          List<String> expectedResourceHandler,
+                          boolean createConfig)
   {
     File file = new File(pathToSchema);
     File resourceDirectory = new File(String.format("%s/%s",
@@ -161,6 +168,9 @@ public class ShellControllerTest
                                                            OUTPUT_DIR,
                                                            UtilityMethods.getResourceHandlerPackage(DEFAULT_PACKAGE_NAME,
                                                                                                     true)));
+    File scimConfigDirectory = new File(String.format("%s/%s",
+                                                      OUTPUT_DIR,
+                                                      UtilityMethods.getScimConfigPackage(DEFAULT_PACKAGE_NAME, true)));
 
 
     final File targetDirectory = new File(OUTPUT_DIR);
@@ -170,7 +180,8 @@ public class ShellControllerTest
                                                      targetDirectory.getAbsolutePath(),
                                                      DEFAULT_PACKAGE_NAME,
                                                      useLombok,
-                                                     overrideExistingFiles);
+                                                     overrideExistingFiles,
+                                                     createConfig);
     log.info(result);
 
     Mockito.verify(shellController)
@@ -179,7 +190,8 @@ public class ShellControllerTest
                         Mockito.eq(targetDirectory.getAbsolutePath()),
                         Mockito.eq(DEFAULT_PACKAGE_NAME),
                         Mockito.eq(useLombok),
-                        Mockito.eq(overrideExistingFiles));
+                        Mockito.eq(overrideExistingFiles),
+                        Mockito.eq(createConfig));
 
     Assertions.assertNotNull(resourceDirectory.listFiles());
     String[] resourcesToCompile = Arrays.stream(resourceDirectory.listFiles())
@@ -197,6 +209,17 @@ public class ShellControllerTest
                                               .map(File::getAbsolutePath)
                                               .toArray(String[]::new);
 
+    String[] scimConfigToCompile = new String[0];
+    if (createConfig)
+    {
+      Assertions.assertNotNull(scimConfigDirectory.listFiles());
+      scimConfigToCompile = Arrays.stream(scimConfigDirectory.listFiles())
+                                  .filter(f -> f.getName().endsWith(".java"))
+                                  .map(File::getAbsolutePath)
+                                  .toArray(String[]::new);
+      Assertions.assertEquals(createConfig ? 1 : 0, scimConfigToCompile.length);
+    }
+
     MatcherAssert.assertThat(Arrays.stream(resourcesToCompile)
                                    .map(File::new)
                                    .map(File::getName)
@@ -212,10 +235,19 @@ public class ShellControllerTest
                                    .map(File::getName)
                                    .collect(Collectors.toList()),
                              Matchers.containsInAnyOrder(expectedResourceHandler.toArray(new String[0])));
+    if (createConfig)
+    {
+      MatcherAssert.assertThat(Arrays.stream(scimConfigToCompile)
+                                     .map(File::new)
+                                     .map(File::getName)
+                                     .collect(Collectors.toList()),
+                               Matchers.containsInAnyOrder("ScimConfig.java"));
+    }
 
     List<String> filesToCompile = new ArrayList<>(Arrays.asList(resourcesToCompile));
     filesToCompile.addAll(Arrays.asList(endpointsToCompile));
     filesToCompile.addAll(Arrays.asList(resourceHandlerToCompile));
+    filesToCompile.addAll(Arrays.asList(scimConfigToCompile));
 
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     int compilerResult = compiler.run(null, System.out, System.err, filesToCompile.toArray(new String[0]));
@@ -238,7 +270,8 @@ public class ShellControllerTest
                                                      targetDirectory.getAbsolutePath(),
                                                      DEFAULT_PACKAGE_NAME,
                                                      useLombok,
-                                                     true);
+                                                     true,
+                                                     false);
 
     log.info(result);
 
@@ -275,7 +308,8 @@ public class ShellControllerTest
                                                      targetDirectory.getAbsolutePath(),
                                                      packageDir,
                                                      useLombok,
-                                                     true);
+                                                     true,
+                                                     false);
 
     log.info(result);
     Assertions.assertEquals(0,
@@ -303,7 +337,8 @@ public class ShellControllerTest
                                                                                               targetDirectory.getAbsolutePath(),
                                                                                               packageDir,
                                                                                               useLombok,
-                                                                                              true));
+                                                                                              true,
+                                                                                              false));
     Assertions.assertEquals(String.format("Path to '%s' is a directory and cannot be translated. Use '-r'"
                                           + " option to recursively iterate through directories.",
                                           file.getAbsolutePath()),
@@ -326,7 +361,8 @@ public class ShellControllerTest
                                                      targetDirectory.getAbsolutePath(),
                                                      DEFAULT_PACKAGE_NAME,
                                                      useLombok,
-                                                     true);
+                                                     true,
+                                                     false);
     log.info(result);
 
     File resourceDirectory = new File(String.format("%s/%s",
