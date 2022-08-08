@@ -23,16 +23,16 @@ public class SchemaRelation
   /**
    * the json representation of the resource type. Might be null
    */
-  private final JsonNode resourceType;
+  private final FileInfoWrapper resourceType;
 
   /**
    * the resource schema that is referenced within the {@link #resourceType}.
    */
-  private final Schema resourceSchema;
+  private final FileInfoWrapper resourceSchema;
 
   /**
    * the extensions of the {@link #resourceType}. If the {@link #resourceType} is null this collection will be
    * empty
    */
-  private final List<Schema> extensions;
+  private final List<FileInfoWrapper> extensions;
 }

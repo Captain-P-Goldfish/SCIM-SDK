@@ -10,6 +10,9 @@ import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -35,7 +38,7 @@ public final class PojoWriter
    * @return the absolute file paths of all files that were created
    */
   @SneakyThrows
-  public static List<String> writePojosToFileSystem(Map<Schema, String> pojoMap, String outputDir)
+  public static List<String> writeResourceNodesToFileSystem(Map<Schema, String> pojoMap, String outputDir)
   {
     new File(outputDir).mkdirs();
     List<String> createdFilePaths = new ArrayList<>();
@@ -45,6 +48,35 @@ public final class PojoWriter
       final String fileName = String.format("%s/%s.java",
                                             outputDir,
                                             StringUtils.capitalize(schema.getName().get()).replaceAll("\\s", ""));
+      try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName)))
+      {
+        outputStream.write(schemaPojoEntry.getValue().getBytes());
+      }
+      createdFilePaths.add(fileName);
+    }
+    return createdFilePaths;
+  }
+
+  /**
+   * will write the given java pojos into the filesystem at the given output directory
+   *
+   * @param pojoMap the map of pojos that were created
+   * @param outputDir the target directory where the pojos should be saved
+   * @return the absolute file paths of all files that were created
+   */
+  @SneakyThrows
+  public static List<String> writeEndpointDefinitionsToFileSystem(Map<JsonNode, String> pojoMap, String outputDir)
+  {
+    new File(outputDir).mkdirs();
+    List<String> createdFilePaths = new ArrayList<>();
+    for ( Map.Entry<JsonNode, String> schemaPojoEntry : pojoMap.entrySet() )
+    {
+      JsonNode resourceType = schemaPojoEntry.getKey();
+      final String name = String.format("%sEndpointDefinition",
+                                        resourceType.get(AttributeNames.RFC7643.NAME).textValue());
+      final String fileName = String.format("%s/%s.java",
+                                            outputDir,
+                                            StringUtils.capitalize(name).replaceAll("\\s", ""));
       try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName)))
       {
         outputStream.write(schemaPojoEntry.getValue().getBytes());

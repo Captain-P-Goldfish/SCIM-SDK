@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import javax.tools.JavaCompiler;
@@ -17,7 +18,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -71,21 +72,77 @@ public class ShellControllerTest
    * make sure that the files are correctly created under the following conditions:
    * <ol>
    * <li>resource-types exist with schema and one schema is referenced in two resource-types</li>
+   * </ol>
+   */
+  @SneakyThrows
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testParseSetup1(boolean useLombok)
+  {
+    final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1";
+    parseSetup(useLombok,
+               pathToSchema,
+               Arrays.asList("User.java",
+                             "Group.java",
+                             "EnterpriseUser.java",
+                             "ServiceProviderConfiguration.java",
+                             "UserEndpointDefinition.java",
+                             "GroupEndpointDefinition.java",
+                             "MeEndpointDefinition.java",
+                             "ServiceProviderConfigEndpointDefinition.java"));
+  }
+
+  /**
+   * make sure that the files are correctly created under the following conditions:
+   * <ol>
    * <li>resource-types do exist that reference non-existing schemas</li>
+   * </ol>
+   */
+  @SneakyThrows
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testParseSetup2(boolean useLombok)
+  {
+    final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2";
+    parseSetup(useLombok,
+               pathToSchema,
+               Arrays.asList("User.java",
+                             "Group.java",
+                             "EnterpriseUser.java",
+                             "ServiceProviderConfiguration.java",
+                             "UserEndpointDefinition.java",
+                             "GroupEndpointDefinition.java",
+                             "MeEndpointDefinition.java",
+                             "ServiceProviderConfigEndpointDefinition.java"));
+  }
+
+  /**
+   * make sure that the files are correctly created under the following conditions:
+   * <ol>
    * <li>resource-node classes are created even if the corresponding resource-type does not exist</li>
    * </ol>
    */
   @SneakyThrows
   @ParameterizedTest
-  @CsvSource({"./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1,false",
-              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2,false",
-              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3,false",
-              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1,true",
-              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2,true",
-              "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3,true"})
-  public void testParseSchemasToJavaPojos(String pathToSchemas, boolean useLombok)
+  @ValueSource(booleans = {true, false})
+  public void testParseSetup3(boolean useLombok)
   {
-    File file = new File(pathToSchemas);
+    final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3";
+    parseSetup(useLombok,
+               pathToSchema,
+               Arrays.asList("User.java",
+                             "Group.java",
+                             "EnterpriseUser.java",
+                             "ServiceProviderConfiguration.java",
+                             "UserEndpointDefinition.java"));
+  }
+
+  /**
+   * parses a predefined setup and verifies if all expected files are present
+   */
+  private void parseSetup(boolean useLombok, String pathToSchema, List<String> expectedGeneratedFiles)
+  {
+    File file = new File(pathToSchema);
     File targetDirectory = new File(OUTPUT_DIR);
     targetDirectory.mkdirs();
     final String packageDir = "de.captaingoldfish.example.resources";
@@ -98,11 +155,11 @@ public class ShellControllerTest
     log.info(result);
 
     Mockito.verify(shellController)
-           .createdFiles(Mockito.eq(file.getAbsolutePath()),
-                         Mockito.eq(true),
-                         Mockito.eq(targetDirectory.getAbsolutePath()),
-                         Mockito.eq(packageDir),
-                         Mockito.eq(useLombok));
+           .createFiles(Mockito.eq(file.getAbsolutePath()),
+                        Mockito.eq(true),
+                        Mockito.eq(targetDirectory.getAbsolutePath()),
+                        Mockito.eq(packageDir),
+                        Mockito.eq(useLombok));
 
     Assertions.assertNotNull(targetDirectory.listFiles());
     String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
@@ -110,14 +167,12 @@ public class ShellControllerTest
                                     .map(File::getAbsolutePath)
                                     .toArray(String[]::new);
 
+
     MatcherAssert.assertThat(Arrays.stream(filesToCompile)
                                    .map(File::new)
                                    .map(File::getName)
                                    .collect(Collectors.toList()),
-                             Matchers.containsInAnyOrder("User.java",
-                                                         "Group.java",
-                                                         "EnterpriseUser.java",
-                                                         "ServiceProviderConfiguration.java"));
+                             Matchers.containsInAnyOrder(expectedGeneratedFiles.toArray(new String[0])));
 
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
     int compilerResult = compiler.run(null, System.out, System.err, filesToCompile);

@@ -22,6 +22,9 @@ import lombok.extern.slf4j.Slf4j;
 
 
 /**
+ * this class tries to identify the relations between the resource-types and its schemas if any relations are
+ * present.
+ *
  * @author Pascal Knueppel
  * @since 28.01.2022
  */
@@ -62,8 +65,14 @@ public class JsonRelationParser
   {
     for ( FileInfoWrapper fileInfoWrapper : fileInfoWrapperList )
     {
-      if (resourceSchemas.stream().noneMatch(f -> f.getResourceFile().equals(f))
-          && resourceTypes.stream().noneMatch(f -> f.getResourceFile().equals(f)))
+      boolean isResourceSchema = resourceSchemas.stream().noneMatch(f -> {
+        return f.getResourceFile().getAbsolutePath().equals(f.getResourceFile().getAbsolutePath());
+      });
+      boolean isResourceType = resourceTypes.stream().noneMatch(f -> {
+        return f.getResourceFile().getAbsolutePath().equals(f.getResourceFile().getAbsolutePath());
+      });
+
+      if (!isResourceSchema && !isResourceType)
       {
         log.warn("File '{}' is not a valid SCIM file and is being ignored",
                  fileInfoWrapper.getResourceFile().getAbsolutePath());
@@ -126,8 +135,8 @@ public class JsonRelationParser
           }
         }
       }
-      JsonNode resourceSchema = getResourceSchemaByUri(resourceSchemaUri).orElse(null);
-      if (resourceSchema == null)
+      FileInfoWrapper resourceSchemaWrapper = getResourceSchemaByUri(resourceSchemaUri).orElse(null);
+      if (resourceSchemaWrapper == null)
       {
         final String resourceTypeName = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.NAME).textValue();
         log.warn("ResourceType \"{}\" is ignored because the referenced schema \"{}\" could not be found",
@@ -135,11 +144,11 @@ public class JsonRelationParser
                  resourceSchemaUri);
         continue;
       }
-      List<Schema> extensionNodes = extensionUris.stream().map(resourceSchemaUri1 -> {
+      List<FileInfoWrapper> extensionNodes = extensionUris.stream().map(resourceSchemaUri1 -> {
         return getResourceSchemaByUri(resourceSchemaUri1).orElse(null);
-      }).filter(Objects::nonNull).map(Schema::new).collect(Collectors.toList());
-      SchemaRelation schemaRelationWrapper = new SchemaRelation(resourceTypeWrapper.getJsonNode(),
-                                                                new Schema(resourceSchema), extensionNodes);
+      }).filter(Objects::nonNull).collect(Collectors.toList());
+      SchemaRelation schemaRelationWrapper = new SchemaRelation(resourceTypeWrapper, resourceSchemaWrapper,
+                                                                extensionNodes);
       schemaRelationWrapperList.add(schemaRelationWrapper);
     }
 
@@ -156,14 +165,12 @@ public class JsonRelationParser
     for ( FileInfoWrapper resourceSchema : resourceSchemas )
     {
       String schemaId = resourceSchema.getJsonNode().get(AttributeNames.RFC7643.ID).textValue();
-      boolean added = schemaRelationWrapperList.stream()
-                                               .anyMatch(relation -> relation.getResourceSchema()
-                                                                             .getNonNullId()
-                                                                             .equals(schemaId));
+      boolean added = schemaRelationWrapperList.stream().anyMatch(relation -> {
+        return new Schema(relation.getResourceSchema().getJsonNode()).getNonNullId().equals(schemaId);
+      });
       if (!added)
       {
-        schemaRelationWrapperList.add(new SchemaRelation(null, new Schema(resourceSchema.getJsonNode()),
-                                                         Collections.emptyList()));
+        schemaRelationWrapperList.add(new SchemaRelation(null, resourceSchema, Collections.emptyList()));
       }
     }
   }
@@ -171,11 +178,11 @@ public class JsonRelationParser
   /**
    * tries to find a resource schema from the {@link #resourceSchemas} by its id attribute
    */
-  private Optional<JsonNode> getResourceSchemaByUri(String resourceSchemaUri)
+  private Optional<FileInfoWrapper> getResourceSchemaByUri(String resourceSchemaUri)
   {
     return resourceSchemas.stream()
-                          .map(FileInfoWrapper::getJsonNode)
-                          .filter(jsonNode -> jsonNode.get(AttributeNames.RFC7643.ID)
+                          .filter(jsonNode -> jsonNode.getJsonNode()
+                                                      .get(AttributeNames.RFC7643.ID)
                                                       .textValue()
                                                       .equals(resourceSchemaUri))
                           .findAny();
@@ -217,7 +224,7 @@ public class JsonRelationParser
       catch (Exception ex)
       {
         log.debug(ex.getMessage(), ex);
-        log.info("Document '{}' is not a valid resource type and will be ignored: {}",
+        log.warn("Document '{}' is not a valid resource type and will be ignored: {}",
                  fileInfoWrapper.getResourceFile().getAbsolutePath(),
                  ex.getMessage());
         return false;

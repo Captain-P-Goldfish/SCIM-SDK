@@ -4,8 +4,10 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
 import lombok.Getter;
 
@@ -52,8 +54,13 @@ public class SchemaHolder
     Map<String, Schema> extensionNodesToParse = new HashMap<>();
     for ( SchemaRelation schemaRelation : schemaRelations )
     {
-      resourceNodesToParse.put(schemaRelation.getResourceSchema().getNonNullId(), schemaRelation.getResourceSchema());
-      for ( Schema extension : schemaRelation.getExtensions() )
+      Schema schema = new Schema(schemaRelation.getResourceSchema().getJsonNode());
+      resourceNodesToParse.put(schema.getNonNullId(), schema);
+      for ( Schema extension : schemaRelation.getExtensions()
+                                             .stream()
+                                             .map(FileInfoWrapper::getJsonNode)
+                                             .map(Schema::new)
+                                             .collect(Collectors.toList()) )
       {
         extensionNodesToParse.put(extension.getNonNullId(), extension);
       }

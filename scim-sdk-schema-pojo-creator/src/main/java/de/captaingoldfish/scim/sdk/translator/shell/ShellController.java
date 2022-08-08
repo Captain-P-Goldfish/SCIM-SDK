@@ -9,8 +9,11 @@ import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 import org.springframework.shell.standard.ShellOption;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
-import de.captaingoldfish.scim.sdk.translator.shell.parser.FreemarkerParser;
+import de.captaingoldfish.scim.sdk.translator.shell.parser.EndpointDefinitionBuilder;
+import de.captaingoldfish.scim.sdk.translator.shell.parser.ResourceNodeBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileSystemJsonReader;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.JsonRelationParser;
@@ -51,7 +54,7 @@ public class ShellController
                                    help = "Add lombok @Builder annotations to constructors", //
                                    defaultValue = "false") boolean useLombok)
   {
-    List<String> createdFiles = createdFiles(schemaLocation, recursive, outputDir, packageDir, useLombok);
+    List<String> createdFiles = createFiles(schemaLocation, recursive, outputDir, packageDir, useLombok);
 
     if (createdFiles.isEmpty())
     {
@@ -68,20 +71,38 @@ public class ShellController
    *
    * @return the list of absolute paths that were created
    */
-  protected List<String> createdFiles(String schemaLocation,
-                                      boolean recursive,
-                                      String outputDir,
-                                      String packageDir,
-                                      boolean useLombok)
+  protected List<String> createFiles(String schemaLocation,
+                                     boolean recursive,
+                                     String outputDir,
+                                     String packageDir,
+                                     boolean useLombok)
   {
     File file = new File(schemaLocation);
     List<FileInfoWrapper> fileInfoWrapperList = FileSystemJsonReader.parseFileToJsonNode(file, recursive);
     JsonRelationParser relationParser = new JsonRelationParser(fileInfoWrapperList);
     List<SchemaRelation> schemaRelations = relationParser.getSchemaRelations();
 
-    FreemarkerParser freemarkerParser = new FreemarkerParser(useLombok);
-    Map<Schema, String> pojoMap = freemarkerParser.createJavaResourcePojos(packageDir, schemaRelations);
-    return PojoWriter.writePojosToFileSystem(pojoMap, outputDir);
+    ResourceNodeBuilder resourceNodeBuilder = new ResourceNodeBuilder(useLombok);
+    EndpointDefinitionBuilder endpointDefinitionBuilder = new EndpointDefinitionBuilder();
+    Map<Schema, String> resourceSchemaPojoMap = resourceNodeBuilder.createResourceSchemaPojos(packageDir,
+                                                                                              schemaRelations);
+    Map<JsonNode, String> endpointDefinitionPojoMap = endpointDefinitionBuilder.createEndpointDefinitions(packageDir,
+                                                                                                          schemaRelations);
+    return writeCreatedResourcesToFileSystem(outputDir, resourceSchemaPojoMap, endpointDefinitionPojoMap);
+  }
+
+  /**
+   * takes the given resources and writes the created pojos to the file system at the specified location
+   */
+  private static List<String> writeCreatedResourcesToFileSystem(String outputDir,
+                                                                Map<Schema, String> resourceSchemaPojoMap,
+                                                                Map<JsonNode, String> endpointDefinitionPojoMap)
+  {
+    List<String> resourceNodeFiles = PojoWriter.writeResourceNodesToFileSystem(resourceSchemaPojoMap, outputDir);
+    List<String> endpointDefinitionFiles = PojoWriter.writeEndpointDefinitionsToFileSystem(endpointDefinitionPojoMap,
+                                                                                           outputDir);
+    resourceNodeFiles.addAll(endpointDefinitionFiles);
+    return endpointDefinitionFiles;
   }
 
 

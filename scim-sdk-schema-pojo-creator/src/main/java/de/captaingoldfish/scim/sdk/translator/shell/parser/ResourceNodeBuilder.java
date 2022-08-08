@@ -7,15 +7,13 @@ import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
-import freemarker.template.Configuration;
 import freemarker.template.Template;
-import freemarker.template.TemplateExceptionHandler;
-import freemarker.template.Version;
 import lombok.SneakyThrows;
 
 
@@ -24,11 +22,11 @@ import lombok.SneakyThrows;
  * created at: 05.08.2022 - 09:13 <br>
  * <br>
  */
-public class FreemarkerParser
+public class ResourceNodeBuilder extends AbstractPojoBuilder
 {
 
   /**
-   * the template to parse resources into java classes
+   * the template to parse resources into {@link de.captaingoldfish.scim.sdk.common.resources.ResourceNode}s
    */
   private final Template resourceNodeTemplate;
 
@@ -41,28 +39,10 @@ public class FreemarkerParser
    * creates a freemarker template to create ResourceNode implementations
    */
   @SneakyThrows
-  public FreemarkerParser(boolean useLombok)
+  public ResourceNodeBuilder(boolean useLombok)
   {
     this.useLombok = useLombok;
-    // 1. Configure FreeMarker
-    //
-    // You should do this ONLY ONCE, when your application starts,
-    // then reuse the same Configuration object elsewhere.
-
-    Configuration configuration = new Configuration(Configuration.VERSION_2_3_31);
-
-    // Where do we load the templates from:
-    final String templatePackage = "/de/captaingoldfish/scim/sdk/translator/freemarker/templates";
-    configuration.setClassForTemplateLoading(FreemarkerParser.class, templatePackage);
-
-    // Some other recommended settings:
-    configuration.setIncompatibleImprovements(new Version(2, 3, 20));
-    configuration.setDefaultEncoding(StandardCharsets.UTF_8.name());
-    configuration.setLocale(Locale.ENGLISH);
-    configuration.setTemplateExceptionHandler(TemplateExceptionHandler.RETHROW_HANDLER);
-
-    // 2.2. Get the template
-    this.resourceNodeTemplate = configuration.getTemplate("resource-node.ftl");
+    this.resourceNodeTemplate = FREEMARKER_CONFIGURATION.getTemplate("resource-node.ftl");
   }
 
   /**
@@ -73,7 +53,7 @@ public class FreemarkerParser
    * @return the created pojos as string representation
    */
   @SneakyThrows
-  public Map<Schema, String> createJavaResourcePojos(String packageName, List<SchemaRelation> schemaRelations)
+  public Map<Schema, String> createResourceSchemaPojos(String packageName, List<SchemaRelation> schemaRelations)
   {
     SchemaHolder schemaHolder = SchemaHolder.PartSchemas(schemaRelations);
 
@@ -82,21 +62,27 @@ public class FreemarkerParser
     for ( Map.Entry<String, Schema> idSchemaEntry : schemaHolder.getResourceNodesToParse().entrySet() )
     {
       Schema schema = idSchemaEntry.getValue();
-      List<Schema> extensions = schemaRelations.stream()
-                                               .filter(relation -> relation.getResourceSchema()
-                                                                           .getNonNullId()
-                                                                           .equals(schema.getNonNullId()))
+      List<Schema> extensions = schemaRelations.stream().filter(relation -> {
+        return new Schema(relation.getResourceSchema().getJsonNode()).getNonNullId().equals(schema.getNonNullId());
+      })
                                                .map(SchemaRelation::getExtensions)
                                                .findAny()
-                                               .get();
-      final String javaPojo = createResourceJavaClassFromSchema(packageName, schema, extensions, false);
+                                               .map(fileInfoWrappers -> fileInfoWrappers.stream()
+                                                                                        .map(FileInfoWrapper::getJsonNode)
+                                                                                        .map(Schema::new))
+                                               .get()
+                                               .collect(Collectors.toList());
+      final String javaPojo = createResourceSchemaJavaClassFromSchema(packageName, schema, extensions, false);
       javaPojos.put(schema, javaPojo);
     }
     // now create the extension node java objects
     for ( Map.Entry<String, Schema> idSchemaEntry : schemaHolder.getExtensionNodesToParse().entrySet() )
     {
       Schema schema = idSchemaEntry.getValue();
-      final String javaPojo = createResourceJavaClassFromSchema(packageName, schema, Collections.emptyList(), true);
+      final String javaPojo = createResourceSchemaJavaClassFromSchema(packageName,
+                                                                      schema,
+                                                                      Collections.emptyList(),
+                                                                      true);
       javaPojos.put(schema, javaPojo);
     }
     return javaPojos;
@@ -112,10 +98,10 @@ public class FreemarkerParser
    * @return the java pojo class representation as string
    */
   @SneakyThrows
-  private String createResourceJavaClassFromSchema(String packageName,
-                                                   Schema schema,
-                                                   List<Schema> extensions,
-                                                   boolean isExtension)
+  private String createResourceSchemaJavaClassFromSchema(String packageName,
+                                                         Schema schema,
+                                                         List<Schema> extensions,
+                                                         boolean isExtension)
   {
     Map<String, Object> input = new HashMap<>();
     input.put("packageName", packageName);
