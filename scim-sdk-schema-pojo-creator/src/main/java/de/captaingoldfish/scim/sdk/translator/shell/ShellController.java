@@ -75,7 +75,7 @@ public class ShellController
   protected List<String> createPojos(String schemaLocation,
                                      boolean recursive,
                                      String outputDir,
-                                     String packageDir,
+                                     String packageName,
                                      boolean useLombok)
   {
     File file = new File(schemaLocation);
@@ -84,17 +84,18 @@ public class ShellController
     List<SchemaRelation> schemaRelations = relationParser.getSchemaRelations();
 
     ResourceNodeBuilder resourceNodeBuilder = new ResourceNodeBuilder(useLombok);
-    Map<Schema, String> resourceSchemaPojoMap = resourceNodeBuilder.createResourceSchemaPojos(packageDir,
+    Map<Schema, String> resourceSchemaPojoMap = resourceNodeBuilder.createResourceSchemaPojos(packageName,
                                                                                               schemaRelations);
 
     EndpointDefinitionBuilder endpointDefinitionBuilder = new EndpointDefinitionBuilder();
-    Map<JsonNode, String> endpointDefinitionPojoMap = endpointDefinitionBuilder.createEndpointDefinitions(packageDir,
+    Map<JsonNode, String> endpointDefinitionPojoMap = endpointDefinitionBuilder.createEndpointDefinitions(packageName,
                                                                                                           schemaRelations);
 
     ResourceHandlerBuilder resourceHandlerBuilder = new ResourceHandlerBuilder();
-    Map<SchemaRelation, String> resourceHandlerPojoMap = resourceHandlerBuilder.createResourceHandlerPojos(packageDir,
+    Map<SchemaRelation, String> resourceHandlerPojoMap = resourceHandlerBuilder.createResourceHandlerPojos(packageName,
                                                                                                            schemaRelations);
     return writeCreatedResourcesToFileSystem(outputDir,
+                                             packageName,
                                              resourceSchemaPojoMap,
                                              endpointDefinitionPojoMap,
                                              resourceHandlerPojoMap);
@@ -104,15 +105,21 @@ public class ShellController
    * takes the given resources and writes the created pojos to the file system at the specified location
    */
   private static List<String> writeCreatedResourcesToFileSystem(String outputDir,
+                                                                String packageName,
                                                                 Map<Schema, String> resourceSchemaPojoMap,
                                                                 Map<JsonNode, String> endpointDefinitionPojoMap,
                                                                 Map<SchemaRelation, String> resourceHandlerPojoMap)
   {
-    List<String> resourceNodeFiles = PojoWriter.writeResourceNodesToFileSystem(resourceSchemaPojoMap, outputDir);
+    List<String> resourceNodeFiles = PojoWriter.writeResourceNodesToFileSystem(resourceSchemaPojoMap,
+                                                                               outputDir,
+                                                                               packageName);
     List<String> endpointDefinitionFiles = PojoWriter.writeEndpointDefinitionsToFileSystem(endpointDefinitionPojoMap,
-                                                                                           outputDir);
+                                                                                           outputDir,
+                                                                                           packageName);
     resourceNodeFiles.addAll(endpointDefinitionFiles);
-    List<String> resourceHandlerFiles = PojoWriter.writeResourceHandlerToFileSystem(resourceHandlerPojoMap, outputDir);
+    List<String> resourceHandlerFiles = PojoWriter.writeResourceHandlerToFileSystem(resourceHandlerPojoMap,
+                                                                                    outputDir,
+                                                                                    packageName);
     resourceNodeFiles.addAll(resourceHandlerFiles);
     return resourceNodeFiles;
   }

@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.translator.shell.utils.UtilityMethods;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
@@ -38,21 +39,31 @@ public final class PojoWriter
    * @return the absolute file paths of all files that were created
    */
   @SneakyThrows
-  public static List<String> writeResourceNodesToFileSystem(Map<Schema, String> pojoMap, String outputDir)
+  public static List<String> writeResourceNodesToFileSystem(Map<Schema, String> pojoMap,
+                                                            String outputDir,
+                                                            String packageName)
   {
-    new File(outputDir).mkdirs();
+    final String targetDirectoryPath = String.format("%s/%s",
+                                                     outputDir,
+                                                     UtilityMethods.getResourcesPackage(packageName, true)
+                                                                   .replaceAll("\\.", "/"));
+    final File targetDirectory = new File(targetDirectoryPath);
+    if (!targetDirectory.exists())
+    {
+      targetDirectory.mkdirs();
+    }
+
     List<String> createdFilePaths = new ArrayList<>();
     for ( Map.Entry<Schema, String> schemaPojoEntry : pojoMap.entrySet() )
     {
       Schema schema = schemaPojoEntry.getKey();
-      final String fileName = String.format("%s/%s.java",
-                                            outputDir,
-                                            StringUtils.capitalize(schema.getName().get()).replaceAll("\\s", ""));
-      try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName)))
+      final String fileName = StringUtils.capitalize(schema.getName().get()).replaceAll("\\s", "");
+      final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
+      try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
       {
         outputStream.write(schemaPojoEntry.getValue().getBytes());
+        createdFilePaths.add(filePath.replaceAll("\\\\", "/"));
       }
-      createdFilePaths.add(fileName);
     }
     return createdFilePaths;
   }
@@ -65,23 +76,33 @@ public final class PojoWriter
    * @return the absolute file paths of all files that were created
    */
   @SneakyThrows
-  public static List<String> writeEndpointDefinitionsToFileSystem(Map<JsonNode, String> pojoMap, String outputDir)
+  public static List<String> writeEndpointDefinitionsToFileSystem(Map<JsonNode, String> pojoMap,
+                                                                  String outputDir,
+                                                                  String packageName)
   {
-    new File(outputDir).mkdirs();
+    final String targetDirectoryPath = String.format("%s/%s",
+                                                     outputDir,
+                                                     UtilityMethods.getEndpointsPackage(packageName, true)
+                                                                   .replaceAll("\\.", "/"));
+    final File targetDirectory = new File(targetDirectoryPath);
+    if (!targetDirectory.exists())
+    {
+      targetDirectory.mkdirs();
+    }
     List<String> createdFilePaths = new ArrayList<>();
     for ( Map.Entry<JsonNode, String> schemaPojoEntry : pojoMap.entrySet() )
     {
       JsonNode resourceType = schemaPojoEntry.getKey();
-      final String name = String.format("%sEndpointDefinition",
-                                        resourceType.get(AttributeNames.RFC7643.NAME).textValue());
-      final String fileName = String.format("%s/%s.java",
-                                            outputDir,
-                                            StringUtils.capitalize(name).replaceAll("\\s", ""));
-      try (OutputStream outputStream = Files.newOutputStream(Paths.get(fileName)))
+      final String endpointName = String.format("%sEndpointDefinition",
+                                                resourceType.get(AttributeNames.RFC7643.NAME).textValue());
+      final String fileName = StringUtils.capitalize(endpointName).replaceAll("\\s", "");
+      final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
+
+      try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
       {
         outputStream.write(schemaPojoEntry.getValue().getBytes());
+        createdFilePaths.add(filePath.replaceAll("\\\\", "/"));
       }
-      createdFilePaths.add(fileName);
     }
     return createdFilePaths;
   }
@@ -95,8 +116,18 @@ public final class PojoWriter
    */
   @SneakyThrows
   public static List<String> writeResourceHandlerToFileSystem(Map<SchemaRelation, String> resourceHandlerPojoMap,
-                                                              String outputDir)
+                                                              String outputDir,
+                                                              String packageName)
   {
+    final String targetDirectoryPath = String.format("%s/%s",
+                                                     outputDir,
+                                                     UtilityMethods.getResourceHandlerPackage(packageName, true)
+                                                                   .replaceAll("\\.", "/"));
+    final File targetDirectory = new File(targetDirectoryPath);
+    if (!targetDirectory.exists())
+    {
+      targetDirectory.mkdirs();
+    }
     List<String> createdFilesPaths = new ArrayList<>();
     for ( Map.Entry<SchemaRelation, String> createdPojoEntry : resourceHandlerPojoMap.entrySet() )
     {
@@ -108,11 +139,11 @@ public final class PojoWriter
                                                                    .get(AttributeNames.RFC7643.NAME)
                                                                    .textValue())
                                          .replaceAll("\\s", "");
-      final String filePath = String.format("%s/%sResourceHandler.java", outputDir, fileName);
+      final String filePath = String.format("%s/%sResourceHandler.java", targetDirectory, fileName);
       try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
       {
         outputStream.write(pojo.getBytes());
-        createdFilesPaths.add(filePath);
+        createdFilesPaths.add(filePath.replaceAll("\\\\", "/"));
       }
     }
     return createdFilesPaths;

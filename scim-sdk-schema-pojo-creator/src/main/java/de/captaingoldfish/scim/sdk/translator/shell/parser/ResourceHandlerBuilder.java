@@ -8,10 +8,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang3.StringUtils;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
+import de.captaingoldfish.scim.sdk.translator.shell.utils.UtilityMethods;
 import freemarker.template.Template;
 import lombok.SneakyThrows;
 
@@ -71,14 +70,18 @@ public class ResourceHandlerBuilder extends AbstractPojoBuilder
   @SneakyThrows
   private String createResourceHandlerJavaClass(String packageName, SchemaRelation schemaRelation)
   {
+    final String resourceName = UtilityMethods.getResourceName(schemaRelation.getResourceSchema()
+                                                                             .getJsonNode()
+                                                                             .get(AttributeNames.RFC7643.NAME)
+                                                                             .textValue());
+    final String resourceImport = String.format("%s.%s",
+                                                UtilityMethods.getResourcesPackage(packageName, false),
+                                                resourceName);
+
     Map<String, Object> input = new HashMap<>();
-    input.put("packageName", packageName);
-    input.put("resourceName",
-              StringUtils.capitalize(schemaRelation.getResourceSchema()
-                                                   .getJsonNode()
-                                                   .get(AttributeNames.RFC7643.NAME)
-                                                   .textValue())
-                         .replaceAll("\\s", ""));
+    input.put("packageName", UtilityMethods.getResourceHandlerPackage(packageName, false));
+    input.put("resourceName", resourceName);
+    input.put("resourceImport", resourceImport);
 
     final String processedTemplate;
     try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream();

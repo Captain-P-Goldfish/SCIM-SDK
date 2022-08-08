@@ -87,10 +87,10 @@ public class EndpointDefinitionBuilder extends AbstractPojoBuilder
     String resourceName = StringUtils.capitalize(new Schema(schemaRelation.getResourceSchema().getJsonNode()).getName()
                                                                                                              .get())
                                      .replaceAll("\\s", "");
-    String resourceImport = String.format("%s.%s", packageName, resourceName);
+    String resourceImport = String.format("%s.%s", UtilityMethods.getResourcesPackage(packageName, false), resourceName);
 
     Map<String, Object> input = new HashMap<>();
-    input.put("packageName", packageName);
+    input.put("packageName", UtilityMethods.getEndpointsPackage(packageName, false));
     input.put("resourceName", resourceName);
     input.put("resourceImport", resourceImport);
     input.put("resourceTypeName", resourceTypeName);

@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
+import de.captaingoldfish.scim.sdk.translator.shell.utils.UtilityMethods;
 import freemarker.template.Template;
 import lombok.SneakyThrows;
 
@@ -104,7 +105,7 @@ public class ResourceNodeBuilder extends AbstractPojoBuilder
                                                          boolean isExtension)
   {
     Map<String, Object> input = new HashMap<>();
-    input.put("packageName", packageName);
+    input.put("packageName", UtilityMethods.getResourcesPackage(packageName, false));
     input.put("resource", schema);
     input.put("extensionList", extensions);
     input.put("lombok", useLombok);

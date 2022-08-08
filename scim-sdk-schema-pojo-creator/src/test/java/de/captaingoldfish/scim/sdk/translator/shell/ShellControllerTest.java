@@ -2,7 +2,8 @@ package de.captaingoldfish.scim.sdk.translator.shell;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.nio.file.FileSystemException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,6 +25,7 @@ import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import de.captaingoldfish.scim.sdk.translator.shell.utils.UtilityMethods;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,29 +43,30 @@ public class ShellControllerTest
 
   private static final String OUTPUT_DIR = "target/pojos";
 
+  private static final String DEFAULT_PACKAGE_NAME = "de.captaingoldfish.scim.example";
+
   @SpyBean
   private ShellController shellController;
 
   /**
    * delete the created and compiled classes
    */
+  @SneakyThrows
   @BeforeEach
   public void deleteExistingPojos()
   {
-    File[] filesToDelete = new File(OUTPUT_DIR).listFiles();
-    if (filesToDelete == null)
-    {
-      return;
-    }
-    for ( File file : filesToDelete )
+    File fileToDelete = new File(OUTPUT_DIR);
+    while (fileToDelete.exists())
     {
       try
       {
-        FileUtils.forceDelete(file);
+        FileUtils.forceDelete(fileToDelete);
+        Thread.sleep(10);
       }
-      catch (IOException e)
+      catch (Exception e)
       {
-        log.debug("Could not delete {}", file.getAbsolutePath());
+        log.debug("Failed to delete file at location '{}'. Trying to delete file again",
+                  fileToDelete.getAbsolutePath());
       }
     }
   }
@@ -82,15 +85,12 @@ public class ShellControllerTest
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1";
     parseSetup(useLombok,
                pathToSchema,
-               Arrays.asList("User.java",
-                             "Group.java",
-                             "EnterpriseUser.java",
-                             "ServiceProviderConfiguration.java",
-                             "UserEndpointDefinition.java",
+               Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
+               Arrays.asList("UserEndpointDefinition.java",
                              "GroupEndpointDefinition.java",
                              "MeEndpointDefinition.java",
-                             "ServiceProviderConfigEndpointDefinition.java",
-                             "UserResourceHandler.java",
+                             "ServiceProviderConfigEndpointDefinition.java"),
+               Arrays.asList("UserResourceHandler.java",
                              "GroupResourceHandler.java",
                              "ServiceProviderConfigurationResourceHandler.java"));
   }
@@ -109,15 +109,12 @@ public class ShellControllerTest
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-2";
     parseSetup(useLombok,
                pathToSchema,
-               Arrays.asList("User.java",
-                             "Group.java",
-                             "EnterpriseUser.java",
-                             "ServiceProviderConfiguration.java",
-                             "UserEndpointDefinition.java",
+               Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
+               Arrays.asList("UserEndpointDefinition.java",
                              "GroupEndpointDefinition.java",
                              "MeEndpointDefinition.java",
-                             "ServiceProviderConfigEndpointDefinition.java",
-                             "UserResourceHandler.java",
+                             "ServiceProviderConfigEndpointDefinition.java"),
+               Arrays.asList("UserResourceHandler.java",
                              "GroupResourceHandler.java",
                              "ServiceProviderConfigurationResourceHandler.java"));
   }
@@ -136,28 +133,39 @@ public class ShellControllerTest
     final String pathToSchema = "./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-3";
     parseSetup(useLombok,
                pathToSchema,
-               Arrays.asList("User.java",
-                             "Group.java",
-                             "EnterpriseUser.java",
-                             "ServiceProviderConfiguration.java",
-                             "UserEndpointDefinition.java",
-                             "UserResourceHandler.java"));
+               Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
+               Arrays.asList("UserEndpointDefinition.java"),
+               Arrays.asList("UserResourceHandler.java"));
   }
 
   /**
    * parses a predefined setup and verifies if all expected files are present
    */
-  private void parseSetup(boolean useLombok, String pathToSchema, List<String> expectedGeneratedFiles)
+  private void parseSetup(boolean useLombok,
+                          String pathToSchema,
+                          List<String> expectedResources,
+                          List<String> expectedEndpoints,
+                          List<String> expectedResourceHandler)
   {
     File file = new File(pathToSchema);
-    File targetDirectory = new File(OUTPUT_DIR);
-    targetDirectory.mkdirs();
-    final String packageDir = "de.captaingoldfish.example.resources";
+    File resourceDirectory = new File(String.format("%s/%s",
+                                                    OUTPUT_DIR,
+                                                    UtilityMethods.getResourcesPackage(DEFAULT_PACKAGE_NAME, true)));
+    File endpointDirectory = new File(String.format("%s/%s",
+                                                    OUTPUT_DIR,
+                                                    UtilityMethods.getEndpointsPackage(DEFAULT_PACKAGE_NAME, true)));
+    File resourceHandlerDirectory = new File(String.format("%s/%s",
+                                                           OUTPUT_DIR,
+                                                           UtilityMethods.getResourceHandlerPackage(DEFAULT_PACKAGE_NAME,
+                                                                                                    true)));
+
+
+    final File targetDirectory = new File(OUTPUT_DIR);
 
     String result = shellController.translateSchemas(file.getAbsolutePath(),
                                                      true,
                                                      targetDirectory.getAbsolutePath(),
-                                                     packageDir,
+                                                     DEFAULT_PACKAGE_NAME,
                                                      useLombok);
     log.info(result);
 
@@ -165,24 +173,47 @@ public class ShellControllerTest
            .createPojos(Mockito.eq(file.getAbsolutePath()),
                         Mockito.eq(true),
                         Mockito.eq(targetDirectory.getAbsolutePath()),
-                        Mockito.eq(packageDir),
+                        Mockito.eq(DEFAULT_PACKAGE_NAME),
                         Mockito.eq(useLombok));
 
-    Assertions.assertNotNull(targetDirectory.listFiles());
-    String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
-                                    .filter(f -> f.getName().endsWith(".java"))
-                                    .map(File::getAbsolutePath)
-                                    .toArray(String[]::new);
+    Assertions.assertNotNull(resourceDirectory.listFiles());
+    String[] resourcesToCompile = Arrays.stream(resourceDirectory.listFiles())
+                                        .filter(f -> f.getName().endsWith(".java"))
+                                        .map(File::getAbsolutePath)
+                                        .toArray(String[]::new);
+    Assertions.assertNotNull(endpointDirectory.listFiles());
+    String[] endpointsToCompile = Arrays.stream(endpointDirectory.listFiles())
+                                        .filter(f -> f.getName().endsWith(".java"))
+                                        .map(File::getAbsolutePath)
+                                        .toArray(String[]::new);
+    Assertions.assertNotNull(resourceHandlerDirectory.listFiles());
+    String[] resourceHandlerToCompile = Arrays.stream(resourceHandlerDirectory.listFiles())
+                                              .filter(f -> f.getName().endsWith(".java"))
+                                              .map(File::getAbsolutePath)
+                                              .toArray(String[]::new);
 
-
-    MatcherAssert.assertThat(Arrays.stream(filesToCompile)
+    MatcherAssert.assertThat(Arrays.stream(resourcesToCompile)
                                    .map(File::new)
                                    .map(File::getName)
                                    .collect(Collectors.toList()),
-                             Matchers.containsInAnyOrder(expectedGeneratedFiles.toArray(new String[0])));
+                             Matchers.containsInAnyOrder(expectedResources.toArray(new String[0])));
+    MatcherAssert.assertThat(Arrays.stream(endpointsToCompile)
+                                   .map(File::new)
+                                   .map(File::getName)
+                                   .collect(Collectors.toList()),
+                             Matchers.containsInAnyOrder(expectedEndpoints.toArray(new String[0])));
+    MatcherAssert.assertThat(Arrays.stream(resourceHandlerToCompile)
+                                   .map(File::new)
+                                   .map(File::getName)
+                                   .collect(Collectors.toList()),
+                             Matchers.containsInAnyOrder(expectedResourceHandler.toArray(new String[0])));
+
+    List<String> filesToCompile = new ArrayList<>(Arrays.asList(resourcesToCompile));
+    filesToCompile.addAll(Arrays.asList(endpointsToCompile));
+    filesToCompile.addAll(Arrays.asList(resourceHandlerToCompile));
 
     JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
-    int compilerResult = compiler.run(null, System.out, System.err, filesToCompile);
+    int compilerResult = compiler.run(null, System.out, System.err, filesToCompile.toArray(new String[0]));
     Assertions.assertEquals(0, compilerResult, "compilation failed: " + compilerResult);
   }
 
@@ -194,20 +225,22 @@ public class ShellControllerTest
   {
     File file = new File("./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-1/schemas/users.json");
     File targetDirectory = new File(OUTPUT_DIR);
-    final String packageDir = "de.captaingoldfish.example.resources";
     boolean recursive = false;
     boolean useLombok = false;
 
     String result = shellController.translateSchemas(file.getAbsolutePath(),
                                                      recursive,
                                                      targetDirectory.getAbsolutePath(),
-                                                     packageDir,
+                                                     DEFAULT_PACKAGE_NAME,
                                                      useLombok);
 
     log.info(result);
 
-    Assertions.assertNotNull(targetDirectory.listFiles());
-    String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
+    File resourceDirectory = new File(String.format("%s/%s",
+                                                    OUTPUT_DIR,
+                                                    UtilityMethods.getResourcesPackage(DEFAULT_PACKAGE_NAME, true)));
+    Assertions.assertNotNull(resourceDirectory.listFiles());
+    String[] filesToCompile = Arrays.stream(resourceDirectory.listFiles())
                                     .filter(f -> f.getName().endsWith(".java"))
                                     .map(File::getAbsolutePath)
                                     .toArray(String[]::new);
@@ -277,19 +310,21 @@ public class ShellControllerTest
   {
     File file = new File("./src/test/resources/de/captaingoldfish/scim/sdk/translator/setup-6");
     File targetDirectory = new File(OUTPUT_DIR);
-    final String packageDir = "de.captaingoldfish.example.resources";
     boolean recursive = true;
     boolean useLombok = false;
 
     String result = shellController.translateSchemas(file.getAbsolutePath(),
                                                      recursive,
                                                      targetDirectory.getAbsolutePath(),
-                                                     packageDir,
+                                                     DEFAULT_PACKAGE_NAME,
                                                      useLombok);
     log.info(result);
 
-    Assertions.assertNotNull(targetDirectory.listFiles());
-    String[] filesToCompile = Arrays.stream(targetDirectory.listFiles())
+    File resourceDirectory = new File(String.format("%s/%s",
+                                                    OUTPUT_DIR,
+                                                    UtilityMethods.getResourcesPackage(DEFAULT_PACKAGE_NAME, true)));
+    Assertions.assertNotNull(resourceDirectory.listFiles());
+    String[] filesToCompile = Arrays.stream(resourceDirectory.listFiles())
                                     .filter(f -> f.getName().endsWith(".java"))
                                     .map(File::getAbsolutePath)
                                     .toArray(String[]::new);

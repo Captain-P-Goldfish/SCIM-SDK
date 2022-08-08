@@ -2,6 +2,8 @@ package de.captaingoldfish.scim.sdk.translator.shell.utils;
 
 import java.io.File;
 
+import org.apache.commons.lang3.StringUtils;
+
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -26,6 +28,34 @@ public final class UtilityMethods
     {
       return file.getAbsolutePath();
     }
+  }
+
+  public static String getResourcesPackage(String packageName, boolean filePath)
+  {
+    String packagePath = String.format("%s.resources", packageName);
+    return filePath ? toFilePath(packagePath) : packagePath;
+  }
+
+  public static String getEndpointsPackage(String packageName, boolean filePath)
+  {
+    String packagePath = String.format("%s.endpoints", packageName);
+    return filePath ? toFilePath(packagePath) : packagePath;
+  }
+
+  public static String getResourceHandlerPackage(String packageName, boolean filePath)
+  {
+    String packagePath = String.format("%s.resourcehandler", packageName);
+    return filePath ? toFilePath(packagePath) : packagePath;
+  }
+
+  private static String toFilePath(String packagePath)
+  {
+    return packagePath.replaceAll("\\.", "/");
+  }
+
+  public static String getResourceName(String resourceJsonName)
+  {
+    return StringUtils.capitalize(resourceJsonName).replaceAll("\\s", "");
   }
 
 }
