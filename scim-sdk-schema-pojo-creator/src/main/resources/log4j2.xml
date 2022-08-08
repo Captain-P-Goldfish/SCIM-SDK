@@ -3,8 +3,8 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                    pattern="%logger{36} - %highlight{%msg%n%throwable}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green }"
-                    disableAnsi="false"/>
+                pattern="%d{DATE} [%t] %highlight{%-5level}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green } %logger{36} (%F:%L) - %highlight{%msg%n%throwable}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green }"
+                disableAnsi="false"/>
         </Console>
     </Appenders>
     <Loggers>

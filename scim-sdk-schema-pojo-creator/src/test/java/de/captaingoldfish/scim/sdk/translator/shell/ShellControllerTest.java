@@ -89,7 +89,10 @@ public class ShellControllerTest
                              "UserEndpointDefinition.java",
                              "GroupEndpointDefinition.java",
                              "MeEndpointDefinition.java",
-                             "ServiceProviderConfigEndpointDefinition.java"));
+                             "ServiceProviderConfigEndpointDefinition.java",
+                             "UserResourceHandler.java",
+                             "GroupResourceHandler.java",
+                             "ServiceProviderConfigurationResourceHandler.java"));
   }
 
   /**
@@ -113,7 +116,10 @@ public class ShellControllerTest
                              "UserEndpointDefinition.java",
                              "GroupEndpointDefinition.java",
                              "MeEndpointDefinition.java",
-                             "ServiceProviderConfigEndpointDefinition.java"));
+                             "ServiceProviderConfigEndpointDefinition.java",
+                             "UserResourceHandler.java",
+                             "GroupResourceHandler.java",
+                             "ServiceProviderConfigurationResourceHandler.java"));
   }
 
   /**
@@ -134,7 +140,8 @@ public class ShellControllerTest
                              "Group.java",
                              "EnterpriseUser.java",
                              "ServiceProviderConfiguration.java",
-                             "UserEndpointDefinition.java"));
+                             "UserEndpointDefinition.java",
+                             "UserResourceHandler.java"));
   }
 
   /**
@@ -155,7 +162,7 @@ public class ShellControllerTest
     log.info(result);
 
     Mockito.verify(shellController)
-           .createFiles(Mockito.eq(file.getAbsolutePath()),
+           .createPojos(Mockito.eq(file.getAbsolutePath()),
                         Mockito.eq(true),
                         Mockito.eq(targetDirectory.getAbsolutePath()),
                         Mockito.eq(packageDir),

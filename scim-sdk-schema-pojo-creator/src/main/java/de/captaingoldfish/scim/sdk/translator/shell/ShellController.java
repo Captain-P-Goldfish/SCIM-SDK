@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.EndpointDefinitionBuilder;
+import de.captaingoldfish.scim.sdk.translator.shell.parser.ResourceHandlerBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.ResourceNodeBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileInfoWrapper;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.FileSystemJsonReader;
@@ -54,7 +55,7 @@ public class ShellController
                                    help = "Add lombok @Builder annotations to constructors", //
                                    defaultValue = "false") boolean useLombok)
   {
-    List<String> createdFiles = createFiles(schemaLocation, recursive, outputDir, packageDir, useLombok);
+    List<String> createdFiles = createPojos(schemaLocation, recursive, outputDir, packageDir, useLombok);
 
     if (createdFiles.isEmpty())
     {
@@ -71,7 +72,7 @@ public class ShellController
    *
    * @return the list of absolute paths that were created
    */
-  protected List<String> createFiles(String schemaLocation,
+  protected List<String> createPojos(String schemaLocation,
                                      boolean recursive,
                                      String outputDir,
                                      String packageDir,
@@ -83,12 +84,20 @@ public class ShellController
     List<SchemaRelation> schemaRelations = relationParser.getSchemaRelations();
 
     ResourceNodeBuilder resourceNodeBuilder = new ResourceNodeBuilder(useLombok);
-    EndpointDefinitionBuilder endpointDefinitionBuilder = new EndpointDefinitionBuilder();
     Map<Schema, String> resourceSchemaPojoMap = resourceNodeBuilder.createResourceSchemaPojos(packageDir,
                                                                                               schemaRelations);
+
+    EndpointDefinitionBuilder endpointDefinitionBuilder = new EndpointDefinitionBuilder();
     Map<JsonNode, String> endpointDefinitionPojoMap = endpointDefinitionBuilder.createEndpointDefinitions(packageDir,
                                                                                                           schemaRelations);
-    return writeCreatedResourcesToFileSystem(outputDir, resourceSchemaPojoMap, endpointDefinitionPojoMap);
+
+    ResourceHandlerBuilder resourceHandlerBuilder = new ResourceHandlerBuilder();
+    Map<SchemaRelation, String> resourceHandlerPojoMap = resourceHandlerBuilder.createResourceHandlerPojos(packageDir,
+                                                                                                           schemaRelations);
+    return writeCreatedResourcesToFileSystem(outputDir,
+                                             resourceSchemaPojoMap,
+                                             endpointDefinitionPojoMap,
+                                             resourceHandlerPojoMap);
   }
 
   /**
@@ -96,13 +105,16 @@ public class ShellController
    */
   private static List<String> writeCreatedResourcesToFileSystem(String outputDir,
                                                                 Map<Schema, String> resourceSchemaPojoMap,
-                                                                Map<JsonNode, String> endpointDefinitionPojoMap)
+                                                                Map<JsonNode, String> endpointDefinitionPojoMap,
+                                                                Map<SchemaRelation, String> resourceHandlerPojoMap)
   {
     List<String> resourceNodeFiles = PojoWriter.writeResourceNodesToFileSystem(resourceSchemaPojoMap, outputDir);
     List<String> endpointDefinitionFiles = PojoWriter.writeEndpointDefinitionsToFileSystem(endpointDefinitionPojoMap,
                                                                                            outputDir);
     resourceNodeFiles.addAll(endpointDefinitionFiles);
-    return endpointDefinitionFiles;
+    List<String> resourceHandlerFiles = PojoWriter.writeResourceHandlerToFileSystem(resourceHandlerPojoMap, outputDir);
+    resourceNodeFiles.addAll(resourceHandlerFiles);
+    return resourceNodeFiles;
   }
 
 

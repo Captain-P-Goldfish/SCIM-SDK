@@ -85,4 +85,36 @@ public final class PojoWriter
     }
     return createdFilePaths;
   }
+
+  /**
+   * will write the resource handler pojos to the filesystem
+   *
+   * @param resourceHandlerPojoMap the map of pojos that were created
+   * @param outputDir the target directory where the pojos should be saved
+   * @return the absolute file paths of all files that were created
+   */
+  @SneakyThrows
+  public static List<String> writeResourceHandlerToFileSystem(Map<SchemaRelation, String> resourceHandlerPojoMap,
+                                                              String outputDir)
+  {
+    List<String> createdFilesPaths = new ArrayList<>();
+    for ( Map.Entry<SchemaRelation, String> createdPojoEntry : resourceHandlerPojoMap.entrySet() )
+    {
+      final SchemaRelation schemaRelation = createdPojoEntry.getKey();
+      final String pojo = createdPojoEntry.getValue();
+
+      final String fileName = StringUtils.capitalize(schemaRelation.getResourceSchema()
+                                                                   .getJsonNode()
+                                                                   .get(AttributeNames.RFC7643.NAME)
+                                                                   .textValue())
+                                         .replaceAll("\\s", "");
+      final String filePath = String.format("%s/%sResourceHandler.java", outputDir, fileName);
+      try (OutputStream outputStream = Files.newOutputStream(Paths.get(filePath)))
+      {
+        outputStream.write(pojo.getBytes());
+        createdFilesPaths.add(filePath);
+      }
+    }
+    return createdFilesPaths;
+  }
 }

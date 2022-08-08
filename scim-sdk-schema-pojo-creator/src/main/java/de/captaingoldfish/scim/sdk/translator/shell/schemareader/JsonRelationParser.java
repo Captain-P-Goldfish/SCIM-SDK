@@ -66,10 +66,10 @@ public class JsonRelationParser
     for ( FileInfoWrapper fileInfoWrapper : fileInfoWrapperList )
     {
       boolean isResourceSchema = resourceSchemas.stream().noneMatch(f -> {
-        return f.getResourceFile().getAbsolutePath().equals(f.getResourceFile().getAbsolutePath());
+        return f.getResourceFile().getAbsolutePath().equals(fileInfoWrapper.getResourceFile().getAbsolutePath());
       });
       boolean isResourceType = resourceTypes.stream().noneMatch(f -> {
-        return f.getResourceFile().getAbsolutePath().equals(f.getResourceFile().getAbsolutePath());
+        return f.getResourceFile().getAbsolutePath().equals(fileInfoWrapper.getResourceFile().getAbsolutePath());
       });
 
       if (!isResourceSchema && !isResourceType)
