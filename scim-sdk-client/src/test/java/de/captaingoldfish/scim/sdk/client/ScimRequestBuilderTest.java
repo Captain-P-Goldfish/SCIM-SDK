@@ -7,8 +7,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.apache.http.impl.client.CloseableHttpClient;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -18,6 +21,7 @@ import org.springframework.web.util.UriComponents;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.client.resources.ResourceType;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.TestSingletonHandler;
@@ -573,5 +577,30 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     // even when closed accessing the get httpclient method must return a new instance
     Assertions.assertNotNull(scimHttpClient2.getHttpClient());
     Assertions.assertNotEquals(client, scimHttpClient2.getHttpClient());
+  }
+
+  /**
+   * verifies that the builtin resource type can be used to successfully load the data from the resource types
+   * endpoint
+   */
+  @Test
+  public void testGetResourceTypes()
+  {
+    ServerResponse<ListResponse<ResourceType>> response = scimRequestBuilder.list(getServerUrl()
+                                                                                  + EndpointPaths.RESOURCE_TYPES,
+                                                                                  ResourceType.class)
+                                                                            .get()
+                                                                            .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    ListResponse<ResourceType> resourceTypeListResponse = response.getResource();
+    Assertions.assertEquals(6, resourceTypeListResponse.getTotalResults());
+    List<ResourceType> resourceTypeList = resourceTypeListResponse.getListedResources();
+    MatcherAssert.assertThat(resourceTypeList.stream().map(ResourceType::getName).collect(Collectors.toList()),
+                             Matchers.containsInAnyOrder("ResourceType",
+                                                         "ServiceProviderConfig",
+                                                         "TestSingleton",
+                                                         "Schema",
+                                                         "Group",
+                                                         "User"));
   }
 }
