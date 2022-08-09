@@ -57,7 +57,7 @@ EXCLUDE: [ \b\t\n]+ -> skip ;
 fragment ALPHA: ([a-zA-Z]);
 fragment INTEGER: '0' | [1-9] DIGIT*;
 fragment DIGIT: [0-9] ;
-fragment STRING: ~[\])]+?;
+fragment STRING: .+?;
 
 fragment A : [aA];
 fragment B : [bB];

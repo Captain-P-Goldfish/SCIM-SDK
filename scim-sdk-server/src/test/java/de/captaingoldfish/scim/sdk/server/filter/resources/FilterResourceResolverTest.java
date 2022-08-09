@@ -1904,6 +1904,25 @@ public class FilterResourceResolverTest implements FileReferences
   }
 
   /**
+   * this test reflects the issue: https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/309
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {")", "]"})
+  public void testFilterWithEnclosingBrace(String brace)
+  {
+    final List<User> userList = Arrays.asList(User.builder()
+                                                  .id(UUID.randomUUID().toString())
+                                                  .userName(String.format("test%s", brace))
+                                                  .build());
+
+
+    final String filter = String.format("userName eq \"test%s\"", brace);
+    final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
+    List<User> filteredUsers = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
+    Assertions.assertEquals(1, filteredUsers.size());
+  }
+
+  /**
    * creates a test for the allTypes representation
    */
   private DynamicTest getAllTypesTest(List<AllTypes> allTypesList,
