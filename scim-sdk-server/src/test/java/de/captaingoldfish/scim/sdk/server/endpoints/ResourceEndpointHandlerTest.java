@@ -1399,7 +1399,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                    .flatMap(Collection::stream)
                                                    .distinct()
                                                    .collect(Collectors.toList());
-      Assertions.assertEquals(allSchemas.size(), listResponse.getTotalResults());
+      Assertions.assertEquals(allSchemas.size() - 1, listResponse.getTotalResults());
     }
   }
 

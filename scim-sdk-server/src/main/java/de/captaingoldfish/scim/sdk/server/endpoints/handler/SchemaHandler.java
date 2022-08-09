@@ -86,10 +86,12 @@ public class SchemaHandler extends ResourceHandler<Schema>
                                                    List<SchemaAttribute> excludedAttributes,
                                                    Context context)
   {
+    final String excludedSchema = "urn:ietf:params:scim:schemas:core:2.0:Schema";
     List<Schema> allSchemas = resourceTypeFactory.getAllResourceTypes()
                                                  .stream()
                                                  .map(ResourceType::getAllSchemas)
                                                  .flatMap(Collection::stream)
+                                                 .filter(schema -> !schema.getNonNullId().equals(excludedSchema))
                                                  .distinct()
                                                  .collect(Collectors.toList());
     return PartialListResponse.<Schema> builder().resources(allSchemas).totalResults(allSchemas.size()).build();
