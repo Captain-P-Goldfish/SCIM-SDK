@@ -107,6 +107,7 @@ for any registered resource
 - [x] attribute validation (@see [attribute validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Attribute-validation)) 
 - [x] custom resource validation [similiar to bean validation in JEE] (@see [resource validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Validation-of-resources))
 - [x] automatic POJO creation from SCIM schema resources. (@see [schema pojo creator](https://github.com/Captain-P-Goldfish/SCIM-SDK/tree/master/scim-sdk-schema-pojo-creator))
+- [x] return resources in BulkResponse. (@see [return resources in BulkResponse](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Return-resources-on-Bulk-Responses))
 
 ## Client implementation
 
