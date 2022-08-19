@@ -698,6 +698,18 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     }
 
     /**
+     * asks the server to return the resource within the bulk response. This feature is supported only by the
+     * SCIM-SDK implementation.
+     *
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Return-resources-on-Bulk-Responses
+     */
+    public BulkRequestOperationCreator returnResource(boolean returnResource)
+    {
+      builder.returnResource(returnResource);
+      return this;
+    }
+
+    /**
      * @return builds the operation object and returns to the owning top level instance
      */
     public BulkBuilder next()
