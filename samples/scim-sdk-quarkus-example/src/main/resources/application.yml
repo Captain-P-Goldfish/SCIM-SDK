@@ -1,0 +1,3 @@
+quarkus:
+  banner:
+    enabled: false

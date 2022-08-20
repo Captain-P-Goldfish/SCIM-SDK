@@ -1,0 +1,7 @@
+POST http://localhost:8080/scim/v2/Users
+Content-Type: application/scim+json
+
+{
+    "userName": "chuck",
+    "displayName": "Chuck Norris"
+}
