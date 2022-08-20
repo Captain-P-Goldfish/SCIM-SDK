@@ -50,11 +50,17 @@ public class ScimController
     ResourceEndpoint resourceEndpoint = scimConfig.getResourceEndpoint();
 
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
+
+    ScimAuthentication scimAuthentication = new ScimAuthentication();
+    de.captaingoldfish.scim.sdk.server.endpoints.Context context =
+    // @formatter:off
+                  new de.captaingoldfish.scim.sdk.server.endpoints.Context(scimAuthentication);
+    // @formatter:on
     ScimResponse scimResponse = resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
                                                                HttpMethod.valueOf(request.getMethod()),
                                                                getRequestBody(request),
                                                                getHttpHeaders(request),
-                                                               new de.captaingoldfish.scim.sdk.server.endpoints.Context(null));
+                                                               context);
     return scimResponse.buildResponse();
   }
 
