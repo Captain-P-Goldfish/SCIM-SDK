@@ -1,5 +1,8 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -117,5 +120,14 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
       httpDelete.setHeader(HttpHeader.IF_NONE_MATCH_HEADER, getVersion().toString());
     }
     return httpDelete;
+  }
+
+  /**
+   * a delete response does not require any response headers
+   */
+  @Override
+  protected Map<String, String> getRequiredResponseHeaders()
+  {
+    return new HashMap<>();
   }
 }

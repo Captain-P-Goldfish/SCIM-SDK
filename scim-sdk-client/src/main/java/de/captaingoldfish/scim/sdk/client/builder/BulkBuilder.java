@@ -284,7 +284,8 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
                                             // take the response headers from any request they will probably be the same
                                             .responseHeaders(serverResponseList.get(0).getHttpHeaders())
                                             .build();
-    return new ServerResponse<>(httpResponse, true, BulkResponse.class, isResponseParseable());
+    return new ServerResponse<>(httpResponse, true, BulkResponse.class, isResponseParseable(),
+                                getRequiredResponseHeaders());
   }
 
   /**

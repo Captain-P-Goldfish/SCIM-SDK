@@ -323,7 +323,8 @@ public class ListBuilder<T extends ResourceNode>
     protected ServerResponse<ListResponse<T>> toResponse(HttpResponse response)
     {
       return new ListServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()),
-                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable());
+                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable(),
+                                      getRequiredResponseHeaders());
     }
   }
 
@@ -412,7 +413,8 @@ public class ListBuilder<T extends ResourceNode>
     protected ServerResponse<ListResponse<T>> toResponse(HttpResponse response)
     {
       return new ListServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()),
-                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable());
+                                      getResponseEntityType(), listBuilder.responseEntityType, isResponseParseable(),
+                                      getRequiredResponseHeaders());
     }
   }
 
@@ -431,9 +433,10 @@ public class ListBuilder<T extends ResourceNode>
                               boolean expectedResponseCode,
                               Class<ListResponse<T>> type,
                               Class<T> responseEntityType,
-                              Function<HttpResponse, Boolean> isResponseParseable)
+                              Function<HttpResponse, Boolean> isResponseParseable,
+                              Map<String, String> requiredResponseHeaders)
     {
-      super(httpResponse, expectedResponseCode, type, isResponseParseable);
+      super(httpResponse, expectedResponseCode, type, isResponseParseable, requiredResponseHeaders);
       this.responseEntityType = responseEntityType;
     }
 

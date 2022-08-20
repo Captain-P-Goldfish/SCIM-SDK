@@ -15,6 +15,7 @@ public class DeleteResponse extends ScimResponse
   public DeleteResponse()
   {
     super(null);
+    getHttpHeaders().clear(); // the delete-response does not need any headers
   }
 
   /**

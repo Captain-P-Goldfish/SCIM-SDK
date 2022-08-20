@@ -2,10 +2,13 @@ package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpUriRequest;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -17,6 +20,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -25,6 +29,7 @@ import lombok.Getter;
  * <br>
  * an abstract request builder implementation
  */
+@Slf4j
 public abstract class RequestBuilder<T extends ScimObjectNode>
 {
 
@@ -184,7 +189,20 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   protected ServerResponse<T> toResponse(HttpResponse response)
   {
     return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType,
-                                isResponseParseable());
+                                isResponseParseable(), getRequiredResponseHeaders());
+  }
+
+  /**
+   * this is the default implementation for the expected response headers that should be present within the
+   * response. This is based on request since the delete request does not require a content type
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/313
+   */
+  protected Map<String, String> getRequiredResponseHeaders()
+  {
+    Map<String, String> requiredHttpHeaders = new HashMap<>();
+    requiredHttpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    return requiredHttpHeaders;
   }
 
   /**

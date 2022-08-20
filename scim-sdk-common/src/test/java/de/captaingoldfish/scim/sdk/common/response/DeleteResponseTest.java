@@ -26,16 +26,12 @@ public class DeleteResponseTest
   public void testCreateDeleteResponse()
   {
     DeleteResponse deleteResponse = Assertions.assertDoesNotThrow(DeleteResponse::new);
-    Assertions.assertEquals(1, deleteResponse.getHttpHeaders().size());
+    Assertions.assertEquals(0, deleteResponse.getHttpHeaders().size());
     Assertions.assertNull(deleteResponse.getHttpHeaders().get(HttpHeader.LOCATION_HEADER));
-    Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
-                            deleteResponse.getHttpHeaders().get(HttpHeader.CONTENT_TYPE_HEADER));
     Assertions.assertTrue(deleteResponse.isEmpty());
 
     Response response = deleteResponse.buildResponse();
-    Assertions.assertEquals(1, response.getHeaders().size());
-    Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
-                            response.getHeaders().get(HttpHeader.CONTENT_TYPE_HEADER).get(0));
+    Assertions.assertEquals(0, response.getHeaders().size());
     Assertions.assertNull(response.getHeaders().get(HttpHeader.LOCATION_HEADER));
     Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
     Assertions.assertNull(response.getEntity());

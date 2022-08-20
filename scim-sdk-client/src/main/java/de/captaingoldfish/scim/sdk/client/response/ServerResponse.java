@@ -6,14 +6,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.HttpHeaders;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
-import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
@@ -72,12 +70,21 @@ public class ServerResponse<T extends ScimObjectNode>
    */
   private Function<HttpResponse, Boolean> isResponseParseable;
 
+  /**
+   * these headers are expected within the response in order to make sure that the content-type of a response
+   * matches a scim response
+   */
+  @Getter(AccessLevel.PROTECTED)
+  private Map<String, String> requiredResponseHeaders;
+
   public ServerResponse(HttpResponse httpResponse,
                         boolean expectedResponseCode,
                         Class<T> type,
-                        Function<HttpResponse, Boolean> isResponseParseable)
+                        Function<HttpResponse, Boolean> isResponseParseable,
+                        Map<String, String> requiredResponseHeaders)
   {
     this.httpResponse = httpResponse;
+    this.requiredResponseHeaders = requiredResponseHeaders;
     this.success = expectedResponseCode && isValidScimResponse();
     this.type = type;
     this.isResponseParseable = isResponseParseable;
@@ -127,7 +134,7 @@ public class ServerResponse<T extends ScimObjectNode>
   {
     if (validScimResponse == null)
     {
-      validScimResponse = doesHeaderMapContain(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE)
+      validScimResponse = doesHeaderMapContain(getHttpHeaders(), requiredResponseHeaders)
                           && ((getResponseBody() != null && JsonHelper.isValidJson(getResponseBody()))
                               || getResponseBody() == null);
     }
@@ -173,39 +180,45 @@ public class ServerResponse<T extends ScimObjectNode>
   }
 
   /**
-   * checks (with a case insensitive check on the given header name) that the value is equal to the expected
+   * checks (with a caseinsensitive check on the given header name) that the value is equal to the expected
    * value
    *
    * @param headerName the header name that should be present
    * @param expectedValue the value that should be found under the given header
    * @return true if the header exists, false else
    */
-  private boolean doesHeaderMapContain(String headerName, String expectedValue)
+  private boolean doesHeaderMapContain(Map<String, String> httpHeaders, Map<String, String> expectedHttpHeaders)
   {
-    List<String> headerNameList = getHttpHeaders().keySet()
-                                                  .stream()
-                                                  .filter(name -> name.equalsIgnoreCase(headerName))
-                                                  .collect(Collectors.toList());
-    if (headerNameList.size() > 1)
+    boolean allHeadersPresent = true;
+    for ( Map.Entry<String, String> keyValue : expectedHttpHeaders.entrySet() )
     {
-      log.info("Could not validate header value for duplicate headerName found in response: {} -> {}",
-               headerName,
-               String.join(", ", headerNameList));
+      String headerName = keyValue.getKey();
+      String expectedValue = keyValue.getValue();
+
+      List<String> headerNameList = httpHeaders.keySet()
+                                               .stream()
+                                               .filter(name -> name.equalsIgnoreCase(headerName))
+                                               .collect(Collectors.toList());
+      if (headerNameList.size() > 1)
+      {
+        log.info("Could not validate header value for duplicate headerName found in response: {} -> {}",
+                 headerName,
+                 String.join(", ", headerNameList));
+      }
+      boolean isHeaderPresent = headerNameList.size() == 1
+                                && StringUtils.startsWithIgnoreCase(httpHeaders.get(headerNameList.get(0)),
+                                                                    expectedValue);
+      if (isHeaderPresent)
+      {
+        log.trace("Successfully validated {} header with value '{}'", headerName, expectedValue);
+      }
+      else
+      {
+        log.info("Expected header {} was not found in response '{}'", headerName, expectedValue);
+        allHeadersPresent = false;
+      }
     }
-    boolean isHeaderPresents = headerNameList.size() == 1
-                               && StringUtils.startsWithIgnoreCase(getHttpHeaders().get(headerNameList.get(0)),
-                                                                   expectedValue);
-    if (isHeaderPresents)
-    {
-      log.trace("Successfully validated {} header with value '{}'",
-                HttpHeaders.CONTENT_TYPE,
-                HttpHeader.SCIM_CONTENT_TYPE);
-    }
-    else
-    {
-      log.info("SCIM {} was not set in response '{}'", HttpHeaders.CONTENT_TYPE, HttpHeader.SCIM_CONTENT_TYPE);
-    }
-    return isHeaderPresents;
+    return allHeadersPresent;
   }
 
   /**
