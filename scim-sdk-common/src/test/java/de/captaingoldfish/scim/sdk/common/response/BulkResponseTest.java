@@ -1,8 +1,12 @@
 package de.captaingoldfish.scim.sdk.common.response;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -52,5 +56,65 @@ public class BulkResponseTest
   {
     BulkResponse bulkResponse = new BulkResponse();
     Assertions.assertNotNull(bulkResponse.getBulkResponseOperations());
+  }
+
+  /**
+   * verifies that the method {@link BulkResponse#getByBulkId(String)}} operates as expected
+   */
+  @Test
+  public void testGetByBulkId()
+  {
+    final String op1BulkId = UUID.randomUUID().toString();
+    final String op2BulkId = UUID.randomUUID().toString();
+    BulkResponseOperation op1 = BulkResponseOperation.builder().bulkId(op1BulkId).build();
+    BulkResponseOperation op2 = BulkResponseOperation.builder().bulkId(op2BulkId).build();
+    BulkResponseOperation op3 = BulkResponseOperation.builder().build();
+    final List<BulkResponseOperation> operations = Arrays.asList(op1, op2, op3);
+
+    BulkResponse bulkResponse = BulkResponse.builder().bulkResponseOperation(operations).build();
+
+    Assertions.assertEquals(bulkResponse.getByBulkId(op1BulkId).get(), op1);
+    Assertions.assertEquals(bulkResponse.getByBulkId(op2BulkId).get(), op2);
+    Assertions.assertEquals(bulkResponse.getByBulkId(null).get(), op3);
+  }
+
+  /**
+   * verifies that the method {@link BulkResponse#getOperationsWithoutBulkId()}} operates as expected
+   */
+  @Test
+  public void testGetOperationsWithoutABulkId()
+  {
+    final String op1BulkId = UUID.randomUUID().toString();
+    final String op2BulkId = UUID.randomUUID().toString();
+    BulkResponseOperation op1 = BulkResponseOperation.builder().bulkId(op1BulkId).build();
+    BulkResponseOperation op2 = BulkResponseOperation.builder().bulkId(op2BulkId).build();
+    BulkResponseOperation op3 = BulkResponseOperation.builder().build();
+    BulkResponseOperation op4 = BulkResponseOperation.builder().build();
+    final List<BulkResponseOperation> operations = Arrays.asList(op1, op2, op3, op4);
+
+    BulkResponse bulkResponse = BulkResponse.builder().bulkResponseOperation(operations).build();
+
+    List<BulkResponseOperation> responseOperations = bulkResponse.getOperationsWithoutBulkId();
+    MatcherAssert.assertThat(responseOperations, Matchers.containsInAnyOrder(op3, op4));
+  }
+
+  /**
+   * verifies that the method {@link BulkResponse#getOperationsWithBulkId()}} operates as expected
+   */
+  @Test
+  public void testGetOperationsWitBulkId()
+  {
+    final String op1BulkId = UUID.randomUUID().toString();
+    final String op2BulkId = UUID.randomUUID().toString();
+    BulkResponseOperation op1 = BulkResponseOperation.builder().bulkId(op1BulkId).build();
+    BulkResponseOperation op2 = BulkResponseOperation.builder().bulkId(op2BulkId).build();
+    BulkResponseOperation op3 = BulkResponseOperation.builder().build();
+    BulkResponseOperation op4 = BulkResponseOperation.builder().build();
+    final List<BulkResponseOperation> operations = Arrays.asList(op1, op2, op3, op4);
+
+    BulkResponse bulkResponse = BulkResponse.builder().bulkResponseOperation(operations).build();
+
+    List<BulkResponseOperation> responseOperations = bulkResponse.getOperationsWithBulkId();
+    MatcherAssert.assertThat(responseOperations, Matchers.containsInAnyOrder(op1, op2));
   }
 }

@@ -2,6 +2,8 @@ package de.captaingoldfish.scim.sdk.common.response;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -67,6 +69,39 @@ public class BulkResponse extends ScimResponse
   public void setBulkResponseOperations(List<BulkResponseOperation> bulkRequestOperations)
   {
     setAttribute(AttributeNames.RFC7643.OPERATIONS, bulkRequestOperations);
+  }
+
+  /**
+   * tries to find a bulk response operation matching the given bulkId. It is also possible to get a bulk
+   * request with a null-bulkId. Be sure to use that only if you are certain that only a single entry has a
+   * null-bulkId
+   *
+   * @param bulkId the bulk id of the operation that should be extracted (null allowed)
+   * @return the operation or an empty if no operation did match the bulkId
+   */
+  public Optional<BulkResponseOperation> getByBulkId(String bulkId)
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      boolean isNullMatch = !op.getBulkId().isPresent() && bulkId == null;
+      boolean isBulkIdMatch = bulkId != null && op.getBulkId().map(bulkId::equals).orElse(false);
+      return isNullMatch || isBulkIdMatch;
+    }).findFirst();
+  }
+
+  /**
+   * @return all operations that do have a bulkId
+   */
+  public List<BulkResponseOperation> getOperationsWithBulkId()
+  {
+    return getBulkResponseOperations().stream().filter(op -> op.getBulkId().isPresent()).collect(Collectors.toList());
+  }
+
+  /**
+   * @return all operations that do not have a bulkId
+   */
+  public List<BulkResponseOperation> getOperationsWithoutBulkId()
+  {
+    return getBulkResponseOperations().stream().filter(op -> !op.getBulkId().isPresent()).collect(Collectors.toList());
   }
 
 }
