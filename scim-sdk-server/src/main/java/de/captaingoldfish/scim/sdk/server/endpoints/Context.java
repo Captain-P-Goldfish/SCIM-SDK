@@ -5,6 +5,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -62,7 +63,7 @@ public class Context
   @Builder
   public Context(Authorization authorization)
   {
-    this.authorization = authorization;
+    this.authorization = Optional.ofNullable(authorization).orElse(new DefaultAuthorization());
   }
 
   /**

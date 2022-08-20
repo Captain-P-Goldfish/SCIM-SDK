@@ -44,7 +44,7 @@ public final class DefaultAuthorization implements Authorization
   public boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams)
   {
     log.warn("Used default authentication that will always return true. Please see '{}' and '{}' to check "
-             + "how to utilize the authentication and authorization features",
+             + "how to utilize the authentication and authorization features or how to disable it.",
              "https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authentication",
              "https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authorization");
     return true;

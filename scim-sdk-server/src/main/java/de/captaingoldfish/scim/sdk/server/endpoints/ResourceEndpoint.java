@@ -357,22 +357,12 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
       // no authentication required for this endpoint
       return;
     }
-    if (authorization == null)
+    boolean isAuthenticated = authorization.authenticate(uriInfos.getHttpHeaders(), uriInfos.getQueryParameters());
+    if (!isAuthenticated)
     {
-      log.warn("Endpoint '{}' requires authentication but received no '{}' implementation. Authentication "
-               + "and Authorization will be bypassed.",
-               uriInfos.getResourceEndpoint(),
-               Authorization.class.getName());
-    }
-    else
-    {
-      boolean isAuthenticated = authorization.authenticate(uriInfos.getHttpHeaders(), uriInfos.getQueryParameters());
-      if (!isAuthenticated)
-      {
-        log.debug("Authentication has failed");
-        throw new UnauthenticatedException("not authenticated", getServiceProvider().getAuthenticationSchemes(),
-                                           authorization.getRealm());
-      }
+      log.debug("Authentication has failed");
+      throw new UnauthenticatedException("not authenticated", getServiceProvider().getAuthenticationSchemes(),
+                                         authorization.getRealm());
     }
   }
 }
