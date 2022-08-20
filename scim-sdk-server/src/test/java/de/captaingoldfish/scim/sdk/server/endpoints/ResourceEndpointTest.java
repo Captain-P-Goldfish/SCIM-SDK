@@ -146,7 +146,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final User user = User.builder().userName(userName).build();
     final String url = BASE_URI + EndpointPaths.USERS;
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     CreateResponse createResponse = (CreateResponse)scimResponse;
@@ -245,7 +249,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     MatcherAssert.assertThat(new ArrayList<>(user.getSchemas()),
                              Matchers.not(Matchers.hasItem(SchemaUris.ENTERPRISE_USER_URI)));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, userRequest, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               userRequest,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     CreateResponse createResponse = (CreateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.CREATED, createResponse.getHttpStatus());
@@ -273,7 +281,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     userHandler.getInMemoryMap().put(id, user);
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
@@ -380,7 +392,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PUT,
                                                                changedUser.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -481,7 +494,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     userHandler.getInMemoryMap().put(id, user);
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.DELETE, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.DELETE,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
     DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
@@ -591,7 +608,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                        + String.format("?startIndex=1&count=%d&filter=%s",
                                        maxUsers,
                                        "userName sw \"" + searchValue + "\"");
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
@@ -621,7 +642,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   public void testQueryResourcesWithInvalidStartIndex()
   {
     final String url = BASE_URI + EndpointPaths.USERS + "?startIndex=NaN";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, scimResponse.getHttpStatus());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -637,7 +662,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   public void testQueryResourcesWithInvalidCount()
   {
     final String url = BASE_URI + EndpointPaths.USERS + "?count=NaN";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, scimResponse.getHttpStatus());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -753,7 +782,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                searchRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
@@ -866,7 +896,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(maxOperations, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
@@ -887,7 +918,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     operations.addAll(getUpdateUserBulkOperations(userHandler.getInMemoryMap().values()));
     operations.addAll(getDeleteUserBulkOperations(userHandler.getInMemoryMap().values()));
     bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
-    scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, bulkRequest.toString(), httpHeaders);
+    scimResponse = resourceEndpoint.handleRequest(url,
+                                                  HttpMethod.POST,
+                                                  bulkRequest.toString(),
+                                                  httpHeaders,
+                                                  new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -933,7 +968,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                createOperations.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -959,7 +995,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     int responseSize = bulkResponse.getBulkResponseOperations().size();
@@ -1024,7 +1061,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -1053,7 +1091,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(failOnErrors, bulkResponse.getBulkResponseOperations().size());
@@ -1082,7 +1121,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -1106,7 +1146,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -1135,7 +1176,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -1160,7 +1202,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -1188,7 +1231,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                bulkRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
@@ -1211,7 +1255,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
     final String url = BASE_URI + EndpointPaths.BULK;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, httpMethod, bulkRequest.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               httpMethod,
+                                                               bulkRequest.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -1255,7 +1303,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     updateResponse.remove(AttributeNames.RFC7643.META);
@@ -1315,7 +1364,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
 
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
@@ -1371,7 +1421,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpString, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpString,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1426,7 +1480,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpString, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               patchOpString,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1529,7 +1587,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
   }
 
@@ -1565,7 +1624,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
@@ -1605,7 +1665,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1650,7 +1711,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1695,7 +1757,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1748,7 +1811,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
@@ -1777,7 +1841,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                User.builder().build().toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
@@ -1800,7 +1865,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                SearchRequest.builder().build().toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
@@ -1823,7 +1889,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.POST,
                                                                BulkRequest.builder().build().toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
@@ -1846,7 +1913,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PUT,
                                                                User.builder().build().toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
@@ -1869,7 +1937,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                PatchOpRequest.builder().build().toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getStatus());
@@ -1887,7 +1956,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG;
     serviceProvider = getServiceProvider();
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
   }
 
@@ -1900,7 +1973,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String url = BASE_URI + EndpointPaths.RESOURCE_TYPES;
     serviceProvider = getServiceProvider();
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
   }
 
@@ -1913,7 +1990,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     final String url = BASE_URI + EndpointPaths.SCHEMAS;
     serviceProvider = getServiceProvider();
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
   }
 
@@ -1934,7 +2015,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check create is disabled", () -> {
       endpointControlFeature.setCreateDisabled(true);
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -1946,7 +2031,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
       endpointControlFeature.setGetDisabled(true);
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.GET, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -1958,7 +2047,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
       endpointControlFeature.setListDisabled(true);
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -1970,7 +2063,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check update is disabled", () -> {
       endpointControlFeature.setUpdateDisabled(true);
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PUT, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PUT,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -1982,7 +2079,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check patch is disabled", () -> {
       endpointControlFeature.setUpdateDisabled(true);
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PATCH, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PATCH,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -1994,7 +2095,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check delete is disabled", () -> {
       endpointControlFeature.setDeleteDisabled(true);
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.DELETE, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2023,7 +2128,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     List<DynamicTest> dynamicTests = new ArrayList<>();
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check create is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2032,7 +2141,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2041,7 +2154,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check update is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PUT, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PUT,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2050,7 +2167,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check patch is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PATCH, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PATCH,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2059,7 +2180,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check delete is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.DELETE, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2087,7 +2212,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     List<DynamicTest> dynamicTests = new ArrayList<>();
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check create is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2096,7 +2225,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2105,7 +2238,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check update is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PUT, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PUT,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2114,7 +2251,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check patch is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PATCH, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PATCH,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2123,7 +2264,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check delete is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.DELETE, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2155,7 +2300,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     List<DynamicTest> dynamicTests = new ArrayList<>();
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check create is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2164,7 +2313,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check list is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2173,7 +2326,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check update is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PUT, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PUT,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2182,7 +2339,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check patch is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.PATCH, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.PATCH,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2191,7 +2352,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("check delete is disabled", () -> {
-      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456", HttpMethod.DELETE, null, httpHeaders);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/123456",
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 new Context(null));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       ScimException ex = errorResponse.getScimException();
@@ -2648,7 +2813,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     Mockito.doReturn(user).when(userHandler).createResource(Mockito.any(), Mockito.isNull());
 
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, arrayNode.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               arrayNode.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
@@ -2695,7 +2864,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     final String url = BASE_URI + EndpointPaths.USERS;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
 
     Assertions.assertNotNull(scimResponse.get(attributeName));
@@ -2745,7 +2918,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
     final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + fullName;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
 
     String[] attributeNameParts = attributeName.split("\\.");
@@ -2806,7 +2983,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
     final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + fullName;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
 
     String[] attributeNameParts = attributeName.split("\\.");
@@ -2866,7 +3047,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
     final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + fullName;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
 
     String[] attributeNameParts = attributeName.split("\\.");
@@ -2921,7 +3106,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
     final String url = BASE_URI + EndpointPaths.USERS + "?attributes=" + SchemaUris.USER_URI;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
 
     Assertions.assertNotNull(scimResponse.get(attributeName));
@@ -2951,7 +3140,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
 
     final String url = BASE_URI + "/AllTypes";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, allTypes.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               allTypes.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
 
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, scimResponse.getHttpStatus());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
@@ -3026,6 +3219,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     public Set<String> getClientRoles()
     {
       return roles;
+    }
+
+    @Override
+    public boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams)
+    {
+      return true;
     }
 
   }

@@ -31,7 +31,11 @@ public class ResourceTypeEndpointTest extends AbstractEndpointTest
   public void getResourceTypesByName(String name)
   {
     final String url = getUrl(EndpointPaths.RESOURCE_TYPES + "/" + name);
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus(), scimResponse.toPrettyString());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
 

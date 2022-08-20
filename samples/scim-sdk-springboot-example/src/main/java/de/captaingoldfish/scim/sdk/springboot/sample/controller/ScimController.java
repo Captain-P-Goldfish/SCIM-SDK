@@ -16,7 +16,9 @@ import org.springframework.web.bind.annotation.RestController;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.springboot.sample.config.ScimAuthentication;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -61,10 +63,14 @@ public class ScimController
   {
     Map<String, String> httpHeaders = getHttpHeaders(request);
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
+
+    ScimAuthentication scimAuthentication = new ScimAuthentication();
+
     ScimResponse scimResponse = resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
                                                                HttpMethod.valueOf(request.getMethod()),
                                                                requestBody,
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(scimAuthentication));
     response.setContentType(HttpHeader.SCIM_CONTENT_TYPE);
     scimResponse.getHttpHeaders().forEach(response::setHeader);
     response.setStatus(scimResponse.getHttpStatus());

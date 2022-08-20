@@ -48,32 +48,6 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
     super(serviceProvider, endpointDefinitions);
   }
 
-  /**
-   * this method will resolve the SCIM request based on the given information
-   *
-   * @param requestUrl the fully qualified resource URL e.g.:
-   *
-   *          <pre>
-   *             https://localhost/v2/scim/Users<br>
-   *             https://localhost/v2/scim/Users/123456<br>
-   *             https://localhost/v2/scim/Users/.search<br>
-   *             https://localhost/v2/scim/Users?startIndex=1&count=20&filter=userName+eq+%22chucky%22
-   *          </pre>
-   *
-   * @param httpMethod the http method that was used by in the request
-   * @param requestBody the request body of the request, may be null
-   * @param httpHeaders the http request headers, may be null
-   * @param context an optional context object that will be expanded with additional information of the current
-   *          request
-   * @return the resolved SCIM response
-   */
-  public ScimResponse handleRequest(String requestUrl,
-                                    HttpMethod httpMethod,
-                                    String requestBody,
-                                    Map<String, String> httpHeaders)
-  {
-    return handleRequest(requestUrl, httpMethod, requestBody, httpHeaders, null, null, null);
-  }
 
   /**
    * this method will resolve the SCIM request based on the given information
@@ -348,7 +322,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    */
   private Context getEffectiveContext(UriInfos uriInfos, Context context)
   {
-    Context effectiveContext = Optional.ofNullable(context).orElse(new Context());
+    Context effectiveContext = Optional.ofNullable(context).orElse(new Context(null));
     effectiveContext.setResourceReferenceUrl(id -> {
       return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(uriInfos.getResourceType().getName(), id);
     });

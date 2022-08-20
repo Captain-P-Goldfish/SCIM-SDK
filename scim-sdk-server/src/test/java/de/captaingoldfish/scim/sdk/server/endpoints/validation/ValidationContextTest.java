@@ -110,7 +110,7 @@ public class ValidationContextTest
     });
     UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders, new Context(null));
     User storedUser = userHandler.getInMemoryMap().get(userHandler.getInMemoryMap().keySet().iterator().next());
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateCreate(Mockito.eq(storedUser), Mockito.notNull(), Mockito.notNull());
@@ -165,7 +165,7 @@ public class ValidationContextTest
     updateUser.setNickName(nickname);
 
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    resourceEndpoint.handleRequest(url, HttpMethod.PUT, updateUser.toString(), httpHeaders);
+    resourceEndpoint.handleRequest(url, HttpMethod.PUT, updateUser.toString(), httpHeaders, new Context(null));
 
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull(), Mockito.notNull());
@@ -225,7 +225,7 @@ public class ValidationContextTest
     patchOpRequest.setOperations(Collections.singletonList(operation));
 
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString(), httpHeaders);
+    resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString(), httpHeaders, new Context(null));
 
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull(), Mockito.notNull());
@@ -276,7 +276,11 @@ public class ValidationContextTest
     userHandler.getInMemoryMap().put(user.getId().get(), user);
 
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
@@ -348,7 +352,11 @@ public class ValidationContextTest
     updateUser.setNickName(nickname);
 
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.PUT, updateUser.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PUT,
+                                                               updateUser.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
 
     Mockito.verify(requestValidator, Mockito.times(1))
@@ -434,7 +442,8 @@ public class ValidationContextTest
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
-                                                               httpHeaders);
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
 
     Mockito.verify(requestValidator, Mockito.times(1))
@@ -488,7 +497,11 @@ public class ValidationContextTest
     });
     UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
@@ -528,7 +541,11 @@ public class ValidationContextTest
     });
     UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());
@@ -569,7 +586,11 @@ public class ValidationContextTest
     });
     UserHandlerImpl userHandler = Mockito.spy(new UserHandlerImpl(true, requestValidator));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.POST, user.toString(), httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               user.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     Mockito.verify(requestValidator, Mockito.times(1))
            .validateCreate(Mockito.any(), Mockito.notNull(), Mockito.notNull());

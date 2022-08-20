@@ -329,6 +329,12 @@ public abstract class AbstractSpringBootWebTest
                                                        .map(auth -> auth.getAuthority().replaceFirst("^ROLE_", ""))
                                                        .collect(Collectors.toSet());
       }
+
+      @Override
+      public boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams)
+      {
+        return true;
+      }
     }
 
   }

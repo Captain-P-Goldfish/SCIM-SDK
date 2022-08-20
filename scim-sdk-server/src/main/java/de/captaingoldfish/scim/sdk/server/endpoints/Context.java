@@ -8,7 +8,6 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
@@ -21,7 +20,6 @@ import lombok.Setter;
  * @since 19.06.2021
  */
 @Getter
-@NoArgsConstructor
 public class Context
 {
 
@@ -86,7 +84,7 @@ public class Context
   }
 
   /**
-   * creates a cross reference url to another resource. <br>
+   * creates a cross-reference url to another resource. <br>
    * <br>
    * e.g. if called on the {@link ResourceHandler} implementation for Groups to create a reference to a user
    * member of the group

@@ -95,7 +95,11 @@ public class SingletonEndpointTest
   public void testGetSingletonUser()
   {
     final String url = BASE_URI + EndpointPaths.USERS;
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
 

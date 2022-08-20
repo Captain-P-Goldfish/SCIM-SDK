@@ -125,10 +125,7 @@ public interface Authorization
    *      https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Authentication-and-Authorization#authentication
    *      </a>
    */
-  default boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams)
-  {
-    return true;
-  }
+  public boolean authenticate(Map<String, String> httpHeaders, Map<String, String> queryParams);
 
   /**
    * the current realm for which the authentication should be executed. This value will be present in the

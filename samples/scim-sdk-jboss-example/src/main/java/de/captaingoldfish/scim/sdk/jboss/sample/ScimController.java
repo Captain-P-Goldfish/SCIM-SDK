@@ -53,7 +53,8 @@ public class ScimController
     ScimResponse scimResponse = resourceEndpoint.handleRequest(request.getRequestURL().toString() + query,
                                                                HttpMethod.valueOf(request.getMethod()),
                                                                getRequestBody(request),
-                                                               getHttpHeaders(request));
+                                                               getHttpHeaders(request),
+                                                               new de.captaingoldfish.scim.sdk.server.endpoints.Context(null));
     return scimResponse.buildResponse();
   }
 

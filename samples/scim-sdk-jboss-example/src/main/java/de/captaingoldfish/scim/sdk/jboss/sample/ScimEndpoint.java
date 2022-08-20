@@ -18,6 +18,7 @@ import org.apache.commons.io.IOUtils;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 
 
 /**
@@ -45,11 +46,15 @@ public class ScimEndpoint extends HttpServlet
     String requestBody = getRequestBody(request);
     Map<String, String> httpHeaders = getHttpHeaders(request);
     String query = request.getQueryString() == null ? "" : "?" + request.getQueryString();
+
+    ScimAuthentication scimAuthentication = new ScimAuthentication();
+
     ScimResponse scimResponse = scimConfig.getResourceEndpoint()
                                           .handleRequest(request.getRequestURL().toString() + query,
                                                          HttpMethod.valueOf(request.getMethod()),
                                                          requestBody,
-                                                         httpHeaders);
+                                                         httpHeaders,
+                                                         new Context(scimAuthentication));
     response.setContentType(HttpHeader.SCIM_CONTENT_TYPE);
     scimResponse.getHttpHeaders().forEach(response::setHeader);
     response.getWriter().append(scimResponse.toString());

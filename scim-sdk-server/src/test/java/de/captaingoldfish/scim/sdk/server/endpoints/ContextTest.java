@@ -79,7 +79,7 @@ public class ContextTest
     userHandler.getInMemoryMap().put(id, User.builder().id(id).userName("goldfish").build());
 
     final String url = String.format("%s%s/%s", BASE_URI, EndpointPaths.USERS, id);
-    resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders);
+    resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders, new Context(null));
 
     Assertions.assertTrue(wasCalled.get());
   }
