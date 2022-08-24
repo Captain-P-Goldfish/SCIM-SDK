@@ -17,7 +17,7 @@ public class KeystoreEndpoint extends EndpointDefinition
   /**
    * the basepath to the resources
    */
-  private static final String RESOURCE_BASE_PATH = "de/captaingoldfish/scim/sdk/sample/common";
+  private static final String RESOURCE_BASE_PATH = "/de/captaingoldfish/scim/sdk/sample/common";
 
   /**
    * the location of the keystore resource type definition

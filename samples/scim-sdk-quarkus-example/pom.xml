@@ -44,6 +44,11 @@
             <groupId>de.captaingoldfish</groupId>
             <artifactId>scim-sdk-server</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>de.captaingoldfish</groupId>
+            <artifactId>scim-sdk-sample-common</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

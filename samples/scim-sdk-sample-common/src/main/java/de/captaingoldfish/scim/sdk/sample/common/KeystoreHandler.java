@@ -87,9 +87,12 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
     // filtering is not performed here. Note that the api provides an auto-filtering feature
     // sorting is not performed here. Note that the api provides an auto-sorting feature
     List<ScimKeystore> scimKeystores = new ArrayList<>(keystoreMap.values());
-    int effectiveStartIndex = (int)Math.min(startIndex, scimKeystores.size() - 1);
-    int effectiveCount = (int)Math.min(startIndex + count, scimKeystores.size() - 1);
-    scimKeystores = scimKeystores.subList(effectiveStartIndex, effectiveCount);
+    if (scimKeystores.size() > 0)
+    {
+      int effectiveStartIndex = (int)Math.min(startIndex, scimKeystores.size() - 1);
+      int effectiveCount = (int)Math.min(startIndex + count, scimKeystores.size() - 1);
+      scimKeystores = scimKeystores.subList(effectiveStartIndex, effectiveCount);
+    }
     return PartialListResponse.<ScimKeystore> builder()
                               .totalResults(scimKeystores.size())
                               .resources(scimKeystores)

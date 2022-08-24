@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.jboss.sample.handler.GroupHandler;
 import de.captaingoldfish.scim.sdk.jboss.sample.handler.UserHandler;
+import de.captaingoldfish.scim.sdk.sample.common.KeystoreEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
@@ -52,6 +53,7 @@ public class ScimConfig
     resourceEndpoint = new ResourceEndpoint(serviceProvider);
     registerUserEndpoint();
     registerGroupEndpoint();
+    registerKeystoreEndpoint();
   }
 
   /**
@@ -93,6 +95,15 @@ public class ScimConfig
   {
     ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
+  }
+
+  /**
+   * registers the groups endpoint and activates auto filtering and auto sorting feature
+   */
+  private void registerKeystoreEndpoint()
+  {
+    ResourceType keystoreResourceType = resourceEndpoint.registerEndpoint(new KeystoreEndpoint());
+    keystoreResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
   }
 
 }

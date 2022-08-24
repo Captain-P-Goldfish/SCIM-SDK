@@ -33,6 +33,11 @@
                 <artifactId>scim-sdk-server</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>de.captaingoldfish</groupId>
+                <artifactId>scim-sdk-sample-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
