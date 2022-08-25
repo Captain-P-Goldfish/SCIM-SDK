@@ -1,0 +1,81 @@
+{
+    "schemas": [
+        "urn:ietf:params:scim:api:messages:2.0:BulkRequest"
+    ],
+    "Operations": [
+        {
+            "method": "POST",
+            "bulkId": "1",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User",
+                    "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+                ],
+                "userName": "goldfish",
+                "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+                    "manager": {
+                        "value": "bulkId:3"
+                    }
+                }
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "2",
+            "path": "/Groups",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:Group"
+                ],
+                "displayName": "admin",
+                "members": [
+                    {
+                        "value": "bulkId:1",
+                        "type": "User"
+                    },
+                    {
+                        "value": "bulkId:3",
+                        "type": "User"
+                    },
+                    {
+                        "value": "bulkId:4",
+                        "type": "Group"
+                    }
+                ]
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "3",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "chuck"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "4",
+            "path": "/Groups",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:Group"
+                ],
+                "displayName": "manager",
+                "members": [
+                    {
+                        "value": "bulkId:1",
+                        "type": "User"
+                    },
+                    {
+                        "value": "bulkId:3",
+                        "type": "Group"
+                    }
+                ]
+            }
+        }
+    ]
+}

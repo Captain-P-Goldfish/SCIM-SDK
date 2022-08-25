@@ -214,40 +214,43 @@ public class BulkIdResolverTest
    *
    * <pre>
    * {
-   *   "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:BulkRequest" ],
-   *   "Operations" : [ {
-   *     "method" : "POST",
-   *     "bulkId" : "1",
-   *     "path" : "/Users/201e999b-e64b-4ef6-a4d1-b42c7a003f5e",
-   *     "data" : {
-   *                   "schemas": [
-   *                      "urn:ietf:params:scim:schemas:core:2.0:User",
-   *                      "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
-   *                   ],
-   *                   "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
-   *                      "manager": {
-   *                         "value": "bulkId:2",
-   *                      }
-   *                   }
-   *               }
-   *       }
-   *   },{
-   *     "method" : "POST",
-   *     "bulkId" : "2",
-   *     "path" : "/Users/201e999b-e64b-4ef6-a4d1-b42c7a003f5e",
-   *     "data" : {
-   *                   "schemas": [
-   *                      "urn:ietf:params:scim:schemas:core:2.0:User",
-   *                      "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
-   *                   ],
-   *                   "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
-   *                      "manager": {
-   *                         "value": "bulkId:1",
-   *                      }
-   *                   }
-   *               }
-   *       }
-   *   }]
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:BulkRequest"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "method": "POST",
+   *             "bulkId": "1",
+   *             "path": "/Users",
+   *             "data": {
+   *                 "schemas": [
+   *                     "urn:ietf:params:scim:schemas:core:2.0:User",
+   *                     "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+   *                 ],
+   *                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+   *                     "manager": {
+   *                         "value": "bulkId:2"
+   *                     }
+   *                 }
+   *             }
+   *         },
+   *         {
+   *             "method": "POST",
+   *             "bulkId": "2",
+   *             "path": "/Users",
+   *             "data": {
+   *                 "schemas": [
+   *                     "urn:ietf:params:scim:schemas:core:2.0:User",
+   *                     "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+   *                 ],
+   *                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+   *                     "manager": {
+   *                         "value": "bulkId:1"
+   *                     }
+   *                 }
+   *             }
+   *         }
+   *     ]
    * }
    * </pre>
    */

@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.bulkid;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -57,7 +59,16 @@ public class BulkIdResolver
       return;
     }
     resolvedBulkIds.put(bulkId, resourceId);
-    bulkIdResourceResolverMap.values().forEach(resolver -> resolver.replaceBulkIdNode(bulkId, resourceId));
+
+    List<String> completelyResolvedOperations = new ArrayList<>();
+    bulkIdResourceResolverMap.values().forEach(resolver -> {
+      resolver.replaceBulkIdNode(bulkId, resourceId);
+      if (!resolver.hasAnyBulkIdReferences())
+      {
+        completelyResolvedOperations.add(bulkId);
+      }
+    });
+    completelyResolvedOperations.forEach(bulkIdResourceResolverMap::remove);
   }
 
   /**

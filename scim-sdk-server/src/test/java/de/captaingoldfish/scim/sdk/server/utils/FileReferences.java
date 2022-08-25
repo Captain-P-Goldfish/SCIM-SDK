@@ -80,6 +80,8 @@ public interface FileReferences
 
   String VALIDATION_TEST_SCHEMA = RESOURCE_BASE_PATH + "/schemas/validation-test-schema.json";
 
+  String WORST_POSSIBLE_BULK_REQUEST = RESOURCE_BASE_PATH + "/miscellaneous/worst-possible-bulk-request.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

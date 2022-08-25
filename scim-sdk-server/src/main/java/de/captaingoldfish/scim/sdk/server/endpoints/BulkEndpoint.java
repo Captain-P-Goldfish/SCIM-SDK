@@ -380,8 +380,9 @@ class BulkEndpoint
         operation.setData(resolverForBulkIds.getResource().toString());
       }
 
+      boolean hadSuccessInLastRun = resolverForBulkIds.isHadSuccessInLastRun();
       boolean isSecondTryToResolveIds = operation.getUniqueIdentifier() != null;
-      if (isSecondTryToResolveIds && !allBulkIdReferencesResolved)
+      if (isSecondTryToResolveIds && !allBulkIdReferencesResolved && !hadSuccessInLastRun)
       {
         String unresolvedBulkIds = (String)resolverForBulkIds.getUnresolvedBulkIds()
                                                              .stream()

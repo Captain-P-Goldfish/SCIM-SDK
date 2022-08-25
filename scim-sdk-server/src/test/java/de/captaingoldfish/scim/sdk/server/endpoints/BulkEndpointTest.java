@@ -54,6 +54,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -63,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class BulkEndpointTest extends AbstractBulkTest
+public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
 {
 
   /**
@@ -1520,5 +1521,126 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getHttpStatus());
     Assertions.assertEquals("eTag status of resource has changed. Current value is: W/\"123456\"",
                             errorResponse.getDetail().get());
+  }
+
+  /**
+   * this test will verify that even a bad created bulk-request where the bulk operations need to be checked
+   * several times will be successfully resolved. Here is an example of such a bulk request:
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:BulkRequest"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "method": "POST",
+   *             "bulkId": "1",
+   *             "path": "/Users",
+   *             "data": {
+   *                 "schemas": [
+   *                     "urn:ietf:params:scim:schemas:core:2.0:User",
+   *                     "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+   *                 ],
+   *                 "userName": "goldfish",
+   *                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+   *                     "manager": {
+   *                         "value": "bulkId:3"
+   *                     }
+   *                 }
+   *             }
+   *         },
+   *         {
+   *             "method": "POST",
+   *             "bulkId": "2",
+   *             "path": "/Groups",
+   *             "data": {
+   *                 "schemas": [
+   *                     "urn:ietf:params:scim:schemas:core:2.0:Group"
+   *                 ],
+   *                 "displayName": "admin",
+   *                 "members": [
+   *                     {
+   *                         "value": "bulkId:1",
+   *                         "type": "Group"
+   *                     },
+   *                     {
+   *                         "value": "bulkId:3",
+   *                         "type": "User"
+   *                     },
+   *                     {
+   *                         "value": "bulkId:4",
+   *                         "type": "Group"
+   *                     }
+   *                 ]
+   *             }
+   *         },
+   *         {
+   *             "method": "POST",
+   *             "bulkId": "3",
+   *             "path": "/Users",
+   *             "data": {
+   *                 "schemas": [
+   *                     "urn:ietf:params:scim:schemas:core:2.0:User"
+   *                 ],
+   *                 "userName": "chuck"
+   *             }
+   *         },
+   *         {
+   *             "method": "POST",
+   *             "bulkId": "4",
+   *             "path": "/Groups",
+   *             "data": {
+   *                 "schemas": [
+   *                     "urn:ietf:params:scim:schemas:core:2.0:Group"
+   *                 ],
+   *                 "displayName": "manager",
+   *                 "members": [
+   *                     {
+   *                         "value": "bulkId:1",
+   *                         "type": "User"
+   *                     },
+   *                     {
+   *                         "value": "bulkId:3",
+   *                         "type": "Group"
+   *                     }
+   *                 ]
+   *             }
+   *         }
+   *     ]
+   * }
+   * </pre>
+   *
+   * what will happen?
+   * <ol>
+   * <li>bulkId:1 cannot be resolved for reference to bulkId:3 and will be pushed to the end of line</li>
+   * <li>bulkId:2 cannot be resolved for reference to bulkId:(1,3,4) and will be pushed to the end of line</li>
+   * <li>bulkId:3 will be successfully resolved</li>
+   * <li>bulkId:4 will be only partially resolved with bulkId:3 and reference to bulkId:1 cannot be resolved so
+   * it will be pushed to the end of line</li>
+   * <li>bulkId:1 is successfully resolved</li>
+   * <li>bulkId:2 cannot be resolved for reference to bulkId:4 and will be pushed to the end of line</li>
+   * <li>bulkId:4 is successfully resolved</li>
+   * <li>bulkId:2 is successfully resolved</li>
+   * </ol>
+   * the operation with bulkId:2 is going 3 times through the execution in order to be completely resolved and
+   * this test makes sure that even such circumstances will be resolved successfully
+   */
+  @Test
+  public void testResolveWorstPossibleBulkIdReferenceSetup()
+  {
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(10);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+
+    String worstPossibleBulkRequestString = readResourceFile(WORST_POSSIBLE_BULK_REQUEST);
+    BulkRequest bulkRequest = JsonHelper.readJsonDocument(worstPossibleBulkRequestString, BulkRequest.class);
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+    }
   }
 }

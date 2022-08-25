@@ -60,6 +60,15 @@ public abstract class BulkIdResolverAbstract<T extends JsonNode>
    */
   protected final Map<String, List<BulkIdReferenceWrapper>> bulkIdReferences;
 
+  /**
+   * a bulk operation may be processed several times if bulkIds need to be resolved. In order to find
+   * unresolvable bulkIds we need to investigate each operation and must try to resolve the contained bulkIds.
+   * If an operation will be processed the second third or fourth time it must have set this boolean set to true
+   * otherwise we will assume that this operation contains an unresolvable bulkId.
+   */
+  @Getter
+  private boolean hadSuccessInLastRun;
+
   public BulkIdResolverAbstract(String operationBulkId, UriInfos uriInfos, T resource)
   {
     this.operationBulkId = operationBulkId;
@@ -146,8 +155,12 @@ public abstract class BulkIdResolverAbstract<T extends JsonNode>
     List<BulkIdReferenceWrapper> bulkIdResourceReferenceWrappers = bulkIdReferences.get(bulkId);
     if (bulkIdResourceReferenceWrappers == null)
     {
+      hadSuccessInLastRun = false;
       return;
     }
+
+    // if at least one element is processed we know that one bulkId was resolved, so we got a success in this run
+    hadSuccessInLastRun = bulkIdResourceReferenceWrappers.size() > 0;
     bulkIdResourceReferenceWrappers.forEach(reference -> reference.replaceValueNode(value));
     bulkIdReferences.remove(bulkId);
     referencedBulkIds.remove(bulkId);
