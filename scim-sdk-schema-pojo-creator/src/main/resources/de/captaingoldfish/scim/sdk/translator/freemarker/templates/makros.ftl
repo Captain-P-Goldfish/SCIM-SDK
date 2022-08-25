@@ -32,14 +32,26 @@
 <#macro addGetAttributeCall attribute indent=4>
     <#assign typeIndent=''?left_pad(indent) >
     <#if  attribute.type == 'INTEGER'>
-        <#lt>${typeIndent}return getLongAttribute(FieldNames.${attribute.name?upper_case})<#rt>
-        <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        <#if attribute.multiValued>
+            <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case}, Long.class);
+        <#else>
+            <#lt>${typeIndent}return getLongAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        </#if>
     <#elseif  attribute.type == 'DECIMAL'>
-        <#lt>${typeIndent}return getDoubleAttribute(FieldNames.${attribute.name?upper_case})<#rt>
-        <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        <#if attribute.multiValued>
+            <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case}, Double.class);
+        <#else>
+            <#lt>${typeIndent}return getDoubleAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        </#if>
     <#elseif  attribute.type == 'DATE_TIME'>
-        <#lt>${typeIndent}return getDateTimeAttribute(FieldNames.${attribute.name?upper_case})<#rt>
-        <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        <#if attribute.multiValued>
+            <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case}, Instant.class);
+        <#else>
+            <#lt>${typeIndent}return getDateTimeAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        </#if>
     <#elseif  attribute.type == 'COMPLEX'><#rt>
         <#if attribute.multiValued>
             <#lt>${typeIndent}return getArrayAttribute(FieldNames.${attribute.name?upper_case}, <#rt>
@@ -50,8 +62,12 @@
             <#lt><#if functions.isRequired(attribute)>.get()</#if>;
         </#if>
     <#else>
-        <#lt>${typeIndent}return getStringAttribute(FieldNames.${attribute.name?upper_case})<#rt>
-        <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        <#if attribute.multiValued>
+            <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case});
+        <#else>
+            <#lt>${typeIndent}return getStringAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        </#if>
     </#if>
 </#macro>
 
@@ -120,13 +136,25 @@
             <#lt>${getterAndSetterIndent}public <@attributeMethodReturnType attribute /> get${attribute.name?cap_first}()
             <#lt>${getterAndSetterIndent}{
             <@addGetAttributeCall attribute=attribute indent=indent + 2 />
-            
+
             <#lt>${getterAndSetterIndent}}
 
             <@addJavadoc javadoc=attribute.description indent=indent />
             <#lt>${getterAndSetterIndent}public void set${attribute.name?cap_first}(${functions.toJavaType(attribute)} ${attribute.name})
             <#lt>${getterAndSetterIndent}{
-            <#lt>${getterAndSetterIndent}  setAttribute(FieldNames.${attribute.name?upper_case}, ${attribute.name});
+            <#if  attribute.type == 'DATE_TIME'>
+                <#if attribute.multiValued>
+                    <#lt>${getterAndSetterIndent}  setAttributeList(FieldNames.${attribute.name?upper_case}, ${attribute.name});
+                <#else>
+                    <#lt>${getterAndSetterIndent}  setDateTimeAttribute(FieldNames.${attribute.name?upper_case}, ${attribute.name});
+                </#if>
+            <#else>
+                <#if attribute.multiValued>
+                    <#lt>${getterAndSetterIndent}  setAttributeList(FieldNames.${attribute.name?upper_case}, ${attribute.name});
+                <#else>
+                    <#lt>${getterAndSetterIndent}  setAttribute(FieldNames.${attribute.name?upper_case}, ${attribute.name});
+                </#if>
+            </#if>
             <#lt>${getterAndSetterIndent}}
 
         <#-- keep empty line -->
@@ -146,7 +174,7 @@
         <#lt>${getterAndSetterIndent}  setAttribute(FieldNames.${extension.name.get()?upper_case}, ${extension.name.get()?uncap_first});
         <#lt>${getterAndSetterIndent}}
 
-        <#-- keep empty line -->
+    <#-- keep empty line -->
     </#list>
 </#macro>
 

@@ -1,0 +1,16 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:ResourceType"
+  ],
+  "id": "AllTypes",
+  "name": "AllTypes",
+  "description": "AllTypes",
+  "schema": "urn:gold:params:scim:schemas:custom:2.0:AllTypes",
+  "endpoint": "/AllTypes",
+  "schemaExtensions": [
+    {
+      "schema": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+      "required": false
+    }
+  ]
+}

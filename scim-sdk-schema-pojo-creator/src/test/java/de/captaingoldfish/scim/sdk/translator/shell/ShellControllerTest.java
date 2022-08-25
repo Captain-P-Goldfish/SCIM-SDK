@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
@@ -86,15 +85,24 @@ public class ShellControllerTest
     parseSetup(useLombok,
                true,
                pathToSchema,
-               Arrays.asList("User.java", "Group.java", "EnterpriseUser.java", "ServiceProviderConfiguration.java"),
+               Arrays.asList("User.java",
+                             "Group.java",
+                             "EnterpriseUser.java",
+                             "ServiceProviderConfiguration.java",
+                             "AllTypes.java",
+                             "BulkIdReferences.java"),
                Arrays.asList("UserEndpointDefinition.java",
                              "GroupEndpointDefinition.java",
                              "MeEndpointDefinition.java",
-                             "ServiceProviderConfigEndpointDefinition.java"),
+                             "ServiceProviderConfigEndpointDefinition.java",
+                             "AllTypesEndpointDefinition.java",
+                             "BulkIdReferencesEndpointDefinition.java"),
                Arrays.asList("UserResourceHandler.java",
                              "MeResourceHandler.java",
                              "GroupResourceHandler.java",
-                             "ServiceProviderConfigResourceHandler.java"),
+                             "ServiceProviderConfigResourceHandler.java",
+                             "AllTypesResourceHandler.java",
+                             "BulkIdReferencesResourceHandler.java"),
                createConfig);
   }
 

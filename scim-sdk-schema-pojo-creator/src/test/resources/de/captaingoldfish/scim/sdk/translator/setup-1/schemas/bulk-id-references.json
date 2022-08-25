@@ -1,0 +1,143 @@
+{
+    "schemas": [
+        "urn:ietf:params:scim:schemas:core:2.0:Schema"
+    ],
+    "id": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences",
+    "name": "BulkIdReferences",
+    "description": "BulkIdReferences",
+    "attributes": [
+        {
+            "name": "id",
+            "type": "string",
+            "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
+            "mutability": "readOnly",
+            "returned": "always",
+            "uniqueness": "server",
+            "multiValued": false,
+            "required": true,
+            "caseExact": true
+        },
+        {
+            "name": "userId",
+            "type": "reference",
+            "referenceTypes": [
+                "resource"
+            ],
+            "resourceType": "User",
+            "description": "a simple user reference.",
+            "mutability": "readWrite",
+            "returned": "default",
+            "uniqueness": "none",
+            "multiValued": false,
+            "required": false,
+            "caseExact": false
+        },
+        {
+            "name": "userIdList",
+            "type": "reference",
+            "referenceTypes": [
+                "resource"
+            ],
+            "resourceType": "User",
+            "description": "a simple multivalued user reference.",
+            "mutability": "readWrite",
+            "returned": "default",
+            "uniqueness": "none",
+            "multiValued": true,
+            "required": false,
+            "caseExact": false
+        },
+        {
+            "name": "member",
+            "type": "complex",
+            "description": "A list of members of the Group.",
+            "mutability": "readWrite",
+            "returned": "default",
+            "uniqueness": "none",
+            "multiValued": false,
+            "required": false,
+            "caseExact": false,
+            "subAttributes": [
+                {
+                    "name": "userId",
+                    "type": "reference",
+                    "referenceTypes": [
+                        "resource"
+                    ],
+                    "resourceType": "User",
+                    "description": "a single simple nested user reference.",
+                    "mutability": "readWrite",
+                    "returned": "default",
+                    "uniqueness": "none",
+                    "multiValued": false,
+                    "required": false,
+                    "caseExact": false
+                },
+                {
+                    "name": "userIdList",
+                    "type": "reference",
+                    "referenceTypes": [
+                        "resource"
+                    ],
+                    "resourceType": "User",
+                    "description": "a single simple nested multivalued Group reference.",
+                    "mutability": "readWrite",
+                    "returned": "default",
+                    "uniqueness": "none",
+                    "multiValued": true,
+                    "required": false,
+                    "caseExact": false
+                }
+            ]
+        },
+        {
+            "name": "memberList",
+            "type": "complex",
+            "description": "A list of members of the Group.",
+            "mutability": "readWrite",
+            "returned": "default",
+            "uniqueness": "none",
+            "multiValued": true,
+            "required": false,
+            "caseExact": false,
+            "subAttributes": [
+                {
+                    "name": "groupId",
+                    "type": "reference",
+                    "referenceTypes": [
+                        "resource"
+                    ],
+                    "resourceType": "Group",
+                    "description": "a multivalued simple nested group reference.",
+                    "mutability": "readWrite",
+                    "returned": "default",
+                    "uniqueness": "none",
+                    "multiValued": false,
+                    "required": false,
+                    "caseExact": false
+                },
+                {
+                    "name": "groupIdList",
+                    "type": "reference",
+                    "referenceTypes": [
+                        "resource"
+                    ],
+                    "resourceType": "Group",
+                    "description": "a multivalued simple nested multivalued Group reference.",
+                    "mutability": "readWrite",
+                    "returned": "default",
+                    "uniqueness": "none",
+                    "multiValued": true,
+                    "required": false,
+                    "caseExact": false
+                }
+            ]
+        }
+    ],
+    "meta": {
+        "resourceType": "Schema",
+        "created": "2019-10-18T14:51:11+02:00",
+        "lastModified": "2019-10-18T14:51:11+02:00",
+        "location": "/Schemas/Group"
+    }
+}
