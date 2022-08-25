@@ -50,7 +50,7 @@ public final class JsonHelper
    */
   public static JsonNode loadJsonDocument(String classPathLocation)
   {
-    log.trace("Trying to read classpath resource from: {}", classPathLocation);
+    log.info("Trying to read classpath resource from: {}", classPathLocation);
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
       return new ObjectMapper().readTree(inputStream);
@@ -69,7 +69,7 @@ public final class JsonHelper
    */
   public static <T extends ObjectNode> T loadJsonDocument(String classPathLocation, Class<T> type)
   {
-    log.trace("Trying to read classpath resource from: {}", classPathLocation);
+    log.info("Trying to read classpath resource from: {}", classPathLocation);
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
       JsonNode jsonNode = new ObjectMapper().readTree(inputStream);

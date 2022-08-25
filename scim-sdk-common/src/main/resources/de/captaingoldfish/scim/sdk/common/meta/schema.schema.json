@@ -480,6 +480,17 @@
               ]
             },
             {
+              "name": "resourceTypeReferenceName",
+              "type": "string",
+              "description": "Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the attribute to the ID of a specific resource. The value must match the name of a registered 'resourceType' not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'",
+              "mutability": "readOnly",
+              "returned": "default",
+              "uniqueness": "none",
+              "multiValued": false,
+              "required": false,
+              "caseExact": true
+            },
+            {
               "name": "multipleOf",
               "type": "decimal",
               "description": "The value of \"multipleOf\" MUST be a number, strictly greater than 0. A numeric instance is valid only if division by this keyword's value results in an integer.",

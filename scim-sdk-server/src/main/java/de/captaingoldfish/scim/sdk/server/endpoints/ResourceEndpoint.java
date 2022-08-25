@@ -214,7 +214,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * @param uriInfos the parsed information's of the request url
    * @param authorization should return the roles of an user and may contain arbitrary data needed in the
    *          handler implementation
-   * @param doBeforeExecution arbitary code that is executed before the endpoint is called. This might be used
+   * @param doBeforeExecution arbitrary code that is executed before the endpoint is called. This might be used
    *          to execute authentication on dedicated resource types
    * @return a response for the client that is either successful or an error
    */

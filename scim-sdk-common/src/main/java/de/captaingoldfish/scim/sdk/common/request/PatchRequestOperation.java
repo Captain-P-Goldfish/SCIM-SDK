@@ -6,10 +6,12 @@ import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
@@ -103,6 +105,25 @@ public class PatchRequestOperation extends ScimObjectNode
     {
       setAttribute(AttributeNames.RFC7643.VALUE, (String)null);
     }
+  }
+
+  /**
+   * reads the value-attribute and if it is not an {@link ArrayNode} it will be parsed to a {@link JsonNode}
+   * that will be embedded within an {@link ArrayNode}
+   */
+  public Optional<ArrayNode> getValueNode()
+  {
+    JsonNode jsonNode = get(AttributeNames.RFC7643.VALUE);
+    if (jsonNode == null)
+    {
+      return Optional.empty();
+    }
+    if (!(jsonNode instanceof ArrayNode))
+    {
+      jsonNode = JsonHelper.readJsonDocument(jsonNode.textValue(), ScimObjectNode.class);
+      setValueNode(jsonNode);
+    }
+    return Optional.of((ArrayNode)get(AttributeNames.RFC7643.VALUE));
   }
 
   /**

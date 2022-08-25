@@ -26,6 +26,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -61,7 +62,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * separated from the normal resource schemata in order to prevent developers for having to define the
    * meta-attribute definition for each resource separately. But if this is done the name of the attributes is
    * not build correctly because meta definition is not a schema-definition and not an attribute definition
-   * anymore. Therefore this name prefix can be used to build the attribute name correctly.<br>
+   * anymore. Therefore, this name prefix can be used to build the attribute name correctly.<br>
    * in case of meta the attribute "created" would only get the name "created". But if this variable is set to
    * "meta" than the attribute will be accessible by the name "meta.created" instead of just "created"
    */
@@ -135,16 +136,69 @@ public final class SchemaAttribute extends ScimObjectNode
                                                        .collect(Collectors.toList()))
                                 .orElse(Type.REFERENCE.equals(type) ? Collections.singletonList(ReferenceTypes.EXTERNAL)
                                   : Collections.emptyList()));
+    setResourceTypeReferenceName(JsonHelper.getSimpleAttribute(jsonNode,
+                                                               AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME)
+                                           .orElse(null));
     setValidationAttributes(jsonNode);
     final List<SchemaAttribute> subAttributes = resolveSubAttributes(jsonNode);
     setSubAttributes(subAttributes);
     validateAttribute();
     Optional.ofNullable(schema).ifPresent(schemaDefinition -> schemaDefinition.addSchemaAttribute(this));
+    checkForDirectResourceReference();
   }
 
   public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
   {
     this(schema, resourceUri, parent, jsonNode, null);
+  }
+
+  /**
+   * this method will verify if this attribute is a direct resource-reference. Which means it must look like
+   * this:
+   *
+   * <pre>
+   *         {
+   *           "name": "userId",
+   *           "type": "reference",
+   *           "mutability": "readWrite | writeOnly"
+   *           "referenceTypes": [
+   *             "resource"
+   *           ]
+   *           "resourceType": "User"
+   *         }
+   * </pre>
+   *
+   * Attributes created this way will allow to use bulkId-references and can be utilized with the
+   * {@link BulkConfig#isSupportBulkGet()}-feature.<br>
+   * <br>
+   * the attribute "resourceType" is mandatory in this case, and it must point to an existing resource-type
+   */
+  private void checkForDirectResourceReference()
+  {
+    // checks if the schema attribute is a direct resource-reference
+    {
+      if (!Type.REFERENCE.equals(getType()))
+      {
+        return;
+      }
+      List<ReferenceTypes> referenceTypes = getReferenceTypes();
+      if (referenceTypes.size() != 1 || !referenceTypes.contains(ReferenceTypes.RESOURCE))
+      {
+        return;
+      }
+      if (Mutability.READ_ONLY.equals(getMutability()))
+      {
+        return;
+      }
+      if (!getResourceTypeReferenceName().isPresent())
+      {
+        // it is not possible to validate the resource type reference name because we have no access to the
+        // resource-types from here. So we need to verify the existence of the resource-type name during
+        // schema-registration within the ResourceTypeFactory
+        return;
+      }
+    }
+    schema.getSimpleBulkIdCandidates().add(this);
   }
 
   /**
@@ -169,6 +223,41 @@ public final class SchemaAttribute extends ScimObjectNode
     JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.NOT_BEFORE, String.class)
               .ifPresent(this::setNotBefore);
     JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.NOT_AFTER, String.class).ifPresent(this::setNotAfter);
+  }
+
+  /**
+   * @return if this attribute is a complex bulk candidate e.g. enterprise.user.manger. A complex bulk-candidate
+   *         is a complex attribute that contains a value a type and a $ref attribute. The $ref attribute must
+   *         be of type "reference" and "referenceType=resource"
+   */
+  public boolean isComplexBulkCandidate()
+  {
+    return schema.getComplexBulkIdCandidates().contains(this);
+  }
+
+  /**
+   * if this attribute is a simple bulk candidate. This is a custom feature not defined in the SCIM
+   * specification. A simple bulk candidate must fulfill the following conditions:
+   * <ol>
+   * <li>be of type "reference"</li>
+   * <li>have as one and only "referenceType" the value "resource"</li>
+   * <li>define the custom attribute "resourceType" that references the name of resource-type.json file</li>
+   * </ol>
+   *
+   * <pre>
+   *         {
+   *           "name": "userId",
+   *           "type": "reference",
+   *           "referenceTypes": [
+   *             "resource"
+   *           ]
+   *           "resourceType": "User"
+   *         }
+   * </pre>
+   */
+  public boolean isSimpleValueBulkCandidate()
+  {
+    return schema.getSimpleBulkIdCandidates().contains(this);
   }
 
   /**
@@ -585,6 +674,26 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     setStringAttributeList(AttributeNames.RFC7643.REFERENCE_TYPES,
                            referenceTypes.stream().map(ReferenceTypes::getValue).collect(Collectors.toList()));
+  }
+
+  /**
+   * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
+   * attribute to the ID of a specific resource. The value must match the name of a registered 'resourceType'
+   * not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'
+   */
+  public Optional<String> getResourceTypeReferenceName()
+  {
+    return getStringAttribute(AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME);
+  }
+
+  /**
+   * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
+   * attribute to the ID of a specific resource. The value must match the name of a registered 'resourceType'
+   * not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'
+   */
+  private void setResourceTypeReferenceName(String resourceTypeReferenceName)
+  {
+    setAttribute(AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME, resourceTypeReferenceName);
   }
 
   // @formatter:off
@@ -1116,7 +1225,7 @@ public final class SchemaAttribute extends ScimObjectNode
     }
     if (hasValueAttribute && isResourceReference)
     {
-      this.schema.getBulkIdCandidates().add(this);
+      this.schema.getComplexBulkIdCandidates().add(this);
     }
     return schemaAttributeList;
   }
@@ -1194,5 +1303,20 @@ public final class SchemaAttribute extends ScimObjectNode
   private InvalidSchemaException getException(String errorMessage, Exception cause)
   {
     return new InvalidSchemaException(errorMessage, cause, HttpStatus.INTERNAL_SERVER_ERROR, null);
+  }
+
+  /**
+   * gets the attributes in an upside down list with its parents on index 0 until index n which is the leaf node
+   */
+  public List<SchemaAttribute> getParentHierarchy()
+  {
+    List<SchemaAttribute> parentHierarchy = new ArrayList<>();
+    SchemaAttribute currentNode = this;
+    while (currentNode != null)
+    {
+      parentHierarchy.add(0, currentNode);
+      currentNode = currentNode.getParent();
+    }
+    return parentHierarchy;
   }
 }

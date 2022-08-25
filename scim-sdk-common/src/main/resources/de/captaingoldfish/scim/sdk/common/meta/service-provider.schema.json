@@ -133,6 +133,17 @@
           "multiValued": false,
           "caseExact": false,
           "required": false
+        },
+        {
+          "name": "supportBulkGet",
+          "type": "boolean",
+          "description": "Allows the service provider to to enable the bulk-get custom feature. This feature allows to send a bulk request to retrieve a specific resource with all its related resources.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
         }
       ]
     },

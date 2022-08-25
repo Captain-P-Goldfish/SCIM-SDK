@@ -1,10 +1,12 @@
 package de.captaingoldfish.scim.sdk.server.schemas;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -19,7 +21,10 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
+import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
+import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
@@ -80,10 +85,9 @@ public final class ResourceTypeFactory
                                            JsonNode... resourceSchemaExtensions)
   {
     Schema resourceTypeSchema = schemaFactory.getMetaSchema(SchemaUris.RESOURCE_TYPE_URI);
-    JsonNode validatedResourceType = MetaSchemaValidator.getInstance()
-                                                        .validateDocument(resourceTypeSchema, resourceType);
+    MetaSchemaValidator.getInstance().validateDocument(resourceTypeSchema, resourceType);
     ResourceType resourceTypeObject = new ResourceType(schemaFactory, resourceType);
-    addSchemaExtensions(validatedResourceType, resourceSchemaExtensions);
+    addSchemaExtensions(resourceTypeObject, resourceSchemaExtensions);
     checkResourceSchema(resourceTypeObject, resourceSchema);
     resourceTypeObject.setResourceHandlerImpl(resourceHandler);
     resourceTypes.put(resourceTypeObject.getEndpoint(), resourceTypeObject);
@@ -91,9 +95,55 @@ public final class ResourceTypeFactory
   }
 
   /**
+   * this method will validate if the schema attributes - that are discovered to be direct resource type
+   * references - do reference already registered resource-types. This feature is based on
+   * {@link BulkConfig#isSupportBulkGet()}
+   *
+   * @param resourceType the resource type that is about to be registered but not yet stored within the
+   *          {@link ResourceTypeFactory}
+   * @param registeredSchema the just created schema that must be validated for direct resource-type references
+   */
+  private void checkDirectResourceTypeReferences(ResourceType resourceType, Schema registeredSchema)
+  {
+    List<SchemaAttribute> invalidSchemaAttributes = new ArrayList<>();
+    for ( SchemaAttribute schemaAttribute : registeredSchema.getSimpleBulkIdCandidates() )
+    {
+      // the optional cannot be empty here
+      final String resourceTypeReferenceName = schemaAttribute.getResourceTypeReferenceName().get();
+      boolean isResourceTypeMissing = !getResourceTypeByName(resourceTypeReferenceName).isPresent()
+                                      || !resourceTypeReferenceName.equals(resourceType.getName());
+      if (isResourceTypeMissing)
+      {
+        invalidSchemaAttributes.add(schemaAttribute);
+      }
+    }
+
+    if (!invalidSchemaAttributes.isEmpty())
+    {
+      final String validResourceTypeNames = resourceTypes.values()
+                                                         .stream()
+                                                         .map(ResourceType::getName)
+                                                         .collect(Collectors.joining(", "))
+                                            + ", " + resourceType.getName();
+      final String invalidAttributeNames = invalidSchemaAttributes.stream()
+                                                                  .map(SchemaAttribute::getFullResourceName)
+                                                                  .collect(Collectors.joining(", "));
+      final String unregisteredResourceTypeNames = invalidSchemaAttributes.stream().map(jsonNodes -> {
+        return jsonNodes.getResourceTypeReferenceName().get();
+      }).collect(Collectors.joining(", "));
+      throw new InvalidSchemaException(String.format("The attributes [%s] do reference resource-types that have not "
+                                                     + "been registered yet. Valid registered ResourceTypes are [%s]. "
+                                                     + "The invalid referenced unregistered resource-types are [%s]",
+                                                     invalidAttributeNames,
+                                                     validResourceTypeNames,
+                                                     unregisteredResourceTypeNames));
+    }
+  }
+
+  /**
    * checks if the resource schema for the resource type is already registered.<br>
    * if the resource schema is null it is expected, that the resource schema does already exist. If not an
-   * exception is thrown. Otherwise the given resource schema is registered and might override an existing
+   * exception is thrown. Otherwise, the given resource schema is registered and might override an existing
    * schema with the same id
    *
    * @param resourceTypeObject the resource type data
@@ -119,7 +169,8 @@ public final class ResourceTypeFactory
       }
       if (resourceSchema != null)
       {
-        schemaFactory.registerResourceSchema(resourceSchema);
+        Schema schema = schemaFactory.registerResourceSchema(resourceSchema);
+        checkDirectResourceTypeReferences(resourceTypeObject, schema);
       }
     }
   }
@@ -132,7 +183,7 @@ public final class ResourceTypeFactory
    * @param resourceType the resource type definition
    * @param resourceSchemaExtensions an array of resource extensions if extensions are present
    */
-  private void addSchemaExtensions(JsonNode resourceType, JsonNode[] resourceSchemaExtensions)
+  private void addSchemaExtensions(ResourceType resourceType, JsonNode[] resourceSchemaExtensions)
   {
     ArrayNode schemaExtensions = JsonHelper.getArrayAttribute(resourceType, AttributeNames.RFC7643.SCHEMA_EXTENSIONS)
                                            .orElse(null);
@@ -146,7 +197,8 @@ public final class ResourceTypeFactory
     validateSchemaExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
     for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
     {
-      schemaFactory.registerResourceSchema(resourceSchemaExtension);
+      Schema schema = schemaFactory.registerResourceSchema(resourceSchemaExtension);
+      checkDirectResourceTypeReferences(resourceType, schema);
     }
   }
 

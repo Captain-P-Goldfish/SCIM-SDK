@@ -150,6 +150,17 @@ public class ResourceType extends ResourceNode
   }
 
   /**
+   * @return the resource schema extensions that represents this resource type
+   */
+  public List<Schema> getAllSchemaExtensions()
+  {
+    return getSchemaExtensions().stream()
+                                .map(SchemaExtension::getSchema)
+                                .map(getSchemaFactory()::getResourceSchema)
+                                .collect(Collectors.toList());
+  }
+
+  /**
    * @return the required resource schema extensions that represents this resource type
    */
   public List<Schema> getRequiredResourceSchemaExtensions()

@@ -61,7 +61,30 @@ public class Schema extends ResourceNode
    * attributes: {@link AttributeNames.RFC7643#VALUE}, {@link AttributeNames.RFC7643#TYPE} and
    * {@link AttributeNames.RFC7643#REF} as a resource-reference
    */
-  private List<SchemaAttribute> bulkIdCandidates = new ArrayList<>();
+  private List<SchemaAttribute> complexBulkIdCandidates = new ArrayList<>();
+
+  /**
+   * this list will hold references to all schema attributes that define itself as type 'reference' with
+   * 'referenceType=resource'. Such reference fields will then also be usable for bulkId-resolving and such
+   * fields must possess an additional attribute 'resourceType=${resourceName}' (name of the resourceType not
+   * resource) in order to make the resource accessible by the bulk endpoint. <br>
+   * The condition to get added into this list for an attribute is: be of type other than {@link Type#COMPLEX},
+   * mutability of other than {@link Mutability#READ_ONLY} and by of type {@link Type#REFERENCE} and of
+   * referenceType {@link de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes#RESOURCE} and define
+   * the custom-attribute {@link AttributeNames.Custom#RESOURCE_TYPE_REFERENCE_NAME}
+   *
+   * <pre>
+   *   {
+   *     "name": "userId",
+   *     "type": "reference",
+   *     "referenceTypes": [
+   *       "resource"
+   *     ]
+   *     "resourceType": "User"
+   *   }
+   * </pre>
+   */
+  private List<SchemaAttribute> simpleBulkIdCandidates = new ArrayList<>();
 
   public Schema(JsonNode jsonNode, String namePrefix)
   {

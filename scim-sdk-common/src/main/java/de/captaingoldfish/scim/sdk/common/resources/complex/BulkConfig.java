@@ -37,7 +37,8 @@ public class BulkConfig extends ScimObjectNode
                     Integer maxOperations,
                     Long maxPayloadSize,
                     Boolean returnResourcesEnabled,
-                    Boolean returnResourcesByDefault)
+                    Boolean returnResourcesByDefault,
+                    Boolean supportBulkGet)
   {
     super(null);
     setSupported(supported);
@@ -45,10 +46,11 @@ public class BulkConfig extends ScimObjectNode
     setMaxPayloadSize(maxPayloadSize);
     setReturnResourcesEnabled(returnResourcesEnabled);
     setReturnResourcesByDefault(returnResourcesByDefault);
+    setSupportBulkGet(supportBulkGet);
   }
 
   /**
-   * A Boolean value specifying whether or not the operation is supported. REQUIRED.
+   * A Boolean value specifying whether the operation is supported. REQUIRED.
    */
   public boolean isSupported()
   {
@@ -140,5 +142,28 @@ public class BulkConfig extends ScimObjectNode
       setReturnResourcesEnabled(true);
     }
     setAttribute(AttributeNames.Custom.RETURN_RESOURCES_BY_DEFAULT_ON_BULK, effectiveValue);
+  }
+
+  /**
+   * Allows the service provider to return resources at all endpoints by default on bulk-requests even if the
+   * client did not explicitly asked for them.
+   */
+  public boolean isSupportBulkGet()
+  {
+    return isReturnResourcesEnabled() && getBooleanAttribute(AttributeNames.Custom.SUPPORT_BULK_GET).orElse(false);
+  }
+
+  /**
+   * Allows the service provider to return resources at all endpoints by default on bulk-requests even if the
+   * client did not explicitly asked for them.
+   */
+  public void setSupportBulkGet(Boolean supportBulkGet)
+  {
+    final boolean effectiveValue = Optional.ofNullable(supportBulkGet).orElse(false);
+    if (effectiveValue)
+    {
+      setReturnResourcesEnabled(true);
+    }
+    setAttribute(AttributeNames.Custom.SUPPORT_BULK_GET, effectiveValue);
   }
 }

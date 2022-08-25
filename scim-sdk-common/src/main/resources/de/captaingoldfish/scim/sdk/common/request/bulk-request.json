@@ -33,6 +33,7 @@
           "type": "string",
           "description": "The HTTP method of the current operation.  Possible values are 'POST', 'PUT', 'PATCH', or 'DELETE'.  REQUIRED.",
           "canonicalValues": [
+            "GET",
             "POST",
             "PUT",
             "PATCH",

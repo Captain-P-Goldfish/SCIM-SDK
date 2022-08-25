@@ -28,7 +28,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/schema.schema.json
                             </file>
-                            <checksum>66edc8df964f48b95e5d59332b1baf46</checksum>
+                            <checksum>2caf38c7512eaad21027444910b079f7</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -42,7 +42,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
                             </file>
-                            <checksum>8c7c0686d07a75f7728123712bfe91b5</checksum>
+                            <checksum>543e7c6ec784d7b14fd8232e4eeb5fe6</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -105,7 +105,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/bulk-request.json
                             </file>
-                            <checksum>9bfcb9de95ab5b844e9f97e9f6e864ef</checksum>
+                            <checksum>c9395d4c7fd1bc8166bce7f281769ebc</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>

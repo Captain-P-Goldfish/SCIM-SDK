@@ -205,6 +205,21 @@ public final class AttributeNames
      * resources from the explicit resource-type if the client asks for them in the request.
      */
     public static final String BLOCK_RETURN_RESOURCES_ON_BULK = "blockReturnResourcesOnBulk";
+
+    /**
+     * a field for the service provider configuration. If set to true the bulk endpoint will have a new feature
+     * enabled that allows to get a single resource and all its relations within a bulk response
+     */
+    public static final String SUPPORT_BULK_GET = "supportBulkGet";
+
+    /**
+     * a field for the {@link de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute} class.<br>
+     * <br>
+     * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
+     * attribute to the ID of a specific resource. The value must match the name of a registered 'resourceType'
+     * not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'
+     */
+    public static final String RESOURCE_TYPE_REFERENCE_NAME = "resourceTypeReferenceName";
   }
 
   /**

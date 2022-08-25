@@ -38,8 +38,8 @@ public class BulkRequestOperation extends ScimObjectNode
 
   /**
    * this identifier is exclusively used on bulk requests to be able to check if this request was already tried
-   * to handle once. If this happens and the second try fails too this operation is marked as failure within the
-   * bulk response
+   * to be handled once. If this happens and the second try fails too, this operation is marked as failure
+   * within the bulk response. This is necessary in order to find bulkId references that cannot be resolved.
    */
   @Getter
   @Setter

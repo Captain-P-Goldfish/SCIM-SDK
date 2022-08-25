@@ -77,7 +77,7 @@ public final class SchemaFactory
    *
    * @param jsonSchema the schema as json node
    */
-  public void registerResourceSchema(JsonNode jsonSchema)
+  public Schema registerResourceSchema(JsonNode jsonSchema)
   {
     Schema metaSchema = getMetaSchema(SchemaUris.SCHEMA_URI);
     try
@@ -93,6 +93,7 @@ public final class SchemaFactory
       {
         metaSchemas.put(schema.getNonNullId(), schema);
       }
+      return schema;
     }
     catch (DocumentValidationException ex)
     {

@@ -822,18 +822,22 @@ public class BulkEndpointTest extends AbstractBulkTest
                                               .get(0)
                                               .getResponse(ErrorResponse.class)
                                               .get();
-    Assertions.assertEquals("the bulkIds '" + bulkId2 + "' and '" + bulkId + "' do form a circular "
-                            + "reference that cannot be resolved.",
-                            firstResponse.getDetail().get(),
-                            bulkResponse.toPrettyString());
+    MatcherAssert.assertThat(firstResponse.getDetail().get(), Matchers.containsString(bulkId));
+    MatcherAssert.assertThat(firstResponse.getDetail().get(), Matchers.containsString(bulkId2));
+    MatcherAssert.assertThat(bulkResponse.toPrettyString(),
+                             firstResponse.getDetail().get(),
+                             Matchers.matchesPattern("the bulkIds '.*?' and '.*?' form a direct or indirect "
+                                                     + "circular reference that cannot be resolved."));
+
     Assertions.assertEquals(HttpStatus.CONFLICT, firstResponse.getHttpStatus());
 
     ErrorResponse secondResponse = bulkResponse.getBulkResponseOperations()
                                                .get(1)
                                                .getResponse(ErrorResponse.class)
                                                .get();
-    Assertions.assertEquals("the bulkIds '" + bulkId + "' and '" + bulkId2 + "' do form a circular "
-                            + "reference that cannot be resolved.",
+    Assertions.assertEquals(String.format("the operation failed because the following bulkId-references could not be "
+                                          + "resolved [bulkId:%s]",
+                                          bulkId2),
                             secondResponse.getDetail().get());
     Assertions.assertEquals(HttpStatus.CONFLICT, secondResponse.getHttpStatus());
   }
@@ -927,15 +931,15 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+    Assertions.assertEquals(HttpStatus.CONFLICT,
                             responseOperationList.get(0).getStatus(),
                             bulkResponse.toPrettyString());
     Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).isPresent(),
                           bulkResponse.toPrettyString());
     Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().isPresent(),
                           bulkResponse.toPrettyString());
-    Assertions.assertEquals("the operation could not be resolved because the following bulkId-references "
-                            + "could not be resolved 'bulkId:" + bulkId + "'",
+    Assertions.assertEquals("the operation failed because the following bulkId-references could not be "
+                            + "resolved [bulkId:" + bulkId + "]",
                             responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().get(),
                             bulkResponse.toPrettyString());
   }
@@ -967,15 +971,15 @@ public class BulkEndpointTest extends AbstractBulkTest
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST,
+    Assertions.assertEquals(HttpStatus.CONFLICT,
                             responseOperationList.get(0).getStatus(),
                             bulkResponse.toPrettyString());
     Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).isPresent(),
                           bulkResponse.toPrettyString());
     Assertions.assertTrue(responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().isPresent(),
                           bulkResponse.toPrettyString());
-    Assertions.assertEquals("the operation could not be resolved because the following bulkId-reference "
-                            + "could not be resolved 'bulkId:" + bulkId + "'",
+    Assertions.assertEquals("the operation failed because the following bulkId-references could not be "
+                            + "resolved [bulkId:" + bulkId + "]",
                             responseOperationList.get(0).getResponse(ErrorResponse.class).get().getDetail().get(),
                             bulkResponse.toPrettyString());
   }
@@ -1137,7 +1141,7 @@ public class BulkEndpointTest extends AbstractBulkTest
   }
 
   /**
-   * verifies that circular references will also cause in patch requests a conflict
+   * verifies that circular references will cause a conflict in patch requests
    */
   @Test
   public void testBulkIdReferenceOnPatchAddNoPathWithCircularReference()
@@ -1200,14 +1204,21 @@ public class BulkEndpointTest extends AbstractBulkTest
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
     Assertions.assertEquals(HttpStatus.CONFLICT, responseOperations.get(0).getStatus());
-    Assertions.assertEquals("the bulkIds '" + createBulkId + "' and '" + patchBulkId + "' do form a circular "
-                            + "reference that cannot be resolved.",
-                            responseOperations.get(0).getResponse(ErrorResponse.class).get().getDetail().get());
+
+    ErrorResponse errorResponse = responseOperations.get(0).getResponse(ErrorResponse.class).get();
+    MatcherAssert.assertThat(errorResponse.getDetail().get(), Matchers.containsString(createBulkId));
+    MatcherAssert.assertThat(errorResponse.getDetail().get(), Matchers.containsString(patchBulkId));
+    MatcherAssert.assertThat(errorResponse.getDetail().get(),
+                             Matchers.matchesPattern("the bulkIds '.*?' and '.*?' form a direct or indirect circular "
+                                                     + "reference that cannot be resolved."));
 
     Assertions.assertEquals(HttpStatus.CONFLICT, responseOperations.get(1).getStatus());
-    Assertions.assertEquals("the bulkIds '" + patchBulkId + "' and '" + createBulkId + "' do form a circular "
-                            + "reference that cannot be resolved.",
-                            responseOperations.get(1).getResponse(ErrorResponse.class).get().getDetail().get());
+
+    ErrorResponse errorResponse2 = responseOperations.get(1).getResponse(ErrorResponse.class).get();
+    Assertions.assertEquals(String.format("the operation failed because the following bulkId-references could not be "
+                                          + "resolved [bulkId:%s]",
+                                          createBulkId),
+                            errorResponse2.getDetail().get());
     Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
   }
 
