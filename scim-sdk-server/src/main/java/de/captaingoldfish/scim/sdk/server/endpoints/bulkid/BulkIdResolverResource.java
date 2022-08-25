@@ -7,6 +7,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -160,7 +161,7 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
         for ( JsonNode jsonNode : parentNode )
         {
           JsonNode childNode = jsonNode.get(valueNodeDefinition.getName());
-          boolean isBulkIdReference = isBulkIdReference(childNode);
+          boolean isBulkIdReference = isBulkIdReferenceAfterRfc7644(childNode);
           if (isBulkIdReference)
           {
             retrievedAttributes.add(new BulkIdReferenceResourceWrapper(jsonNode, childNode, valueNodeDefinition));
@@ -171,7 +172,7 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
       else
       {
         JsonNode childNode = parentNode.get(valueNodeDefinition.getName());
-        boolean isBulkIdReference = isBulkIdReference(childNode);
+        boolean isBulkIdReference = isBulkIdReferenceAfterRfc7644(childNode);
         if (isBulkIdReference)
         {
           return Collections.singletonList(new BulkIdReferenceResourceWrapper(parentNode, childNode,
@@ -225,16 +226,125 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
   @Override
   protected List<BulkIdReferenceWrapper> getDirectBulkIdNodes()
   {
-    // TODO
-    return Collections.emptyList();
+    Schema mainSchema = uriInfos.getResourceType().getMainSchema();
+    List<Schema> schemaExtensions = uriInfos.getResourceType().getAllSchemaExtensions();
+
+    List<SchemaAttribute> mainSchemaBulkIdNodes = mainSchema.getSimpleBulkIdCandidates();
+    List<SchemaAttribute> extensionBulkIdNodes = schemaExtensions.stream().flatMap((Schema jsonNodes) -> {
+      return jsonNodes.getSimpleBulkIdCandidates().stream();
+    }).collect(Collectors.toList());
+
+    List<BulkIdReferenceWrapper> bulkIdNodes = new ArrayList<>();
+    for ( SchemaAttribute schemaAttribute : mainSchemaBulkIdNodes )
+    {
+      List<BulkIdReferenceWrapper> bulkIdWrapper = getSimpleBulkIdWrapperNodes(resource, schemaAttribute);
+      bulkIdNodes.addAll(bulkIdWrapper);
+    }
+
+    for ( SchemaAttribute schemaAttribute : extensionBulkIdNodes )
+    {
+      JsonNode extension = resource.get(schemaAttribute.getSchema().getNonNullId());
+      if (extension != null)
+      {
+        List<BulkIdReferenceWrapper> bulkIdWrapper = getSimpleBulkIdWrapperNodes(extension, schemaAttribute);
+        bulkIdNodes.addAll(bulkIdWrapper);
+      }
+    }
+
+    return bulkIdNodes;
+  }
+
+  /**
+   * tries to extract bulkId references from the resource after the custom setup for bulkIds as explained above
+   * at: {@link #getDirectBulkIdNodes()}
+   *
+   * @param resource the resource from which the bulkId reference should be extracted
+   * @param schemaAttribute the definition of the attribute that should be extracted
+   * @return the list of bulkId references that were found under the given schema attribute
+   */
+  private List<BulkIdReferenceWrapper> getSimpleBulkIdWrapperNodes(JsonNode resource, SchemaAttribute schemaAttribute)
+  {
+    List<BulkIdReferenceWrapper> bulkIdWrapperNodes = new ArrayList<>();
+
+    if (schemaAttribute.getParent() == null)
+    {
+      List<BulkIdReferenceWrapper> simpleBulkIdReferences = getSimpleBulkIdReferences(resource, schemaAttribute);
+      bulkIdWrapperNodes.addAll(simpleBulkIdReferences);
+    }
+    else
+    {
+      JsonNode parentAttribute = resource.get(schemaAttribute.getParent().getName());
+      if (parentAttribute == null)
+      {
+        return Collections.emptyList();
+      }
+      if (parentAttribute.isArray())
+      {
+        for ( JsonNode childObjectNode : parentAttribute )
+        {
+          List<BulkIdReferenceWrapper> bulkIdReferenceList = getSimpleBulkIdReferences(childObjectNode,
+                                                                                       schemaAttribute);
+          bulkIdWrapperNodes.addAll(bulkIdReferenceList);
+        }
+      }
+      else
+      {
+        List<BulkIdReferenceWrapper> simpleBulkIdReferences = getSimpleBulkIdReferences(parentAttribute,
+                                                                                        schemaAttribute);
+        bulkIdWrapperNodes.addAll(simpleBulkIdReferences);
+      }
+    }
+
+    return bulkIdWrapperNodes;
+  }
+
+  /**
+   * expects the given resource to be an objectNode with only simple children that may also be arrays and tries
+   * to extract bulkId references from this node
+   *
+   * @param resource an object node that contains only simple children
+   * @param schemaAttribute the definition of the attribute that should be extracted
+   * @return the list of bulkId references that were found under the given schema attribute
+   */
+  private List<BulkIdReferenceWrapper> getSimpleBulkIdReferences(JsonNode resource, SchemaAttribute schemaAttribute)
+  {
+    List<BulkIdReferenceWrapper> bulkIdWrapperNodes = new ArrayList<>();
+    if (resource == null)
+    {
+      return Collections.emptyList();
+    }
+    JsonNode attribute = resource.get(schemaAttribute.getName());
+    if (attribute == null)
+    {
+      return Collections.emptyList();
+    }
+    if (attribute.isArray())
+    {
+      for ( int i = 0 ; i < attribute.size() ; i++ )
+      {
+        JsonNode node = attribute.get(i);
+        if (isBulkIdReferenceAfterCustomFeature(node))
+        {
+          bulkIdWrapperNodes.add(new BulkIdReferenceArrayWrapper((ArrayNode)attribute, i));
+        }
+      }
+    }
+    else
+    {
+      if (isBulkIdReferenceAfterCustomFeature(attribute))
+      {
+        bulkIdWrapperNodes.add(new BulkIdReferenceResourceWrapper(resource, attribute, schemaAttribute));
+      }
+    }
+    return bulkIdWrapperNodes;
   }
 
   /**
    * checks if the given json node contains a bulkId reference
    */
-  private boolean isBulkIdReference(JsonNode jsonNode)
+  private boolean isBulkIdReferenceAfterRfc7644(JsonNode jsonNode)
   {
-    boolean isBulkIdReference = jsonNode != null && !jsonNode.isArray() && !jsonNode.isObject()
+    boolean isBulkIdReference = jsonNode != null && jsonNode.isTextual()
                                 && jsonNode.textValue()
                                            .startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     if (isBulkIdReference)
@@ -242,6 +352,15 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
       checkForBulkIdReferenceValidity(jsonNode.textValue());
     }
     return isBulkIdReference;
+  }
+
+  /**
+   * checks if the given json node contains a bulkId reference
+   */
+  private boolean isBulkIdReferenceAfterCustomFeature(JsonNode jsonNode)
+  {
+    checkForBulkIdReferenceValidity(jsonNode.textValue());
+    return jsonNode.textValue().startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
   }
 
 }

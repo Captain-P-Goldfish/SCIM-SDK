@@ -219,7 +219,7 @@ public final class AttributeNames
      * attribute to the ID of a specific resource. The value must match the name of a registered 'resourceType'
      * not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'
      */
-    public static final String RESOURCE_TYPE_REFERENCE_NAME = "resourceTypeReferenceName";
+    public static final String RESOURCE_TYPE_REFERENCE_NAME = "resourceType";
   }
 
   /**

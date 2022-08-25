@@ -359,7 +359,7 @@ class BulkEndpoint
    * @param httpMethod the http method that will let us know which type of bulk-request we need to handle
    * @param operationUriInfo the url information of the current request operation. This object might also
    *          contain a bulkId-reference within the url
-   * @param bulkId the bulkId-refrence of the bulk-request-operation
+   * @param bulkId the bulkId-reference of the bulk-request-operation
    * @return true if all bulkId-references of the operation could be resolved, false else
    */
   private Optional<BulkIdResolverAbstract> resolveBulkIds(BulkRequestOperation operation,
@@ -367,6 +367,12 @@ class BulkEndpoint
                                                           UriInfos operationUriInfo,
                                                           String bulkId)
   {
+    if (bulkIdResolver.isDuplicateBulkId(bulkId))
+    {
+      throw new BadRequestException(String.format("Found duplicate %s '%s' in bulk request operations",
+                                                  AttributeNames.RFC7643.BULK_ID,
+                                                  bulkId));
+    }
     final boolean isOperationOtherThanDelete = !HttpMethod.DELETE.equals(httpMethod);
     if (isOperationOtherThanDelete)
     {

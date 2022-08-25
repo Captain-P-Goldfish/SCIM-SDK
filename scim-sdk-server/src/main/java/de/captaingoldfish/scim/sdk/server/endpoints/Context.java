@@ -7,7 +7,6 @@ import java.util.function.Function;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -20,13 +19,13 @@ import lombok.Setter;
  * @author Pascal Knueppel
  * @since 19.06.2021
  */
-@Getter
 public class Context
 {
 
   /**
    * the authorization information of the current request
    */
+  @Getter
   private Authorization authorization;
 
   /**
@@ -39,7 +38,6 @@ public class Context
    * => http://localhost:8080/scim/v2/Groups/123456
    * </pre>
    */
-  @Getter(AccessLevel.PRIVATE)
   @Setter(AccessLevel.PACKAGE)
   private Function<String, String> resourceReferenceUrl;
 
@@ -56,11 +54,9 @@ public class Context
    * <pre>
    * </pre>
    */
-  @Getter(AccessLevel.PRIVATE)
   @Setter(AccessLevel.PACKAGE)
   private BiFunction<String, String, String> crossResourceReferenceUrl;
 
-  @Builder
   public Context(Authorization authorization)
   {
     this.authorization = Optional.ofNullable(authorization).orElse(new DefaultAuthorization());

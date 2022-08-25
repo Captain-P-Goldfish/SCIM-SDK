@@ -6,9 +6,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 
@@ -49,6 +51,9 @@ import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.custom.endpoints.BulkIdReferencesEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.custom.resourcehandler.BulkIdReferencesResourceHandler;
+import de.captaingoldfish.scim.sdk.server.custom.resources.BulkIdReferences;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
@@ -93,6 +98,11 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
   private GroupHandlerImpl groupHandler;
 
   /**
+   * an endpoint that is used for testing resolving of bulkIds with the SCIM-SDK custom feature for bulkIds
+   */
+  private BulkIdReferencesResourceHandler bulkIdReferencesResourceHandler;
+
+  /**
    * a resource type consumer that can be dynamically changed during the test execution
    */
   private Consumer<ResourceType> dynamicResourceTypeConsumer;
@@ -108,6 +118,10 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     groupHandler = Mockito.spy(new GroupHandlerImpl());
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
                                                              new GroupEndpointDefinition(groupHandler));
+    {
+      ResourceType resourceType = resourceEndpoint.registerEndpoint(new BulkIdReferencesEndpointDefinition());
+      bulkIdReferencesResourceHandler = (BulkIdReferencesResourceHandler)resourceType.getResourceHandlerImpl();
+    }
     bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory(),
                                     new HashMap<>(), new HashMap<>(),
                                     resourceType -> Optional.ofNullable(dynamicResourceTypeConsumer)
@@ -1524,6 +1538,49 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
   }
 
   /**
+   * this test will verify that the request is rejected if several bulk request operations do have the same
+   * bulkId
+   */
+  @Test
+  public void testRejectDuplicateBulkIds()
+  {
+    final int maxOperations = 3;
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    final String bulkId = UUID.randomUUID().toString();
+
+    List<BulkRequestOperation> operations = new ArrayList<>();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder().userName(username).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(user.toString())
+                                       .build());
+    user = User.builder().userName(UUID.randomUUID().toString()).build();
+    operations.add(BulkRequestOperation.builder()
+                                       .bulkId(bulkId)
+                                       .method(HttpMethod.POST)
+                                       .path(EndpointPaths.USERS)
+                                       .data(user.toString())
+                                       .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(2, responseOperations.size());
+    Assertions.assertEquals(HttpStatus.CREATED, responseOperations.get(0).getStatus());
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, responseOperations.get(1).getStatus());
+    ErrorResponse errorResponse = responseOperations.get(1).getResponse(ErrorResponse.class).get();
+    Assertions.assertEquals(String.format("Found duplicate %s '%s' in bulk request operations",
+                                          AttributeNames.RFC7643.BULK_ID,
+                                          bulkId),
+                            errorResponse.getDetail().get());
+  }
+
+  /**
    * this test will verify that even a bad created bulk-request where the bulk operations need to be checked
    * several times will be successfully resolved. Here is an example of such a bulk request:
    *
@@ -1641,6 +1698,61 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
       Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+    }
+  }
+
+  /**
+   * this test will use a large bulkId ensemble on a lot of different types that must be successfully resolved
+   */
+  @Test
+  public void testResolveLargeComplexBulkIdEnsemble()
+  {
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+
+    String worstPossibleBulkRequestString = readResourceFile(BULK_ID_REFERENCE_RESOURCE_ENSEMBLE);
+    BulkRequest bulkRequest = JsonHelper.readJsonDocument(worstPossibleBulkRequestString, BulkRequest.class);
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    log.warn(bulkResponse.toPrettyString());
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+    }
+    BulkResponseOperation responseOperation = bulkResponse.getByBulkId("1").get();
+    BulkIdReferences bulkIdReferences = responseOperation.getResponse(BulkIdReferences.class).get();
+
+    Set<String> resolvedIds = new HashSet<>();
+    resolvedIds.add(bulkIdReferences.getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getUserIdList());
+    resolvedIds.add(bulkIdReferences.getMember().get().getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getMember().get().getUserIdList());
+
+    for ( BulkIdReferences.MemberList memberList : bulkIdReferences.getMemberList() )
+    {
+      resolvedIds.add(memberList.getGroupId().get());
+      resolvedIds.addAll(memberList.getGroupIdList());
+    }
+    Assertions.assertEquals(bulkRequest.getBulkRequestOperations().size() - 1, resolvedIds.size());
+    Assertions.assertTrue(resolvedIds.stream().noneMatch(id -> {
+      return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+    }));
+    Assertions.assertTrue(resolvedIds.stream().allMatch(this::isUuid));
+  }
+
+  private boolean isUuid(String id)
+  {
+    try
+    {
+      UUID.fromString(id);
+      return true;
+    }
+    catch (Exception ex)
+    {
+      return false;
     }
   }
 }

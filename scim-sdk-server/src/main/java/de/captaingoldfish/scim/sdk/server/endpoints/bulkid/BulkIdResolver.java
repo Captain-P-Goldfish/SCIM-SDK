@@ -157,4 +157,13 @@ public class BulkIdResolver
   {
     return bulkIdResourceResolverMap.values().stream().anyMatch(BulkIdResolverAbstract::hasAnyBulkIdReferences);
   }
+
+  /**
+   * checks if the given bulkId was already resolved. If this happens two operations from the bulk-request share
+   * the same bulkId
+   */
+  public boolean isDuplicateBulkId(String bulkId)
+  {
+    return resolvedBulkIds.containsKey(bulkId);
+  }
 }

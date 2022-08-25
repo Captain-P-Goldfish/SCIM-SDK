@@ -110,8 +110,7 @@ public final class ResourceTypeFactory
     {
       // the optional cannot be empty here
       final String resourceTypeReferenceName = schemaAttribute.getResourceTypeReferenceName().get();
-      boolean isResourceTypeMissing = !getResourceTypeByName(resourceTypeReferenceName).isPresent()
-                                      || !resourceTypeReferenceName.equals(resourceType.getName());
+      boolean isResourceTypeMissing = !getResourceTypeByName(resourceTypeReferenceName).isPresent();
       if (isResourceTypeMissing)
       {
         invalidSchemaAttributes.add(schemaAttribute);
@@ -130,7 +129,7 @@ public final class ResourceTypeFactory
                                                                   .collect(Collectors.joining(", "));
       final String unregisteredResourceTypeNames = invalidSchemaAttributes.stream().map(jsonNodes -> {
         return jsonNodes.getResourceTypeReferenceName().get();
-      }).collect(Collectors.joining(", "));
+      }).distinct().collect(Collectors.joining(", "));
       throw new InvalidSchemaException(String.format("The attributes [%s] do reference resource-types that have not "
                                                      + "been registered yet. Valid registered ResourceTypes are [%s]. "
                                                      + "The invalid referenced unregistered resource-types are [%s]",

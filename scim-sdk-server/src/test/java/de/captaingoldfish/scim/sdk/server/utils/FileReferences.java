@@ -82,6 +82,8 @@ public interface FileReferences
 
   String WORST_POSSIBLE_BULK_REQUEST = RESOURCE_BASE_PATH + "/miscellaneous/worst-possible-bulk-request.json";
 
+  String BULK_ID_REFERENCE_RESOURCE_ENSEMBLE = RESOURCE_BASE_PATH + "/miscellaneous/bulk-id-resource-ensemble.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

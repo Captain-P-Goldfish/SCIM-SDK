@@ -1,0 +1,166 @@
+{
+    "schemas": [
+        "urn:ietf:params:scim:api:messages:2.0:BulkRequest"
+    ],
+    "Operations": [
+        {
+            "method": "POST",
+            "bulkId": "1",
+            "path": "/BulkIdReferences",
+            "returnResource": true,
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences"
+                ],
+                "userId": "bulkId:2",
+                "userIdList": ["bulkId:3", "bulkId:4"],
+                "member": {
+                    "userId": "bulkId:5",
+                    "userIdList": ["bulkId:6", "bulkId:7"]
+                },
+                "memberList": [
+                    {
+                        "groupId": "bulkId:8",
+                        "groupIdList": ["bulkId:9", "bulkId:10"]
+                    },
+                    {
+                        "groupId": "bulkId:11",
+                        "groupIdList": ["bulkId:12", "bulkId:13"]
+                    }
+                ]
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "2",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "a"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "3",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "b"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "4",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "c"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "5",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "d"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "6",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "e"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "7",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "f"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "8",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "g"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "9",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "h"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "10",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "i"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "11",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "j"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "12",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "k"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "13",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "l"
+            }
+        }
+    ]
+}

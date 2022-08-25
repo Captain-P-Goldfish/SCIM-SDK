@@ -25,12 +25,13 @@ public class BulkConfigTest
   {
     BulkConfig bulkConfig = BulkConfig.builder().build();
     MatcherAssert.assertThat(bulkConfig, Matchers.not(Matchers.emptyIterable()));
-    Assertions.assertEquals(5, bulkConfig.size());
+    Assertions.assertEquals(6, bulkConfig.size());
     Assertions.assertFalse(bulkConfig.isSupported());
     Assertions.assertEquals(BulkConfig.DEFAULT_MAX_OPERATIONS, bulkConfig.getMaxOperations());
     Assertions.assertEquals(BulkConfig.DEFAULT_MAX_PAYLOAD_SIZE, bulkConfig.getMaxPayloadSize());
     Assertions.assertFalse(bulkConfig.isReturnResourcesEnabled());
     Assertions.assertFalse(bulkConfig.isReturnResourcesByDefault());
+    Assertions.assertFalse(bulkConfig.isSupportBulkGet());
   }
 
   /**
