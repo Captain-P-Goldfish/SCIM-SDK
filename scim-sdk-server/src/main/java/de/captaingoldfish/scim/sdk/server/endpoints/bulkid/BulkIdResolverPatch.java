@@ -439,19 +439,6 @@ class BulkIdResolverPatch extends BulkIdResolverAbstract<PatchOpRequest>
         checkForBulkIdReferenceValidity(bulkIdReference);
         bulkIdReferenceWrappers.add(new BulkIdReferenceArrayWrapper(valueNodeArray, i));
       }
-      else if (valueNode.isArray())
-      {
-        for ( int j = 0 ; j < valueNode.size() ; j++ )
-        {
-          JsonNode simpleNode = valueNode.get(j);
-          if (simpleNode.isTextual())
-          {
-            String bulkIdReference = simpleNode.textValue();
-            checkForBulkIdReferenceValidity(bulkIdReference);
-            bulkIdReferenceWrappers.add(new BulkIdReferenceArrayWrapper((ArrayNode)valueNode, i));
-          }
-        }
-      }
     }
 
     return bulkIdReferenceWrappers;
