@@ -626,20 +626,20 @@ public class BulkIdResolverTest
     patchOpRequest = JsonHelper.readJsonDocument(patchOpRequest.toString(), PatchOpRequest.class);
 
     // this will find the bulkIds but no bulkIds will be resolved yet
-    bulkIdResolver.createNewBulkIdResolver(bulkId2,
-                                           buildUriInfos(userResourceType, HttpMethod.PATCH),
-                                           patchOpRequest.toString());
-    Assertions.assertTrue(bulkIdResolver.isOpenBulkIdReferences());
+    BulkIdResolverAbstract<?> resolver = bulkIdResolver.createNewBulkIdResolver(bulkId2,
+                                                                                buildUriInfos(userResourceType,
+                                                                                              HttpMethod.PATCH),
+                                                                                patchOpRequest.toString());
+    Assertions.assertTrue(bulkIdResolver.isOpenBulkIdReferences(), resolver.getResource().toPrettyString());
 
     // now resolve the bulkId context by generating an id to replace the bulkId
     final String resourceId = UUID.randomUUID().toString();
     bulkIdResolver.addResolvedBulkId(bulkId1, resourceId);
     Assertions.assertFalse(bulkIdResolver.isOpenBulkIdReferences());
 
-    BulkIdResolverAbstract<?> resolver = bulkIdResolver.createNewBulkIdResolver(bulkId2,
-                                                                                buildUriInfos(userResourceType,
-                                                                                              HttpMethod.PATCH),
-                                                                                patchOpRequest.toString());
+    resolver = bulkIdResolver.createNewBulkIdResolver(bulkId2,
+                                                      buildUriInfos(userResourceType, HttpMethod.PATCH),
+                                                      patchOpRequest.toString());
 
     PatchOpRequest resolvedPatchOpRequest = (PatchOpRequest)resolver.getResource();
     User resolvedUser1 = JsonHelper.readJsonDocument(resolvedPatchOpRequest.getOperations().get(0).getValues().get(0),

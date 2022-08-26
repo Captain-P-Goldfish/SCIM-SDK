@@ -84,6 +84,12 @@ public interface FileReferences
 
   String BULK_ID_REFERENCE_RESOURCE_ENSEMBLE = RESOURCE_BASE_PATH + "/miscellaneous/bulk-id-resource-ensemble.json";
 
+  String BULK_ID_REFERENCE_PATCH_NO_PATH_ENSEMBLE = RESOURCE_BASE_PATH
+                                                    + "/miscellaneous/bulk-id-resource-patch-no-path.json";
+
+  String BULK_ID_REFERENCE_PATCH_WITH_PATH_ENSEMBLE = RESOURCE_BASE_PATH
+                                                      + "/miscellaneous/bulk-id-resource-patch-with-path.json";
+
 
   /**
    * reads a file from the test-resources and modifies the content

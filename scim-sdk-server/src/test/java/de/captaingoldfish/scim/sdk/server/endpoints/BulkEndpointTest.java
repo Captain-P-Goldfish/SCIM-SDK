@@ -1716,7 +1716,6 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     BulkRequest bulkRequest = JsonHelper.readJsonDocument(worstPossibleBulkRequestString, BulkRequest.class);
 
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
-    log.warn(bulkResponse.toPrettyString());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -1737,6 +1736,105 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       resolvedIds.addAll(memberList.getGroupIdList());
     }
     Assertions.assertEquals(bulkRequest.getBulkRequestOperations().size() - 1, resolvedIds.size());
+    Assertions.assertTrue(resolvedIds.stream().noneMatch(id -> {
+      return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+    }));
+    Assertions.assertTrue(resolvedIds.stream().allMatch(this::isUuid));
+  }
+
+  /**
+   * verifies that simple bulkId references are also correctly resolved within patch requests without a path.
+   */
+  @Test
+  public void testResolveSimpleBulkIdsInPatchRequestWithoutAPath()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+
+    BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_PATCH_NO_PATH_ENSEMBLE, BulkRequest.class);
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      if ("3".equals(bulkResponseOperation.getBulkId().get()))
+      {
+        Assertions.assertEquals(HttpStatus.OK, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+      }
+      else
+      {
+        Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+      }
+    }
+    BulkResponseOperation responseOperation = bulkResponse.getByBulkId("3").get();
+    BulkIdReferences bulkIdReferences = responseOperation.getResponse(BulkIdReferences.class).get();
+
+    Set<String> resolvedIds = new HashSet<>();
+    resolvedIds.add(bulkIdReferences.getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getUserIdList());
+    resolvedIds.add(bulkIdReferences.getMember().get().getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getMember().get().getUserIdList());
+
+    for ( BulkIdReferences.MemberList memberList : bulkIdReferences.getMemberList() )
+    {
+      resolvedIds.add(memberList.getGroupId().get());
+      resolvedIds.addAll(memberList.getGroupIdList());
+    }
+    Assertions.assertEquals(12, resolvedIds.size());
+    Assertions.assertTrue(resolvedIds.stream().noneMatch(id -> {
+      return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+    }));
+    Assertions.assertTrue(resolvedIds.stream().allMatch(this::isUuid));
+  }
+
+  /**
+   * verifies that simple bulkId references are also correctly resolved within patch requests with path.
+   */
+  @Test
+  public void testResolveSimpleBulkIdsInPatchRequestWithPath()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+
+    BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_PATCH_WITH_PATH_ENSEMBLE,
+                                                          BulkRequest.class);
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      if ("3".equals(bulkResponseOperation.getBulkId().get()))
+      {
+        Assertions.assertEquals(HttpStatus.OK, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+      }
+      else
+      {
+        Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+      }
+    }
+    BulkResponseOperation responseOperation = bulkResponse.getByBulkId("3").get();
+    BulkIdReferences bulkIdReferences = responseOperation.getResponse(BulkIdReferences.class).get();
+
+    Set<String> resolvedIds = new HashSet<>();
+    resolvedIds.add(bulkIdReferences.getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getUserIdList());
+    resolvedIds.add(bulkIdReferences.getMember().get().getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getMember().get().getUserIdList());
+
+    for ( BulkIdReferences.MemberList memberList : bulkIdReferences.getMemberList() )
+    {
+      resolvedIds.add(memberList.getGroupId().get());
+      resolvedIds.addAll(memberList.getGroupIdList());
+    }
+    Assertions.assertEquals(12, resolvedIds.size());
     Assertions.assertTrue(resolvedIds.stream().noneMatch(id -> {
       return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     }));

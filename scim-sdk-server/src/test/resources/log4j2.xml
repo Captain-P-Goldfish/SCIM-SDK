@@ -3,11 +3,17 @@
     <Appenders>
         <Console name="Console" target="SYSTEM_OUT">
             <PatternLayout
-                    pattern="%d{DATE} [%t] %highlight{%-5level}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green } %logger{36} (%F:%L) - %highlight{%msg%n%throwable}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green }"
-                    disableAnsi="false"/>
+                pattern="%d{DATE} [%t] %highlight{%-5level}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green } %logger{36} (%F:%L) - %highlight{%msg%n%throwable}{FATAL=bright red, ERROR=red, WARN=yellow, INFO=white, DEBUG=bright blue, TRACE=green }"
+                disableAnsi="false"/>
         </Console>
     </Appenders>
     <Loggers>
+
+        <Logger name="de.captaingoldfish.scim.sdk.common.response.ErrorResponse" level="debug"
+                additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
+
         <Root level="info">
             <AppenderRef ref="Console"/>
         </Root>

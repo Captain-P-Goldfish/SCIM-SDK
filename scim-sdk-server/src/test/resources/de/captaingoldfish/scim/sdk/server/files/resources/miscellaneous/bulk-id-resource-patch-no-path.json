@@ -1,0 +1,210 @@
+{
+    "schemas": [
+        "urn:ietf:params:scim:api:messages:2.0:BulkRequest"
+    ],
+    "Operations": [
+        {
+            "method": "POST",
+            "bulkId": "1",
+            "path": "/BulkIdReferences",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences"
+                ],
+                "userId": "bulkId:2"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "2",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "goldfish"
+            }
+        },
+        {
+            "method": "PATCH",
+            "bulkId": "3",
+            "path": "/BulkIdReferences/bulkId:1",
+            "returnResource": true,
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+                ],
+                "Operations": [
+                    {
+                        "op": "replace",
+                        "value": {
+                            "schemas": [
+                                "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences"
+                            ],
+                            "userId": "bulkId:4",
+                            "userIdList": [
+                                "bulkId:5",
+                                "bulkId:6"
+                            ],
+                            "member": {
+                                "userId": "bulkId:7",
+                                "userIdList": [
+                                    "bulkId:8",
+                                    "bulkId:9"
+                                ]
+                            },
+                            "memberList": [
+                                {
+                                    "groupId": "bulkId:10",
+                                    "groupIdList": [
+                                        "bulkId:11",
+                                        "bulkId:12"
+                                    ]
+                                },
+                                {
+                                    "groupId": "bulkId:13",
+                                    "groupIdList": [
+                                        "bulkId:14",
+                                        "bulkId:15"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "4",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "a"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "5",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "b"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "6",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "c"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "7",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "d"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "8",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "e"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "9",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "f"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "10",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "g"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "11",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "h"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "12",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "i"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "13",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "j"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "14",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "k"
+            }
+        },
+        {
+            "method": "POST",
+            "bulkId": "15",
+            "path": "/Users",
+            "data": {
+                "schemas": [
+                    "urn:ietf:params:scim:schemas:core:2.0:User"
+                ],
+                "userName": "l"
+            }
+        }
+    ]
+}

@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.exceptions.IOException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
@@ -118,9 +119,20 @@ public class PatchRequestOperation extends ScimObjectNode
     {
       return Optional.empty();
     }
-    if (!(jsonNode instanceof ArrayNode))
+    if (jsonNode.isTextual())
     {
-      jsonNode = JsonHelper.readJsonDocument(jsonNode.textValue(), ScimObjectNode.class);
+      try
+      {
+        jsonNode = JsonHelper.readJsonDocument(jsonNode.textValue(), ScimObjectNode.class);
+      }
+      catch (IOException ex)
+      {
+        // do nothing
+      }
+      setValueNode(jsonNode);
+    }
+    if (jsonNode.isObject())
+    {
       setValueNode(jsonNode);
     }
     return Optional.of((ArrayNode)get(AttributeNames.RFC7643.VALUE));
