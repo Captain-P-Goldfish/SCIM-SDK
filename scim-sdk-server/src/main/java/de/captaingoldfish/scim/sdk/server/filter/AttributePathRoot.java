@@ -50,6 +50,13 @@ public class AttributePathRoot extends FilterNode
     setSubAttributeName(ctx.subattribute == null ? null : ctx.subattribute.getText());
   }
 
+  protected AttributePathRoot()
+  {
+    this.child = null;
+    this.filterAttributeName = null;
+    this.schemaAttribute = null;
+  }
+
   public String getResourceUri()
   {
     return filterAttributeName.getResourceUri();
