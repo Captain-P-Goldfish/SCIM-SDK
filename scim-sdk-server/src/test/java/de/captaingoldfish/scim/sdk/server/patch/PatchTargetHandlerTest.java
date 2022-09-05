@@ -4030,4 +4030,221 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(multiComplexNodes.get(1).getNumber().isPresent());
     Assertions.assertEquals(999L, multiComplexNodes.get(1).getNumber().get());
   }
+
+  /**
+   * verifies that an extension can be removed if the extension id is directly referenced within the path
+   * attribute
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+   *             "op": "remove"
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testRemoveExtension()
+  {
+    String employeeNumber = "1111";
+    String costCenter = "2222";
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
+                                                   .employeeNumber(employeeNumber)
+                                                   .costCenter(costCenter)
+                                                   .build());
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REMOVE)
+                                                                                .path(SchemaUris.ENTERPRISE_USER_URI)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
+    Assertions.assertTrue(patchHandler.isChangedResource(), patchedAllTypes.toPrettyString());
+    Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+  }
+
+  /**
+   * verifies that an extension can be removed if a replace operation with an empty extension object is used
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+   *             "op": "replace",
+   *             "value": ["{\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": {}}"]
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testReplaceExtensionWithEmptyObject()
+  {
+    String employeeNumber = "1111";
+    String costCenter = "2222";
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
+                                                   .employeeNumber(employeeNumber)
+                                                   .costCenter(costCenter)
+                                                   .build());
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(SchemaUris.ENTERPRISE_USER_URI)
+                                                                                .valueNode(EnterpriseUser.builder()
+                                                                                                         .build())
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
+    Assertions.assertTrue(patchHandler.isChangedResource(), patchedAllTypes.toPrettyString());
+    Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+  }
+
+  /**
+   * verifies that an extension can be completely replaced if set within the patch values when directly accessed
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+   *             "op": "replace",
+   *             "value": ["{\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": {
+   *                 \"costCenter\": \"2222\",
+   *                 \"employeeNumber\": \"1111\" }}"]
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testReplaceExtensionWithNonEmptyObject()
+  {
+    String employeeNumber = "1111";
+    String costCenter = "2222";
+
+    AllTypes allTypeChanges = new AllTypes(true);
+
+    EnterpriseUser enterpriseUser = EnterpriseUser.builder()
+                                                  .employeeNumber(employeeNumber)
+                                                  .costCenter(costCenter)
+                                                  .build();
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(SchemaUris.ENTERPRISE_USER_URI)
+                                                                                .valueNode(enterpriseUser)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
+    Assertions.assertTrue(patchHandler.isChangedResource(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals(enterpriseUser, patchedAllTypes.getEnterpriseUser().get());
+  }
+
+  /**
+   * verifies that an exception is thrown if too many values are set
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+   *             "op": "replace",
+   *             "value": ["{\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": {
+   *                           \"costCenter\": \"2222\",
+   *                           \"employeeNumber\": \"1111\"
+   *                        }}",
+   *                        "{\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": {
+   *                           \"costCenter\": \"3333\",
+   *                           \"employeeNumber\": \"4444\"
+   *                        }}",]
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testReplaceExtensionWithTooManyValues()
+  {
+
+    EnterpriseUser enterpriseUser1 = EnterpriseUser.builder().employeeNumber("1111").costCenter("2222").build();
+    EnterpriseUser enterpriseUser2 = EnterpriseUser.builder().employeeNumber("3333").costCenter("4444").build();
+    List<String> values = Arrays.asList(enterpriseUser1.toString(), enterpriseUser2.toString());
+
+    AllTypes allTypeChanges = new AllTypes(true);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(SchemaUris.ENTERPRISE_USER_URI)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchHandler.patchResource(allTypeChanges, patchOpRequest));
+    String errorMessage = String.format("Patch request contains too many values. Expected a single value "
+                                        + "representing an extension but got several. '%s'",
+                                        values);
+    Assertions.assertEquals(errorMessage, ex.getMessage());
+  }
+
+  /**
+   * verifies that an exception is thrown if the value contains an empty string
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "path": "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User",
+   *             "op": "replace",
+   *             "value": [""]
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testReplaceExtensionWithEmptyValue()
+  {
+
+    AllTypes allTypeChanges = new AllTypes(true);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(SchemaUris.ENTERPRISE_USER_URI)
+                                                                                .values(Collections.singletonList(""))
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchHandler.patchResource(allTypeChanges, patchOpRequest));
+    String errorMessage = "Received invalid data on patch values. Expected an extension resource but got: ''";
+    Assertions.assertEquals(errorMessage, ex.getMessage());
+  }
 }

@@ -1073,6 +1073,49 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * this test will make sure, that the extension is removed if a patch operation with an empty extension is
+   * added as operation:
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *     ],
+   *     "Operations": [
+   *         {
+   *             "op": "replace",
+   *             "value": ["{\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": {}}"]
+   *         }
+   *     ]
+   * }
+   * </pre>
+   */
+  @Test
+  public void testExtensionIsRemovedOnEmptyReplace()
+  {
+    String employeeNumber = "1111";
+    String costCenter = "2222";
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
+                                                   .employeeNumber(employeeNumber)
+                                                   .costCenter(costCenter)
+                                                   .build());
+
+    AllTypes allTypesWithEmptyEnterpriseUser = new AllTypes(true);
+    allTypesWithEmptyEnterpriseUser.setEnterpriseUser(EnterpriseUser.builder().build());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .value(allTypesWithEmptyEnterpriseUser.toString())
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
+    Assertions.assertTrue(patchHandler.isChangedResource());
+    Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+  }
+
+  /**
    * this method returns a specific attribute definition that will be added to the enterprise user that is used
    * as extension for the alltypes schema. this shall provoke a naming conflict with a complex type in the
    * extension

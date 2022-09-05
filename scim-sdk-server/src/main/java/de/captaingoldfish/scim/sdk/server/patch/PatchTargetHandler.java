@@ -99,7 +99,16 @@ public class PatchTargetHandler extends AbstractPatch
     super(resourceType);
     try
     {
-      this.path = RequestUtils.parsePatchPath(resourceType, path);
+      if (resourceType.getAllSchemaExtensions().stream().anyMatch(schema -> schema.getNonNullId().equals(path)))
+      {
+        this.path = new PatchExtensionAttributePath(path);
+        this.schemaAttribute = null;
+      }
+      else
+      {
+        this.path = RequestUtils.parsePatchPath(resourceType, path);
+        this.schemaAttribute = getSchemaAttribute();
+      }
     }
     catch (ScimException ex)
     {
@@ -107,7 +116,6 @@ public class PatchTargetHandler extends AbstractPatch
       throw ex;
     }
     this.patchOp = patchOp;
-    this.schemaAttribute = getSchemaAttribute();
   }
 
   /**
@@ -139,13 +147,78 @@ public class PatchTargetHandler extends AbstractPatch
   }
 
   /**
-   * will add the specified values into the specified path
+   * will add, replace or remove the specified values based on the given path-attribute
    *
    * @param resource the resource to which the values should be added
    * @param values the values that should be added into the resource
    * @return true if an effective change was made, false else
    */
-  public boolean addOperationValues(ResourceNode resource, List<String> values)
+  public boolean handleOperationValues(ResourceNode resource, List<String> values)
+  {
+    if (path instanceof PatchExtensionAttributePath)
+    {
+      return handleExtensionOperation(resource, values);
+    }
+    return handlePathAttributeOperation(resource, values);
+  }
+
+  /**
+   * handles path references that will directly address an extension of a resource
+   *
+   * @param resource the resource to which the values should be handled
+   * @param values the values that should contain a single element that contains the referenced extension, or
+   *          should be empty.
+   * @return true if an effective change was made, false else
+   */
+  private boolean handleExtensionOperation(ResourceNode resource, List<String> values)
+  {
+    final boolean areTooManyValuesPresent = values.size() > 1;
+    if (areTooManyValuesPresent)
+    {
+      throw new BadRequestException(String.format("Patch request contains too many values. Expected a single value "
+                                                  + "representing an extension but got several. '%s'",
+                                                  values));
+    }
+
+    boolean changeMade;
+    final boolean addOrReplaceValue = !PatchOp.REMOVE.equals(patchOp);
+    ObjectNode currentNode = (ObjectNode)resource.get(path.getFullName());
+    if (addOrReplaceValue)
+    {
+      ObjectNode extensionNode = (ObjectNode)JsonHelper.readJsonDocument(values.get(0));
+      if (extensionNode == null)
+      {
+        throw new BadRequestException(String.format("Received invalid data on patch values. Expected an extension "
+                                                    + "resource but got: '%s'",
+                                                    values.get(0)));
+      }
+      changeMade = !extensionNode.equals(currentNode);
+      if (extensionNode.isEmpty())
+      {
+        resource.remove(path.getFullName());
+      }
+      else
+      {
+        resource.set(path.getFullName(), extensionNode);
+      }
+    }
+    else
+    {
+      changeMade = currentNode != null && !currentNode.isEmpty();
+      resource.remove(path.getFullName());
+    }
+    return changeMade;
+  }
+
+  /**
+   * handles patch requests whose path will directly address an attribute of either the main resource or an
+   * extension
+   *
+   * @param resource the resource to which the values should be handled
+   * @param values the values that should be handled
+   * @return true if an effective change was made, false else
+   */
+  private boolean handlePathAttributeOperation(ResourceNode resource, List<String> values)
   {
     validateRequest(values);
     String[] fullAttributeNames = getAttributeNames();
@@ -878,7 +951,7 @@ public class PatchTargetHandler extends AbstractPatch
         && !values.stream().allMatch(JsonHelper::isValidJson))
     {
       throw new BadRequestException("the values are expected to be valid json representations for an expression as "
-                                    + "'" + path.toString() + "' but was: " + String.join(",\n", values), null,
+                                    + "'" + path + "' but was: " + String.join(",\n", values), null,
                                     ScimType.RFC7644.INVALID_PATH);
     }
     checkIsValidComplexJson(path, values);
@@ -905,7 +978,7 @@ public class PatchTargetHandler extends AbstractPatch
   }
 
   /**
-   * checks that if the attribute is a simple type and not multi valued that only a single attribute is allowed
+   * checks that if the attribute is a simple type and not multivalued that only a single attribute is allowed
    * in the values parameter of the patch request
    *
    * @param values the values parameter that is under test

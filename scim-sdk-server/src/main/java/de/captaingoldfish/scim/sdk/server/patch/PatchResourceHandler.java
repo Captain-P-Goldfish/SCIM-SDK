@@ -101,10 +101,16 @@ public class PatchResourceHandler extends AbstractPatch
           MsAzurePatchResourceWorkaroundHandler workaroundHandler = new MsAzurePatchResourceWorkaroundHandler(resourceType);
           effectiveValue = workaroundHandler.rebuildResource(extensionRef, key, value);
         }
-        changeWasMade.weakCompareAndSet(false,
-                                        addResourceValues((ObjectNode)complex,
-                                                          effectiveValue,
-                                                          extensionRef.getSchema()));
+        if (effectiveValue.isEmpty())
+        {
+          resource.remove(extensionRef.getSchema());
+          changeWasMade.compareAndSet(false, complex.size() > 0);
+        }
+        else
+        {
+          final boolean changeMade = addResourceValues((ObjectNode)complex, effectiveValue, extensionRef.getSchema());
+          changeWasMade.compareAndSet(false, changeMade);
+        }
       }
       else
       {

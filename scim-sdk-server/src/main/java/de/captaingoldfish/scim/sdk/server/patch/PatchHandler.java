@@ -73,7 +73,7 @@ public class PatchHandler
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
     for ( PatchRequestOperation operation : patchOpRequest.getOperations() )
     {
-      changeWasMade.weakCompareAndSet(false, handlePatchOp(resource, operation));
+      changeWasMade.compareAndSet(false, handlePatchOp(resource, operation));
     }
     setLastModified(resource, changeWasMade);
     changedResource = changeWasMade.get();
@@ -90,9 +90,12 @@ public class PatchHandler
    */
   private void setAttributeFromPath(PatchRequestOperation operation, AttributePathRoot path)
   {
-    if (operation.getOp().equals(PatchOp.REMOVE))
+    boolean isExtensionNodeReference = path instanceof PatchExtensionAttributePath;
+    if (operation.getOp().equals(PatchOp.REMOVE) || isExtensionNodeReference)
     {
       // in this case the attribute is not present anymore so there is nothing to return
+      // an extension node reference is a simple path and not a direct attribute reference, so it cannot be resolved
+      // to a schema attribute
       return;
     }
     String fullName = path.getFullName() + (path.getSubAttributeName() == null ? "" : "." + path.getSubAttributeName());
@@ -155,7 +158,7 @@ public class PatchHandler
         path = msAzureWorkaround.fixPath();
       }
       PatchTargetHandler patchTargetHandler = new PatchTargetHandler(resourceType, operation.getOp(), path);
-      boolean changeWasMade = patchTargetHandler.addOperationValues(resource, values);
+      boolean changeWasMade = patchTargetHandler.handleOperationValues(resource, values);
       setAttributeFromPath(operation, patchTargetHandler.getPath());
       return changeWasMade;
     }
