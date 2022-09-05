@@ -76,7 +76,7 @@
         <version.commons.io>2.11.0</version.commons.io>
         <version.jackson>2.13.3</version.jackson>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
-        <version.antlr>4.9.3</version.antlr>
+        <version.antlr>4.11.1</version.antlr>
         <version.apache.http.client>4.5.13</version.apache.http.client>
         <version.apache.http.core>4.4.15</version.apache.http.core>
         <version.bouncy.castle>1.70</version.bouncy.castle>
