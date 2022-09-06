@@ -110,7 +110,8 @@ public final class ResourceTypeFactory
     {
       // the optional cannot be empty here
       final String resourceTypeReferenceName = schemaAttribute.getResourceTypeReferenceName().get();
-      boolean isResourceTypeMissing = !getResourceTypeByName(resourceTypeReferenceName).isPresent();
+      boolean isResourceTypeMissing = !getResourceTypeByName(resourceTypeReferenceName).isPresent()
+                                      && !resourceType.getName().equals(resourceTypeReferenceName);
       if (isResourceTypeMissing)
       {
         invalidSchemaAttributes.add(schemaAttribute);
@@ -130,9 +131,9 @@ public final class ResourceTypeFactory
       final String unregisteredResourceTypeNames = invalidSchemaAttributes.stream().map(jsonNodes -> {
         return jsonNodes.getResourceTypeReferenceName().get();
       }).distinct().collect(Collectors.joining(", "));
-      throw new InvalidSchemaException(String.format("The attributes [%s] do reference resource-types that have not "
+      throw new InvalidSchemaException(String.format("The attributes [%s] do reference ResourceTypes that have not "
                                                      + "been registered yet. Valid registered ResourceTypes are [%s]. "
-                                                     + "The invalid referenced unregistered resource-types are [%s]",
+                                                     + "The invalid referenced unregistered ResourceTypes are [%s]",
                                                      invalidAttributeNames,
                                                      validResourceTypeNames,
                                                      unregisteredResourceTypeNames));
@@ -193,7 +194,8 @@ public final class ResourceTypeFactory
       // no further validation is needed because no extensions have been added
       return;
     }
-    validateSchemaExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
+    final String mainSchemaId = resourceType.getSchema();
+    validateSchemaExtensions(mainSchemaId, resourceTypeExtensionIds, extensionsToRegisterIds);
     for ( JsonNode resourceSchemaExtension : resourceSchemaExtensions )
     {
       Schema schema = schemaFactory.registerResourceSchema(resourceSchemaExtension);
@@ -204,11 +206,15 @@ public final class ResourceTypeFactory
   /**
    * will validate if the given extension parameters are valid and throws an exception if not.
    *
+   * @param mainSchemaId this parameter is used to check if an extension is set as a self-reference. Self
+   *          references will not work for they cause problems with filter expressions.
    * @param resourceTypeExtensionIds the ids of the extensions present in the resource type document
    * @param extensionsToRegisterIds the ids of the extensions that were given to the method
    *          {@link #registerResourceType(ResourceHandler, JsonNode, JsonNode, JsonNode...)} for registration
    */
-  private void validateSchemaExtensions(Set<String> resourceTypeExtensionIds, Set<String> extensionsToRegisterIds)
+  private void validateSchemaExtensions(String mainSchemaId,
+                                        Set<String> resourceTypeExtensionIds,
+                                        Set<String> extensionsToRegisterIds)
   {
     if (resourceTypeExtensionIds.equals(extensionsToRegisterIds))
     {
@@ -216,24 +222,38 @@ public final class ResourceTypeFactory
       return;
     }
     validateUnreferencedExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
-    validateMissingExtensions(resourceTypeExtensionIds, extensionsToRegisterIds);
+    validateMissingExtensions(mainSchemaId, resourceTypeExtensionIds, extensionsToRegisterIds);
   }
 
   /**
-   * this method will check if missing extensions are present that these extensions are already registered. If
-   * this is not the case an exception is thrown
+   * this method will check if missing extensions are present and that these extensions are already registered.
+   * If this is not the case an exception is thrown
    *
+   * @param mainSchemaId this parameter is used to check if an extension is set as a self-reference. Self
+   *          references will not work for they cause problems with filter expressions.
    * @param resourceTypeExtensionIds the ids of the extensions present in the resource type document
    * @param extensionsToRegisterIds the ids of the extensions that were given to the method
    *          {@link #registerResourceType(ResourceHandler, JsonNode, JsonNode, JsonNode...)} for registration
    */
-  private void validateMissingExtensions(Set<String> resourceTypeExtensionIds, Set<String> extensionsToRegisterIds)
+  private void validateMissingExtensions(String mainSchemaId,
+                                         Set<String> resourceTypeExtensionIds,
+                                         Set<String> extensionsToRegisterIds)
   {
     Set<String> resourceTypeIds = new HashSet<>(resourceTypeExtensionIds);
     resourceTypeIds.removeAll(extensionsToRegisterIds);
 
     for ( String extensionId : resourceTypeIds )
     {
+      boolean isSelfReference = extensionId.equals(mainSchemaId);
+      if (isSelfReference)
+      {
+        String errorMessage = String.format("You tried to set a self-reference as schema extension within a "
+                                            + "ResourceType with the schema id '%s'. Self references do not work since "
+                                            + "they would cause problems with ambiguous attribute references in "
+                                            + "filter-expressions",
+                                            mainSchemaId);
+        throw new InvalidResourceTypeException(errorMessage, null, null, null);
+      }
       if (schemaFactory.getResourceSchema(extensionId) == null)
       {
         String errorMessage = "You missed to add the extension with the id '" + extensionId + "' for registration";

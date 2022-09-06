@@ -8,6 +8,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -15,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidResourceTypeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
@@ -246,5 +249,30 @@ public class ResourceTypeFactoryTest
                                                "/Users",
                                                userResourceSchema);
     });
+  }
+
+  /**
+   * verifies that a resource type with a self reference will cause an error
+   */
+  @Test
+  public void testRegisterResourceWithSelfReference()
+  {
+    ScimObjectNode userExtensionNode = new ScimObjectNode();
+    userExtensionNode.set("schema", new TextNode(SchemaUris.USER_URI));
+    userExtensionNode.set("required", BooleanNode.FALSE);
+
+    ArrayNode extensionArray = (ArrayNode)userResourceType.get(AttributeNames.RFC7643.SCHEMA_EXTENSIONS);
+    extensionArray.add(userExtensionNode);
+
+    InvalidResourceTypeException ex = Assertions.assertThrows(InvalidResourceTypeException.class, () -> {
+      resourceTypeFactory.registerResourceType(null, userResourceType, userResourceType);
+    });
+
+    String errorMessage = String.format("You tried to set a self-reference as schema extension within a "
+                                        + "ResourceType with the schema id '%s'. Self references do not work since "
+                                        + "they would cause problems with ambiguous attribute references in "
+                                        + "filter-expressions",
+                                        SchemaUris.USER_URI);
+    Assertions.assertEquals(errorMessage, ex.getMessage());
   }
 }
