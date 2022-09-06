@@ -114,7 +114,8 @@ public class PatchResourceHandler extends AbstractPatch
       }
       else
       {
-        SchemaAttribute schemaAttribute = getSchemaAttribute((extensionUri == null ? "" : extensionUri + ":") + key);
+        SchemaAttribute schemaAttribute = getSchemaAttribute((extensionUri == null ? resourceType.getSchema()
+          : extensionUri) + ":" + key);
         boolean resourceChanged;
         boolean isReadOnlyAndSet = isReadOnlyAndSet(resource, schemaAttribute);
         if (Type.COMPLEX.equals(schemaAttribute.getType()))
@@ -316,8 +317,8 @@ public class PatchResourceHandler extends AbstractPatch
     AtomicBoolean newPrimaryNodeDetected = new AtomicBoolean(false);
     value.forEach(complex -> {
       complex.fields().forEachRemaining(stringJsonNodeEntry -> {
-        String fullName = (extensionUri == null ? "" : extensionUri + ":") + schemaAttribute.getName() + "."
-                          + stringJsonNodeEntry.getKey();
+        String fullName = (extensionUri == null ? resourceType.getSchema() : extensionUri) + ":"
+                          + schemaAttribute.getName() + "." + stringJsonNodeEntry.getKey();
         SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullName);
         verifyImmutableAndReadOnly(complex, subAttribute);
       });
