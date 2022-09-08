@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
@@ -29,14 +27,6 @@ public class BulkRequestOperation extends ScimObjectNode
 {
 
   /**
-   * these are the only http methods allowed by bulk
-   */
-  protected final static List<HttpMethod> VALID_METHODS = Arrays.asList(HttpMethod.POST,
-                                                                        HttpMethod.PUT,
-                                                                        HttpMethod.PATCH,
-                                                                        HttpMethod.DELETE);
-
-  /**
    * this identifier is exclusively used on bulk requests to be able to check if this request was already tried
    * to be handled once. If this happens and the second try fails too, this operation is marked as failure
    * within the bulk response. This is necessary in order to find bulkId references that cannot be resolved.
@@ -56,7 +46,8 @@ public class BulkRequestOperation extends ScimObjectNode
                               String path,
                               String data,
                               ETag version,
-                              Boolean returnResource)
+                              Boolean returnResource,
+                              Integer maxResourceLevel)
   {
     this();
     setMethod(method);
@@ -65,6 +56,7 @@ public class BulkRequestOperation extends ScimObjectNode
     setData(data);
     setVersion(version);
     setReturnResource(returnResource);
+    setMaxResourceLevel(maxResourceLevel);
   }
 
   /**
@@ -84,11 +76,6 @@ public class BulkRequestOperation extends ScimObjectNode
    */
   public void setMethod(HttpMethod method)
   {
-    if (method != null && !VALID_METHODS.contains(method))
-    {
-      throw new BadRequestException("bulk does only support the following methods '" + VALID_METHODS
-                                    + "' but found method: " + method, null, ScimType.Custom.INVALID_PARAMETERS);
-    }
     setAttribute(AttributeNames.RFC7643.METHOD, method == null ? null : method.name());
   }
 
@@ -224,5 +211,23 @@ public class BulkRequestOperation extends ScimObjectNode
   public void setReturnResource(Boolean returnResource)
   {
     setAttribute(AttributeNames.Custom.RETURN_RESOURCE, returnResource);
+  }
+
+  /**
+   * this field allows clients to limit the number of transitive retrieved resources from the bulk-response to
+   * keep the response profile low
+   */
+  public Integer getMaxResourceLevel()
+  {
+    return getIntegerAttribute(AttributeNames.Custom.MAX_RESOURCE_LEVEL).orElse(0);
+  }
+
+  /**
+   * this field allows clients to limit the number of transitive retrieved resources from the bulk-response to
+   * keep the response profile low
+   */
+  public void setMaxResourceLevel(Integer maxResourceLevel)
+  {
+    setAttribute(AttributeNames.Custom.MAX_RESOURCE_LEVEL, maxResourceLevel);
   }
 }

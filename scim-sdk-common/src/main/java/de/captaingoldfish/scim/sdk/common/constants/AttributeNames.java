@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants;
 
+import de.captaingoldfish.scim.sdk.common.response.BulkResponseGetOperation;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -204,7 +205,7 @@ public final class AttributeNames
      * a field for the service provider configuration. If set to true the service provider will not return
      * resources from the explicit resource-type if the client asks for them in the request.
      */
-    public static final String BLOCK_RETURN_RESOURCES_ON_BULK = "blockReturnResourcesOnBulk";
+    public static final String DENY_RETURN_RESOURCES_ON_BULK = "denyReturnResourcesOnBulk";
 
     /**
      * a field for the service provider configuration. If set to true the bulk endpoint will have a new feature
@@ -220,6 +221,36 @@ public final class AttributeNames
      * not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'
      */
     public static final String RESOURCE_TYPE_REFERENCE_NAME = "resourceType";
+
+    /**
+     * a field used in bulk-requests to utilize the bulk-get feature that is not defined within the SCIM
+     * specification. It allows to set the maximum transitive level of resources to be extracted within a
+     * bulk-get-request
+     */
+    public static final String MAX_RESOURCE_LEVEL = "maxResourceLevel";
+
+    /**
+     * a field used in {@link BulkResponseGetOperation}s to point to the parents node that is referencing the
+     * retrieved resource.
+     */
+    public static final String NODE_PATH = "nodePath";
+
+    /**
+     * a field used in {@link BulkResponseGetOperation}s to identify the returned resource
+     */
+    public static final String RESOURCE = "resource";
+
+    /**
+     * a field used in {@link BulkResponseGetOperation}s to identify the children of a resource
+     */
+    public static final String CHILDREN = "children";
+
+    /**
+     * a field used in {@link BulkResponseGetOperation}s to identify the referenced resource. This is especially
+     * useful if retrieval of the resource has failed in order to link the response operation to the resource that
+     * could not be extracted
+     */
+    public static final String RESOURCE_ID = "resourceId";
   }
 
   /**

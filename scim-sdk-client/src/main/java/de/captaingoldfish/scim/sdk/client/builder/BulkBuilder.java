@@ -206,7 +206,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   @Override
   public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
   {
-    final int maxNumberOfOperationns = getMaxNumberOfOperationns();
+    final int maxNumberOfOperationns = getMaxNumberOfOperations();
     final boolean isSplittingFeatureDisabled = !getScimHttpClient().getScimClientConfig()
                                                                    .isEnableAutomaticBulkRequestSplitting();
     final boolean fitsIntoASingleRequest = bulkRequestOperationList.size() <= maxNumberOfOperationns;
@@ -220,7 +220,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   /**
    * retrieves the current maximum number of operations allowed at the bulk endpoint
    */
-  private int getMaxNumberOfOperationns()
+  private int getMaxNumberOfOperations()
   {
     return Optional.ofNullable(serviceProviderSupplier.get())
                    .map(ServiceProvider::getBulkConfig)
@@ -438,7 +438,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   private BulkRequestIdResolverWrapper splitRequestsWithRelationOrderPreserved()
   {
-    final int maxNumberOfOperationns = getMaxNumberOfOperationns();
+    final int maxNumberOfOperationns = getMaxNumberOfOperations();
 
     // determine parent-child relations. We need this to build an operation-relation-chain
     GenericTree<BulkRequestOperation> childParentRelationsTree = getParentChildRelationsOfRequest();
@@ -609,7 +609,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   private List<List<BulkRequestOperation>> splitRequestsSimple(List<BulkRequestOperation> operationsToSplit)
   {
-    final int maxNumberOfOperationns = getMaxNumberOfOperationns();
+    final int maxNumberOfOperationns = getMaxNumberOfOperations();
 
     List<List<BulkRequestOperation>> splittedListParts = new ArrayList<>();
     if (operationsToSplit.size() <= maxNumberOfOperationns)
@@ -707,6 +707,16 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     public BulkRequestOperationCreator returnResource(boolean returnResource)
     {
       builder.returnResource(returnResource);
+      return this;
+    }
+
+    /**
+     * only usable for the SCIM-SDKs Bulk-Get custom feature. It limits the amount of resources to be returned
+     * from the server if the bulk-get feature is utilized
+     */
+    public BulkRequestOperationCreator maxResourceLevel(int maxResourceLevel)
+    {
+      builder.maxResourceLevel(maxResourceLevel);
       return this;
     }
 

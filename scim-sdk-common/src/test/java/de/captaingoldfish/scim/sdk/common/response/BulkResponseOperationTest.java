@@ -2,8 +2,6 @@ package de.captaingoldfish.scim.sdk.common.response;
 
 import java.util.UUID;
 
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -12,7 +10,6 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
@@ -74,27 +71,5 @@ public class BulkResponseOperationTest implements FileReferences
     BulkResponseOperation operations = new BulkResponseOperation();
     Assertions.assertThrows(InternalServerException.class, operations::getMethod);
     Assertions.assertThrows(InternalServerException.class, operations::getStatus);
-  }
-
-  /**
-   * verifies that only the valid http methods can be set for a request operation
-   */
-  @Test
-  public void testInvalidHttpMethodSet()
-  {
-    Assertions.assertThrows(BadRequestException.class,
-                            () -> BulkResponseOperation.builder().method(HttpMethod.GET).build());
-
-  }
-
-  /**
-   * verifies the content of the valid methods array
-   */
-  @Test
-  public void testValidMethods()
-  {
-    MatcherAssert.assertThat(BulkResponseOperation.VALID_METHODS,
-                             Matchers.contains(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE));
-
   }
 }

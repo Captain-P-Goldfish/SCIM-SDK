@@ -7,6 +7,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -22,10 +24,12 @@ import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.GroupHandler;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
+import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequestOperation;
@@ -33,6 +37,7 @@ import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponseGetOperation;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -330,7 +335,6 @@ public class BulkBuilderTest extends HttpServerMockup
   {
     scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(maxNumberOfOperations);
 
-
     setGetResponseStatus(() -> HttpStatus.OK);
 
     List<BulkRequestOperation> requestOperations = createComplexBulkReferenceRequests();
@@ -345,6 +349,81 @@ public class BulkBuilderTest extends HttpServerMockup
     Assertions.assertEquals(requestOperations.size(), bulkResponse.getBulkResponseOperations().size());
     Mockito.verify(bulkBuilder, Mockito.times((int)Math.ceil((double)requestOperations.size() / maxNumberOfOperations)))
            .toResponse(Mockito.any());
+  }
+
+  /**
+   * verifies that the bulk-get feature is accessible by using this client implementation
+   */
+  @Test
+  public void testBulkGetCanBeUtilized()
+  {
+    scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(100);
+    scimConfig.getServiceProvider().getBulkConfig().setSupportBulkGet(true);
+
+    setGetResponseStatus(() -> HttpStatus.OK);
+
+    Function<Group, Member> toMember = group -> Member.builder()
+                                                      .value(group.getId().get())
+                                                      .ref(String.format("%s%s/%s",
+                                                                         getServerUrl(),
+                                                                         EndpointPaths.GROUPS,
+                                                                         group.getId().get()))
+                                                      .build();
+    GroupHandler groupHandler = (GroupHandler)scimConfig.getGroupResourceType().getResourceHandlerImpl();
+    Group group1 = Group.builder().id("1").displayName("group1").build();
+    Group group2 = Group.builder().id("2").displayName("group2").members(Arrays.asList(toMember.apply(group1))).build();
+    Group group3 = Group.builder().id("3").displayName("group3").members(Arrays.asList(toMember.apply(group2))).build();
+    Group group4 = Group.builder().id("4").displayName("group4").members(Arrays.asList(toMember.apply(group3))).build();
+
+    groupHandler.getInMemoryMap().put(group1.getId().get(), group1);
+    groupHandler.getInMemoryMap().put(group2.getId().get(), group2);
+    groupHandler.getInMemoryMap().put(group3.getId().get(), group3);
+    groupHandler.getInMemoryMap().put(group4.getId().get(), group4);
+
+    // and at last enter a bulk get operation
+    List<BulkRequestOperation> requestOperations = new ArrayList<>();
+    final String bulkId = "bulk-get-op";
+    requestOperations.add(BulkRequestOperation.builder()
+                                              .bulkId(bulkId)
+                                              .method(HttpMethod.GET)
+                                              .path(String.format("%s/%s", EndpointPaths.GROUPS, group4.getId().get()))
+                                              .maxResourceLevel(2)
+                                              .build());
+
+    ScimHttpClient scimHttpClient = new ScimHttpClient(new ScimClientConfig());
+    BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
+                                                          scimConfig::getServiceProvider));
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0).addOperations(requestOperations).sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    BulkResponse bulkResponse = response.getResource();
+
+    List<BulkResponseOperation> bulkResponseOperations = bulkResponse.getBulkResponseOperations();
+    Assertions.assertEquals(1, bulkResponseOperations.size());
+
+    BulkResponseGetOperation getOperation = bulkResponseOperations.get(0)
+                                                                  .getResponse(BulkResponseGetOperation.class)
+                                                                  .get();
+
+    {
+      Assertions.assertEquals("4", getOperation.getResourceId());
+      Assertions.assertEquals(ResourceTypeNames.GROUPS, getOperation.getResourceType());
+      Assertions.assertNull(getOperation.getNodePath()); // main node has no node reference
+      Assertions.assertEquals(1, getOperation.getChildren().size());
+    }
+    {
+      BulkResponseGetOperation childGetOperation = getOperation.getChildren().get(0);
+      Assertions.assertEquals("3", childGetOperation.getResourceId());
+      Assertions.assertEquals(ResourceTypeNames.GROUPS, childGetOperation.getResourceType());
+      Assertions.assertEquals("members", childGetOperation.getNodePath());
+      Assertions.assertEquals(1, childGetOperation.getChildren().size());
+    }
+    {
+      BulkResponseGetOperation childGetOperation = getOperation.getChildren().get(0).getChildren().get(0);
+      Assertions.assertEquals("2", childGetOperation.getResourceId());
+      Assertions.assertEquals(ResourceTypeNames.GROUPS, childGetOperation.getResourceType());
+      Assertions.assertEquals("members", childGetOperation.getNodePath());
+      Assertions.assertEquals(0, childGetOperation.getChildren().size());
+    }
   }
 
   private BulkRequestOperation createBulkRequestOperation(String username)
@@ -379,6 +458,7 @@ public class BulkBuilderTest extends HttpServerMockup
     {
       groupMembers.add(Member.builder()
                              .value(String.format("%s:%s", AttributeNames.RFC7643.BULK_ID, memberReference))
+                             .type(ResourceTypeNames.GROUPS)
                              .build());
     }
     groupBuilder.members(groupMembers);

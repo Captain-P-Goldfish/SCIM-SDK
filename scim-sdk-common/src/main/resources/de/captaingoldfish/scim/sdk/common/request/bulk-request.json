@@ -100,6 +100,17 @@
           "multiValued": false,
           "caseExact": false,
           "required": false
+        },
+        {
+          "name": "maxResourceLevel",
+          "type": "integer",
+          "description": "this field allows clients to limit the number of transitive retrieved resources from the bulk-response to keep the response profile low.",
+          "mutability": "writeOnly",
+          "returned": "never",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
         }
       ]
     }

@@ -27,15 +27,31 @@ public class BulkIdReferences extends ResourceNode
                           String userId,
                           List<String> userIdList,
                           Member member,
-                          List<MemberList> memberList)
+                          List<MemberList> memberList,
+                          boolean isExtension,
+                          BulkIdReferences extension)
   {
-    setSchemas(Arrays.asList(FieldNames.SCHEMA));
+    if (!isExtension)
+    {
+      setSchemas(Arrays.asList(FieldNames.SCHEMA));
+    }
     setId(id);
     setMeta(meta);
     setUserId(userId);
     setUserIdList(userIdList);
     setMember(member);
     setMemberList(memberList);
+    setExtension(extension);
+  }
+
+  public void setExtension(BulkIdReferences bulkIdReferences)
+  {
+    setAttribute(FieldNames.EXTENSION_SCHEMA, bulkIdReferences);
+  }
+
+  public Optional<BulkIdReferences> getExtension()
+  {
+    return getObjectAttribute(FieldNames.EXTENSION_SCHEMA, BulkIdReferences.class);
   }
 
   /**
@@ -218,6 +234,7 @@ public class BulkIdReferences extends ResourceNode
 
     public static final String SCHEMA = "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences";
 
+    public static final String EXTENSION_SCHEMA = "custom:captaingoldfish:scim:schemas:extensions:2.0:BulkIdReferences";
 
     public static final String USERID = "userId";
 

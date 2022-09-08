@@ -33,7 +33,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
     setEndpointControlFeature(endpointControlFeature);
     setAuthorization(authorization);
     setETagFeature(eTagFeature);
-    setBlockReturnResourcesOnBulk(blockReturnResourcesOnBulk);
+    setDenyReturnResourcesOnBulk(blockReturnResourcesOnBulk);
   }
 
   /**
@@ -192,17 +192,17 @@ public class ResourceTypeFeatures extends ScimObjectNode
    * This attribute allows the service provider to not return a resource on bulk-responses even if the client
    * explicitly asked for it. Default is false so that resources will be returned if the client asks for them
    */
-  public boolean isBlockReturnResourcesOnBulk()
+  public boolean isDenyReturnResourcesOnBulk()
   {
-    return getBooleanAttribute(AttributeNames.Custom.BLOCK_RETURN_RESOURCES_ON_BULK).orElse(false);
+    return getBooleanAttribute(AttributeNames.Custom.DENY_RETURN_RESOURCES_ON_BULK).orElse(false);
   }
 
   /**
    * This attribute allows the service provider to not return a resource on bulk-responses even if the client
    * explicitly asked for it. Default is false so that resources will be returned if the client asks for them
    */
-  public void setBlockReturnResourcesOnBulk(boolean blockReturnResourcesOnBulk)
+  public void setDenyReturnResourcesOnBulk(boolean returnResourcesOnBulk)
   {
-    setAttribute(AttributeNames.Custom.BLOCK_RETURN_RESOURCES_ON_BULK, blockReturnResourcesOnBulk);
+    setAttribute(AttributeNames.Custom.DENY_RETURN_RESOURCES_ON_BULK, returnResourcesOnBulk);
   }
 }

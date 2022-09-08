@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -47,12 +48,12 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponseGetOperation;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.custom.endpoints.BulkIdReferencesEndpointDefinition;
-import de.captaingoldfish.scim.sdk.server.custom.resourcehandler.BulkIdReferencesResourceHandler;
 import de.captaingoldfish.scim.sdk.server.custom.resources.BulkIdReferences;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
@@ -98,11 +99,6 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
   private GroupHandlerImpl groupHandler;
 
   /**
-   * an endpoint that is used for testing resolving of bulkIds with the SCIM-SDK custom feature for bulkIds
-   */
-  private BulkIdReferencesResourceHandler bulkIdReferencesResourceHandler;
-
-  /**
    * a resource type consumer that can be dynamically changed during the test execution
    */
   private Consumer<ResourceType> dynamicResourceTypeConsumer;
@@ -117,11 +113,8 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     userHandler = Mockito.spy(new UserHandlerImpl(true));
     groupHandler = Mockito.spy(new GroupHandlerImpl());
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
-                                                             new GroupEndpointDefinition(groupHandler));
-    {
-      ResourceType resourceType = resourceEndpoint.registerEndpoint(new BulkIdReferencesEndpointDefinition());
-      bulkIdReferencesResourceHandler = (BulkIdReferencesResourceHandler)resourceType.getResourceHandlerImpl();
-    }
+                                                             new GroupEndpointDefinition(groupHandler),
+                                                             new BulkIdReferencesEndpointDefinition());
     bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory(),
                                     new HashMap<>(), new HashMap<>(),
                                     resourceType -> Optional.ofNullable(dynamicResourceTypeConsumer)
@@ -275,7 +268,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
     serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
     ResourceType userResourceType = bulkEndpoint.getResourceTypeFactory().getResourceType(EndpointPaths.USERS);
-    userResourceType.getFeatures().setBlockReturnResourcesOnBulk(true);
+    userResourceType.getFeatures().setDenyReturnResourcesOnBulk(true);
 
     List<BulkRequestOperation> operations = new ArrayList<>();
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations, true);
@@ -1839,6 +1832,243 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     }));
     Assertions.assertTrue(resolvedIds.stream().allMatch(this::isUuid));
+  }
+
+  /**
+   * verifies that the bulk-get feature will act the same if the resource level is set to 1 or below 1. 1 is the
+   * lowest possible value to set
+   */
+  @ParameterizedTest
+  @ValueSource(ints = {0, 1})
+  public void testUseBulkGetWithResourceLevel(int maxResourceLevel)
+  {
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setSupportBulkGet(true);
+
+    User user1 = User.builder().id("1").userName("user1").build();
+    User user2 = User.builder().id("2").userName("user2").build();
+    User user3 = User.builder()
+                     .id("3")
+                     .userName("user3")
+                     .enterpriseUser(EnterpriseUser.builder()
+                                                   .manager(Manager.builder()
+                                                                   .value(user2.getId().get())
+                                                                   .ref(String.format("%s%s/%s",
+                                                                                      BASE_URI,
+                                                                                      EndpointPaths.USERS,
+                                                                                      user2.getId().get()))
+                                                                   .build())
+                                                   .build())
+                     .build();
+    Group group1 = Group.builder().id("1").displayName("group1").build();
+    Group group2 = Group.builder()
+                        .id("2")
+                        .displayName("group2")
+                        .members(Arrays.asList(Member.builder()
+                                                     .value(user3.getId().get())
+                                                     .type(ResourceTypeNames.USER)
+                                                     .build()))
+                        .build();
+
+    groupHandler.getInMemoryMap().put(group1.getId().get(), group1);
+    groupHandler.getInMemoryMap().put(group2.getId().get(), group2);
+    userHandler.getInMemoryMap().put(user1.getId().get(), user1);
+    userHandler.getInMemoryMap().put(user2.getId().get(), user2);
+    userHandler.getInMemoryMap().put(user3.getId().get(), user3);
+
+    List<Member> members = Arrays.asList(Member.builder()
+                                               .value(group1.getId().get())
+                                               .type(ResourceTypeNames.GROUPS)
+                                               .build(),
+                                         Member.builder()
+                                               .value(group2.getId().get())
+                                               .ref(String.format("%s%s/%s",
+                                                                  BASE_URI,
+                                                                  EndpointPaths.GROUPS,
+                                                                  group2.getId().get()))
+                                               .build(),
+                                         Member.builder()
+                                               .value(user1.getId().get())
+                                               .type(ResourceTypeNames.USER)
+                                               .build(),
+                                         Member.builder()
+                                               .value(user2.getId().get())
+                                               .ref(String.format("%s%s/%s",
+                                                                  BASE_URI,
+                                                                  EndpointPaths.USERS,
+                                                                  user2.getId().get()))
+                                               .build());
+    Group adminGroup = Group.builder().id("3").displayName("admin").members(members).build();
+
+    groupHandler.getInMemoryMap().put(adminGroup.getId().get(), adminGroup);
+
+    final String resourcePath = String.format("%s/%s", EndpointPaths.GROUPS, adminGroup.getId().get());
+    List<BulkRequestOperation> bulkRequestOperations = Arrays.asList(BulkRequestOperation.builder()
+                                                                                         .method(HttpMethod.GET)
+                                                                                         .path(resourcePath)
+                                                                                         .maxResourceLevel(maxResourceLevel)
+                                                                                         .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(bulkRequestOperations).failOnErrors(0).build();
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
+    BulkResponseOperation responseOperation = bulkResponse.getBulkResponseOperations().get(0);
+    BulkResponseGetOperation responseGetOperation = responseOperation.getResponse(BulkResponseGetOperation.class).get();
+    Assertions.assertEquals(HttpStatus.OK, responseGetOperation.getStatus());
+
+    Assertions.assertEquals(adminGroup.getId().get(), responseGetOperation.getResourceId());
+    Assertions.assertEquals(adminGroup.getId().get(), responseGetOperation.getResource(Group.class).getId().get());
+    Assertions.assertEquals(4, responseGetOperation.getChildren().size());
+
+    List<BulkResponseGetOperation> groupResponses = responseGetOperation.getChildren().stream().filter(op -> {
+      return op.getResourceType().equals(ResourceTypeNames.GROUPS);
+    }).collect(Collectors.toList());
+
+    Assertions.assertEquals(2, groupResponses.size());
+    Assertions.assertEquals(group1.getId().get(), groupResponses.get(0).getResourceId());
+    Assertions.assertEquals(group1.getId().get(), groupResponses.get(0).getResource(Group.class).getId().get());
+    Assertions.assertEquals(0, groupResponses.get(0).getChildren().size());
+
+    Assertions.assertEquals(group2.getId().get(), groupResponses.get(1).getResourceId());
+    Assertions.assertEquals(group2.getId().get(), groupResponses.get(1).getResource(Group.class).getId().get());
+    Assertions.assertEquals(0, groupResponses.get(1).getChildren().size());
+
+    List<BulkResponseGetOperation> userResponses = responseGetOperation.getChildren().stream().filter(op -> {
+      return op.getResourceType().equals(ResourceTypeNames.USER);
+    }).collect(Collectors.toList());
+    Assertions.assertEquals(2, userResponses.size());
+    Assertions.assertEquals(user1.getId().get(), userResponses.get(0).getResourceId());
+    Assertions.assertEquals(user1.getId().get(), userResponses.get(0).getResource(User.class).getId().get());
+    Assertions.assertEquals(0, userResponses.get(0).getChildren().size());
+
+    Assertions.assertEquals(user2.getId().get(), userResponses.get(1).getResourceId());
+    Assertions.assertEquals(user2.getId().get(), userResponses.get(1).getResource(User.class).getId().get());
+    Assertions.assertEquals(0, userResponses.get(1).getChildren().size());
+  }
+
+  /**
+   * tests the bulk-get feature with a group referencing two groups of which one will address a user that has
+   * also a manager and this user will also be addressed by the parent group
+   */
+  @Test
+  public void testUseBulkGetWithResourceLevel_2()
+  {
+    final int maxResourceLevel = 2;
+
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setSupportBulkGet(true);
+
+    User user1 = User.builder().id("1").userName("user1").build();
+    User user2 = User.builder().id("2").userName("user2").build();
+    User user3 = User.builder()
+                     .id("3")
+                     .userName("user3")
+                     .enterpriseUser(EnterpriseUser.builder()
+                                                   .manager(Manager.builder()
+                                                                   .value(user2.getId().get())
+                                                                   .ref(String.format("%s%s/%s",
+                                                                                      BASE_URI,
+                                                                                      EndpointPaths.USERS,
+                                                                                      user2.getId().get()))
+                                                                   .build())
+                                                   .build())
+                     .build();
+    Group group1 = Group.builder().id("1").displayName("group1").build();
+    Group group2 = Group.builder()
+                        .id("2")
+                        .displayName("group2")
+                        .members(Arrays.asList(Member.builder()
+                                                     .value(user3.getId().get())
+                                                     .type(ResourceTypeNames.USER)
+                                                     .build()))
+                        .build();
+
+    groupHandler.getInMemoryMap().put(group1.getId().get(), group1);
+    groupHandler.getInMemoryMap().put(group2.getId().get(), group2);
+    userHandler.getInMemoryMap().put(user1.getId().get(), user1);
+    userHandler.getInMemoryMap().put(user2.getId().get(), user2);
+    userHandler.getInMemoryMap().put(user3.getId().get(), user3);
+
+    List<Member> members = Arrays.asList(Member.builder()
+                                               .value(group1.getId().get())
+                                               .type(ResourceTypeNames.GROUPS)
+                                               .build(),
+                                         Member.builder()
+                                               .value(group2.getId().get())
+                                               .ref(String.format("%s%s/%s",
+                                                                  BASE_URI,
+                                                                  EndpointPaths.GROUPS,
+                                                                  group2.getId().get()))
+                                               .build(),
+                                         Member.builder()
+                                               .value(user1.getId().get())
+                                               .type(ResourceTypeNames.USER)
+                                               .build(),
+                                         Member.builder()
+                                               .value(user2.getId().get())
+                                               .ref(String.format("%s%s/%s",
+                                                                  BASE_URI,
+                                                                  EndpointPaths.USERS,
+                                                                  user2.getId().get()))
+                                               .build());
+    Group adminGroup = Group.builder().id("3").displayName("admin").members(members).build();
+
+    groupHandler.getInMemoryMap().put(adminGroup.getId().get(), adminGroup);
+
+    final String resourcePath = String.format("%s/%s", EndpointPaths.GROUPS, adminGroup.getId().get());
+    List<BulkRequestOperation> bulkRequestOperations = Arrays.asList(BulkRequestOperation.builder()
+                                                                                         .method(HttpMethod.GET)
+                                                                                         .path(resourcePath)
+                                                                                         .maxResourceLevel(maxResourceLevel)
+                                                                                         .build());
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(bulkRequestOperations).failOnErrors(0).build();
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
+    BulkResponseOperation responseOperation = bulkResponse.getBulkResponseOperations().get(0);
+    BulkResponseGetOperation responseGetOperation = responseOperation.getResponse(BulkResponseGetOperation.class).get();
+    Assertions.assertEquals(HttpStatus.OK, responseGetOperation.getStatus());
+
+    Assertions.assertEquals(adminGroup.getId().get(), responseGetOperation.getResourceId());
+    Assertions.assertEquals(adminGroup.getId().get(), responseGetOperation.getResource(Group.class).getId().get());
+    Assertions.assertEquals(4, responseGetOperation.getChildren().size());
+
+    List<BulkResponseGetOperation> groupResponses = responseGetOperation.getChildren().stream().filter(op -> {
+      return op.getResourceType().equals(ResourceTypeNames.GROUPS);
+    }).collect(Collectors.toList());
+
+    Assertions.assertEquals(2, groupResponses.size());
+    Assertions.assertEquals(group1.getId().get(), groupResponses.get(0).getResourceId());
+    Assertions.assertEquals(group1.getId().get(), groupResponses.get(0).getResource(Group.class).getId().get());
+    Assertions.assertEquals(ResourceTypeNames.GROUPS, groupResponses.get(0).getResourceType());
+    Assertions.assertEquals(0, groupResponses.get(0).getChildren().size());
+
+    Assertions.assertEquals(group2.getId().get(), groupResponses.get(1).getResourceId());
+    Assertions.assertEquals(group2.getId().get(), groupResponses.get(1).getResource(Group.class).getId().get());
+    Assertions.assertEquals(ResourceTypeNames.GROUPS, groupResponses.get(1).getResourceType());
+    Assertions.assertEquals(1, groupResponses.get(1).getChildren().size());
+    Assertions.assertEquals(0, groupResponses.get(1).getChildren().get(0).getChildren().size());
+    Assertions.assertEquals(ResourceTypeNames.USER, groupResponses.get(1).getChildren().get(0).getResourceType());
+
+    List<BulkResponseGetOperation> userResponses = responseGetOperation.getChildren().stream().filter(op -> {
+      return op.getResourceType().equals(ResourceTypeNames.USER);
+    }).collect(Collectors.toList());
+    Assertions.assertEquals(2, userResponses.size());
+    Assertions.assertEquals(user1.getId().get(), userResponses.get(0).getResourceId());
+    Assertions.assertEquals(user1.getId().get(), userResponses.get(0).getResource(User.class).getId().get());
+    Assertions.assertEquals(0, userResponses.get(0).getChildren().size());
+
+    Assertions.assertEquals(user2.getId().get(), userResponses.get(1).getResourceId());
+    Assertions.assertEquals(user2.getId().get(), userResponses.get(1).getResource(User.class).getId().get());
+    Assertions.assertEquals(0, userResponses.get(1).getChildren().size());
   }
 
   private boolean isUuid(String id)

@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.UUID;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -34,13 +34,16 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
+import de.captaingoldfish.scim.sdk.common.response.BulkResponseGetOperation;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import de.captaingoldfish.scim.sdk.common.response.GetResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.bulkget.BulkGetResolver;
 import de.captaingoldfish.scim.sdk.server.endpoints.bulkid.BulkIdResolver;
 import de.captaingoldfish.scim.sdk.server.endpoints.bulkid.BulkIdResolverAbstract;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -86,20 +89,14 @@ class BulkEndpoint
    */
   private final Consumer<ResourceType> doBeforeExecution;
 
-  /**
-   * this map is used to map the ids of newly created resources to bulkIds
-   */
-  private final Map<String, String> resolvedBulkIds = new HashMap<>();
-
-  /**
-   * this map is used to detect circular references by storing bulkId references within it
-   */
-  private final Map<String, Set<String>> circularReferenceDetectorMap = new HashMap<>();
-
   private final Map<String, String> originalHttpHeaders;
 
   private final Map<String, String> originalQueryParams;
 
+  /**
+   * this implementation is used to modify the bulk-operations by replacing the bulkId references for the ids of
+   * the actual references resource after the resource was created
+   */
   private final BulkIdResolver bulkIdResolver = new BulkIdResolver();
 
   public BulkEndpoint(ResourceEndpoint resourceEndpoint,
@@ -305,7 +302,35 @@ class BulkEndpoint
     }
     else
     {
-      addResponse(operation, scimResponse, operationUriInfo.getResourceType(), responseBuilder);
+      // if we are currently processing a bulk-get response we need to resolve the transitive resources
+      if (scimResponse instanceof GetResponse && serviceProvider.getBulkConfig().isSupportBulkGet())
+      {
+        // get all transitive children of the retrieved resource
+        final String resourceTypeName = operationUriInfo.getResourceType().getName();
+        BiFunction<String, ResourceType, ScimResponse> bulkGetOpCaller = getTransitiveBulkGetResolver(baseUri,
+                                                                                                      httpHeaders,
+                                                                                                      context);
+        BulkGetResolver bulkGetResolver = BulkGetResolver.builder()
+                                                         .maxResourceLevel(operation.getMaxResourceLevel())
+                                                         .parentResourceResponse(scimResponse)
+                                                         .resourceTypeFactory(resourceTypeFactory)
+                                                         .resourceType(operationUriInfo.getResourceType())
+                                                         .callResourceEndpoint(bulkGetOpCaller)
+                                                         .build();
+        List<BulkResponseGetOperation> children = bulkGetResolver.getTransitiveResources();
+        BulkResponseGetOperation bulkResponseGetOperation = BulkResponseGetOperation.builder()
+                                                                                    .status(HttpStatus.OK)
+                                                                                    .resourceId(operationUriInfo.getResourceId())
+                                                                                    .resourceType(resourceTypeName)
+                                                                                    .resource(scimResponse)
+                                                                                    .children(children)
+                                                                                    .build();
+        responseBuilder.response(bulkResponseGetOperation);
+      }
+      else
+      {
+        addResponse(operation, scimResponse, operationUriInfo.getResourceType(), responseBuilder);
+      }
     }
 
     if (isErrorResponse)
@@ -345,11 +370,32 @@ class BulkEndpoint
         responseBuilder.resourceId(resourceId);
       }
     }
-    if (StringUtils.isNotBlank(id) && operation.getBulkId().isPresent())
-    {
-      resolvedBulkIds.put(operation.getBulkId().get(), id.substring(1));
-    }
     return responseBuilder.build();
+  }
+
+  /**
+   * calls the resource endpoint with a get call for the bulk-get-feature. This call will be executed for each
+   * child resource that is being extracted
+   *
+   * @param baseUri the base uri of this server
+   * @param httpHeaders the http headers from the current request
+   * @param context the current request context
+   * @return a function to call the {@link ResourceEndpoint} from {@link BulkGetResolver}
+   */
+  private BiFunction<String, ResourceType, ScimResponse> getTransitiveBulkGetResolver(String baseUri,
+                                                                                      Map<String, String> httpHeaders,
+                                                                                      Context context)
+  {
+    return (resourceId, resourceType) -> {
+      UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
+                                                      String.format("%s%s/%s",
+                                                                    baseUri,
+                                                                    resourceType.getEndpoint(),
+                                                                    resourceId),
+                                                      HttpMethod.GET,
+                                                      httpHeaders);
+      return resourceEndpoint.resolveRequest(uriInfos.getHttpMethod(), null, uriInfos, doBeforeExecution, context);
+    };
   }
 
   /**
@@ -373,36 +419,37 @@ class BulkEndpoint
                                                   AttributeNames.RFC7643.BULK_ID,
                                                   bulkId));
     }
-    final boolean isOperationOtherThanDelete = !HttpMethod.DELETE.equals(httpMethod);
-    if (isOperationOtherThanDelete)
-    {
-      BulkIdResolverAbstract resolverForBulkIds = bulkIdResolver.getBulkIdResolver(bulkId).orElseGet(() -> {
-        return bulkIdResolver.createNewBulkIdResolver(bulkId, operationUriInfo, operation.getData().orElse("{}"));
-      });
-      boolean allBulkIdReferencesResolved = !resolverForBulkIds.hasAnyBulkIdReferences();
-      // the BulkIdResolverAbstract contains the modified data with the resolved bulkIds
-      if (allBulkIdReferencesResolved)
-      {
-        operation.setData(resolverForBulkIds.getResource().toString());
-      }
 
-      boolean hadSuccessInLastRun = resolverForBulkIds.isHadSuccessInLastRun();
-      boolean isSecondTryToResolveIds = operation.getUniqueIdentifier() != null;
-      if (isSecondTryToResolveIds && !allBulkIdReferencesResolved && !hadSuccessInLastRun)
-      {
-        String unresolvedBulkIds = (String)resolverForBulkIds.getUnresolvedBulkIds()
-                                                             .stream()
-                                                             .map(id -> String.format("%s:%s",
-                                                                                      AttributeNames.RFC7643.BULK_ID,
-                                                                                      id))
-                                                             .collect(Collectors.joining(", "));
-        throw new ConflictException(String.format("the operation failed because the following "
-                                                  + "bulkId-references could not be resolved [%s]",
-                                                  unresolvedBulkIds));
-      }
-      return Optional.of(resolverForBulkIds);
+    if (HttpMethod.DELETE.equals(httpMethod))
+    {
+      return Optional.empty();
     }
-    return Optional.empty();
+
+    BulkIdResolverAbstract resolverForBulkIds = bulkIdResolver.getBulkIdResolver(bulkId).orElseGet(() -> {
+      return bulkIdResolver.createNewBulkIdResolver(bulkId, operationUriInfo, operation.getData().orElse("{}"));
+    });
+    boolean allBulkIdReferencesResolved = !resolverForBulkIds.hasAnyBulkIdReferences();
+    // the BulkIdResolverAbstract contains the modified data with the resolved bulkIds
+    if (allBulkIdReferencesResolved)
+    {
+      operation.setData(resolverForBulkIds.getResource().toString());
+    }
+
+    boolean hadSuccessInLastRun = resolverForBulkIds.isHadSuccessInLastRun();
+    boolean isSecondTryToResolveIds = operation.getUniqueIdentifier() != null;
+    if (isSecondTryToResolveIds && !allBulkIdReferencesResolved && !hadSuccessInLastRun)
+    {
+      String unresolvedBulkIds = (String)resolverForBulkIds.getUnresolvedBulkIds()
+                                                           .stream()
+                                                           .map(id -> String.format("%s:%s",
+                                                                                    AttributeNames.RFC7643.BULK_ID,
+                                                                                    id))
+                                                           .collect(Collectors.joining(", "));
+      throw new ConflictException(String.format("the operation failed because the following "
+                                                + "bulkId-references could not be resolved [%s]",
+                                                unresolvedBulkIds));
+    }
+    return Optional.of(resolverForBulkIds);
   }
 
   /**
@@ -427,7 +474,7 @@ class BulkEndpoint
       return;
     }
 
-    if (resourceType.getFeatures().isBlockReturnResourcesOnBulk())
+    if (resourceType.getFeatures().isDenyReturnResourcesOnBulk())
     {
       return;
     }
@@ -513,7 +560,14 @@ class BulkEndpoint
    */
   private void validateOperation(BulkRequestOperation operation)
   {
-    List<HttpMethod> validMethods = Arrays.asList(HttpMethod.POST, HttpMethod.PUT, HttpMethod.PATCH, HttpMethod.DELETE);
+    List<HttpMethod> validMethods = new ArrayList<>(Arrays.asList(HttpMethod.POST,
+                                                                  HttpMethod.PUT,
+                                                                  HttpMethod.PATCH,
+                                                                  HttpMethod.DELETE));
+    if (serviceProvider.getBulkConfig().isSupportBulkGet())
+    {
+      validMethods.add(HttpMethod.GET);
+    }
     if (!validMethods.contains(operation.getMethod()))
     {
       throw new BadRequestException("bulk request used invalid http method. Only the following methods are allowed "

@@ -33,6 +33,16 @@ public class AllTypes extends ResourceNode
     }
   }
 
+  public Optional<String> getUserReference()
+  {
+    return getStringAttribute("allTypesReference");
+  }
+
+  public void setUserReference(String userReference)
+  {
+    setAttribute("allTypesReference", userReference);
+  }
+
   public Optional<String> getString()
   {
     return getStringAttribute("string");

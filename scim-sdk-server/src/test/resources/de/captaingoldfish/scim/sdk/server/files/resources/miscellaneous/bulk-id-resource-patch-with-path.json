@@ -36,36 +36,36 @@
                 ],
                 "Operations": [
                     {
-                        "path": "userId",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:userId",
                         "op": "replace",
                         "value": "bulkId:4"
                     },
                     {
-                        "path": "userIdList",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:userIdList",
                         "op": "replace",
                         "value": "bulkId:5"
                     },
                     {
-                        "path": "userIdList",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:userIdList",
                         "op": "add",
                         "value": [
                             "bulkId:6"
                         ]
                     },
                     {
-                        "path": "member.userId",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:member.userId",
                         "op": "replace",
                         "value": "bulkId:7"
                     },
                     {
-                        "path": "member.userIdList",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:member.userIdList",
                         "op": "replace",
                         "value": [
                             "bulkId:8"
                         ]
                     },
                     {
-                        "path": "member",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:member",
                         "op": "add",
                         "value": [
                             {
@@ -76,7 +76,7 @@
                         ]
                     },
                     {
-                        "path": "memberList",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:memberList",
                         "op": "add",
                         "value": [
                             {
@@ -88,14 +88,14 @@
                         ]
                     },
                     {
-                        "path": "memberList.groupId",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:memberList.groupId",
                         "op": "add",
                         "value": [
                             "bulkId:10"
                         ]
                     },
                     {
-                        "path": "memberList",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:memberList",
                         "op": "add",
                         "value": [
                             {
@@ -107,7 +107,7 @@
                         ]
                     },
                     {
-                        "path": "memberList.groupIdList",
+                        "path": "urn:ietf:params:scim:schemas:core:2.0:BulkIdReferences:memberList.groupIdList",
                         "op": "add",
                         "value": [
                             "bulkId:15"

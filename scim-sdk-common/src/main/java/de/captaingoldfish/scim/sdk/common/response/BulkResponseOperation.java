@@ -1,14 +1,10 @@
 package de.captaingoldfish.scim.sdk.common.response;
 
-import java.util.Arrays;
-import java.util.List;
 import java.util.Optional;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
-import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -24,14 +20,6 @@ import lombok.Builder;
  */
 public class BulkResponseOperation extends ScimObjectNode
 {
-
-  /**
-   * these are the only http methods allowed by bulk
-   */
-  protected final static List<HttpMethod> VALID_METHODS = Arrays.asList(HttpMethod.POST,
-                                                                        HttpMethod.PUT,
-                                                                        HttpMethod.PATCH,
-                                                                        HttpMethod.DELETE);
 
   public BulkResponseOperation()
   {
@@ -74,11 +62,6 @@ public class BulkResponseOperation extends ScimObjectNode
    */
   public void setMethod(HttpMethod method)
   {
-    if (method != null && !VALID_METHODS.contains(method))
-    {
-      throw new BadRequestException("bulk does only support the following methods '" + VALID_METHODS
-                                    + "' but found method: " + method, null, ScimType.Custom.INVALID_PARAMETERS);
-    }
     setAttribute(AttributeNames.RFC7643.METHOD, method == null ? null : method.name());
   }
 
