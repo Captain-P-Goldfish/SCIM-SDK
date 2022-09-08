@@ -108,6 +108,8 @@ for any registered resource
 - [x] custom resource validation [similiar to bean validation in JEE] (@see [resource validation](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Validation-of-resources))
 - [x] automatic POJO creation from SCIM schema resources. (@see [schema pojo creator](https://github.com/Captain-P-Goldfish/SCIM-SDK/tree/master/scim-sdk-schema-pojo-creator))
 - [x] return resources in BulkResponse. (@see [return resources in BulkResponse](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Return-resources-on-Bulk-Responses))
+- [x] Simple resource references. (@see [simple resource references](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Simple-Resource-References-(Custom-Feature)-(@since-1.15.0)))
+- [x] Bulk-Get. (@see [Bulk-Get Feature](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Bulk-Get-(Custom-Feature)-(@since-1.15.0)))
 
 ## Client implementation
 
