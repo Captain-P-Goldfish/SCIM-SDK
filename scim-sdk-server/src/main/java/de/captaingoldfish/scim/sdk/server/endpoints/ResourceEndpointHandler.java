@@ -1030,7 +1030,7 @@ class ResourceEndpointHandler
       resourceNode.setMeta(meta);
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
-      PatchHandler patchHandler = new PatchHandler(resourceType);
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), resourceType);
       ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
 
       // validates the patched resource and throws an exception if an error was found

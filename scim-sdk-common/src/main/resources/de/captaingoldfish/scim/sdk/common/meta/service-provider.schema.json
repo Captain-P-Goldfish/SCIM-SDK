@@ -41,6 +41,17 @@
           "multiValued": false,
           "required": true,
           "caseExact": false
+        },
+        {
+          "name": "activateSailsPointWorkaround",
+          "type": "boolean",
+          "description": "A Workaround to handle patch replace-ops on single complex types as add operations.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
         }
       ]
     },

@@ -38,8 +38,10 @@ import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -72,11 +74,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
   private ResourceType allTypesResourceType;
 
   /**
+   * the service provider with the current endpoints configuration
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * initializes a new {@link ResourceTypeFactory} for the following tests
    */
   @BeforeEach
   public void initialize()
   {
+    this.serviceProvider = ServiceProvider.builder().patchConfig(PatchConfig.builder().supported(true).build()).build();
     this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
@@ -123,7 +131,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * this test will verify that multi valued complex types will be added to already existing attributes
+   * this test will verify that multivalued complex types will be added to already existing attributes
    */
   @Test
   public void testAddMultiValuedComplexType()
@@ -146,7 +154,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(2, allTypes.getMultiComplex().size());
@@ -180,7 +188,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(1, allTypes.getMultiComplex().size());
@@ -217,7 +225,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(1, allTypes.getMultiComplex().size());
@@ -242,7 +250,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -279,7 +287,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertTrue(allTypes.getComplex().isPresent());
@@ -315,7 +323,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getComplex().isPresent());
     Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent(),
@@ -347,7 +355,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getString().isPresent());
     Assertions.assertEquals("hello world", allTypes.getString().get());
@@ -372,7 +380,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(4, allTypes.getNumberArray().size());
     MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(1L, 2L, 3L, 4L));
@@ -394,7 +402,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(2, allTypes.getNumberArray().size());
     MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(3L, 4L));
@@ -421,7 +429,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -466,7 +474,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                   .valueNode(allTypeChanges)
                                                                                   .build());
       PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-      PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
       Assertions.assertEquals(1, allTypes.size(), allTypes.toPrettyString());
       allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
       Assertions.assertTrue(allTypes.size() > 1, allTypes.toPrettyString());
@@ -495,7 +503,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   {
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder().op(PatchOp.ADD).build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(new AllTypes(true), patchOpRequest);
@@ -520,7 +528,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(new AllTypes(true), patchOpRequest);
@@ -562,7 +570,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getString().isPresent());
     Assertions.assertEquals("hello world", allTypes.getString().get());
@@ -591,7 +599,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -627,7 +635,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -665,7 +673,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -702,7 +710,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -755,7 +763,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -804,7 +812,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -853,7 +861,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -886,7 +894,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     AtomicBoolean primaryFound = new AtomicBoolean(false);
     for ( JsonNode complex : allTypes.getMultiComplex() )
@@ -921,7 +929,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -950,7 +958,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
   }
@@ -988,7 +996,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("hello world", allTypes.getEnterpriseUser().get().get(ambiguousAttributeName).textValue());
@@ -1030,7 +1038,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("hello world", allTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
@@ -1067,7 +1075,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     patchHandler.patchResource(allTypeChanges, patchOpRequest);
     Assertions.assertTrue(patchHandler.isChangedResource());
   }
@@ -1109,10 +1117,68 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(allTypesWithEmptyEnterpriseUser.toString())
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
     Assertions.assertTrue(patchHandler.isChangedResource());
     Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+  }
+
+  /**
+   * this test will make sure that the sailspoint workaround for complex types does correctly work.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
+   */
+  @Test
+  public void testHandleReplaceOnComplexTypesAsAdd()
+  {
+    serviceProvider.getPatchConfig().setActivateSailsPointWorkaround(true);
+
+    AllTypes originalResource = new AllTypes(true);
+    {
+      originalResource.setString("hello world");
+      originalResource.setNumber(2L);
+      AllTypes complex = new AllTypes(false);
+      complex.setString("test");
+      complex.setNumber(3L);
+      complex.setStringArray(Arrays.asList("test1", "test2"));
+      originalResource.setComplex(complex);
+    }
+
+    AllTypes patchValue1 = new AllTypes(true);
+    {
+      AllTypes complex = new AllTypes(false);
+      complex.setString("new value");
+      patchValue1.setComplex(complex);
+    }
+
+    AllTypes patchValue2 = new AllTypes(true);
+    {
+      AllTypes complex = new AllTypes(false);
+      complex.setNumber(999L);
+      patchValue2.setComplex(complex);
+    }
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .value(patchValue1.toString())
+                                                                                .build(),
+                                                           PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .value(patchValue2.toString())
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes patchedAllTypes = patchHandler.patchResource(originalResource, patchOpRequest);
+
+    log.warn(patchedAllTypes.toPrettyString());
+
+    Assertions.assertTrue(patchHandler.isChangedResource());
+    Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
+    Assertions.assertEquals(2L, patchedAllTypes.getNumber().get());
+    Assertions.assertEquals(999L, patchedAllTypes.getComplex().get().getNumber().get());
+    Assertions.assertEquals("new value", patchedAllTypes.getComplex().get().getString().get());
+    MatcherAssert.assertThat(patchedAllTypes.getComplex().get().getStringArray(),
+                             Matchers.containsInAnyOrder("test1", "test2"));
   }
 
   /**

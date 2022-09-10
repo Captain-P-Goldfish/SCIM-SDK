@@ -251,6 +251,13 @@ public final class AttributeNames
      * could not be extracted
      */
     public static final String RESOURCE_ID = "resourceId";
+
+    /**
+     * A Workaround to handle patch replace-ops on single complex types as add operations.
+     *
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
+     */
+    public static final String ACTIVATE_SAILS_POINT_WORKAROUND = "activateSailsPointWorkaround";
   }
 
   /**

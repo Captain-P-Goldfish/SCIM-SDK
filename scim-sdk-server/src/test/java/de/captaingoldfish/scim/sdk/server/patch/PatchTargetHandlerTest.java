@@ -39,10 +39,12 @@ import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -65,6 +67,11 @@ public class PatchTargetHandlerTest implements FileReferences
 {
 
   /**
+   * contains the current patch configuration
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * needed to extract the {@link ResourceType}s which are necessary to check if the given attribute-names are
    * valid or not
    */
@@ -81,6 +88,7 @@ public class PatchTargetHandlerTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
+    this.serviceProvider = ServiceProvider.builder().patchConfig(PatchConfig.builder().supported(true).build()).build();
     this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
@@ -106,7 +114,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertNotNull(allTypes.get(attributeName));
@@ -131,7 +139,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertNotNull(allTypes.get(attributeName));
@@ -155,7 +163,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertNotNull(allTypes.get(attributeName));
@@ -178,7 +186,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertNotNull(allTypes.get(attributeName));
@@ -200,7 +208,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -222,7 +230,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -244,7 +252,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setStringArray(Arrays.asList("1", "2", "3", "4", "humpty dumpty"));
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
@@ -269,7 +277,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -292,7 +300,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -315,7 +323,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     List<Long> numberList = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L);
     allTypes.setNumberArray(numberList);
@@ -342,7 +350,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     List<Long> numberList = Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L, 7L, 8L);
     allTypes.setNumberArray(numberList);
@@ -369,7 +377,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -394,7 +402,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -428,7 +436,7 @@ public class PatchTargetHandlerTest implements FileReferences
     complex.setStringArray(Collections.singletonList("happy day"));
     allTypes.setComplex(complex);
 
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
 
     Assertions.assertEquals(4, allTypes.size(), allTypes.toPrettyString());
@@ -467,7 +475,7 @@ public class PatchTargetHandlerTest implements FileReferences
     complex.setStringArray(Collections.singletonList("happy day"));
     allTypes.setComplex(complex);
 
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
 
     Assertions.assertEquals(4, allTypes.size(), allTypes.toPrettyString());
@@ -503,7 +511,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -538,7 +546,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
@@ -565,7 +573,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(attributeName)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -598,7 +606,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hf");
 
@@ -646,7 +654,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hf");
 
@@ -699,7 +707,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
 
@@ -736,7 +744,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
 
@@ -773,7 +781,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("goldfish");
@@ -816,7 +824,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("goldfish");
@@ -848,7 +856,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
 
@@ -869,7 +877,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     AllTypes complex2 = new AllTypes(false);
@@ -901,7 +909,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     AllTypes complex2 = new AllTypes(false);
@@ -938,7 +946,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     AllTypes complex2 = new AllTypes(false);
@@ -974,7 +982,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     AllTypes complex2 = new AllTypes(false);
@@ -1009,7 +1017,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     try
     {
@@ -1040,7 +1048,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     try
     {
@@ -1073,7 +1081,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .valueNode(multiComplex)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     try
     {
@@ -1105,7 +1113,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     try
     {
@@ -1136,7 +1144,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     try
     {
@@ -1165,7 +1173,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1203,7 +1211,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1247,7 +1255,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setString(value);
@@ -1291,7 +1299,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1340,7 +1348,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .valueNode(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1393,7 +1401,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1445,7 +1453,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1491,7 +1499,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setStringArray(Collections.singletonList("hello world"));
@@ -1530,7 +1538,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setString("blubb");
@@ -1576,7 +1584,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes multiComplex1 = new AllTypes(false);
     multiComplex1.setString("blubb");
@@ -1624,7 +1632,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setEnterpriseUser(EnterpriseUser.builder().costCenter("humpty dumpty").build());
 
@@ -1653,7 +1661,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setEnterpriseUser(EnterpriseUser.builder().costCenter("humpty dumpty").department("department").build());
 
@@ -1687,7 +1695,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hello world");
     EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
@@ -1738,7 +1746,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
     MatcherAssert.assertThat(allTypes.getSchemas(),
@@ -1770,7 +1778,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setEnterpriseUser(EnterpriseUser.builder().costCenter("humpty dumpty").build());
 
@@ -1798,7 +1806,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setEnterpriseUser(EnterpriseUser.builder().manager(Manager.builder().value("123456").build()).build());
 
@@ -1826,7 +1834,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setEnterpriseUser(EnterpriseUser.builder().manager(Manager.builder().value("123456").build()).build());
 
@@ -1857,7 +1865,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
@@ -1877,7 +1885,7 @@ public class PatchTargetHandlerTest implements FileReferences
   {
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder().op(PatchOp.REMOVE).build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
     try
@@ -1908,7 +1916,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
     try
@@ -1936,7 +1944,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hello world");
 
@@ -1957,7 +1965,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
     try
@@ -1985,7 +1993,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
 
     AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
@@ -2005,7 +2013,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setString("hello world");
 
@@ -2027,7 +2035,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes.setStringArray(Collections.singletonList("hello world"));
 
@@ -2050,7 +2058,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -2075,7 +2083,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -2105,7 +2113,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setStringArray(Collections.singletonList("hello world"));
@@ -2135,7 +2143,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setStringArray(Collections.singletonList("hello world"));
@@ -2163,7 +2171,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setNumber(5L);
@@ -2188,7 +2196,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setNumber(5L);
@@ -2217,7 +2225,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setNumber(5L);
@@ -2246,7 +2254,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -2280,7 +2288,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(path)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -2314,7 +2322,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(Collections.singletonList("5"))
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -2346,7 +2354,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(Collections.singletonList("5"))
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("jippie ay yay");
@@ -2391,7 +2399,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("jippie ay yay");
@@ -2432,7 +2440,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
@@ -2486,7 +2494,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
     emailArray = (ScimArrayNode)allTypes.get(AttributeNames.RFC7643.EMAILS);
@@ -2539,7 +2547,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
     emailArray = (ScimArrayNode)allTypes.get(AttributeNames.RFC7643.EMAILS);
@@ -2597,7 +2605,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
 
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     originalAllTypes = patchHandler.patchResource(originalAllTypes, patchOpRequest);
     Assertions.assertEquals(1, originalAllTypes.getSchemas().size(), originalAllTypes.toPrettyString());
     emailArray = (ScimArrayNode)originalAllTypes.get(AttributeNames.RFC7643.EMAILS);
@@ -2656,7 +2664,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
 
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     originalAllTypes = patchHandler.patchResource(originalAllTypes, patchOpRequest);
     Assertions.assertEquals(1, originalAllTypes.getSchemas().size(), originalAllTypes.toPrettyString());
     emailArray = (ScimArrayNode)originalAllTypes.get(AttributeNames.RFC7643.EMAILS);
@@ -2687,7 +2695,7 @@ public class PatchTargetHandlerTest implements FileReferences
     final String resourceId = UUID.randomUUID().toString();
     User user = User.builder().id(resourceId).userName("goldfish").build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -2731,7 +2739,7 @@ public class PatchTargetHandlerTest implements FileReferences
     final String username = UUID.randomUUID().toString();
     User user = User.builder().id(UUID.randomUUID().toString()).userName(username).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -2776,7 +2784,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().id(UUID.randomUUID().toString()).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertEquals(newUsername, user.getUserName().get());
   }
@@ -2807,7 +2815,7 @@ public class PatchTargetHandlerTest implements FileReferences
     final String username = "goldfish";
     User user = User.builder().id(UUID.randomUUID().toString()).userName(username).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertFalse(user.getUserName().isPresent());
   }
@@ -2835,7 +2843,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -2871,7 +2879,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -2917,7 +2925,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -2955,7 +2963,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().name(Name.builder().familyName("norris").build()).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3004,7 +3012,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().name(Name.builder().givenName("norris").build()).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3052,7 +3060,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().name(Name.builder().givenName("norris").build()).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3099,7 +3107,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().name(Name.builder().familyName("norris").build()).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertTrue(user.getName().isPresent());
     Assertions.assertTrue(user.getName().get().getGivenName().isPresent());
@@ -3129,7 +3137,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().id(UUID.randomUUID().toString()).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertTrue(user.getName().isPresent());
     Assertions.assertTrue(user.getName().get().getGivenName().isPresent());
@@ -3155,7 +3163,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Name name = Name.builder().givenName("chuck").build();
     User user = User.builder().id(UUID.randomUUID().toString()).name(name).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertFalse(user.getName().isPresent());
   }
@@ -3183,7 +3191,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3223,7 +3231,7 @@ public class PatchTargetHandlerTest implements FileReferences
                     .emails(Arrays.asList(Email.builder().value(UUID.randomUUID().toString()).build()))
                     .build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3262,7 +3270,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
     User user = User.builder().build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertEquals(1, user.getEmails().size());
     Assertions.assertEquals(email, user.getEmails().get(0));
@@ -3287,7 +3295,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
     User user = User.builder().emails(Collections.singletonList(email)).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertEquals(0, user.getEmails().size());
   }
@@ -3311,7 +3319,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Email email = Email.builder().value(UUID.randomUUID().toString()).type("home").build();
     User user = User.builder().emails(Collections.singletonList(email)).build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertEquals(1, user.getEmails().size());
     Assertions.assertFalse(user.getEmails().get(0).getType().isPresent());
@@ -3342,7 +3350,7 @@ public class PatchTargetHandlerTest implements FileReferences
                     .emails(Collections.singletonList(Email.builder().value(UUID.randomUUID().toString()).build()))
                     .build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
     Assertions.assertEquals(1, user.getEmails().size());
     Assertions.assertTrue(user.getEmails().get(0).getValue().isPresent());
@@ -3377,7 +3385,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                            .build()))
                     .build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3419,7 +3427,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                            .build()))
                     .build();
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(user, patchOpRequest);
@@ -3494,7 +3502,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .valueNode(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(groupResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), groupResourceType);
     Group group = Group.builder()
                        .displayName("admin")
                        .members(Arrays.asList(Member.builder().value(UUID.randomUUID().toString()).build(),
@@ -3537,7 +3545,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
 
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
@@ -3572,7 +3580,7 @@ public class PatchTargetHandlerTest implements FileReferences
     List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
 
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
@@ -3612,7 +3620,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation, secondOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.getMultiComplex().size());
@@ -3653,7 +3661,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation, secondOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, patchedResource.getMultiComplex().size());
@@ -3691,7 +3699,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation, secondOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(2, patchedResource.getMultiComplex().size());
@@ -3731,7 +3739,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation, secondOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     try
     {
@@ -3776,7 +3784,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.size());
@@ -3815,7 +3823,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.size());
@@ -3853,7 +3861,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.size());
@@ -3891,7 +3899,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.size());
@@ -3929,7 +3937,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.size());
@@ -3967,7 +3975,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     try
     {
@@ -4014,7 +4022,7 @@ public class PatchTargetHandlerTest implements FileReferences
     // so the second must fail
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
 
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(3, patchedResource.size());
@@ -4066,7 +4074,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .path(SchemaUris.ENTERPRISE_USER_URI)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
     Assertions.assertTrue(patchHandler.isChangedResource(), patchedAllTypes.toPrettyString());
     Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
@@ -4109,7 +4117,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                                          .build())
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
     Assertions.assertTrue(patchHandler.isChangedResource(), patchedAllTypes.toPrettyString());
     Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
@@ -4154,7 +4162,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .valueNode(enterpriseUser)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
     Assertions.assertTrue(patchHandler.isChangedResource(), patchedAllTypes.toPrettyString());
     Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
@@ -4202,7 +4210,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
                                                      () -> patchHandler.patchResource(allTypeChanges, patchOpRequest));
     String errorMessage = String.format("Patch request contains too many values. Expected a single value "
@@ -4241,7 +4249,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(Collections.singletonList(""))
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
                                                      () -> patchHandler.patchResource(allTypeChanges, patchOpRequest));
     String errorMessage = "Received invalid data on patch values. Expected an extension resource but got: ''";

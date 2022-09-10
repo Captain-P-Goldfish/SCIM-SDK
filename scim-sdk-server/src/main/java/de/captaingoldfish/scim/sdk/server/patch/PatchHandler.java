@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
@@ -37,6 +38,11 @@ public class PatchHandler
 {
 
   /**
+   * the current patch configuration of the service provider
+   */
+  private final PatchConfig patchConfig;
+
+  /**
    * this resource type is used to get the attribute definitions of the values from the patch operations
    */
   private final ResourceType resourceType;
@@ -55,8 +61,9 @@ public class PatchHandler
   @Getter
   private boolean changedResource;
 
-  public PatchHandler(ResourceType resourceType)
+  public PatchHandler(PatchConfig patchConfig, ResourceType resourceType)
   {
+    this.patchConfig = patchConfig;
     this.requestedAttributes = new ScimObjectNode();
     this.resourceType = Objects.requireNonNull(resourceType);
   }
@@ -182,7 +189,8 @@ public class PatchHandler
         values = msAzureWorkaround.fixValues();
       }
 
-      PatchResourceHandler patchResourceHandler = new PatchResourceHandler(resourceType, operation.getOp());
+      PatchResourceHandler patchResourceHandler = new PatchResourceHandler(patchConfig, resourceType,
+                                                                           operation.getOp());
       boolean changeWasMade = patchResourceHandler.addResourceValues(resource,
                                                                      JsonHelper.readJsonDocument(values.get(0)),
                                                                      null);

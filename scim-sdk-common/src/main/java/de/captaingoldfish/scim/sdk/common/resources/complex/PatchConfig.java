@@ -26,7 +26,7 @@ public class PatchConfig extends ScimObjectNode
   }
 
   /**
-   * A Boolean value specifying whether or not the operation is supported. REQUIRED.
+   * A Boolean value specifying whether the operation is supported. REQUIRED.
    */
   public boolean isSupported()
   {
@@ -34,10 +34,31 @@ public class PatchConfig extends ScimObjectNode
   }
 
   /**
-   * A Boolean value specifying whether or not the operation is supported. REQUIRED.
+   * A Boolean value specifying whether the operation is supported. REQUIRED.
    */
   public void setSupported(Boolean supported)
   {
     setAttribute(AttributeNames.RFC7643.SUPPORTED, Optional.ofNullable(supported).orElse(false));
+  }
+
+  /**
+   * A Workaround to handle patch replace-ops on single complex types as add operations.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
+   */
+  public boolean isActivateSailsPointWorkaround()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND).orElse(false);
+  }
+
+  /**
+   * A Workaround to handle patch replace-ops on single complex types as add operations.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
+   */
+  public void setActivateSailsPointWorkaround(Boolean activateSailsPointWorkaround)
+  {
+    setAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND,
+                 Optional.ofNullable(activateSailsPointWorkaround).orElse(false));
   }
 }

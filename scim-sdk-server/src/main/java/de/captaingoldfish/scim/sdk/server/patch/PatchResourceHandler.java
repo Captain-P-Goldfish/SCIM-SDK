@@ -16,6 +16,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -43,13 +44,19 @@ public class PatchResourceHandler extends AbstractPatch
 {
 
   /**
+   * the patch configuration of the current request. Used to check if workarounds are activated
+   */
+  private final PatchConfig patchConfig;
+
+  /**
    * tells us if the current operation is an add or a replace operation.
    */
   private PatchOp patchOp;
 
-  public PatchResourceHandler(ResourceType resourceType, PatchOp op)
+  public PatchResourceHandler(PatchConfig patchConfig, ResourceType resourceType, PatchOp op)
   {
     super(resourceType);
+    this.patchConfig = patchConfig;
     this.patchOp = op;
   }
 
@@ -84,11 +91,11 @@ public class PatchResourceHandler extends AbstractPatch
                                                               .orElse(null);
       if (extensionRef != null)
       {
-        JsonNode complex = resource.get(extensionRef.getSchema());
-        if (complex == null)
+        JsonNode extensionResource = resource.get(extensionRef.getSchema());
+        if (extensionResource == null)
         {
-          complex = new ScimObjectNode();
-          resource.set(extensionRef.getSchema(), complex);
+          extensionResource = new ScimObjectNode();
+          resource.set(extensionRef.getSchema(), extensionResource);
           ((ResourceNode)resource).addSchema(key);
         }
         // ms azure workaround
@@ -104,11 +111,13 @@ public class PatchResourceHandler extends AbstractPatch
         if (effectiveValue.isEmpty())
         {
           resource.remove(extensionRef.getSchema());
-          changeWasMade.compareAndSet(false, complex.size() > 0);
+          changeWasMade.compareAndSet(false, extensionResource.size() > 0);
         }
         else
         {
-          final boolean changeMade = addResourceValues((ObjectNode)complex, effectiveValue, extensionRef.getSchema());
+          final boolean changeMade = addResourceValues((ObjectNode)extensionResource,
+                                                       effectiveValue,
+                                                       extensionRef.getSchema());
           changeWasMade.compareAndSet(false, changeMade);
         }
       }
@@ -239,8 +248,12 @@ public class PatchResourceHandler extends AbstractPatch
         return false;
       }
 
-
-      if (PatchOp.ADD.equals(patchOp))
+      PatchOp effectivePatchOp = patchOp;
+      if (patchConfig.isActivateSailsPointWorkaround() && PatchOp.REPLACE.equals(patchOp))
+      {
+        effectivePatchOp = PatchOp.ADD;
+      }
+      if (PatchOp.ADD.equals(effectivePatchOp))
       {
         ObjectNode complexNode;
         if (resource.get(schemaAttribute.getName()) == null)

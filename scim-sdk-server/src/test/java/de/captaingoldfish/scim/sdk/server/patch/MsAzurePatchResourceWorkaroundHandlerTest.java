@@ -18,6 +18,8 @@ import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -36,6 +38,11 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
 {
 
   /**
+   * contains the current patch configuration
+   */
+  private ServiceProvider serviceProvider;
+
+  /**
    * needed to extract the {@link ResourceType}s which are necessary to check if the given attribute-names are
    * valid or not
    */
@@ -52,6 +59,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
+    this.serviceProvider = ServiceProvider.builder().patchConfig(PatchConfig.builder().supported(true).build()).build();
     this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
@@ -109,7 +117,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
     Assertions.assertEquals(employeeNumber, patchedResource.getEnterpriseUser().get().getEmployeeNumber().get());
@@ -143,7 +151,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
     Assertions.assertEquals(managerId, patchedResource.getEnterpriseUser().get().getManager().get().getValue().get());
@@ -172,7 +180,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
     Assertions.assertEquals(managerId, patchedResource.getEnterpriseUser().get().getManager().get().getValue().get());
@@ -198,7 +206,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -235,7 +243,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -268,7 +276,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -317,7 +325,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
       patchHandler.patchResource(allTypes, patchOpRequest);
@@ -361,7 +369,7 @@ public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(allTypesResourceType);
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes newAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
     Assertions.assertEquals(employeeNumberChanged, newAllTypes.getEnterpriseUser().get().getEmployeeNumber().get());
     Assertions.assertTrue(patchHandler.isChangedResource());
