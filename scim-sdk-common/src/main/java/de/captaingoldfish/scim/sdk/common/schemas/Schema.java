@@ -15,19 +15,13 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
-import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
-import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -123,46 +117,6 @@ public class Schema extends ResourceNode
     }
     setAttributes(attributeList);
     initMeta(jsonNode.get(AttributeNames.RFC7643.META));
-    if (attributeRegister.get(AttributeNames.RFC7643.ID) == null)
-    {
-      ObjectNode defaultIdAttribute = getDefaultIdAttributeRepresentation();
-      SchemaAttribute idAttribute = new SchemaAttribute(this, getNonNullId(), null, defaultIdAttribute, namePrefix);
-      attributeNameSet.add(idAttribute.getName());
-      attributeList.add(idAttribute);
-    }
-  }
-
-  /**
-   * creates a default id-attribute representation
-   *
-   * <pre>
-   * {
-   *   "name": "id",
-   *   "type": "string",
-   *   "description": "Unique identifier for the SCIM Resource as defined by the Service Provider.",
-   *   "mutability": "readOnly",
-   *   "returned": "always",
-   *   "uniqueness": "server",
-   *   "multiValued": false,
-   *   "required": true,
-   *   "caseExact": true
-   * }
-   * </pre>
-   */
-  private static ObjectNode getDefaultIdAttributeRepresentation()
-  {
-    ObjectNode defaultIdAttribute = new ObjectNode(JsonNodeFactory.instance);
-    defaultIdAttribute.set(AttributeNames.RFC7643.NAME, new TextNode(AttributeNames.RFC7643.ID));
-    defaultIdAttribute.set(AttributeNames.RFC7643.TYPE, new TextNode(Type.STRING.getValue()));
-    final String description = "Unique identifier for the SCIM Resource as defined by the Service Provider.";
-    defaultIdAttribute.set(AttributeNames.RFC7643.DESCRIPTION, new TextNode(description));
-    defaultIdAttribute.set(AttributeNames.RFC7643.MUTABILITY, new TextNode(Mutability.READ_ONLY.getValue()));
-    defaultIdAttribute.set(AttributeNames.RFC7643.RETURNED, new TextNode(Returned.ALWAYS.getValue()));
-    defaultIdAttribute.set(AttributeNames.RFC7643.UNIQUENESS, new TextNode(Uniqueness.SERVER.getValue()));
-    defaultIdAttribute.set(AttributeNames.RFC7643.MULTI_VALUED, BooleanNode.FALSE);
-    defaultIdAttribute.set(AttributeNames.RFC7643.REQUIRED, BooleanNode.TRUE);
-    defaultIdAttribute.set(AttributeNames.RFC7643.CASE_EXACT, BooleanNode.TRUE);
-    return defaultIdAttribute;
   }
 
   public Schema(JsonNode jsonNode)

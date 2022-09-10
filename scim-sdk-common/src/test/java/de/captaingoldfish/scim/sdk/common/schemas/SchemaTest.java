@@ -203,41 +203,6 @@ public class SchemaTest implements FileReferences
   }
 
   /**
-   * this test will verify that an id-attribute is automatically added to schema if not present within the
-   * resource-schema
-   */
-  @Test
-  public void testVerifyIdIsAutomaticallyAdded()
-  {
-    JsonNode validationSchema = JsonHelper.loadJsonDocument(FileReferences.VALIDATION_TEST_SCHEMA);
-    ArrayNode attributes = (ArrayNode)validationSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
-    boolean foundIdAttribute = false;
-    for ( JsonNode attribute : attributes )
-    {
-      JsonNode attributeName = attribute.get(AttributeNames.RFC7643.NAME);
-      if (attributeName.textValue().equalsIgnoreCase("id"))
-      {
-        foundIdAttribute = true;
-        break;
-      }
-    }
-    Assertions.assertFalse(foundIdAttribute,
-                           "The ID attribute should not be added to the validation-test-schema "
-                                             + "in order to keep this unit test alive");
-
-    Schema schema = Assertions.assertDoesNotThrow(() -> new Schema(validationSchema));
-    SchemaAttribute idAttribute = schema.getSchemaAttribute("id");
-    Assertions.assertNotNull(idAttribute);
-    Assertions.assertFalse(idAttribute.isMultiValued());
-    Assertions.assertTrue(idAttribute.isCaseExact());
-    Assertions.assertTrue(idAttribute.isRequired());
-    Assertions.assertEquals(Type.STRING, idAttribute.getType());
-    Assertions.assertEquals(Returned.ALWAYS, idAttribute.getReturned());
-    Assertions.assertEquals(Mutability.READ_ONLY, idAttribute.getMutability());
-    Assertions.assertEquals(Uniqueness.SERVER, idAttribute.getUniqueness());
-  }
-
-  /**
    * @return a test that calls a setter method and expects an {@link InvalidSchemaException} with an internal
    *         server error status and the given error message
    */
