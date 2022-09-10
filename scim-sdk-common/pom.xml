@@ -42,7 +42,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
                             </file>
-                            <checksum>543e7c6ec784d7b14fd8232e4eeb5fe6</checksum>
+                            <checksum>4ab278ea2f111c533a656d80235b90d6</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
