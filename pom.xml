@@ -82,7 +82,7 @@
         <version.bouncy.castle>1.70</version.bouncy.castle>
 
         <!-- dependency conflicts -->
-        <version.javassist>3.29.0-GA</version.javassist>
+        <version.javassist>3.29.2-GA</version.javassist>
         <version.jboss.jaxb.api>2.0.1.Final</version.jboss.jaxb.api>
 
         <!-- logging dependencies -->
