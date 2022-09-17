@@ -143,13 +143,13 @@
             <#lt>${getterAndSetterIndent}public void set${attribute.name?cap_first}(${functions.toJavaType(attribute)} ${attribute.name})
             <#lt>${getterAndSetterIndent}{
             <#if  attribute.type == 'DATE_TIME'>
-                <#if attribute.multiValued>
+                <#if attribute.multiValued && attribute.type != 'COMPLEX'>
                     <#lt>${getterAndSetterIndent}  setAttributeList(FieldNames.${attribute.name?upper_case}, ${attribute.name});
                 <#else>
                     <#lt>${getterAndSetterIndent}  setDateTimeAttribute(FieldNames.${attribute.name?upper_case}, ${attribute.name});
                 </#if>
             <#else>
-                <#if attribute.multiValued>
+                <#if attribute.multiValued && attribute.type != 'COMPLEX'>
                     <#lt>${getterAndSetterIndent}  setAttributeList(FieldNames.${attribute.name?upper_case}, ${attribute.name});
                 <#else>
                     <#lt>${getterAndSetterIndent}  setAttribute(FieldNames.${attribute.name?upper_case}, ${attribute.name});
