@@ -177,4 +177,14 @@ public class BulkResponseGetOperation extends ScimObjectNode
   {
     setAttribute(AttributeNames.Custom.CHILDREN, children);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class BulkResponseGetOperationBuilder
+  {
+
+    public BulkResponseGetOperationBuilder()
+    {}
+  }
 }

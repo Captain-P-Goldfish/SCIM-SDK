@@ -144,4 +144,14 @@ public class ETag extends ScimTextNode
       return getEntityTag().equals(other.getEntityTag());
     }
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class ETagBuilder
+  {
+
+    public ETagBuilder()
+    {}
+  }
 }

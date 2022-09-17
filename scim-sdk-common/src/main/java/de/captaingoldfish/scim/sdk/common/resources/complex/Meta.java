@@ -232,6 +232,9 @@ public class Meta extends ScimObjectNode
      */
     private Meta meta;
 
+    public MetaBuilder()
+    {}
+
     public MetaBuilder(Meta meta)
     {
       this.meta = meta;

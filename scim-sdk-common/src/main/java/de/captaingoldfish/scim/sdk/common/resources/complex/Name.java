@@ -147,4 +147,13 @@ public class Name extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.HONORIFIC_SUFFIX, honorificSuffix);
   }
 
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class NameBuilder
+  {
+
+    public NameBuilder()
+    {}
+  }
 }

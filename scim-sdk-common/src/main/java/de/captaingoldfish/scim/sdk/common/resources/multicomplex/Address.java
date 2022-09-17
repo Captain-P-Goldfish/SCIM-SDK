@@ -141,4 +141,14 @@ public class Address extends MultiComplexNode
   {
     setAttribute(AttributeNames.RFC7643.COUNTRY, country);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class AddressBuilder
+  {
+
+    public AddressBuilder()
+    {}
+  }
 }

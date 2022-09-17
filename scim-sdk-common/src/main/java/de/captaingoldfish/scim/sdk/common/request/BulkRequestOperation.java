@@ -230,4 +230,14 @@ public class BulkRequestOperation extends ScimObjectNode
   {
     setAttribute(AttributeNames.Custom.MAX_RESOURCE_LEVEL, maxResourceLevel);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class BulkRequestOperationBuilder
+  {
+
+    public BulkRequestOperationBuilder()
+    {}
+  }
 }

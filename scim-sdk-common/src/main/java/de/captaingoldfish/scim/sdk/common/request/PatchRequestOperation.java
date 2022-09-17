@@ -149,6 +149,9 @@ public class PatchRequestOperation extends ScimObjectNode
   public static class PatchRequestOperationBuilder
   {
 
+    public PatchRequestOperationBuilder()
+    {}
+
     public PatchRequestOperationBuilder value(String value)
     {
       this.values(Arrays.asList(value));

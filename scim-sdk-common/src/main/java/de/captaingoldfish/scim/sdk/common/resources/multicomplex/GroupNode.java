@@ -32,4 +32,14 @@ public class GroupNode extends MultiComplexNode
   {
     super(type, primary, display, value, ref);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class GroupNodeBuilder
+  {
+
+    public GroupNodeBuilder()
+    {}
+  }
 }

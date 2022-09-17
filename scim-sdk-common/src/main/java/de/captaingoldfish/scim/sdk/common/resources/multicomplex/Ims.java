@@ -24,4 +24,14 @@ public class Ims extends MultiComplexNode
   {
     super(type, primary, display, value, ref);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class ImsBuilder
+  {
+
+    public ImsBuilder()
+    {}
+  }
 }

@@ -23,4 +23,14 @@ public class Entitlement extends MultiComplexNode
   {
     super(type, primary, display, value, ref);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class EntitlementBuilder
+  {
+
+    public EntitlementBuilder()
+    {}
+  }
 }

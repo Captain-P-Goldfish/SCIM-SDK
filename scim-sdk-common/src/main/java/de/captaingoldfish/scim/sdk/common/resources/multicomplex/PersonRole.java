@@ -21,4 +21,14 @@ public class PersonRole extends MultiComplexNode
   {
     super(type, primary, display, value, ref);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class PersonRoleBuilder
+  {
+
+    public PersonRoleBuilder()
+    {}
+  }
 }

@@ -61,4 +61,14 @@ public class PatchConfig extends ScimObjectNode
     setAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND,
                  Optional.ofNullable(activateSailsPointWorkaround).orElse(false));
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class PatchConfigBuilder
+  {
+
+    public PatchConfigBuilder()
+    {}
+  }
 }

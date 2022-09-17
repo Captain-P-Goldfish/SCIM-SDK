@@ -22,4 +22,14 @@ public class ScimX509Certificate extends MultiComplexNode
   {
     super(type, primary, display, value, ref);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class ScimX509CertificateBuilder
+  {
+
+    public ScimX509CertificateBuilder()
+    {}
+  }
 }

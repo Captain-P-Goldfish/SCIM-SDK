@@ -65,4 +65,14 @@ public class FilterConfig extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.MAX_RESULTS,
                  Optional.ofNullable(results).orElse(Long.valueOf(DEFAULT_MAX_RESULTS)));
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class FilterConfigBuilder
+  {
+
+    public FilterConfigBuilder()
+    {}
+  }
 }

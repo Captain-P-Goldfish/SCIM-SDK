@@ -203,4 +203,14 @@ public class ResourceType extends ResourceNode
     public static final String REQUIRED = "required";
 
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class ResourceTypeBuilder
+  {
+
+    public ResourceTypeBuilder()
+    {}
+  }
 }

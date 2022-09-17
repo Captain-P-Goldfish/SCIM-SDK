@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
+import lombok.Builder;
 
 
 /**

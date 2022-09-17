@@ -78,4 +78,14 @@ public class Manager extends ScimObjectNode
   {
     setAttribute(AttributeNames.RFC7643.REF, ref);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class ManagerBuilder
+  {
+
+    public ManagerBuilder()
+    {}
+  }
 }

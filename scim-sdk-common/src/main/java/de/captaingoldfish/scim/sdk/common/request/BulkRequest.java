@@ -75,4 +75,14 @@ public class BulkRequest extends AbstractSchemasHolder
   {
     setAttribute(AttributeNames.RFC7643.OPERATIONS, bulkRequestOperation);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class BulkRequestBuilder
+  {
+
+    public BulkRequestBuilder()
+    {}
+  }
 }

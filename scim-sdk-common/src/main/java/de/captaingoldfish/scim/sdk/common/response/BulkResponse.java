@@ -104,4 +104,13 @@ public class BulkResponse extends ScimResponse
     return getBulkResponseOperations().stream().filter(op -> !op.getBulkId().isPresent()).collect(Collectors.toList());
   }
 
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class BulkResponseBuilder
+  {
+
+    public BulkResponseBuilder()
+    {}
+  }
 }

@@ -40,4 +40,14 @@ public class ChangePasswordConfig extends ScimObjectNode
   {
     setAttribute(AttributeNames.RFC7643.SUPPORTED, Optional.ofNullable(supported).orElse(false));
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class ChangePasswordConfigBuilder
+  {
+
+    public ChangePasswordConfigBuilder()
+    {}
+  }
 }

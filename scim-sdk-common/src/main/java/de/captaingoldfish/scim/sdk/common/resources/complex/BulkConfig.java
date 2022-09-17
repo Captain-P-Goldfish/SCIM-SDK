@@ -166,4 +166,14 @@ public class BulkConfig extends ScimObjectNode
     }
     setAttribute(AttributeNames.Custom.SUPPORT_BULK_GET, effectiveValue);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class BulkConfigBuilder
+  {
+
+    public BulkConfigBuilder()
+    {}
+  }
 }

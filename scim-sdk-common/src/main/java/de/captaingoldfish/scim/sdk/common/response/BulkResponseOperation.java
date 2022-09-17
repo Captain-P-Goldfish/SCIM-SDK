@@ -228,4 +228,14 @@ public class BulkResponseOperation extends ScimObjectNode
                    .map(value -> JsonHelper.copyResourceToObject(value, type));
   }
 
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class BulkResponseOperationBuilder
+  {
+
+    public BulkResponseOperationBuilder()
+    {}
+  }
 }

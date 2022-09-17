@@ -49,4 +49,14 @@ public class PatchOpRequest extends AbstractSchemasHolder
   {
     setAttribute(AttributeNames.RFC7643.OPERATIONS, operations);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class PatchOpRequestBuilder
+  {
+
+    public PatchOpRequestBuilder()
+    {}
+  }
 }

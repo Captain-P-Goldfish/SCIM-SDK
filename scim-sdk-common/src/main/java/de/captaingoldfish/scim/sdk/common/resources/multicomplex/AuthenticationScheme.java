@@ -145,4 +145,14 @@ public class AuthenticationScheme extends MultiComplexNode
     return getName() + " realm=\"" + realm + "\"";
   }
 
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class AuthenticationSchemeBuilder
+  {
+
+    public AuthenticationSchemeBuilder()
+    {}
+  }
+
 }

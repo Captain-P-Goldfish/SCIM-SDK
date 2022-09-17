@@ -173,4 +173,14 @@ public class SearchRequest extends AbstractSchemasHolder
   {
     setAttribute(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES, excludedAttributes);
   }
+
+  /**
+   * override lombok builder with public constructor
+   */
+  public static class SearchRequestBuilder
+  {
+
+    public SearchRequestBuilder()
+    {}
+  }
 }
