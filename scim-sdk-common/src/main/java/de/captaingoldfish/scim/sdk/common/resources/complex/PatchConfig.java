@@ -19,10 +19,11 @@ public class PatchConfig extends ScimObjectNode
 {
 
   @Builder
-  public PatchConfig(Boolean supported)
+  public PatchConfig(Boolean supported, Boolean activateSailsPointWorkaround)
   {
     super(null);
     setSupported(supported);
+    setActivateSailsPointWorkaround(activateSailsPointWorkaround);
   }
 
   /**
