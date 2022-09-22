@@ -25,7 +25,7 @@ public class PatchConfigTest
   {
     PatchConfig patchConfig = PatchConfig.builder().build();
     MatcherAssert.assertThat(patchConfig, Matchers.not(Matchers.emptyIterable()));
-    Assertions.assertEquals(1, patchConfig.size());
+    Assertions.assertEquals(2, patchConfig.size());
     Assertions.assertFalse(patchConfig.isSupported());
   }
 
