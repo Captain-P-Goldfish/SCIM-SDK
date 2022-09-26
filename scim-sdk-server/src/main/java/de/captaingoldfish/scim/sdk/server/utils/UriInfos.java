@@ -186,13 +186,14 @@ public class UriInfos
     {
       return resourceType;
     }
-    throw new BadRequestException("the request url does not point to a registered resource type. Registered resource "
-                                  + "types are: ["
-                                  + resourceTypeFactory.getAllResourceTypes()
-                                                       .stream()
-                                                       .map(ResourceType::getEndpoint)
-                                                       .collect(Collectors.joining(","))
-                                  + "]", null, ScimType.Custom.INVALID_PARAMETERS);
+    throw new BadRequestException(String.format("the request url '%s' does not point to a registered resource type. "
+                                                + "Registered resource types are: [%s]",
+                                                lastPathPart + nextToLastPathPart,
+                                                resourceTypeFactory.getAllResourceTypes()
+                                                                   .stream()
+                                                                   .map(ResourceType::getEndpoint)
+                                                                   .collect(Collectors.joining(","))),
+                                  null, ScimType.Custom.INVALID_PARAMETERS);
   }
 
   /**
