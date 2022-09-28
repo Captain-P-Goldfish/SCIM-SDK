@@ -607,7 +607,7 @@
                     <plugin>
                         <groupId>org.projectlombok</groupId>
                         <artifactId>lombok-maven-plugin</artifactId>
-                        <version>${version.lombok}.0</version>
+                        <version>${version.lombok}</version>
                         <executions>
                             <execution>
                                 <id>delombok</id>
