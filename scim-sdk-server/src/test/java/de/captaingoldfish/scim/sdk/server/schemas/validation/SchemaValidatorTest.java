@@ -110,7 +110,7 @@ public class SchemaValidatorTest implements FileReferences
    * creates a endpoint reference url to a specific resource that was registered within the
    * {@link #resourceTypeFactory}
    */
-  private BiFunction<String, String, String> referenceUrlSupplier = (resourceName, resourceId) -> {
+  private BiFunction<String, String, String> referenceUrlSupplier = (resourceId, resourceName) -> {
     String endpoint = resourceTypeFactory.getResourceTypeByName(resourceName)
                                          .map(ResourceType::getEndpoint)
                                          .orElse("/" + resourceName);

@@ -97,6 +97,6 @@ public class Context
    */
   public Optional<String> getCrossResourceReferenceUrl(String id, String resourceName)
   {
-    return Optional.ofNullable(crossResourceReferenceUrl.apply(resourceName, id));
+    return Optional.ofNullable(crossResourceReferenceUrl.apply(id, resourceName));
   }
 }

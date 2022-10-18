@@ -54,7 +54,7 @@ public class ResponseAttributeValidatorTest
   /**
    * a url supplier that may be used in special cases during schema validation
    */
-  private static final BiFunction<String, String, String> REFERENCE_URL_SUPPLIER = (resourceName, resourceId) -> {
+  private static final BiFunction<String, String, String> REFERENCE_URL_SUPPLIER = (resourceId, resourceName) -> {
     return String.format("http://localhost:8080/scim/v2/%s/%s", resourceName, resourceId);
   };
 
@@ -1902,7 +1902,7 @@ public class ResponseAttributeValidatorTest
       Assertions.assertTrue(validatedNode.isPresent());
       Assertions.assertEquals(3, validatedNode.get().size());
 
-      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(resourceName, id);
+      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(id, resourceName);
       Assertions.assertEquals(expectedUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).textValue());
     }
 
@@ -2109,8 +2109,8 @@ public class ResponseAttributeValidatorTest
         ObjectNode member = (ObjectNode)members.get(i);
         ObjectNode validatedMember = (ObjectNode)validatedNode.get().get(i);
 
-        final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(resourceName,
-                                                                member.get(AttributeNames.RFC7643.VALUE).textValue());
+        final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(member.get(AttributeNames.RFC7643.VALUE).textValue(),
+                                                                resourceName);
         Assertions.assertEquals(expectedUrl, validatedMember.get(AttributeNames.RFC7643.REF).textValue());
       }
     }
@@ -2143,8 +2143,8 @@ public class ResponseAttributeValidatorTest
       Assertions.assertTrue(validatedNode.get().isArray());
       Assertions.assertEquals(1, validatedNode.get().size());
 
-      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(resourceName,
-                                                              member.get(AttributeNames.RFC7643.VALUE).textValue());
+      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(member.get(AttributeNames.RFC7643.VALUE).textValue(),
+                                                              resourceName);
       Assertions.assertEquals(expectedUrl, validatedNode.get().get(0).get(AttributeNames.RFC7643.REF).textValue());
     }
 

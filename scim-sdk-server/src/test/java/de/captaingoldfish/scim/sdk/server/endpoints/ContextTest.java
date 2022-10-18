@@ -66,7 +66,7 @@ public class ContextTest
       Assertions.assertEquals(String.format("%s%s/%s", BASE_URI, EndpointPaths.USERS, otherId),
                               context.getResourceReferenceUrl(otherId));
       Assertions.assertEquals(String.format("%s%s/%s", BASE_URI, EndpointPaths.GROUPS, otherId),
-                              context.getCrossResourceReferenceUrl("Group", otherId).get());
+                              context.getCrossResourceReferenceUrl(otherId, "Group").get());
       wasCalled.set(true);
     };
 

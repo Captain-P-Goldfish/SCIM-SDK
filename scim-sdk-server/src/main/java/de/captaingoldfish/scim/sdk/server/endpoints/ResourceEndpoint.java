@@ -324,9 +324,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   {
     Context effectiveContext = Optional.ofNullable(context).orElse(new Context(null));
     effectiveContext.setResourceReferenceUrl(id -> {
-      return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(uriInfos.getResourceType().getName(), id);
+      return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, uriInfos.getResourceType().getName());
     });
-    effectiveContext.setCrossResourceReferenceUrl((resourceName, id) -> {
+    effectiveContext.setCrossResourceReferenceUrl((id, resourceName) -> {
       return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, resourceName);
     });
     return effectiveContext;

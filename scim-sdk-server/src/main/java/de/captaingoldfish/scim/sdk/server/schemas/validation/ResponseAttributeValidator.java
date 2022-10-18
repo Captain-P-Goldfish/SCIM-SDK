@@ -579,7 +579,7 @@ class ResponseAttributeValidator
       return;
     }
 
-    String referenceUrl = referenceUrlSupplier.apply(resourceName, resourceId);
+    String referenceUrl = referenceUrlSupplier.apply(resourceId, resourceName);
     if (referenceUrl == null)
     {
       return;
