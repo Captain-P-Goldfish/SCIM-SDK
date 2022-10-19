@@ -610,6 +610,13 @@
                         <groupId>org.projectlombok</groupId>
                         <artifactId>lombok-maven-plugin</artifactId>
                         <version>${version.maven.lombok.plugin}</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.projectlombok</groupId>
+                                <artifactId>lombok</artifactId>
+                                <version>${version.lombok}</version>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <execution>
                                 <id>delombok</id>
