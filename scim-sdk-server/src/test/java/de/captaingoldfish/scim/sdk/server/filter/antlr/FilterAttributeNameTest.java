@@ -25,7 +25,7 @@ public class FilterAttributeNameTest
    */
   @ParameterizedTest
   @ValueSource(strings = {"", "userName", "emails", "name.givenName", "urn:ietf:params:scim:schemas:core:2.0:User:name",
-                          "urn:ietf:params:scim:schemas:core:2.0:User:name.givenName"})
+                          "urn:ietf:params:scim:schemas:core:2.0:User:name.givenName", "emails.$ref"})
 
   public void testCreateAttributeNameWithStringConstructor(String attributeNameString)
   {

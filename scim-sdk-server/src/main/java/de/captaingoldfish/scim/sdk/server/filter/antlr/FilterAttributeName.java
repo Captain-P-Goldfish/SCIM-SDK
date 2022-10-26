@@ -62,7 +62,7 @@ public class FilterAttributeName
 
   public FilterAttributeName(String attributeName)
   {
-    Pattern pattern = Pattern.compile("(([\\w:.]+):)?(\\w+)(\\.)?(\\w+)?");
+    Pattern pattern = Pattern.compile("(([\\w$:.]+):)?([\\w$]+)(\\.)?([\\w$]+)?");
     Matcher matcher = pattern.matcher(attributeName);
     if (matcher.matches())
     {
