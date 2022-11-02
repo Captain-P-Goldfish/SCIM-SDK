@@ -17,6 +17,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
@@ -891,7 +892,10 @@ public class ListBuilder<T extends ResourceNode>
      */
     private void setExpression(String attributeName, Comparator comparator, Object value)
     {
-      filterString.append(attributeName).append(" ").append(comparator.name());
+      ScimClientConfig scimClientConfig = scimHttpClient.getScimClientConfig();
+      String comparatorString = scimClientConfig.isUseLowerCaseInFilterComparators() ? comparator.name().toLowerCase()
+        : comparator.name();
+      filterString.append(attributeName).append(" ").append(comparatorString);
       if (value instanceof String)
       {
         filterString.append(value == null ? "" : " ").append("\"").append(value == null ? "" : value).append("\"");
@@ -911,7 +915,7 @@ public class ListBuilder<T extends ResourceNode>
       {
         throw new IllegalStateException("error within filter expression\n\topened parentheses: " + openedParenthesis
                                         + "\n\tclosed parentheses: " + closedParenthesis + "\n\tfilter: "
-                                        + filterString.toString());
+                                        + filterString);
       }
       listBuilder.requestParameters.put(AttributeNames.RFC7643.FILTER, filterString.toString());
       return listBuilder;

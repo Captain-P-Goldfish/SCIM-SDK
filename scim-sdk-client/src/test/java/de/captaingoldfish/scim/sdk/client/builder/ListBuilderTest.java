@@ -554,6 +554,57 @@ public class ListBuilderTest extends HttpServerMockup
     }
   }
 
+  /**
+   * verifies that filter comparators are written in lower case if the {@link ScimClientConfig} has the property
+   * {@link ScimClientConfig#useLowerCaseInFilterComparators} set to true
+   */
+  @Test
+  public void testFilterComparatorsAreWrittenInLowerCase()
+  {
+    ScimClientConfig scimClientConfig = ScimClientConfig.builder().useLowerCaseInFilterComparators(true).build();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.filter("username", Comparator.SW, "hello").and("displayName", Comparator.EW, "world").build();
+
+    AtomicBoolean wasCalled = new AtomicBoolean();
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      Map<String, String> requestParams = RequestUtils.getQueryParameters(httpExchange.getRequestURI().getQuery());
+
+      String filterExpression = requestParams.get(AttributeNames.RFC7643.FILTER);
+      Assertions.assertEquals("username sw \"hello\" and displayName ew \"world\"", filterExpression);
+      wasCalled.set(true);
+    });
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(wasCalled.get());
+  }
+
+  /**
+   * verifies that filter comparators are written in upper case if no configurations are adjusted.
+   */
+  @Test
+  public void testFilterComparatorsAreWrittenInUpperCase()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.filter("username", Comparator.SW, "hello").and("displayName", Comparator.EW, "world").build();
+
+    AtomicBoolean wasCalled = new AtomicBoolean();
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      Map<String, String> requestParams = RequestUtils.getQueryParameters(httpExchange.getRequestURI().getQuery());
+
+      String filterExpression = requestParams.get(AttributeNames.RFC7643.FILTER);
+      Assertions.assertEquals("username SW \"hello\" and displayName EW \"world\"", filterExpression);
+      wasCalled.set(true);
+    });
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(wasCalled.get());
+  }
+
   private void parseFilterWithAntlr(String filter)
   {
     FilterRuleErrorListener filterRuleErrorListener = new FilterRuleErrorListener();

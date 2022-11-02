@@ -96,6 +96,12 @@ public class ScimClientConfig
    */
   private ConfigManipulator configManipulator;
 
+  /**
+   * if the filter-expression-comparators should be sent in lowercase instead of uppercase e.g.: eq instead of
+   * EQ.
+   */
+  private boolean useLowerCaseInFilterComparators;
+
   @Builder
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
@@ -109,7 +115,8 @@ public class ScimClientConfig
                           Map<String, String> httpHeaders,
                           Map<String, String[]> httpMultiHeaders,
                           BasicAuth basicAuth,
-                          ConfigManipulator configManipulator)
+                          ConfigManipulator configManipulator,
+                          boolean useLowerCaseInFilterComparators)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -123,6 +130,7 @@ public class ScimClientConfig
     setHeaders(httpHeaders, httpMultiHeaders);
     this.basicAuth = basicAuth;
     this.configManipulator = configManipulator;
+    this.useLowerCaseInFilterComparators = useLowerCaseInFilterComparators;
   }
 
   /**
