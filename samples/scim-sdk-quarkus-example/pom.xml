@@ -12,7 +12,7 @@
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.quarkus.sample</module.name>
 
-        <version.quarkus>2.14.1.Final</version.quarkus>
+        <version.quarkus>2.14.3.Final</version.quarkus>
     </properties>
 
     <dependencyManagement>
