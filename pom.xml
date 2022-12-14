@@ -115,7 +115,7 @@
         <version.maven.deploy.plugin>3.0.0</version.maven.deploy.plugin>
         <version.maven.release.plugin>3.0.0-M7</version.maven.release.plugin>
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
-        <version.maven.versions.plugin>2.13.0</version.maven.versions.plugin>
+        <version.maven.versions.plugin>2.14.0</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.3.0</version.maven.jar.plugin>
         <version.gmaven.plugin>1.5</version.gmaven.plugin>
         <version.jacoco>0.8.8</version.jacoco>
