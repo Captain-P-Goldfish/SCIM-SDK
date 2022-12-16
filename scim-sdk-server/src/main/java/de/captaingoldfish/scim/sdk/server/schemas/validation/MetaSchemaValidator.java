@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
@@ -62,5 +63,14 @@ public class MetaSchemaValidator extends AbstractSchemaValidator
   protected Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
     return MetaAttributeValidator.validateAttribute(schemaAttribute, attribute);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected int getHttpStatusCode()
+  {
+    return HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }
