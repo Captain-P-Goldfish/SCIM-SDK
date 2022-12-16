@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -68,5 +69,14 @@ public class RequestSchemaValidator extends AbstractSchemaValidator
       validationContext.addExceptionMessages(ex);
       return Optional.empty();
     }
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected int getHttpStatusCode()
+  {
+    return HttpStatus.BAD_REQUEST;
   }
 }

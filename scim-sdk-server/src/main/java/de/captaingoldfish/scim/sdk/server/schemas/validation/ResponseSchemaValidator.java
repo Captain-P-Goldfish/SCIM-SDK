@@ -6,6 +6,7 @@ import java.util.function.BiFunction;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 
@@ -65,5 +66,14 @@ public class ResponseSchemaValidator extends AbstractSchemaValidator
                                                         attributesList,
                                                         excludedAttributesList,
                                                         referenceUrlSupplier);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  protected int getHttpStatusCode()
+  {
+    return HttpStatus.INTERNAL_SERVER_ERROR;
   }
 }

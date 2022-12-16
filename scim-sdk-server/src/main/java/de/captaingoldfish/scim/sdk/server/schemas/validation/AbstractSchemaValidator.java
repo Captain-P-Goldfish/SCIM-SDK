@@ -55,6 +55,12 @@ public abstract class AbstractSchemaValidator
   protected abstract Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute, JsonNode attribute);
 
   /**
+   * the http status code to use in the {@link DocumentValidationException} if the validation fails. Should be
+   * 400 (bad request) for requests and 500 (internal server error) for responses
+   */
+  protected abstract int getHttpStatusCode();
+
+  /**
    * checks the given document against the schema definition of the {@link #resourceType}
    *
    * @param resource the document that should be validated
@@ -72,7 +78,7 @@ public abstract class AbstractSchemaValidator
     {
       Throwable cause = ExceptionUtils.getRootCause(ex);
       String errorMessage = Optional.ofNullable(cause).map(Throwable::getMessage).orElse(ex.getMessage());
-      throw new DocumentValidationException(errorMessage, ex, null, null);
+      throw new DocumentValidationException(errorMessage, ex, getHttpStatusCode(), null);
     }
   }
 
