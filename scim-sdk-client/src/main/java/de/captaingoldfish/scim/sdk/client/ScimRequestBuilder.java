@@ -81,7 +81,8 @@ public class ScimRequestBuilder implements AutoCloseable
                  response.getHttpStatus(),
                  response.getResponseBody());
       }
-      return response.getResource();
+      serviceProvider = response.getResource();
+      return serviceProvider;
     }
     catch (Exception ex)
     {
