@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -302,9 +303,14 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     {
       BulkRequestOperation bulkRequestOperation = bulkRequestOperations.get(i);
       String operationString = bulkRequestOperation.toString();
+      final String bulkId = bulkRequestOperation.getBulkId().orElse(null);
+      if (bulkId == null)
+      {
+        throw new IllegalStateException("Cannot use auto-splitting feature for bulk requests if the bulkId "
+                                        + "elements are missing. Please assign a bulkId to each single operation!");
+      }
       List<BulkRequestOperation> childOperationList = bulkRequestIdResolverWrapper.getParentChildRelationMap()
-                                                                                  .get(bulkRequestOperation.getBulkId()
-                                                                                                           .get());
+                                                                                  .get(bulkId);
       if (childOperationList == null)
       {
         break;
