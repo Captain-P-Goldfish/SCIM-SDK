@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -381,7 +380,11 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
       final String resourceId = bulkResponseOperation.getResourceId().orElseGet(() -> {
         return getIdFromLocationAttribute(bulkResponseOperation);
       });
-      bulkRequestIdResolverWrapper.getResolvedBulkIds().put(bulkId, resourceId);
+      // if the resourceId is null the operation did fail
+      if (resourceId != null)
+      {
+        bulkRequestIdResolverWrapper.getResolvedBulkIds().put(bulkId, resourceId);
+      }
       List<BulkResponseOperation> compositeOperations = compositeBulkResponse.getBulkResponseOperations();
       compositeOperations.add(bulkResponseOperation);
       compositeBulkResponse.setBulkResponseOperations(compositeOperations);
@@ -393,7 +396,11 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   protected String getIdFromLocationAttribute(BulkResponseOperation bulkResponseOperation)
   {
-    String[] locationParts = bulkResponseOperation.getLocation().map(s -> s.split("/")).get();
+    String[] locationParts = bulkResponseOperation.getLocation().map(s -> s.split("/")).orElse(null);
+    if (locationParts == null)
+    {
+      return null;
+    }
     return locationParts[locationParts.length - 1];
   }
 
