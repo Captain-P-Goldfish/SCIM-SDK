@@ -138,7 +138,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    * into the request body
    */
   @Override
-  protected String getResource()
+  public String getResource()
   {
     return builder.build().toString();
   }
