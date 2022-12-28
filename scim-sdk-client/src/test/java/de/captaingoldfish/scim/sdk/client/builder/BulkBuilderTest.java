@@ -132,7 +132,8 @@ public class BulkBuilderTest extends HttpServerMockup
   }
 
   /**
-   * causes a precondition failed response from the server by causing errors in the bulk request
+   * causes a precondition failed response from the server by causing errors in the bulk request. The error is
+   * caused by omitting the resource that should be present in a POST within the request
    */
   @ParameterizedTest
   @ValueSource(booleans = {true, false})
@@ -145,9 +146,6 @@ public class BulkBuilderTest extends HttpServerMockup
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
-                                                       .data(User.builder()
-                                                                 .userName(UUID.randomUUID().toString())
-                                                                 .build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());

@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
 import lombok.Getter;
@@ -40,6 +41,38 @@ public class BulkRequestOperation extends ScimObjectNode
     super(null);
   }
 
+  /**
+   * @param method The HTTP method of the current operation. Possible values are "POST", "PUT", "PATCH", or
+   *          "DELETE". REQUIRED.
+   * @param bulkId The transient identifier of a newly created resource, unique within a bulk request and
+   *          created by the client. The bulkId serves as a surrogate resource id enabling clients to uniquely
+   *          identify newly created resources in the response and cross-reference new resources in and across
+   *          operations within a bulk request. REQUIRED when "method" is "POST".
+   * @param path The resource's relative path to the SCIM service provider's root. If "method" is "POST", the
+   *          value must specify a resource type endpoint, e.g., /Users or /Groups, whereas all other "method"
+   *          values must specify the path to a specific resource, e.g.,
+   *          /Users/2819c223-7f76-453a-919d-413861904646. REQUIRED in a request.
+   * @param data The resource data as it would appear for a single SCIM POST, PUT, or PATCH operation. REQUIRED
+   *          in a request when "method" is "POST", "PUT", or "PATCH".
+   * @param version The version of the resource being returned. This value must be the same as the entity-tag
+   *          (ETag) HTTP response header (see Sections 2.1 and 2.3 of [RFC7232]). This attribute has
+   *          "caseExact" as "true". Service provider support for this attribute is optional and subject to the
+   *          service provider's support for versioning (see Section 3.14 of [RFC7644]). If a service provider
+   *          provides "version" (entity-tag) for a representation and the generation of that entity-tag does
+   *          not satisfy all of the characteristics of a strong validator (see Section 2.1 of [RFC7232]), then
+   *          the origin server MUST mark the "version" (entity-tag) as weak by prefixing its opaque value with
+   *          "W/" (case sensitive).
+   * @param returnResource this field allows clients to explicitly ask the server to return the created or
+   *          modified resource in the bulk response. This does only work with the SCIM-SDK server
+   *          implementation under the condition that the feature {@link BulkConfig#isReturnResourcesEnabled()}
+   *          is enabled in the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
+   *          configuration.
+   * @param maxResourceLevel this field allows clients to limit the number of transitive retrieved resources
+   *          from the bulk-response to keep the response profile low. This is a custom feature usable with the
+   *          SCIM-SDK server implementation that is only usable if the {@link BulkConfig#isSupportBulkGet()}
+   *          feature is enabled within the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
+   *          configuration.
+   */
   @Builder
   public BulkRequestOperation(HttpMethod method,
                               String bulkId,
@@ -205,8 +238,10 @@ public class BulkRequestOperation extends ScimObjectNode
   }
 
   /**
-   * this field allows clients to explicitly ask to return the created or modified resource in the bulk
-   * response.
+   * this field allows clients to explicitly ask the server to return the created or modified resource in the
+   * bulk response. This does only work with the SCIM-SDK server implementation under the condition that the
+   * feature is enabled in the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
+   * configuration.
    */
   public void setReturnResource(Boolean returnResource)
   {
