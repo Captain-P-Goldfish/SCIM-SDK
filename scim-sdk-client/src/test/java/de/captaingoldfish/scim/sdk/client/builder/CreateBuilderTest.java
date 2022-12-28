@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.UUID;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,19 +29,21 @@ public class CreateBuilderTest extends HttpServerMockup
   @Test
   public void testCreateBuilderTest()
   {
+    final String username = UUID.randomUUID().toString();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
+    User user = User.builder().userName(username).build();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ServerResponse<User> response = new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                                                        scimHttpClient).setResource(User.builder().userName("goldfish").build()).sendRequest();
+                                                        scimHttpClient).setResource(user).sendRequest();
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
     Assertions.assertNull(response.getErrorResponse());
 
-    User user = response.getResource();
-    Assertions.assertEquals("goldfish", user.getUserName().get());
-    Assertions.assertEquals(user.getMeta().get().getVersion().get().getEntityTag(),
+    User createdUser = response.getResource();
+    Assertions.assertEquals(username, createdUser.getUserName().get());
+    Assertions.assertEquals(createdUser.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
   }
 
@@ -49,10 +53,11 @@ public class CreateBuilderTest extends HttpServerMockup
   @Test
   public void testWithFullyQualifiedUrl()
   {
+    final String username = UUID.randomUUID().toString();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ServerResponse<User> response = new CreateBuilder<>(getServerUrl() + EndpointPaths.USERS, User.class,
-                                                        scimHttpClient).setResource(User.builder().userName("goldfish").build()).sendRequest();
+                                                        scimHttpClient).setResource(User.builder().userName(username).build()).sendRequest();
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
     Assertions.assertTrue(response.isSuccess());
@@ -60,7 +65,7 @@ public class CreateBuilderTest extends HttpServerMockup
     Assertions.assertNull(response.getErrorResponse());
 
     User user = response.getResource();
-    Assertions.assertEquals("goldfish", user.getUserName().get());
+    Assertions.assertEquals(username, user.getUserName().get());
     Assertions.assertEquals(user.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
   }

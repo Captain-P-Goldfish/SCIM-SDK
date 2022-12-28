@@ -39,7 +39,7 @@ public class UpdateBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -65,7 +65,10 @@ public class UpdateBuilderTest extends HttpServerMockup
   public void testUpdateResourceFail(boolean useFullUrl)
   {
     final String id = UUID.randomUUID().toString();
-    User updateUser = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    User updateUser = User.builder()
+                          .userName(UUID.randomUUID().toString())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ServerResponse<User> response;
@@ -96,7 +99,7 @@ public class UpdateBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -145,7 +148,7 @@ public class UpdateBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -197,7 +200,7 @@ public class UpdateBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -249,7 +252,7 @@ public class UpdateBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 

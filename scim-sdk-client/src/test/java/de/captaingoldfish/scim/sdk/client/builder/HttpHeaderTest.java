@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.client.builder;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
@@ -98,7 +99,8 @@ public class HttpHeaderTest extends HttpServerMockup
     });
 
     new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                        scimHttpClient).setResource(User.builder().userName("goldfish").build()).sendRequest();
+                        scimHttpClient).setResource(User.builder().userName(UUID.randomUUID().toString()).build())
+                                       .sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -129,7 +131,7 @@ public class HttpHeaderTest extends HttpServerMockup
     });
 
     new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                        scimHttpClient).setResource(User.builder().userName("goldfish").build())
+                        scimHttpClient).setResource(User.builder().userName(UUID.randomUUID().toString()).build())
                                        .sendRequest(preferredHeaders);
     Assertions.assertTrue(wasCalled.get());
   }
@@ -158,7 +160,8 @@ public class HttpHeaderTest extends HttpServerMockup
     });
 
     new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                        scimHttpClient).setResource(User.builder().userName("goldfish").build()).sendRequest();
+                        scimHttpClient).setResource(User.builder().userName(UUID.randomUUID().toString()).build())
+                                       .sendRequest();
     Assertions.assertTrue(wasCalled.get());
   }
 
@@ -189,7 +192,7 @@ public class HttpHeaderTest extends HttpServerMockup
     });
 
     new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
-                        scimHttpClient).setResource(User.builder().userName("goldfish").build())
+                        scimHttpClient).setResource(User.builder().userName(UUID.randomUUID().toString()).build())
                                        .sendRequestWithMultiHeaders(preferredHeaders);
     Assertions.assertTrue(wasCalled.get());
   }

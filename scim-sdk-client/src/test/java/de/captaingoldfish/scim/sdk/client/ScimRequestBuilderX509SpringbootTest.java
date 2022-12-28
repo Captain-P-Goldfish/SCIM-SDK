@@ -83,7 +83,8 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
   @Test
   public void testBuildCreateRequest()
   {
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder().userName(username).name(Name.builder().givenName("goldfish").build()).build();
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
                                                       .sendRequest();
@@ -94,7 +95,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
     User returnedUser = response.getResource();
-    Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
+    Assertions.assertEquals(username, returnedUser.getUserName().get());
     Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
   }
@@ -136,7 +137,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                         .build();
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
-    User user = User.builder().userName("goldfish").build();
+    User user = User.builder().userName(UUID.randomUUID().toString()).build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
@@ -165,7 +166,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                         .build();
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
-    User user = User.builder().userName("goldfish").build();
+    User user = User.builder().userName(UUID.randomUUID().toString()).build();
     user.setSchemas(Collections.singleton(SchemaUris.GROUP_URI)); // this will cause an error for wrong schema uri
 
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
@@ -196,8 +197,9 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     {
       builder = scimRequestBuilder.bulk();
     }
+    final String username = UUID.randomUUID().toString();
     ServerResponse<BulkResponse> response = builder.bulkRequestOperation(EndpointPaths.USERS)
-                                                   .data(User.builder().userName("goldfish").build())
+                                                   .data(User.builder().userName(username).build())
                                                    .method(HttpMethod.POST)
                                                    .bulkId(bulkId)
                                                    .next()
@@ -220,7 +222,6 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
     BulkResponseOperation createUserOperation = bulkResponse.getBulkResponseOperations().get(0);
     Assertions.assertEquals(HttpStatus.CREATED, createUserOperation.getStatus());
     Assertions.assertEquals(bulkId, createUserOperation.getBulkId().get());
-
 
     BulkResponseOperation createGroupOperation = bulkResponse.getBulkResponseOperations().get(1);
     Assertions.assertEquals(HttpStatus.CREATED, createGroupOperation.getStatus());

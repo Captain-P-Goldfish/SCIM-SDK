@@ -38,7 +38,7 @@ public class DeleteBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -234,7 +234,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     final String id = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).version(version).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
@@ -270,7 +270,7 @@ public class DeleteBuilderTest extends HttpServerMockup
     final String id = UUID.randomUUID().toString();
     final String version = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).version(version).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();

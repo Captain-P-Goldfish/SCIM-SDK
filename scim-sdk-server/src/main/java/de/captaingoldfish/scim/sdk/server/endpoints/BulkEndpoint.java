@@ -26,6 +26,7 @@ import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
+import de.captaingoldfish.scim.sdk.common.exceptions.PreconditionFailedException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequestOperation;
@@ -165,8 +166,20 @@ class BulkEndpoint
       BulkRequestOperation requestOperation = operations.get(0);
       if (errorCounter >= failOnErrors)
       {
+        operations.remove(0);
+        BulkResponseOperation.BulkResponseOperationBuilder responseBuilder = BulkResponseOperation.builder();
+        final String errorMessage = String.format("Operation with bulkId '%s' at iteration '%s' was not handled due to "
+                                                  + "previous failed precondition",
+                                                  requestOperation.getBulkId().orElse(null),
+                                                  iterations);
+        PreconditionFailedException ex = new PreconditionFailedException(errorMessage);
+        responseOperations.add(responseBuilder.status(HttpStatus.PRECONDITION_FAILED)
+                                              .bulkId(requestOperation.getBulkId().orElse(null))
+                                              .response(new ErrorResponse(ex))
+                                              .method(requestOperation.getMethod())
+                                              .build());
         // The service provider stops processing the bulk operation and immediately returns a response to the client
-        break;
+        continue;
       }
       try
       {

@@ -41,6 +41,12 @@ public class UserHandler extends ResourceHandler<User>
   private Map<String, User> inMemoryMap = new HashMap<>();
 
   /**
+   * an in memory map that holds our 5000 users with their username
+   */
+  @Getter
+  private Map<String, User> inMemoryUsernameMap = new HashMap<>();
+
+  /**
    * adds approximately 5000 users into the in memory map
    */
   public UserHandler()
@@ -56,6 +62,7 @@ public class UserHandler extends ResourceHandler<User>
         String id = UUID.randomUUID().toString();
         Meta meta = Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build();
         inMemoryMap.put(id, User.builder().id(id).userName(name).nickName(name).meta(meta).build());
+        inMemoryUsernameMap.put(name, User.builder().id(id).userName(name).nickName(name).meta(meta).build());
       }
     }
     catch (IOException e)
@@ -70,13 +77,15 @@ public class UserHandler extends ResourceHandler<User>
   @Override
   public User createResource(User resource, Context context)
   {
-    final String userId = UUID.randomUUID().toString();
-    if (inMemoryMap.containsKey(userId))
+    final String userName = resource.getUserName().get();
+    if (inMemoryUsernameMap.containsKey(userName))
     {
-      throw new ConflictException("resource with id '" + userId + "' does already exist");
+      throw new ConflictException("resource with username '" + userName + "' does already exist");
     }
+    final String userId = UUID.randomUUID().toString();
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
+    inMemoryUsernameMap.put(userName, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());
       meta.setLastModified(Instant.now());

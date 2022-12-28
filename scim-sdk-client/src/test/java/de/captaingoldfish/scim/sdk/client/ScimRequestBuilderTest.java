@@ -75,7 +75,8 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   @ValueSource(booleans = {true, false})
   public void testBuildCreateRequest(boolean useFullUrl)
   {
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder().userName(username).name(Name.builder().givenName("goldfish").build()).build();
     ServerResponse<User> response;
     if (useFullUrl)
     {
@@ -94,7 +95,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
     User returnedUser = response.getResource();
-    Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
+    Assertions.assertEquals(username, returnedUser.getUserName().get());
     Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
   }
@@ -138,7 +139,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -314,7 +315,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -384,7 +385,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
-    User user = User.builder().id(id).userName("goldfish").meta(meta).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
     UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
     userHandler.getInMemoryMap().put(id, user);
 
@@ -445,7 +446,7 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     final String id = UUID.randomUUID().toString();
 
-    User updateUser = User.builder().userName("goldfish").nickName("hello world").build();
+    User updateUser = User.builder().userName(UUID.randomUUID().toString()).nickName("hello world").build();
     ServerResponse<User> response;
     if (useFullUrl)
     {
@@ -476,7 +477,10 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     httpHeaders.put(HttpHeader.AUTHORIZATION, new String[]{"Bearer " + token, "hello world"});
     httpHeaders.put(HttpHeader.IF_MATCH_HEADER, new String[]{token});
 
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    User user = User.builder()
+                    .userName(UUID.randomUUID().toString())
+                    .name(Name.builder().givenName("goldfish").build())
+                    .build();
 
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, requestBody) -> {

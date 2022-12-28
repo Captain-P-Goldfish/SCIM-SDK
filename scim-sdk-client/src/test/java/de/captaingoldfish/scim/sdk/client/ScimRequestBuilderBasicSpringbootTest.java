@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.client;
 
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
@@ -79,7 +80,8 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
       Assertions.assertFalse(headers.containsKey("cookie"));
       wasConsumerExecuted.set(true);
     };
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    final String username = UUID.randomUUID().toString();
+    User user = User.builder().userName(username).name(Name.builder().givenName("goldfish").build()).build();
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
                                                       .sendRequest();
@@ -91,7 +93,7 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
     Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
 
     User returnedUser = response.getResource();
-    Assertions.assertEquals("goldfish", returnedUser.getUserName().get());
+    Assertions.assertEquals(username, returnedUser.getUserName().get());
     Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
                             response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
   }
@@ -103,7 +105,10 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
   public void testAccessEndpointWithoutAuthentication()
   {
     scimRequestBuilder.getScimClientConfig().setBasicAuth(null);
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    User user = User.builder()
+                    .userName(UUID.randomUUID().toString())
+                    .name(Name.builder().givenName("goldfish").build())
+                    .build();
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
                                                       .sendRequest();
@@ -130,7 +135,10 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
                                                         .build();
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    User user = User.builder()
+                    .userName(UUID.randomUUID().toString())
+                    .name(Name.builder().givenName("goldfish").build())
+                    .build();
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
                                                       .sendRequest();
@@ -157,7 +165,10 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
                                                         .build();
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    User user = User.builder()
+                    .userName(UUID.randomUUID().toString())
+                    .name(Name.builder().givenName("goldfish").build())
+                    .build();
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
                                                       .sendRequest();
@@ -185,7 +196,10 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
                                                         .build();
     scimRequestBuilder = new ScimRequestBuilder(getRequestUrl(TestController.SCIM_ENDPOINT_PATH), scimClientConfig);
 
-    User user = User.builder().userName("goldfish").name(Name.builder().givenName("goldfish").build()).build();
+    User user = User.builder()
+                    .userName(UUID.randomUUID().toString())
+                    .name(Name.builder().givenName("goldfish").build())
+                    .build();
     ServerResponse<User> response = scimRequestBuilder.create(User.class, EndpointPaths.USERS)
                                                       .setResource(user)
                                                       .sendRequest();

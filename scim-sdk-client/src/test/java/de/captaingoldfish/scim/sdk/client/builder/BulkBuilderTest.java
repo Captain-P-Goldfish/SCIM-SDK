@@ -7,7 +7,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import org.hamcrest.MatcherAssert;
@@ -72,12 +71,64 @@ public class BulkBuilderTest extends HttpServerMockup
     ServerResponse<BulkResponse> response = bulkBuilder.bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
                                                        .bulkId(UUID.randomUUID().toString())
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder()
+                                                                 .userName(UUID.randomUUID().toString())
+                                                                 .build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
     Assertions.assertNull(response.getErrorResponse());
+  }
+
+  /**
+   *
+   */
+  @Test
+  public void testCreateSameUserThrice()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    String url = getServerUrl();
+    BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, false, null);
+
+    final String firstBulkId = UUID.randomUUID().toString();
+    final String secondBulkId = UUID.randomUUID().toString();
+    final String thirdBulkId = UUID.randomUUID().toString();
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(1)
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .bulkId(firstBulkId)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .next()
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .bulkId(secondBulkId)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .next()
+                                                       .bulkRequestOperation(EndpointPaths.USERS)
+                                                       .method(HttpMethod.POST)
+                                                       .bulkId(thirdBulkId)
+                                                       .data(User.builder().userName("goldfish").build())
+                                                       .sendRequest();
+    Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED,
+                            response.getHttpStatus(),
+                            response.getResource().toPrettyString());
+    Assertions.assertFalse(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+    BulkResponse bulkResponse = response.getResource();
+
+    log.debug(bulkResponse.toPrettyString());
+
+    BulkResponseOperation successOperation = bulkResponse.getByBulkId(firstBulkId).get();
+    Assertions.assertEquals(HttpStatus.CREATED, successOperation.getStatus());
+
+    BulkResponseOperation conflictOperation = bulkResponse.getByBulkId(secondBulkId).get();
+    Assertions.assertEquals(HttpStatus.CONFLICT, conflictOperation.getStatus());
+
+    BulkResponseOperation preconditionFailedOperation = bulkResponse.getByBulkId(thirdBulkId).get();
+    Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, preconditionFailedOperation.getStatus());
   }
 
   /**
@@ -94,7 +145,9 @@ public class BulkBuilderTest extends HttpServerMockup
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder()
+                                                                 .userName(UUID.randomUUID().toString())
+                                                                 .build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -117,7 +170,9 @@ public class BulkBuilderTest extends HttpServerMockup
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder()
+                                                                 .userName(UUID.randomUUID().toString())
+                                                                 .build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -140,7 +195,9 @@ public class BulkBuilderTest extends HttpServerMockup
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder()
+                                                                 .userName(UUID.randomUUID().toString())
+                                                                 .build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -170,7 +227,9 @@ public class BulkBuilderTest extends HttpServerMockup
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder()
+                                                                 .userName(UUID.randomUUID().toString())
+                                                                 .build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, response.getHttpStatus());
     Assertions.assertFalse(response.isSuccess());
@@ -190,13 +249,13 @@ public class BulkBuilderTest extends HttpServerMockup
     scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(maxNumberOfOperations);
 
     List<BulkRequestOperation> requestOperations = new ArrayList<>();
-    requestOperations.addAll(Arrays.asList(createBulkRequestOperation("user 1"),
-                                           createBulkRequestOperation("user 2"),
-                                           createBulkRequestOperation("user 3"),
-                                           createBulkRequestOperation("user 4"),
-                                           createBulkRequestOperation("user 5"),
-                                           createBulkRequestOperation("user 6"),
-                                           createBulkRequestOperation("user 7")));
+    requestOperations.addAll(Arrays.asList(createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString())));
 
     setVerifyRequestAttributes((httpExchange, body) -> {
       BulkRequest bulkRequest = JsonHelper.readJsonDocument(body, BulkRequest.class);
@@ -239,10 +298,10 @@ public class BulkBuilderTest extends HttpServerMockup
     scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(maxNumberOfOperations);
 
     List<BulkRequestOperation> requestOperations = new ArrayList<>();
-    requestOperations.addAll(Arrays.asList(createBulkRequestOperation("user 1"),
-                                           createBulkRequestOperation("user 2"),
-                                           createBulkRequestOperation("user 3"),
-                                           createBulkRequestOperation("user 4"),
+    requestOperations.addAll(Arrays.asList(createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
+                                           createBulkRequestOperation(UUID.randomUUID().toString()),
                                            // empty operation is unparseable on the server
                                            BulkRequestOperation.builder().build()));
 

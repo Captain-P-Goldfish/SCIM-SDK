@@ -127,7 +127,7 @@ public abstract class AbstractSpringBootWebTest
   }
 
   /**
-   * @return the truststore to trust the self signed certificate of the tomcat server
+   * @return the truststore to trust the self-signed certificate of the tomcat server
    */
   protected KeyStoreWrapper getTruststore()
   {

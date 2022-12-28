@@ -465,9 +465,12 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
-    Assertions.assertEquals(failOnErrors, bulkResponse.getBulkResponseOperations().size());
+    Assertions.assertEquals(bulkRequest.getBulkRequestOperations().size(),
+                            bulkResponse.getBulkResponseOperations().size());
 
-    bulkResponse.getBulkResponseOperations().forEach(operation -> {
+    List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
+    // check first operation
+    responseOperations.subList(0, responseOperations.size() - 1).forEach(operation -> {
       Assertions.assertTrue(operation.getResponse().isPresent());
       ErrorResponse errorResponse = operation.getResponse(ErrorResponse.class).get();
       MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -476,7 +479,20 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       Assertions.assertEquals("something bad", errorResponse.getDetail().get());
     });
 
-    Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, bulkResponse.getHttpStatus());
+    // should be always a single
+    final BulkResponseOperation preconditionFailedOperation = responseOperations.get(responseOperations.size() - 1);
+
+    Assertions.assertTrue(preconditionFailedOperation.getResponse().isPresent());
+    ErrorResponse errorResponse = preconditionFailedOperation.getResponse(ErrorResponse.class).get();
+    MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
+                             Matchers.typeCompatibleWith(ResponseException.class));
+    final String errorMessage = String.format("Operation with bulkId '%s' at iteration '%s' was not handled due to "
+                                              + "previous failed precondition",
+                                              preconditionFailedOperation.getBulkId().orElse(null),
+                                              responseOperations.size());
+    Assertions.assertEquals(errorMessage, errorResponse.getDetail().get());
+
+    Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getHttpStatus());
   }
 
   /**

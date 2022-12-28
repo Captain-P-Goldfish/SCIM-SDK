@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import lombok.Builder;
@@ -85,6 +87,26 @@ public class BulkResponse extends ScimResponse
       boolean isNullMatch = !op.getBulkId().isPresent() && bulkId == null;
       boolean isBulkIdMatch = bulkId != null && op.getBulkId().map(bulkId::equals).orElse(false);
       return isNullMatch || isBulkIdMatch;
+    }).findFirst();
+  }
+
+  /**
+   * tries to find a bulk response operation by searching for a resource's id. This can be used on update/patch
+   * or delete requests
+   *
+   * @param resourceId the resources id of the operation that should be extracted
+   * @return the operation or an empty if no operation did match the resourceId
+   */
+  public Optional<BulkResponseOperation> getByResourceId(String resourceId)
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      return resourceId != null && op.getResourceId().map(resourceId::equals).orElseGet(() -> {
+        return op.getResponse()
+                 .map(node -> node.get(AttributeNames.RFC7643.ID))
+                 .map(JsonNode::textValue)
+                 .map(resourceId::equals)
+                 .orElse(false);
+      });
     }).findFirst();
   }
 
