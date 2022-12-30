@@ -163,9 +163,9 @@ public final class ResourceTypeFactory
       if (registeredResourceSchema != null && resourceSchema != null
           && !registeredResourceSchema.equals(resourceSchema))
       {
-        log.info("Resource schema with id '{}' is already registered. The new instance is not equal to"
-                 + " the old schema document. The old document is being replaced by the new one",
-                 resourceTypeObject.getSchema());
+        log.debug("Resource schema with id '{}' is already registered. The new instance is not equal to"
+                  + " the old schema document. The old document is being replaced by the new one",
+                  resourceTypeObject.getSchema());
       }
       if (resourceSchema != null)
       {
