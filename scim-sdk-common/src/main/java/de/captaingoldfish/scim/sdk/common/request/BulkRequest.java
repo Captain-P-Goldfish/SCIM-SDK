@@ -84,5 +84,10 @@ public class BulkRequest extends AbstractSchemasHolder
 
     public BulkRequestBuilder()
     {}
+
+    public Integer getFailOnErrors()
+    {
+      return failOnErrors;
+    }
   }
 }

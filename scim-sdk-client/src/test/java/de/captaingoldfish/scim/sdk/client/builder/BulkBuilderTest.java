@@ -282,8 +282,9 @@ public class BulkBuilderTest extends HttpServerMockup
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     BulkResponse bulkResponse = response.getResource();
     Assertions.assertEquals(requestOperations.size(), bulkResponse.getBulkResponseOperations().size());
-    // verify that 3 responses have been evaluated
-    Mockito.verify(bulkBuilder, Mockito.times(3)).toResponse(Mockito.any());
+    // verify that 0 responses have been evaluated. The responses are evaluated on an internal built
+    // BulkBuilder-object
+    Mockito.verify(bulkBuilder, Mockito.never()).toResponse(Mockito.any());
     log.debug(bulkResponse.toPrettyString());
   }
 
@@ -409,8 +410,9 @@ public class BulkBuilderTest extends HttpServerMockup
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     BulkResponse bulkResponse = response.getResource();
     Assertions.assertEquals(requestOperations.size(), bulkResponse.getBulkResponseOperations().size());
-    Mockito.verify(bulkBuilder, Mockito.times((int)Math.ceil((double)requestOperations.size() / maxNumberOfOperations)))
-           .toResponse(Mockito.any());
+    // verify that 0 responses have been evaluated. The responses are evaluated on an internal built
+    // BulkBuilder-object
+    Mockito.verify(bulkBuilder, Mockito.never()).toResponse(Mockito.any());
   }
 
   /**

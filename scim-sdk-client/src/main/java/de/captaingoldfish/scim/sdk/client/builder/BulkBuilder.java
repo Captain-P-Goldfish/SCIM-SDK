@@ -164,6 +164,25 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   }
 
   /**
+   * {@inheritDoc}
+   */
+  protected HttpUriRequest getHttpUriRequest(JsonNode requestData)
+  {
+    HttpPost httpPost;
+    if (StringUtils.isBlank(fullUrl))
+    {
+      httpPost = new HttpPost(getBaseUrl() + getEndpoint());
+    }
+    else
+    {
+      httpPost = new HttpPost(fullUrl);
+    }
+    StringEntity stringEntity = new StringEntity(requestData.toString(), StandardCharsets.UTF_8);
+    httpPost.setEntity(stringEntity);
+    return httpPost;
+  }
+
+  /**
    * overrides the default method from the superclass to have easier control of the resource that will be put
    * into the request body
    */
@@ -454,13 +473,11 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
         replaceBulkRequestOperations(bulkRequestOperations, bulkRequestIdResolverWrapper);
         BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl,
                                                        serviceProviderSupplier);
-        splitBulkBuilder.addOperations(bulkRequestOperations);
+        Integer failOnErrors = builder.getFailOnErrors();
+        splitBulkBuilder.failOnErrors(failOnErrors).addOperations(bulkRequestOperations);
         // the request in the super-class is created from the builder, so we need to replace the original here. and
         // afterwards we are changing it back to restore the original state
-        List<BulkRequestOperation> originalOperations = this.bulkRequestOperationList;
-        builder.bulkRequestOperation(bulkRequestOperations);
-        ServerResponse<BulkResponse> response = super.sendRequestWithMultiHeaders(httpHeaders);
-        builder.bulkRequestOperation(originalOperations);
+        ServerResponse<BulkResponse> response = splitBulkBuilder.sendRequestWithMultiHeaders(httpHeaders);
 
         log.debug("Received response for bulk request '{}' of '{}'.",
                   index + 1,

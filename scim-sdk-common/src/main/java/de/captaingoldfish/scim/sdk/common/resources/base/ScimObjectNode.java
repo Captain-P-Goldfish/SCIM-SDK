@@ -491,6 +491,11 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     for ( T jsonNodes : attributeValue )
     {
+      // null nodes are ignored
+      if (jsonNodes == null)
+      {
+        continue;
+      }
       if (jsonNodes.isArray())
       {
         arrayNode.addAll((ArrayNode)jsonNodes);
