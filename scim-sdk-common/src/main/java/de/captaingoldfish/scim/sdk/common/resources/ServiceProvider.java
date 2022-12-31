@@ -55,6 +55,21 @@ public class ServiceProvider extends ResourceNode
   @Getter
   private boolean caseInsensitiveValidation;
 
+  /**
+   * @param documentationUri the URL to the documentation of the application
+   * @param patchConfig the patch configuration
+   * @param changePasswordConfig if changing passwords is supported or not
+   * @param sortConfig the sorting configuration
+   * @param eTagConfig the etag configuration
+   * @param filterConfig the filter configuration
+   * @param bulkConfig the bulk configuration
+   * @param authenticationSchemes the supported authentication schemes
+   * @param forkJoinPool the join pool that is used to handle parallel streams. The
+   *          {@link ForkJoinPool#commonPool()} is used by default.
+   * @param caseInsensitiveValidation if attributes within the JSON document should be extracted
+   *          case-insensitive or case-sensitive. The difference here is that the case-insensitive check uses
+   *          another comparator that eats up more performance than the case-sensitive comparator.
+   */
   @Builder
   public ServiceProvider(String documentationUri,
                          PatchConfig patchConfig,
