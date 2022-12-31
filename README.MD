@@ -85,8 +85,9 @@ support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is sim
 - [x] create
 - [x] read
 - [x] list
-  * filtering (@see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features))
-  * sorting (@see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features))
+    * filtering (@see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features))\
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(@see [How to use the FilterNode](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/How-to-use-the-FilterNode))
+    * sorting (@see [additional features](https://github.com/Captain-P-Goldfish/SCIM/wiki/Additional-Features))
 - [x] update
 - [x] patch (@see [patching resources](https://github.com/Captain-P-Goldfish/SCIM/wiki/Patching-resources))
 - [x] delete
