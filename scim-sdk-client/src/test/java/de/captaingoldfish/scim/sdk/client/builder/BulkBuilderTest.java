@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 import org.hamcrest.MatcherAssert;
@@ -307,11 +308,13 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
                                                           scimConfig::getServiceProvider));
-    IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class,
-                                                       () -> bulkBuilder.failOnErrors(0)
-                                                                        .addOperations(requestOperations)
-                                                                        .sendRequest());
-    MatcherAssert.assertThat(ex.getMessage(),
+    ExecutionException ex = Assertions.assertThrows(ExecutionException.class,
+                                                    () -> bulkBuilder.failOnErrors(0)
+                                                                     .addOperations(requestOperations)
+                                                                     .sendRequest());
+    Assertions.assertEquals(IllegalStateException.class, ex.getCause().getClass());
+    IllegalStateException illegalStateException = (IllegalStateException)ex.getCause();
+    MatcherAssert.assertThat(illegalStateException.getMessage(),
                              Matchers.startsWith("The bulk request failed with status: 400 and message"));
   }
 
@@ -343,11 +346,13 @@ public class BulkBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
                                                           scimConfig::getServiceProvider));
-    IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class,
-                                                       () -> bulkBuilder.failOnErrors(0)
-                                                                        .addOperations(requestOperations)
-                                                                        .sendRequest());
-    MatcherAssert.assertThat(ex.getMessage(),
+    ExecutionException ex = Assertions.assertThrows(ExecutionException.class,
+                                                    () -> bulkBuilder.failOnErrors(0)
+                                                                     .addOperations(requestOperations)
+                                                                     .sendRequest());
+    Assertions.assertEquals(IllegalStateException.class, ex.getCause().getClass());
+    IllegalStateException illegalStateException = (IllegalStateException)ex.getCause();
+    MatcherAssert.assertThat(illegalStateException.getMessage(),
                              Matchers.startsWith("Missing bulkId in response cannot resolve relations of split operations."));
   }
 
