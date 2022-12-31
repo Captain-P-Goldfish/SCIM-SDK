@@ -11,6 +11,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -75,6 +76,11 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   @Getter
   private final List<BulkRequestOperation> bulkRequestOperationList;
 
+  /**
+   * a thread safe-map that holds the request operations references. This can be used by client implementations
+   * to compare the request with the returned response operations. This might be useful to write log-messages
+   * based on the requests content.
+   */
   private final Map<String, BulkRequestOperation> bulkRequestOperationMap;
 
   /**
@@ -110,7 +116,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
 
     builder = BulkRequest.builder();
     bulkRequestOperationList = new ArrayList<>();
-    bulkRequestOperationMap = new HashMap<>();
+    bulkRequestOperationMap = new ConcurrentHashMap<>();
     builder.bulkRequestOperation(bulkRequestOperationList);
     this.fullUrl = isFullUrl ? baseUrl : null;
     this.serviceProviderSupplier = Optional.ofNullable(serviceProviderSupplier).orElse(() -> null);
