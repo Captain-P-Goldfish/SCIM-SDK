@@ -10,12 +10,16 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpPost;
@@ -41,11 +45,13 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseOperation;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.tree.GenericTree;
 import de.captaingoldfish.scim.sdk.common.tree.TreeNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -229,6 +235,19 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   /**
    * send the request to the server
    *
+   * @param runSplittedRequestsParallel if the requests should be run parallel. This is only recommended if no
+   *          relations between the different bulk-request-operations are set. So if no bulkId-references are
+   *          set. Otherwise, the relation between these requests might break
+   * @return the response from the server
+   */
+  public ServerResponse<BulkResponse> sendRequest(boolean runSplittedRequestsParallel)
+  {
+    return sendRequestWithMultiHeaders(Collections.emptyMap(), null, runSplittedRequestsParallel);
+  }
+
+  /**
+   * send the request to the server
+   *
    * @param responseHandler a helper method to will allow the client to react to each individual response. This
    *          makes only sense if the feature {@link ScimClientConfig#isEnableAutomaticBulkRequestSplitting()}
    *          is enabled
@@ -236,7 +255,24 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   public ServerResponse<BulkResponse> sendRequest(Consumer<ServerResponse<BulkResponse>> responseHandler)
   {
-    return sendRequestWithMultiHeaders(Collections.emptyMap(), responseHandler);
+    return sendRequestWithMultiHeaders(Collections.emptyMap(), responseHandler, false);
+  }
+
+  /**
+   * send the request to the server
+   *
+   * @param responseHandler a helper method to will allow the client to react to each individual response. This
+   *          makes only sense if the feature {@link ScimClientConfig#isEnableAutomaticBulkRequestSplitting()}
+   *          is enabled
+   * @param runSplittedRequestsParallel if the requests should be run parallel. This is only recommended if no
+   *          relations between the different bulk-request-operations are set. So if no bulkId-references are
+   *          set. Otherwise, the relation between these requests might break
+   * @return the response from the server
+   */
+  public ServerResponse<BulkResponse> sendRequest(Consumer<ServerResponse<BulkResponse>> responseHandler,
+                                                  boolean runSplittedRequestsParallel)
+  {
+    return sendRequestWithMultiHeaders(Collections.emptyMap(), responseHandler, runSplittedRequestsParallel);
   }
 
   /**
@@ -251,9 +287,28 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   public ServerResponse<BulkResponse> sendRequest(Map<String, String> headers,
                                                   Consumer<ServerResponse<BulkResponse>> responseHandler)
   {
+    return sendRequest(headers, responseHandler, false);
+  }
+
+  /**
+   * send the request to the server
+   *
+   * @param headers the http headers to send additionally to the default headery within the request
+   * @param responseHandler a helper method to will allow the client to react to each individual response. This
+   *          makes only sense if the feature {@link ScimClientConfig#isEnableAutomaticBulkRequestSplitting()}
+   *          is enabled
+   * @param runSplittedRequestsParallel if the requests should be run parallel. This is only recommended if no
+   *          relations between the different bulk-request-operations are set. So if no bulkId-references are
+   *          set. Otherwise, the relation between these requests might break
+   * @return the response from the server
+   */
+  public ServerResponse<BulkResponse> sendRequest(Map<String, String> headers,
+                                                  Consumer<ServerResponse<BulkResponse>> responseHandler,
+                                                  boolean runSplittedRequestsParallel)
+  {
     Map<String, String[]> multiHeader = new HashMap<>();
     headers.forEach((key, value) -> multiHeader.put(key, new String[]{value}));
-    return sendRequestWithMultiHeaders(multiHeader, responseHandler);
+    return sendRequestWithMultiHeaders(multiHeader, responseHandler, runSplittedRequestsParallel);
   }
 
   /**
@@ -262,7 +317,20 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   @Override
   public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
   {
-    return sendRequestWithMultiHeaders(httpHeaders, null);
+    return sendRequestWithMultiHeaders(httpHeaders, null, false);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @param runSplittedRequestsParallel if the requests should be run parallel. This is only recommended if no
+   *          relations between the different bulk-request-operations are set. So if no bulkId-references are
+   *          set. Otherwise, the relation between these requests might break
+   */
+  public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders,
+                                                                  boolean runSplittedRequestsParallel)
+  {
+    return sendRequestWithMultiHeaders(httpHeaders, null, runSplittedRequestsParallel);
   }
 
   /**
@@ -275,6 +343,23 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders,
                                                                   Consumer<ServerResponse<BulkResponse>> responseHandler)
   {
+    return sendRequestWithMultiHeaders(httpHeaders, responseHandler, false);
+  }
+
+  /**
+   * {@inheritDoc}
+   *
+   * @param responseHandler a helper method to will allow the client to react to each individual response. This
+   *          makes only sense if the feature {@link ScimClientConfig#isEnableAutomaticBulkRequestSplitting()}
+   *          is enabled
+   * @param runSplittedRequestsParallel if the requests should be run parallel. This is only recommended if no
+   *          relations between the different bulk-request-operations are set. So if no bulkId-references are
+   *          set. Otherwise, the relation between these requests might break
+   */
+  public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders,
+                                                                  Consumer<ServerResponse<BulkResponse>> responseHandler,
+                                                                  boolean runSplittedRequestsParallel)
+  {
     final int maxNumberOfOperationns = getMaxNumberOfOperations();
     final boolean isSplittingFeatureDisabled = !getScimHttpClient().getScimClientConfig()
                                                                    .isEnableAutomaticBulkRequestSplitting();
@@ -283,7 +368,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     {
       return super.sendRequestWithMultiHeaders(httpHeaders);
     }
-    return sendMultipleBulkRequests(httpHeaders, responseHandler);
+    return sendMultipleBulkRequests(httpHeaders, responseHandler, runSplittedRequestsParallel);
   }
 
   /**
@@ -304,10 +389,15 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    *
    * @param httpHeaders allows the user to add additional http headers to the request
    * @param responseHandler a helper method to will allow the client to react to each individual response
+   * @param runSplittedRequestsParallel if the requests should be run parallel. This is only recommended if no
+   *          relations between the different bulk-request-operations are set. So if no bulkId-references are
+   *          set. Otherwise, the relation between these requests might break
    * @return a composed response object that results from several responses of the different requests
    */
+  @SneakyThrows
   private ServerResponse<BulkResponse> sendMultipleBulkRequests(Map<String, String[]> httpHeaders,
-                                                                Consumer<ServerResponse<BulkResponse>> responseHandler)
+                                                                Consumer<ServerResponse<BulkResponse>> responseHandler,
+                                                                boolean runSplittedRequestsParallel)
   {
     boolean containsBulkIdReferences = getResource().contains(String.format("\"%s:", AttributeNames.RFC7643.BULK_ID));
 
@@ -325,50 +415,77 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     }
 
     BulkResponse compositeBulkResponse = new BulkResponse();
-    List<ServerResponse<BulkResponse>> serverResponseList = new ArrayList<>();
-    for ( int i = 0 ; i < bulkRequestIdResolverWrapper.getRequestsList().size() ; i++ )
-    {
-      List<BulkRequestOperation> bulkRequestOperations = bulkRequestIdResolverWrapper.getRequestsList().get(i);
-      log.debug("Handling bulk request '{}' of '{}' with '{}' operations.",
-                i + 1,
-                bulkRequestIdResolverWrapper.getRequestsList().size(),
-                bulkRequestOperations.size());
-      boolean isFullUrl = getBaseUrl() == null;
-      replaceBulkRequestOperations(bulkRequestOperations, bulkRequestIdResolverWrapper);
-      BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl,
-                                                     serviceProviderSupplier);
-      splitBulkBuilder.addOperations(bulkRequestOperations);
-      // the request in the super-class is created from the builder, so we need to replace the original here. and
-      // afterwards we are changing it back to restore the original state
-      List<BulkRequestOperation> originalOperations = bulkRequestOperationList;
-      builder.bulkRequestOperation(bulkRequestOperations);
-      ServerResponse<BulkResponse> response = super.sendRequestWithMultiHeaders(httpHeaders);
-      builder.bulkRequestOperation(originalOperations);
 
-      log.debug("Received response for bulk request '{}' of '{}'.",
-                i + 1,
-                bulkRequestIdResolverWrapper.getRequestsList().size());
+    List<List<BulkRequestOperation>> bulkRequestOperationsList = bulkRequestIdResolverWrapper.getRequestsList();
+    // @formatter:off
+    ArrayBlockingQueue<ServerResponse<BulkResponse>> serverResponseList =
+                                                          new ArrayBlockingQueue<>(bulkRequestOperationsList.size());
+    // @formatter:on
 
-      validateResponseAndResolveResults(bulkRequestOperations,
-                                        bulkRequestIdResolverWrapper,
-                                        response,
-                                        compositeBulkResponse);
+    ServiceProvider serviceProvider = serviceProviderSupplier.get();
+    ScimClientConfig scimClientConfig = getScimHttpClient().getScimClientConfig();
 
-      Optional.ofNullable(responseHandler).ifPresent(handler -> handler.accept(response));
+    IntStream bulkOperationIndexStream = IntStream.range(0, bulkRequestOperationsList.size());
 
-      serverResponseList.add(response);
-    }
+    Function<Runnable, ForkJoinTask> runInPool = runnable -> {
+      serviceProvider.getThreadPool().awaitQuiescence(scimClientConfig.getSocketTimeout(), TimeUnit.SECONDS);
+      return serviceProvider.getThreadPool().submit(runnable);
+    };
+
+    Runnable runnable = () -> {
+
+      IntStream indexStream = runSplittedRequestsParallel ? bulkOperationIndexStream.parallel()
+        : bulkOperationIndexStream;
+
+      indexStream.forEach(index -> {
+        List<BulkRequestOperation> bulkRequestOperations = bulkRequestOperationsList.get(index);
+
+        log.debug("Handling bulk request '{}' of '{}' with '{}' operations.",
+                  index + 1,
+                  bulkRequestIdResolverWrapper.getRequestsList().size(),
+                  bulkRequestOperations.size());
+        boolean isFullUrl = getBaseUrl() == null;
+        replaceBulkRequestOperations(bulkRequestOperations, bulkRequestIdResolverWrapper);
+        BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl,
+                                                       serviceProviderSupplier);
+        splitBulkBuilder.addOperations(bulkRequestOperations);
+        // the request in the super-class is created from the builder, so we need to replace the original here. and
+        // afterwards we are changing it back to restore the original state
+        List<BulkRequestOperation> originalOperations = this.bulkRequestOperationList;
+        builder.bulkRequestOperation(bulkRequestOperations);
+        ServerResponse<BulkResponse> response = super.sendRequestWithMultiHeaders(httpHeaders);
+        builder.bulkRequestOperation(originalOperations);
+
+        log.debug("Received response for bulk request '{}' of '{}'.",
+                  index + 1,
+                  bulkRequestIdResolverWrapper.getRequestsList().size());
+
+        validateResponseAndResolveResults(bulkRequestOperations,
+                                          bulkRequestIdResolverWrapper,
+                                          response,
+                                          compositeBulkResponse);
+
+        Optional.ofNullable(responseHandler).ifPresent(handler -> handler.accept(response));
+
+        serverResponseList.add(response);
+      });
+    };
+
+    runInPool.apply(runnable).get();
 
     log.debug("Finished handling all bulk requests. The requests will be merged and returned in a single "
               + "response-object");
+
 
     // validate responses and also content of responses
     // if no error occurred until now everything is fine and all operations completed successfully
     HttpResponse httpResponse = HttpResponse.builder()
                                             .httpStatusCode(HttpStatus.OK)
                                             .responseBody(compositeBulkResponse.toString())
-                                            // take the response headers from any request they will probably be the same
-                                            .responseHeaders(serverResponseList.get(0).getHttpHeaders())
+                                            // take the response headers from any request they should be the same
+                                            .responseHeaders(Optional.ofNullable(serverResponseList.peek())
+                                                                     .map(ServerResponse::getHttpHeaders)
+                                                                     .orElse(Collections.emptyMap()))
                                             .build();
     return new ServerResponse<>(httpResponse, true, BulkResponse.class, isResponseParseable(),
                                 getRequiredResponseHeaders());
@@ -438,6 +555,10 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
                 + "the problem:");
       log.error("The following request operations were not successful: \n{}",
                 bulkRequestOperations.stream().map(ScimObjectNode::toPrettyString).collect(Collectors.joining("\n")));
+      log.error("Response from the server: {}",
+                Optional.ofNullable(response.getErrorResponse())
+                        .map(ErrorResponse::toPrettyString)
+                        .orElseGet(response::getResponseBody));
       final int indexOfFailedRequest = bulkRequestIdResolverWrapper.getRequestsList().indexOf(bulkRequestOperations);
       if (indexOfFailedRequest > 0)
       {
@@ -450,6 +571,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
         log.error("The following operations were executed successfully on the server and were persisted: \n{}",
                   successOperations);
       }
+
       throw new IllegalStateException(String.format("The bulk request failed with status: %s and message: %s",
                                                     response.getHttpStatus(),
                                                     response.getResponseBody()));
