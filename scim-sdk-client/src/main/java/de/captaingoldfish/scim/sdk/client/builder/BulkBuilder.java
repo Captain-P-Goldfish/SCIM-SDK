@@ -115,7 +115,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
     super(isFullUrl ? null : baseUrl, EndpointPaths.BULK, BulkResponse.class, scimHttpClient);
 
     builder = BulkRequest.builder();
-    bulkRequestOperationList = new ArrayList<>();
+    bulkRequestOperationList = Collections.synchronizedList(new ArrayList<>());
     bulkRequestOperationMap = new ConcurrentHashMap<>();
     builder.bulkRequestOperation(bulkRequestOperationList);
     this.fullUrl = isFullUrl ? baseUrl : null;
