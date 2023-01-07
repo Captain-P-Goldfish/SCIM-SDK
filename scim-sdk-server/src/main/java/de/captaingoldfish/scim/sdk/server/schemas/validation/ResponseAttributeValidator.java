@@ -251,7 +251,7 @@ class ResponseAttributeValidator
     {
       try
       {
-        validateRequiredAttribute(schemaAttribute, !validatedNode.isPresent());
+        validateRequiredAttribute(schemaAttribute, !validatedNode.isPresent(), attributesList, excludedAttributesList);
       }
       catch (AttributeValidationException ex)
       {
@@ -328,7 +328,7 @@ class ResponseAttributeValidator
       return false;
     }
     final boolean isNodeNull = attribute == null || attribute.isNull();
-    validateRequiredAttribute(schemaAttribute, isNodeNull);
+    validateRequiredAttribute(schemaAttribute, isNodeNull, attributesList, excludedAttributesList);
 
     if (isNodeNull)
     {
@@ -434,16 +434,51 @@ class ResponseAttributeValidator
    *
    * @param schemaAttribute the attributes definition
    * @param isNodeNull if the attribute is null or not
+   * @param attributesList tells us if the returned set should be a minimal set or not
+   * @param excludedAttributesList tells us if the client asked to exclude specific attributes
    */
-  private static void validateRequiredAttribute(SchemaAttribute schemaAttribute, boolean isNodeNull)
+  private static void validateRequiredAttribute(SchemaAttribute schemaAttribute,
+                                                boolean isNodeNull,
+                                                List<SchemaAttribute> attributesList,
+                                                List<SchemaAttribute> excludedAttributesList)
   {
     if (!schemaAttribute.isRequired())
     {
       return;
     }
-    if (isNodeNull && !Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability())
-        && !Returned.NEVER.equals(schemaAttribute.getReturned()))
+
+    final boolean isWriteOnly = Mutability.WRITE_ONLY.equals(schemaAttribute.getMutability());
+    final boolean isReturnedNever = Returned.NEVER.equals(schemaAttribute.getReturned());
+    if (isNodeNull && !isWriteOnly && !isReturnedNever)
     {
+      // now we got one case in which the attribute may still be null. If the attribute was excluded from the
+      // request or not directly asked for
+      final boolean isReturnedAlways = Returned.ALWAYS.equals(schemaAttribute.getReturned());
+      final boolean wereAttributesRequested = attributesList != null && attributesList.size() > 0;
+      directlyRequestedAttributesBlock: if (!isReturnedAlways && wereAttributesRequested)
+      {
+        final boolean isDirectlyRequested = attributesList.contains(schemaAttribute);
+        if (isDirectlyRequested)
+        {
+          // cause an exception because the client asked specifically for this attribute that is null eventhough it is
+          // required
+          break directlyRequestedAttributesBlock;
+        }
+        // no exception. The attribute is required but must not always be returned and the user wants a minimal set
+        // of attributes
+        return;
+      }
+      final boolean wereAttributesExcluded = excludedAttributesList != null && excludedAttributesList.size() > 0;
+      if (wereAttributesExcluded)
+      {
+        final boolean isExcludedByClient = excludedAttributesList.contains(schemaAttribute);
+        if (isExcludedByClient)
+        {
+          // no exception. The attribute is required but the client explicitly asked to exclude it from the
+          // response
+          return;
+        }
+      }
       String errorMessage = String.format("Required '%s' attribute '%s' is missing",
                                           schemaAttribute.getMutability(),
                                           schemaAttribute.getFullResourceName());

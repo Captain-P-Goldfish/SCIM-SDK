@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
@@ -73,6 +74,7 @@ import de.captaingoldfish.scim.sdk.common.response.GetResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
@@ -130,7 +132,17 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   @BeforeEach
   public void initialize()
   {
-    serviceProvider = ServiceProvider.builder().build();
+    List<AuthenticationScheme> authSchemes = Arrays.asList(AuthenticationScheme.builder()
+                                                                               .name("test")
+                                                                               .description("test")
+                                                                               .type("test")
+                                                                               .specUri("test")
+                                                                               .documentationUri("test")
+                                                                               .display("test")
+                                                                               .ref("test")
+                                                                               .primary(true)
+                                                                               .build());
+    serviceProvider = ServiceProvider.builder().authenticationSchemes(authSchemes).build();
     userHandler = Mockito.spy(new UserHandlerImpl(true));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
@@ -1692,6 +1704,158 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     for ( String attributeName : minimalAttributeSet )
     {
       Assertions.assertNotNull(updateResponse.get(attributeName), updateResponse.toPrettyString());
+    }
+  }
+
+  /**
+   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
+   * <ul>
+   * <li>we ask explicitly for the patch attribute of the service provider</li>
+   * <li>we expect only the minimal set of [schemas, patch] to be returned in the response</li>
+   * </ul>
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
+   */
+  @Test
+  public void testAskForASingleAttributeWhileOthersAreStillRequired()
+  {
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?attributes=patch";
+    final List<String> minimalAttributeSet = Arrays.asList("schemas", "patch");
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
+    Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus(), scimResponse.toPrettyString());
+    Assertions.assertEquals(minimalAttributeSet.size(), scimResponse.size(), scimResponse.toPrettyString());
+    for ( String attributeName : minimalAttributeSet )
+    {
+      Assertions.assertNotNull(scimResponse.get(attributeName), scimResponse.toPrettyString());
+    }
+  }
+
+  /**
+   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
+   * <ul>
+   * <li>we remove the patch config from the service provider</li>
+   * <li>we ask explicitly for the patch attribute of the service provider</li>
+   * <li>we expect an internal server error because the response does not contain the required attribute</li>
+   * </ul>
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
+   */
+  @Test
+  public void testAskForASpecificAttributeThatIsMissingInTheResponse()
+  {
+    // 1. set patch config to null
+    resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
+
+    // 2. ask explicitly for the patch attribute
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?attributes=patch";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
+
+    // 3. we expect an internal server error since the required attribute is not provided by the server
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
+                            scimResponse.getHttpStatus(),
+                            scimResponse.toPrettyString());
+  }
+
+  /**
+   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
+   * <ul>
+   * <li>we ask explicitly to exclude the patch attribute of the service provider</li>
+   * <li>we expect the complete set of attributes except the patch attribute</li>
+   * </ul>
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
+   */
+  @Test
+  public void testExcludeRequiredAttribute()
+  {
+    // 1. ask explicitly to exclude the patch attribute
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?excludedAttributes=patch";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
+
+    // 2. expect all attributes to be returned except for the patch attribute
+    ResourceType resourceType = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.SERVICE_PROVIDER_CONFIG)
+                                                .orElse(null);
+    final List<String> expectedAttributeSet = resourceType.getMainSchema()
+                                                          .getAttributes()
+                                                          .stream()
+                                                          .map(SchemaAttribute::getScimNodeName)
+                                                          .collect(Collectors.toList());
+    expectedAttributeSet.add(AttributeNames.RFC7643.SCHEMAS);
+    expectedAttributeSet.add(AttributeNames.RFC7643.META);
+    expectedAttributeSet.remove(AttributeNames.RFC7643.PATCH);
+    // documentation uri is not a required attribute
+    expectedAttributeSet.remove(AttributeNames.RFC7643.DOCUMENTATION_URI);
+
+    Assertions.assertEquals(expectedAttributeSet.size(), scimResponse.size(), scimResponse.toPrettyString());
+    for ( String attributeName : expectedAttributeSet )
+    {
+      Assertions.assertNotNull(scimResponse.get(attributeName),
+                               String.format("attribute '%s' should have been present in document: \n%s",
+                                             attributeName,
+                                             scimResponse.toPrettyString()));
+    }
+  }
+
+  /**
+   * will check that no exception is thrown if the client tries to exclude an attribute that is required but not
+   * even set by the service provider. In cases of errors on the service provider side the client may use this
+   * as a workaround
+   * <ul>
+   * <li>remove the patch attribute from the service provider</li>
+   * <li>we ask explicitly to exclude the patch attribute of the service provider</li>
+   * <li>we expect the complete set of attributes except the patch attribute</li>
+   * </ul>
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
+   */
+  @Test
+  public void testExcludeRequiredAttributeThatIsIllegallySetToNull()
+  {
+    // 1. set patch config to null
+    resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
+
+    // 2. ask explicitly to exclude the patch attribute
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?excludedAttributes=patch";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
+
+    // 3. expect all attributes to be returned except for the patch attribute
+    ResourceType resourceType = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.SERVICE_PROVIDER_CONFIG)
+                                                .orElse(null);
+    final List<String> expectedAttributeSet = resourceType.getMainSchema()
+                                                          .getAttributes()
+                                                          .stream()
+                                                          .map(SchemaAttribute::getScimNodeName)
+                                                          .collect(Collectors.toList());
+    expectedAttributeSet.add(AttributeNames.RFC7643.SCHEMAS);
+    expectedAttributeSet.add(AttributeNames.RFC7643.META);
+    expectedAttributeSet.remove(AttributeNames.RFC7643.PATCH);
+    // documentation uri is not a required attribute
+    expectedAttributeSet.remove(AttributeNames.RFC7643.DOCUMENTATION_URI);
+
+    Assertions.assertEquals(expectedAttributeSet.size(), scimResponse.size(), scimResponse.toPrettyString());
+    for ( String attributeName : expectedAttributeSet )
+    {
+      Assertions.assertNotNull(scimResponse.get(attributeName),
+                               String.format("attribute '%s' should have been present in document: \n%s",
+                                             attributeName,
+                                             scimResponse.toPrettyString()));
     }
   }
 
