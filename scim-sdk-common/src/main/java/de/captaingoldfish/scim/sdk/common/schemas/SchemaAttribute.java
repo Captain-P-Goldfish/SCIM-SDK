@@ -296,7 +296,7 @@ public final class SchemaAttribute extends ScimObjectNode
   /**
    * The attribute's name.
    */
-  private void setName(String name)
+  public void setName(String name)
   {
     setAttribute(AttributeNames.RFC7643.NAME, name);
   }
@@ -324,7 +324,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * defined, listing the sub-attributes of the attribute.
    */
   // @formatter:on
-  private void setType(Type type)
+  public void setType(Type type)
   {
     setAttribute(AttributeNames.RFC7643.TYPE, Optional.ofNullable(type).map(Type::getValue).orElse(null));
   }
@@ -346,7 +346,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * applicable, service providers MUST specify the description.
    */
   // @formatter:on
-  private void setDescription(String description)
+  public void setDescription(String description)
   {
     setAttribute(AttributeNames.RFC7643.DESCRIPTION, description);
   }
@@ -396,7 +396,7 @@ public final class SchemaAttribute extends ScimObjectNode
    *             "writeOnly" usually also has a returned setting of "never".
    */
   // @formatter:on
-  private void setMutability(Mutability mutability)
+  public void setMutability(Mutability mutability)
   {
     setAttribute(AttributeNames.RFC7643.MUTABILITY,
                  Optional.ofNullable(mutability).map(Mutability::getValue).orElse(null));
@@ -465,7 +465,7 @@ public final class SchemaAttribute extends ScimObjectNode
    *          specified in the "attributes" parameter.
    */
   // @formatter:on
-  private void setReturned(Returned returned)
+  public void setReturned(Returned returned)
   {
     setAttribute(AttributeNames.RFC7643.RETURNED, Optional.ofNullable(returned).map(Returned::getValue).orElse(null));
   }
@@ -525,7 +525,7 @@ public final class SchemaAttribute extends ScimObjectNode
    *         server SHOULD possess the same value.
    */
   // @formatter:on
-  private void setUniqueness(Uniqueness uniqueness)
+  public void setUniqueness(Uniqueness uniqueness)
   {
     setAttribute(AttributeNames.RFC7643.UNIQUENESS,
                  Optional.ofNullable(uniqueness).map(Uniqueness::getValue).orElse(null));
@@ -542,7 +542,7 @@ public final class SchemaAttribute extends ScimObjectNode
   /**
    * A Boolean value indicating the attribute's plurality.
    */
-  private void setMultiValued(boolean multiValued)
+  public void setMultiValued(boolean multiValued)
   {
     setAttribute(AttributeNames.RFC7643.MULTI_VALUED, multiValued);
   }
@@ -564,7 +564,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * attribute is required.
    */
   // @formatter:on
-  private void setRequired(boolean required)
+  public void setRequired(boolean required)
   {
     setAttribute(AttributeNames.RFC7643.REQUIRED, required);
   }
@@ -598,7 +598,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * values (see Section 3.4.2.2 of [RFC7644]).
    */
   // @formatter:on
-  private void setCaseExact(boolean caseExact)
+  public void setCaseExact(boolean caseExact)
   {
     setAttribute(AttributeNames.RFC7643.CASE_EXACT, caseExact);
   }
@@ -622,7 +622,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * providers MAY choose to ignore unsupported values.  OPTIONAL.
    */
   // @formatter:on
-  private void setCanonicalValues(List<String> canonicalValues)
+  public void setCanonicalValues(List<String> canonicalValues)
   {
     setStringAttributeList(AttributeNames.RFC7643.CANONICAL_VALUES, canonicalValues);
   }
@@ -670,7 +670,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * type "reference" (Section 2.3.7).
    */
   // @formatter:on
-  private void setReferenceTypes(List<ReferenceTypes> referenceTypes)
+  public void setReferenceTypes(List<ReferenceTypes> referenceTypes)
   {
     setStringAttributeList(AttributeNames.RFC7643.REFERENCE_TYPES,
                            referenceTypes.stream().map(ReferenceTypes::getValue).collect(Collectors.toList()));
@@ -691,7 +691,7 @@ public final class SchemaAttribute extends ScimObjectNode
    * attribute to the ID of a specific resource. The value must match the name of a registered 'resourceType'
    * not a 'resource'-name! In case of the /Me endpoint use the value 'Me' not the value 'User'
    */
-  private void setResourceTypeReferenceName(String resourceTypeReferenceName)
+  public void setResourceTypeReferenceName(String resourceTypeReferenceName)
   {
     setAttribute(AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME, resourceTypeReferenceName);
   }
