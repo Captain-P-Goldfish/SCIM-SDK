@@ -177,8 +177,8 @@ public class UriInfos
     {
       return null;
     }
-    final String lastPathPart = "/" + urlParts[urlParts.length - 1];
     final String nextToLastPathPart = "/" + urlParts[urlParts.length - 2];
+    final String lastPathPart = "/" + urlParts[urlParts.length - 1];
     ResourceType resourceType = Optional.ofNullable(resourceTypeFactory.getResourceType(nextToLastPathPart))
                                         .orElse(resourceTypeFactory.getResourceType(lastPathPart));
 
@@ -188,7 +188,7 @@ public class UriInfos
     }
     throw new BadRequestException(String.format("the request url '%s' does not point to a registered resource type. "
                                                 + "Registered resource types are: [%s]",
-                                                lastPathPart + nextToLastPathPart,
+                                                String.join("/", urlParts),
                                                 resourceTypeFactory.getAllResourceTypes()
                                                                    .stream()
                                                                    .map(ResourceType::getEndpoint)

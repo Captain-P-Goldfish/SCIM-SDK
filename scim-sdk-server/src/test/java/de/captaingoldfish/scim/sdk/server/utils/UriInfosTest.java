@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -128,12 +129,19 @@ public class UriInfosTest
   /**
    * will verify that a {@link BadRequestException} is thrown if the resource endpoint is unknown
    */
-  @Test
-  public void testUnknownResourceType()
+  @ParameterizedTest
+  @CsvSource({"/Unknown,", "/Unknown,/2"})
+  public void testUnknownResourceType(String unknownPath, String id)
   {
-    final String url = BASE_URI + "/Unknown";
-    Assertions.assertThrows(BadRequestException.class,
-                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders));
+    final String url = BASE_URI + unknownPath + StringUtils.stripToEmpty(id);
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class, () -> {
+      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders);
+    });
+
+    Assertions.assertEquals(String.format("the request url '%s' does not point to a registered resource type. "
+                                          + "Registered resource types are: [/Users]",
+                                          "/scim/v2" + unknownPath + StringUtils.stripToEmpty(id)),
+                            ex.getMessage());
   }
 
   /**
