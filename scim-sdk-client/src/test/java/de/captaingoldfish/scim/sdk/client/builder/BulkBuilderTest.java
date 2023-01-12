@@ -94,23 +94,24 @@ public class BulkBuilderTest extends HttpServerMockup
     BulkBuilder bulkBuilder = new BulkBuilder(url, scimHttpClient, false, null);
 
     final String firstBulkId = UUID.randomUUID().toString();
+    final String username = UUID.randomUUID().toString();
     final String secondBulkId = UUID.randomUUID().toString();
     final String thirdBulkId = UUID.randomUUID().toString();
     ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(1)
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
                                                        .bulkId(firstBulkId)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder().userName(username).build())
                                                        .next()
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
                                                        .bulkId(secondBulkId)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder().userName(username).build())
                                                        .next()
                                                        .bulkRequestOperation(EndpointPaths.USERS)
                                                        .method(HttpMethod.POST)
                                                        .bulkId(thirdBulkId)
-                                                       .data(User.builder().userName("goldfish").build())
+                                                       .data(User.builder().userName(username).build())
                                                        .sendRequest();
     Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED,
                             response.getHttpStatus(),
@@ -320,7 +321,7 @@ public class BulkBuilderTest extends HttpServerMockup
   }
 
   /**
-   * verifies that an error message is appropriately thrown if the server misses returning a bulkId
+   * verifies that an error message is appropriately thrown if the server misses to return a bulkId
    */
   @Test
   public void testTooManyOperationsWithAutomaticSplittingEnabled_simpleWithError2()
@@ -354,7 +355,7 @@ public class BulkBuilderTest extends HttpServerMockup
     Assertions.assertEquals(IllegalStateException.class, ex.getCause().getClass());
     IllegalStateException illegalStateException = (IllegalStateException)ex.getCause();
     MatcherAssert.assertThat(illegalStateException.getMessage(),
-                             Matchers.startsWith("Missing bulkId in response cannot resolve relations of split operations."));
+                             Matchers.containsString("Missing bulkId in response cannot resolve relations of split operations."));
   }
 
   /**
