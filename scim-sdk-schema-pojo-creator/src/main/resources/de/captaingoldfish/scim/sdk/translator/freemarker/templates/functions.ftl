@@ -10,6 +10,9 @@
     <#if attribute.type == 'DATE_TIME'>
         <#local javaType="Instant" />
     </#if>
+    <#if attribute.type == 'BOOLEAN'>
+        <#local javaType="Boolean" />
+    </#if>
     <#if attribute.type == 'COMPLEX'>
         <#local javaType="${attribute.name?cap_first}" />
     </#if>

@@ -52,6 +52,13 @@
             <#lt>${typeIndent}return getDateTimeAttribute(FieldNames.${attribute.name?upper_case})<#rt>
             <#lt><#if functions.isRequired(attribute)>.get()</#if>;
         </#if>
+    <#elseif  attribute.type == 'BOOLEAN'>
+        <#if attribute.multiValued>
+            <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case}, Boolean.class);
+        <#else>
+            <#lt>${typeIndent}return getBooleanAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        </#if>
     <#elseif  attribute.type == 'COMPLEX'><#rt>
         <#if attribute.multiValued>
             <#lt>${typeIndent}return getArrayAttribute(FieldNames.${attribute.name?upper_case}, <#rt>
