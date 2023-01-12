@@ -16,6 +16,10 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
     <#lt>import lombok.Builder;
 </#if>
 
+<#list extensionList as extension>
+    <#lt>import ${packageName}.${extension.name.get()};
+</#list>
+
 
 <@makros.addJavadoc javadoc=resource.description.get() indent=0 />
 public class ${resource.name.get()?cap_first?replace(" ", "")} extends <#rt>
@@ -61,10 +65,9 @@ public class ${resource.name.get()?cap_first?replace(" ", "")} extends <#rt>
           </#if>
         </#if>
       </#if>
-
     </#list>
     <#list extensionList as extension>
-        <#lt>${''?left_pad(4)}public static final String ${extension.name.get()?upper_case} = "${extension.name.get()}";
+        <#lt>${''?left_pad(4)}public static final String ${extension.name.get()?upper_case} = ${extension.name.get()}.FieldNames.SCHEMA;
     </#list>
   }
 }
