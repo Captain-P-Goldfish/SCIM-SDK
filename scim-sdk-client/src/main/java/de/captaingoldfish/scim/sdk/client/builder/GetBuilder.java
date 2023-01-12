@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.Map;
+
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -47,6 +49,15 @@ public class GetBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
           scimHttpClient);
     this.fullUrl = null;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public GetBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+  {
+    return (GetBuilder<T>)super.setExpectedResponseHeaders(requiredResponseHeaders);
   }
 
   /**

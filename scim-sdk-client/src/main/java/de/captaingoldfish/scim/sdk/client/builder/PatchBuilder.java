@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpPatch;
@@ -18,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 
 
 /**
@@ -70,6 +72,15 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * {@inheritDoc}
    */
   @Override
+  public PatchBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+  {
+    return (PatchBuilder<T>)super.setExpectedResponseHeaders(requiredResponseHeaders);
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
   protected boolean isExpectedResponseCode(int httpStatus)
   {
     return HttpStatus.OK == httpStatus;
@@ -80,9 +91,11 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    *
    * @param resource the patch request representation
    */
-  public RequestBuilder<T> setPatchResource(PatchOpRequest resource)
+  public PatchBuilder<T> setPatchResource(PatchOpRequest resource)
   {
-    return super.setResource(resource);
+    PatchBuilder<T> patchBuilder = (PatchBuilder<T>)super.setResource(resource);
+    this.operations = resource.getOperations();
+    return patchBuilder;
   }
 
   /**
@@ -90,9 +103,12 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    *
    * @param resource the patch request representation
    */
-  public RequestBuilder<T> setPatchResource(String resource)
+  public PatchBuilder<T> setPatchResource(String resource)
   {
-    return super.setResource(resource);
+    PatchBuilder<T> patchBuilder = (PatchBuilder<T>)super.setResource(resource);
+    PatchOpRequest patchOpRequest = JsonHelper.readJsonDocument(resource, PatchOpRequest.class);
+    this.operations = patchOpRequest.getOperations();
+    return patchBuilder;
   }
 
   /**

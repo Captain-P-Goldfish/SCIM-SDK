@@ -180,7 +180,7 @@ public class ServerResponse<T extends ScimObjectNode>
   }
 
   /**
-   * checks (with a caseinsensitive check on the given header name) that the value is equal to the expected
+   * checks (with a case-insensitive check on the given header name) that the value is equal to the expected
    * value
    *
    * @param headerName the header name that should be present

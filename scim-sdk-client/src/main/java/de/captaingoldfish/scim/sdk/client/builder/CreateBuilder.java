@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpPost;
@@ -46,6 +47,15 @@ public class CreateBuilder<T extends ResourceNode> extends RequestBuilder<T>
   {
     super(baseUrl, endpoint, responseEntityType, scimHttpClient);
     this.fullUrl = null;
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  @Override
+  public CreateBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+  {
+    return (CreateBuilder<T>)super.setExpectedResponseHeaders(requiredResponseHeaders);
   }
 
   /**

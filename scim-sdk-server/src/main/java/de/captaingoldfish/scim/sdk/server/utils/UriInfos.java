@@ -245,8 +245,10 @@ public class UriInfos
     if ((HttpMethod.POST.equals(httpMethod) || HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod))
         && (contentType == null || !StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE)))
     {
-      throw new BadRequestException("Invalid content type. Was '" + contentType + "' but should be "
-                                    + HttpHeader.SCIM_CONTENT_TYPE, null, null);
+      throw new BadRequestException(String.format("Invalid content type. Was '%s' but should be %s",
+                                                  contentType,
+                                                  HttpHeader.SCIM_CONTENT_TYPE),
+                                    null, null);
     }
     // other headers do not need to be validated currently
     return httpHeaders;

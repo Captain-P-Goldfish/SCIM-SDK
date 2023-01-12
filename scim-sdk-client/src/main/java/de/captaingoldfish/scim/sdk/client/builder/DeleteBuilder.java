@@ -52,6 +52,16 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   }
 
   /**
+   * Kept protected for delete requests to prevent misunderstandings. The delete-response-header check is
+   * disabled by default because we do not expect any content-types on delete for example
+   */
+  @Override
+  protected DeleteBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+  {
+    return (DeleteBuilder<T>)super.setExpectedResponseHeaders(requiredResponseHeaders);
+  }
+
+  /**
    * {@inheritDoc}
    */
   @Override

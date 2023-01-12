@@ -123,6 +123,15 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   }
 
   /**
+   * {@inheritDoc}
+   */
+  @Override
+  public BulkBuilder setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+  {
+    return (BulkBuilder)super.setExpectedResponseHeaders(requiredResponseHeaders);
+  }
+
+  /**
    * retrieves a request operation from the builder by its bulkId. Modifying the returned operation will also
    * modify the request
    *

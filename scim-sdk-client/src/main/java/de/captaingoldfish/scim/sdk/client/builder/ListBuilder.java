@@ -253,6 +253,15 @@ public class ListBuilder<T extends ResourceNode>
      * {@inheritDoc}
      */
     @Override
+    public GetRequestBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+    {
+      return (GetRequestBuilder<T>)super.setExpectedResponseHeaders(requiredResponseHeaders);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     protected boolean isExpectedResponseCode(int httpStatus)
     {
       return HttpStatus.OK == httpStatus;
@@ -345,6 +354,15 @@ public class ListBuilder<T extends ResourceNode>
       super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
             listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public PostRequestBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+    {
+      return (PostRequestBuilder<T>)super.setExpectedResponseHeaders(requiredResponseHeaders);
     }
 
     /**

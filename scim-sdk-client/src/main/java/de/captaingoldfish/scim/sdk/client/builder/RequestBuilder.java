@@ -60,6 +60,13 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   @Getter(AccessLevel.PROTECTED)
   private ScimHttpClient scimHttpClient;
 
+  /**
+   * the headers that are expected to be returned from the server. If any of the required response headers is
+   * missing the response will be marked as not successful
+   */
+  @Getter
+  private Map<String, String> requiredHttpHeaders;
+
   public RequestBuilder(String baseUrl, String endpoint, Class<T> responseEntityType, ScimHttpClient scimHttpClient)
   {
     this.baseUrl = baseUrl;
@@ -197,9 +204,34 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
    */
   protected Map<String, String> getRequiredResponseHeaders()
   {
+    if (requiredHttpHeaders != null)
+    {
+      return requiredHttpHeaders;
+    }
+    if (scimHttpClient.getScimClientConfig().getExpectedHttpResponseHeaders() != null)
+    {
+      return scimHttpClient.getScimClientConfig().getExpectedHttpResponseHeaders();
+    }
     Map<String, String> requiredHttpHeaders = new HashMap<>();
     requiredHttpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
     return requiredHttpHeaders;
+  }
+
+  /**
+   * Set this if the SCIM provider is not behaving SCIM compliant by manipulating the expected headers that will
+   * be returned from the server
+   * <ul>
+   * <li>null: The headers are checked as normally for the content-type "application/scim+json"</li>
+   * <li>empty map: The check of response headers is disabled</li>
+   * <li>filled map: The check of the response headers will be done with the entries of this map</li>
+   * </ul>
+   *
+   * @param resource sets the resource that should be sent to the service provider
+   */
+  protected RequestBuilder<T> setExpectedResponseHeaders(Map<String, String> requiredResponseHeaders)
+  {
+    this.requiredHttpHeaders = requiredResponseHeaders;
+    return this;
   }
 
   /**

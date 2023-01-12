@@ -87,6 +87,18 @@ public class ScimClientConfig
   private Map<String, String[]> httpHeaders;
 
   /**
+   * normally SCIM responses must have set the http-header "application/scim+json". But some providers are not
+   * providing these headers. If so, set this map in order to modify the check of the response headers from the
+   * server. <br>
+   * <ul>
+   * <li>null: The headers are checked as normally for the content-type "application/scim+json"</li>
+   * <li>empty map: The check of response headers is disabled</li>
+   * <li>filled map: The check of the response headers will be done with the entries of this map</li>
+   * </ul>
+   */
+  private Map<String, String> expectedHttpResponseHeaders;
+
+  /**
    * an optional basic authentication object
    */
   private BasicAuth basicAuth;
@@ -116,7 +128,8 @@ public class ScimClientConfig
                           Map<String, String[]> httpMultiHeaders,
                           BasicAuth basicAuth,
                           ConfigManipulator configManipulator,
-                          boolean useLowerCaseInFilterComparators)
+                          boolean useLowerCaseInFilterComparators,
+                          Map<String, String> expectedHttpResponseHeaders)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -131,6 +144,7 @@ public class ScimClientConfig
     this.basicAuth = basicAuth;
     this.configManipulator = configManipulator;
     this.useLowerCaseInFilterComparators = useLowerCaseInFilterComparators;
+    this.expectedHttpResponseHeaders = expectedHttpResponseHeaders;
   }
 
   /**
