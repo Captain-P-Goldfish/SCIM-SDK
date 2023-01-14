@@ -78,7 +78,7 @@ class SchemaFactoryTest implements FileReferences
   // @formatter:on
   @ParameterizedTest
   @ValueSource(strings = {DUPLICATE_NAME_SCHEMA, DUPLICATE_SUB_NAME_SCHEMA, READ_ONLY_NEVER_SCHEMA,
-                          WRITE_ONLY_ALWAYS_SCHEMA})
+                          WRITE_ONLY_ALWAYS_SCHEMA, BINARY_NOT_CASE_EXACT})
   public void testSenselessAttributeCombinationsInMetaSchemata(String badSchemaLocation)
   {
     Assertions.assertThrows(InvalidSchemaException.class,

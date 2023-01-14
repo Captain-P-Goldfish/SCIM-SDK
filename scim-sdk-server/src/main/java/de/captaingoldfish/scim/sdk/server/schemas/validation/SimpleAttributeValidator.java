@@ -4,6 +4,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Base64;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -25,14 +26,11 @@ import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 
 /**
- * <p>
- * Copyright &copy; 2009-2020 Governikus GmbH &amp; Co. KG
- * </p>
- *
  * @author Pascal Knüppel
  * @since 09.04.2021
  */
@@ -56,6 +54,7 @@ class SimpleAttributeValidator
    * will parse the given node type into a json representation that contains additional its schema attribute
    * definition
    */
+  @SneakyThrows
   public static JsonNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
     log.trace("Validating simple attribute '{}'", schemaAttribute.getScimNodeName());
@@ -74,6 +73,26 @@ class SimpleAttributeValidator
       case STRING:
         isNodeOfExpectedType(schemaAttribute, attribute, jsonNode -> jsonNode.isTextual() || jsonNode.isObject());
         return new ScimTextNode(schemaAttribute, attribute.isTextual() ? attribute.textValue() : attribute.toString());
+      case BINARY:
+        isNodeOfExpectedType(schemaAttribute, attribute, jsonNode -> {
+          if (jsonNode.isTextual())
+          {
+            try
+            {
+              Base64.getDecoder().decode(jsonNode.textValue());
+              return true;
+            }
+            catch (IllegalArgumentException ex)
+            {
+              log.trace(ex.getMessage(), ex);
+              log.debug(String.format("Data of attribute '%s' is not valid Base64 encoded data",
+                                      schemaAttribute.getFullResourceName()));
+              return false;
+            }
+          }
+          return false;
+        });
+        return new ScimTextNode(schemaAttribute, attribute.textValue());
       case BOOLEAN:
         isNodeOfExpectedType(schemaAttribute, attribute, JsonNode::isBoolean);
         return new ScimBooleanNode(schemaAttribute, attribute.booleanValue());

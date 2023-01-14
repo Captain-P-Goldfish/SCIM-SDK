@@ -13,6 +13,9 @@
     <#if attribute.type == 'BOOLEAN'>
         <#local javaType="Boolean" />
     </#if>
+    <#if attribute.type == 'BINARY'>
+        <#local javaType="byte[]" />
+    </#if>
     <#if attribute.type == 'COMPLEX'>
         <#local javaType="${attribute.name?cap_first}" />
     </#if>

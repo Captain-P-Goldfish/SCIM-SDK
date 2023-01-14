@@ -53,6 +53,16 @@ public class AllTypes extends ResourceNode
     setAttribute("string", string);
   }
 
+  public Optional<byte[]> getBinary()
+  {
+    return getBinaryAttribute("binary");
+  }
+
+  public void setBinary(byte[] binary)
+  {
+    setAttribute("binary", binary);
+  }
+
   public Optional<Long> getNumber()
   {
     return getLongAttribute("number");
@@ -116,6 +126,16 @@ public class AllTypes extends ResourceNode
   public void setStringArray(List<String> stringArray)
   {
     setStringAttributeList("stringArray", stringArray);
+  }
+
+  public List<byte[]> getBinaryArray()
+  {
+    return getSimpleArrayAttribute("binaryArray", byte[].class);
+  }
+
+  public void setBinaryArray(List<byte[]> binaryArray)
+  {
+    setAttributeList("binaryArray", binaryArray);
   }
 
   public List<Long> getNumberArray()

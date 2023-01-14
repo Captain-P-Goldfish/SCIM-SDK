@@ -85,6 +85,11 @@ public final class AttributeExpressionLeaf extends FilterNode
     }
 
     this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, attributeName);
+    if (schemaAttribute.getType().equals(Type.BINARY))
+    {
+      throw new InvalidFilterException(String.format("binary types like '%s' are not suitable for filter expressions",
+                                                     schemaAttribute.getFullResourceName()));
+    }
     if (parentName != null && !parentName.equals(schemaAttribute.getParent().getName()))
     {
       this.attributeName = new FilterAttributeName(schemaAttribute.getParent().getScimNodeName(),

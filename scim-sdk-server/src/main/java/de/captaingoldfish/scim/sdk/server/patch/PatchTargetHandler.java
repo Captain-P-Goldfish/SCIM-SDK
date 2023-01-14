@@ -861,6 +861,7 @@ public class PatchTargetHandler extends AbstractPatch
       case STRING:
       case DATE_TIME:
       case REFERENCE:
+      case BINARY:
         return new ScimTextNode(schemaAttribute, value);
       case BOOLEAN:
         return new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(value));

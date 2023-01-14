@@ -28,7 +28,8 @@ public enum Type
   DECIMAL("decimal"),
   INTEGER("integer"),
   DATE_TIME("dateTime"),
-  REFERENCE("reference");
+  REFERENCE("reference"),
+  BINARY("binary");
 
   @Getter
   private String value;

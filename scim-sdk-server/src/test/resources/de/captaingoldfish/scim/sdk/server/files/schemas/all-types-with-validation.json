@@ -21,6 +21,17 @@
       "pattern": "[0-9]+"
     },
     {
+      "name": "binary",
+      "type": "binary",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "description": "test",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true
+    },
+    {
       "name": "number",
       "type": "integer",
       "mutability": "readWrite",
@@ -87,6 +98,17 @@
       "minLength": 5,
       "maxLength": 10,
       "pattern": "[0-9]+"
+    },
+    {
+      "name": "binaryArray",
+      "type": "binary",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "description": "test",
+      "multiValued": true,
+      "required": false,
+      "caseExact": true
     },
     {
       "name": "numberArray",
@@ -174,6 +196,17 @@
           "pattern": "[0-9]+"
         },
         {
+          "name": "binary",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": false,
+          "required": false,
+          "caseExact": true
+        },
+        {
           "name": "number",
           "type": "integer",
           "mutability": "readWrite",
@@ -240,6 +273,17 @@
           "minLength": 5,
           "maxLength": 10,
           "pattern": "[0-9]+"
+        },
+        {
+          "name": "binaryArray",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": true,
+          "required": false,
+          "caseExact": true
         },
         {
           "name": "numberArray",
@@ -331,6 +375,17 @@
           "pattern": "[0-9]+"
         },
         {
+          "name": "binary",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": false,
+          "required": false,
+          "caseExact": true
+        },
+        {
           "name": "number",
           "type": "integer",
           "mutability": "readWrite",
@@ -394,6 +449,17 @@
           "minLength": 5,
           "maxLength": 10,
           "pattern": "[0-9]+"
+        },
+        {
+          "name": "binaryArray",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": true,
+          "required": false,
+          "caseExact": true
         },
         {
           "name": "numberArray",

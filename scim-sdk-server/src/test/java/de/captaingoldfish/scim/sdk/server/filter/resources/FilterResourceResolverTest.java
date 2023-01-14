@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
+import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
@@ -1920,6 +1921,21 @@ public class FilterResourceResolverTest implements FileReferences
     final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
     List<User> filteredUsers = FilterResourceResolver.filterResources(serviceProvider, userList, filterNode);
     Assertions.assertEquals(1, filteredUsers.size());
+  }
+
+  /**
+   * it is rather hard to define a scenario that can be used to filter reliably for binary data. Therefor we
+   * will simply reject filter-expressions on binaries
+   */
+  @Test
+  public void testBinaryFiltersAreRejected()
+  {
+    final String filter = "binary eq \"aGVsbG8gd29ybGQ=\"";
+    InvalidFilterException ex = Assertions.assertThrows(InvalidFilterException.class,
+                                                        () -> RequestUtils.parseFilter(allTypesResourceType, filter));
+    Assertions.assertEquals("binary types like 'urn:gold:params:scim:schemas:custom:2.0:AllTypes:binary' "
+                            + "are not suitable for filter expressions",
+                            ex.getMessage());
   }
 
   /**

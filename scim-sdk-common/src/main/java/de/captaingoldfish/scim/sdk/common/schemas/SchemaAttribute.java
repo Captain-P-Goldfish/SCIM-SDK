@@ -1268,8 +1268,8 @@ public final class SchemaAttribute extends ScimObjectNode
    * because the value is a stored hash). Note: An attribute with a mutability of "writeOnly" usually also has a
    * returned setting of "never"</li>
    * </ul>
-   * the last problem is that the an attribute with the same name was declared twice. This problem will be
-   * handled in another method
+   * the last problem is that an attribute with the same name was declared twice. This problem will be handled
+   * in another method
    */
   private void validateAttribute()
   {
@@ -1289,6 +1289,13 @@ public final class SchemaAttribute extends ScimObjectNode
                             + "combination. The client should only write to this attribute but should never have it "
                             + "returned. The mutability writeOnly makes only sense for sensitive application data "
                             + "like passwords or other secrets.";
+      throw getException(errorMessage, null);
+    }
+    // binaries must be case exact
+    if (Type.BINARY.equals(getType()) && !isCaseExact())
+    {
+      String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
+                            + "Binaries have to be case-exact by definition.";
       throw getException(errorMessage, null);
     }
   }

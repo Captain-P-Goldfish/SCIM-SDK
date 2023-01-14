@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.patch;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -34,6 +35,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -129,7 +131,8 @@ public class PatchTargetHandlerTest implements FileReferences
    * resource
    */
   @ParameterizedTest
-  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "bool,false", "date,1996-03-10T00:00:00Z"})
+  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "bool,false", "date,1996-03-10T00:00:00Z",
+              "binary,aGVsbG8gZ29sZGZpc2g="})
   public void testReplaceSimpleAttribute(String attributeName, String value)
   {
     List<String> values = Collections.singletonList(value);
@@ -153,7 +156,8 @@ public class PatchTargetHandlerTest implements FileReferences
    * will verify that already existing attributes are getting replaced by the add operation
    */
   @ParameterizedTest
-  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "date,1996-03-10T00:00:00Z"})
+  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "date,1996-03-10T00:00:00Z",
+              "binary,aGVsbG8gZ29sZGZpc2g="})
   public void testAddSimpleAttributeWithExistingValues(String attributeName, String value)
   {
     List<String> values = Collections.singletonList(value);
@@ -176,7 +180,8 @@ public class PatchTargetHandlerTest implements FileReferences
    * will verify that already existing attributes are getting replaced by the replace operation
    */
   @ParameterizedTest
-  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "date,1996-03-10T00:00:00Z"})
+  @CsvSource({"string,hello world", "number,5", "decimal,5.8", "bool,true", "date,1996-03-10T00:00:00Z",
+              "binary,aGVsbG8gZ29sZGZpc2g="})
   public void testReplaceSimpleAttributeWithExistingValues(String attributeName, String value)
   {
     List<String> values = Collections.singletonList(value);
@@ -196,7 +201,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verfies that several values can be added to simple string array types
+   * verifies that several values can be added to simple string array types
    */
   @Test
   public void testAddSimpleStringArrayAttribute()
@@ -218,7 +223,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verfies that a string array can be added with the replace operation
+   * verifies that a string array can be added with the replace operation
    */
   @Test
   public void testAddSimpleStringArrayAttributeWithReplaceOperation()
@@ -240,7 +245,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verfies that a string array can be replaced with the replace operation
+   * verifies that a string array can be replaced with the replace operation
    */
   @Test
   public void testReplaceSimpleStringArrayAttribute()
@@ -259,6 +264,76 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
     Assertions.assertEquals(values.size(), allTypes.getStringArray().size());
     MatcherAssert.assertThat(allTypes.getStringArray(), Matchers.hasItems(values.toArray(new String[0])));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that a binary array can be replaced with the replace operation
+   */
+  @Test
+  public void testReplaceSimpleBinaryArrayAttribute()
+  {
+    List<String> values = Arrays.asList(Base64.getEncoder().encodeToString("hello world".getBytes()),
+                                        Base64.getEncoder().encodeToString("goodbye world".getBytes()));
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("binaryarray")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setBinaryArray(Arrays.asList("1".getBytes(),
+                                          "2".getBytes(),
+                                          "3".getBytes(),
+                                          "4".getBytes(),
+                                          "humpty dumpty".getBytes()));
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(values.size(), allTypes.getBinaryArray().size());
+    MatcherAssert.assertThat(allTypes.getBinaryArray()
+                                     .stream()
+                                     .map(Base64.getEncoder()::encodeToString)
+                                     .collect(Collectors.toList()),
+                             Matchers.hasItems(values.toArray(new String[0])));
+    Assertions.assertTrue(allTypes.getMeta().isPresent());
+    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * verifies that a binary array can be replaced with the replace operation
+   */
+  @Test
+  public void testReplaceComplexBinaryArrayAttribute()
+  {
+    List<String> values = Arrays.asList(Base64.getEncoder().encodeToString("hello world".getBytes()),
+                                        Base64.getEncoder().encodeToString("goodbye world".getBytes()));
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("complex.binaryarray")
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(true);
+    complex.setBinaryArray(Arrays.asList("1".getBytes(),
+                                         "2".getBytes(),
+                                         "3".getBytes(),
+                                         "4".getBytes(),
+                                         "humpty dumpty".getBytes()));
+    allTypes.setComplex(complex);
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(2, complex.size(), allTypes.toPrettyString());
+    Assertions.assertEquals(values.size(), allTypes.getComplex().get().getBinaryArray().size());
+    MatcherAssert.assertThat(allTypes.getComplex()
+                                     .get()
+                                     .getBinaryArray()
+                                     .stream()
+                                     .map(Base64.getEncoder()::encodeToString)
+                                     .collect(Collectors.toList()),
+                             Matchers.hasItems(values.toArray(new String[0])));
     Assertions.assertTrue(allTypes.getMeta().isPresent());
     Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -367,7 +442,7 @@ public class PatchTargetHandlerTest implements FileReferences
    */
   @ParameterizedTest
   @CsvSource({"string,hello world", "number,5", "number," + Long.MAX_VALUE, "decimal,5.8", "bool,true", "bool,false",
-              "date," + "1996-03-10T00:00:00Z"})
+              "date,1996-03-10T00:00:00Z", "binary,aGVsbG8gZ29sZGZpc2g="})
   public void testAddSimpleAttributeToComplexType(String attributeName, String value)
   {
     List<String> values = Collections.singletonList(value);
@@ -392,7 +467,7 @@ public class PatchTargetHandlerTest implements FileReferences
    */
   @ParameterizedTest
   @CsvSource({"string,hello world", "number,5", "number," + Long.MAX_VALUE, "decimal,5.8", "bool,true", "bool,false",
-              "date," + "1996-03-10T00:00:00Z"})
+              "date,1996-03-10T00:00:00Z", "binary,aGVsbG8gZ29sZGZpc2g="})
   public void testAddSimpleAttributeToComplexTypeWithReplaceOperation(String attributeName, String value)
   {
     List<String> values = Collections.singletonList(value);
@@ -636,7 +711,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that a complex type can completely replaced
+   * verifies that a complex type can be completely replaced
    */
   @Test
   public void testReplaceComplexAttribute()
@@ -681,7 +756,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that complex types can be added to a multi valued complex type
+   * verifies that complex types can be added to a multivalued complex type
    */
   @Test
   public void testAddNewAttributeToMultiValuedComplexNode()
@@ -718,7 +793,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that complex types can be added to a multi valued complex type with the replace operation
+   * verifies that complex types can be added to a multivalued complex type with the replace operation
    */
   @Test
   public void testAddNewAttributeToMultiValuedComplexNodeWithReplaceOperation()
@@ -755,7 +830,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that complex types can be added to a multi valued complex type while preserving old values
+   * verifies that complex types can be added to a multivalued complex type while preserving old values
    */
   @Test
   public void testAddNewAttributeToMultiValuedComplexNodeAndPreserveOldEntries()
@@ -798,7 +873,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that a multi valued complex type can be replaced
+   * verifies that a multivalued complex type can be replaced
    */
   @Test
   public void testReplaceMultiValuedComplexType()
@@ -865,7 +940,7 @@ public class PatchTargetHandlerTest implements FileReferences
 
   /**
    * this test will show that values can be added to arrays within multi complex attributes. If no filter is
-   * given then the new value will be added to all complex representations within the multi valued complex array
+   * given then the new value will be added to all complex representations within the multivalued complex array
    */
   @Test
   public void testAddArrayAttributeToMultiComplexType()
@@ -4254,5 +4329,34 @@ public class PatchTargetHandlerTest implements FileReferences
                                                      () -> patchHandler.patchResource(allTypeChanges, patchOpRequest));
     String errorMessage = "Received invalid data on patch values. Expected an extension resource but got: ''";
     Assertions.assertEquals(errorMessage, ex.getMessage());
+  }
+
+  /**
+   * this test will verify that filter-expressions on binary types in patch-path-representations will be
+   * rejected
+   */
+  @Test
+  public void testRejectFilterExpressionOnBinaryTypeInPatchPath()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setBinary("hello goldfish".getBytes());
+
+    AllTypes firstChangeMulticomplex = new AllTypes(false);
+    firstChangeMulticomplex.setBinary("replace it".getBytes());
+    final String path = "multicomplex[binary eq \"aGVsbG8gZ29sZGZpc2g=\"]";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder()
+                                                                .op(PatchOp.REPLACE)
+                                                                .path(path)
+                                                                .valueNode(firstChangeMulticomplex)
+                                                                .build();
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    InvalidFilterException ex = Assertions.assertThrows(InvalidFilterException.class,
+                                                        () -> patchHandler.patchResource(allTypes, patchOpRequest));
+    Assertions.assertEquals("binary types like 'urn:gold:params:scim:schemas:custom:2.0:AllTypes:"
+                            + "multiComplex.binary' are not suitable for filter expressions",
+                            ex.getMessage());
   }
 }

@@ -59,6 +59,13 @@
             <#lt>${typeIndent}return getBooleanAttribute(FieldNames.${attribute.name?upper_case})<#rt>
             <#lt><#if functions.isRequired(attribute)>.get()</#if>;
         </#if>
+    <#elseif  attribute.type == 'BINARY'>
+        <#if attribute.multiValued>
+            <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case}, byte[].class);
+        <#else>
+            <#lt>${typeIndent}return getBinaryAttribute(FieldNames.${attribute.name?upper_case})<#rt>
+            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+        </#if>
     <#elseif  attribute.type == 'COMPLEX'><#rt>
         <#if attribute.multiValued>
             <#lt>${typeIndent}return getArrayAttribute(FieldNames.${attribute.name?upper_case}, <#rt>

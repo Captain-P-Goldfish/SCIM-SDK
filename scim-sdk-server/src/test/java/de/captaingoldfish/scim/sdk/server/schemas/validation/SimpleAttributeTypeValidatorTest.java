@@ -41,16 +41,14 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
- * <p>
- * Copyright &copy; 2009-2020 Governikus GmbH &amp; Co. KG
- * </p>
- *
  * @author Pascal Knüppel
  * @since 09.04.2021
  */
+@Slf4j
 public class SimpleAttributeTypeValidatorTest
 {
 
@@ -491,6 +489,23 @@ public class SimpleAttributeTypeValidatorTest
   }
 
   /**
+   * shows that a reference of type external is correctly parsed to a string node
+   */
+  @Test
+  public void testBinaryType()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BINARY).build();
+
+    String content = "aWQ6IDI1";
+    JsonNode attribute = new TextNode(content);
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
+                                                                                                     attribute));
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
+    Assertions.assertEquals(content, parsedNode.textValue());
+  }
+
+  /**
    * shows that a reference is correctly turned into a string node no matter if the type is resource or uri
    */
   @ParameterizedTest
@@ -642,7 +657,7 @@ public class SimpleAttributeTypeValidatorTest
   {
 
     /**
-     * will verify that a string value will not be parsed into into a an integer value
+     * will verify that a string value will not be parsed into an integer value
      */
     @Test
     public void testWithInteger()
@@ -694,7 +709,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a string value will not be parsed into into a boolean value
+     * will verify that a string value will not be parsed into a boolean value
      */
     @Test
     public void testWithBoolean()
@@ -721,7 +736,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a string value will not be parsed into into a decimal value
+     * will verify that a string value will not be parsed into a decimal value
      */
     @Test
     public void testWithDouble()
@@ -755,7 +770,7 @@ public class SimpleAttributeTypeValidatorTest
   {
 
     /**
-     * will verify that an integer value will not be parsed into into a string value
+     * will verify that an integer value will not be parsed into a string value
      */
     @Test
     public void testWithString()
@@ -781,7 +796,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that an integer value will not be parsed into into an integer if the value is a string value
+     * will verify that an integer value will not be parsed into an integer if the value is a string value
      */
     @Test
     public void testWithStringNumber()
@@ -807,7 +822,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that an integer value will not be parsed into into a boolean value
+     * will verify that an integer value will not be parsed into a boolean value
      */
     @Test
     public void testWithBoolean()
@@ -833,7 +848,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that an integer value will not be parsed into into a decimal value
+     * will verify that an integer value will not be parsed into a decimal value
      */
     @Test
     public void testWithDouble()
@@ -867,7 +882,7 @@ public class SimpleAttributeTypeValidatorTest
   {
 
     /**
-     * will verify that a boolean value will not be parsed into into a string value
+     * will verify that a boolean value will not be parsed into a string value
      */
     @Test
     public void testWithString()
@@ -893,7 +908,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a boolean value will not be parsed into into an integer value
+     * will verify that a boolean value will not be parsed into an integer value
      */
     @Test
     public void testWithInteger()
@@ -919,7 +934,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a boolean value will not be parsed into into a long value
+     * will verify that a boolean value will not be parsed into a long value
      */
     @Test
     public void testWithLong()
@@ -945,7 +960,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a boolean value will not be parsed into into a decimal value
+     * will verify that a boolean value will not be parsed into a decimal value
      */
     @Test
     public void testWithDouble()
@@ -979,7 +994,7 @@ public class SimpleAttributeTypeValidatorTest
   {
 
     /**
-     * will verify that a string value will not be parsed into into a decimal value
+     * will verify that a string value will not be parsed into a decimal value
      */
     @Test
     public void testWithString()
@@ -1005,7 +1020,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a number string value will not be parsed into into a decimal value. After all its to be
+     * will verify that a number string value will not be parsed into a decimal value. After all its to be
      * interpreted as a string value not a number
      */
     @Test
@@ -1032,7 +1047,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a boolean value will not be parsed into into a decimal value
+     * will verify that a boolean value will not be parsed into a decimal value
      */
     @Test
     public void testWithBoolean()
@@ -1066,7 +1081,7 @@ public class SimpleAttributeTypeValidatorTest
   {
 
     /**
-     * will verify that a none date string value will not be parsed into into a date value
+     * will verify that a none date string value will not be parsed into a date value
      */
     @Test
     public void testWithString()
@@ -1088,7 +1103,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a boolean value will not be parsed into into a date value
+     * will verify that a boolean value will not be parsed into a date value
      */
     @Test
     public void testWithBoolean()
@@ -1114,7 +1129,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that an integer value will not be parsed into into a date value
+     * will verify that an integer value will not be parsed into a date value
      */
     @Test
     public void testWithInteger()
@@ -1140,7 +1155,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a long value will not be parsed into into a date value
+     * will verify that a long value will not be parsed into a date value
      */
     @Test
     public void testWithLong()
@@ -1166,7 +1181,7 @@ public class SimpleAttributeTypeValidatorTest
     }
 
     /**
-     * will verify that a decimal value will not be parsed into into a date value
+     * will verify that a decimal value will not be parsed into a date value
      */
     @Test
     public void testWithDecimal()
@@ -1258,6 +1273,92 @@ public class SimpleAttributeTypeValidatorTest
                                                schemaAttribute.getType().getValue(),
                                                StringUtils.lowerCase(jsonNode.getNodeType().toString()),
                                                jsonNode);
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
+      }
+    }
+  }
+
+  /**
+   * checks for binary parsing failures and that appropriate errors are displayed
+   */
+  @Nested
+  public class BinaryFailureTestBuilder
+  {
+
+    /**
+     * will verify that a non base64 encoded value will not be parsed into a binary value
+     */
+    @Test
+    public void testWithString()
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("binary").type(Type.BINARY).build();
+
+      JsonNode attribute = new TextNode("abc_?/%");
+      try
+      {
+        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
+                                               schemaAttribute.getFullResourceName(),
+                                               schemaAttribute.getType().getValue(),
+                                               StringUtils.lowerCase(JsonNodeType.STRING.toString()),
+                                               attribute);
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
+      }
+    }
+
+    /**
+     * will verify that an integer value will not be parsed into a binary value
+     */
+    @Test
+    public void testWithInteger()
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("binary").type(Type.BINARY).build();
+
+      JsonNode attribute = new IntNode(5);
+      try
+      {
+        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
+                                               schemaAttribute.getFullResourceName(),
+                                               schemaAttribute.getType().getValue(),
+                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
+                                               attribute);
+        Assertions.assertEquals(expectedMessage, ex.getMessage());
+      }
+    }
+
+    /**
+     * will verify that a boolean value will not be parsed into a binary value
+     */
+    @Test
+    public void testWithBoolean()
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("binary").type(Type.BINARY).build();
+
+      JsonNode attribute = BooleanNode.getTrue();
+      try
+      {
+        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        Assertions.fail("this point must not be reached");
+      }
+      catch (AttributeValidationException ex)
+      {
+        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
+        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
+                                               schemaAttribute.getFullResourceName(),
+                                               schemaAttribute.getType().getValue(),
+                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
+                                               attribute);
         Assertions.assertEquals(expectedMessage, ex.getMessage());
       }
     }

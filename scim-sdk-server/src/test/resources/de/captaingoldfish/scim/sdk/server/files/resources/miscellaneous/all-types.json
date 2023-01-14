@@ -1,5 +1,6 @@
 {
   "string": "chuck",
+  "binary": "TUlJLi4uRVc9PQ==",
   "number": 2147483648,
   "decimal": 50.5,
   "bool": false,
@@ -7,6 +8,10 @@
   "stringArray": [
     "hello",
     "world"
+  ],
+  "binaryArray": [
+    "aGVsbG8=",
+    "d29ybGQ="
   ],
   "numberArray": [
     44,
@@ -30,6 +35,7 @@
   ],
   "complex": {
     "string": "chuck",
+    "binary": "aGVsbG8gd29ybGQgY29tcGxleA==",
     "number": 2147483648,
     "decimal": 50.5,
     "bool": false,
@@ -37,6 +43,10 @@
     "stringArray": [
       "hello",
       "world"
+    ],
+    "binaryArray": [
+      "aGVsbG8gY29tcGxleA==",
+      "d29ybGQgY29tcGxleA=="
     ],
     "numberArray": [
       44,
@@ -62,6 +72,7 @@
   "multiComplex": [
     {
       "string": "chuck",
+      "binary": "aGVsbG8gd29ybGQgbXVsdGk=",
       "number": 2147483648,
       "decimal": 50.5,
       "bool": false,
@@ -69,6 +80,10 @@
       "stringArray": [
         "hello",
         "world"
+      ],
+      "binaryArray": [
+        "aGVsbG8gbXVsdGk=",
+        "d29ybGQgbXVsdGk="
       ],
       "numberArray": [
         44,

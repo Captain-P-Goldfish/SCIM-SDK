@@ -1,0 +1,21 @@
+{
+  "schemas": [
+    "urn:ietf:params:scim:schemas:core:2.0:Schema"
+  ],
+  "id": "urn:gold:params:scim:schemas:custom:2.0:WrongBinary",
+  "name": "WrongBinary",
+  "description": "WrongBinary",
+  "attributes": [
+    {
+      "name": "binary",
+      "type": "binary",
+      "description": "WrongBinary declaration: binaries must be case exact but I will not require them to be non-unique.",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "server",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false
+    }
+  ]
+}

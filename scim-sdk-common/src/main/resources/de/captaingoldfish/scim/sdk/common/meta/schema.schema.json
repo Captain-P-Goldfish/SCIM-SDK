@@ -79,6 +79,7 @@
             "integer",
             "dateTime",
             "reference",
+            "binary",
             "any"
           ]
         },
@@ -354,6 +355,7 @@
                 "integer",
                 "dateTime",
                 "reference",
+                "binary",
                 "any"
               ]
             },

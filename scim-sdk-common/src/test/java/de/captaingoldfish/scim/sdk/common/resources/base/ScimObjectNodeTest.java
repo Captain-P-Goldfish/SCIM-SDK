@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -7,21 +8,25 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Stream;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
+import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
@@ -56,16 +61,20 @@ public class ScimObjectNodeTest implements FileReferences
   }
 
   /**
-   * validates the an all types attribute
+   * validates an all types attribute
    */
   private void validateAllType(AllTypes allTypes)
   {
     Assertions.assertEquals("chuck", allTypes.getString().get());
+    Assertions.assertArrayEquals("hello world".getBytes(StandardCharsets.UTF_8),
+                                 allTypes.getBinary().get(),
+                                 new String(allTypes.getBinary().get()));
     Assertions.assertEquals(Integer.MAX_VALUE + 1L, allTypes.getNumber().get());
     Assertions.assertEquals(50.5, allTypes.getDecimal().get());
     Assertions.assertEquals(false, allTypes.getBool().get());
     Assertions.assertEquals(Instant.parse("1940-03-10T00:00:00Z"), allTypes.getDate().get());
     MatcherAssert.assertThat(allTypes.getStringArray(), Matchers.hasItems("hello", "world"));
+    MatcherAssert.assertThat(allTypes.getBinaryArray(), Matchers.hasItems("hello".getBytes(), "world".getBytes()));
     MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(44L, 55L, 66L));
     MatcherAssert.assertThat(allTypes.getDecimalArray(), Matchers.hasItems(4.7, 5.1, 6.2));
     Instant[] dateTimes = Stream.of("1976-03-10T00:00:00Z", "1986-03-10T00:00:00Z", "1996-03-10T00:00:00Z")
@@ -327,7 +336,98 @@ public class ScimObjectNodeTest implements FileReferences
     Assertions.assertTrue(scimObjectNode.getSimpleArrayAttribute(attributeName, String.class).isEmpty());
 
     Assertions.assertTrue(scimObjectNode.getSimpleArrayAttributeSet(attributeName, String.class).isEmpty());
+  }
 
+  /**
+   * makes sure that simple binary data can successfully be retrieved from a {@link ScimObjectNode}
+   */
+  @Test
+  public void testReadBinaryNodeData()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+    byte[] binaryData = "hello world".getBytes();
+    String base64Data = Base64.getEncoder().encodeToString(binaryData);
+    scimObjectNode.setAttribute(attributeName, base64Data);
+
+    byte[] retrievedBinaryData = scimObjectNode.getBinaryAttribute(attributeName).get();
+    Assertions.assertArrayEquals(binaryData, retrievedBinaryData);
+  }
+
+  /**
+   * makes sure that binary array data can successfully be retrieved from a {@link ScimObjectNode}
+   */
+  @Test
+  public void testReadBinaryNodeDataFromArray()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+    byte[] binaryData = "hello world".getBytes();
+    JsonNode base64Data = new TextNode(Base64.getEncoder().encodeToString(binaryData));
+    scimObjectNode.addAttribute(attributeName, base64Data);
+
+    List<byte[]> retrievedBinaryData = scimObjectNode.getSimpleArrayAttribute(attributeName, byte[].class);
+    Assertions.assertEquals(1, retrievedBinaryData.size());
+    Assertions.assertArrayEquals(binaryData, retrievedBinaryData.get(0));
+  }
+
+  /**
+   * makes sure that binary array data can successfully be retrieved from a {@link ScimObjectNode}
+   */
+  @Test
+  public void testReadBrokenBinaryNodeDataFromArray()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+    byte[] binaryData = "hello world".getBytes();
+    JsonNode base64Data = new TextNode(Base64.getEncoder().encodeToString(binaryData) + "__öüä");
+    scimObjectNode.addAttribute(attributeName, base64Data);
+
+    IncompatibleAttributeException ex = Assertions.assertThrows(IncompatibleAttributeException.class,
+                                                                () -> scimObjectNode.getSimpleArrayAttribute(attributeName,
+                                                                                                             byte[].class));
+    ex.printStackTrace();
+    Assertions.assertEquals("The value of node with name 'attr' is not of type binary. "
+                            + "Illegal base64 encoded data",
+                            ex.getMessage());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+  }
+
+  /**
+   * makes sure that a binary array can be added to a {@link ScimObjectNode}
+   */
+  @Test
+  public void testAddBinaryArrayNodeToScimNode()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+    byte[] binaryData = "hello world".getBytes();
+    List<byte[]> binaryList = Arrays.asList(binaryData);
+    scimObjectNode.setAttributeList(attributeName, binaryList);
+
+    List<byte[]> retrievedBinaryData = scimObjectNode.getSimpleArrayAttribute(attributeName, byte[].class);
+    Assertions.assertEquals(1, retrievedBinaryData.size());
+    Assertions.assertArrayEquals(binaryData, retrievedBinaryData.get(0));
+  }
+
+  /**
+   * makes sure that an appropriate exception is thrown if an attribute that should contain binary data does not
+   * contain a valid base64 encoded structure
+   */
+  @Test
+  public void testReadBinaryNodeWithBrokenBase64Data()
+  {
+    ScimObjectNode scimObjectNode = new ScimObjectNode(null);
+    final String attributeName = "attr";
+    byte[] binaryData = "hello world".getBytes();
+    String base64Data = Base64.getEncoder().encodeToString(binaryData) + "__öüä";
+    scimObjectNode.setAttribute(attributeName, base64Data);
+
+    IncompatibleAttributeException ex = Assertions.assertThrows(IncompatibleAttributeException.class,
+                                                                () -> scimObjectNode.getBinaryAttribute(attributeName)
+                                                                                    .get());
+    Assertions.assertEquals("attribute value 'aGVsbG8gd29ybGQ=__öüä' is not of type BINARY", ex.getMessage());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
   }
 
 }

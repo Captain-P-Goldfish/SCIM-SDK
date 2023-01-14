@@ -102,7 +102,7 @@ public final class SchemaFactory
   }
 
   /**
-   * extracts a meta schema that will defines the base of another schema like the user resource schema or group
+   * extracts a meta schema that will define the base of another schema like the user resource schema or group
    * resource schema
    *
    * @param id the fully qualified id of the meta schema

@@ -56,6 +56,8 @@ public interface FileReferences
 
   String WRITE_ONLY_ALWAYS_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/bad/write-only-and-always.json";
 
+  String BINARY_NOT_CASE_EXACT = RESOURCE_SCHEMA_BASE_PATH + "/bad/binary-and-not-caseexact.json";
+
   String ALL_TYPES_JSON = RESOURCE_BASE_PATH + "/miscellaneous/all-types.json";
 
   String ALL_TYPES_JSON_SCHEMA = RESOURCE_SCHEMA_BASE_PATH + "/all-types.json";

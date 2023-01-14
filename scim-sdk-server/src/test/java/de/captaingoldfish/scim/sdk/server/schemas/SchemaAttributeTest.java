@@ -123,6 +123,7 @@ class SchemaAttributeTest
                                           Type.INTEGER.getValue(),
                                           Type.DATE_TIME.getValue(),
                                           Type.REFERENCE.getValue(),
+                                          Type.BINARY.getValue(),
                                           Type.ANY.getValue()),
                             type.getCanonicalValues());
   }

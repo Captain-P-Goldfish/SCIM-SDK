@@ -9,6 +9,7 @@ import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
@@ -278,8 +280,10 @@ public final class JsonHelper
     }
     if (attribute.isArray())
     {
-      throw new IncompatibleAttributeException("attribute '" + name + "' is not of type " + type.getSimpleName(), null,
-                                               null, null);
+      throw new IncompatibleAttributeException(String.format("attribute '%s' is not of type %s",
+                                                             name,
+                                                             type.getSimpleName()),
+                                               null, null, ScimType.RFC7644.INVALID_VALUE);
     }
     return getAsAttribute(attribute, type);
   }
@@ -418,8 +422,24 @@ public final class JsonHelper
     {
       return Optional.of((T)Double.valueOf(attribute.asDouble()));
     }
-    throw new IncompatibleAttributeException("attribute '" + attribute + "' is not of type" + type.getSimpleName(),
-                                             null, null, null);
+    if (byte[].class.equals(type))
+    {
+      try
+      {
+        return Optional.of((T)Base64.getDecoder().decode(attribute.textValue()));
+      }
+      catch (IllegalArgumentException e)
+      {
+        throw new IncompatibleAttributeException(String.format("attribute value '%s' is not of type %s",
+                                                               attribute.textValue(),
+                                                               Type.BINARY),
+                                                 e, null, ScimType.RFC7644.INVALID_VALUE);
+      }
+    }
+    throw new IncompatibleAttributeException(String.format("attribute '%s' is not of type %s",
+                                                           attribute,
+                                                           type.getSimpleName()),
+                                             null, null, ScimType.RFC7644.INVALID_VALUE);
   }
 
   /**

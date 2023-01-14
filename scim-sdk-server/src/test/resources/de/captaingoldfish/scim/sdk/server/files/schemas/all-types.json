@@ -29,6 +29,17 @@
       "caseExact": false
     },
     {
+      "name": "binary",
+      "type": "binary",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "description": "test",
+      "multiValued": false,
+      "required": false,
+      "caseExact": true
+    },
+    {
       "name": "number",
       "type": "integer",
       "mutability": "readWrite",
@@ -82,6 +93,17 @@
       "multiValued": true,
       "required": false,
       "caseExact": false
+    },
+    {
+      "name": "binaryArray",
+      "type": "binary",
+      "mutability": "readWrite",
+      "returned": "default",
+      "uniqueness": "none",
+      "description": "test",
+      "multiValued": true,
+      "required": false,
+      "caseExact": true
     },
     {
       "name": "numberArray",
@@ -150,6 +172,17 @@
           "caseExact": false
         },
         {
+          "name": "binary",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": false,
+          "required": false,
+          "caseExact": true
+        },
+        {
           "name": "number",
           "type": "integer",
           "mutability": "readWrite",
@@ -203,6 +236,17 @@
           "multiValued": true,
           "required": false,
           "caseExact": false
+        },
+        {
+          "name": "binaryArray",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": true,
+          "required": false,
+          "caseExact": true
         },
         {
           "name": "numberArray",
@@ -273,6 +317,17 @@
           "caseExact": false
         },
         {
+          "name": "binary",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": false,
+          "required": false,
+          "caseExact": true
+        },
+        {
           "name": "primary",
           "type": "boolean",
           "mutability": "readWrite",
@@ -337,6 +392,17 @@
           "multiValued": true,
           "required": false,
           "caseExact": false
+        },
+        {
+          "name": "binaryArray",
+          "type": "binary",
+          "mutability": "readWrite",
+          "returned": "default",
+          "uniqueness": "none",
+          "description": "test",
+          "multiValued": true,
+          "required": false,
+          "caseExact": true
         },
         {
           "name": "numberArray",

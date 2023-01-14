@@ -9,6 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -17,6 +18,7 @@ import java.util.Set;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -25,11 +27,14 @@ import com.fasterxml.jackson.databind.node.LongNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import lombok.Getter;
+import lombok.SneakyThrows;
 
 
 /**
@@ -63,6 +68,14 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   protected Optional<String> getStringAttribute(String attributeName)
   {
     return JsonHelper.getSimpleAttribute(this, attributeName);
+  }
+
+  /**
+   * extracts a string type attribute
+   */
+  protected Optional<byte[]> getBinaryAttribute(String attributeName)
+  {
+    return JsonHelper.getSimpleAttribute(this, attributeName, byte[].class);
   }
 
   /**
@@ -221,9 +234,11 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
    * @param type the type that should be extracted
    * @param <T> a simple attribute type as Long, Double, String, Boolean or Instant. Other types are not allowed
    */
+  @SneakyThrows
   protected <T> List<T> getSimpleArrayAttribute(String attributeName, Class<T> type)
   {
-    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class).contains(type))
+    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class, byte[].class)
+               .contains(type))
     {
       throw new InternalServerException("the type '" + type.getSimpleName() + "' is not allowed for this method", null,
                                         null);
@@ -266,6 +281,20 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       else if (String.class.isAssignableFrom(type))
       {
         multiValuedSimpleTypes.add((T)(node.isTextual() ? node.textValue() : node.toString()));
+      }
+      else if (byte[].class.isAssignableFrom(type))
+      {
+        try
+        {
+          multiValuedSimpleTypes.add((T)Base64.getDecoder().decode(node.asText()));
+        }
+        catch (IllegalArgumentException ex)
+        {
+          throw new IncompatibleAttributeException(String.format("The value of node with name '%s' is not of type "
+                                                                 + "binary. Illegal base64 encoded data",
+                                                                 attributeName),
+                                                   ex, null, ScimType.RFC7644.INVALID_VALUE);
+        }
       }
       else
       {
@@ -348,6 +377,19 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       return;
     }
     JsonHelper.addAttribute(this, attributeName, new TextNode(attributeValue));
+  }
+
+  /**
+   * adds or removes a binary type attribute
+   */
+  protected void setAttribute(String attributeName, byte[] attributeValue)
+  {
+    if (attributeValue == null)
+    {
+      JsonHelper.removeAttribute(this, attributeName);
+      return;
+    }
+    JsonHelper.addAttribute(this, attributeName, new BinaryNode(attributeValue));
   }
 
   /**
@@ -549,7 +591,8 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       return;
     }
     Class type = attributeValue.stream().filter(Objects::nonNull).findAny().orElse((T)"").getClass();
-    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class).contains(type))
+    if (!Arrays.asList(Long.class, Double.class, Boolean.class, String.class, Instant.class, byte[].class)
+               .contains(type))
     {
       throw new InternalServerException("the type '" + type.getSimpleName() + "' is not allowed for this method", null,
                                         null);
@@ -566,6 +609,10 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     else if (Boolean.class.isAssignableFrom(type))
     {
       attributeValue.forEach(t -> arrayNode.add((Boolean)t));
+    }
+    else if (byte[].class.isAssignableFrom(type))
+    {
+      attributeValue.forEach(t -> arrayNode.add((byte[])t));
     }
     else
     {
