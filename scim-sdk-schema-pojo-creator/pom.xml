@@ -15,7 +15,7 @@
         <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
 
         <version.spring.shell>2.1.4</version.spring.shell>
-        <version.apache.freemarker>2.3.31</version.apache.freemarker>
+        <version.apache.freemarker>2.3.32</version.apache.freemarker>
 
         <version.maven.assembly.plugin>3.4.2</version.maven.assembly.plugin>
     </properties>
