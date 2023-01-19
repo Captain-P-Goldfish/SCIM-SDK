@@ -12,6 +12,8 @@ import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -223,6 +225,20 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     public PatchOperationBuilder<T> valueNode(JsonNode valueNode)
     {
       builder.valueNode(valueNode);
+      return this;
+    }
+
+    /**
+     * sets a list of nodes that might be a simple text-nodes, json objects or json arrays that will then be added
+     * into an array node.
+     *
+     * @param valueNode list of simple text-nodes, json objects or json arrays
+     */
+    public PatchOperationBuilder<T> valueNodes(List<? extends JsonNode> valueNodes)
+    {
+      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+      valueNodes.forEach(arrayNode::add);
+      builder.valueNode(arrayNode);
       return this;
     }
 

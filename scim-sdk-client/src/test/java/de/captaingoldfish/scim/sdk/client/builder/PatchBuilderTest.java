@@ -1,10 +1,13 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -122,5 +125,38 @@ public class PatchBuilderTest extends HttpServerMockup
     Assertions.assertEquals(emailValue, patchedUser.getEmails().get(0).getValue().orElse(null));
     Assertions.assertEquals(emailType, patchedUser.getEmails().get(0).getType().orElse(null));
     Assertions.assertEquals(emailPrimary, patchedUser.getEmails().get(0).isPrimary());
+  }
+
+  /**
+   * verifies that the method
+   * {@link de.captaingoldfish.scim.sdk.client.builder.PatchBuilder.PatchOperationBuilder#valueNodes(List)} will
+   * produce the expected correct result by adding the list-entries into an array-node that will then be sent
+   * within the request.
+   */
+  @Test
+  public void testBuildPatchOperationWithListOfValues()
+  {
+    final String userId = currentUser.getId().get();
+    PatchBuilder<User> patchBuilder = new PatchBuilder<>(getServerUrl(), EndpointPaths.USERS, userId, User.class,
+                                                         scimHttpClient);
+
+    Email email1 = Email.builder().value("happy.day@scim-sdk.de").type("fun").primary(true).build();
+    Email email2 = Email.builder().value("hello-world@scim-sdk.de").type("work").build();
+
+    List<Email> emailList = Arrays.asList(email1, email2);
+
+    ServerResponse<User> response = patchBuilder.addOperation()
+                                                .path("emails")
+                                                .op(PatchOp.ADD)
+                                                .valueNodes(emailList)
+                                                .build()
+                                                .sendRequest();
+
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertNotNull(response.getResource());
+    User patchedUser = response.getResource();
+    Assertions.assertEquals(2, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertTrue(patchedUser.getEmails().stream().anyMatch(email -> email.equals(email1)));
+    Assertions.assertTrue(patchedUser.getEmails().stream().anyMatch(email -> email.equals(email2)));
   }
 }
