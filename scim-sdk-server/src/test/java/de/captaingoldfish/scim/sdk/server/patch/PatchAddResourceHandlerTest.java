@@ -1084,6 +1084,38 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that the problematic ms-azure notation will be supported for multivalued-complex types.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureNotationForMultivaluedComplexTypes(PatchOp patchOp)
+  {
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = new User();
+
+    final String patchValue = "{\"emails.value\": \"max@mustermann.de\"}";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+
+    log.warn(user.toPrettyString());
+
+    Assertions.assertEquals(1, user.getEmails().size(), user.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(0).getValue().get());
+  }
+
+  /**
    * this will test that PatchHandler.isChangedResource is true if any attribute is changed, and not just if the
    * last attributes is changed.
    */

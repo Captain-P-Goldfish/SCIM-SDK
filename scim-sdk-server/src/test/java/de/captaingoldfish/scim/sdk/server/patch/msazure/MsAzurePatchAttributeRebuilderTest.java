@@ -5,15 +5,37 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 
 
 public class MsAzurePatchAttributeRebuilderTest
 {
+
+  private ResourceType userResourceType;
+
+  @BeforeEach
+  public void initialize()
+  {
+    ResourceTypeFactory resourceTypeFactory = new ResourceTypeFactory();
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    this.userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                     userResourceTypeNode,
+                                                                     userSchema,
+                                                                     enterpriseUserSchema);
+  }
 
   /**
    * verifies that the values is correctly handled in simple cases
@@ -25,7 +47,8 @@ public class MsAzurePatchAttributeRebuilderTest
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"name.givenName\": \"captain\", \"name.familyName\": \"goldfish\" }"));
     final List<String> expectedValues = new ArrayList<>(Arrays.asList("{\"name\":{\"givenName\":\"captain\",\"familyName\":\"goldfish\"}}"));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertIterableEquals(expectedValues, valuesResult);
@@ -41,7 +64,8 @@ public class MsAzurePatchAttributeRebuilderTest
     final PatchOp patchOp = PatchOp.REMOVE;
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"name.givenName\": \"captain\", \"name.familyName\": \"goldfish\" }"));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -56,7 +80,8 @@ public class MsAzurePatchAttributeRebuilderTest
   {
     final List<String> values = new ArrayList<>();
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -71,7 +96,8 @@ public class MsAzurePatchAttributeRebuilderTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("", ""));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -86,7 +112,8 @@ public class MsAzurePatchAttributeRebuilderTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("{ not valid"));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -101,7 +128,8 @@ public class MsAzurePatchAttributeRebuilderTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("[ \"array\", \"not\", \"object\" ]"));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -116,7 +144,8 @@ public class MsAzurePatchAttributeRebuilderTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"first.second.third\": \"value\" }"));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -132,7 +161,8 @@ public class MsAzurePatchAttributeRebuilderTest
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"schemas\": [ \"urn:ietf:params:scim:schemas:core:2.0:User\", \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\" ], \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": { \"costCenter\": \"1234\" } }"));
 
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
@@ -149,7 +179,8 @@ public class MsAzurePatchAttributeRebuilderTest
     final List<String> expectedValues = new ArrayList<>(Arrays.asList("{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"],\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\":{\"manager\":{\"displayName\":\"captain\"}}}"));
 
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertIterableEquals(expectedValues, valuesResult);
@@ -166,7 +197,8 @@ public class MsAzurePatchAttributeRebuilderTest
     final List<String> values = new ArrayList<>(Arrays.asList("{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"],\"name.givenName\":\"goldfish\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\":{\"costCenter\":\"1234\"}}"));
     final List<String> expectedValues = new ArrayList<>(Arrays.asList("{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"],\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\":{\"costCenter\":\"1234\"},\"name\":{\"givenName\":\"goldfish\"}}"));
 
-    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values,
+                                                                                                       userResourceType);
     List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertIterableEquals(expectedValues, valuesResult);

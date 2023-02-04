@@ -11,7 +11,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -76,6 +79,11 @@ public final class MsAzurePatchAttributeRebuilder
    * the values of the patch operation. This attribute should actually be empty
    */
   private final List<String> values;
+
+  /**
+   * used to check if an attribute is a complex type or a multivalued complex type
+   */
+  private final ResourceType resourceType;
 
 
   public List<String> fixValues()
@@ -194,6 +202,9 @@ public final class MsAzurePatchAttributeRebuilder
         String fieldName = split[0];
         String childFieldName = split[1];
 
+        SchemaAttribute childSchemaAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType,
+                                                                                              originalFieldName);
+
         JsonNode node = resourceObjectNode.get(fieldName);
         if (node != null && node.isObject())
         {
@@ -201,7 +212,14 @@ public final class MsAzurePatchAttributeRebuilder
         }
         else
         {
-          resourceObjectNode.putObject(fieldName).set(childFieldName, originalFieldValue);
+          if (childSchemaAttribute.getParent().isMultiValued())
+          {
+            resourceObjectNode.putArray(fieldName).addObject().set(childFieldName, originalFieldValue);
+          }
+          else
+          {
+            resourceObjectNode.putObject(fieldName).set(childFieldName, originalFieldValue);
+          }
         }
 
         resourceObjectNode.remove(originalFieldName);

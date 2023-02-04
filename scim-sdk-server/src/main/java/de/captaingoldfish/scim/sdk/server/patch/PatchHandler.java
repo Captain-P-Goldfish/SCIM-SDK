@@ -188,8 +188,8 @@ public class PatchHandler
                                          || PatchOp.REPLACE.equals(operation.getOp());
       if (executeMsAzureWorkaround)
       {
-        MsAzurePatchAttributeRebuilder msAzureWorkaround = new MsAzurePatchAttributeRebuilder(operation.getOp(),
-                                                                                              values);
+        MsAzurePatchAttributeRebuilder msAzureWorkaround = new MsAzurePatchAttributeRebuilder(operation.getOp(), values,
+                                                                                              resourceType);
         values = msAzureWorkaround.fixValues();
       }
 
