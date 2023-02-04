@@ -64,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public final class MsAzurePatchWorkaroundHandler
+public final class MsAzurePatchAttributeRebuilder
 {
 
   /**

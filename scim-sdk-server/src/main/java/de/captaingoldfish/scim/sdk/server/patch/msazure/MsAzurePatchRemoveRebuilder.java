@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class is a workaround handler in order to handle the broken patch requests of Microsoft Azure. Azure
- * sends illegal patch-remove requests that looks as follows:
+ * sends illegal patch-remove requests that look as follows:
  *
  * <pre>
  * PATCH /scim/Groups/2752513
@@ -60,7 +60,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class MsAzurePatchRemoveWorkaroundHandler
+public final class MsAzurePatchRemoveRebuilder
 {
 
   /**

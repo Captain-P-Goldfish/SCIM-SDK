@@ -33,7 +33,7 @@ import lombok.RequiredArgsConstructor;
  * @since 24.09.2021
  */
 @RequiredArgsConstructor
-public class MsAzurePatchResourceWorkaroundHandler
+public class MsAzurePatchExtensionResourceRebuilder
 {
 
   /**

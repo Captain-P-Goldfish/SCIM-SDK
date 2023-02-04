@@ -21,8 +21,8 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
-import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchRemoveWorkaroundHandler;
-import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchWorkaroundHandler;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchAttributeRebuilder;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchRemoveRebuilder;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.Getter;
@@ -162,8 +162,8 @@ public class PatchHandler
       String path = target.get();
       if (PatchOp.REMOVE.equals(operation.getOp()))
       {
-        MsAzurePatchRemoveWorkaroundHandler msAzureWorkaround = new MsAzurePatchRemoveWorkaroundHandler(operation.getOp(),
-                                                                                                        path, values);
+        MsAzurePatchRemoveRebuilder msAzureWorkaround = new MsAzurePatchRemoveRebuilder(operation.getOp(), path,
+                                                                                        values);
         path = msAzureWorkaround.fixPath();
       }
       PatchTargetHandler patchTargetHandler = new PatchTargetHandler(resourceType, operation.getOp(), path);
@@ -188,8 +188,8 @@ public class PatchHandler
                                          || PatchOp.REPLACE.equals(operation.getOp());
       if (executeMsAzureWorkaround)
       {
-        MsAzurePatchWorkaroundHandler msAzureWorkaround = new MsAzurePatchWorkaroundHandler(operation.getOp(),
-                                                                                                          values);
+        MsAzurePatchAttributeRebuilder msAzureWorkaround = new MsAzurePatchAttributeRebuilder(operation.getOp(),
+                                                                                              values);
         values = msAzureWorkaround.fixValues();
       }
 

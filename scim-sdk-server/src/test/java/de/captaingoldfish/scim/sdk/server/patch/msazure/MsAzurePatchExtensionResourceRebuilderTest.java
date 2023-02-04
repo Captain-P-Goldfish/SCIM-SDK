@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 24.09.2021
  */
 @Slf4j
-public class MsAzurePatchResourceWorkaroundHandlerTest implements FileReferences
+public class MsAzurePatchExtensionResourceRebuilderTest implements FileReferences
 {
 
   /**

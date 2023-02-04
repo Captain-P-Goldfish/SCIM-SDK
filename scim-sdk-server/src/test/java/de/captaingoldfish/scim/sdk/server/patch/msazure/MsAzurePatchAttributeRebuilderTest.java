@@ -12,7 +12,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 
 
-public class MsAzurePatchWorkaroundHandlerTest
+public class MsAzurePatchAttributeRebuilderTest
 {
 
   /**
@@ -25,9 +25,8 @@ public class MsAzurePatchWorkaroundHandlerTest
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"name.givenName\": \"captain\", \"name.familyName\": \"goldfish\" }"));
     final List<String> expectedValues = new ArrayList<>(Arrays.asList("{\"name\":{\"givenName\":\"captain\",\"familyName\":\"goldfish\"}}"));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertIterableEquals(expectedValues, valuesResult);
   }
@@ -42,9 +41,8 @@ public class MsAzurePatchWorkaroundHandlerTest
     final PatchOp patchOp = PatchOp.REMOVE;
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"name.givenName\": \"captain\", \"name.familyName\": \"goldfish\" }"));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -58,9 +56,8 @@ public class MsAzurePatchWorkaroundHandlerTest
   {
     final List<String> values = new ArrayList<>();
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -74,9 +71,8 @@ public class MsAzurePatchWorkaroundHandlerTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("", ""));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -90,9 +86,8 @@ public class MsAzurePatchWorkaroundHandlerTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("{ not valid"));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -106,9 +101,8 @@ public class MsAzurePatchWorkaroundHandlerTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("[ \"array\", \"not\", \"object\" ]"));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -122,9 +116,8 @@ public class MsAzurePatchWorkaroundHandlerTest
   {
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"first.second.third\": \"value\" }"));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -139,9 +132,8 @@ public class MsAzurePatchWorkaroundHandlerTest
     final List<String> values = new ArrayList<>(Arrays.asList("{ \"schemas\": [ \"urn:ietf:params:scim:schemas:core:2.0:User\", \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\" ], \"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\": { \"costCenter\": \"1234\" } }"));
 
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertEquals(values, valuesResult);
   }
@@ -157,9 +149,8 @@ public class MsAzurePatchWorkaroundHandlerTest
     final List<String> expectedValues = new ArrayList<>(Arrays.asList("{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"],\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\":{\"manager\":{\"displayName\":\"captain\"}}}"));
 
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertIterableEquals(expectedValues, valuesResult);
   }
@@ -175,9 +166,8 @@ public class MsAzurePatchWorkaroundHandlerTest
     final List<String> values = new ArrayList<>(Arrays.asList("{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"],\"name.givenName\":\"goldfish\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\":{\"costCenter\":\"1234\"}}"));
     final List<String> expectedValues = new ArrayList<>(Arrays.asList("{\"schemas\":[\"urn:ietf:params:scim:schemas:core:2.0:User\",\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\"],\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User\":{\"costCenter\":\"1234\"},\"name\":{\"givenName\":\"goldfish\"}}"));
 
-    MsAzurePatchWorkaroundHandler msAzurePatchWorkaroundHandler = new MsAzurePatchWorkaroundHandler(patchOp,
-                                                                                                                         values);
-    List<String> valuesResult = msAzurePatchWorkaroundHandler.fixValues();
+    MsAzurePatchAttributeRebuilder msAzurePatchAttributeRebuilder = new MsAzurePatchAttributeRebuilder(patchOp, values);
+    List<String> valuesResult = msAzurePatchAttributeRebuilder.fixValues();
 
     Assertions.assertIterableEquals(expectedValues, valuesResult);
   }

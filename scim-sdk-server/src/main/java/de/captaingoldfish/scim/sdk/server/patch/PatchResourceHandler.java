@@ -19,7 +19,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchResourceWorkaroundHandler;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchExtensionResourceRebuilder;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 
@@ -108,7 +108,7 @@ public class PatchResourceHandler extends AbstractPatch
                                            && key.startsWith(extensionRef.getSchema());
         if (executeMsAzureWorkaround)
         {
-          MsAzurePatchResourceWorkaroundHandler workaroundHandler = new MsAzurePatchResourceWorkaroundHandler(resourceType);
+          MsAzurePatchExtensionResourceRebuilder workaroundHandler = new MsAzurePatchExtensionResourceRebuilder(resourceType);
           effectiveValue = workaroundHandler.rebuildResource(extensionRef, key, value);
         }
         if (effectiveValue.isEmpty())
