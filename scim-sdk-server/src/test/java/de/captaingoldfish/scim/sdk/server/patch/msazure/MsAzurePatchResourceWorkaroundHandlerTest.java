@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.server.patch;
+package de.captaingoldfish.scim.sdk.server.patch.msazure;
 
 import java.util.Arrays;
 import java.util.List;
@@ -21,6 +21,7 @@ import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.patch.PatchHandler;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;

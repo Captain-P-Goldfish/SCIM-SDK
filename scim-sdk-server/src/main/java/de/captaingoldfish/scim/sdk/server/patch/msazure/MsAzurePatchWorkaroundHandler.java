@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.server.patch;
+package de.captaingoldfish.scim.sdk.server.patch.msazure;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * This class is a workaround handler in order to handle the broken patch requests of Microsoft Azure. Azure
- * sends illegal patch-remove requests that looks as follows:
+ * sends illegal patch requests that look as follows:
  *
  * <pre>
  * PATCH /scim/Users/2752513
@@ -64,7 +64,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor
-public final class MsAzurePatchReplaceWorkaroundHandler
+public final class MsAzurePatchWorkaroundHandler
 {
 
   /**
@@ -80,11 +80,10 @@ public final class MsAzurePatchReplaceWorkaroundHandler
 
   public List<String> fixValues()
   {
-    // just a security check to make sure that the if-block that prevents this class to be executed in case of ADD
-    // and REMOVE should disappear
-    if (!PatchOp.REPLACE.equals(patchOp))
+    // simply a check to return early from this method if a remove operation is used
+    if (PatchOp.REMOVE.equals(patchOp))
     {
-      log.trace("[MS Azure REPLACE workaround] only handling 'REPLACE' requests");
+      log.trace("[MS Azure REPLACE workaround] only handling 'REPLACE' and 'ADD' requests");
       return values;
     }
 
@@ -119,7 +118,7 @@ public final class MsAzurePatchReplaceWorkaroundHandler
       return values;
     }
     ObjectNode rootObjectNode = (ObjectNode)jsonNode;
-    List<ObjectNode> resourceObjectNodes = new ArrayList<ObjectNode>();
+    List<ObjectNode> resourceObjectNodes = new ArrayList<>();
     resourceObjectNodes.add(rootObjectNode);
 
     Optional<List<String>> schemas = JsonHelper.getSimpleAttributeArray(rootObjectNode, AttributeNames.RFC7643.SCHEMAS);

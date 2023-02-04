@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.server.patch;
+package de.captaingoldfish.scim.sdk.server.patch.msazure;
 
 import java.util.ArrayList;
 import java.util.Arrays;

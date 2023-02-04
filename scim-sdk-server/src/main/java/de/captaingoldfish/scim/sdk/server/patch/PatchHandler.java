@@ -21,6 +21,8 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchRemoveWorkaroundHandler;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchWorkaroundHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.Getter;
@@ -182,9 +184,11 @@ public class PatchHandler
                                       + "resource itself", null, ScimType.RFC7644.INVALID_VALUE);
       }
 
-      if (PatchOp.REPLACE.equals(operation.getOp()))
+      boolean executeMsAzureWorkaround = PatchOp.ADD.equals(operation.getOp())
+                                         || PatchOp.REPLACE.equals(operation.getOp());
+      if (executeMsAzureWorkaround)
       {
-        MsAzurePatchReplaceWorkaroundHandler msAzureWorkaround = new MsAzurePatchReplaceWorkaroundHandler(operation.getOp(),
+        MsAzurePatchWorkaroundHandler msAzureWorkaround = new MsAzurePatchWorkaroundHandler(operation.getOp(),
                                                                                                           values);
         values = msAzureWorkaround.fixValues();
       }

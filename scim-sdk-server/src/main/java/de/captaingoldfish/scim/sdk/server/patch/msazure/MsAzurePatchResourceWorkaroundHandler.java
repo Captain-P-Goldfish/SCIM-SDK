@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.server.patch;
+package de.captaingoldfish.scim.sdk.server.patch.msazure;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -13,7 +13,20 @@ import lombok.RequiredArgsConstructor;
 
 
 /**
- * This is a workaround handler that shall handle invalid scim patch requests that are built by ms azure
+ * This is a workaround handler that shall handle invalid scim patch requests that are built by ms-azure. This
+ * handler will be used if for resource extensions where ms-azure references the attributes as follows:
+ *
+ * <pre>
+ *   "Operations": [
+ *         {
+ *             "op": "replace",
+ *             "value": {
+ *                 ...
+ *                 "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber": "1111"
+ *             }
+ *         }
+ *     ]
+ * </pre>
  *
  * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/193
  * @author Pascal Knueppel

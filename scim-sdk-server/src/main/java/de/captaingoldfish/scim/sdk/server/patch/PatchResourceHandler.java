@@ -19,6 +19,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchResourceWorkaroundHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 
@@ -101,6 +102,8 @@ public class PatchResourceHandler extends AbstractPatch
         // ms azure workaround
         // https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/193
         JsonNode effectiveValue = value;
+        // if the attribute is not identical to the extension-schema-reference but starts with the
+        // extension-schema-reference
         boolean executeMsAzureWorkaround = !key.equals(extensionRef.getSchema())
                                            && key.startsWith(extensionRef.getSchema());
         if (executeMsAzureWorkaround)

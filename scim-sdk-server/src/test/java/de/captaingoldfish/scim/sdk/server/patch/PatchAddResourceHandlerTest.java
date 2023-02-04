@@ -39,8 +39,10 @@ import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
@@ -1045,11 +1047,49 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * this test will verify that the MsAzure Workaround is executed for add and replace operations.
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureWorkaroundIsExecuted(PatchOp patchOp)
+  {
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = new User();
+
+    // @formatter:off
+    final String patchValue = "{" +
+                                "  \"active\": true," +
+                                "  \"name.givenName\": \"Terrence\"," +
+                                "  \"name.familyName\": \"William\"" +
+                                "}";
+    // @formatter:on
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+
+    Assertions.assertTrue(user.isActive().orElse(false));
+    Assertions.assertEquals("Terrence", user.getName().flatMap(Name::getGivenName).orElse(null));
+    Assertions.assertEquals("William", user.getName().flatMap(Name::getFamilyName).orElse(null));
+  }
+
+  /**
    * this will test that PatchHandler.isChangedResource is true if any attribute is changed, and not just if the
    * last attributes is changed.
    */
-  @Test
-  public void testIsChangedResourceForExtensionValueInMsAzureAdStyle()
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testIsChangedResourceForExtensionValueInMsAzureAdStyle(PatchOp patchOp)
   {
     String employeeNumber = "1111";
     String employeeNumberChanged = "2222";
@@ -1071,7 +1111,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     // @formatter:on
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.REPLACE)
+                                                                                .op(patchOp)
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
