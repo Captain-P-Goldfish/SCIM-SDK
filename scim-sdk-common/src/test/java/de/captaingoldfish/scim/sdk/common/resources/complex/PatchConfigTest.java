@@ -28,7 +28,7 @@ public class PatchConfigTest
     Assertions.assertEquals(1, patchConfig.size());
     Assertions.assertFalse(patchConfig.isSupported());
     Assertions.assertFalse(patchConfig.isActivateSailsPointWorkaround());
-    Assertions.assertFalse(patchConfig.isMsAzurePatchFilterWorkaroundActive());
+    Assertions.assertFalse(patchConfig.isMsAzureFilterWorkaroundActive());
   }
 
   /**
@@ -69,6 +69,6 @@ public class PatchConfigTest
                                          .build();
     Assertions.assertTrue(patchConfig.isSupported());
     Assertions.assertTrue(patchConfig.isActivateSailsPointWorkaround());
-    Assertions.assertTrue(patchConfig.isMsAzurePatchFilterWorkaroundActive());
+    Assertions.assertTrue(patchConfig.isMsAzureFilterWorkaroundActive());
   }
 }

@@ -1157,7 +1157,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression(PatchOp patchOp)
   {
-    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -1265,7 +1265,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2(PatchOp patchOp)
   {
-    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -1374,7 +1374,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression3(PatchOp patchOp)
   {
-    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
@@ -1410,7 +1410,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression4Fail(PatchOp patchOp)
   {
-    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);

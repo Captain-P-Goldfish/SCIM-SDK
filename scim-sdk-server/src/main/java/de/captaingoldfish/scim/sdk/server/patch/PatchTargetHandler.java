@@ -796,7 +796,7 @@ public class PatchTargetHandler extends AbstractPatch
   {
     SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullAttributeName);
     List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
-    if (patchConfig.isMsAzurePatchFilterWorkaroundActive())
+    if (patchConfig.isMsAzureFilterWorkaroundActive())
     {
       if (matchingComplexNodes.isEmpty())
       {
