@@ -19,11 +19,12 @@ public class PatchConfig extends ScimObjectNode
 {
 
   @Builder
-  public PatchConfig(Boolean supported, Boolean activateSailsPointWorkaround)
+  public PatchConfig(Boolean supported, Boolean activateSailsPointWorkaround, Boolean activateMsAzureWorkaround)
   {
     super(null);
     setSupported(supported);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);
+    setMsAzurePatchFilterWorkaroundActive(activateMsAzureWorkaround);
   }
 
   /**
@@ -59,8 +60,27 @@ public class PatchConfig extends ScimObjectNode
    */
   public void setActivateSailsPointWorkaround(Boolean activateSailsPointWorkaround)
   {
-    setAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND,
-                 Optional.ofNullable(activateSailsPointWorkaround).orElse(false));
+    setAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND, activateSailsPointWorkaround);
+  }
+
+  /**
+   * A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
+   */
+  public boolean isMsAzurePatchFilterWorkaroundActive()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_FILTER_WORKAROUND).orElse(false);
+  }
+
+  /**
+   * A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
+   */
+  public void setMsAzurePatchFilterWorkaroundActive(Boolean msAzureWorkaroundActive)
+  {
+    setAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_FILTER_WORKAROUND, msAzureWorkaroundActive);
   }
 
   /**

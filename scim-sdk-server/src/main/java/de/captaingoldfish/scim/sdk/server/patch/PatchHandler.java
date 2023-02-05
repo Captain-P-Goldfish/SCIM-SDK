@@ -166,7 +166,8 @@ public class PatchHandler
                                                                                         values);
         path = msAzureWorkaround.fixPath();
       }
-      PatchTargetHandler patchTargetHandler = new PatchTargetHandler(resourceType, operation.getOp(), path);
+      PatchTargetHandler patchTargetHandler = new PatchTargetHandler(patchConfig, resourceType, operation.getOp(),
+                                                                     path);
       boolean changeWasMade = patchTargetHandler.handleOperationValues(resource, values);
       setAttributeFromPath(operation, patchTargetHandler.getPath());
       return changeWasMade;

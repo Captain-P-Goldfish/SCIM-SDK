@@ -52,6 +52,17 @@
           "multiValued": false,
           "required": false,
           "caseExact": false
+        },
+        {
+          "name": "activateMsAzureFilterWorkaround",
+          "type": "boolean",
+          "description": "A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
         }
       ]
     },

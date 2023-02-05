@@ -44,6 +44,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -1109,10 +1110,332 @@ public class PatchAddResourceHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
     user = patchHandler.patchResource(user, patchOpRequest);
 
-    log.warn(user.toPrettyString());
+    Assertions.assertEquals(1, user.getEmails().size(), user.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(0).getValue().get());
+  }
+
+  /**
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are added if
+   * the filter does not match an existing entry.<br>
+   * <br>
+   * Example:<br>
+   * the request
+   *
+   * <pre>
+   * {
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ],
+   *   "Operations": [
+   *     {
+   *       "op": "add",
+   *       "path": "emails[type eq \"work\"].value",
+   *       "value": "max@mustermann.de"
+   *     }
+   *   ]
+   * }
+   * </pre>
+   *
+   * must result in
+   *
+   * <pre>
+   * {
+   *   "schemas" : [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+   *   "emails" : [ {
+   *     "type" : "work",
+   *     "value" : "max@mustermann.de"
+   *   } ],
+   *   "meta" : {
+   *     "lastModified" : "2023-02-05T11:56:25.8049737+01:00"
+   *   }
+   * }
+   * </pre>
+   *
+   * if the user did not have any emails before
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = new User();
+
+    final String path = "emails[type eq \"work\"].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
 
     Assertions.assertEquals(1, user.getEmails().size(), user.toPrettyString());
     Assertions.assertEquals("max@mustermann.de", user.getEmails().get(0).getValue().get());
+    Assertions.assertEquals("work", user.getEmails().get(0).getType().get());
+  }
+
+  /**
+   * the same as {@link #testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression(PatchOp)}
+   * except that the ms-azure workaround is deactivated
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpressionFail(PatchOp patchOp)
+  {
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = new User();
+
+    final String path = "emails[type eq \"work\"].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchHandler.patchResource(user, patchOpRequest));
+    Assertions.assertEquals("No target found for path-filter 'emails[type eq \"work\"].value'", ex.getMessage());
+  }
+
+  /**
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are added if
+   * the filter does not match an existing entry.<br>
+   * <br>
+   * Example:<br>
+   * the request
+   *
+   * <pre>
+   * {
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ],
+   *   "Operations": [
+   *     {
+   *       "op": "add",
+   *       "path": "emails[type eq \"work\"].value",
+   *       "value": "max@mustermann.de"
+   *     }
+   *   ]
+   * }
+   * </pre>
+   *
+   * must result in
+   *
+   * <pre>
+   * {
+   *   "schemas" : [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+   *   "emails" : [
+   *     {
+   *       "value" : "erika@mustermann.de"
+   *     },
+   *     {
+   *       "type" : "work",
+   *       "value" : "max@mustermann.de"
+   *     }
+   *   ],
+   *   "meta" : {
+   *     "lastModified" : "2023-02-05T11:56:25.8049737+01:00"
+   *   }
+   * }
+   * </pre>
+   *
+   * if the user did have the email "erika@mustermann.de" before
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
+
+    final String path = "emails[type eq \"work\"].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+
+    Assertions.assertEquals(2, user.getEmails().size(), user.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(1).getValue().get());
+    Assertions.assertEquals("work", user.getEmails().get(1).getType().get());
+  }
+
+  /**
+   * the same as {@link #testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2(PatchOp)}
+   * except that the ms-azure workaround is deactivated
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Fail(PatchOp patchOp)
+  {
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
+
+    final String path = "emails[type eq \"work\"].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchHandler.patchResource(user, patchOpRequest));
+    Assertions.assertEquals("No target found for path-filter 'emails[type eq \"work\"].value'", ex.getMessage());
+  }
+
+  /**
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are added if
+   * the filter does not match an existing entry.<br>
+   * <br>
+   * Example:<br>
+   * the request
+   *
+   * <pre>
+   * {
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ],
+   *   "Operations": [
+   *     {
+   *       "op": "add",
+   *       "path": "emails[primary eq true].value",
+   *       "value": "max@mustermann.de"
+   *     }
+   *   ]
+   * }
+   * </pre>
+   *
+   * must result in
+   *
+   * <pre>
+   * {
+   *   "schemas" : [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+   *   "emails" : [
+   *     {
+   *       "value" : "erika@mustermann.de"
+   *     },
+   *     {
+   *       "primary" : true,
+   *       "value" : "max@mustermann.de"
+   *     }
+   *   ],
+   *   "meta" : {
+   *     "lastModified" : "2023-02-05T11:56:25.8049737+01:00"
+   *   }
+   * }
+   * </pre>
+   *
+   * if the user did have the email "erika@mustermann.de" before
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression3(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
+
+    final String path = "emails[primary eq true].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    user = patchHandler.patchResource(user, patchOpRequest);
+
+    Assertions.assertEquals(2, user.getEmails().size(), user.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(1).getValue().get());
+    Assertions.assertTrue(user.getEmails().get(1).isPrimary());
+  }
+
+  /**
+   * this test simply shows that the default behaviour is maintained if a more complex filter expression is used
+   * since we will support a simplex filter-expressions only for the ms-azure workaround
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression4Fail(PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setMsAzurePatchFilterWorkaroundActive(true);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+    User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
+
+    final String path = "emails[type eq \"work\" and primary eq true].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchHandler.patchResource(user, patchOpRequest));
+    Assertions.assertEquals("No target found for path-filter 'emails[type eq \"work\" and primary eq true].value'",
+                            ex.getMessage());
   }
 
   /**

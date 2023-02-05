@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,10 +27,12 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.resources.PatchFilterResolver;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -79,6 +80,11 @@ public class PatchTargetHandler extends AbstractPatch
 {
 
   /**
+   * used to check if the ms-azure workaround for patch operations with filters is active.
+   */
+  private final PatchConfig patchConfig;
+
+  /**
    * the specified path where the value should be added
    */
   @Getter(AccessLevel.PROTECTED)
@@ -94,9 +100,11 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private SchemaAttribute schemaAttribute;
 
-  public PatchTargetHandler(ResourceType resourceType, PatchOp patchOp, String path)
+
+  public PatchTargetHandler(PatchConfig patchConfig, ResourceType resourceType, PatchOp patchOp, String path)
   {
     super(resourceType);
+    this.patchConfig = patchConfig;
     try
     {
       if (resourceType.getAllSchemaExtensions().stream().anyMatch(schema -> schema.getNonNullId().equals(path)))
@@ -786,12 +794,21 @@ public class PatchTargetHandler extends AbstractPatch
                                                      String fullAttributeName,
                                                      List<String> values)
   {
-    if (!PatchOp.REMOVE.equals(patchOp) && multiValued.size() == 0)
-    {
-      return false;
-    }
     SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullAttributeName);
     List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
+    if (patchConfig.isMsAzurePatchFilterWorkaroundActive())
+    {
+      if (matchingComplexNodes.isEmpty())
+      {
+        MsAzurePatchFilterWorkaround filterWorkaround = new MsAzurePatchFilterWorkaround();
+        ScimObjectNode newNode = filterWorkaround.createAttributeFromPatchFilter(path);
+        if (!newNode.isEmpty())
+        {
+          multiValued.add(newNode);
+          matchingComplexNodes.add(new IndexNode(multiValued.size() - 1, newNode));
+        }
+      }
+    }
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
     if (AttributeNames.RFC7643.PRIMARY.equals(subAttribute.getName()))
     {
@@ -842,7 +859,7 @@ public class PatchTargetHandler extends AbstractPatch
     }
     if (path.getChild() != null && matchingComplexNodes.size() == 0)
     {
-      return Collections.emptyList();
+      return new ArrayList<>();
     }
     return matchingComplexNodes;
   }
