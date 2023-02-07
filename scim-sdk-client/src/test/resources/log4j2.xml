@@ -12,11 +12,11 @@
         <Logger name="de.captaingoldfish" level="debug" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="org.springframework" level="info" additivity="false">
-            <AppenderRef ref="Console"/>
-        </Logger>
+<!--        <Logger name="org.springframework" level="info" additivity="false">-->
+<!--            <AppenderRef ref="Console"/>-->
+<!--        </Logger>-->
 
-        <Root level="info">
+        <Root level="trace">
             <AppenderRef ref="Console"/>
         </Root>
     </Loggers>

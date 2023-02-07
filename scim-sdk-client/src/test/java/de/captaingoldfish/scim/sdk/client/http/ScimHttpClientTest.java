@@ -28,7 +28,7 @@ import lombok.extern.slf4j.Slf4j;
  * created at: 09.12.2019 - 15:26 <br>
  * <br>
  */
-@ActiveProfiles(SecurityConstants.X509_PROFILE)
+@ActiveProfiles(SecurityConstants.BASIC_PROFILE)
 @Slf4j
 @ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = {SpringBootInitializer.class})
@@ -68,7 +68,8 @@ public class ScimHttpClientTest extends AbstractSpringBootWebTest
   public void testBasicAuthenticationWithScimHttpClient()
   {
     ScimClientConfig scimClientConfig = ScimClientConfig.builder()
-                                                        .basic("goldfish", "123456")
+                                                        .basic(SecurityConstants.AUTHORIZED_USERNAME,
+                                                               SecurityConstants.PASSWORD)
                                                         .truststore(tlsTruststore)
                                                         .hostnameVerifier((s, sslSession) -> true)
                                                         .build();

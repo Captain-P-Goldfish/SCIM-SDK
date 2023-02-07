@@ -317,7 +317,7 @@ public class BulkBuilderTest extends HttpServerMockup
     Assertions.assertEquals(IllegalStateException.class, ex.getCause().getClass());
     IllegalStateException illegalStateException = (IllegalStateException)ex.getCause();
     MatcherAssert.assertThat(illegalStateException.getMessage(),
-                             Matchers.startsWith("The bulk request failed with status: 400 and message"));
+                             Matchers.containsString("The bulk request failed with status: 400 and message"));
   }
 
   /**

@@ -6,10 +6,10 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.web.SecurityFilterChain;
 
 
 /**
@@ -23,7 +23,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 @Order(X509SecurityConfig.RANDOM_ORDER_NUMBER)
 @Configuration
 @EnableWebSecurity
-public class X509SecurityConfig extends WebSecurityConfigurerAdapter
+public class X509SecurityConfig
 {
 
   /**
@@ -36,19 +36,20 @@ public class X509SecurityConfig extends WebSecurityConfigurerAdapter
    * configure the endpoints that require mutual client authentication and add the regular expression to match
    * the username within the certificates distinguished name
    */
-  @Override
-  protected void configure(HttpSecurity http) throws Exception
+  @Bean
+  protected SecurityFilterChain configure(HttpSecurity http) throws Exception
   {
     http.csrf()
         .disable()
-        .authorizeRequests()
-        .antMatchers(AbstractSpringBootWebTest.TestController.GET_ENDPOINT_PATH,
-                     AbstractSpringBootWebTest.TestController.TIMEOUT_ENDPOINT_PATH,
-                     AbstractSpringBootWebTest.TestController.SCIM_ENDPOINT_PATH)
+        .authorizeHttpRequests()
+        .requestMatchers(String.format("/%s/**", AbstractSpringBootWebTest.TestController.GET_ENDPOINT_PATH),
+                         String.format("/%s/**", AbstractSpringBootWebTest.TestController.TIMEOUT_ENDPOINT_PATH),
+                         String.format("/%s/**", AbstractSpringBootWebTest.TestController.SCIM_ENDPOINT_PATH))
         .authenticated()
         .and()
         .x509()
         .subjectPrincipalRegex("CN=(.*)"); // the regular expression to parse the username from the DN
+    return http.build();
   }
 
   /**
