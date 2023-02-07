@@ -272,7 +272,11 @@ class BulkEndpoint
     operationUriInfo.getQueryParameters().putAll(originalQueryParams);
     String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
     String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
-    String bulkId = operation.getBulkId().orElse(null);
+    String bulkId = operation.getBulkId().orElseGet(() -> {
+      String bId = UUID.randomUUID().toString();
+      operation.setBulkId(bId);
+      return bId;
+    });
     BulkResponseOperation.BulkResponseOperationBuilder responseBuilder = BulkResponseOperation.builder()
                                                                                               .bulkId(bulkId)
                                                                                               .method(httpMethod)

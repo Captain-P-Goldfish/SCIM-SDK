@@ -947,7 +947,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       Assertions.assertEquals(HttpMethod.PUT, bulkResponseOperation.getMethod());
       Assertions.assertEquals(HttpStatus.OK, bulkResponseOperation.getStatus());
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
-      Assertions.assertFalse(bulkResponseOperation.getBulkId().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
       MatcherAssert.assertThat(bulkResponseOperation.getLocation().get(),
                                Matchers.startsWith(BASE_URI + EndpointPaths.USERS));

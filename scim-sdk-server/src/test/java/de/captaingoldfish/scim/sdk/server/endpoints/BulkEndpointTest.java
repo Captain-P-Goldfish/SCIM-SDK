@@ -178,7 +178,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       Assertions.assertEquals(HttpMethod.PUT, bulkResponseOperation.getMethod());
       Assertions.assertEquals(HttpStatus.OK, bulkResponseOperation.getStatus());
       Assertions.assertFalse(bulkResponseOperation.getResponse().isPresent());
-      Assertions.assertFalse(bulkResponseOperation.getBulkId().isPresent());
+      Assertions.assertTrue(bulkResponseOperation.getBulkId().isPresent());
       Assertions.assertTrue(bulkResponseOperation.getLocation().isPresent());
       MatcherAssert.assertThat(bulkResponseOperation.getLocation().get(),
                                Matchers.startsWith(BASE_URI + EndpointPaths.USERS));
@@ -679,6 +679,142 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       Assertions.assertTrue(operation.getResourceId().isPresent());
       Assertions.assertTrue(operation.getVersion().isPresent());
     });
+  }
+
+  /**
+   * this test is based on a bug found in version 1.15.3 in which the bulk-operations-value was replaced with a
+   * previous operation while resolving a bulkId-reference. We will send the following bulk-request:
+   *
+   * <pre>
+   * {
+   *   "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:BulkRequest" ],
+   *   "Operations" : [ {
+   *     "method" : "PATCH",
+   *     "path" : "/Groups/d13ae6ec-89ca-4b85-92ba-168742ce210d",
+   *     "data" : {
+   *       "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+   *       "Operations" : [ {
+   *         "path" : "members[value eq \"52c912c0-238a-4d23-9694-f9f6a8cc18a2\"]",
+   *         "op" : "remove"
+   *       } ]
+   *     }
+   *   }, {
+   *     "method" : "DELETE",
+   *     "path" : "/Users/52c912c0-238a-4d23-9694-f9f6a8cc18a2"
+   *   }, {
+   *     "method" : "POST",
+   *     "bulkId" : "4dacaf8b-fe57-4552-b5f0-ac10e4fd890d",
+   *     "path" : "/Users",
+   *     "data" : {
+   *       "schemas" : [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+   *       "id" : "60949e99-31a6-4b53-9e56-f24f2b104343",
+   *       "userName" : "goldfish"
+   *     }
+   *   }, {
+   *     "method" : "PATCH",
+   *     "path" : "/Groups/d13ae6ec-89ca-4b85-92ba-168742ce210d",
+   *     "data" : {
+   *       "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+   *       "Operations" : [ {
+   *         "op" : "add",
+   *         "value" : [ {
+   *           "value" : "bulkId:4dacaf8b-fe57-4552-b5f0-ac10e4fd890d"
+   *         } ]
+   *       } ]
+   *     }
+   *   } ]
+   * }
+   * </pre>
+   *
+   * The bug that was found caused the first patch request to be executed again instead of the second patch
+   * request that contains the bulkId-reference. This bug came with the release 1.15.0. In previous releases it
+   * was working.
+   */
+  @Test
+  public void testBulkIdResolvesCorrectly()
+  {
+    final int maxOperations = 4;
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
+
+    User chuck = User.builder().id(UUID.randomUUID().toString()).userName("chuck").build();
+    Group adminGroup = Group.builder()
+                            .id(UUID.randomUUID().toString())
+                            .displayName("admin")
+                            .members(Arrays.asList(Member.builder().value(chuck.getId().get()).build()))
+                            .meta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build())
+                            .build();
+    userHandler.getInMemoryMap().put(chuck.getId().get(), chuck);
+    groupHandler.getInMemoryMap().put(adminGroup.getId().get(), adminGroup);
+
+
+    List<BulkRequestOperation> bulkOperations = new ArrayList<>();
+    {
+      List<PatchRequestOperation> removeChuckMemberOp = new ArrayList<>();
+      removeChuckMemberOp.add(PatchRequestOperation.builder()
+                                                   .op(PatchOp.REMOVE)
+                                                   .path(String.format("members[value eq \"%s\"]", chuck.getId().get()))
+                                                   .build());
+      bulkOperations.add(BulkRequestOperation.builder()
+                                             .method(HttpMethod.PATCH)
+                                             .path(EndpointPaths.GROUPS + "/" + adminGroup.getId().get())
+                                             .data(PatchOpRequest.builder()
+                                                                 .operations(removeChuckMemberOp)
+                                                                 .build()
+                                                                 .toString())
+                                             .build());
+    }
+    {
+      bulkOperations.add(BulkRequestOperation.builder()
+                                             .method(HttpMethod.DELETE)
+                                             .path(EndpointPaths.USERS + "/" + chuck.getId().get())
+                                             .build());
+    }
+    User goldfish = User.builder().id(UUID.randomUUID().toString()).userName("goldfish").build();
+    final String addUserBulkId = UUID.randomUUID().toString();
+    {
+      bulkOperations.add(BulkRequestOperation.builder()
+                                             .bulkId(addUserBulkId)
+                                             .method(HttpMethod.POST)
+                                             .path(EndpointPaths.USERS)
+                                             .data(goldfish.toString())
+                                             .build());
+    }
+    {
+      List<PatchRequestOperation> addGoldfishMember = new ArrayList<>();
+      addGoldfishMember.add(PatchRequestOperation.builder()
+                                                 .op(PatchOp.ADD)
+                                                 .path(AttributeNames.RFC7643.MEMBERS)
+                                                 .valueNode(Member.builder()
+                                                                  .value(String.format("%s:%s",
+                                                                                       AttributeNames.RFC7643.BULK_ID,
+                                                                                       addUserBulkId))
+                                                                  .build())
+                                                 .build());
+      bulkOperations.add(BulkRequestOperation.builder()
+                                             .method(HttpMethod.PATCH)
+                                             .path(EndpointPaths.GROUPS + "/" + adminGroup.getId().get())
+                                             .data(PatchOpRequest.builder()
+                                                                 .operations(addGoldfishMember)
+                                                                 .build()
+                                                                 .toString())
+                                             .build());
+    }
+
+    BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(bulkOperations).build();
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    Assertions.assertEquals(1, userHandler.getInMemoryMap().size());
+    Assertions.assertEquals("goldfish", userHandler.getInMemoryMap().values().iterator().next().getUserName().get());
+    goldfish = userHandler.getInMemoryMap().values().iterator().next();
+
+    adminGroup = groupHandler.getInMemoryMap().get(adminGroup.getId().get());
+    Assertions.assertEquals(1, adminGroup.getMembers().size());
+    Assertions.assertEquals(goldfish.getId().get(), adminGroup.getMembers().get(0).getValue().get());
   }
 
   /**
