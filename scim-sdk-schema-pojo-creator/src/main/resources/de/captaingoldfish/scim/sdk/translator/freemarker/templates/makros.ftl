@@ -1,9 +1,13 @@
 <#import "functions.ftl" as functions>
-<#macro attributeMethodReturnType attribute>
+<#macro attributeMethodReturnType attribute lowercase=false>
     <#compress>
-        <#if !functions.isRequired(attribute) && !attribute.multiValued>Optional<</#if><#rt>
-        <#lt>${functions.toJavaType(attribute)}<#rt>
-        <#lt><#if !functions.isRequired(attribute) && !attribute.multiValued>></#if><#rt>
+        <#if !functions.isRequired(attribute) && !attribute.multiValued && attribute.type != 'BOOLEAN'>Optional<</#if><#rt>
+        <#if lowercase>
+            <#lt>${functions.toJavaType(attribute)?lower_case}<#rt>
+        <#else>
+            <#lt>${functions.toJavaType(attribute)}<#rt>
+        </#if>
+        <#lt><#if !functions.isRequired(attribute) && !attribute.multiValued  && attribute.type != 'BOOLEAN'>></#if><#rt>
     </#compress>
 </#macro>
 
@@ -14,7 +18,11 @@
             <#lt><#if attribute?index != 0>${leftIndent}</#if>${functions.toJavaType(attribute)} ${attribute.name?uncap_first}<#sep>,
         </#if>
     </#list>
-    <#lt><#if attributeList?size != 0 && extensionList?size != 0>,</#if>
+    <#lt><#if attributeList?size != 0 && extensionList?size != 0>
+            <#lt>,
+         <#else>
+            <#rt>
+         </#if>
     <#list extensionList as extension>
         <#lt>${leftIndent}${extension.name.get()?cap_first} ${extension.name.get()?uncap_first}<#sep>,
     </#list>
@@ -56,8 +64,7 @@
         <#if attribute.multiValued>
             <#lt>${typeIndent}return getSimpleArrayAttribute(FieldNames.${attribute.name?upper_case}, Boolean.class);
         <#else>
-            <#lt>${typeIndent}return getBooleanAttribute(FieldNames.${attribute.name?upper_case})<#rt>
-            <#lt><#if functions.isRequired(attribute)>.get()</#if>;
+            <#lt>${typeIndent}return getBooleanAttribute(FieldNames.${attribute.name?upper_case}).orElse(false);
         </#if>
     <#elseif  attribute.type == 'BINARY'>
         <#if attribute.multiValued>
@@ -83,6 +90,7 @@
             <#lt><#if functions.isRequired(attribute)>.get()</#if>;
         </#if>
     </#if>
+    <#rt>
 </#macro>
 
 <#macro addConstructor name attributesList isResourceNode extensionList=[] indent=0>
@@ -132,7 +140,7 @@
         <#lt>${constructorIndent}@Builder
     </#if>
     <#lt>${constructorIndent}public ${name?cap_first}(<#rt>
-    <#lt><@methodAttributes attributeList=attributesList indent=name?length + 10 + indent - 2 />)
+    <#lt><@methodAttributes attributeList=attributesList indent=name?length + 10 + indent - 2 /><#lt>)
     <#lt>${constructorIndent}{
     <#list attributesList as attribute>
         <#if functions.doNotIgnoreAttribute(attribute) || attribute.name == 'externalId' >
@@ -147,10 +155,13 @@
     <#list attributeList as attribute>
         <#if functions.doNotIgnoreAttribute(attribute)>
             <@addJavadoc javadoc=attribute.description indent=indent />
-            <#lt>${getterAndSetterIndent}public <@attributeMethodReturnType attribute /> get${attribute.name?cap_first}()
+            <#if attribute.type == 'BOOLEAN'>
+                <#lt>${getterAndSetterIndent}public <@attributeMethodReturnType attribute=attribute lowercase=!attribute.multiValued /> is${attribute.name?cap_first}()
+            <#else>
+                <#lt>${getterAndSetterIndent}public <@attributeMethodReturnType attribute /> get${attribute.name?cap_first}()
+            </#if>
             <#lt>${getterAndSetterIndent}{
             <@addGetAttributeCall attribute=attribute indent=indent + 2 />
-
             <#lt>${getterAndSetterIndent}}
 
             <@addJavadoc javadoc=attribute.description indent=indent />
@@ -203,4 +214,5 @@
 
     <@addGetterAndSetter attributeList=attribute.subAttributes indent=4 />
   }
+
 </#macro>

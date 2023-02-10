@@ -42,7 +42,6 @@ public class ${resource.name.get()?cap_first?replace(" ", "")} extends <#rt>
 <#list resource.attributes as attribute>
     <@makros.addComplexTypeClasses attribute=attribute />
 </#list>
-
   <@makros.addJavadoc javadoc='contains the attribute names of the resource representation' indent=2 />
   public static class FieldNames
   {
