@@ -81,7 +81,7 @@
         <version.antlr>4.11.1</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
-        <version.bouncy.castle>1.70</version.bouncy.castle>
+        <version.bouncy.castle>1.72</version.bouncy.castle>
 
         <!-- dependency conflicts -->
         <version.javassist>3.29.2-GA</version.javassist>
@@ -97,7 +97,7 @@
         <version.reflections>0.10.2</version.reflections>
         <version.mockito>5.1.1</version.mockito>
         <version.resteasy.jaxrs>3.15.3.Final</version.resteasy.jaxrs>
-        <version.equalsverifier>3.13</version.equalsverifier>
+        <version.equalsverifier>3.13.2</version.equalsverifier>
         <version.springboot>3.0.2</version.springboot>
         <version.spring.security>5.2.2.RELEASE</version.spring.security>
 
@@ -109,11 +109,11 @@
         <version.maven.compiler.plugin>3.10.1</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.22.0</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.2.1</version.maven.enforcer.plugin>
-        <version.maven.surefire.plugin>3.0.0-M8</version.maven.surefire.plugin>
+        <version.maven.surefire.plugin>3.0.0-M9</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.2.1</version.maven.source.plugin>
-        <version.maven.javadoc.plugin>3.4.0</version.maven.javadoc.plugin>
+        <version.maven.javadoc.plugin>3.5.0</version.maven.javadoc.plugin>
         <version.maven.gpg.plugin>3.0.1</version.maven.gpg.plugin>
-        <version.maven.deploy.plugin>3.0.0</version.maven.deploy.plugin>
+        <version.maven.deploy.plugin>3.1.0</version.maven.deploy.plugin>
         <version.maven.release.plugin>3.0.0-M7</version.maven.release.plugin>
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
         <version.maven.versions.plugin>2.14.2</version.maven.versions.plugin>
@@ -206,12 +206,12 @@
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcprov-jdk15on</artifactId>
+                <artifactId>bcprov-jdk18on</artifactId>
                 <version>${version.bouncy.castle}</version>
             </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
-                <artifactId>bcpkix-jdk15on</artifactId>
+                <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${version.bouncy.castle}</version>
             </dependency>
 
