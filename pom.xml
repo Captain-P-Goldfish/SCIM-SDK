@@ -6,7 +6,7 @@
     <artifactId>scim-sdk-parent</artifactId>
 
     <packaging>pom</packaging>
-    <version>1.16.0</version>
+    <version>1.16.1-SNAPSHOT</version>
 
     <name>SCIM SDK</name>
     <description>A full SCIM 2.0 open source implementation</description>
@@ -34,7 +34,7 @@
         <connection>scm:git:git://github.com/Captain-P-Goldfish/SCIM.git</connection>
         <developerConnection>scm:git:ssh://github.com/Captain-P-Goldfish/SCIM.git</developerConnection>
         <url>https://github.com/Captain-P-Goldfish/SCIM/tree/master</url>
-        <tag>1.16.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <distributionManagement>
