@@ -153,7 +153,7 @@ class MultivaluedComplexAttributeValidator
     boolean isPrimary = hasPrimaryValue(jsonNode);
     if (isPrimary && primaryValueFound)
     {
-      String errorMessage = String.format("Attribute '%s' has at least two primary values but only one primary"
+      String errorMessage = String.format("Attribute '%s' has at least two primary values but only one primary "
                                           + "is allowed '%s'",
                                           schemaAttribute.getFullResourceName(),
                                           multivaluedComplexParent);

@@ -496,7 +496,7 @@ public class MultivaluedComplexAttributeValidatorTest
     {
       {
         Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String errorMessage = String.format("Attribute '%s' has at least two primary values but only one primary"
+        String errorMessage = String.format("Attribute '%s' has at least two primary values but only one primary "
                                             + "is allowed '%s'",
                                             schemaAttribute.getFullResourceName(),
                                             attribute);
