@@ -14,6 +14,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -202,5 +203,14 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public RequestValidator<T> getRequestValidator()
   {
     return null;
+  }
+
+  /**
+   * an arbitrary method that might be useful for implementations that need to do some initialization after the
+   * registration of the resource is complete
+   */
+  protected void postConstruct(ResourceType resourceType)
+  {
+    // do nothing
   }
 }

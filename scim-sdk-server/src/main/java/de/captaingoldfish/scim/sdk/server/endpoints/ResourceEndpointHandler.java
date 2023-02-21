@@ -131,6 +131,7 @@ class ResourceEndpointHandler
                                                     .collect(Collectors.toList()));
     resourceHandler.setChangePasswordSupported(() -> serviceProvider.getChangePasswordConfig().isSupported());
     resourceHandler.setMaxResults(() -> serviceProvider.getFilterConfig().getMaxResults());
+    resourceHandler.postConstruct(resourceType);
     return resourceType;
   }
 
