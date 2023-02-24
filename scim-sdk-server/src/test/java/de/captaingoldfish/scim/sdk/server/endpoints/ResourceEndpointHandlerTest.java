@@ -2076,6 +2076,24 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * tries to verify that resource-types are correctly retrieved if accessed by the method
+   * {@link ResourceHandler#getResourceTypeByRef(String)}
+   */
+  @ParameterizedTest
+  @CsvSource({ResourceTypeNames.USER + "," + ResourceTypeNames.USER,
+              ResourceTypeNames.GROUPS + "," + ResourceTypeNames.GROUPS,
+              "https://localhost/scim/v2/Users/1" + "," + ResourceTypeNames.USER,
+              "https://localhost/scim/v2/Groups/1" + "," + ResourceTypeNames.GROUPS,
+              "https://localhost/scim/v2/ServiceProviderConfig" + "," + ResourceTypeNames.SERVICE_PROVIDER_CONFIG})
+  public void testGetResourceTypeByReferenceWorks(String resourceTypeRef, String expectedResourceType)
+  {
+    ResourceType resourceType1 = userHandler.getResourceTypeByRef(resourceTypeRef).get();
+    ResourceType resourceType2 = groupHandler.getResourceTypeByRef(resourceTypeRef).get();
+    Assertions.assertEquals(resourceType1, resourceType2);
+    Assertions.assertEquals(expectedResourceType, resourceType1.getName());
+  }
+
+  /**
    * reads a user from the endpoint
    *
    * @param endpoint the resource endpoint that should be used

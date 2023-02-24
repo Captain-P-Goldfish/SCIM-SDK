@@ -4,6 +4,7 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
@@ -61,6 +62,13 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   @Setter(AccessLevel.PACKAGE)
   private Supplier<Integer> maxResults;
+
+  /**
+   * this function is used to resolve a resource type by the $ref-uri attribute or by the type-attribute of a
+   * resource-reference attribute
+   */
+  @Setter(AccessLevel.PACKAGE)
+  private Function<String, ResourceType> getResourceTypeByRef;
 
   /**
    * default constructor that resolves the generic type for this class
@@ -203,6 +211,19 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public RequestValidator<T> getRequestValidator()
   {
     return null;
+  }
+
+  /**
+   * this method is used to resolve a resource type by the $ref-uri attribute or by the type-attribute of a
+   * resource-reference attribute
+   * 
+   * @param ref the $ref or type value of a resource-reference attribute e.g.: "User" or
+   *          "http://localhost:8080/scim/v2/Users" or "http://localhost:8080/scim/v2/Users/${id}"
+   * @return the resource type definition of the referenced type.
+   */
+  public Optional<ResourceType> getResourceTypeByRef(String ref)
+  {
+    return Optional.ofNullable(getResourceTypeByRef).map(function -> function.apply(ref));
   }
 
   /**
