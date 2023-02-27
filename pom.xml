@@ -105,7 +105,7 @@
         <version.antlr.st4>4.3.4</version.antlr.st4>
 
         <!-- plugins -->
-        <version.maven.compiler.plugin>3.10.1</version.maven.compiler.plugin>
+        <version.maven.compiler.plugin>3.11.0</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.22.0</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.2.1</version.maven.enforcer.plugin>
         <version.maven.surefire.plugin>3.0.0-M9</version.maven.surefire.plugin>
