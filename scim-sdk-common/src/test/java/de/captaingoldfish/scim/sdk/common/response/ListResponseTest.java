@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.common.response;
 import java.util.Arrays;
 import java.util.List;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;

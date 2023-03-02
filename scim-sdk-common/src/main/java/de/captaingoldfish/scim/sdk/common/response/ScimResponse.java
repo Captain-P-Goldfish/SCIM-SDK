@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.common.response;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.ws.rs.core.Response;
+import jakarta.ws.rs.core.Response;
 
 import com.fasterxml.jackson.databind.JsonNode;
 

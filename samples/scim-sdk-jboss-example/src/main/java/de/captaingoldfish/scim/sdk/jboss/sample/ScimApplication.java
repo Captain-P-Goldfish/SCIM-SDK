@@ -1,8 +1,8 @@
 package de.captaingoldfish.scim.sdk.jboss.sample;
 
 import javax.enterprise.context.ApplicationScoped;
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
+import jakarta.ws.rs.ApplicationPath;
+import jakarta.ws.rs.core.Application;
 
 
 /**
