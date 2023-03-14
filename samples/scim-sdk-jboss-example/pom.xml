@@ -5,7 +5,7 @@
     <parent>
         <artifactId>scim-sdk-samples</artifactId>
         <groupId>de.captaingoldfish</groupId>
-        <version>1.16.1-SNAPSHOT</version>
+        <version>1.16.0-scim-for-keycloak-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-sdk-jboss-example</artifactId>
