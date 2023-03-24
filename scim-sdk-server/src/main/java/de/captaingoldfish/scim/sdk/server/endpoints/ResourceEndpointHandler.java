@@ -14,6 +14,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -1136,16 +1137,18 @@ class ResourceEndpointHandler
   private String getLocation(ResourceType resourceType, String resourceId, Supplier<String> getBaseUrlSupplier)
   {
     String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
+    String escapedResourceId = EncodingUtils.urlEncode(resourceId);
     if (StringUtils.isBlank(baseUrl))
     {
       return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint()
-             + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
+             + (StringUtils.isBlank(escapedResourceId) ? "" : "/" + escapedResourceId);
     }
     if (baseUrl.endsWith("/"))
     {
       baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
     }
-    return baseUrl + resourceType.getEndpoint() + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
+    return baseUrl + resourceType.getEndpoint()
+           + (StringUtils.isBlank(escapedResourceId) ? "" : "/" + escapedResourceId);
   }
 
   /**
