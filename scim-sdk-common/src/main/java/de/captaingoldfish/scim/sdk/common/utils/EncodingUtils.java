@@ -1,6 +1,5 @@
 package de.captaingoldfish.scim.sdk.common.utils;
 
-import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLEncoder;
@@ -27,7 +26,7 @@ public class EncodingUtils
     }
     catch (Exception e)
     {
-      throw new InternalServerException(e.getMessage(), e);
+      throw new IllegalStateException(e.getMessage(), e);
     }
   }
 }
