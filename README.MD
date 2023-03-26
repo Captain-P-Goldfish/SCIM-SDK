@@ -51,9 +51,28 @@ wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-
     <version>${project.version}</version>
 </dependency>
 <dependency>
-    <groupId>de.captaingoldfish</groupId>
-    <artifactId>scim-sdk-client</artifactId>
-    <version>${project.version}</version>
+<groupId>de.captaingoldfish</groupId>
+<artifactId>scim-sdk-client</artifactId>
+<version>${project.version}</version>
+</dependency>
+```
+
+if you want to use the built-in methods for the rest-api you must make sure that you deliver the corresponding
+dependencies yourself, because this project has marked them as optional. They are not being imported as transitive
+dependencies. Also note that these are simply the api libraries. The implementations should also be provided by your
+application or underlying application server.
+
+```xml
+
+<dependency>
+    <groupId>javax.ws.rs</groupId>
+    <artifactId>javax.ws.rs-api</artifactId>
+    <optional>true</optional>
+</dependency>
+<dependency>
+<groupId>jakarta.ws.rs</groupId>
+<artifactId>jakarta.ws.rs-api</artifactId>
+<optional>true</optional>
 </dependency>
 ```
 
