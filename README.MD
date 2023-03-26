@@ -51,9 +51,9 @@ wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-
     <version>${project.version}</version>
 </dependency>
 <dependency>
-<groupId>de.captaingoldfish</groupId>
-<artifactId>scim-sdk-client</artifactId>
-<version>${project.version}</version>
+    <groupId>de.captaingoldfish</groupId>
+    <artifactId>scim-sdk-client</artifactId>
+    <version>${project.version}</version>
 </dependency>
 ```
 
@@ -70,9 +70,9 @@ application or underlying application server.
     <optional>true</optional>
 </dependency>
 <dependency>
-<groupId>jakarta.ws.rs</groupId>
-<artifactId>jakarta.ws.rs-api</artifactId>
-<optional>true</optional>
+    <groupId>jakarta.ws.rs</groupId>
+    <artifactId>jakarta.ws.rs-api</artifactId>
+    <optional>true</optional>
 </dependency>
 ```
 
