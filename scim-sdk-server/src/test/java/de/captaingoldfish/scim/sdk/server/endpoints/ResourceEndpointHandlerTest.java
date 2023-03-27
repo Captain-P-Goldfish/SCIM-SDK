@@ -284,6 +284,31 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * Verifies that Meta location, if provided, is preserved on resource get
+   */
+  @Test
+  public void testGetUserWithMetaLocationAlreadySet()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    user.setMeta(Meta.builder().location(providedLocation).build());
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(user.getId().get()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.isNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    user.getId().get(),
+                                                                    null,
+                                                                    getBaseUrlSupplier());
+    GetResponse createResponse = (GetResponse)scimResponse;
+    User returnedUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+    Assertions.assertTrue(returnedUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, returnedUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * if the returned resource by the getResource endpoint has no id a {@link DocumentValidationException} must
    * be thrown
    */
@@ -1560,15 +1585,16 @@ public class ResourceEndpointHandlerTest implements FileReferences
    * Verifies that Meta location, if provided, is preserved on resource create
    */
   @Test
-  public void testCreateUserWithMetaLocationAlreadySet(){
+  public void testCreateUserWithMetaLocationAlreadySet()
+  {
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
     String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
     Meta meta = Meta.builder().location(providedLocation).build();
     user.setMeta(meta);
     ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
-            user.toString(),
-            getBaseUrlSupplier(),
-            null);
+                                                                       user.toString(),
+                                                                       getBaseUrlSupplier(),
+                                                                       null);
     CreateResponse createResponse = (CreateResponse)scimResponse;
     User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
     Assertions.assertTrue(createdUser.getMeta().isPresent());

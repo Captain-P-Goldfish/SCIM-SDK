@@ -247,9 +247,12 @@ class ResourceEndpointHandler
       {
         createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
       }
-      if (meta.getLocation().isPresent()) {
+      if (meta.getLocation().isPresent())
+      {
         createdMeta.setLocation(meta.getLocation().get());
-      } else {
+      }
+      else
+      {
         createdMeta.setLocation(location);
       }
       createdMeta.setResourceType(resourceType.getName());
@@ -381,7 +384,10 @@ class ResourceEndpointHandler
         {
           meta.setLastModified(meta.getCreated().orElse(null));
         }
-        meta.setLocation(location);
+        if (!meta.getLocation().isPresent())
+        {
+          meta.setLocation(location);
+        }
         meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       });
