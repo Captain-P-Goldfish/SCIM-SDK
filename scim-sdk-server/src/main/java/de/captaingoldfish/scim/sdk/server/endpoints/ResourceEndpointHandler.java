@@ -247,7 +247,11 @@ class ResourceEndpointHandler
       {
         createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
       }
-      createdMeta.setLocation(location);
+      if (meta.getLocation().isPresent()) {
+        createdMeta.setLocation(meta.getLocation().get());
+      } else {
+        createdMeta.setLocation(location);
+      }
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
       ResponseResourceValidator responseValidator = new ResponseResourceValidator(null, resourceType, null, null,

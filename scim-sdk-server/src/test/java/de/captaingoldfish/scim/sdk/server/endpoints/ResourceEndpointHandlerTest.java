@@ -1557,6 +1557,25 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * Verifies that Meta location, if provided, is preserved on resource create
+   */
+  @Test
+  public void testCreateUserWithMetaLocationAlreadySet(){
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    Meta meta = Meta.builder().location(providedLocation).build();
+    user.setMeta(meta);
+    ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
+            user.toString(),
+            getBaseUrlSupplier(),
+            null);
+    CreateResponse createResponse = (CreateResponse)scimResponse;
+    User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+    Assertions.assertTrue(createdUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, createdUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * Verifies that a {@link BadRequestException} is thrown if the request body is empty on update
    */
   @Test
