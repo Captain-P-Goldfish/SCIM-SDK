@@ -806,31 +806,31 @@ public class ResourceEndpointHandlerTest implements FileReferences
     userList.get(0).getMeta().get().setLocation(providedLocation);
     userList.get(0).getName().get().setGivenName("ChucklesMcChuckleson");
     PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
-            .totalResults(1)
-            .resources(userList)
-            .build();
+                                                                       .totalResults(1)
+                                                                       .resources(userList)
+                                                                       .build();
 
     Mockito.doReturn(partialListResponse)
-            .when(userHandler)
-            .listResources(Mockito.anyLong(),
-                    Mockito.anyInt(),
-                    Mockito.any(),
-                    Mockito.any(),
-                    Mockito.any(),
-                    Mockito.any(),
-                    Mockito.any(),
-                    Mockito.isNull());
+           .when(userHandler)
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
-            1L,
-            1,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null,
-            null);
+                                                                      1L,
+                                                                      1,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
 
     ListResponse listResponse = (ListResponse)scimResponse;
     User listUser = JsonHelper.copyResourceToObject((User)listResponse.getListedResources().get(0), User.class);
@@ -1401,6 +1401,30 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getScimException().getStatus());
+  }
+
+  /**
+   * Verifies that Meta location, if provided, is preserved on resource update
+   */
+  @Test
+  public void testUpdateUserWithMetaLocationAlreadySet()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    Meta meta = Meta.builder().location(providedLocation).build();
+    user.setMeta(meta);
+    Mockito.doReturn(user).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+    ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
+                                                                       user.getId().get(),
+                                                                       user.toString(),
+                                                                       null,
+                                                                       getBaseUrlSupplier(),
+                                                                       null);
+
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    User createdUser = JsonHelper.copyResourceToObject(updateResponse, User.class);
+    Assertions.assertTrue(createdUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, createdUser.getMeta().get().getLocation().get());
   }
 
   /**

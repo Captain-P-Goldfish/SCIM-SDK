@@ -880,7 +880,10 @@ class ResourceEndpointHandler
       {
         createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
       }
-      createdMeta.setLocation(location);
+      if (!createdMeta.getLocation().isPresent())
+      {
+        createdMeta.setLocation(location);
+      }
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
