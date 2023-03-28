@@ -798,6 +798,47 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
   }
 
+  @Test
+  public void testListUsersWithMetaLocationAlreadySet()
+  {
+    List<User> userList = createUsers(1);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    userList.get(0).getMeta().get().setLocation(providedLocation);
+    userList.get(0).getName().get().setGivenName("ChucklesMcChuckleson");
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+            .totalResults(1)
+            .resources(userList)
+            .build();
+
+    Mockito.doReturn(partialListResponse)
+            .when(userHandler)
+            .listResources(Mockito.anyLong(),
+                    Mockito.anyInt(),
+                    Mockito.any(),
+                    Mockito.any(),
+                    Mockito.any(),
+                    Mockito.any(),
+                    Mockito.any(),
+                    Mockito.isNull());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+            1L,
+            1,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null);
+
+    ListResponse listResponse = (ListResponse)scimResponse;
+    User listUser = JsonHelper.copyResourceToObject((User)listResponse.getListedResources().get(0), User.class);
+    Assertions.assertTrue(listUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, listUser.getMeta().get().getLocation().get());
+
+  }
+
   /**
    * this test will check that the implementation is reducing the number of returned entries to the desired
    * number of entries if the developer returned too many
