@@ -1785,6 +1785,46 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
   }
 
+  @Test
+  public void testPatchUserWithMetaLocationAlreadySet()
+  {
+    resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    User patchedUser = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    patchedUser.setMeta(Meta.builder().location(providedLocation).build());
+
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(user.getId().get()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.any());
+
+    Mockito.doReturn(patchedUser).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+
+    ScimResponse scimResponse = resourceEndpointHandler.patchResource("/Users",
+                                                                      user.getId().get(),
+                                                                      patchOpRequest.toString(),
+                                                                      null,
+                                                                      getBaseUrlSupplier());
+
+    UpdateResponse patchResponse = (UpdateResponse)scimResponse;
+    User returnedUser = JsonHelper.copyResourceToObject(patchResponse, User.class);
+    Assertions.assertTrue(returnedUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, returnedUser.getMeta().get().getLocation().get());
+  }
+
   /**
    * this test will verify that the schemas endpoint is using autoFiltering by default
    */

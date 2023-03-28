@@ -1092,7 +1092,10 @@ class ResourceEndpointHandler
           meta.setLastModified(meta.getCreated().orElse(null));
         }
         meta.setResourceType(resourceType.getName());
-        meta.setLocation(location);
+        if (!meta.getLocation().isPresent())
+        {
+          meta.setLocation(location);
+        }
       }
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
