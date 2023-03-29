@@ -3057,8 +3057,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
-   * This test will verify that an attribute is also returned if the full URI of the attribute name was used in
-   * the attributes parameter<br>
+   * This test will verify that an attribute is returned if the attributes returned value is "request" and its
+   * value was present in the request document<br>
    * from RFC7643 chapter 7
    *
    * <pre>
@@ -3073,6 +3073,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   @ValueSource(strings = {AttributeNames.RFC7643.PHONE_NUMBERS, AttributeNames.RFC7643.DISPLAY_NAME,
                           AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
                           AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.EMAILS + "." + AttributeNames.RFC7643.VALUE,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
   public void testAttributeIsReturnedIfFullUriNameIsUsedOnAttributesParameter(String attributeName)
@@ -3092,9 +3093,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                        null,
                                        null,
                                        null);
-    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
-                                                             Collections.singletonList(enterpriseUserSchemaNode),
-                                                             new UserHandlerImpl(false)));
+    ResourceType resourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType,
+                                                                                         userSchemaNode,
+                                                                                         Collections.singletonList(enterpriseUserSchemaNode),
+                                                                                         new UserHandlerImpl(false)));
+    SchemaAttribute schemaAttribute = resourceType.getSchemaAttribute(attributeName).get();
 
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
@@ -3115,14 +3118,25 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     {
       JsonNode complexAttribute = scimResponse.get(attributeNameParts[0]);
       Assertions.assertNotNull(complexAttribute);
-      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+      SchemaAttribute parentAttribute = schemaAttribute.getParent();
+      if (parentAttribute.isMultiValued())
+      {
+        ArrayNode multiValuedComplex = (ArrayNode)complexAttribute;
+        for ( JsonNode valuedComplex : multiValuedComplex )
+        {
+          Assertions.assertNotNull(valuedComplex.get(attributeNameParts[1]));
+        }
+      }
+      else
+      {
+        Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+      }
     }
     Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
   }
 
   /**
-   * This test will verify that an attribute is also returned if the full URI of the attribute name was used in
-   * the attributes parameter<br>
+   * This test will verify that an attribute is also returned parameters names are case insensitive<br>
    * from RFC7643 chapter 7
    *
    * <pre>
@@ -3134,7 +3148,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
    * </pre>
    */
   @ParameterizedTest
-  @CsvSource({AttributeNames.RFC7643.PHONE_NUMBERS + ",phoneNumbers",
+  @CsvSource({AttributeNames.RFC7643.PHONE_NUMBERS + ",phonenumbers",
+              AttributeNames.RFC7643.PHONE_NUMBERS + ".value,phonenumbers.value",
               AttributeNames.RFC7643.DISPLAY_NAME + "," + "displayname",
               AttributeNames.RFC7643.EXTERNAL_ID + ",externalid",
               AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME + ",name.givenname",
@@ -3157,9 +3172,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                        null,
                                        null,
                                        null);
-    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
-                                                             Collections.singletonList(enterpriseUserSchemaNode),
-                                                             new UserHandlerImpl(false)));
+    ResourceType resourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType,
+                                                                                         userSchemaNode,
+                                                                                         Collections.singletonList(enterpriseUserSchemaNode),
+                                                                                         new UserHandlerImpl(false)));
+
+    SchemaAttribute schemaAttribute = resourceType.getSchemaAttribute(attributeName).get();
 
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
@@ -3180,7 +3198,19 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     {
       JsonNode complexAttribute = scimResponse.get(attributeNameParts[0]);
       Assertions.assertNotNull(complexAttribute);
-      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+      SchemaAttribute parentAttribute = schemaAttribute.getParent();
+      if (parentAttribute.isMultiValued())
+      {
+        ArrayNode multiValuedComplex = (ArrayNode)complexAttribute;
+        for ( JsonNode valuedComplex : multiValuedComplex )
+        {
+          Assertions.assertNotNull(valuedComplex.get(attributeNameParts[1]));
+        }
+      }
+      else
+      {
+        Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+      }
     }
     Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
   }
@@ -3202,6 +3232,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   @ValueSource(strings = {AttributeNames.RFC7643.PHONE_NUMBERS, AttributeNames.RFC7643.DISPLAY_NAME,
                           AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.NAME,
                           AttributeNames.RFC7643.EMAILS,
+                          AttributeNames.RFC7643.EMAILS + "." + AttributeNames.RFC7643.VALUE,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
   public void testAttributeIsReturnedIfShortNameIsUsedOnAttributesParameter(String attributeName)
@@ -3221,9 +3252,11 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                        null,
                                        null,
                                        null);
-    resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType, userSchemaNode,
-                                                             Collections.singletonList(enterpriseUserSchemaNode),
-                                                             new UserHandlerImpl(false)));
+    ResourceType resourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceType,
+                                                                                         userSchemaNode,
+                                                                                         Collections.singletonList(enterpriseUserSchemaNode),
+                                                                                         new UserHandlerImpl(false)));
+    SchemaAttribute schemaAttribute = resourceType.getSchemaAttribute(attributeName).get();
 
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
 
@@ -3244,7 +3277,19 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     {
       JsonNode complexAttribute = scimResponse.get(attributeNameParts[0]);
       Assertions.assertNotNull(complexAttribute);
-      Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+      SchemaAttribute parentAttribute = schemaAttribute.getParent();
+      if (parentAttribute.isMultiValued())
+      {
+        ArrayNode multiValuedComplex = (ArrayNode)complexAttribute;
+        for ( JsonNode valuedComplex : multiValuedComplex )
+        {
+          Assertions.assertNotNull(valuedComplex.get(attributeNameParts[1]));
+        }
+      }
+      else
+      {
+        Assertions.assertNotNull(complexAttribute.get(attributeNameParts[1]));
+      }
     }
     Assertions.assertNotNull(scimResponse.get(AttributeNames.RFC7643.ID));
   }

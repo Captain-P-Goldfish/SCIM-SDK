@@ -7,6 +7,7 @@ import java.util.function.BiFunction;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -415,18 +416,37 @@ class ResponseAttributeValidator
   private static boolean isAttributePresentInDocument(SchemaAttribute schemaAttribute, JsonNode document)
   {
     String[] nameParts = schemaAttribute.getScimNodeName().split("\\.");
-    JsonNode currentNode = document;
-    boolean isPresent;
-    for ( String namePart : nameParts )
+
+    JsonNode currentNode = document.get(nameParts[0]);
+    boolean isPresent = currentNode != null;
+
+    if (nameParts.length == 1 || !isPresent)
     {
-      currentNode = currentNode.get(namePart);
-      isPresent = currentNode != null;
+      return isPresent;
+    }
+
+    if (currentNode instanceof ArrayNode)
+    {
+      ArrayNode currentArrayNode = (ArrayNode)currentNode;
+      for ( JsonNode jsonNode : currentArrayNode )
+      {
+        isPresent = jsonNode.get(nameParts[1]) != null;
+        if (isPresent)
+        {
+          break;
+        }
+      }
+    }
+    else
+    {
+      isPresent = currentNode.get(nameParts[1]) != null;
       if (!isPresent)
       {
         return false;
       }
     }
-    return true;
+
+    return isPresent;
   }
 
   /**

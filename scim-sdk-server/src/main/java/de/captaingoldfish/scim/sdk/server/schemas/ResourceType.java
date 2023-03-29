@@ -27,6 +27,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
@@ -181,6 +182,34 @@ public class ResourceType extends ResourceNode
   public Schema getMetaSchema()
   {
     return schemaFactory.getMetaSchema(SchemaUris.META);
+  }
+
+  /**
+   * tries to find a scim node of this resource type in the registered schemas. This method may return the wrong
+   * attribute if there are colliding attribute names among the main-schema and an extension or among two
+   * extensions.
+   * 
+   * @param scimNodeName the scim node name of the attribute that should be extracted
+   * @return the schema attribute if it does exist or an empty.
+   */
+  public Optional<SchemaAttribute> getSchemaAttribute(String scimNodeName)
+  {
+    {
+      SchemaAttribute schemaAttribute = getMainSchema().getSchemaAttribute(scimNodeName);
+      if (schemaAttribute != null)
+      {
+        return Optional.of(schemaAttribute);
+      }
+    }
+    for ( Schema extension : getAllSchemaExtensions() )
+    {
+      SchemaAttribute schemaAttribute = extension.getSchemaAttribute(scimNodeName);
+      if (schemaAttribute != null)
+      {
+        return Optional.of(schemaAttribute);
+      }
+    }
+    return Optional.empty();
   }
 
   /**

@@ -32,6 +32,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -799,7 +800,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testRequiredReadOnlyAttributeOnPutRequest(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -808,7 +809,7 @@ public class ResponseAttributeValidatorTest
                                                               .required(true)
                                                               .mutability(Mutability.READ_ONLY)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -841,7 +842,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testRequiredReadWriteAttributeOnPutRequest(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -850,7 +851,7 @@ public class ResponseAttributeValidatorTest
                                                               .required(true)
                                                               .mutability(Mutability.READ_WRITE)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "21");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -883,7 +884,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testRequiredImmutableAttributeOnPutRequest(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -892,7 +893,7 @@ public class ResponseAttributeValidatorTest
                                                               .required(true)
                                                               .mutability(Mutability.IMMUTABLE)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1006,7 +1007,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedAlwaysAttribute(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1014,7 +1015,7 @@ public class ResponseAttributeValidatorTest
                                                               .type(type)
                                                               .returned(Returned.ALWAYS)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1047,7 +1048,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testRequiredReturnedAlwaysAttribute(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1056,7 +1057,7 @@ public class ResponseAttributeValidatorTest
                                                               .required(true)
                                                               .returned(Returned.ALWAYS)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1087,7 +1088,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedAlwaysAttributeAsNull(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1125,7 +1126,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedAlwaysAttributeAsNullNode(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1168,7 +1169,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedAlwaysAttributeWithAttributesParameterContainingParamName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1211,7 +1212,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedAlwaysAttributeWithAttributesParameterNotContainingParamName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1256,7 +1257,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedAlwaysAttributeWithExcludedAttributesParameterContainingParamName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1300,7 +1301,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttribute(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1308,7 +1309,7 @@ public class ResponseAttributeValidatorTest
                                                               .type(type)
                                                               .returned(Returned.DEFAULT)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1339,7 +1340,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttributeAsNull(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1377,7 +1378,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttributeAsNullNode(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1420,7 +1421,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttributeWithAttributesParamContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1428,7 +1429,7 @@ public class ResponseAttributeValidatorTest
                                                               .type(type)
                                                               .returned(Returned.DEFAULT)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1465,7 +1466,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttributeWithAttributesParamNotContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1510,7 +1511,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttributeWithExcludedAttributesParamContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1553,7 +1554,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedDefaultAttributeWithExcludedAttributesParamNotContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1561,7 +1562,7 @@ public class ResponseAttributeValidatorTest
                                                               .type(type)
                                                               .returned(Returned.DEFAULT)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1601,7 +1602,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttribute(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1638,7 +1639,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttributeAsNull(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1676,7 +1677,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttributeAsNullNode(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1719,7 +1720,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttributeWithAttributesParamContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1727,7 +1728,7 @@ public class ResponseAttributeValidatorTest
                                                               .type(type)
                                                               .returned(Returned.REQUEST)
                                                               .build();
-      JsonNode attribute = AttributeBuilder.build(type, "2");
+      JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
                                                             attribute,
@@ -1764,7 +1765,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttributeWithAttributesParamNotContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1809,7 +1810,7 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttributeWithExcludedAttributesParamContainingTheName(Type type)
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
@@ -1840,6 +1841,7 @@ public class ResponseAttributeValidatorTest
      *    {
      *      "type": "*",
      *      "required": false,
+     *      "returned": "request",
      *      ...
      *    }
      * </pre>
@@ -1851,10 +1853,14 @@ public class ResponseAttributeValidatorTest
      * </pre>
      */
     @ParameterizedTest
-    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN"})
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
     public void testReturnedRequestAttributeWithExcludedAttributesParamNotContainingTheName(Type type)
     {
-      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(type).build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(type)
+                                                              .returned(Returned.REQUEST)
+                                                              .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(schemaAttribute,
@@ -1864,6 +1870,50 @@ public class ResponseAttributeValidatorTest
                                                             Collections.singletonList(SchemaAttributeBuilder.builder()
                                                                                                             .name("another")
                                                                                                             .build()),
+                                                            REFERENCE_URL_SUPPLIER);
+      });
+      Assertions.assertFalse(validatedNode.isPresent());
+    }
+
+    /**
+     * tests that an attribute is returned if it is of returned type "request" and the attribute is present within
+     * the request document.
+     *
+     * <pre>
+     *    {
+     *      "type": "*",
+     *      "required": false,
+     *      "returned": "request",
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     *   {
+     *     "id": ${2}
+     *   }
+     * </pre>
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"ANY", "STRING", "INTEGER", "DECIMAL", "BOOLEAN", "BINARY"})
+    public void testReturnedRequestAttributeWithValueInRequestDocument(Type type)
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(type)
+                                                              .returned(Returned.REQUEST)
+                                                              .build();
+      JsonNode attribute = AttributeBuilder.build(type, "12");
+
+      ScimObjectNode requestDocument = new ScimObjectNode();
+      requestDocument.set(schemaAttribute.getName(), attribute);
+
+      Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return ResponseAttributeValidator.validateAttribute(schemaAttribute,
+                                                            attribute,
+                                                            requestDocument,
+                                                            null,
+                                                            null,
                                                             REFERENCE_URL_SUPPLIER);
       });
       Assertions.assertTrue(validatedNode.isPresent());
