@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.HttpHeaders;
@@ -351,15 +352,9 @@ public abstract class HttpServerMockup
     for ( String pair : pairs )
     {
       int idx = pair.indexOf("=");
-      try
-      {
-        query_pairs.put(URLDecoder.decode(pair.substring(0, idx), "UTF-8"),
-                        URLDecoder.decode(pair.substring(idx + 1), "UTF-8"));
-      }
-      catch (UnsupportedEncodingException e)
-      {
-        throw new IllegalStateException(e);
-      }
+      query_pairs.put(EncodingUtils.urlDecode(pair.substring(0, idx)),
+                      EncodingUtils.urlDecode(pair.substring(idx + 1)));
+
     }
     return query_pairs;
   }

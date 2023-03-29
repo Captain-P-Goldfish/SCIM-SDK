@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -124,6 +125,7 @@ public class UriInfos
     final boolean endsOfSearch = EndpointPaths.SEARCH.endsWith(pathParts[pathParts.length - 1]);
     final boolean endsOfResource = resourceType.getEndpoint().endsWith(pathParts[pathParts.length - 1]);
     final String resourceId = endsOfSearch ? null : (endsOfResource ? null : pathParts[pathParts.length - 1]);
+    final String decodedResourceId = EncodingUtils.urlDecode(resourceId);
     final boolean searchRequest = endsOfSearch && HttpMethod.POST.equals(httpMethod)
                                   || HttpMethod.GET.equals(httpMethod) && resourceId == null;
     final String baseUri = StringUtils.substringBeforeLast(requestUrl, resourceType.getEndpoint());
@@ -131,7 +133,7 @@ public class UriInfos
                                 .baseUri(baseUri)
                                 .searchRequest(searchRequest)
                                 .resourceEndpoint(resourceType.getEndpoint())
-                                .resourceId(resourceId)
+                                .resourceId(decodedResourceId)
                                 .queryParameters(url.getQuery())
                                 .resourceType(resourceType)
                                 .httpMethod(httpMethod)

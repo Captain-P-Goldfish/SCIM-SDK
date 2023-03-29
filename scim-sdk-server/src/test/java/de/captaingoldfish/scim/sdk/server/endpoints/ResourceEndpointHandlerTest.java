@@ -284,6 +284,31 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * Verifies that Meta location, if provided, is preserved on resource get
+   */
+  @Test
+  public void testGetUserWithMetaLocationAlreadySet()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    user.setMeta(Meta.builder().location(providedLocation).build());
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(user.getId().get()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.isNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    user.getId().get(),
+                                                                    null,
+                                                                    getBaseUrlSupplier());
+    GetResponse createResponse = (GetResponse)scimResponse;
+    User returnedUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+    Assertions.assertTrue(returnedUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, returnedUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * if the returned resource by the getResource endpoint has no id a {@link DocumentValidationException} must
    * be thrown
    */
@@ -771,6 +796,47 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ListResponse listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(0, listResponse.getListedResources().size());
     Assertions.assertEquals(resourceTypeFactory.getAllResourceTypes().size(), listResponse.getTotalResults());
+  }
+
+  @Test
+  public void testListUsersWithMetaLocationAlreadySet()
+  {
+    List<User> userList = createUsers(1);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    userList.get(0).getMeta().get().setLocation(providedLocation);
+    userList.get(0).getName().get().setGivenName("ChucklesMcChuckleson");
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(1)
+                                                                       .resources(userList)
+                                                                       .build();
+
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1L,
+                                                                      1,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+
+    ListResponse listResponse = (ListResponse)scimResponse;
+    User listUser = JsonHelper.copyResourceToObject((User)listResponse.getListedResources().get(0), User.class);
+    Assertions.assertTrue(listUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, listUser.getMeta().get().getLocation().get());
+
   }
 
   /**
@@ -1338,6 +1404,30 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * Verifies that Meta location, if provided, is preserved on resource update
+   */
+  @Test
+  public void testUpdateUserWithMetaLocationAlreadySet()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    Meta meta = Meta.builder().location(providedLocation).build();
+    user.setMeta(meta);
+    Mockito.doReturn(user).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+    ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
+                                                                       user.getId().get(),
+                                                                       user.toString(),
+                                                                       null,
+                                                                       getBaseUrlSupplier(),
+                                                                       null);
+
+    UpdateResponse updateResponse = (UpdateResponse)scimResponse;
+    User createdUser = JsonHelper.copyResourceToObject(updateResponse, User.class);
+    Assertions.assertTrue(createdUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, createdUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * the modifier on the the method {@link ResourceEndpointHandler#getServiceProvider()} must be public!
    */
   @Test
@@ -1557,6 +1647,26 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * Verifies that Meta location, if provided, is preserved on resource create
+   */
+  @Test
+  public void testCreateUserWithMetaLocationAlreadySet()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    Meta meta = Meta.builder().location(providedLocation).build();
+    user.setMeta(meta);
+    ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
+                                                                       user.toString(),
+                                                                       getBaseUrlSupplier(),
+                                                                       null);
+    CreateResponse createResponse = (CreateResponse)scimResponse;
+    User createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
+    Assertions.assertTrue(createdUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, createdUser.getMeta().get().getLocation().get());
+  }
+
+  /**
    * Verifies that a {@link BadRequestException} is thrown if the request body is empty on update
    */
   @Test
@@ -1673,6 +1783,46 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.NOT_IMPLEMENTED, errorResponse.getHttpStatus());
+  }
+
+  @Test
+  public void testPatchUserWithMetaLocationAlreadySet()
+  {
+    resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    User patchedUser = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
+    patchedUser.setMeta(Meta.builder().location(providedLocation).build());
+
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(user.getId().get()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.any());
+
+    Mockito.doReturn(patchedUser).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+
+    ScimResponse scimResponse = resourceEndpointHandler.patchResource("/Users",
+                                                                      user.getId().get(),
+                                                                      patchOpRequest.toString(),
+                                                                      null,
+                                                                      getBaseUrlSupplier());
+
+    UpdateResponse patchResponse = (UpdateResponse)scimResponse;
+    User returnedUser = JsonHelper.copyResourceToObject(patchResponse, User.class);
+    Assertions.assertTrue(returnedUser.getMeta().isPresent());
+    Assertions.assertEquals(providedLocation, returnedUser.getMeta().get().getLocation().get());
   }
 
   /**

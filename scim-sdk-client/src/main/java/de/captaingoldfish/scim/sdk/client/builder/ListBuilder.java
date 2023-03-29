@@ -1,7 +1,5 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -11,6 +9,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
@@ -286,14 +285,7 @@ public class ListBuilder<T extends ResourceNode>
         }
         List<String> pairs = new ArrayList<>();
         listBuilder.requestParameters.forEach((key, value) -> {
-          try
-          {
-            pairs.add(key + "=" + URLEncoder.encode(value, StandardCharsets.UTF_8.name()));
-          }
-          catch (UnsupportedEncodingException e)
-          {
-            throw new IllegalStateException(e.getMessage(), e);
-          }
+          pairs.add(key + "=" + EncodingUtils.urlEncode(value));
         });
         queryBuilder.append(String.join("&", pairs));
       }

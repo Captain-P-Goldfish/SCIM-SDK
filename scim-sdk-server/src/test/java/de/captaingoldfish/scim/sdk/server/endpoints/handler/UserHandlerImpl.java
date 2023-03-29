@@ -72,7 +72,6 @@ public class UserHandlerImpl extends ResourceHandler<User>
     Optional.ofNullable(context).ifPresent(contextVerifier);
     Assertions.assertTrue(resource.getMeta().isPresent());
     Meta meta = resource.getMeta().get();
-    Assertions.assertFalse(meta.getLocation().isPresent());
     Assertions.assertTrue(meta.getResourceType().isPresent());
     Assertions.assertEquals(ResourceTypeNames.USER, meta.getResourceType().get());
     final String userId = UUID.randomUUID().toString();

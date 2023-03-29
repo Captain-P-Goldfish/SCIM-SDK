@@ -115,13 +115,12 @@ public class ResourceType extends ResourceNode
     Optional<ObjectNode> metaNode = JsonHelper.getObjectAttribute(resourceTypeDocument, AttributeNames.RFC7643.META);
     Meta meta;
     final String resourceType = "ResourceType";
-    final String location = EndpointPaths.RESOURCE_TYPES + "/" + getName();
     if (metaNode.isPresent())
     {
       meta = JsonHelper.copyResourceToObject(metaNode.get(), Meta.class);
       meta = Meta.builder()
                  .resourceType(meta.getResourceType().orElse(resourceType))
-                 .location(meta.getLocation().orElse(location))
+                 .location(meta.getLocation().orElse(null))
                  .created(meta.getCreated()
                               .map(instant -> instant.atZone(ZoneId.systemDefault()).toLocalDateTime())
                               .orElse(LocalDateTime.now()))
@@ -134,7 +133,6 @@ public class ResourceType extends ResourceNode
     {
       meta = Meta.builder()
                  .resourceType(resourceType)
-                 .location(location)
                  .created(LocalDateTime.now())
                  .lastModified(LocalDateTime.now())
                  .build();

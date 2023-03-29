@@ -14,6 +14,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -246,7 +247,14 @@ class ResourceEndpointHandler
       {
         createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
       }
-      createdMeta.setLocation(location);
+      if (meta.getLocation().isPresent())
+      {
+        createdMeta.setLocation(meta.getLocation().get());
+      }
+      else
+      {
+        createdMeta.setLocation(location);
+      }
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
       ResponseResourceValidator responseValidator = new ResponseResourceValidator(null, resourceType, null, null,
@@ -376,7 +384,10 @@ class ResourceEndpointHandler
         {
           meta.setLastModified(meta.getCreated().orElse(null));
         }
-        meta.setLocation(location);
+        if (!meta.getLocation().isPresent())
+        {
+          meta.setLocation(location);
+        }
         meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       });
@@ -605,7 +616,10 @@ class ResourceEndpointHandler
           {
             meta.setLastModified(meta.getCreated().orElse(null));
           }
-          meta.setLocation(location);
+          if (!meta.getLocation().isPresent())
+          {
+            meta.setLocation(location);
+          }
           meta.setResourceType(resourceType.getName());
           ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
         });
@@ -866,7 +880,10 @@ class ResourceEndpointHandler
       {
         createdMeta.setLastModified(createdMeta.getCreated().orElse(null));
       }
-      createdMeta.setLocation(location);
+      if (!createdMeta.getLocation().isPresent())
+      {
+        createdMeta.setLocation(location);
+      }
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
       Supplier<String> errorMessage = () -> "ID attribute not set on updated resource";
@@ -1075,7 +1092,10 @@ class ResourceEndpointHandler
           meta.setLastModified(meta.getCreated().orElse(null));
         }
         meta.setResourceType(resourceType.getName());
-        meta.setLocation(location);
+        if (!meta.getLocation().isPresent())
+        {
+          meta.setLocation(location);
+        }
       }
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
@@ -1136,16 +1156,18 @@ class ResourceEndpointHandler
   private String getLocation(ResourceType resourceType, String resourceId, Supplier<String> getBaseUrlSupplier)
   {
     String baseUrl = getBaseUrlSupplier == null ? null : getBaseUrlSupplier.get();
+    String escapedResourceId = EncodingUtils.urlEncode(resourceId);
     if (StringUtils.isBlank(baseUrl))
     {
       return StringUtils.stripToEmpty(System.getProperty("SCIM_BASE_URL")) + resourceType.getEndpoint()
-             + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
+             + (StringUtils.isBlank(escapedResourceId) ? "" : "/" + escapedResourceId);
     }
     if (baseUrl.endsWith("/"))
     {
       baseUrl = baseUrl.substring(0, baseUrl.length() - 1);
     }
-    return baseUrl + resourceType.getEndpoint() + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId);
+    return baseUrl + resourceType.getEndpoint()
+           + (StringUtils.isBlank(escapedResourceId) ? "" : "/" + escapedResourceId);
   }
 
   /**
