@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.handler;
 
+import de.captaingoldfish.scim.sdk.server.endpoints.AbstractEndpointTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class ResourceTypeHandlerTest
+public class ResourceTypeHandlerTest extends AbstractEndpointTest
 {
 
   /**
@@ -76,7 +77,7 @@ public class ResourceTypeHandlerTest
     Assertions.assertTrue(resourceType.getMeta().get().getCreated().isPresent());
     Assertions.assertTrue(resourceType.getMeta().get().getLastModified().isPresent());
     Assertions.assertEquals(ResourceTypeNames.RESOURCE_TYPE, resourceType.getMeta().get().getResourceType().get());
-    Assertions.assertEquals(getLocationUrl(name), resourceType.getMeta().get().getLocation().get());
+    Assertions.assertEquals(BASE_URI + getLocationUrl(name), resourceType.getMeta().get().getLocation().get());
   }
 
   /**
