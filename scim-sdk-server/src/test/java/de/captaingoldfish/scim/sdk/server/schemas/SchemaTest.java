@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
-import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -111,8 +110,7 @@ class SchemaTest
     Assertions.assertEquals(ResourceTypeNames.SCHEMA, meta.getResourceType().get());
     Assertions.assertEquals(TimeUtils.parseDateTime("2019-10-18T14:51:11+02:00"), meta.getCreated().get());
     Assertions.assertEquals(TimeUtils.parseDateTime("2019-10-18T14:51:11+02:00"), meta.getLastModified().get());
-    Assertions.assertEquals(EndpointPaths.SCHEMAS + "/" + ResourceTypeNames.SERVICE_PROVIDER_CONFIG,
-                            meta.getLocation().get());
+    Assertions.assertFalse(meta.getLocation().isPresent());
     Assertions.assertFalse(meta.getVersion().isPresent());
   }
 

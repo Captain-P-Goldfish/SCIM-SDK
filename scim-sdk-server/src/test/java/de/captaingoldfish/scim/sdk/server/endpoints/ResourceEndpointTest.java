@@ -75,6 +75,7 @@ import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
@@ -2160,6 +2161,17 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                httpHeaders,
                                                                new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = JsonHelper.copyResourceToObject(scimResponse, ListResponse.class);
+    Assertions.assertEquals(3, listResponse.getTotalResults());
+    Assertions.assertEquals(3, listResponse.getListedResources().size());
+    for ( ScimObjectNode listedResource : listResponse.getListedResources() )
+    {
+      String name = listedResource.get(AttributeNames.RFC7643.NAME).textValue();
+      Meta meta = JsonHelper.copyResourceToObject(listedResource.get(AttributeNames.RFC7643.META), Meta.class);
+      Assertions.assertTrue(meta.getLocation().isPresent());
+      Assertions.assertEquals(String.format("%s%s/%s", BASE_URI, EndpointPaths.RESOURCE_TYPES, name),
+                              meta.getLocation().get());
+    }
   }
 
   /**
@@ -2177,6 +2189,17 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                httpHeaders,
                                                                new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = JsonHelper.copyResourceToObject(scimResponse, ListResponse.class);
+    Assertions.assertEquals(4, listResponse.getTotalResults());
+    Assertions.assertEquals(4, listResponse.getListedResources().size());
+    for ( ScimObjectNode listedResource : listResponse.getListedResources() )
+    {
+      String id = listedResource.get(AttributeNames.RFC7643.ID).textValue();
+      Meta meta = JsonHelper.copyResourceToObject(listedResource.get(AttributeNames.RFC7643.META), Meta.class);
+      Assertions.assertTrue(meta.getLocation().isPresent());
+      Assertions.assertEquals(String.format("%s%s/%s", BASE_URI, EndpointPaths.SCHEMAS, EncodingUtils.urlEncode(id)),
+                              meta.getLocation().get());
+    }
   }
 
   /**

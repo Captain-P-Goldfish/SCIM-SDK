@@ -66,6 +66,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
@@ -147,7 +148,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceTypeHandler = new ResourceTypeHandler(resourceTypeFactory);
     resourceTypeHandler = Mockito.spy(resourceTypeHandler);
     EndpointDefinition endpointDefinition = new ResourceTypeEndpointDefinition(resourceTypeHandler);
-    ResourceType resourceType = resourceEndpointHandler.registerEndpoint(endpointDefinition);
+    resourceEndpointHandler.registerEndpoint(endpointDefinition);
 
     serviceProviderHandler = Mockito.spy(new ServiceProviderHandler(serviceProvider));
     endpointDefinition = new ServiceProviderEndpointDefinition(serviceProvider);
@@ -1477,10 +1478,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
       SearchRequest searchRequest = SearchRequest.builder().startIndex(startIndex + 1L).count(count).build();
       ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.SCHEMAS,
                                                                         searchRequest,
-                                                                        null,
+                                                                        getBaseUrlSupplier(),
                                                                         null);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
-      ListResponse listResponse = (ListResponse)scimResponse;
+      ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
       MatcherAssert.assertThat(listResponse.getListedResources().size(), Matchers.lessThanOrEqualTo(count));
 
       List<Schema> allSchemas = resourceTypeFactory.getAllResourceTypes()
@@ -1490,6 +1491,15 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                    .distinct()
                                                    .collect(Collectors.toList());
       Assertions.assertEquals(allSchemas.size() - 1, listResponse.getTotalResults());
+
+      for ( ScimObjectNode listedResource : listResponse.getListedResources() )
+      {
+        String id = listedResource.get(AttributeNames.RFC7643.ID).textValue();
+        Meta meta = JsonHelper.copyResourceToObject(listedResource.get(AttributeNames.RFC7643.META), Meta.class);
+        Assertions.assertTrue(meta.getLocation().isPresent());
+        Assertions.assertEquals(getLocation(EndpointPaths.SCHEMAS, EncodingUtils.urlEncode(id)),
+                                meta.getLocation().get());
+      }
     }
   }
 

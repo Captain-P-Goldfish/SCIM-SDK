@@ -41,28 +41,28 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/schema.schema.json
                             </file>
-                            <checksum>a4d099383779090bae2be97b3675ee1e</checksum>
+                            <checksum>a29d50d396d09e7c035f6577903dd9b4</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/resource-type.schema.json
                             </file>
-                            <checksum>c6745a21fd79a4efc2183504287830a3</checksum>
+                            <checksum>d1153905c1b6f3f9692781e47e625f99</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
                             </file>
-                            <checksum>a930602d3e17d023cc2f0db6afc9230a</checksum>
+                            <checksum>95b8bafe694f9314510d2ef3a2d6dcef</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/meta.schema.json
                             </file>
-                            <checksum>e25c87853da13468eb16370555c7e3ca</checksum>
+                            <checksum>ad03defd95b2ad6eb3788913e66c9679</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
@@ -118,42 +118,42 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/bulk-request.json
                             </file>
-                            <checksum>da8a0340801def02cda7fa4b0d25dff6</checksum>
+                            <checksum>740e52b8810fb1a6cf62d8b70d07c82b</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/request/patch-request.json
                             </file>
-                            <checksum>e599374caf336247b261bfa504e61761</checksum>
+                            <checksum>694703bb4a6bce0e1ed425340edc22bd</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/response/bulk-response.json
                             </file>
-                            <checksum>980fd747ff170bbdfbbd7fa64ca841e6</checksum>
+                            <checksum>7db10af65affa80b88730d330c7fb2eb</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/enterprise-user.json
                             </file>
-                            <checksum>b80d00d637b51c3e4ff7a2c63eb9e374</checksum>
+                            <checksum>1dc2d9a1645925bd2cdc03e048f04912</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/groups.json
                             </file>
-                            <checksum>d86aa995184143b366b66472d4466290</checksum>
+                            <checksum>bf486f5216e505f5ac6ea24f70009d28</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/schemas/users.json
                             </file>
-                            <checksum>cd13db265b7b928d78514f6f9b157023</checksum>
+                            <checksum>6edeb388ea2c7cf88d4e8c579a32d888</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                     </rules>
