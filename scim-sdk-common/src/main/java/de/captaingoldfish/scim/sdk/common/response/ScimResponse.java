@@ -73,6 +73,22 @@ public abstract class ScimResponse extends AbstractSchemasHolder
   }
 
   /**
+   * builds a response object that should be usable with most of the common rest apis
+   *
+   * @return a jakarta-rs response containing the response body and the http headers
+   */
+  public jakarta.ws.rs.core.Response buildJakartaResponse()
+  {
+    jakarta.ws.rs.core.Response.ResponseBuilder responseBuilder = jakarta.ws.rs.core.Response.status(getHttpStatus());
+    httpHeaders.forEach(responseBuilder::header);
+    if (this.size() != 0)
+    {
+      responseBuilder.entity(toString());
+    }
+    return responseBuilder.build();
+  }
+
+  /**
    * the http status code of the response
    */
   public abstract int getHttpStatus();
