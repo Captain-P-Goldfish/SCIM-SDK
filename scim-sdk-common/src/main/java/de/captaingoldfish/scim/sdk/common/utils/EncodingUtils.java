@@ -37,7 +37,6 @@ public class EncodingUtils
   }
 
   /**
-   *
    * @param value The value to be URL decoded.
    * @return A URL decoded version of the input value.
    */

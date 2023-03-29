@@ -352,8 +352,8 @@ public abstract class HttpServerMockup
     for ( String pair : pairs )
     {
       int idx = pair.indexOf("=");
-        query_pairs.put(EncodingUtils.urlDecode(pair.substring(0, idx)),
-                EncodingUtils.urlDecode(pair.substring(idx + 1)));
+      query_pairs.put(EncodingUtils.urlDecode(pair.substring(0, idx)),
+                      EncodingUtils.urlDecode(pair.substring(idx + 1)));
 
     }
     return query_pairs;
