@@ -21,12 +21,32 @@ public class EncodingUtilsTest
   }
 
   /**
-   * This test will show that the provided values do not result in an exception.
+   * This test will show that the provided value has spaces unescaped in the output.
+   */
+  @Test
+  public void testUrlDecodingSuccess()
+  {
+    Assertions.assertEquals("Hello World", EncodingUtils.urlDecode("Hello+World"));
+  }
+
+  /**
+   * This test will show that the provided values do not result in an exception when encoded.
    */
   @ParameterizedTest
   @NullSource
   @ValueSource(strings = {"", "+", "test"})
   public void testUrlEncodingGeneralCaseSuccess(String value)
+  {
+    Assertions.assertDoesNotThrow(() -> EncodingUtils.urlEncode(value));
+  }
+
+  /**
+   * This test will show that the provided values do not result in an exception when encoded.
+   */
+  @ParameterizedTest
+  @NullSource
+  @ValueSource(strings = {"", "+", "test"})
+  public void testUrlDecodingGeneralCaseSuccess(String value)
   {
     Assertions.assertDoesNotThrow(() -> EncodingUtils.urlEncode(value));
   }

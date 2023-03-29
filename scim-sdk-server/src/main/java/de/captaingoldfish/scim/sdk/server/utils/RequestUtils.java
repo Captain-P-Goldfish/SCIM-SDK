@@ -12,6 +12,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.lang3.StringUtils;
@@ -408,15 +409,9 @@ public final class RequestUtils
         param = pair.substring(0, index);
         value = pair.substring(index + 1);
       }
-      try
-      {
-        queryParameter.put(URLDecoder.decode(param.toLowerCase(), StandardCharsets.UTF_8.name()),
-                           URLDecoder.decode(value, StandardCharsets.UTF_8.name()));
-      }
-      catch (UnsupportedEncodingException e)
-      {
-        throw new IllegalStateException(e.getMessage(), e);
-      }
+        queryParameter.put(EncodingUtils.urlDecode(param.toLowerCase()),
+                EncodingUtils.urlDecode(value));
+
     }
     return queryParameter;
   }

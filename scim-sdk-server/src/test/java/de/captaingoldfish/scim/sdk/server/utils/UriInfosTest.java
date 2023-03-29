@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -69,8 +70,9 @@ public class UriInfosTest
    */
   @ParameterizedTest
   @CsvSource({"/Users,,,POST", "/Users/.search,,,POST", "/Users,123456,,GET", "/Users,,startIndex=1&count=50,GET",
-              "/Users,123456,,PUT", "/Users,123456,,DELETE", "/Users,123456,,PATCH"})
+              "/Users,123456,,PUT", "/Users,123456,,DELETE", "/Users,123456,,PATCH", "/Users,Super%20Admin,,GET"})
   public void testParseUri(String resourcePath, String resourceId, String query, HttpMethod httpMethod)
+    throws UnsupportedEncodingException
   {
     final String baseUrl = "https://localhost/management/Users/scim/v2";
     final String resourceUrl = baseUrl + resourcePath + (resourceId == null ? "" : "/" + resourceId)
@@ -79,7 +81,7 @@ public class UriInfosTest
     Assertions.assertEquals(baseUrl, uriInfos.getBaseUri());
     Assertions.assertEquals(ResourceTypeNames.USER, uriInfos.getResourceType().getName());
     Assertions.assertEquals(resourcePath.replaceFirst(EndpointPaths.SEARCH, ""), uriInfos.getResourceEndpoint());
-    Assertions.assertEquals(resourceId, uriInfos.getResourceId());
+    Assertions.assertEquals(EncodingUtils.urlDecode(resourceId), uriInfos.getResourceId());
     Assertions.assertEquals(resourcePath.endsWith(EndpointPaths.SEARCH) && HttpMethod.POST.equals(httpMethod)
                             || HttpMethod.GET.equals(httpMethod) && query != null,
                             uriInfos.isSearchRequest());
@@ -117,7 +119,7 @@ public class UriInfosTest
     Map<String, String> parameter = uriInfos.getQueryParameters();
     Assertions.assertEquals(startIndex, parameter.get(AttributeNames.RFC7643.START_INDEX.toLowerCase()));
     Assertions.assertEquals(count, parameter.get(AttributeNames.RFC7643.COUNT));
-    Assertions.assertEquals(URLDecoder.decode(filter, StandardCharsets.UTF_8.name()),
+    Assertions.assertEquals(EncodingUtils.urlDecode(filter),
                             parameter.get(AttributeNames.RFC7643.FILTER));
     Assertions.assertEquals(sortBy, parameter.get(AttributeNames.RFC7643.SORT_BY.toLowerCase()));
     Assertions.assertEquals(sortOrder, parameter.get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()));
