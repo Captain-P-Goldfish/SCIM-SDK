@@ -409,8 +409,7 @@ public final class RequestUtils
         param = pair.substring(0, index);
         value = pair.substring(index + 1);
       }
-        queryParameter.put(EncodingUtils.urlDecode(param.toLowerCase()),
-                EncodingUtils.urlDecode(value));
+      queryParameter.put(EncodingUtils.urlDecode(param.toLowerCase()), EncodingUtils.urlDecode(value));
 
     }
     return queryParameter;

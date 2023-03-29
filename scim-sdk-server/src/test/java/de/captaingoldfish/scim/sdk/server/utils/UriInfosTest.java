@@ -119,8 +119,7 @@ public class UriInfosTest
     Map<String, String> parameter = uriInfos.getQueryParameters();
     Assertions.assertEquals(startIndex, parameter.get(AttributeNames.RFC7643.START_INDEX.toLowerCase()));
     Assertions.assertEquals(count, parameter.get(AttributeNames.RFC7643.COUNT));
-    Assertions.assertEquals(EncodingUtils.urlDecode(filter),
-                            parameter.get(AttributeNames.RFC7643.FILTER));
+    Assertions.assertEquals(EncodingUtils.urlDecode(filter), parameter.get(AttributeNames.RFC7643.FILTER));
     Assertions.assertEquals(sortBy, parameter.get(AttributeNames.RFC7643.SORT_BY.toLowerCase()));
     Assertions.assertEquals(sortOrder, parameter.get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()));
     Assertions.assertEquals(attributes, parameter.get(AttributeNames.RFC7643.ATTRIBUTES));
