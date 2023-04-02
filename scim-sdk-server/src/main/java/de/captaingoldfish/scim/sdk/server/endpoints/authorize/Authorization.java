@@ -50,29 +50,40 @@ public interface Authorization
   default void isClientAuthorized(ResourceType resourceType, EndpointType endpointType)
   {
     Set<String> defaultRoles = resourceType.getFeatures().getAuthorization().getRoles();
+    boolean useOrOnRoles = resourceType.getFeatures().getAuthorization().isUseOrOnRoles();
     switch (endpointType)
     {
       case CREATE:
         isAuthorized(resourceType,
                      endpointType,
+                     useOrOnRoles,
                      resourceType.getFeatures().getAuthorization().getRolesCreate(),
                      defaultRoles);
         break;
       case UPDATE:
         isAuthorized(resourceType,
                      endpointType,
+                     useOrOnRoles,
                      resourceType.getFeatures().getAuthorization().getRolesUpdate(),
                      defaultRoles);
         break;
       case DELETE:
         isAuthorized(resourceType,
                      endpointType,
+                     useOrOnRoles,
                      resourceType.getFeatures().getAuthorization().getRolesDelete(),
                      defaultRoles);
         break;
+      case LIST:
+        isAuthorized(resourceType,
+                     endpointType,
+                     useOrOnRoles,
+                     resourceType.getFeatures().getAuthorization().getRolesList(),
+                     defaultRoles);
       default:
         isAuthorized(resourceType,
                      endpointType,
+                     useOrOnRoles,
                      resourceType.getFeatures().getAuthorization().getRolesGet(),
                      defaultRoles);
     }
@@ -87,6 +98,7 @@ public interface Authorization
    */
   default void isAuthorized(ResourceType resourceType,
                             EndpointType endpointType,
+                            boolean useOrOnRoles,
                             Set<String> roles,
                             Set<String> defaultRoles)
   {
@@ -99,9 +111,22 @@ public interface Authorization
     {
       return;
     }
-    if (!Optional.ofNullable(getClientRoles())
-                 .map(clientRoles -> clientRoles.containsAll(effectiveRoles))
-                 .orElse(false))
+
+    final boolean isAuthorized;
+    if (useOrOnRoles)
+    {
+      isAuthorized = effectiveRoles.stream().anyMatch(role -> {
+        return Optional.ofNullable(getClientRoles()).map(clientRoles -> clientRoles.contains(role)).orElse(false);
+      });
+    }
+    else
+    {
+      isAuthorized = Optional.ofNullable(getClientRoles())
+                             .map(clientRoles -> clientRoles.containsAll(effectiveRoles))
+                             .orElse(false);
+    }
+
+    if (!isAuthorized)
     {
       log.debug("The client '{}' tried to execute an action without proper authorization. "
                 + "Required authorization is '{}' but the client has '{}'",
