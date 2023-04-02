@@ -165,6 +165,17 @@
           "required": false
         },
         {
+          "name": "useOrOnRoles",
+          "type": "boolean",
+          "description": "tells us if the roles entered within the arrays must all be present for the user to access the endpoint or if only a single role is necessary. Default is false",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "caseExact": false,
+          "required": false
+        },
+        {
           "name": "roles",
           "type": "string",
           "description": "the roles the client must have to access the resource endpoint. This setting defines the roles necessary for all endpoints [create, get, list, update, patch, delete]. This setting may be overridden by other attributes",
@@ -178,7 +189,7 @@
         {
           "name": "rolesCreate",
           "type": "string",
-          "description": "the roles the client must have to access the create endpoint.(overrides the attribute \"roles\" the create endpoint only)",
+          "description": "the roles the client must have to access the create endpoint.(overrides the attribute \"roles\" for the create endpoint only)",
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none",
@@ -189,7 +200,18 @@
         {
           "name": "rolesGet",
           "type": "string",
-          "description": "the roles the client must have to access the get endpoint.(overrides the attribute \"roles\" the get endpoint only)",
+          "description": "the roles the client must have to access the get endpoint.(overrides the attribute \"roles\" for the get endpoint only)",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": true,
+          "caseExact": true,
+          "required": false
+        },
+        {
+          "name": "rolesList",
+          "type": "string",
+          "description": "the roles the client must have to access the list endpoint.(overrides the attribute \"roles\" for the list endpoint only)",
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none",
@@ -200,7 +222,7 @@
         {
           "name": "rolesUpdate",
           "type": "string",
-          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" the update endpoint only)",
+          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" for the update endpoint only)",
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none",
@@ -211,7 +233,7 @@
         {
           "name": "rolesDelete",
           "type": "string",
-          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" the delete endpoint only)",
+          "description": "the roles the client must have to access the update or patch endpoint.(overrides the attribute \"roles\" for the delete endpoint only)",
           "mutability": "readOnly",
           "returned": "default",
           "uniqueness": "none",

@@ -23,6 +23,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
 
   @Builder
   public ResourceTypeAuthorization(Boolean authenticated,
+                                   Boolean useOrOnRoles,
                                    Set<String> roles,
                                    Set<String> rolesCreate,
                                    Set<String> rolesGet,
@@ -31,6 +32,7 @@ public class ResourceTypeAuthorization extends ScimObjectNode
   {
     this();
     setAuthenticated(authenticated);
+    setUseOrOnRoles(useOrOnRoles);
     setRoles(roles);
     setRolesCreate(rolesCreate);
     setRolesGet(rolesGet);
@@ -52,6 +54,24 @@ public class ResourceTypeAuthorization extends ScimObjectNode
   public void setAuthenticated(Boolean authenticated)
   {
     setAttribute(AttributeNames.Custom.AUTHENTICATED, authenticated);
+  }
+
+  /**
+   * tells us if the roles entered within the arrays must all be present for the user to access the endpoint or
+   * if only a single role is necessary. Default is false
+   */
+  public boolean isUseOrOnRoles()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.USE_OR_ON_ROLES).orElse(false);
+  }
+
+  /**
+   * tells us if the roles entered within the arrays must all be present for the user to access the endpoint or
+   * if only a single role is necessary. Default is false
+   */
+  public void setUseOrOnRoles(Boolean useOrOnRoles)
+  {
+    setAttribute(AttributeNames.Custom.USE_OR_ON_ROLES, useOrOnRoles);
   }
 
   /**
@@ -136,6 +156,33 @@ public class ResourceTypeAuthorization extends ScimObjectNode
   public void setRolesGet(String... rolesGet)
   {
     setStringAttributeList(AttributeNames.Custom.ROLES_GET, new HashSet<>(Arrays.asList(rolesGet)));
+  }
+
+  /**
+   * the roles the client must have to access the list endpoint.(overrides the attribute "{@link #getRoles()}"
+   * for the list endpoint only)
+   */
+  public Set<String> getRolesList()
+  {
+    return getSimpleArrayAttributeSet(AttributeNames.Custom.ROLES_LIST);
+  }
+
+  /**
+   * the roles the client must have to access the list endpoint.(overrides the attribute "{@link #getRoles()}"
+   * for the list endpoint only)
+   */
+  public void setRolesList(Set<String> rolesList)
+  {
+    setStringAttributeList(AttributeNames.Custom.ROLES_LIST, rolesList);
+  }
+
+  /**
+   * the roles the client must have to access the list endpoint.(overrides the attribute "{@link #getRoles()}"
+   * for the list endpoint only)
+   */
+  public void setRolesList(String... rolesList)
+  {
+    setStringAttributeList(AttributeNames.Custom.ROLES_LIST, new HashSet<>(Arrays.asList(rolesList)));
   }
 
   /**

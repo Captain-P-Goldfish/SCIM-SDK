@@ -82,6 +82,12 @@ public final class AttributeNames
     public static final String ROLES = "roles";
 
     /**
+     * tells us if the roles entered within the arrays must all be present for the user to access the endpoint or
+     * if only a single role is necessary. Default is false
+     */
+    public static final String USE_OR_ON_ROLES = "useOrOnRoles";
+
+    /**
      * this attribute defines the role-array for the create endpoint of a specific resource type
      */
     public static final String ROLES_CREATE = "rolesCreate";
@@ -90,6 +96,11 @@ public final class AttributeNames
      * this attribute defines the role-array for the get endpoint of a specific resource type
      */
     public static final String ROLES_GET = "rolesGet";
+
+    /**
+     * this attribute defines the role-array for the list endpoint of a specific resource type
+     */
+    public static final String ROLES_LIST = "rolesList";
 
     /**
      * this attribute defines the role-array for the update endpoint of a specific resource type
