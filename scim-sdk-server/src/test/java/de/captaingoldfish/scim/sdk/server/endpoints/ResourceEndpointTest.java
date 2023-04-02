@@ -2991,6 +2991,162 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     return dynamicTests;
   }
 
+  /**
+   * this test will verify that a client cannot access a protected endpoint if the endpoint requires several
+   * roles in order to access the endpoint<br>
+   * <br>
+   * <ol>
+   * <li>the user has only the role user but access to all endpoints require the roles "admin" and "user"</li>
+   * <li>the authorization access must fail on all endpoints</li>
+   * </ol>
+   */
+  @TestFactory
+  public List<DynamicTest> testAuthorizedBecauseRolesAllRequiredRolesArePresent()
+  {
+    final String url = BASE_URI + EndpointPaths.USERS;
+    serviceProvider = getServiceProvider();
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    EndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    endpointDefinition.setResourceType(JsonHelper.loadJsonDocument(USER_AUTHORIZED_RESOURCE_TYPE));
+    endpointDefinition.setResourceSchemaExtensions(Collections.emptyList());
+    ResourceType resourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    // require the roles "admin" and "user" on all endpoints
+    resourceType.getFeatures().getAuthorization().setUseOrOnRoles(false);
+    resourceType.getFeatures().getAuthorization().setRolesCreate("admin", "user");
+    resourceType.getFeatures().getAuthorization().setRolesGet("admin", "user");
+    resourceType.getFeatures().getAuthorization().setRolesList("admin", "user");
+    resourceType.getFeatures().getAuthorization().setRolesUpdate("admin", "user");
+    resourceType.getFeatures().getAuthorization().setRolesDelete("admin", "user");
+
+    final ClientAuthorization clientAuthorization = new ClientAuthorization("goldfish", "user", "admin");
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName("test").nickName("test").meta(meta).build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    List<DynamicTest> dynamicTests = new ArrayList<>();
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("create authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                                 HttpMethod.POST,
+                                                                 User.builder().userName("test").build().toString(),
+                                                                 httpHeaders,
+                                                                 context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.eq(context));
+      Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("get authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.GET,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .getResource(Mockito.any(),
+                          Mockito.eq(Collections.emptyList()),
+                          Mockito.eq(Collections.emptyList()),
+                          Mockito.eq(context));
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("list authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders, context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .listResources(Mockito.anyLong(),
+                            Mockito.anyInt(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.eq(context));
+      Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("list-post authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/.search",
+                                                                 HttpMethod.POST,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .listResources(Mockito.anyLong(),
+                            Mockito.anyInt(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.any(),
+                            Mockito.eq(context));
+      Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("update authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.PUT,
+                                                                 User.builder()
+                                                                     .userName("test")
+                                                                     .nickName("test")
+                                                                     .build()
+                                                                     .toString(),
+                                                                 httpHeaders,
+                                                                 context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(context));
+      Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("patch authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      PatchRequestOperation operation = PatchRequestOperation.builder().path("nickname").op(PatchOp.REMOVE).build();
+      List<PatchRequestOperation> operations = Arrays.asList(operation);
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.PATCH,
+                                                                 patchOpRequest.toString(),
+                                                                 httpHeaders,
+                                                                 context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1))
+             .getResource(Mockito.any(),
+                          Mockito.eq(Collections.emptyList()),
+                          Mockito.eq(Collections.emptyList()),
+                          Mockito.eq(context));
+      Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(context));
+      Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Mockito.clearInvocations(userHandler);
+    }));
+    /* ************************************************************************************************************/
+    dynamicTests.add(DynamicTest.dynamicTest("delete authorized", () -> {
+      Context context = new Context(clientAuthorization);
+      ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
+                                                                 HttpMethod.DELETE,
+                                                                 null,
+                                                                 httpHeaders,
+                                                                 context);
+      MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+      Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any(), Mockito.eq(context));
+      Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+    }));
+    /* ************************************************************************************************************/
+    return dynamicTests;
+  }
+
 
   /**
    * this test will verify that a client cannot access a protected endpoint if the endpoint requires several
