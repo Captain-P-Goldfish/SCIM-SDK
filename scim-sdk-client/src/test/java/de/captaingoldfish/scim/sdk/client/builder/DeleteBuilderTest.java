@@ -61,6 +61,44 @@ public class DeleteBuilderTest extends HttpServerMockup
     Assertions.assertNull(response.getErrorResponse());
   }
 
+  /**
+   * verifies that a request body is sent with the delete request if set
+   */
+  @ParameterizedTest
+  @ValueSource(booleans = {true, false})
+  public void testSimpleDeleteRequestSuccessWithRequestBody(boolean useFullUrl)
+  {
+    final String id = UUID.randomUUID().toString();
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+
+    final String requestBody = "a simple plain text request body";
+    setVerifyRequestAttributes((httpExchange, receivedRequestBody) -> {
+      Assertions.assertEquals(requestBody, receivedRequestBody);
+    });
+    ServerResponse<User> response;
+    if (useFullUrl)
+    {
+      response = new DeleteBuilder<>(getServerUrl() + EndpointPaths.USERS + "/" + id, User.class,
+                                     scimHttpClient).setResource(requestBody).sendRequest();
+    }
+    else
+    {
+      response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                     scimHttpClient).setResource(requestBody).sendRequest();
+    }
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+
+  }
+
 
   /**
    * verifies simply that the request is setup correctly for simple cases

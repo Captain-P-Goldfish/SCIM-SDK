@@ -4,14 +4,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpUriRequest;
+import org.apache.http.entity.StringEntity;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.captaingoldfish.scim.sdk.client.http.HttpDelete;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import lombok.SneakyThrows;
 
 
 /**
@@ -49,6 +53,22 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
           scimHttpClient);
     this.fullUrl = null;
+  }
+
+  /**
+   * @param resource sets the resource that should be sent to the service provider
+   */
+  public RequestBuilder<T> setResource(String resource)
+  {
+    return super.setResource(resource);
+  }
+
+  /**
+   * @param resource sets the resource that should be sent to the service provider
+   */
+  public RequestBuilder<T> setResource(JsonNode resource)
+  {
+    return super.setResource(resource);
   }
 
   /**
@@ -109,6 +129,7 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   /**
    * @return a delete request to the desired resource
    */
+  @SneakyThrows
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
@@ -120,6 +141,10 @@ public class DeleteBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     else
     {
       httpDelete = new HttpDelete(fullUrl);
+    }
+    if (StringUtils.isNotBlank(getResource()))
+    {
+      httpDelete.setEntity(new StringEntity(getResource()));
     }
     if (isUseIfMatch())
     {
