@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.endpoints;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
@@ -57,6 +58,12 @@ public class Context
   @Setter(AccessLevel.PACKAGE)
   private BiFunction<String, String, String> crossResourceReferenceUrl;
 
+  /**
+   * allows to access the original request body if necessary
+   */
+  @Setter(AccessLevel.PACKAGE)
+  private Supplier<String> requestBodySupplier;
+
   public Context(Authorization authorization)
   {
     this.authorization = Optional.ofNullable(authorization).orElse(new DefaultAuthorization());
@@ -98,5 +105,13 @@ public class Context
   public Optional<String> getCrossResourceReferenceUrl(String id, String resourceName)
   {
     return Optional.ofNullable(crossResourceReferenceUrl.apply(id, resourceName));
+  }
+
+  /**
+   * will retrieve the original request body before it was parsed and modified
+   */
+  public String getRequestBody()
+  {
+    return requestBodySupplier.get();
   }
 }

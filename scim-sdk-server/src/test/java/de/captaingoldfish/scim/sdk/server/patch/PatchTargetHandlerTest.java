@@ -116,6 +116,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    log.warn(patchOpRequest.toPrettyString());
     PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     AllTypes allTypes = new AllTypes(true);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);

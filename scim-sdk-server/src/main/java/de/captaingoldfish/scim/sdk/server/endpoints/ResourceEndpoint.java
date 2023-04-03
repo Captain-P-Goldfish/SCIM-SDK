@@ -225,7 +225,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                         Context context)
   {
     Optional.ofNullable(doBeforeExecution).ifPresent(consumer -> consumer.accept(uriInfos.getResourceType()));
-    Context effectiveContext = getEffectiveContext(uriInfos, context);
+    Context effectiveContext = getEffectiveContext(uriInfos, requestBody, context);
     authenticateClient(uriInfos, effectiveContext.getAuthorization());
     switch (httpMethod)
     {
@@ -317,10 +317,11 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    * current context data to it
    *
    * @param uriInfos the current uri infos of the request
+   * @param requestBody to be able to access the original request body within the resourcehandler
    * @param context the context created by the developer (might be null)
    * @return an expanded or new context
    */
-  private Context getEffectiveContext(UriInfos uriInfos, Context context)
+  private Context getEffectiveContext(UriInfos uriInfos, String requestBody, Context context)
   {
     Context effectiveContext = Optional.ofNullable(context).orElse(new Context(null));
     effectiveContext.setResourceReferenceUrl(id -> {
@@ -328,6 +329,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
     });
     effectiveContext.setCrossResourceReferenceUrl((id, resourceName) -> {
       return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, resourceName);
+    });
+    effectiveContext.setRequestBodySupplier(() -> {
+      return requestBody;
     });
     return effectiveContext;
   }
