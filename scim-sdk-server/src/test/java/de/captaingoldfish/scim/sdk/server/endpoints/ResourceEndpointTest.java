@@ -3029,14 +3029,16 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("create authorized", () -> {
       Context context = new Context(clientAuthorization);
+      final String requestBody = User.builder().userName("test").build().toString();
       ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                  HttpMethod.POST,
-                                                                 User.builder().userName("test").build().toString(),
+                                                                 requestBody,
                                                                  httpHeaders,
                                                                  context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
       Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.eq(context));
       Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Assertions.assertEquals(context.getRequestBody(), requestBody);
       Mockito.clearInvocations(userHandler);
     }));
     /* ************************************************************************************************************/
@@ -3053,6 +3055,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.eq(Collections.emptyList()),
                           Mockito.eq(Collections.emptyList()),
                           Mockito.eq(context));
+      Assertions.assertNull(context.getRequestBody());
       Mockito.clearInvocations(userHandler);
     }));
     /* ************************************************************************************************************/
@@ -3070,6 +3073,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                             Mockito.any(),
                             Mockito.eq(context));
       Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Assertions.assertNull(context.getRequestBody());
       Mockito.clearInvocations(userHandler);
     }));
     /* ************************************************************************************************************/
@@ -3091,23 +3095,22 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                             Mockito.any(),
                             Mockito.eq(context));
       Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Assertions.assertNull(context.getRequestBody());
       Mockito.clearInvocations(userHandler);
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("update authorized", () -> {
       Context context = new Context(clientAuthorization);
+      final String requestBody = User.builder().userName("test").nickName("test").build().toString();
       ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
                                                                  HttpMethod.PUT,
-                                                                 User.builder()
-                                                                     .userName("test")
-                                                                     .nickName("test")
-                                                                     .build()
-                                                                     .toString(),
+                                                                 requestBody,
                                                                  httpHeaders,
                                                                  context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
       Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(context));
       Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Assertions.assertEquals(context.getRequestBody(), requestBody);
       Mockito.clearInvocations(userHandler);
     }));
     /* ************************************************************************************************************/
@@ -3116,9 +3119,10 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
       PatchRequestOperation operation = PatchRequestOperation.builder().path("nickname").op(PatchOp.REMOVE).build();
       List<PatchRequestOperation> operations = Arrays.asList(operation);
       PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      final String requestBody = patchOpRequest.toString();
       ScimResponse scimResponse = resourceEndpoint.handleRequest(url + "/" + id,
                                                                  HttpMethod.PATCH,
-                                                                 patchOpRequest.toString(),
+                                                                 requestBody,
                                                                  httpHeaders,
                                                                  context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
@@ -3129,6 +3133,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.eq(context));
       Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(context));
       Assertions.assertEquals(clientAuthorization, context.getAuthorization());
+      Assertions.assertEquals(context.getRequestBody(), requestBody);
       Mockito.clearInvocations(userHandler);
     }));
     /* ************************************************************************************************************/
@@ -3141,6 +3146,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                  context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
       Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.any(), Mockito.eq(context));
+      Assertions.assertNull(context.getRequestBody());
       Assertions.assertEquals(clientAuthorization, context.getAuthorization());
     }));
     /* ************************************************************************************************************/
