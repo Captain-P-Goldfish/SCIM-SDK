@@ -80,6 +80,7 @@ public interface Authorization
                      useOrOnRoles,
                      resourceType.getFeatures().getAuthorization().getRolesList(),
                      defaultRoles);
+        break;
       default:
         isAuthorized(resourceType,
                      endpointType,
