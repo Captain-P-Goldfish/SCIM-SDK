@@ -24,7 +24,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
                               EndpointControlFeature endpointControlFeature,
                               ResourceTypeAuthorization authorization,
                               ETagFeature eTagFeature,
-                              boolean blockReturnResourcesOnBulk)
+                              boolean returnResourcesOnBulk)
   {
     super(null);
     setAutoFiltering(autoFiltering);
@@ -33,7 +33,7 @@ public class ResourceTypeFeatures extends ScimObjectNode
     setEndpointControlFeature(endpointControlFeature);
     setAuthorization(authorization);
     setETagFeature(eTagFeature);
-    setDenyReturnResourcesOnBulk(blockReturnResourcesOnBulk);
+    setDenyReturnResourcesOnBulk(returnResourcesOnBulk);
   }
 
   /**
