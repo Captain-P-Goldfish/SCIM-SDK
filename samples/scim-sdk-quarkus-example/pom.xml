@@ -3,7 +3,7 @@
     <parent>
         <artifactId>scim-sdk-samples</artifactId>
         <groupId>de.captaingoldfish</groupId>
-        <version>1.17.1-kc-SNAPSHOT</version>
+        <version>1.17.1-kc</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
