@@ -6,7 +6,7 @@
     <artifactId>scim-sdk-parent</artifactId>
 
     <packaging>pom</packaging>
-    <version>1.16.0-scim-for-keycloak-SNAPSHOT</version>
+    <version>1.17.2-SNAPSHOT</version>
 
     <name>SCIM SDK</name>
     <description>A full SCIM 2.0 open source implementation</description>
@@ -74,14 +74,14 @@
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.12.0</version.apache.commons.lang3>
         <version.commons.io>2.11.0</version.commons.io>
-        <version.jackson>2.14.2</version.jackson>
-        <version.jackson-databind>2.14.2</version.jackson-databind>
+        <version.jackson>2.15.0</version.jackson>
+        <version.jackson-databind>2.15.0</version.jackson-databind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.jakarta.ws.rs.api>3.1.0</version.jakarta.ws.rs.api>
         <version.antlr>4.9.2</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
-        <version.bouncy.castle>1.72</version.bouncy.castle>
+        <version.bouncy.castle>1.73</version.bouncy.castle>
 
         <!-- dependency conflicts -->
         <version.javassist>3.29.2-GA</version.javassist>
@@ -92,13 +92,13 @@
         <version.slf4j>2.0.7</version.slf4j>
 
         <!-- test dependencies -->
-        <version.junit.jupiter>5.9.2</version.junit.jupiter>
+        <version.junit.jupiter>5.9.3</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.10.2</version.reflections>
-        <version.mockito>5.2.0</version.mockito>
+        <version.mockito>5.3.1</version.mockito>
         <version.resteasy.jaxrs>3.15.6.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.14.1</version.equalsverifier>
-        <version.springboot>3.0.5</version.springboot>
+        <version.springboot>3.0.6</version.springboot>
         <version.spring.security>6.0.2</version.spring.security>
 
         <!-- version conflicts -->
@@ -108,7 +108,7 @@
         <!-- plugins -->
         <version.maven.compiler.plugin>3.11.0</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.22.0</version.maven.formatter.plugin>
-        <version.maven.enforcer.plugin>3.2.1</version.maven.enforcer.plugin>
+        <version.maven.enforcer.plugin>3.3.0</version.maven.enforcer.plugin>
         <version.maven.surefire.plugin>3.0.0</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.2.1</version.maven.source.plugin>
         <version.maven.javadoc.plugin>3.5.0</version.maven.javadoc.plugin>

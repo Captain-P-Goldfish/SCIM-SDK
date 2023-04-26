@@ -3,7 +3,7 @@
     <parent>
         <artifactId>scim-sdk-samples</artifactId>
         <groupId>de.captaingoldfish</groupId>
-        <version>1.16.0-scim-for-keycloak-SNAPSHOT</version>
+        <version>1.17.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -12,7 +12,8 @@
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.quarkus.sample</module.name>
 
-        <version.quarkus>2.16.5.Final</version.quarkus>
+        <version.quarkus>3.0.1.Final</version.quarkus>
+        <version.quarkus.resteasy>3.0.0.Final</version.quarkus.resteasy>
     </properties>
 
     <dependencyManagement>
@@ -27,7 +28,7 @@
             <dependency>
                 <groupId>io.quarkus</groupId>
                 <artifactId>quarkus-resteasy</artifactId>
-                <version>${version.quarkus}</version>
+                <version>${version.quarkus.resteasy}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

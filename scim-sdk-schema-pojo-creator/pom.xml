@@ -3,7 +3,7 @@
     <parent>
         <artifactId>scim-sdk-parent</artifactId>
         <groupId>de.captaingoldfish</groupId>
-        <version>1.16.0-scim-for-keycloak-SNAPSHOT</version>
+        <version>1.17.2-SNAPSHOT</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
@@ -14,7 +14,7 @@
     <properties>
         <module.name>de.captaingoldfish.scim.sdk.schema.to.pojo</module.name>
 
-        <version.spring.shell>3.0.1</version.spring.shell>
+        <version.spring.shell>3.0.2</version.spring.shell>
         <version.apache.freemarker>2.3.32</version.apache.freemarker>
 
         <version.maven.assembly.plugin>3.4.2</version.maven.assembly.plugin>
