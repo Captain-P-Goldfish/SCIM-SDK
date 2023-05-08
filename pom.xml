@@ -112,7 +112,7 @@
         <version.maven.surefire.plugin>3.0.0</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.2.1</version.maven.source.plugin>
         <version.maven.javadoc.plugin>3.5.0</version.maven.javadoc.plugin>
-        <version.maven.gpg.plugin>3.0.1</version.maven.gpg.plugin>
+        <version.maven.gpg.plugin>3.1.0</version.maven.gpg.plugin>
         <version.maven.deploy.plugin>3.1.1</version.maven.deploy.plugin>
         <version.maven.release.plugin>3.0.0</version.maven.release.plugin>
         <version.maven.scm.provider.gitexe>1.11.2</version.maven.scm.provider.gitexe>
