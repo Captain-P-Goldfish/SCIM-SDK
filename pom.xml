@@ -78,7 +78,7 @@
         <version.jackson-databind>2.15.0</version.jackson-databind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.jakarta.ws.rs.api>3.1.0</version.jakarta.ws.rs.api>
-        <version.antlr>4.12.0</version.antlr>
+        <version.antlr>4.13.0</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
         <version.bouncy.castle>1.73</version.bouncy.castle>
