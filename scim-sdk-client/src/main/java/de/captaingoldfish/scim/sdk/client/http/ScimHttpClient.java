@@ -113,7 +113,8 @@ public class ScimHttpClient implements Closeable
     if (scimClientConfig.getClientAuth() != null || scimClientConfig.getTruststore() != null)
     {
       clientBuilder.setSSLContext(SSLContextHelper.getSslContext(scimClientConfig.getClientAuth(),
-                                                                 scimClientConfig.getTruststore()));
+                                                                 scimClientConfig.getTruststore(),
+                                                                 scimClientConfig.getTlsVersion()));
     }
 
     clientBuilder.setConnectionReuseStrategy((response, context) -> false);

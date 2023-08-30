@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.net.ssl.HostnameVerifier;
 
@@ -16,6 +17,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -114,6 +116,11 @@ public class ScimClientConfig
    */
   private boolean useLowerCaseInFilterComparators;
 
+  /**
+   * a string value describing the TLS version that is used for SSLContexts
+   */
+  private String tlsVersion;
+
   @Builder
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
@@ -129,7 +136,8 @@ public class ScimClientConfig
                           BasicAuth basicAuth,
                           ConfigManipulator configManipulator,
                           boolean useLowerCaseInFilterComparators,
-                          Map<String, String> expectedHttpResponseHeaders)
+                          Map<String, String> expectedHttpResponseHeaders,
+                          String tlsVersion)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -145,6 +153,7 @@ public class ScimClientConfig
     this.configManipulator = configManipulator;
     this.useLowerCaseInFilterComparators = useLowerCaseInFilterComparators;
     this.expectedHttpResponseHeaders = expectedHttpResponseHeaders;
+    this.tlsVersion = Optional.ofNullable(tlsVersion).map(StringUtils::stripToNull).orElse("TLSv1.2");
   }
 
   /**

@@ -4,12 +4,15 @@ import java.security.KeyManagementException;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
+import java.util.Optional;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
+
+import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.client.exceptions.SslContextCreationFailedException;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
@@ -34,7 +37,8 @@ public final class SSLContextHelper
    * @return the {@link SSLContext} that configured the TLS connection
    */
   public static SSLContext getSslContext(KeyStoreWrapper mutualClientAuthenticationKeystoreList,
-                                         KeyStoreWrapper truststore)
+                                         KeyStoreWrapper truststore,
+                                         String tlsVersion)
   {
     if ((mutualClientAuthenticationKeystoreList == null || mutualClientAuthenticationKeystoreList.getKeyStore() == null)
         && (truststore == null || truststore.getKeyStore() == null))
@@ -51,7 +55,9 @@ public final class SSLContextHelper
     SSLContext sslContext;
     try
     {
-      sslContext = SSLContext.getInstance("TLS");
+      sslContext = SSLContext.getInstance(Optional.ofNullable(tlsVersion)
+                                                  .map(StringUtils::stripToNull)
+                                                  .orElse("TLSv1.2"));
     }
     catch (NoSuchAlgorithmException e)
     {

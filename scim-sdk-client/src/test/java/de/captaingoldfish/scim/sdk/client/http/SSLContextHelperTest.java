@@ -6,6 +6,8 @@ import javax.net.ssl.SSLContext;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreSupporter;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
@@ -28,15 +30,16 @@ public class SSLContextHelperTest
    * this method asserts that we do not get the SSL default context of the JVM if we give him an appropriate
    * truststore and keystore
    */
-  @Test
-  public void createSslContextHelperInstance() throws NoSuchAlgorithmException
+  @ParameterizedTest
+  @ValueSource(strings = {"", "TLS", "TLSv1.2", "TLSv1.3"})
+  public void createSslContextHelperInstance(String tlsVersion) throws NoSuchAlgorithmException
   {
     String keystoreLocation = "/test-keys/test.jks";
     KeyStoreWrapper keyStore = new KeyStoreWrapper(getClass().getResourceAsStream(keystoreLocation),
                                                    KeyStoreSupporter.KeyStoreType.JKS, KEYSTORE_MASTER_PASSWORD);
     KeyStoreWrapper truststore = new KeyStoreWrapper(getClass().getResourceAsStream(keystoreLocation),
                                                      KEYSTORE_MASTER_PASSWORD);
-    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore);
+    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore, tlsVersion);
     Assertions.assertNotNull(sslContext);
     Assertions.assertNotEquals(SSLContext.getDefault(), sslContext);
   }
@@ -52,7 +55,7 @@ public class SSLContextHelperTest
     KeyStoreWrapper keyStore = new KeyStoreWrapper(getClass().getResourceAsStream(keystoreLocation),
                                                    KeyStoreSupporter.KeyStoreType.JKS, KEYSTORE_MASTER_PASSWORD);
     KeyStoreWrapper truststore = null;
-    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore);
+    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore, null);
     Assertions.assertNotNull(sslContext);
     Assertions.assertNotEquals(SSLContext.getDefault(), sslContext);
   }
@@ -68,7 +71,7 @@ public class SSLContextHelperTest
     KeyStoreWrapper keyStore = null;
     KeyStoreWrapper truststore = new KeyStoreWrapper(getClass().getResourceAsStream(keystoreLocation),
                                                      KEYSTORE_MASTER_PASSWORD);
-    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore);
+    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore, null);
     Assertions.assertNotNull(sslContext);
     Assertions.assertNotEquals(SSLContext.getDefault(), sslContext);
   }
@@ -81,7 +84,7 @@ public class SSLContextHelperTest
   {
     KeyStoreWrapper keyStore = null;
     KeyStoreWrapper truststore = null;
-    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore);
+    SSLContext sslContext = SSLContextHelper.getSslContext(keyStore, truststore, null);
     Assertions.assertNotNull(sslContext);
     Assertions.assertEquals(SSLContext.getDefault(), sslContext);
   }
