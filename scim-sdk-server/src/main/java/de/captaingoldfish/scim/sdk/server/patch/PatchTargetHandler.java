@@ -583,8 +583,7 @@ public class PatchTargetHandler extends AbstractPatch
       resource.remove(schemaAttribute.getName());
       return false;
     }
-    JsonNode firstAttribute = resource.get(fullAttributeName);
-    return firstAttribute == null || !firstAttribute.asText().equals(values.get(0));
+    return false;
   }
 
   /**

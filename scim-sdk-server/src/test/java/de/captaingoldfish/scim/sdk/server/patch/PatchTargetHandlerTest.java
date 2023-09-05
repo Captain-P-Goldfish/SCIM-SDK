@@ -246,6 +246,35 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that the modification of an attribute in a complex attribute is marked as unchanged if the new
+   * value matches the old value
+   */
+  @Test
+  public void testAddComplexStringAttributeWithReplaceOperationWithoutChange()
+  {
+    String attributeName = "complex.string";
+    String value = "hello world";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(attributeName)
+                                                                                .value(value)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setString(value);
+    allTypes.setComplex(complex);
+
+    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    Assertions.assertFalse(patchHandler.isChangedResource());
+
+    Assertions.assertNotNull(allTypes.getComplex().orElse(null));
+    Assertions.assertEquals(value, allTypes.getComplex().get().getString().get());
+  }
+
+  /**
    * verifies that a string array can be replaced with the replace operation
    */
   @Test
