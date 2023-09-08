@@ -274,7 +274,7 @@ public class Schema extends ResourceNode
     String scimNodeName = schemaAttribute.getScimNodeName().toLowerCase();
     if (attributeRegister.containsKey(scimNodeName))
     {
-      throw new InvalidSchemaException("schema '" + getNonNullId() + "' has an duplicate attribute name: '"
+      throw new InvalidSchemaException("schema '" + getNonNullId() + "' has a duplicate attribute name: '"
                                        + scimNodeName + "'", null, null, null);
     }
     attributeRegister.put(scimNodeName, schemaAttribute);
