@@ -85,7 +85,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected boolean isExpectedResponseCode(int httpStatus)
   {
-    return HttpStatus.OK == httpStatus;
+    return HttpStatus.OK == httpStatus || HttpStatus.NO_CONTENT == httpStatus;
   }
 
   /**
