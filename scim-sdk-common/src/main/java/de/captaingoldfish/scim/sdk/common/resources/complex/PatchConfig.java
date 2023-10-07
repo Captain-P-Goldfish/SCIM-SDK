@@ -28,6 +28,7 @@ public class PatchConfig extends ScimObjectNode
     setSupported(supported);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);
     setMsAzureFilterWorkaroundActive(activateMsAzureWorkaround);
+    setMsAzureValueSubAttributeWorkaroundActive(activateMsAzureValueSubAttributeWorkaround);
   }
 
   /**
