@@ -41,7 +41,7 @@ import lombok.extern.slf4j.Slf4j;
  * }
  * </pre>
  *
- * the value in the request must not be present. Instead the request should look like this:
+ * the value in the request must not be present. Instead, the request should look like this:
  *
  * <pre>
  * PATCH /scim/Users/2752513

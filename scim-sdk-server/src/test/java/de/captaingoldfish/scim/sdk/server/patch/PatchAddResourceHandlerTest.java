@@ -5,12 +5,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -24,6 +26,7 @@ import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -45,6 +48,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PersonRole;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -1574,6 +1578,140 @@ public class PatchAddResourceHandlerTest implements FileReferences
     Assertions.assertEquals("new value", patchedAllTypes.getComplex().get().getString().get());
     MatcherAssert.assertThat(patchedAllTypes.getComplex().get().getStringArray(),
                              Matchers.containsInAnyOrder("test1", "test2"));
+  }
+
+  /**
+   * this patch request is based on the github-issue: https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516.
+   * MsAzure is building illegal patch-requests that prevents a correct resolving of the patch request.
+   */
+  private String getMsAzureSubValueAttributeTestString()
+  {
+    return " { \"schemas\" : [ \"urn:ietf:params:scim:api:messages:2.0:PatchOp\" ], "//
+           + "\"Operations\" : [ "//
+           + "   { \"path\" : \"roles\", "//
+           + "       \"op\" : \"add\", "//
+           + "    \"value\" : [ " //
+           + "                  {" //
+           + "                    \"value\": \"{\\\"$ref\\\":\\\"827f0d2e-be15-4d8f-a8e3-f7697239c112\\\","
+           + "                                  \\\"value\\\":\\\"DocumentMgmt-BuyerAdmin\\\","
+           + "                                  \\\"display\\\":\\\"DocumentMgmt BuyerAdmin\\\""
+           + "                                 }\"" //
+           + "                  },"//
+           + "                  {" //
+           + "                    \"value\": \"{\\\"$ref\\\":\\\"8ae06bd4-35bb-4fcd-977e-12e074ad1192\\\","
+           + "                                  \\\"value\\\":\\\"Buyer-Admin\\\","
+           + "                                  \\\"display\\\":\\\"Buyer Admin\\\""
+           + "                                  }\"" //
+           + "                  }"//
+           + "                ]"//
+           + "  } "//
+           + "]}";
+  }
+
+  /**
+   * This test makes sure that the illegal MsAzure Patch-Requests with the value sub-attribute object structure
+   * is resolved correctly if the feature is activated
+   *
+   * @see #getMsAzureSubValueAttributeTestString()
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+   */
+  @DisplayName("MsAzure value-subAttribute workaround is active and resolves correctly")
+  @Test
+  public void testMsAzureSubValueAttributeResolvingWithWorkaroundActive()
+  {
+    serviceProvider.getPatchConfig().setMsAzureValueSubAttributeWorkaroundActive(true);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+
+    final String resourceId = UUID.randomUUID().toString();
+    final String patchRequestString = getMsAzureSubValueAttributeTestString();
+    PatchOpRequest patchOpRequest = JsonHelper.readJsonDocument(patchRequestString, PatchOpRequest.class);
+    User user = User.builder().id(resourceId).userName("goldfish").build();
+
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    User patchedUser = patchHandler.patchResource(user, patchOpRequest);
+
+    log.info(patchedUser.toPrettyString());
+
+    List<PersonRole> personRoles = patchedUser.getRoles();
+    Assertions.assertEquals(2, personRoles.size());
+
+    {
+      PersonRole role1 = personRoles.get(0);
+      Assertions.assertEquals("827f0d2e-be15-4d8f-a8e3-f7697239c112", role1.getRef().get());
+      Assertions.assertEquals("DocumentMgmt-BuyerAdmin", role1.getValue().get());
+      Assertions.assertEquals("DocumentMgmt BuyerAdmin", role1.getDisplay().get());
+    }
+
+    {
+      PersonRole role2 = personRoles.get(1);
+      Assertions.assertEquals("8ae06bd4-35bb-4fcd-977e-12e074ad1192", role2.getRef().get());
+      Assertions.assertEquals("Buyer-Admin", role2.getValue().get());
+      Assertions.assertEquals("Buyer Admin", role2.getDisplay().get());
+    }
+  }
+
+  /**
+   * This test makes sure that the illegal MsAzure Patch-Requests with the value sub-attribute object structure
+   * is not resolved anymore if the feature is deactivated
+   *
+   * @see #getMsAzureSubValueAttributeTestString()
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+   */
+  @DisplayName("MsAzure value-subAttribute workaround is inactive and resolves correctly")
+  @Test
+  public void testMsAzureSubValueAttributeResolvingWithWorkaroundInActive()
+  {
+    serviceProvider.getPatchConfig().setMsAzureValueSubAttributeWorkaroundActive(false);
+
+    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                             userResourceTypeNode,
+                                                                             userSchema,
+                                                                             enterpriseUserSchema);
+
+    final String resourceId = UUID.randomUUID().toString();
+    final String patchRequestString = getMsAzureSubValueAttributeTestString();
+    PatchOpRequest patchOpRequest = JsonHelper.readJsonDocument(patchRequestString, PatchOpRequest.class);
+    User user = User.builder().id(resourceId).userName("goldfish").build();
+
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    User patchedUser = patchHandler.patchResource(user, patchOpRequest);
+
+    log.info(patchedUser.toPrettyString());
+
+    List<PersonRole> personRoles = patchedUser.getRoles();
+    Assertions.assertEquals(2, personRoles.size());
+
+    List<String> values = patchOpRequest.getOperations().get(0).getValues();
+
+    {
+      PersonRole role1 = personRoles.get(0);
+      String expectedContent = JsonHelper.readJsonDocument(values.get(0), ObjectNode.class)
+                                         .get(AttributeNames.RFC7643.VALUE)
+                                         .textValue();
+      Assertions.assertEquals(expectedContent, role1.getValue().get());
+      Assertions.assertFalse(role1.getRef().isPresent());
+      Assertions.assertFalse(role1.getDisplay().isPresent());
+    }
+
+    {
+      PersonRole role2 = personRoles.get(1);
+      String expectedContent = JsonHelper.readJsonDocument(values.get(1), ObjectNode.class)
+                                         .get(AttributeNames.RFC7643.VALUE)
+                                         .textValue();
+      Assertions.assertEquals(expectedContent, role2.getValue().get());
+      Assertions.assertFalse(role2.getRef().isPresent());
+      Assertions.assertFalse(role2.getDisplay().isPresent());
+    }
   }
 
   /**

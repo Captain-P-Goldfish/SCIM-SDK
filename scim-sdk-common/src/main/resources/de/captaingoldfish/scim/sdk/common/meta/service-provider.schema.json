@@ -56,7 +56,18 @@
         {
           "name": "activateMsAzureFilterWorkaround",
           "type": "boolean",
-          "description": "A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource.",
+          "description": "A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource. @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416",
+          "mutability": "readOnly",
+          "returned": "request",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
+          "name": "activateMsAzureValueSubAttributeWorkaround",
+          "type": "boolean",
+          "description": "A workaround to handle MsAzures illegal value-subattribute notation. @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516",
           "mutability": "readOnly",
           "returned": "request",
           "uniqueness": "none",

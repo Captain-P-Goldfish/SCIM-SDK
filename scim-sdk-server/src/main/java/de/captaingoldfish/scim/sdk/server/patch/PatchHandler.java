@@ -23,6 +23,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchAttributeRebuilder;
 import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchRemoveRebuilder;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchValueSubAttributeRebuilder;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.Getter;
@@ -166,6 +167,14 @@ public class PatchHandler
                                                                                         values);
         path = msAzureWorkaround.fixPath();
       }
+
+      if (patchConfig.isMsAzureValueSubAttributeWorkaroundActive())
+      {
+        MsAzurePatchValueSubAttributeRebuilder msAzureWorkaround;
+        msAzureWorkaround = new MsAzurePatchValueSubAttributeRebuilder(operation.getOp(), values);
+        values = msAzureWorkaround.fixValues();
+      }
+
       PatchTargetHandler patchTargetHandler = new PatchTargetHandler(patchConfig, resourceType, operation.getOp(),
                                                                      path);
       boolean changeWasMade = patchTargetHandler.handleOperationValues(resource, values);

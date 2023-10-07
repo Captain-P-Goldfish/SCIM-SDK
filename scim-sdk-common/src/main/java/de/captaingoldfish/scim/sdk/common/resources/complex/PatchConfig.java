@@ -19,7 +19,10 @@ public class PatchConfig extends ScimObjectNode
 {
 
   @Builder
-  public PatchConfig(Boolean supported, Boolean activateSailsPointWorkaround, Boolean activateMsAzureWorkaround)
+  public PatchConfig(Boolean supported,
+                     Boolean activateSailsPointWorkaround,
+                     Boolean activateMsAzureWorkaround,
+                     Boolean activateMsAzureValueSubAttributeWorkaround)
   {
     super(null);
     setSupported(supported);
@@ -67,6 +70,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround
    */
   public boolean isMsAzureFilterWorkaroundActive()
   {
@@ -77,10 +81,34 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround
    */
   public void setMsAzureFilterWorkaroundActive(Boolean msAzureWorkaroundActive)
   {
     setAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_FILTER_WORKAROUND, msAzureWorkaroundActive);
+  }
+
+  /**
+   * A workaround to handle MsAzures illegal value-subattribute notation
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchValueSubAttributeRebuilder
+   */
+  public boolean isMsAzureValueSubAttributeWorkaroundActive()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_VALUE_SUB_ATTRIBUTE_WORKAROUND).orElse(false);
+  }
+
+  /**
+   * A workaround to handle MsAzures illegal value-subattribute notation
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchValueSubAttributeRebuilder
+   */
+  public void setMsAzureValueSubAttributeWorkaroundActive(Boolean msAzureValueSubAttributeWorkaroundActive)
+  {
+    setAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_VALUE_SUB_ATTRIBUTE_WORKAROUND,
+                 msAzureValueSubAttributeWorkaroundActive);
   }
 
   /**

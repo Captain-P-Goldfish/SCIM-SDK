@@ -276,6 +276,14 @@ public final class AttributeNames
      * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
      */
     public static final String ACTIVATE_MS_AZURE_FILTER_WORKAROUND = "activateMsAzureFilterWorkaround";
+
+    /**
+     * A workaround indicator to handle MsAzures illegal value-subattribute notation. There might be cases in
+     * which this switch will cause with normal execution. That is why this must be activated explicitly.
+     *
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+     */
+    public static final String ACTIVATE_MS_AZURE_VALUE_SUB_ATTRIBUTE_WORKAROUND = "activateMsAzureValueSubAttributeWorkaround";
   }
 
   /**
