@@ -1,8 +1,10 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -39,6 +41,8 @@ public class AttributeBuilder
         return new DoubleNode(Double.parseDouble(value));
       case BOOLEAN:
         return BooleanNode.valueOf(Boolean.parseBoolean(value));
+      case BINARY:
+        return BinaryNode.valueOf(value.getBytes(StandardCharsets.UTF_8));
       case COMPLEX:
         ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
         final String attributeName = Optional.ofNullable(schemaAttribute).map(SchemaAttribute::getName).orElse("key");

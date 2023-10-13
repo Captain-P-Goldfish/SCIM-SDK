@@ -424,6 +424,18 @@ public final class JsonHelper
     }
     if (byte[].class.equals(type))
     {
+      if (attribute.isBinary())
+      {
+        try
+        {
+          return Optional.of((T)attribute.binaryValue());
+        }
+        catch (IOException e)
+        {
+          throw new IncompatibleAttributeException("binary attribute value could not be read", e, null,
+                                                   ScimType.RFC7644.INVALID_VALUE);
+        }
+      }
       try
       {
         return Optional.of((T)Base64.getDecoder().decode(attribute.textValue()));

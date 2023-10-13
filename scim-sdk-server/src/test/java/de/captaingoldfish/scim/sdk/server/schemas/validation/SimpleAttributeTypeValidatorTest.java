@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -21,6 +22,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -33,6 +35,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBinaryNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
@@ -41,6 +44,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -491,8 +495,9 @@ public class SimpleAttributeTypeValidatorTest
   /**
    * shows that a reference of type external is correctly parsed to a string node
    */
+  @SneakyThrows
   @Test
-  public void testBinaryType()
+  public void testBinaryTypeWithStringNode()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BINARY).build();
 
@@ -503,6 +508,24 @@ public class SimpleAttributeTypeValidatorTest
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
+  }
+
+  /**
+   * shows that a reference of type external is correctly parsed to a string node
+   */
+  @SneakyThrows
+  @Test
+  public void testBinaryTypeWithBinaryNode()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BINARY).build();
+
+    String content = "aWQ6IDI1";
+    JsonNode attribute = new BinaryNode(content.getBytes(StandardCharsets.UTF_8));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
+                                                                                                     attribute));
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBinaryNode.class));
+    Assertions.assertArrayEquals(content.getBytes(StandardCharsets.UTF_8), parsedNode.binaryValue());
   }
 
   /**

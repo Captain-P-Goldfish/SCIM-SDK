@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidDateTimeRepresentationException;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBinaryNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
@@ -75,6 +76,10 @@ class SimpleAttributeValidator
         return new ScimTextNode(schemaAttribute, attribute.isTextual() ? attribute.textValue() : attribute.toString());
       case BINARY:
         isNodeOfExpectedType(schemaAttribute, attribute, jsonNode -> {
+          if (jsonNode.isBinary())
+          {
+            return true;
+          }
           if (jsonNode.isTextual())
           {
             try
@@ -92,7 +97,14 @@ class SimpleAttributeValidator
           }
           return false;
         });
-        return new ScimTextNode(schemaAttribute, attribute.textValue());
+        if (attribute.isBinary())
+        {
+          return new ScimBinaryNode(schemaAttribute, attribute.binaryValue());
+        }
+        else
+        {
+          return new ScimTextNode(schemaAttribute, attribute.textValue());
+        }
       case BOOLEAN:
         isNodeOfExpectedType(schemaAttribute, attribute, JsonNode::isBoolean);
         return new ScimBooleanNode(schemaAttribute, attribute.booleanValue());
