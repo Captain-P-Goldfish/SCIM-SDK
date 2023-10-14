@@ -2,21 +2,25 @@ package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.time.Instant;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -357,6 +361,46 @@ public class ListBuilderTest extends HttpServerMockup
     Assertions.assertEquals(count, listResponse.getListedResources().size());
 
     Assertions.assertTrue(wasCalled.get());
+  }
+
+  /**
+   * verifies that the {@link ListBuilder.GetRequestBuilder#getAll()} method will retrieve all resources from
+   * the given startIndex
+   */
+  @DisplayName("Get all resources")
+  @ParameterizedTest(name = "startIndex: {0}, count: {1}, useGet: {2}")
+  @CsvSource({",,true", ",,false", "1,500,true", "2501,30,false", "3846,25,true", "4000,100,false", "4945,50,true",
+              "4946,50,false"})
+  public void testSendListGetAllRequest(Long startIndex, Integer count, boolean useGet)
+  {
+    final String sortBy = "username";
+    final SortOrder sortOrder = SortOrder.DESCENDING;
+    final String[] attributes = new String[]{"username", "meta.created"};
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).sortBy(sortBy)
+                                                                     .sortOrder(sortOrder)
+                                                                     .excludedAttributes(attributes);
+    Optional.ofNullable(startIndex).ifPresent(listBuilder::startIndex);
+    Optional.ofNullable(count).ifPresent(listBuilder::count);
+
+    ServerResponse<ListResponse<User>> response = useGet ? listBuilder.get().getAll() : listBuilder.post().getAll();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+
+    int allUserCount = ((UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl()).getInMemoryMap().size();
+    ListResponse<User> listResponse = response.getResource();
+    Assertions.assertEquals(allUserCount - Optional.ofNullable(startIndex).map(i -> i - 1).orElse(0L),
+                            listResponse.getItemsPerPage());
+    Assertions.assertEquals(Optional.ofNullable(startIndex).filter(i -> i > 0).orElse(1L),
+                            listResponse.getStartIndex());
+    Assertions.assertEquals(allUserCount - Optional.ofNullable(startIndex).map(i -> i - 1).orElse(0L),
+                            listResponse.getListedResources().size());
+    Assertions.assertEquals(listResponse.getItemsPerPage(), listResponse.getListedResources().size());
   }
 
   /**

@@ -6,21 +6,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
@@ -29,9 +33,11 @@ import de.captaingoldfish.scim.sdk.common.request.SearchRequest;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -40,6 +46,7 @@ import lombok.Getter;
  * <br>
  * a builder that can be used to build a list request
  */
+@Slf4j
 public class ListBuilder<T extends ResourceNode>
 {
 
@@ -107,7 +114,7 @@ public class ListBuilder<T extends ResourceNode>
    */
   public ListBuilder<T> count(int count)
   {
-    requestParameters.put(AttributeNames.RFC7643.COUNT, String.valueOf(count));
+    requestParameters.put(RFC7643.COUNT, String.valueOf(count));
     return this;
   }
 
@@ -118,7 +125,7 @@ public class ListBuilder<T extends ResourceNode>
    */
   public ListBuilder<T> startIndex(long startIndex)
   {
-    requestParameters.put(AttributeNames.RFC7643.START_INDEX, String.valueOf(startIndex));
+    requestParameters.put(RFC7643.START_INDEX, String.valueOf(startIndex));
     return this;
   }
 
@@ -129,7 +136,7 @@ public class ListBuilder<T extends ResourceNode>
    */
   public ListBuilder<T> sortBy(String sortBy)
   {
-    requestParameters.put(AttributeNames.RFC7643.SORT_BY, sortBy);
+    requestParameters.put(RFC7643.SORT_BY, sortBy);
     return this;
   }
 
@@ -140,7 +147,7 @@ public class ListBuilder<T extends ResourceNode>
    */
   public ListBuilder<T> sortOrder(SortOrder sortOrder)
   {
-    requestParameters.put(AttributeNames.RFC7643.SORT_ORDER, sortOrder.name().toLowerCase());
+    requestParameters.put(RFC7643.SORT_ORDER, sortOrder.name().toLowerCase());
     return this;
   }
 
@@ -153,7 +160,7 @@ public class ListBuilder<T extends ResourceNode>
   {
     if (attributeNames != null)
     {
-      requestParameters.put(AttributeNames.RFC7643.ATTRIBUTES, String.join(",", attributeNames));
+      requestParameters.put(RFC7643.ATTRIBUTES, String.join(",", attributeNames));
     }
     return this;
   }
@@ -168,7 +175,7 @@ public class ListBuilder<T extends ResourceNode>
   {
     if (attributeNames != null)
     {
-      requestParameters.put(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES, String.join(",", attributeNames));
+      requestParameters.put(RFC7643.EXCLUDED_ATTRIBUTES, String.join(",", attributeNames));
     }
     return this;
   }
@@ -194,7 +201,7 @@ public class ListBuilder<T extends ResourceNode>
    */
   public ListBuilder<T> filter(String filter)
   {
-    requestParameters.put(AttributeNames.RFC7643.FILTER, filter);
+    requestParameters.put(RFC7643.FILTER, filter);
     return this;
   }
 
@@ -230,22 +237,87 @@ public class ListBuilder<T extends ResourceNode>
     return new PostRequestBuilder<>(this);
   }
 
-  /**
-   * a request builder that builds the list-request as a http-get request
-   */
-  public static class GetRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
+  private abstract static class TypedRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
   {
 
     /**
      * the original list builder instance
      */
-    private ListBuilder<T> listBuilder;
+    protected ListBuilder<T> listBuilder;
 
-    public GetRequestBuilder(ListBuilder<T> listBuilder)
+    protected TypedRequestBuilder(ListBuilder<T> listBuilder)
     {
       super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
             listBuilder.scimHttpClient);
       this.listBuilder = listBuilder;
+    }
+
+    /**
+     * this method can be used to retrieve all resources from the given startIndex of the given endpoint
+     */
+    public ServerResponse<ListResponse<T>> getAll()
+    {
+      List<ServerResponse<ListResponse<T>>> responseList = new ArrayList<>();
+      boolean needsAdditionalRequest = false;
+      long totalResults;
+
+      final long originalStartIndex = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.START_INDEX))
+                                              .map(Long::parseLong)
+                                              .orElse(1L);
+      final Integer originalCount = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.START_INDEX))
+                                            .map(Integer::parseInt)
+                                            .orElse(null);
+      int iterations = 0;
+      ArrayNode resources = new ArrayNode(JsonNodeFactory.instance);
+      do
+      {
+        log.trace("Loading resources in iteration: {}", iterations++);
+        ServerResponse<ListResponse<T>> response = sendRequest();
+        if (!response.isSuccess())
+        {
+          log.warn("Failed to load next-resources in iteration. Ignoring previous responses: {}", iterations);
+          return response;
+        }
+        responseList.add(response);
+        ArrayNode nextResources = (ArrayNode)response.getResource().get(RFC7643.RESOURCES);
+        if (nextResources != null)
+        {
+          resources.addAll(nextResources);
+        }
+        ListResponse<T> listResponse = response.getResource();
+        totalResults = listResponse.getTotalResults();
+        final int itemsPerPage = listResponse.getItemsPerPage();
+        final long usedStartIndex = listResponse.getStartIndex();
+        needsAdditionalRequest = (originalCount == null || originalCount > 0)
+                                 && (usedStartIndex - 1) + itemsPerPage < totalResults;
+        if (needsAdditionalRequest)
+        {
+          listBuilder.startIndex(usedStartIndex + itemsPerPage);
+        }
+      }
+      while (needsAdditionalRequest);
+
+      ListResponse<T> rebuildListResponse = new ListResponse<>();
+      rebuildListResponse.setTotalResults(totalResults);
+      // we have merged all requests into a single response
+      rebuildListResponse.setItemsPerPage((int)(totalResults - (originalStartIndex - 1)));
+      rebuildListResponse.setStartIndex(originalStartIndex);
+      rebuildListResponse.set(AttributeNames.RFC7643.RESOURCES, resources);
+
+      HttpResponse httpResponse = HttpResponse.builder().httpStatusCode(HttpStatus.OK).build();
+      return new ServerResponse<>(httpResponse, true, rebuildListResponse);
+    }
+  }
+
+  /**
+   * a request builder that builds the list-request as a http-get request
+   */
+  public static class GetRequestBuilder<T extends ResourceNode> extends TypedRequestBuilder<T>
+  {
+
+    public GetRequestBuilder(ListBuilder<T> listBuilder)
+    {
+      super(listBuilder);
     }
 
     /**
@@ -292,11 +364,11 @@ public class ListBuilder<T extends ResourceNode>
       HttpGet httpGet;
       if (StringUtils.isBlank(listBuilder.fullUrl))
       {
-        httpGet = new HttpGet(getBaseUrl() + getEndpoint() + queryBuilder.toString());
+        httpGet = new HttpGet(getBaseUrl() + getEndpoint() + queryBuilder);
       }
       else
       {
-        httpGet = new HttpGet(listBuilder.fullUrl + queryBuilder.toString());
+        httpGet = new HttpGet(listBuilder.fullUrl + queryBuilder);
       }
       return httpGet;
     }
@@ -333,19 +405,12 @@ public class ListBuilder<T extends ResourceNode>
   /**
    * a request builder that builds the list-request as a http-post request
    */
-  public static class PostRequestBuilder<T extends ResourceNode> extends RequestBuilder<ListResponse<T>>
+  public static class PostRequestBuilder<T extends ResourceNode> extends TypedRequestBuilder<T>
   {
-
-    /**
-     * the original list builder instance
-     */
-    private ListBuilder<T> listBuilder;
 
     public PostRequestBuilder(ListBuilder<T> listBuilder)
     {
-      super(listBuilder.baseUrl, listBuilder.endpoint, (Class<ListResponse<T>>)new ListResponse<T>().getClass(),
-            listBuilder.scimHttpClient);
-      this.listBuilder = listBuilder;
+      super(listBuilder);
     }
 
     /**
@@ -927,7 +992,7 @@ public class ListBuilder<T extends ResourceNode>
                                         + "\n\tclosed parentheses: " + closedParenthesis + "\n\tfilter: "
                                         + filterString);
       }
-      listBuilder.requestParameters.put(AttributeNames.RFC7643.FILTER, filterString.toString());
+      listBuilder.requestParameters.put(RFC7643.FILTER, filterString.toString());
       return listBuilder;
     }
   }
