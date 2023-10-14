@@ -284,6 +284,18 @@ public final class AttributeNames
      * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
      */
     public static final String ACTIVATE_MS_AZURE_VALUE_SUB_ATTRIBUTE_WORKAROUND = "activateMsAzureValueSubAttributeWorkaround";
+
+    /**
+     * this attribute is used for meta-configuration loading. It will hold the ServiceProvider configuration from
+     * the SCIM provider
+     */
+    public static final String SERVICE_PROVIDER = "serviceProvider";
+
+    /**
+     * this attribute is used for meta-configuration loading. It will hold the ResourceTypes from the SCIM
+     * provider
+     */
+    public static final String RESOURCE_TYPES = "resourceTypes";
   }
 
   /**

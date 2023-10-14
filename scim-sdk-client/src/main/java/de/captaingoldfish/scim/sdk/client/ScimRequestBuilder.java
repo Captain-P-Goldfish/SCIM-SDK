@@ -5,6 +5,8 @@ import de.captaingoldfish.scim.sdk.client.builder.CreateBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.DeleteBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.GetBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.ListBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.MetaConfigLoaderBuilder;
+import de.captaingoldfish.scim.sdk.client.builder.config.MetaConfigRequestDetails;
 import de.captaingoldfish.scim.sdk.client.builder.PatchBuilder;
 import de.captaingoldfish.scim.sdk.client.builder.UpdateBuilder;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
@@ -317,6 +319,26 @@ public class ScimRequestBuilder implements AutoCloseable
   public <T extends ResourceNode> PatchBuilder<T> patch(String fullyQualifiedUrl, Class<T> type)
   {
     return new PatchBuilder<>(fullyQualifiedUrl, type, scimHttpClient);
+  }
+
+  /**
+   * will try to load the complete data of the meta-endpoints from the configured SCIM provider
+   *
+   * @return the meta configuration details from the SCIM provider
+   */
+  public MetaConfigLoaderBuilder loadMetaConfiguration()
+  {
+    return new MetaConfigLoaderBuilder(baseUrl, scimHttpClient, new MetaConfigRequestDetails());
+  }
+
+  /**
+   * will try to load the complete data of the meta-endpoints from the configured SCIM provider
+   *
+   * @return the meta configuration details from the SCIM provider
+   */
+  public MetaConfigLoaderBuilder loadMetaConfiguration(MetaConfigRequestDetails metaConfigLoaderDetails)
+  {
+    return new MetaConfigLoaderBuilder(baseUrl, scimHttpClient, metaConfigLoaderDetails);
   }
 
   /**

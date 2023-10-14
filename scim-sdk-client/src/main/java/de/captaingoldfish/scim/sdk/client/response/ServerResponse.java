@@ -90,6 +90,14 @@ public class ServerResponse<T extends ScimObjectNode>
     this.isResponseParseable = isResponseParseable;
   }
 
+  public ServerResponse(HttpResponse httpResponse, boolean expectedResponseCode, T resource)
+  {
+    this.httpResponse = httpResponse;
+    this.success = expectedResponseCode;
+    this.resource = resource;
+    this.isResponseParseable = response -> false; // should never be called
+  }
+
   /**
    * tries to resolve the returned resource as scim object
    *
@@ -99,8 +107,11 @@ public class ServerResponse<T extends ScimObjectNode>
    */
   public T getResource()
   {
-    boolean isSuccessResponse = resource == null && success && StringUtils.isNotBlank(getResponseBody())
-                                && isValidScimResponse();
+    if (resource != null)
+    {
+      return resource;
+    }
+    boolean isSuccessResponse = success && StringUtils.isNotBlank(getResponseBody()) && isValidScimResponse();
     Boolean result = isResponseParseable.apply(httpResponse);
     boolean isParseable = result != null && result;
     if (isParseable || isSuccessResponse)
