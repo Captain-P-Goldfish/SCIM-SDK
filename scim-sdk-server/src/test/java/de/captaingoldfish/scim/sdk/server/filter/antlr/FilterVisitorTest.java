@@ -17,9 +17,12 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
+import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.OrExpressionNode;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -277,6 +280,60 @@ public class FilterVisitorTest
     {
       MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString(ambiguousAttributeName));
     }
+  }
+
+  /**
+   * this test verifies that the filter expression is rejected because the attribute is ambiguous in the
+   * user-schema and the user-enterprise-schema. Since the filter-expression is not using the fully-qualified
+   * name the filter cannot be parsed.
+   */
+  @Test
+  public void testAmbiguousNameInUserResourceAndExtensionWithShortName()
+  {
+    Schema enterpriseUserSchema = userResourceType.getAllSchemaExtensions().get(0);
+
+    final String ambiguousAttributeName = "name";
+    SchemaAttribute nameAttribute = userResourceType.getMainSchema().getSchemaAttribute(ambiguousAttributeName);
+    SchemaAttribute schemaAttribute = new SchemaAttribute(null, enterpriseUserSchema.getNonNullId(), null,
+                                                          nameAttribute);
+    enterpriseUserSchema.addAttribute(schemaAttribute);
+
+    final String filterExpression = "name[givenName eq \"goldfish\"]";
+    try
+    {
+      RequestUtils.parseFilter(userResourceType, filterExpression);
+      Assertions.fail();
+    }
+    catch (InvalidFilterException ex)
+    {
+      log.warn(ex.getMessage());
+      MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString(ambiguousAttributeName));
+    }
+  }
+
+  /**
+   * this test verifies that an ambiguous filter expression is successfully resolved if the attributes
+   * filter-expression with sub-attributes uses the fully-qualified resource-name on the parent-attribute
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {SchemaUris.USER_URI, SchemaUris.ENTERPRISE_USER_URI})
+  public void testAmbiguousNameInUserResourceAndExtensionFullyQualifiedName(String schemaUri)
+  {
+    Schema enterpriseUserSchema = userResourceType.getAllSchemaExtensions().get(0);
+
+    final String ambiguousAttributeName = "name";
+    SchemaAttribute nameAttribute = userResourceType.getMainSchema().getSchemaAttribute(ambiguousAttributeName);
+    SchemaAttribute schemaAttribute = new SchemaAttribute(null, enterpriseUserSchema.getNonNullId(), null,
+                                                          nameAttribute);
+    enterpriseUserSchema.addAttribute(schemaAttribute);
+
+    final String filterExpression = schemaUri + ":name[givenName eq \"goldfish\"]";
+    FilterNode filterNode = Assertions.assertDoesNotThrow(() -> RequestUtils.parseFilter(userResourceType,
+                                                                                         filterExpression));
+    Assertions.assertEquals(AttributePathRoot.class, filterNode.getClass());
+    AttributePathRoot attributePathRoot = (AttributePathRoot)filterNode;
+    Assertions.assertEquals(schemaUri, attributePathRoot.getResourceUri());
+    Assertions.assertEquals(schemaUri, attributePathRoot.getSchemaAttribute().getResourceUri());
   }
 
   /**

@@ -4,9 +4,12 @@ import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterParser.AttributePathContext;
+import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterParser.ValuePathContext;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -44,13 +47,26 @@ public class FilterAttributeName
    */
   private String complexSubAttributeName;
 
-  public FilterAttributeName(ScimFilterParser.ValuePathContext valuePathContext,
-                             ScimFilterParser.AttributePathContext attributePathContext)
+  public FilterAttributeName(ValuePathContext valuePathContext, AttributePathContext attributePathContext)
   {
     this(valuePathContext == null ? null : valuePathContext.attributePath().attribute.getText(), attributePathContext);
+    this.resourceUri = Optional.ofNullable(this.resourceUri).orElseGet(() -> {
+      return Optional.ofNullable(valuePathContext)
+                     .map(ValuePathContext::attributePath)
+                     .map(AttributePathContext::NAME_URI)
+                     .map(ParseTree::getText)
+                     .map(uri -> {
+                       if (uri.endsWith(":"))
+                       {
+                         return uri.substring(0, uri.length() - 1);
+                       }
+                       return uri;
+                     })
+                     .orElse(null);
+    });
   }
 
-  public FilterAttributeName(String parentName, ScimFilterParser.AttributePathContext attributePathContext)
+  public FilterAttributeName(String parentName, AttributePathContext attributePathContext)
   {
     this.parentAttributeName = parentName == null ? null : (parentName + ".");
     this.attributeName = attributePathContext.attribute.getText();
@@ -79,7 +95,7 @@ public class FilterAttributeName
    * @param attributePathContext the antlr attribute path context
    * @return the resourceUri
    */
-  private Optional<String> resolveResourceUri(ScimFilterParser.AttributePathContext attributePathContext)
+  private Optional<String> resolveResourceUri(AttributePathContext attributePathContext)
   {
     if (attributePathContext.resourceUri == null)
     {
