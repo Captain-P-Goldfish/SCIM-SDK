@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -98,7 +99,7 @@ public class ResourceType extends ResourceNode
    */
   public String getSchema()
   {
-    return getStringAttribute(FieldNames.SCHEMA).get();
+    return getStringAttribute(AttributeNames.RFC7643.SCHEMA).get();
 
   }
 
@@ -107,7 +108,7 @@ public class ResourceType extends ResourceNode
    */
   public void setSchema(String schema)
   {
-    setAttribute(FieldNames.SCHEMA, schema);
+    setAttribute(AttributeNames.RFC7643.SCHEMA, schema);
   }
 
   /**
