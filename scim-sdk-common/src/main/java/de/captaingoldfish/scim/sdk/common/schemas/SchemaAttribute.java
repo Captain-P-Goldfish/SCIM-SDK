@@ -75,6 +75,18 @@ public final class SchemaAttribute extends ScimObjectNode
   private Pattern pattern;
 
   /**
+   * this constructor is necessary for the SCIM-SDK-client. It is used if the meta-config-data of a SCIM
+   * provider is loaded and evaluated
+   */
+  public SchemaAttribute()
+  {
+    this.schema = null;
+    this.parent = null;
+    this.resourceUri = null;
+    this.namePrefix = null;
+  }
+
+  /**
    * a constructor used for unit tests only to create schema-attribute instances for testing
    */
   public SchemaAttribute(SchemaAttribute parent, String resourceUri, String namePrefix)
