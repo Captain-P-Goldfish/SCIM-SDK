@@ -3,6 +3,9 @@ package de.captaingoldfish.scim.sdk.client.builder;
 import java.util.List;
 import java.util.Optional;
 
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 import org.apache.http.client.methods.HttpUriRequest;
 
 import de.captaingoldfish.scim.sdk.client.builder.ListBuilder.FilterBuilder;
@@ -30,24 +33,30 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
 {
 
   /**
+   * the request configuration details that tell us what should be retrieved and how from the provider
+   */
+  private final MetaConfigRequestDetails metaConfigLoaderDetails;
+
+  /**
    * the builder to retrieve the ServiceProviderConfig
    */
-  private final GetBuilder<ServiceProvider> serviceProviderLoaderBuilder;
+  @Getter(AccessLevel.PACKAGE) // added for unit tests
+  @Setter(AccessLevel.PACKAGE) // added for unit tests
+  private GetBuilder<ServiceProvider> serviceProviderLoaderBuilder;
 
   /**
    * the builder to retrieve the resourceTypes
    */
-  private final ListBuilder<ResourceType> resourceTypeLoaderBuilder;
+  @Getter(AccessLevel.PACKAGE) // added for unit tests
+  @Setter(AccessLevel.PACKAGE) // added for unit tests
+  private ListBuilder<ResourceType> resourceTypeLoaderBuilder;
 
   /**
    * the builder to retrieve the schemas
    */
-  private final ListBuilder<Schema> schemaLoaderBuilder;
-
-  /**
-   * the request configuration details that tell us what should be retrieved and how from the provider
-   */
-  private final MetaConfigRequestDetails metaConfigLoaderDetails;
+  @Getter(AccessLevel.PACKAGE) // added for unit tests
+  @Setter(AccessLevel.PACKAGE) // added for unit tests
+  private ListBuilder<Schema> schemaLoaderBuilder;
 
   public MetaConfigLoaderBuilder(String baseUrl,
                                  ScimHttpClient scimHttpClient,
@@ -163,9 +172,13 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
    */
   private ServerResponse<ListResponse<ResourceType>> loadResourceTypes(ServerResponse<ServiceProvider> serviceProviderResponse)
   {
+    ServiceProvider serviceProvider = serviceProviderResponse.getResource();
+    Integer count = metaConfigLoaderDetails.getMaxCountPerRequest().apply(serviceProvider);
+    resourceTypeLoaderBuilder.count(count);
+
     if (metaConfigLoaderDetails.isExcludeMetaResourceTypes() && serviceProviderResponse.isSuccess())
     {
-      if (serviceProviderResponse.getResource().getFilterConfig().isSupported())
+      if (serviceProvider.getFilterConfig().isSupported())
       {
         FilterBuilder filterBuilder = null;
         for ( String metaResourceTypeEndpoint : metaConfigLoaderDetails.getMetaResourceTypeNames() )
@@ -191,10 +204,10 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
                        .map(FilterBuilder::build)
                        .orElse(resourceTypeLoaderBuilder)
                        .post()
-                       .sendRequest();
+                       .getAll();
       }
     }
-    return resourceTypeLoaderBuilder.post().sendRequest();
+    return resourceTypeLoaderBuilder.post().getAll();
   }
 
   /**
@@ -203,9 +216,13 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
    */
   private ServerResponse<ListResponse<Schema>> loadSchemas(ServerResponse<ServiceProvider> serviceProviderResponse)
   {
+    ServiceProvider serviceProvider = serviceProviderResponse.getResource();
+    Integer count = metaConfigLoaderDetails.getMaxCountPerRequest().apply(serviceProvider);
+    schemaLoaderBuilder.count(count);
+
     if (metaConfigLoaderDetails.isExcludeMetaSchemas() && serviceProviderResponse.isSuccess())
     {
-      if (serviceProviderResponse.getResource().getFilterConfig().isSupported())
+      if (serviceProvider.getFilterConfig().isSupported())
       {
         FilterBuilder filterBuilder = null;
         for ( String metaSchemaUri : metaConfigLoaderDetails.getMetaSchemaUris() )
@@ -219,13 +236,9 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
             filterBuilder.and(AttributeNames.RFC7643.ID, Comparator.NE, metaSchemaUri);
           }
         }
-        return Optional.ofNullable(filterBuilder)
-                       .map(FilterBuilder::build)
-                       .orElse(schemaLoaderBuilder)
-                       .post()
-                       .sendRequest();
+        return Optional.ofNullable(filterBuilder).map(FilterBuilder::build).orElse(schemaLoaderBuilder).post().getAll();
       }
     }
-    return schemaLoaderBuilder.post().sendRequest();
+    return schemaLoaderBuilder.post().getAll();
   }
 }

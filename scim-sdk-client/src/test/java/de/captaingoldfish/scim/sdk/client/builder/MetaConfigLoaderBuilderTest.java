@@ -1,21 +1,27 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.concurrent.atomic.AtomicReference;
+
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.builder.config.MetaConfigRequestDetails;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.resources.MetaConfiguration;
+import de.captaingoldfish.scim.sdk.client.resources.ResourceType;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -99,6 +105,66 @@ public class MetaConfigLoaderBuilderTest extends HttpServerMockup
     MetaConfiguration metaConfiguration = response.getResource();
     Assertions.assertNotNull(metaConfiguration.getServiceProvider());
     Assertions.assertEquals(3, metaConfiguration.getResourceTypes().size());
+    Assertions.assertEquals(8, metaConfiguration.getSchemas().size());
+  }
+
+  /**
+   * verifies that the metadata is loaded from the serviceProvider and that the number of requests matches the
+   * expected number of requests based on the given count-value
+   */
+  @DisplayName("Load meta-data with count")
+  @ParameterizedTest(name = "count: {0}")
+  @ValueSource(ints = {1, 3, 10})
+  public void testLoadMetaConfigurationWithMinimumCount(int count)
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    MetaConfigRequestDetails metaConfigRequestDetails = MetaConfigRequestDetails.builder()
+                                                                                .maxCountPerRequest(serviceProvider -> {
+                                                                                  return count;
+                                                                                })
+                                                                                .build();
+    MetaConfigLoaderBuilder metaConfigLoader = new MetaConfigLoaderBuilder(getServerUrl(), scimHttpClient,
+                                                                           metaConfigRequestDetails);
+
+    // we need to wrap the build-chain in mockito-spies now to check that the methods were called as often as we
+    // want them to be called
+    GetBuilder<ServiceProvider> serviceProviderLoader = Mockito.spy(metaConfigLoader.getServiceProviderLoaderBuilder());
+    ListBuilder<ResourceType> resourceTypeLoader = Mockito.spy(metaConfigLoader.getResourceTypeLoaderBuilder());
+    ListBuilder<Schema> schemaLoader = Mockito.spy(metaConfigLoader.getSchemaLoaderBuilder());
+    metaConfigLoader.setServiceProviderLoaderBuilder(serviceProviderLoader);
+    metaConfigLoader.setResourceTypeLoaderBuilder(resourceTypeLoader);
+    metaConfigLoader.setSchemaLoaderBuilder(schemaLoader);
+
+    AtomicReference<ListBuilder.PostRequestBuilder> mockedPostResourceTypeRequestBuilder = new AtomicReference<>();
+    {
+      ListBuilder.PostRequestBuilder postRequestBuilder = Mockito.spy(new ListBuilder.PostRequestBuilder(resourceTypeLoader));
+      mockedPostResourceTypeRequestBuilder.set(postRequestBuilder);
+      Mockito.doAnswer(invocation -> {
+        return postRequestBuilder;
+      }).when(resourceTypeLoader).post();
+    }
+
+    AtomicReference<ListBuilder.PostRequestBuilder> mockedPostSchemaRequestBuilder = new AtomicReference<>();
+    {
+      ListBuilder.PostRequestBuilder postRequestBuilder = Mockito.spy(new ListBuilder.PostRequestBuilder(schemaLoader));
+      mockedPostSchemaRequestBuilder.set(postRequestBuilder);
+      Mockito.doAnswer(invocation -> {
+        return postRequestBuilder;
+      }).when(schemaLoader).post();
+    }
+
+    ServerResponse<MetaConfiguration> response = metaConfigLoader.sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+
+    Mockito.verify(serviceProviderLoader).sendRequest();
+    Mockito.verify(mockedPostResourceTypeRequestBuilder.get(), Mockito.times((int)Math.ceil(6.0 / count)))
+           .sendRequest();
+    Mockito.verify(mockedPostSchemaRequestBuilder.get(), Mockito.times((int)Math.ceil(8.0 / count))).sendRequest();
+
+    MetaConfiguration metaConfiguration = response.getResource();
+    Assertions.assertNotNull(metaConfiguration.getServiceProvider());
+    Assertions.assertEquals(6, metaConfiguration.getResourceTypes().size());
     Assertions.assertEquals(8, metaConfiguration.getSchemas().size());
   }
 
