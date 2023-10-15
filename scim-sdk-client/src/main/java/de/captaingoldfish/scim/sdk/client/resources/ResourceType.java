@@ -149,8 +149,7 @@ public class ResourceType extends ResourceNode
      */
     public String getSchema()
     {
-      return getStringAttribute(FieldNames.SCHEMA).get();
-
+      return getStringAttribute(AttributeNames.RFC7643.SCHEMA).get();
     }
 
     /**
@@ -158,7 +157,7 @@ public class ResourceType extends ResourceNode
      */
     public void setSchema(String schema)
     {
-      setAttribute(FieldNames.SCHEMA, schema);
+      setAttribute(AttributeNames.RFC7643.SCHEMA, schema);
     }
 
     /**
@@ -169,7 +168,6 @@ public class ResourceType extends ResourceNode
     public String getRequired()
     {
       return getStringAttribute(FieldNames.REQUIRED).get();
-
     }
 
     /**
