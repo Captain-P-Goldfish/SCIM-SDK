@@ -43,6 +43,17 @@
           "caseExact": false
         },
         {
+          "name": "ignoreUnknownAttributes",
+          "type": "boolean",
+          "description": "If activated unknown attributes on patch expressions will no longer result in a BadRequestException.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
           "name": "activateSailsPointWorkaround",
           "type": "boolean",
           "description": "A Workaround to handle patch replace-ops on single complex types as add operations.",

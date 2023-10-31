@@ -20,6 +20,7 @@ public class PatchConfig extends ScimObjectNode
 
   @Builder
   public PatchConfig(Boolean supported,
+                     Boolean ignoreUnknownAttributes,
                      Boolean activateSailsPointWorkaround,
                      Boolean activateMsAzureWorkaround,
                      Boolean activateMsAzureValueSubAttributeWorkaround,
@@ -27,6 +28,7 @@ public class PatchConfig extends ScimObjectNode
   {
     super(null);
     setSupported(supported);
+    setIgnoreUnknownAttribute(ignoreUnknownAttributes);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);
     setMsAzureFilterWorkaroundActive(activateMsAzureWorkaround);
     setMsAzureValueSubAttributeWorkaroundActive(activateMsAzureValueSubAttributeWorkaround);
@@ -47,6 +49,26 @@ public class PatchConfig extends ScimObjectNode
   public void setSupported(Boolean supported)
   {
     setAttribute(AttributeNames.RFC7643.SUPPORTED, Optional.ofNullable(supported).orElse(false));
+  }
+
+  /**
+   * If activated unknown attributes on patch expressions will no longer result in a BadRequestException.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/539
+   */
+  public boolean isIgnoreUnknownAttribute()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.IGNORE_UNKNOWN_ATTRIBUTES).orElse(false);
+  }
+
+  /**
+   * If activated unknown attributes on patch expressions will no longer result in a BadRequestException.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/539
+   */
+  public void setIgnoreUnknownAttribute(Boolean ignoreUnknownAttribute)
+  {
+    setAttribute(AttributeNames.Custom.IGNORE_UNKNOWN_ATTRIBUTES, ignoreUnknownAttribute);
   }
 
   /**

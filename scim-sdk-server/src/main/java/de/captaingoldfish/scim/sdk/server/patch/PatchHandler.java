@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -175,8 +176,22 @@ public class PatchHandler
         values = msAzureWorkaround.fixValues();
       }
 
-      PatchTargetHandler patchTargetHandler = new PatchTargetHandler(patchConfig, resourceType, operation.getOp(),
-                                                                     path);
+      PatchTargetHandler patchTargetHandler;
+      try
+      {
+        patchTargetHandler = new PatchTargetHandler(patchConfig, resourceType, operation.getOp(), path);
+      }
+      catch (InvalidFilterException ex)
+      {
+        if (patchConfig.isIgnoreUnknownAttribute() && ScimType.RFC7644.INVALID_PATH.equals(ex.getScimType()))
+        {
+          return false;
+        }
+        else
+        {
+          throw ex;
+        }
+      }
       boolean changeWasMade = patchTargetHandler.handleOperationValues(resource, values);
       setAttributeFromPath(operation, patchTargetHandler.getPath());
       return changeWasMade;

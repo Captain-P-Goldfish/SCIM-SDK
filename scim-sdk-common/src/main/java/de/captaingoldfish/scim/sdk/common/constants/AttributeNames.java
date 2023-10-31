@@ -264,6 +264,15 @@ public final class AttributeNames
     public static final String RESOURCE_ID = "resourceId";
 
     /**
+     * Can be used to change the behaviour in patch-requests. If activated the patch-operation will no longer
+     * throw a {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException} if the referenced
+     * attribute does not exist. Instead, the operation will be ignored.
+     *
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/539
+     */
+    public static final String IGNORE_UNKNOWN_ATTRIBUTES = "ignoreUnknownAttributes";
+
+    /**
      * A workaround to handle patch replace-ops on single complex types as add operations.
      *
      * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327

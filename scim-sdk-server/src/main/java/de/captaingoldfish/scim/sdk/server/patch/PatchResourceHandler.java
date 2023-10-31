@@ -126,8 +126,24 @@ public class PatchResourceHandler extends AbstractPatch
       }
       else
       {
-        SchemaAttribute schemaAttribute = getSchemaAttribute((extensionUri == null ? resourceType.getSchema()
-          : extensionUri) + ":" + key);
+        SchemaAttribute schemaAttribute;
+        try
+        {
+          schemaAttribute = getSchemaAttribute((extensionUri == null ? resourceType.getSchema() : extensionUri) + ":"
+                                               + key);
+        }
+        catch (BadRequestException ex)
+        {
+          if (patchConfig.isIgnoreUnknownAttribute() && ScimType.RFC7644.INVALID_PATH.equals(ex.getScimType()))
+          {
+            changeWasMade.set(false);
+            return;
+          }
+          else
+          {
+            throw ex;
+          }
+        }
         boolean resourceChanged;
         boolean isReadOnlyAndSet = isReadOnlyAndSet(resource, schemaAttribute);
         if (Type.COMPLEX.equals(schemaAttribute.getType()))

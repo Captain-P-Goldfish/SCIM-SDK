@@ -3655,6 +3655,56 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that the {@link PatchConfig#isIgnoreUnknownAttribute()} configuration is correctly handled on
+   * patch with path expressions
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/539
+   */
+  @DisplayName("Activate ignoreUnknownAttribute config with patch-path and verify it works")
+  @Test
+  public void testNoExceptionOnInvalidAttributePatchPath()
+  {
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path("unknown")
+                                                                                .value("my-value")
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(allTypes, patchedResource);
+  }
+
+  /**
+   * verifies that the {@link PatchConfig#isIgnoreUnknownAttribute()} configuration is correctly handled on
+   * patch without path expressions
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/539
+   */
+  @DisplayName("Activate ignoreUnknownAttribute config with patch-resource and verify it works")
+  @Test
+  public void testNoExceptionOnInvalidAttributeOnPatchResource()
+  {
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
+    AllTypes patchRequestObject = new AllTypes(true);
+    patchRequestObject.set("unknownAttribute", new TextNode("my-value"));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(patchRequestObject)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    Assertions.assertEquals(allTypes, patchedResource);
+  }
+
+  /**
    * Makes sure that the workaround is not executed if not explicitly activated in the {@link PatchConfig}
    *
    * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder for more details
