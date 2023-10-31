@@ -22,13 +22,15 @@ public class PatchConfig extends ScimObjectNode
   public PatchConfig(Boolean supported,
                      Boolean activateSailsPointWorkaround,
                      Boolean activateMsAzureWorkaround,
-                     Boolean activateMsAzureValueSubAttributeWorkaround)
+                     Boolean activateMsAzureValueSubAttributeWorkaround,
+                     Boolean msAzureComplexSimpleValueWorkaroundActive)
   {
     super(null);
     setSupported(supported);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);
     setMsAzureFilterWorkaroundActive(activateMsAzureWorkaround);
     setMsAzureValueSubAttributeWorkaroundActive(activateMsAzureValueSubAttributeWorkaround);
+    setMsAzureComplexSimpleValueWorkaroundActive(msAzureComplexSimpleValueWorkaroundActive);
   }
 
   /**
@@ -110,6 +112,29 @@ public class PatchConfig extends ScimObjectNode
   {
     setAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_VALUE_SUB_ATTRIBUTE_WORKAROUND,
                  msAzureValueSubAttributeWorkaroundActive);
+  }
+
+  /**
+   * A workaround to handle MsAzures illegal complex-simple-value notation.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder
+   */
+  public boolean isMsAzureComplexSimpleValueWorkaroundActive()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_COMPLEX_SIMPLE_VALUE_WORKAROUND).orElse(false);
+  }
+
+  /**
+   * A workaround to handle MsAzures illegal complex-simple-value notation.
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder
+   */
+  public void setMsAzureComplexSimpleValueWorkaroundActive(Boolean msAzureComplexSimpleValueWorkaroundActive)
+  {
+    setAttribute(AttributeNames.Custom.ACTIVATE_MS_AZURE_COMPLEX_SIMPLE_VALUE_WORKAROUND,
+                 msAzureComplexSimpleValueWorkaroundActive);
   }
 
   /**

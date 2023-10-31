@@ -74,6 +74,17 @@
           "multiValued": false,
           "required": false,
           "caseExact": false
+        },
+        {
+          "name": "activateMsAzureComplexSimpleValueWorkaround",
+          "type": "boolean",
+          "description": "A workaround to handle MsAzures illegal complex-simple-value notation. @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541",
+          "mutability": "readOnly",
+          "returned": "request",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
         }
       ]
     },

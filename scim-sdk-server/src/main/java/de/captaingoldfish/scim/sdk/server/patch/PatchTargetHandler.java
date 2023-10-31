@@ -32,6 +32,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.resources.PatchFilterResolver;
+import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder;
 import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
@@ -318,6 +319,13 @@ public class PatchTargetHandler extends AbstractPatch
         return true;
       }
     }
+
+    if (patchConfig.isMsAzureComplexSimpleValueWorkaroundActive())
+    {
+      MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(schemaAttribute,
+                                                                                                  values);
+      values = workaroundHandler.fixValues();
+    }
     boolean changeMade = handleComplexAttribute(schemaAttribute, currentParent, fullAttributeNames, values);
     removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
     return changeMade;
@@ -516,8 +524,8 @@ public class PatchTargetHandler extends AbstractPatch
     if (newNode == null || !newNode.isObject())
     {
       throw new BadRequestException("given value is not a complex json representation for attribute '"
-                                    + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
-                                    null, ScimType.RFC7644.INVALID_VALUE);
+                                    + schemaAttribute.getFullResourceName() + "':\n\t" + String.join(",", values), null,
+                                    ScimType.RFC7644.INVALID_VALUE);
     }
     PatchFilterResolver filterResolver = new PatchFilterResolver();
     boolean hasFilterExpression = path.getChild() != null;

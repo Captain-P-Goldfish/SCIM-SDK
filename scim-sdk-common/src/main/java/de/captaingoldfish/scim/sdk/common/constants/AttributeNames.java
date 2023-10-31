@@ -286,6 +286,13 @@ public final class AttributeNames
     public static final String ACTIVATE_MS_AZURE_VALUE_SUB_ATTRIBUTE_WORKAROUND = "activateMsAzureValueSubAttributeWorkaround";
 
     /**
+     * A workaround indicator to handle MsAzures illegal patch-values on complex-attributes with simple values.
+     *
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
+     */
+    public static final String ACTIVATE_MS_AZURE_COMPLEX_SIMPLE_VALUE_WORKAROUND = "activateMsAzureComplexSimpleValueWorkaround";
+
+    /**
      * this attribute is used for meta-configuration loading. It will hold the ServiceProvider configuration from
      * the SCIM provider
      */

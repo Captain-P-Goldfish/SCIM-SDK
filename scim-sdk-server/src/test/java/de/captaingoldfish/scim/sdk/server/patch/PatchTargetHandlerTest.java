@@ -13,6 +13,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -24,7 +25,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
-import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -50,6 +51,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -1794,7 +1796,7 @@ public class PatchTargetHandlerTest implements FileReferences
     enterpriseUserSchema.addAttribute(emailsDef);
 
 
-    final String path = AttributeNames.RFC7643.EMAILS;
+    final String path = RFC7643.EMAILS;
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.REMOVE)
                                                                                 .path(path)
@@ -1807,7 +1809,7 @@ public class PatchTargetHandlerTest implements FileReferences
     ScimArrayNode emailsArrayNode = new ScimArrayNode(null);
     Email email = Email.builder().value(UUID.randomUUID().toString()).build();
     emailsArrayNode.add(email);
-    enterpriseUser.set(AttributeNames.RFC7643.EMAILS, emailsArrayNode);
+    enterpriseUser.set(RFC7643.EMAILS, emailsArrayNode);
     allTypes.setEnterpriseUser(enterpriseUser);
 
     MatcherAssert.assertThat(allTypes.getSchemas(),
@@ -1844,7 +1846,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                   + "\"primary\": true"
                                              + "}");
     // @formatter:on
-    final String path = AttributeNames.RFC7643.EMAILS;
+    final String path = RFC7643.EMAILS;
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(patchOp)
                                                                                 .path(path)
@@ -1862,7 +1864,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(patchedResource.getMeta().get().getLastModified().isPresent(),
                           patchedResource.toPrettyString());
     Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent(), patchedResource.toPrettyString());
-    ArrayNode emails = (ArrayNode)patchedResource.getEnterpriseUser().get().get(AttributeNames.RFC7643.EMAILS);
+    ArrayNode emails = (ArrayNode)patchedResource.getEnterpriseUser().get().get(RFC7643.EMAILS);
     Assertions.assertNotNull(emails, patchedResource.toPrettyString());
     Assertions.assertEquals(1, emails.size(), patchedResource.toPrettyString());
     MatcherAssert.assertThat(patchedResource.getSchemas(),
@@ -2584,7 +2586,7 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     ScimArrayNode emailArray = new ScimArrayNode(null);
     emails.forEach(emailArray::add);
-    allTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+    allTypes.set(RFC7643.EMAILS, emailArray);
 
     final String path = "emails";
     // @formatter:off
@@ -2602,19 +2604,19 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
-    emailArray = (ScimArrayNode)allTypes.get(AttributeNames.RFC7643.EMAILS);
+    emailArray = (ScimArrayNode)allTypes.get(RFC7643.EMAILS);
     Assertions.assertNotNull(emailArray);
     Assertions.assertEquals(4, emailArray.size());
     for ( JsonNode email : emailArray )
     {
-      String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+      String emailText = email.get(RFC7643.VALUE).textValue();
       if (emailText.equals("4@4.de"))
       {
-        Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), allTypes.toPrettyString());
+        Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), allTypes.toPrettyString());
       }
       else
       {
-        Assertions.assertNull(email.get(AttributeNames.RFC7643.PRIMARY), allTypes.toPrettyString());
+        Assertions.assertNull(email.get(RFC7643.PRIMARY), allTypes.toPrettyString());
       }
     }
   }
@@ -2642,7 +2644,7 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     ScimArrayNode emailArray = new ScimArrayNode(null);
     emails.forEach(emailArray::add);
-    allTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+    allTypes.set(RFC7643.EMAILS, emailArray);
 
     final String path = "emails[value sw \"2\"].primary";
     List<String> values = Arrays.asList("true");
@@ -2655,19 +2657,19 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
     Assertions.assertEquals(1, allTypes.getSchemas().size(), allTypes.toPrettyString());
-    emailArray = (ScimArrayNode)allTypes.get(AttributeNames.RFC7643.EMAILS);
+    emailArray = (ScimArrayNode)allTypes.get(RFC7643.EMAILS);
     Assertions.assertNotNull(emailArray);
     Assertions.assertEquals(3, emailArray.size());
     for ( JsonNode email : emailArray )
     {
-      String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+      String emailText = email.get(RFC7643.VALUE).textValue();
       if (emailText.equals("2@2.de"))
       {
-        Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), allTypes.toPrettyString());
+        Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), allTypes.toPrettyString());
       }
       else
       {
-        Assertions.assertNull(email.get(AttributeNames.RFC7643.PRIMARY), allTypes.toPrettyString());
+        Assertions.assertNull(email.get(RFC7643.PRIMARY), allTypes.toPrettyString());
       }
     }
   }
@@ -2695,12 +2697,12 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes originalAllTypes = new AllTypes(true);
     ScimArrayNode emailArray = new ScimArrayNode(null);
     emails.forEach(emailArray::add);
-    originalAllTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+    originalAllTypes.set(RFC7643.EMAILS, emailArray);
 
     AllTypes patchResource = new AllTypes(true);
     ScimArrayNode patchEmailArray = new ScimArrayNode(null);
     patchEmailArray.add(Email.builder().value("4@4.de").primary(true).build());
-    patchResource.set(AttributeNames.RFC7643.EMAILS, patchEmailArray);
+    patchResource.set(RFC7643.EMAILS, patchEmailArray);
 
     List<String> values = Collections.singletonList(patchResource.toString());
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -2713,20 +2715,19 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     originalAllTypes = patchHandler.patchResource(originalAllTypes, patchOpRequest);
     Assertions.assertEquals(1, originalAllTypes.getSchemas().size(), originalAllTypes.toPrettyString());
-    emailArray = (ScimArrayNode)originalAllTypes.get(AttributeNames.RFC7643.EMAILS);
+    emailArray = (ScimArrayNode)originalAllTypes.get(RFC7643.EMAILS);
     Assertions.assertNotNull(emailArray, originalAllTypes.toPrettyString());
     Assertions.assertEquals(4, emailArray.size(), originalAllTypes.toPrettyString());
     for ( JsonNode email : emailArray )
     {
-      String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+      String emailText = email.get(RFC7643.VALUE).textValue();
       if (emailText.equals("4@4.de"))
       {
-        Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(),
-                              originalAllTypes.toPrettyString());
+        Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), originalAllTypes.toPrettyString());
       }
       else
       {
-        Assertions.assertNull(email.get(AttributeNames.RFC7643.PRIMARY), originalAllTypes.toPrettyString());
+        Assertions.assertNull(email.get(RFC7643.PRIMARY), originalAllTypes.toPrettyString());
       }
     }
   }
@@ -2754,12 +2755,12 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes originalAllTypes = new AllTypes(true);
     ScimArrayNode emailArray = new ScimArrayNode(null);
     emails.forEach(emailArray::add);
-    originalAllTypes.set(AttributeNames.RFC7643.EMAILS, emailArray);
+    originalAllTypes.set(RFC7643.EMAILS, emailArray);
 
     AllTypes patchResource = new AllTypes(true);
     ScimArrayNode patchEmailArray = new ScimArrayNode(null);
     patchEmailArray.add(Email.builder().value("4@4.de").primary(true).build());
-    patchResource.set(AttributeNames.RFC7643.EMAILS, patchEmailArray);
+    patchResource.set(RFC7643.EMAILS, patchEmailArray);
 
     List<String> values = Collections.singletonList(patchResource.toString());
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -2772,13 +2773,13 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     originalAllTypes = patchHandler.patchResource(originalAllTypes, patchOpRequest);
     Assertions.assertEquals(1, originalAllTypes.getSchemas().size(), originalAllTypes.toPrettyString());
-    emailArray = (ScimArrayNode)originalAllTypes.get(AttributeNames.RFC7643.EMAILS);
+    emailArray = (ScimArrayNode)originalAllTypes.get(RFC7643.EMAILS);
     Assertions.assertNotNull(emailArray, originalAllTypes.toPrettyString());
     Assertions.assertEquals(1, emailArray.size(), originalAllTypes.toPrettyString());
     JsonNode email = emailArray.get(0);
-    String emailText = email.get(AttributeNames.RFC7643.VALUE).textValue();
+    String emailText = email.get(RFC7643.VALUE).textValue();
     Assertions.assertEquals("4@4.de", emailText);
-    Assertions.assertTrue(email.get(AttributeNames.RFC7643.PRIMARY).booleanValue(), originalAllTypes.toPrettyString());
+    Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), originalAllTypes.toPrettyString());
   }
 
   /**
@@ -3597,7 +3598,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                               groupSchemaNode);
 
 
-    final String path = AttributeNames.RFC7643.MEMBERS;
+    final String path = RFC7643.MEMBERS;
     final String value = "123456";
     final ObjectNode valueNode = new ObjectNode(JsonNodeFactory.instance);
     valueNode.set("value", new TextNode(value));
@@ -3621,6 +3622,71 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertFalse(patchedResource.getMembers()
                                           .stream()
                                           .anyMatch(member -> member.getValue().get().equals(value)));
+  }
+
+  /**
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder for more details
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
+   */
+  @DisplayName("MsAzure workaround is executed for patch with path expressions")
+  @ParameterizedTest
+  @CsvSource({"manager,ADD", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager,ADD",
+              "manager,REPLACE", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager,REPLACE"})
+  public void testMsAzureComplexPatchPathValueWorkaround(String attributePath, PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setMsAzureComplexSimpleValueWorkaroundActive(true);
+    SchemaAttribute manager = allTypesResourceType.getAllSchemaExtensions().get(0).getSchemaAttribute(RFC7643.MANAGER);
+    Assertions.assertNotNull(manager);
+    Assertions.assertEquals(Type.COMPLEX, manager.getType());
+
+    final String value = "271";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(attributePath)
+                                                                                .value(value)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+    EnterpriseUser enterpriseUser = patchedResource.getEnterpriseUser().get();
+    Assertions.assertEquals(value, enterpriseUser.getManager().flatMap(Manager::getValue).orElse(null));
+  }
+
+  /**
+   * Makes sure that the workaround is not executed if not explicitly activated in the {@link PatchConfig}
+   *
+   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder for more details
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
+   */
+  @DisplayName("MsAzure workaround is not executed for patch with path expressions if deactivated")
+  @ParameterizedTest
+  @CsvSource({"manager,ADD", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager,ADD",
+              "manager,REPLACE", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager,REPLACE"})
+  public void testMsAzureComplexPatchPathSimpleValueWorkaroundIsIgnoredIfDeactivated(String attributePath,
+                                                                                     PatchOp patchOp)
+  {
+    serviceProvider.getPatchConfig().setMsAzureComplexSimpleValueWorkaroundActive(false);
+    SchemaAttribute manager = allTypesResourceType.getAllSchemaExtensions().get(0).getSchemaAttribute(RFC7643.MANAGER);
+    Assertions.assertNotNull(manager);
+    Assertions.assertEquals(Type.COMPLEX, manager.getType());
+
+    final String value = "271";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(attributePath)
+                                                                                .value(value)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    AllTypes allTypes = new AllTypes();
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchHandler.patchResource(allTypes, patchOpRequest));
+    String expectedErrorMessage = "given value is not a complex json representation for attribute"
+                                  + " 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager':\n\t271";
+    Assertions.assertEquals(expectedErrorMessage, ex.getMessage());
   }
 
   /**
