@@ -253,6 +253,66 @@ public class FilterVisitorTest
   }
 
   /**
+   * this test will show that the special bracket notation from MsAzure is correctly resolved as an
+   * and-expression
+   */
+  @Test
+  public void testMsAzureBracketFilter()
+  {
+    final String givenName = "pascal.knueppel@localhost.de";
+    final String expression = String.format("emails[type eq \"work\"].value sw \"%s\"", givenName);
+    FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
+    MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(AndExpressionNode.class));
+    AndExpressionNode andExpressionNode = (AndExpressionNode)filterNode;
+    MatcherAssert.assertThat(andExpressionNode.getLeftNode().getClass(),
+                             Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
+    MatcherAssert.assertThat(andExpressionNode.getRightNode().getClass(),
+                             Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
+    AttributeExpressionLeaf leftNode = (AttributeExpressionLeaf)andExpressionNode.getLeftNode();
+    Assertions.assertEquals("emails.type", leftNode.getSchemaAttribute().getScimNodeName());
+    Assertions.assertEquals(Comparator.EQ, leftNode.getComparator());
+    Assertions.assertEquals("work", leftNode.getValue());
+    Assertions.assertNull(leftNode.getResourceUri());
+
+    AttributeExpressionLeaf rightNode = (AttributeExpressionLeaf)andExpressionNode.getRightNode();
+    Assertions.assertEquals("emails.value", rightNode.getSchemaAttribute().getScimNodeName());
+    Assertions.assertEquals(Comparator.SW, rightNode.getComparator());
+    Assertions.assertEquals(givenName, rightNode.getValue());
+    Assertions.assertNull(rightNode.getResourceUri());
+  }
+
+  /**
+   * this test will show that the special bracket notation from MsAzure is correctly resolved as an
+   * and-expression
+   */
+  @Test
+  public void testMsAzureBracketFilterWithFullResourceUri()
+  {
+    final String givenName = "pascal.knueppel@localhost.de";
+    final String expression = String.format("%s:emails[type eq \"work\"].value sw \"%s\"",
+                                            SchemaUris.USER_URI,
+                                            givenName);
+    FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
+    MatcherAssert.assertThat(filterNode.getClass(), Matchers.typeCompatibleWith(AndExpressionNode.class));
+    AndExpressionNode andExpressionNode = (AndExpressionNode)filterNode;
+    MatcherAssert.assertThat(andExpressionNode.getLeftNode().getClass(),
+                             Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
+    MatcherAssert.assertThat(andExpressionNode.getRightNode().getClass(),
+                             Matchers.typeCompatibleWith(AttributeExpressionLeaf.class));
+    AttributeExpressionLeaf leftNode = (AttributeExpressionLeaf)andExpressionNode.getLeftNode();
+    Assertions.assertEquals("emails.type", leftNode.getSchemaAttribute().getScimNodeName());
+    Assertions.assertEquals(Comparator.EQ, leftNode.getComparator());
+    Assertions.assertEquals("work", leftNode.getValue());
+    Assertions.assertEquals(SchemaUris.USER_URI, leftNode.getResourceUri());
+
+    AttributeExpressionLeaf rightNode = (AttributeExpressionLeaf)andExpressionNode.getRightNode();
+    Assertions.assertEquals("emails.value", rightNode.getSchemaAttribute().getScimNodeName());
+    Assertions.assertEquals(Comparator.SW, rightNode.getComparator());
+    Assertions.assertEquals(givenName, rightNode.getValue());
+    Assertions.assertEquals(SchemaUris.USER_URI, rightNode.getResourceUri());
+  }
+
+  /**
    * this method will add an ambiguous attribute
    */
   @Test

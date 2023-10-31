@@ -76,6 +76,21 @@ public class FilterAttributeName
     this.fullName = (resourceUri == null ? "" : StringUtils.stripToEmpty(resourceUri) + ":") + getShortName();
   }
 
+  public FilterAttributeName(String resourceUri, String parentName, String childName)
+  {
+    this.parentAttributeName = parentName == null ? null : (parentName + ".");
+    this.attributeName = childName;
+    this.complexSubAttributeName = null;
+    this.resourceUri = Optional.ofNullable(StringUtils.stripToNull(resourceUri)).map(uri -> {
+      if (uri.endsWith(":"))
+      {
+        return uri.substring(0, uri.length() - 1);
+      }
+      return uri;
+    }).orElse(null);
+    this.fullName = Optional.ofNullable(resourceUri).map(uri -> uri + ":").orElse("") + getShortName();
+  }
+
   public FilterAttributeName(String attributeName)
   {
     Pattern pattern = Pattern.compile("(([\\w$:.]+):)?([\\w$]+)(\\.)?([\\w$]+)?");

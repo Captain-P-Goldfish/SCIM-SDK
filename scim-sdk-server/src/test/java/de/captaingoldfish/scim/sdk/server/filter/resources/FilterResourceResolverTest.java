@@ -1753,6 +1753,31 @@ public class FilterResourceResolverTest implements FileReferences
   }
 
   /**
+   * verifies that the given filter expression is correctly resolved as expected by MsAzure
+   */
+  @Test
+  public void testFilterWithMsAzureBrackeNotation()
+  {
+    AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class)};
+    List<AllTypes> allTypesList = Arrays.asList(allTypesArray);
+
+    allTypesArray[0].getMultiComplex().get(0).setNumber(1L);
+    allTypesArray[0].getMultiComplex().get(0).setString("hello");
+    allTypesArray[1].getMultiComplex().get(0).setNumber(2L);
+    allTypesArray[1].getMultiComplex().get(0).setString("world");
+    allTypesArray[2].getMultiComplex().get(0).setNumber(3L);
+    allTypesArray[2].getMultiComplex().get(0).setString("somewhere else");
+
+    final String filter = "multicomplex[number eq 1 and string eq \"hello\" or number eq 2].string eq \"world\"";
+    final FilterNode filterNode = RequestUtils.parseFilter(allTypesResourceType, filter);
+    List<AllTypes> filteredAllTypes = FilterResourceResolver.filterResources(serviceProvider, allTypesList, filterNode);
+    Assertions.assertEquals(1, filteredAllTypes.size());
+    MatcherAssert.assertThat(filteredAllTypes, Matchers.hasItems(allTypesArray[1]));
+  }
+
+  /**
    * verifies that bracket filters can be resolved as they have to be for patch expressions
    */
   @Test

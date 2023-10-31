@@ -115,6 +115,14 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
   public FilterNode visitValuePath(ScimFilterParser.ValuePathContext ctx)
   {
     FilterNode childNode = ctx.filter() == null ? null : visit(ctx.filter());
+    // this if-case represents an illegal MsAzure filter-expression like:
+    // "emails[type eq \"work\"].value sw \"%s\""
+    // we are trying to fix it here by wrapping it into an AndExpressionNode
+    if (ctx.compareOperator() != null && ctx.compareValue() != null)
+    {
+      FilterNode outerExpression = new AttributeExpressionLeaf(ctx, resourceType);
+      return new AndExpressionNode(childNode, outerExpression);
+    }
     return new AttributePathRoot(childNode, resourceType, ctx);
   }
 }

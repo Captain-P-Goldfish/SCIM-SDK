@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 import org.antlr.v4.runtime.ParserRuleContext;
+import org.antlr.v4.runtime.Token;
 import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -70,7 +71,7 @@ public final class AttributeExpressionLeaf extends FilterNode
   {
     ScimFilterParser.ValuePathContext attributeValuePath = getParentValuePath(context);
     this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
-    FilterAttributeName attributeName = new FilterAttributeName(attributeValuePath, context.attributePath());
+    this.attributeName = new FilterAttributeName(attributeValuePath, context.attributePath());
     String parentName = attributeName.getParentAttributeName();
 
     if (attributeValuePath != null)
@@ -90,14 +91,37 @@ public final class AttributeExpressionLeaf extends FilterNode
       throw new InvalidFilterException(String.format("binary types like '%s' are not suitable for filter expressions",
                                                      schemaAttribute.getFullResourceName()));
     }
-    if (parentName != null && !parentName.equals(schemaAttribute.getParent().getName()))
+    this.compareValue = context.compareValue() == null ? null
+      : new CompareValue(context.compareValue(), schemaAttribute);
+    validateFilterComparator();
+    final Optional<String> attrSchemaId = schemaAttribute.getSchema().getId();
+    // meta attribute has no schema ID per RFC 7643 (3.1 Common Attributes)
+    this.mainSchemaNode = resourceType.getMainSchema().getId().equals(attrSchemaId)
+                          || SchemaUris.META.equals(attrSchemaId.orElse(null));
+  }
+
+  public AttributeExpressionLeaf(ScimFilterParser.ValuePathContext context, ResourceType resourceType)
+  {
+    this.comparator = Comparator.valueOf(getCompareOperatorValue(context));
+
+    if (context.compareOperator() != null && context.compareValue() != null)
     {
-      this.attributeName = new FilterAttributeName(schemaAttribute.getParent().getScimNodeName(),
-                                                   context.attributePath());
+      this.attributeName = new FilterAttributeName(Optional.ofNullable(context.attributePath().resourceUri)
+                                                           .map(Token::getText)
+                                                           .orElse(null),
+                                                   context.attributePath().attribute.getText(),
+                                                   context.subattribute.getText());
     }
     else
     {
-      this.attributeName = attributeName;
+      this.attributeName = new FilterAttributeName(context, context.attributePath());
+    }
+
+    this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, attributeName);
+    if (schemaAttribute.getType().equals(Type.BINARY))
+    {
+      throw new InvalidFilterException(String.format("binary types like '%s' are not suitable for filter expressions",
+                                                     schemaAttribute.getFullResourceName()));
     }
     this.compareValue = context.compareValue() == null ? null
       : new CompareValue(context.compareValue(), schemaAttribute);
@@ -194,6 +218,24 @@ public final class AttributeExpressionLeaf extends FilterNode
    * @return the {@link Comparator} value as string in upper case
    */
   private String getCompareOperatorValue(ScimFilterParser.AttributeExpressionContext context)
+  {
+    if (context.compareOperator() == null)
+    {
+      return context.children.get(1).getText().toUpperCase();
+    }
+    return context.compareOperator().getText().toUpperCase();
+  }
+
+  /**
+   * tries to get the compare operator. This must be handled differently in cases when it is the
+   * {@link Comparator#PR} operator because no value will be present then and the present comparator will be a
+   * {@link org.antlr.v4.runtime.tree.TerminalNode} instead of a {@link ScimFilterParser.CompareOperatorContext}
+   * node
+   *
+   * @param context the antlr context to extract the {@link Comparator} value
+   * @return the {@link Comparator} value as string in upper case
+   */
+  private String getCompareOperatorValue(ScimFilterParser.ValuePathContext context)
   {
     if (context.compareOperator() == null)
     {
