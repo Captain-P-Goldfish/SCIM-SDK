@@ -14,7 +14,6 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -45,6 +44,7 @@ import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.response.UpdateResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ResourceTypeEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.SchemaEndpointDefinition;
@@ -59,9 +59,9 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.AbstractResourceValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestSchemaValidator;
-import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
 import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.AccessLevel;
@@ -122,6 +122,8 @@ class ResourceEndpointHandler
                                                                          endpointDefinition.getResourceSchemaExtensions()
                                                                                            .toArray(new JsonNode[0]));
     ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+    resourceHandler.setServiceProvider(serviceProvider);
+    resourceHandler.setResourceType(resourceType);
     Schema mainSchema = resourceType.getMainSchema();
     resourceHandler.setSchema(mainSchema);
     resourceHandler.setSchemaExtensions(resourceType.getAllSchemas()
@@ -257,10 +259,13 @@ class ResourceEndpointHandler
       }
       createdMeta.setResourceType(resourceType.getName());
       ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(null, resourceType, null, null,
-                                                                                  resource,
-                                                                                  getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
+      Optional<AbstractResourceValidator> responseValidator = //
+        resourceHandler.getResponseValidator(null, null, resource, getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = resourceNode;
+      if (responseValidator.isPresent())
+      {
+        responseResource = responseValidator.get().validateDocument(resourceNode);
+      }
       return new CreateResponse(responseResource, location, createdMeta);
     }
     catch (RequestContextException ex)
@@ -391,11 +396,17 @@ class ResourceEndpointHandler
         meta.setResourceType(resourceType.getName());
         ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
       });
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType,
-                                                                                  attributesList,
-                                                                                  excludedAttributesList, null,
-                                                                                  getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
+
+      Optional<AbstractResourceValidator> responseValidator = //
+        resourceHandler.getResponseValidator(attributesList,
+                                             excludedAttributesList,
+                                             null,
+                                             getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = resourceNode;
+      if (responseValidator.isPresent())
+      {
+        responseResource = responseValidator.get().validateDocument(resourceNode);
+      }
       return new GetResponse(responseResource, location, resourceNode.getMeta().orElse(null));
     }
     catch (ScimException ex)
@@ -623,12 +634,19 @@ class ResourceEndpointHandler
           meta.setResourceType(resourceType.getName());
           ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
         });
-        ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType,
-                                                                                    attributesList,
-                                                                                    excludedAttributesList, null,
-                                                                                    getReferenceUrlSupplier(baseUrlSupplier));
-        JsonNode validatedResource = responseValidator.validateDocument(resourceNode);
-        validatedResourceList.add(validatedResource);
+
+        Optional<AbstractResourceValidator> responseValidator = //
+          resourceHandler.getResponseValidator(attributesList,
+                                               excludedAttributesList,
+                                               null,
+                                               getReferenceUrlSupplier(baseUrlSupplier));
+        JsonNode responseResource = resourceNode;
+        if (responseValidator.isPresent())
+        {
+          responseResource = responseValidator.get().validateDocument(resourceNode);
+        }
+
+        validatedResourceList.add(responseResource);
       }
 
       return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(),
@@ -895,11 +913,13 @@ class ResourceEndpointHandler
                                           + "requested id: requestedId: '" + id + "', returnedId: '" + resourceId + "'",
                                           null, null);
       }
-
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType, null,
-                                                                                  null, resourceNode,
-                                                                                  getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = responseValidator.validateDocument(resourceNode);
+      Optional<AbstractResourceValidator> responseValidator = //
+        resourceHandler.getResponseValidator(null, null, resourceNode, getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = resourceNode;
+      if (responseValidator.isPresent())
+      {
+        responseResource = responseValidator.get().validateDocument(resourceNode);
+      }
 
       return new UpdateResponse(responseResource, location, meta);
     }
@@ -1099,12 +1119,17 @@ class ResourceEndpointHandler
       }
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
-      ResponseResourceValidator responseValidator = new ResponseResourceValidator(serviceProvider, resourceType,
-                                                                                  attributesList,
-                                                                                  excludedAttributesList,
-                                                                                  patchHandler.getRequestedAttributes(),
-                                                                                  getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = responseValidator.validateDocument(patchedResourceNode);
+      Optional<AbstractResourceValidator> responseValidator = //
+        resourceHandler.getResponseValidator(attributesList,
+                                             excludedAttributesList,
+                                             patchHandler.getRequestedAttributes(),
+                                             getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = patchedResourceNode;
+      if (responseValidator.isPresent())
+      {
+        responseResource = responseValidator.get().validateDocument(patchedResourceNode);
+      }
+
 
       return new UpdateResponse(responseResource, location, meta);
     }

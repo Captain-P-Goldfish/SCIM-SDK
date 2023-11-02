@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 21.04.2021
  */
 @Slf4j
-abstract class AbstractResourceValidator
+public abstract class AbstractResourceValidator
 {
 
   /**

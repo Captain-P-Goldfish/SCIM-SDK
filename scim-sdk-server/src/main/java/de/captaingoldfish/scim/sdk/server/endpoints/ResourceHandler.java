@@ -4,18 +4,24 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.AbstractResourceValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -35,6 +41,20 @@ public abstract class ResourceHandler<T extends ResourceNode>
    */
   @Getter
   private Class<T> type;
+
+  /**
+   * the current service provider configuration of the resource-type
+   */
+  @Getter
+  @Setter(AccessLevel.PROTECTED)
+  private ServiceProvider serviceProvider;
+
+  /**
+   * the resource type that is the basic definition of this handler implementation
+   */
+  @Getter
+  @Setter(AccessLevel.PROTECTED)
+  private ResourceType resourceType;
 
   /**
    * allows to access the definition of the main schema
@@ -216,7 +236,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
   /**
    * this method is used to resolve a resource type by the $ref-uri attribute or by the type-attribute of a
    * resource-reference attribute
-   * 
+   *
    * @param ref the $ref or type value of a resource-reference attribute e.g.: "User" or
    *          "http://localhost:8080/scim/v2/Users" or "http://localhost:8080/scim/v2/Users/${id}"
    * @return the resource type definition of the referenced type.
@@ -233,5 +253,23 @@ public abstract class ResourceHandler<T extends ResourceNode>
   protected void postConstruct(ResourceType resourceType)
   {
     // do nothing
+  }
+
+  /**
+   * can be used to override the response-verifier if custom validation is wanted
+   *
+   * @param attributesList the attributes from the request
+   * @param excludedAttributesList the excluded attributes from the request
+   * @param requestDocument the request document
+   * @param referenceUrlSupplier the url-supplier to build specific urls for resources
+   * @return an optional response-validator
+   */
+  protected Optional<AbstractResourceValidator> getResponseValidator(List<SchemaAttribute> attributesList,
+                                                                     List<SchemaAttribute> excludedAttributesList,
+                                                                     JsonNode requestDocument,
+                                                                     BiFunction<String, String, String> referenceUrlSupplier)
+  {
+    return Optional.of(new ResponseResourceValidator(serviceProvider, resourceType, attributesList,
+                                                     excludedAttributesList, requestDocument, referenceUrlSupplier));
   }
 }
