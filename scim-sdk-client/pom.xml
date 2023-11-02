@@ -5,7 +5,7 @@
     <parent>
         <artifactId>scim-sdk-parent</artifactId>
         <groupId>de.captaingoldfish</groupId>
-        <version>1.19.0-kc-SNAPSHOT</version>
+        <version>1.19.0-kc</version>
     </parent>
 
     <artifactId>scim-sdk-client</artifactId>
