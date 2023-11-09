@@ -331,7 +331,8 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
     }
     else
     {
-      if (isBulkIdReferenceAfterCustomFeature(attribute))
+      boolean isBulkIdReference = isBulkIdReferenceAfterCustomFeature(attribute);
+      if (isBulkIdReference)
       {
         bulkIdWrapperNodes.add(new BulkIdReferenceResourceWrapper(resource, attribute, schemaAttribute));
       }
@@ -359,7 +360,13 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
    */
   private boolean isBulkIdReferenceAfterCustomFeature(JsonNode jsonNode)
   {
-    checkForBulkIdReferenceValidity(jsonNode.textValue());
+    boolean isBulkIdReference = jsonNode != null && jsonNode.isTextual()
+                                && jsonNode.textValue()
+                                           .startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+    if (isBulkIdReference)
+    {
+      checkForBulkIdReferenceValidity(jsonNode.textValue());
+    }
     return jsonNode.textValue().startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
   }
 

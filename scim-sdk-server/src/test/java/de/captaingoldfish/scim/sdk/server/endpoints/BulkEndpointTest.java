@@ -24,6 +24,9 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
+
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -1930,6 +1933,55 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       resolvedIds.addAll(memberList.getGroupIdList());
     }
     Assertions.assertEquals(12, resolvedIds.size());
+    Assertions.assertTrue(resolvedIds.stream().noneMatch(id -> {
+      return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+    }));
+    Assertions.assertTrue(resolvedIds.stream().allMatch(this::isUuid));
+  }
+
+  /**
+   * verifies that no error occurs if the schema has a bulkId reference but does not use it and sets the ID
+   * directly instead
+   */
+  @Test
+  public void testSimpleBulkIdReferenceWithSeveralReferences()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+
+    BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_RESOURCE_ENSEMBLE, BulkRequest.class);
+    {
+      // set a direct value and not a bulkId-reference into the userId field this must execute successfully
+      ObjectNode objectNode = JsonHelper.readJsonDocument(bulkRequest.getBulkRequestOperations().get(0).getData().get(),
+                                                          ObjectNode.class);
+      objectNode.set("userId", new TextNode(UUID.randomUUID().toString()));
+      bulkRequest.getBulkRequestOperations().get(0).setData(objectNode.toString());
+    }
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+    }
+    BulkResponseOperation responseOperation = bulkResponse.getByBulkId("1").get();
+    BulkIdReferences bulkIdReferences = responseOperation.getResponse(BulkIdReferences.class).get();
+
+    Set<String> resolvedIds = new HashSet<>();
+    resolvedIds.addAll(bulkIdReferences.getUserIdList());
+    resolvedIds.add(bulkIdReferences.getMember().get().getUserId().get());
+    resolvedIds.addAll(bulkIdReferences.getMember().get().getUserIdList());
+
+    for ( BulkIdReferences.MemberList memberList : bulkIdReferences.getMemberList() )
+    {
+      resolvedIds.add(memberList.getGroupId().get());
+      resolvedIds.addAll(memberList.getGroupIdList());
+    }
+    Assertions.assertEquals(11, resolvedIds.size());
     Assertions.assertTrue(resolvedIds.stream().noneMatch(id -> {
       return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     }));
