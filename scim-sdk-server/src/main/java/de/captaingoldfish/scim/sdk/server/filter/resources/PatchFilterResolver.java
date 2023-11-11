@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
@@ -118,4 +119,17 @@ public class PatchFilterResolver
   }
 
 
+  public boolean isSimpleNodeMatchingFilter(JsonNode simpleNode, FilterNode filterNode)
+  {
+    if (filterNode instanceof AndExpressionNode)
+    {
+      throw new BadRequestException("And expressions are not supported on simple arrayNodes");
+    }
+    if (filterNode instanceof OrExpressionNode)
+    {
+      throw new BadRequestException("Or expressions are not supported on simple arrayNodes");
+    }
+    AttributeExpressionLeaf attributeExpressionLeaf = (AttributeExpressionLeaf)filterNode;
+    return FilterResourceResolver.checkValueEquality(simpleNode, attributeExpressionLeaf);
+  }
 }

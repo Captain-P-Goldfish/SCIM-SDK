@@ -14,6 +14,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -4504,5 +4505,94 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals("binary types like 'urn:gold:params:scim:schemas:custom:2.0:AllTypes:"
                             + "multiComplex.binary' are not suitable for filter expressions",
                             ex.getMessage());
+  }
+
+  @DisplayName("Filter simple values from array with patch-remove")
+  @Nested
+  public class SimpleArrayFilterRemoveTests
+  {
+
+    /**
+     * remove specific value from string-type attribute with custom-filter-expression
+     */
+    @DisplayName("Remove value from simple string-array with: stringArray[value eq \"world\"]")
+    @Test
+    public void testRemoveValueFromSimpleStringArrayWithFilterExpression()
+    {
+      AllTypes allTypes = new AllTypes(true);
+      allTypes.setStringArray(Arrays.asList("hello", "world", "world", "next-day"));
+
+      final String path = "stringArray[value eq \"world\"]";
+      PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder()
+                                                                         .op(PatchOp.REMOVE)
+                                                                         .path(path)
+                                                                         .build();
+      List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+      AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.assertEquals(2, patchedAllTypes.getStringArray().size());
+      Assertions.assertEquals("hello", patchedAllTypes.getStringArray().get(0));
+      Assertions.assertEquals("next-day", patchedAllTypes.getStringArray().get(1));
+    }
+
+    /**
+     * remove specific value from string-type attribute with custom-filter-expression
+     */
+    @DisplayName("Remove value from simple integer-array with: numberArray[value eq 3]")
+    @Test
+    public void testRemoveValueFromSimpleIntArrayWithFilterExpression()
+    {
+      AllTypes allTypes = new AllTypes(true);
+      allTypes.setNumberArray(Arrays.asList(1L, 1L, 2L, 2L, 3L, 3L, 4L, 4L, 5L, 5L));
+
+      final String path = "numberArray[value eq 3]";
+      PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder()
+                                                                         .op(PatchOp.REMOVE)
+                                                                         .path(path)
+                                                                         .build();
+      List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+      AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.assertEquals(8, patchedAllTypes.getNumberArray().size());
+      Assertions.assertEquals(1L, patchedAllTypes.getNumberArray().get(0));
+      Assertions.assertEquals(1L, patchedAllTypes.getNumberArray().get(1));
+      Assertions.assertEquals(2L, patchedAllTypes.getNumberArray().get(2));
+      Assertions.assertEquals(2L, patchedAllTypes.getNumberArray().get(3));
+      Assertions.assertEquals(4L, patchedAllTypes.getNumberArray().get(4));
+      Assertions.assertEquals(4L, patchedAllTypes.getNumberArray().get(5));
+      Assertions.assertEquals(5L, patchedAllTypes.getNumberArray().get(6));
+      Assertions.assertEquals(5L, patchedAllTypes.getNumberArray().get(7));
+    }
+
+    /**
+     * remove specific value from decimal-type attribute with custom-filter-expression
+     */
+    @DisplayName("Remove value from simple decimal-array with: decimalArray[value gt 2.8]")
+    @Test
+    public void testRemoveValueFromDecimalStringArrayWithFilterExpression()
+    {
+      AllTypes allTypes = new AllTypes(true);
+      allTypes.setDecimalArray(Arrays.asList(1.1, 2.9, 3.0));
+
+      final String path = "decimalArray[value gt 2.8]";
+      PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder()
+                                                                         .op(PatchOp.REMOVE)
+                                                                         .path(path)
+                                                                         .build();
+      List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+      AllTypes patchedAllTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+      Assertions.assertEquals(1, patchedAllTypes.getDecimalArray().size());
+      Assertions.assertEquals(1.1, patchedAllTypes.getDecimalArray().get(0));
+    }
   }
 }

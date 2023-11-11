@@ -353,24 +353,55 @@ public class PatchTargetHandler extends AbstractPatch
                                                     ObjectNode currentParent,
                                                     JsonNode firstAttribute)
   {
-    if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null
-        && path.getChild() == null)
+    if (PatchOp.REMOVE.equals(patchOp) && fullAttributeNames.length == 1 && path.getSubAttributeName() == null)
     {
       evaluatePatchPathOperation(schemaAttribute, firstAttribute.size() == 0 ? null : firstAttribute);
       int sizeBefore = currentParent.size();
-      JsonNode removedNode = currentParent.remove(schemaAttribute.getName());
       boolean effectiveChangeMade = false;
-      if (sizeBefore > currentParent.size() && removedNode.size() != 0)
+      if (path.getChild() == null)
       {
-        effectiveChangeMade = true;
+        JsonNode removedNode = currentParent.remove(schemaAttribute.getName());
+        if (sizeBefore > currentParent.size() && removedNode.size() != 0)
+        {
+          effectiveChangeMade = true;
+        }
+        else
+        {
+          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                        ScimType.RFC7644.NO_TARGET);
+        }
+        removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
+        return effectiveChangeMade;
       }
-      else
+      else if (schemaAttribute.getParent() == null && !Type.COMPLEX.equals(schemaAttribute.getType()))
       {
-        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                      ScimType.RFC7644.NO_TARGET);
+        JsonNode jsonNode = currentParent.get(schemaAttribute.getName());
+        if (jsonNode != null && jsonNode.isArray())
+        {
+          ArrayNode arrayNode = (ArrayNode)jsonNode;
+          List<Integer> indexesToRemove = new ArrayList<>();
+          for ( int i = 0 ; i < arrayNode.size() ; i++ )
+          {
+            JsonNode simpleNode = arrayNode.get(i);
+            PatchFilterResolver patchFilterResolver = new PatchFilterResolver();
+            boolean doesEntryMatch = patchFilterResolver.isSimpleNodeMatchingFilter(simpleNode, path.getChild());
+            if (doesEntryMatch)
+            {
+              indexesToRemove.add(i);
+            }
+          }
+          for ( int i = indexesToRemove.size() - 1 ; i >= 0 ; i-- )
+          {
+            arrayNode.remove(indexesToRemove.get(i));
+            effectiveChangeMade = true;
+          }
+          if (arrayNode.isEmpty())
+          {
+            currentParent.remove(schemaAttribute.getName());
+          }
+        }
+        return effectiveChangeMade;
       }
-      removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
-      return effectiveChangeMade;
     }
     boolean changeWasMade = handleMultiValuedAttribute(schemaAttribute,
                                                        (ArrayNode)firstAttribute,

@@ -1,8 +1,5 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -12,18 +9,20 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.apache.commons.lang3.StringUtils;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.FilterAttributeName;
@@ -354,6 +353,22 @@ public final class RequestUtils
     }
     if (schemaAttributeList.isEmpty())
     {
+      String[] parts = scimNodeName.split("\\.");
+      if (parts.length == 2 && AttributeNames.RFC7643.VALUE.equals(parts[1]))
+      {
+        schemaAttributeList = resourceTypeSchemas.stream()
+                                                 .map(schema -> schema.getSchemaAttribute(parts[0]))
+                                                 .filter(Objects::nonNull)
+                                                 .collect(Collectors.toList());
+        if (schemaAttributeList.size() == 1)
+        {
+          SchemaAttribute schemaAttribute = schemaAttributeList.get(0);
+          if (schemaAttribute.isMultiValued() && !Type.COMPLEX.equals(schemaAttribute.getType()))
+          {
+            return schemaAttribute;
+          }
+        }
+      }
       throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
                                     + "unknown to resource type '" + resourceType.getName() + "'", null,
                                     ScimType.Custom.INVALID_PARAMETERS);
