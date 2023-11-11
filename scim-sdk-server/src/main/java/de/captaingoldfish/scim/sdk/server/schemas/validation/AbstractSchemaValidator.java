@@ -5,6 +5,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -41,6 +43,7 @@ public abstract class AbstractSchemaValidator
    * the service provider configuration in order to check if case-insensitive attribute extraction is enabled or
    * not
    */
+  @Getter(AccessLevel.PROTECTED)
   private final ServiceProvider serviceProvider;
 
   protected final Class resourceNodeType;

@@ -60,8 +60,13 @@ public class ResponseSchemaValidator extends AbstractSchemaValidator
   @Override
   protected Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
+    JsonNode effectiveAttribute = attribute;
+    if (getServiceProvider().isUseDefaultValuesOnResponse())
+    {
+      effectiveAttribute = DefaultValueHandler.getOrGetDefault(schemaAttribute, attribute);
+    }
     return ResponseAttributeValidator.validateAttribute(schemaAttribute,
-                                                        attribute,
+                                                        effectiveAttribute,
                                                         requestDocument,
                                                         attributesList,
                                                         excludedAttributesList,

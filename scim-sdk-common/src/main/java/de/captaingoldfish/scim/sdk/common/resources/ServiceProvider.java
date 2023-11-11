@@ -18,9 +18,11 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -56,6 +58,20 @@ public class ServiceProvider extends ResourceNode
   private boolean caseInsensitiveValidation;
 
   /**
+   * if the {@link SchemaAttribute#getDefaultValue()} should be respected on requests
+   */
+  @Getter
+  @Setter
+  private boolean useDefaultValuesOnRequest = true;
+
+  /**
+   * if the {@link SchemaAttribute#getDefaultValue()} should be respected on responses
+   */
+  @Getter
+  @Setter
+  private boolean useDefaultValuesOnResponse = true;
+
+  /**
    * @param documentationUri the URL to the documentation of the application
    * @param patchConfig the patch configuration
    * @param changePasswordConfig if changing passwords is supported or not
@@ -80,7 +96,9 @@ public class ServiceProvider extends ResourceNode
                          BulkConfig bulkConfig,
                          List<AuthenticationScheme> authenticationSchemes,
                          ForkJoinPool forkJoinPool,
-                         boolean caseInsensitiveValidation)
+                         boolean caseInsensitiveValidation,
+                         boolean useDefaultValuesOnRequest,
+                         boolean useDefaultValuesOnResponse)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -99,6 +117,8 @@ public class ServiceProvider extends ResourceNode
     setMeta(meta);
     Optional.ofNullable(forkJoinPool).ifPresent(this::setThreadPool);
     this.caseInsensitiveValidation = caseInsensitiveValidation;
+    this.useDefaultValuesOnRequest = useDefaultValuesOnRequest;
+    this.useDefaultValuesOnResponse = useDefaultValuesOnResponse;
   }
 
   /**

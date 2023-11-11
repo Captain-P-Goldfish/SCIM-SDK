@@ -312,6 +312,12 @@ public final class AttributeNames
      * provider
      */
     public static final String RESOURCE_TYPES = "resourceTypes";
+
+    /**
+     * Used in {@link de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute} to assign default values to if
+     * the attribute is left empty
+     */
+    public static final String DEFAULT_VALUE = "defaultValue";
   }
 
   /**

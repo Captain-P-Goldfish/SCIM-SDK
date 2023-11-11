@@ -12,14 +12,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
 
-import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
-import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
-import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
-import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
-import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;

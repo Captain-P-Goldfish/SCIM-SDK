@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -13,6 +14,8 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
+
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -24,6 +27,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
+import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
@@ -152,6 +156,8 @@ public final class SchemaAttribute extends ScimObjectNode
                                                                AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME)
                                            .orElse(null));
     setValidationAttributes(jsonNode);
+    JsonHelper.getSimpleAttribute(jsonNode, AttributeNames.Custom.DEFAULT_VALUE, String.class)
+              .ifPresent(this::setDefaultValue);
     final List<SchemaAttribute> subAttributes = resolveSubAttributes(jsonNode);
     setSubAttributes(subAttributes);
     validateAttribute();
@@ -297,6 +303,8 @@ public final class SchemaAttribute extends ScimObjectNode
     return namePrefix == null ? "" : namePrefix + ".";
   }
 
+  // @formatter:off
+
   /**
    * The attribute's name.
    */
@@ -304,6 +312,8 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     return getStringAttribute(AttributeNames.RFC7643.NAME).orElse(null);
   }
+
+  // @formatter:off
 
   /**
    * The attribute's name.
@@ -314,6 +324,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The attribute's data type.  Valid values are "string",
    * "boolean", "decimal", "integer", "dateTime", "reference", and
@@ -328,6 +339,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The attribute's data type.  Valid values are "string",
    * "boolean", "decimal", "integer", "dateTime", "reference", and
@@ -342,6 +354,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The attribute's human-readable description.  When
    * applicable, service providers MUST specify the description.
@@ -353,6 +366,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The attribute's human-readable description.  When
    * applicable, service providers MUST specify the description.
@@ -364,6 +378,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A single keyword indicating the circumstances under
    * which the value of the attribute can be (re)defined:
@@ -389,6 +404,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A single keyword indicating the circumstances under
    * which the value of the attribute can be (re)defined:
@@ -415,6 +431,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A single keyword that indicates when an attribute and
    * associated values are returned in response to a GET request or
@@ -449,6 +466,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A single keyword that indicates when an attribute and
    * associated values are returned in response to a GET request or
@@ -482,29 +500,16 @@ public final class SchemaAttribute extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.RETURNED, Optional.ofNullable(returned).map(Returned::getValue).orElse(null));
   }
 
-  // @formatter:off
   /**
-   * A single keyword value that specifies how the service
-   * provider enforces uniqueness of attribute values.  A server MAY
-   * reject an invalid value based on uniqueness by returning HTTP
-   * response code 400 (Bad Request).  A client MAY enforce
-   * uniqueness on the client side to a greater degree than the
-   * service provider enforces.  For example, a client could make a
-   * value unique while the server has uniqueness of "none".  Valid
-   * keywords are as follows:
-   *
-   * none  The values are not intended to be unique in any way.
-   *       DEFAULT.
-   *
-   * server  The value SHOULD be unique within the context of the
-   *         current SCIM endpoint (or tenancy) and MAY be globally
-   *         unique (e.g., a "username", email address, or other
-   *         server-generated key or counter).  No two resources on the
-   *         same server SHOULD possess the same value.
-   *
-   * global  The value SHOULD be globally unique (e.g., an email
-   *         address, a GUID, or other value).  No two resources on any
-   *         server SHOULD possess the same value.
+   * A single keyword value that specifies how the service provider enforces uniqueness of attribute values. A
+   * server MAY reject an invalid value based on uniqueness by returning HTTP response code 400 (Bad Request). A
+   * client MAY enforce uniqueness on the client side to a greater degree than the service provider enforces.
+   * For example, a client could make a value unique while the server has uniqueness of "none". Valid keywords
+   * are as follows: none The values are not intended to be unique in any way. DEFAULT. server The value SHOULD
+   * be unique within the context of the current SCIM endpoint (or tenancy) and MAY be globally unique (e.g., a
+   * "username", email address, or other server-generated key or counter). No two resources on the same server
+   * SHOULD possess the same value. global The value SHOULD be globally unique (e.g., an email address, a GUID,
+   * or other value). No two resources on any server SHOULD possess the same value.
    */
   // @formatter:on
   public Uniqueness getUniqueness()
@@ -512,29 +517,16 @@ public final class SchemaAttribute extends ScimObjectNode
     return getStringAttribute(AttributeNames.RFC7643.UNIQUENESS).map(Uniqueness::getByValue).orElse(null);
   }
 
-  // @formatter:off
   /**
-   * A single keyword value that specifies how the service
-   * provider enforces uniqueness of attribute values.  A server MAY
-   * reject an invalid value based on uniqueness by returning HTTP
-   * response code 400 (Bad Request).  A client MAY enforce
-   * uniqueness on the client side to a greater degree than the
-   * service provider enforces.  For example, a client could make a
-   * value unique while the server has uniqueness of "none".  Valid
-   * keywords are as follows:
-   *
-   * none  The values are not intended to be unique in any way.
-   *       DEFAULT.
-   *
-   * server  The value SHOULD be unique within the context of the
-   *         current SCIM endpoint (or tenancy) and MAY be globally
-   *         unique (e.g., a "username", email address, or other
-   *         server-generated key or counter).  No two resources on the
-   *         same server SHOULD possess the same value.
-   *
-   * global  The value SHOULD be globally unique (e.g., an email
-   *         address, a GUID, or other value).  No two resources on any
-   *         server SHOULD possess the same value.
+   * A single keyword value that specifies how the service provider enforces uniqueness of attribute values. A
+   * server MAY reject an invalid value based on uniqueness by returning HTTP response code 400 (Bad Request). A
+   * client MAY enforce uniqueness on the client side to a greater degree than the service provider enforces.
+   * For example, a client could make a value unique while the server has uniqueness of "none". Valid keywords
+   * are as follows: none The values are not intended to be unique in any way. DEFAULT. server The value SHOULD
+   * be unique within the context of the current SCIM endpoint (or tenancy) and MAY be globally unique (e.g., a
+   * "username", email address, or other server-generated key or counter). No two resources on the same server
+   * SHOULD possess the same value. global The value SHOULD be globally unique (e.g., an email address, a GUID,
+   * or other value). No two resources on any server SHOULD possess the same value.
    */
   // @formatter:on
   public void setUniqueness(Uniqueness uniqueness)
@@ -543,6 +535,8 @@ public final class SchemaAttribute extends ScimObjectNode
                  Optional.ofNullable(uniqueness).map(Uniqueness::getValue).orElse(null));
   }
 
+  // @formatter:off
+
   /**
    * A Boolean value indicating the attribute's plurality.
    */
@@ -550,6 +544,8 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     return getBooleanAttribute(AttributeNames.RFC7643.MULTI_VALUED).orElse(false);
   }
+
+  // @formatter:off
 
   /**
    * A Boolean value indicating the attribute's plurality.
@@ -560,6 +556,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A Boolean value that specifies whether or not the
    * attribute is required.
@@ -571,6 +568,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A Boolean value that specifies whether or not the
    * attribute is required.
@@ -581,7 +579,8 @@ public final class SchemaAttribute extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.REQUIRED, required);
   }
 
-  // @formatter:off
+// @formatter:off
+
   /**
    * A Boolean value that specifies whether or not a string
    * attribute is case sensitive.  The server SHALL use case
@@ -599,6 +598,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A Boolean value that specifies whether or not a string
    * attribute is case sensitive.  The server SHALL use case
@@ -615,7 +615,8 @@ public final class SchemaAttribute extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.CASE_EXACT, caseExact);
   }
 
-// @formatter:off
+ // @formatter:off
+
   /**
    * A collection of suggested canonical values that
    * MAY be used (e.g., "work" and "home").  In some cases, service
@@ -628,6 +629,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * A collection of suggested canonical values that
    * MAY be used (e.g., "work" and "home").  In some cases, service
@@ -639,22 +641,12 @@ public final class SchemaAttribute extends ScimObjectNode
     setStringAttributeList(AttributeNames.RFC7643.CANONICAL_VALUES, canonicalValues);
   }
 
- // @formatter:off
   /**
-   * A multi-valued array of JSON strings that indicate
-   * the SCIM resource types that may be referenced.  Valid values
-   * are as follows:
-   *
-   * +  A SCIM resource type (e.g., "User" or "Group"),
-   *
-   * +  "external" - indicating that the resource is an external
-   *                 resource (e.g., a photo), or
-   *
-   * +  "uri" - indicating that the reference is to a service
-   *            endpoint or an identifier (e.g., a schema URN).
-   *
-   * This attribute is only applicable for attributes that are of
-   * type "reference" (Section 2.3.7).
+   * A multi-valued array of JSON strings that indicate the SCIM resource types that may be referenced. Valid
+   * values are as follows: + A SCIM resource type (e.g., "User" or "Group"), + "external" - indicating that the
+   * resource is an external resource (e.g., a photo), or + "uri" - indicating that the reference is to a
+   * service endpoint or an identifier (e.g., a schema URN). This attribute is only applicable for attributes
+   * that are of type "reference" (Section 2.3.7).
    */
   // @formatter:on
   public List<ReferenceTypes> getReferenceTypes()
@@ -664,22 +656,12 @@ public final class SchemaAttribute extends ScimObjectNode
                                                                           .collect(Collectors.toList());
   }
 
-  // @formatter:off
   /**
-   * A multi-valued array of JSON strings that indicate
-   * the SCIM resource types that may be referenced.  Valid values
-   * are as follows:
-   *
-   * +  A SCIM resource type (e.g., "User" or "Group"),
-   *
-   * +  "external" - indicating that the resource is an external
-   *                 resource (e.g., a photo), or
-   *
-   * +  "uri" - indicating that the reference is to a service
-   *            endpoint or an identifier (e.g., a schema URN).
-   *
-   * This attribute is only applicable for attributes that are of
-   * type "reference" (Section 2.3.7).
+   * A multi-valued array of JSON strings that indicate the SCIM resource types that may be referenced. Valid
+   * values are as follows: + A SCIM resource type (e.g., "User" or "Group"), + "external" - indicating that the
+   * resource is an external resource (e.g., a photo), or + "uri" - indicating that the reference is to a
+   * service endpoint or an identifier (e.g., a schema URN). This attribute is only applicable for attributes
+   * that are of type "reference" (Section 2.3.7).
    */
   // @formatter:on
   public void setReferenceTypes(List<ReferenceTypes> referenceTypes)
@@ -687,6 +669,8 @@ public final class SchemaAttribute extends ScimObjectNode
     setStringAttributeList(AttributeNames.RFC7643.REFERENCE_TYPES,
                            referenceTypes.stream().map(ReferenceTypes::getValue).collect(Collectors.toList()));
   }
+
+  // @formatter:off
 
   /**
    * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
@@ -697,6 +681,8 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     return getStringAttribute(AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME);
   }
+
+  // @formatter:off
 
   /**
    * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
@@ -709,6 +695,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of "multipleOf" MUST be a number, strictly greater than 0.
    *
@@ -722,6 +709,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of "multipleOf" MUST be a number, strictly greater than 0.
    *
@@ -743,6 +731,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of "minimum" MUST be a number, representing an inclusive
    * lower limit for a numeric instance.
@@ -757,6 +746,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of "minimum" MUST be a number, representing an inclusive
    * lower limit for a numeric instance.
@@ -779,6 +769,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of "maximum" MUST be a number, representing an inclusive
    * upper limit for a numeric instance.
@@ -793,6 +784,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of "maximum" MUST be a number, representing an inclusive
    * upper limit for a numeric instance.
@@ -815,6 +807,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -831,6 +824,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -855,6 +849,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -873,6 +868,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -899,6 +895,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a string.  This string SHOULD be a
    * valid regular expression, according to the Java regular
@@ -915,6 +912,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a string.  This string SHOULD be a
    * valid regular expression, according to the Java regular
@@ -954,6 +952,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -969,6 +968,7 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -991,12 +991,9 @@ public final class SchemaAttribute extends ScimObjectNode
     }
   }
 
-  // @formatter:off
   /**
-   * The value of this keyword MUST be a non-negative integer.
-   *
-   * An array instance is valid against "maxItems" if its size is less
-   * than, or equal to, the value of this keyword.
+   * The value of this keyword MUST be a non-negative integer. An array instance is valid against "maxItems" if
+   * its size is less than, or equal to, the value of this keyword.
    */
   // @formatter:on
   public Optional<Integer> getMaxItems()
@@ -1004,12 +1001,9 @@ public final class SchemaAttribute extends ScimObjectNode
     return getIntegerAttribute(AttributeNames.Custom.MAX_ITEMS);
   }
 
-  // @formatter:off
   /**
-   * The value of this keyword MUST be a non-negative integer.
-   *
-   * An array instance is valid against "maxItems" if its size is less
-   * than, or equal to, the value of this keyword.
+   * The value of this keyword MUST be a non-negative integer. An array instance is valid against "maxItems" if
+   * its size is less than, or equal to, the value of this keyword.
    */
   // @formatter:on
   public void setMaxItems(Integer maxItems)
@@ -1170,6 +1164,34 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
+
+  /**
+   * A default value that is set if the attribute has no value
+   */
+  public String getDefaultValue()
+  {
+    return getStringAttribute(AttributeNames.Custom.DEFAULT_VALUE).orElse(null);
+  }
+
+  // @formatter:off
+
+  /**
+   * A default value that is set if the attribute has no value
+   */
+  public void setDefaultValue(String defaultValue)
+  {
+    boolean doesDefaultValueApplyToType = validateDefaultValue(defaultValue);
+    if (doesDefaultValueApplyToType)
+    {
+      setAttribute(AttributeNames.Custom.DEFAULT_VALUE, defaultValue);
+    }
+    else
+    {
+      log.warn("Ignoring default value for attribute '{}' because the value '{}' does not apply to type '{}'",
+        getName(), defaultValue, getType());
+    }
+  }
+
   /**
    * When an attribute is of type "complex",
    * "subAttributes" defines a set of sub-attributes.
@@ -1182,12 +1204,9 @@ public final class SchemaAttribute extends ScimObjectNode
     return getArrayAttribute(AttributeNames.RFC7643.SUB_ATTRIBUTES, SchemaAttribute.class);
   }
 
-  // @formatter:off
   /**
-   * When an attribute is of type "complex",
-   * "subAttributes" defines a set of sub-attributes.
-   * "subAttributes" has the same schema sub-attributes as
-   * "attributes".
+   * When an attribute is of type "complex", "subAttributes" defines a set of sub-attributes. "subAttributes"
+   * has the same schema sub-attributes as "attributes".
    */
   // @formatter:on
   private void setSubAttributes(List<SchemaAttribute> subAttributes)
@@ -1342,5 +1361,47 @@ public final class SchemaAttribute extends ScimObjectNode
       currentNode = currentNode.getParent();
     }
     return parentHierarchy;
+  }
+
+  /**
+   * verifies that the given default-value applies to the {@link SchemaAttribute}s definition
+   *
+   * @param schemaAttribute the attributes definition
+   * @param defaultValue the default-value that is being assigned to the attributes-definition
+   */
+  private boolean validateDefaultValue(String defaultValue)
+  {
+    try
+    {
+      switch (getType())
+      {
+        case BOOLEAN:
+          return StringUtils.equalsAnyIgnoreCase(defaultValue, "true", "false");
+        case INTEGER:
+          Integer.parseInt(defaultValue);
+          return true;
+        case DECIMAL:
+          Double.parseDouble(defaultValue);
+          return true;
+        case COMPLEX:
+        case BINARY:
+        case ANY:
+          throw new InternalServerException(String.format("Invalid configuration. Default values are only supported for "
+                                                          + "the following types: %s",
+                                                          Arrays.asList(Type.BOOLEAN,
+                                                                        Type.INTEGER,
+                                                                        Type.DECIMAL,
+                                                                        Type.STRING,
+                                                                        Type.REFERENCE,
+                                                                        Type.DATE_TIME)));
+        default:
+          return true;
+      }
+    }
+    catch (Exception ex)
+    {
+      log.debug(ex.getMessage(), ex);
+      return false;
+    }
   }
 }

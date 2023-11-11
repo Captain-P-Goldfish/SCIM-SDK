@@ -6,7 +6,7 @@
     <artifactId>scim-sdk-parent</artifactId>
 
     <packaging>pom</packaging>
-    <version>1.19.1-SNAPSHOT</version>
+    <version>1.20.0-SNAPSHOT</version>
 
     <name>SCIM SDK</name>
     <description>A full SCIM 2.0 open source implementation</description>
@@ -78,7 +78,7 @@
         <version.jackson-databind>2.15.3</version.jackson-databind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.jakarta.ws.rs.api>3.1.0</version.jakarta.ws.rs.api>
-        <version.antlr>4.13.1</version.antlr>
+        <version.antlr>4.9.3</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
         <version.bouncy.castle>1.76</version.bouncy.castle>
@@ -104,6 +104,7 @@
         <!-- version conflicts -->
         <version.apiguardian>1.1.2</version.apiguardian>
         <version.antlr.st4>4.3.4</version.antlr.st4>
+        <version.antlr.runtime>3.5.3</version.antlr.runtime>
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.11.0</version.maven.compiler.plugin>
@@ -369,6 +370,11 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>ST4</artifactId>
                 <version>${version.antlr.st4}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr-runtime</artifactId>
+                <version>${version.antlr.runtime}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

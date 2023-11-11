@@ -58,7 +58,7 @@ class ResponseAttributeValidator
    *   }
    * </pre>
    *
-   * Additionally the <b>attributes</b> or <b>excludedAttributes</b> parameter has an effect of some of the
+   * Additionally, the <b>attributes</b> or <b>excludedAttributes</b> parameter has an effect of some of the
    * values of the <b>"returned"</b> attribute.<br>
    * <br>
    * Now we will list the different value combinations and what they will mean as a result for this contexts
@@ -298,7 +298,7 @@ class ResponseAttributeValidator
   }
 
   /**
-   * validates an attribute and will decides if the attribute should be returned to the client or not
+   * validates an attribute and will decide if the attribute should be returned to the client or not
    *
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate

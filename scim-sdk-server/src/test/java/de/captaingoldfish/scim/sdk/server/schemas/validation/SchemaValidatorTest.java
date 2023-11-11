@@ -23,7 +23,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -2210,5 +2212,615 @@ public class SchemaValidatorTest implements FileReferences
       return new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
                                         HttpMethod.PATCH).validateDocument(patchSchema, patchOpRequest);
     });
+  }
+
+  @DisplayName("Test validation with default values on schema-request-validation")
+  @Nested
+  public class SchemaRequestValidationDefaultValueTests
+  {
+
+    private ResourceType allTypesResourceType;
+
+    private SchemaAttribute testAttribute;
+
+    @BeforeEach
+    public void initialize()
+    {
+      JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+      JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+      JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+      allTypesResourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(false),
+                                                                      allTypesResourceTypeJson,
+                                                                      allTypesValidationSchema,
+                                                                      enterpriseUserValidationSchema);
+      testAttribute = allTypesResourceType.getSchemaAttribute("string").get();
+    }
+
+    /**
+     * verifies that if a string-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignStringDefaultValue()
+    {
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * shows that the default-value is not set if the serviceProvider does not support it
+     */
+    @DisplayName("STRING-type default value is not set if not supported by ServiceProvider")
+    @Test
+    public void testAssignStringDefaultValueWithFeatureDisabled()
+    {
+      serviceProvider.setUseDefaultValuesOnRequest(false);
+
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(1, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+    }
+
+    /**
+     * verifies that if a string-default value is not overriding a field that is present
+     */
+    @DisplayName("STRING-type default value does not override present value")
+    @Test
+    public void testAssignStringDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setString("hello");
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("hello", resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a reference-default value is assigned to an attribute that this value is set if the field
+     * is left empty
+     */
+    @DisplayName("REFERENCE-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignReferenceDefaultValue()
+    {
+      testAttribute.setType(Type.REFERENCE);
+      testAttribute.setReferenceTypes(Arrays.asList(ReferenceTypes.EXTERNAL));
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("world", resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a reference-default value is not overriding a field that is present
+     */
+    @DisplayName("REFERENCE-type default value does not override present value")
+    @Test
+    public void testAssignReferenceDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.REFERENCE);
+      testAttribute.setReferenceTypes(Arrays.asList(ReferenceTypes.EXTERNAL));
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setString("hello");
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(allTypes.getString().get(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a datetime-default value is assigned to an attribute that this value is set if the field
+     * is left empty
+     */
+    @DisplayName("DATETIME-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignDateTimeDefaultValue()
+    {
+      testAttribute.setType(Type.DATE_TIME);
+      Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+      testAttribute.setDefaultValue(now.toString());
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a datetime-default value is not overriding a field that is present
+     */
+    @DisplayName("DATETIME-type default value does not override present value")
+    @Test
+    public void testAssignDatetimeDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.DATE_TIME);
+      Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+      testAttribute.setDefaultValue(now.toString());
+
+      Instant later = Instant.now().plusSeconds(50).truncatedTo(ChronoUnit.MILLIS);
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setString(later.toString());
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(later.toString(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a boolean-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("BOOLEAN-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignBooleanDefaultValue()
+    {
+      testAttribute.setType(Type.BOOLEAN);
+      testAttribute.setDefaultValue(Boolean.TRUE.toString());
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(Boolean.parseBoolean(testAttribute.getDefaultValue()),
+                              resource.get(testAttribute.getName()).booleanValue());
+    }
+
+    /**
+     * verifies that if a boolean-default value is not overriding a field that is present
+     */
+    @DisplayName("BOOLEAN-type default value does not override present value")
+    @Test
+    public void testAssignBooleanDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.BOOLEAN);
+      testAttribute.setDefaultValue("false");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", BooleanNode.TRUE);
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertTrue(resource.get(testAttribute.getName()).booleanValue());
+    }
+
+    /**
+     * verifies that if a integer-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("INTEGER-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignIntegerDefaultValue()
+    {
+      testAttribute.setType(Type.INTEGER);
+      testAttribute.setDefaultValue("55");
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(55, resource.get(testAttribute.getName()).intValue());
+    }
+
+    /**
+     * verifies that if a integer-default value is not overriding a field that is present
+     */
+    @DisplayName("INTEGER-type default value does not override present value")
+    @Test
+    public void testAssignIntegerDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.INTEGER);
+      testAttribute.setDefaultValue("55");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", new IntNode(1));
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(1, resource.get(testAttribute.getName()).intValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("DECIMAL-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignDecimalDefaultValue()
+    {
+      testAttribute.setType(Type.DECIMAL);
+      testAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", new DoubleNode(55.559));
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(55.559, resource.get(testAttribute.getName()).doubleValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is not overriding a field that is present
+     */
+    @DisplayName("DECIMAL-type default value does not override present value")
+    @Test
+    public void testAssignDecimalDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.DECIMAL);
+      testAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", new DoubleNode(88.79));
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(88.79, resource.get(testAttribute.getName()).doubleValue());
+    }
+  }
+
+  @DisplayName("Test validation with default values on schema-response-validation")
+  @Nested
+  public class SchemaResponseValidationDefaultValueTests
+  {
+
+    private ResourceType allTypesResourceType;
+
+    private SchemaAttribute testAttribute;
+
+    @BeforeEach
+    public void initialize()
+    {
+      JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+      JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+      JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+      allTypesResourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(false),
+                                                                      allTypesResourceTypeJson,
+                                                                      allTypesValidationSchema,
+                                                                      enterpriseUserValidationSchema);
+      testAttribute = allTypesResourceType.getSchemaAttribute("string").get();
+    }
+
+    /**
+     * verifies that if a string-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignStringDefaultValue()
+    {
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * shows that the default-value is not set if the serviceProvider does not support it
+     */
+    @DisplayName("STRING-type default value is not set if not supported by ServiceProvider")
+    @Test
+    public void testAssignStringDefaultValueWithFeatureDisabled()
+    {
+      serviceProvider.setUseDefaultValuesOnResponse(false);
+
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+    }
+
+    /**
+     * verifies that if a string-default value is not overriding a field that is present
+     */
+    @DisplayName("STRING-type default value does not override present value")
+    @Test
+    public void testAssignStringDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setString("hello");
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("hello", resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a reference-default value is assigned to an attribute that this value is set if the field
+     * is left empty
+     */
+    @DisplayName("REFERENCE-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignReferenceDefaultValue()
+    {
+      testAttribute.setType(Type.REFERENCE);
+      testAttribute.setReferenceTypes(Arrays.asList(ReferenceTypes.EXTERNAL));
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("world", resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a reference-default value is not overriding a field that is present
+     */
+    @DisplayName("REFERENCE-type default value does not override present value")
+    @Test
+    public void testAssignReferenceDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.REFERENCE);
+      testAttribute.setReferenceTypes(Arrays.asList(ReferenceTypes.EXTERNAL));
+      testAttribute.setDefaultValue("world");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setString("hello");
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(allTypes.getString().get(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a datetime-default value is assigned to an attribute that this value is set if the field
+     * is left empty
+     */
+    @DisplayName("DATETIME-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignDateTimeDefaultValue()
+    {
+      testAttribute.setType(Type.DATE_TIME);
+      Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+      testAttribute.setDefaultValue(now.toString());
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a datetime-default value is not overriding a field that is present
+     */
+    @DisplayName("DATETIME-type default value does not override present value")
+    @Test
+    public void testAssignDatetimeDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.DATE_TIME);
+      Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+      testAttribute.setDefaultValue(now.toString());
+
+      Instant later = Instant.now().plusSeconds(50).truncatedTo(ChronoUnit.MILLIS);
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setString(later.toString());
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(later.toString(), resource.get(testAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a boolean-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("BOOLEAN-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignBooleanDefaultValue()
+    {
+      testAttribute.setType(Type.BOOLEAN);
+      testAttribute.setDefaultValue(Boolean.TRUE.toString());
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(Boolean.parseBoolean(testAttribute.getDefaultValue()),
+                              resource.get(testAttribute.getName()).booleanValue());
+    }
+
+    /**
+     * verifies that if a boolean-default value is not overriding a field that is present
+     */
+    @DisplayName("BOOLEAN-type default value does not override present value")
+    @Test
+    public void testAssignBooleanDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.BOOLEAN);
+      testAttribute.setDefaultValue("false");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", BooleanNode.TRUE);
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertTrue(resource.get(testAttribute.getName()).booleanValue());
+    }
+
+    /**
+     * verifies that if a integer-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("INTEGER-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignIntegerDefaultValue()
+    {
+      testAttribute.setType(Type.INTEGER);
+      testAttribute.setDefaultValue("55");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(55, resource.get(testAttribute.getName()).intValue());
+    }
+
+    /**
+     * verifies that if a integer-default value is not overriding a field that is present
+     */
+    @DisplayName("INTEGER-type default value does not override present value")
+    @Test
+    public void testAssignIntegerDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.INTEGER);
+      testAttribute.setDefaultValue("55");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", new IntNode(1));
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(1, resource.get(testAttribute.getName()).intValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("DECIMAL-type default value is successfully assigned on empty field")
+    @Test
+    public void testAssignDecimalDefaultValue()
+    {
+      testAttribute.setType(Type.DECIMAL);
+      testAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", new DoubleNode(55.559));
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(55.559, resource.get(testAttribute.getName()).doubleValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is not overriding a field that is present
+     */
+    @DisplayName("DECIMAL-type default value does not override present value")
+    @Test
+    public void testAssignDecimalDefaultValueDoesNotOverride()
+    {
+      testAttribute.setType(Type.DECIMAL);
+      testAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.set("string", new DoubleNode(88.79));
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(88.79, resource.get(testAttribute.getName()).doubleValue());
+    }
   }
 }
