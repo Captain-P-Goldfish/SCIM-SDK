@@ -39,7 +39,8 @@ class ValidationSelector
                                                 JsonNode attribute,
                                                 ContextValidator contextValidator)
   {
-    final boolean isContextValidation = contextValidator.validateContext(schemaAttribute, attribute);
+    final JsonNode effectiveAttribute = contextValidator.handleDefaultValue(schemaAttribute, attribute);
+    final boolean isContextValidation = contextValidator.validateContext(schemaAttribute, effectiveAttribute);
     if (!isContextValidation)
     {
       return Optional.empty();
@@ -48,7 +49,7 @@ class ValidationSelector
     boolean isAnyNode = Type.ANY.equals(schemaAttribute.getType());
     if (isAnyNode)
     {
-      return Optional.of(handleAnyAttribute(schemaAttribute, attribute));
+      return Optional.of(handleAnyAttribute(schemaAttribute, effectiveAttribute));
     }
 
     boolean isComplexType = Type.COMPLEX.equals(schemaAttribute.getType());
@@ -57,14 +58,15 @@ class ValidationSelector
       if (isComplexType)
       {
         ArrayNode validatedAttribute = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                          attribute,
+                                                                                          effectiveAttribute,
                                                                                           contextValidator);
         CustomAttributeValidator.validateArrayNode(schemaAttribute, validatedAttribute);
         return Optional.ofNullable(validatedAttribute);
       }
       else
       {
-        ArrayNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        ArrayNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute,
+                                                                                         effectiveAttribute);
         CustomAttributeValidator.validateArrayNode(schemaAttribute, validatedAttribute);
         return Optional.ofNullable(validatedAttribute);
       }
@@ -74,13 +76,13 @@ class ValidationSelector
       if (isComplexType)
       {
         JsonNode validatedAttribute = ComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                              attribute,
+                                                                              effectiveAttribute,
                                                                               contextValidator);
         return Optional.ofNullable(validatedAttribute);
       }
       else
       {
-        JsonNode validatedAttribute = SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        JsonNode validatedAttribute = SimpleAttributeValidator.parseNodeType(schemaAttribute, effectiveAttribute);
         CustomAttributeValidator.validateSimpleNode(schemaAttribute, validatedAttribute);
         return Optional.of(validatedAttribute);
       }

@@ -2223,9 +2223,14 @@ public class SchemaValidatorTest implements FileReferences
 
     private SchemaAttribute testAttribute;
 
+    private SchemaAttribute testSubAttribute;
+
     @BeforeEach
     public void initialize()
     {
+      serviceProvider.setUseDefaultValuesOnRequest(true);
+      serviceProvider.setUseDefaultValuesOnResponse(false);
+
       JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
       JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
       JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
@@ -2235,6 +2240,28 @@ public class SchemaValidatorTest implements FileReferences
                                                                       allTypesValidationSchema,
                                                                       enterpriseUserValidationSchema);
       testAttribute = allTypesResourceType.getSchemaAttribute("string").get();
+      testSubAttribute = allTypesResourceType.getSchemaAttribute("complex.string").get();
+    }
+
+    /**
+     * verifies that if a string-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value is successfully assigned on required empty field")
+    @Test
+    public void testAssignRequiredStringDefaultValue()
+    {
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+      testAttribute.setRequired(true);
+
+      AllTypes allTypes = new AllTypes();
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
     }
 
     /**
@@ -2504,6 +2531,58 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
       Assertions.assertEquals(88.79, resource.get(testAttribute.getName()).doubleValue());
     }
+
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value is successfully assigned on empty-complex sub-attribute")
+    @Test
+    public void testAssignStringDefaultValueOnSubAttribute()
+    {
+      testSubAttribute.setType(Type.STRING);
+      testSubAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+      log.warn(resource.toPrettyString());
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value does not override present-complex sub-attribute")
+    @Test
+    public void testAssignStringDefaultValueOnPresentSubAttribute()
+    {
+      testSubAttribute.setType(Type.STRING);
+      testSubAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setString("hello-world");
+
+      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+                                                         HttpMethod.POST).validateDocument(allTypes);
+
+      log.warn(resource.toPrettyString());
+      Assertions.assertEquals(2, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).textValue());
+    }
   }
 
   @DisplayName("Test validation with default values on schema-response-validation")
@@ -2515,9 +2594,14 @@ public class SchemaValidatorTest implements FileReferences
 
     private SchemaAttribute testAttribute;
 
+    private SchemaAttribute testSubAttribute;
+
     @BeforeEach
     public void initialize()
     {
+      serviceProvider.setUseDefaultValuesOnRequest(false);
+      serviceProvider.setUseDefaultValuesOnResponse(true);
+
       JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
       JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
       JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
@@ -2527,6 +2611,30 @@ public class SchemaValidatorTest implements FileReferences
                                                                       allTypesValidationSchema,
                                                                       enterpriseUserValidationSchema);
       testAttribute = allTypesResourceType.getSchemaAttribute("string").get();
+      testSubAttribute = allTypesResourceType.getSchemaAttribute("complex.string").get();
+    }
+
+    /**
+     * verifies that if a string-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("default value is successfully assigned on response on required-attribute")
+    @Test
+    public void testAssignDefaultValueToRequiredAttribute()
+    {
+      testAttribute.setType(Type.STRING);
+      testAttribute.setDefaultValue("world");
+      testAttribute.setRequired(true);
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
     }
 
     /**
@@ -2821,6 +2929,59 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
       Assertions.assertEquals(88.79, resource.get(testAttribute.getName()).doubleValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value is successfully assigned on empty-complex sub-attribute")
+    @Test
+    public void testAssignStringDefaultValueOnSubAttribute()
+    {
+      testSubAttribute.setType(Type.STRING);
+      testSubAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).textValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value does not override present-complex sub-attribute")
+    @Test
+    public void testAssignStringDefaultValueOnPresentSubAttribute()
+    {
+      testSubAttribute.setType(Type.STRING);
+      testSubAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+      complex.setString("hello-world");
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).textValue());
     }
   }
 }

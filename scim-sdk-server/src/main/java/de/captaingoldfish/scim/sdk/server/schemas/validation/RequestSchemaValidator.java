@@ -58,12 +58,7 @@ public class RequestSchemaValidator extends AbstractSchemaValidator
   {
     try
     {
-      JsonNode effectiveAttribute = attribute;
-      if (getServiceProvider().isUseDefaultValuesOnRequest())
-      {
-        effectiveAttribute = DefaultValueHandler.getOrGetDefault(schemaAttribute, attribute);
-      }
-      return RequestAttributeValidator.validateAttribute(schemaAttribute, effectiveAttribute, httpMethod);
+      return RequestAttributeValidator.validateAttribute(getServiceProvider(), schemaAttribute, attribute, httpMethod);
     }
     catch (AttributeValidationException ex)
     {

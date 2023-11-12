@@ -19,6 +19,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -35,6 +36,11 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestAttributeValidatorTest
 {
 
+  /**
+   * a simple serviceProvider config that is used for the context-validators. It is not needed in these tests
+   * though
+   */
+  private final ServiceProvider serviceProvider = new ServiceProvider();
 
   /**
    * test validating a nested complex object. This is actually forbidden by RFC7643 but this should be a
@@ -102,7 +108,7 @@ public class RequestAttributeValidatorTest
 
 
     Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-      return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+      return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, attribute, HttpMethod.POST);
     });
     Assertions.assertTrue(validatedNode.isPresent());
     Assertions.assertEquals(attribute, validatedNode.get());
@@ -146,7 +152,7 @@ public class RequestAttributeValidatorTest
                                                                 .multivalued(multiValued)
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return RequestAttributeValidator.validateAttribute(schemaAttribute, null, HttpMethod.POST);
+          return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
         });
         Assertions.assertFalse(validatedNode.isPresent());
       }
@@ -191,7 +197,10 @@ public class RequestAttributeValidatorTest
                                                                   .build();
           JsonNode attribute = AttributeBuilder.build(type, "2");
           Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-            return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+            return RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                               schemaAttribute,
+                                                               attribute,
+                                                               HttpMethod.POST);
           });
           // read only attributes will be ignored even if they do not match its schema validation
           Assertions.assertFalse(validatedNode.isPresent());
@@ -242,7 +251,10 @@ public class RequestAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                           schemaAttribute,
+                                                           attribute,
+                                                           HttpMethod.POST);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -298,7 +310,10 @@ public class RequestAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                           schemaAttribute,
+                                                           attribute,
+                                                           HttpMethod.POST);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -350,7 +365,10 @@ public class RequestAttributeValidatorTest
       attribute.set("firstname", new TextNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                           schemaAttribute,
+                                                           attribute,
+                                                           HttpMethod.POST);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -390,7 +408,7 @@ public class RequestAttributeValidatorTest
                                                               .required(false)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(schemaAttribute, null, HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -423,7 +441,10 @@ public class RequestAttributeValidatorTest
                                                               .required(false)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(schemaAttribute, new TextNode("123456"), HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                           schemaAttribute,
+                                                           new TextNode("123456"),
+                                                           HttpMethod.POST);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       ScimTextNode scimTextNode = (ScimTextNode)validatedNode.get();
@@ -464,7 +485,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(schemaAttribute, null, HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -507,7 +528,10 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(schemaAttribute, NullNode.getInstance(), HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                    schemaAttribute,
+                                                    NullNode.getInstance(),
+                                                    HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -547,7 +571,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(schemaAttribute, null, HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -589,7 +613,10 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(schemaAttribute, NullNode.getInstance(), HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                    schemaAttribute,
+                                                    NullNode.getInstance(),
+                                                    HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -632,7 +659,10 @@ public class RequestAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                           schemaAttribute,
+                                                           attribute,
+                                                           HttpMethod.POST);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       JsonNode jsonNode = validatedNode.get();
@@ -688,7 +718,7 @@ public class RequestAttributeValidatorTest
 
       try
       {
-        RequestAttributeValidator.validateAttribute(schemaAttribute, attribute, HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, attribute, HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)

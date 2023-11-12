@@ -76,10 +76,17 @@ public class MetaAttributeValidator
    */
   private static ContextValidator getContextValidator()
   {
-    return (schemaAttribute, attribute) -> {
-      boolean isNodeNull = attribute == null || attribute.isNull();
-      validateRequiredAttribute(schemaAttribute, isNodeNull);
-      return !isNodeNull;
+    return new ContextValidator(null, null)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        boolean isNodeNull = jsonNode == null || jsonNode.isNull();
+        validateRequiredAttribute(schemaAttribute, isNodeNull);
+        return !isNodeNull;
+      }
     };
   }
 }

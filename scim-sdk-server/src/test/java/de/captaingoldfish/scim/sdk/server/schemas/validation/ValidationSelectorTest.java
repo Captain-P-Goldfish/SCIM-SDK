@@ -24,11 +24,14 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ContextValidator.ValidationContextType;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 import lombok.SneakyThrows;
 
@@ -47,7 +50,16 @@ public class ValidationSelectorTest
   public void testOnContextValidationFalseReturnEmpty()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").build();
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> false;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return false;
+      }
+    };
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, null, contextValidator);
     Assertions.assertFalse(validatedNode.isPresent());
   }
@@ -60,7 +72,16 @@ public class ValidationSelectorTest
   public void testValidateSimpleAttribute()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").build();
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return true;
+      }
+    };
     JsonNode attribute = new TextNode("hello world");
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
     Assertions.assertTrue(validatedNode.isPresent());
@@ -79,7 +100,16 @@ public class ValidationSelectorTest
                                                             .type(Type.INTEGER)
                                                             .multivalued(true)
                                                             .build();
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return true;
+      }
+    };
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     for ( Integer integer : Arrays.asList(1, 2, 3, 4, 5, 6) )
     {
@@ -107,7 +137,16 @@ public class ValidationSelectorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return true;
+      }
+    };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
@@ -160,7 +199,16 @@ public class ValidationSelectorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return jsonNode != null;
+      }
+    };
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("goldfish"));
@@ -190,7 +238,16 @@ public class ValidationSelectorTest
   public List<DynamicTest> testAnyTypeAsString()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.ANY).build();
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return jsonNode != null;
+      }
+    };
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
     dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsString", () -> {
@@ -286,7 +343,16 @@ public class ValidationSelectorTest
                                    BooleanNode.getFalse(),
                                    new TextNode("2019-09-29T24:00:00Z")));
 
-    ContextValidator contextValidator = (schemaAttribute1, jsonNode) -> true;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return true;
+      }
+    };
     Optional<JsonNode> scimArrayNode = Assertions.assertDoesNotThrow(() -> {
       return ValidationSelector.validateNode(schemaAttribute, arrayNode, contextValidator);
     });

@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -232,14 +233,16 @@ class ResponseAttributeValidator
    * @throws AttributeValidationException if the client has send an invalid attribute that does not match its
    *           definition
    */
-  public static Optional<JsonNode> validateAttribute(SchemaAttribute schemaAttribute,
+  public static Optional<JsonNode> validateAttribute(ServiceProvider serviceProvider,
+                                                     SchemaAttribute schemaAttribute,
                                                      JsonNode attribute,
                                                      JsonNode requestDocument,
                                                      List<SchemaAttribute> attributesList,
                                                      List<SchemaAttribute> excludedAttributesList,
                                                      BiFunction<String, String, String> referenceUrlSupplier)
   {
-    ContextValidator requestContextValidator = getContextValidator(attributesList,
+    ContextValidator requestContextValidator = getContextValidator(serviceProvider,
+                                                                   attributesList,
                                                                    requestDocument,
                                                                    excludedAttributesList,
                                                                    referenceUrlSupplier);
@@ -269,6 +272,7 @@ class ResponseAttributeValidator
   /**
    * the validation that checks if an attribute must be removed from the response document
    *
+   * @param serviceProvider
    * @param attributesList the list of attributes within the "attributes"-parameter
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
    *          returned-value of "request" or "default" should be returned if the attributes parameter is
@@ -278,22 +282,30 @@ class ResponseAttributeValidator
    *          resource id of the resource and it will return the fully qualified url of this resource
    * @return the context validation for responses
    */
-  private static ContextValidator getContextValidator(List<SchemaAttribute> attributesList,
+  private static ContextValidator getContextValidator(ServiceProvider serviceProvider,
+                                                      List<SchemaAttribute> attributesList,
                                                       JsonNode requestDocument,
                                                       List<SchemaAttribute> excludedAttributesList,
                                                       BiFunction<String, String, String> referenceUrlSupplier)
   {
-    return (schemaAttribute, attribute) -> {
-      final boolean validateNode = validateNode(schemaAttribute,
-                                                attribute,
-                                                requestDocument,
-                                                attributesList,
-                                                excludedAttributesList);
-      if (validateNode && Type.COMPLEX.equals(schemaAttribute.getType()))
+    return new ContextValidator(serviceProvider, ContextValidator.ValidationContextType.RESPONSE)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode attribute)
+        throws AttributeValidationException
       {
-        overrideEmptyReferenceNode(schemaAttribute, attribute, referenceUrlSupplier);
+        final boolean validateNode = validateNode(schemaAttribute,
+                                                  attribute,
+                                                  requestDocument,
+                                                  attributesList,
+                                                  excludedAttributesList);
+        if (validateNode && Type.COMPLEX.equals(schemaAttribute.getType()))
+        {
+          overrideEmptyReferenceNode(schemaAttribute, attribute, referenceUrlSupplier);
+        }
+        return validateNode;
       }
-      return validateNode;
     };
   }
 

@@ -2,17 +2,24 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.RequiredArgsConstructor;
 
 
 /**
  * @author Pascal Knueppel
  * @since 11.04.2021
  */
-@FunctionalInterface
-interface ContextValidator
+@RequiredArgsConstructor
+abstract class ContextValidator
 {
+
+  private final ServiceProvider serviceProvider;
+
+  private final ValidationContextType validationContextType;
 
   /**
    * used to define the validation of an attribute in a specific context. The expect context implementations
@@ -23,7 +30,30 @@ interface ContextValidator
    *
    * @throws AttributeValidationException if the attribute does not match its definition
    */
-  public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+  public abstract boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
     throws AttributeValidationException;
 
+  public JsonNode handleDefaultValue(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+  {
+    if (Type.COMPLEX.equals(schemaAttribute.getType()) || (jsonNode != null && !jsonNode.isNull()))
+    {
+      // no default values on complex types
+      return jsonNode;
+    }
+    boolean handleOnRequest = ValidationContextType.REQUEST.equals(validationContextType)
+                              && serviceProvider.isUseDefaultValuesOnRequest();
+    boolean handleOnResponse = ValidationContextType.RESPONSE.equals(validationContextType)
+                               && serviceProvider.isUseDefaultValuesOnResponse();
+    if (handleOnRequest || handleOnResponse)
+    {
+      return DefaultValueHandler.getOrGetDefault(schemaAttribute, jsonNode);
+    }
+    return jsonNode;
+  }
+
+
+  public enum ValidationContextType
+  {
+    REQUEST, RESPONSE
+  }
 }

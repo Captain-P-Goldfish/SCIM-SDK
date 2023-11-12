@@ -17,9 +17,11 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.ContextValidator.ValidationContextType;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 
 
@@ -29,6 +31,21 @@ import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
  */
 public class MultivaluedComplexAttributeValidatorTest
 {
+
+  /**
+   * a simple context-validator always evaluating to true. The contextType has no meaning for the tests here
+   */
+  private static final ContextValidator simpleContextValidator = new ContextValidator(new ServiceProvider(),
+                                                                                      ValidationContextType.REQUEST)
+  {
+
+    @Override
+    public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+      throws AttributeValidationException
+    {
+      return true;
+    }
+  };
 
 
   /**
@@ -66,7 +83,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
@@ -116,7 +133,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("Captain"));
@@ -173,7 +190,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("Captain"));
@@ -232,7 +249,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("Captain"));
@@ -293,7 +310,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("Captain"));
@@ -349,7 +366,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     TextNode attribute = new TextNode("I am an illegal value");
 
     try
@@ -404,7 +421,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("Captain"));
@@ -475,7 +492,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .subAttributes(firstnameAttribute, primaryAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("goldfish"));
@@ -547,7 +564,16 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return jsonNode != null;
+      }
+    };
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
     element.set("firstname", new TextNode("goldfish"));
@@ -599,7 +625,16 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return jsonNode != null;
+      }
+    };
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
@@ -638,7 +673,16 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return jsonNode != null;
+      }
+    };
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
       return MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
@@ -678,7 +722,16 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> jsonNode != null;
+    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return jsonNode != null;
+      }
+    };
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
       return MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, null, contextValidator);

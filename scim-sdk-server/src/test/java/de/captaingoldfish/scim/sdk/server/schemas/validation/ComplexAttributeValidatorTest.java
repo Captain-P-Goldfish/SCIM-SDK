@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
@@ -41,7 +42,17 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+                                                             ContextValidator.ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return true;
+      }
+    };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
@@ -74,8 +85,17 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition,
-                                         jsonNode) -> !Mutability.READ_ONLY.equals(attributeDefinition.getMutability());
+    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+                                                             ContextValidator.ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return !Mutability.READ_ONLY.equals(schemaAttribute.getMutability());
+      }
+    };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
@@ -119,8 +139,17 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition,
-                                         jsonNode) -> !Mutability.READ_ONLY.equals(attributeDefinition.getMutability());
+    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+                                                             ContextValidator.ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return !Mutability.READ_ONLY.equals(schemaAttribute.getMutability());
+      }
+    };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
@@ -149,7 +178,17 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = (attributeDefinition, jsonNode) -> true;
+    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+                                                             ContextValidator.ValidationContextType.REQUEST)
+    {
+
+      @Override
+      public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode jsonNode)
+        throws AttributeValidationException
+      {
+        return true;
+      }
+    };
     TextNode attribute = new TextNode("Captain");
 
     try
