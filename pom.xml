@@ -74,15 +74,15 @@
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.13.0</version.apache.commons.lang3>
         <version.commons.io>2.15.0</version.commons.io>
-        <version.jackson>2.15.3</version.jackson>
-        <version.jackson-databind>2.15.3</version.jackson-databind>
+        <version.jackson>2.16.0</version.jackson>
+        <version.jackson-databind>2.16.0</version.jackson-databind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.jakarta.ws.rs.api>3.1.0</version.jakarta.ws.rs.api>
         <version.antlr>4.13.1</version.antlr>
 <!--        <version.antlr>4.9.3</version.antlr>-->
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
-        <version.bouncy.castle>1.76</version.bouncy.castle>
+        <version.bouncy.castle>1.77</version.bouncy.castle>
 
         <!-- dependency conflicts -->
         <version.javassist>3.29.2-GA</version.javassist>
@@ -96,7 +96,7 @@
         <version.junit.jupiter>5.9.3</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.10.2</version.reflections>
-        <version.mockito>5.6.0</version.mockito>
+        <version.mockito>5.7.0</version.mockito>
         <version.resteasy.jaxrs>3.15.6.Final</version.resteasy.jaxrs>
         <version.equalsverifier>3.15.3</version.equalsverifier>
         <version.springboot>3.1.4</version.springboot>
@@ -112,13 +112,13 @@
         <version.maven.compiler.plugin>3.11.0</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.23.0</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.4.1</version.maven.enforcer.plugin>
-        <version.maven.surefire.plugin>3.2.1</version.maven.surefire.plugin>
+        <version.maven.surefire.plugin>3.2.2</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.3.0</version.maven.source.plugin>
-        <version.maven.javadoc.plugin>3.6.0</version.maven.javadoc.plugin>
+        <version.maven.javadoc.plugin>3.6.2</version.maven.javadoc.plugin>
         <version.maven.gpg.plugin>3.1.0</version.maven.gpg.plugin>
         <version.maven.deploy.plugin>3.1.1</version.maven.deploy.plugin>
         <version.maven.release.plugin>3.0.1</version.maven.release.plugin>
-        <version.maven.versions.plugin>2.16.1</version.maven.versions.plugin>
+        <version.maven.versions.plugin>2.16.2</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.3.0</version.maven.jar.plugin>
         <version.jacoco>0.8.11</version.jacoco>
         <version.maven.lombok.plugin>1.18.20.0</version.maven.lombok.plugin>
