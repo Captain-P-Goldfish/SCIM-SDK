@@ -333,6 +333,28 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that no exception is thrown anymore if the getResource endpoint has no id attribute under the
+   * condition that the {@link ServiceProvider#isIgnoreRequiredExtensionsOnResponse()} is set to true
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"", "123456"})
+  public void testGetResourceWithReturnedResourceHasDifferentId_(String id)
+  {
+    resourceEndpointHandler.getServiceProvider().setIgnoreRequiredAttributesOnResponse(true);
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    user.setId(null);
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(id),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.isNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", id, null, getBaseUrlSupplier());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+  }
+
+  /**
    * will show that a {@link ScimException} is correctly handled by the
    * {@link ResourceEndpointHandler#getResource(String, String)} method
    */
@@ -762,7 +784,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
-   * get service provider configuration without a authentication scheme. this will result in an internal server
+   * get service provider configuration without an authentication scheme. this will result in an internal server
    * error with http status 500
    */
   @Test
@@ -777,6 +799,22 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
     Assertions.assertEquals("An internal error has occurred.", errorResponse.getDetail().get());
+  }
+
+  /**
+   * get service provider configuration without an authentication scheme will not fail if the
+   * {@link ServiceProvider#isIgnoreRequiredExtensionsOnResponse()} is set to true
+   */
+  @Test
+  public void testGetServiceProviderConfigurationWithoutAuthSchemeDoesNotFail()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    resourceEndpointHandler.getServiceProvider().setIgnoreRequiredAttributesOnResponse(true);
+    ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
+                                                                    null,
+                                                                    null,
+                                                                    null);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
   }
 
   /**

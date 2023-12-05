@@ -758,6 +758,44 @@ public class ResponseAttributeValidatorTest
     }
 
     /**
+     * tests the following structure with {@link ServiceProvider#isIgnoreRequiredAttributesOnResponse()}
+     *
+     * <pre>
+     *    {
+     *      "type": "string",
+     *      "required": true,
+     *      "mutability": "readWrite|readOnly|immutable"
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * null
+     * </pre>
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"READ_WRITE", "READ_ONLY", "IMMUTABLE"})
+    public void testRequiredAttributeWithMissingAttributeWithIgnoreRequiredAttributes(Mutability mutability)
+    {
+      serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(Type.STRING)
+                                                              .required(true)
+                                                              .mutability(mutability)
+                                                              .build();
+      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(serviceProvider,
+                                                                                           schemaAttribute,
+                                                                                           null,
+                                                                                           null,
+                                                                                           null,
+                                                                                           null,
+                                                                                           REFERENCE_URL_SUPPLIER);
+      Assertions.assertFalse(validatedAttribute.isPresent());
+    }
+
+    /**
      * tests the following structure
      *
      * <pre>
@@ -804,6 +842,46 @@ public class ResponseAttributeValidatorTest
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
       }
+    }
+
+    /**
+     * tests the following structure with {@link ServiceProvider#isIgnoreRequiredAttributesOnResponse()} set to
+     * true
+     *
+     * <pre>
+     *    {
+     *      "type": "string",
+     *      "required": true,
+     *      "mutability": "readWrite|readOnly|immutable"
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * {
+     *   "id": null
+     * }
+     * </pre>
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"READ_WRITE", "READ_ONLY", "IMMUTABLE"})
+    public void testRequiredAttributeWithNullAttributeWithIgnoreRequiredAttributes(Mutability mutability)
+    {
+      serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(Type.STRING)
+                                                              .required(true)
+                                                              .mutability(mutability)
+                                                              .build();
+      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(serviceProvider,
+                                                                                           schemaAttribute,
+                                                                                           NullNode.getInstance(),
+                                                                                           null,
+                                                                                           null,
+                                                                                           null,
+                                                                                           REFERENCE_URL_SUPPLIER);
+      Assertions.assertFalse(validatedAttribute.isPresent());
     }
 
     /**
@@ -936,11 +1014,12 @@ public class ResponseAttributeValidatorTest
     }
 
     /**
-     * tests the following structure and expects an empty to be returned due to the write only nature of the
-     * sub-attributes
+     * tests the following structure and expects an error to be returned because the required complex attribute is
+     * not present in the response
      *
      * <pre>
      *    {
+     *      "name": "person",
      *      "type": "complex",
      *      "required": true
      *      "subAttributes": [
@@ -1010,6 +1089,64 @@ public class ResponseAttributeValidatorTest
           Assertions.assertEquals(errorMessage, cause.getMessage());
         }
       }
+    }
+
+    /**
+     * tests the following structure and expects an empty to be returned instead of an error because the
+     * {@link ServiceProvider#isIgnoreRequiredAttributesOnResponse()} is set to true
+     *
+     * <pre>
+     *    {
+     *      "name": "person",
+     *      "type": "complex",
+     *      "required": true
+     *      "subAttributes": [
+     *        {
+     *          "name": "firstname",
+     *          "mutability": "writeOnly",
+     *          ...
+     *        }
+     *      ]
+     *      ...
+     *    }
+     * </pre>
+     *
+     * <pre>
+     * {
+     *   "object": {
+     *     "firstname": "goldfish"
+     *   }
+     * }
+     * </pre>
+     */
+    @Test
+    public void testComplexValidationWithReadOnlySubAttributesWithRequiredIgnored()
+    {
+      serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+      SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder()
+                                                                 .name("firstname")
+                                                                 .type(Type.STRING)
+                                                                 .mutability(Mutability.WRITE_ONLY)
+                                                                 .build();
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("person")
+                                                              .type(Type.COMPLEX)
+                                                              .required(true)
+                                                              .subAttributes(firstnameAttribute)
+                                                              .build();
+
+      // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
+      ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
+      attribute.set("firstname", new TextNode("goldfish"));
+
+      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(serviceProvider,
+                                                                                           schemaAttribute,
+                                                                                           attribute,
+                                                                                           null,
+                                                                                           null,
+                                                                                           null,
+                                                                                           REFERENCE_URL_SUPPLIER);
+      Assertions.assertFalse(validatedAttribute.isPresent());
     }
   }
 

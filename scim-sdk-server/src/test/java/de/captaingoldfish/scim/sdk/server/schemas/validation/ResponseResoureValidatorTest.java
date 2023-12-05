@@ -14,6 +14,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +25,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
+import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -143,6 +145,69 @@ public class ResponseResoureValidatorTest implements FileReferences
   }
 
   /**
+   * verifies that no error is thrown if the response does not contain an extension if the attribute
+   * {@link ServiceProvider#isIgnoreRequiredExtensionsOnResponse()} is set to true
+   */
+  @DisplayName("Missing required extension does not throw error on response")
+  @Test
+  public void testRequiredExtensionDoesNotThrowErrorOnResponse()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    Schema userSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+
+    TestUser testUser = TestUser.builder().id(UUID.randomUUID().toString()).userName("goldfish").build();
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(new TestUserResourceHandler(),
+                                                                         userResourceType,
+                                                                         userSchema,
+                                                                         enterpriseUserExtension);
+    for ( ResourceType.SchemaExtension schemaExtension : resourceType.getSchemaExtensions() )
+    {
+      schemaExtension.setRequired(true);
+    }
+    serviceProvider.setIgnoreRequiredExtensionsOnResponse(true);
+
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+                                           referenceUrlSupplier).validateDocument(testUser);
+    });
+    TestUser validatedTestUser = (TestUser)validatedDocument;
+    Set<String> schemas = validatedTestUser.getSchemas();
+    MatcherAssert.assertThat(schemas, Matchers.containsInAnyOrder(SchemaUris.USER_URI));
+  }
+
+  /**
+   * verifies that an error is thrown if the response does not contain an extension if the attribute
+   * {@link ServiceProvider#isIgnoreRequiredExtensionsOnResponse()} is set to false
+   */
+  @DisplayName("Missing required extension does throw error on response")
+  @Test
+  public void testRequiredExtensionDoesThrowErrorOnResponse()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    Schema userSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+
+    TestUser testUser = TestUser.builder().id(UUID.randomUUID().toString()).userName("goldfish").build();
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(new TestUserResourceHandler(),
+                                                                         userResourceType,
+                                                                         userSchema,
+                                                                         enterpriseUserExtension);
+    for ( ResourceType.SchemaExtension schemaExtension : resourceType.getSchemaExtensions() )
+    {
+      schemaExtension.setRequired(true);
+    }
+    serviceProvider.setIgnoreRequiredExtensionsOnResponse(false);
+
+    DocumentValidationException ex = Assertions.assertThrows(DocumentValidationException.class, () -> {
+      new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+                                    referenceUrlSupplier).validateDocument(testUser);
+    });
+    Assertions.assertEquals(String.format("Required extension '%s' is missing", SchemaUris.ENTERPRISE_USER_URI),
+                            ex.getMessage());
+  }
+
+  /**
    * test implementation of a resource node that misses to add the main schema to its "schemas"-attribute
    */
   @NoArgsConstructor
@@ -150,13 +215,39 @@ public class ResponseResoureValidatorTest implements FileReferences
   {
 
     @Builder
-    private TestUser(String id, EnterpriseUser enterpriseUser, Meta meta)
+    private TestUser(String id, String userName, EnterpriseUser enterpriseUser, Meta meta)
     {
       // no schemas attribute is set
       setId(id);
+      setUserName(userName);
       setEnterpriseUser(enterpriseUser);
       setMeta(meta);
     }
+
+    /**
+     * A service provider's unique identifier for the user, typically used by the user to directly authenticate to
+     * the service provider. Often displayed to the user as their unique identifier within the system (as opposed
+     * to "id" or "externalId", which are generally opaque and not user-friendly identifiers). Each User MUST
+     * include a non-empty userName value. This identifier MUST be unique across the service provider's entire set
+     * of Users. This attribute is REQUIRED and is case insensitive.
+     */
+    public Optional<String> getUserName()
+    {
+      return getStringAttribute(AttributeNames.RFC7643.USER_NAME);
+    }
+
+    /**
+     * A service provider's unique identifier for the user, typically used by the user to directly authenticate to
+     * the service provider. Often displayed to the user as their unique identifier within the system (as opposed
+     * to "id" or "externalId", which are generally opaque and not user-friendly identifiers). Each User MUST
+     * include a non-empty userName value. This identifier MUST be unique across the service provider's entire set
+     * of Users. This attribute is REQUIRED and is case insensitive.
+     */
+    public void setUserName(String userName)
+    {
+      setAttribute(AttributeNames.RFC7643.USER_NAME, userName);
+    }
+
 
     /**
      * The following SCIM extension defines attributes commonly used in representing users that belong to, or act

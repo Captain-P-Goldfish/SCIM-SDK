@@ -15,7 +15,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
-import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
@@ -186,7 +185,7 @@ public class ResourceType extends ResourceNode
    * tries to find a scim node of this resource type in the registered schemas. This method may return the wrong
    * attribute if there are colliding attribute names among the main-schema and an extension or among two
    * extensions.
-   * 
+   *
    * @param scimNodeName the scim node name of the attribute that should be extracted
    * @return the schema attribute if it does exist or an empty.
    */
@@ -491,7 +490,7 @@ public class ResourceType extends ResourceNode
      * The URI of an extended schema, e.g., "urn:edu:2.0:Staff". This MUST be equal to the "id" attribute of a
      * "Schema" resource. REQUIRED.
      */
-    private void setSchema(String schema)
+    public void setSchema(String schema)
     {
       setAttribute(AttributeNames.RFC7643.SCHEMA, schema);
     }
@@ -511,12 +510,12 @@ public class ResourceType extends ResourceNode
     }
 
     /**
-     * A Boolean value that specifies whether or not the schema extension is required for the resource type. If
-     * true, a resource of this type MUST include this schema extension and also include any attributes declared
-     * as required in this schema extension. If false, a resource of this type MAY omit this schema extension.
+     * A Boolean value that specifies whether the schema extension is required for the resource type. If true, a
+     * resource of this type MUST include this schema extension and also include any attributes declared as
+     * required in this schema extension. If false, a resource of this type MAY omit this schema extension.
      * REQUIRED.
      */
-    private void setRequired(boolean required)
+    public void setRequired(boolean required)
     {
       setAttribute(AttributeNames.RFC7643.REQUIRED, required);
     }

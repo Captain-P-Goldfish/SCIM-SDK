@@ -538,6 +538,27 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
+   * this test will check that on response validation NO exception is thrown if a required attribute is missing
+   * but the {@link ServiceProvider#isIgnoreRequiredExtensionsOnResponse()} is set to true
+   */
+  @ParameterizedTest
+  @CsvSource({ClassPathReferences.USER_SCHEMA_JSON + "," + USER_RESOURCE_ENTERPRISE,
+              ClassPathReferences.GROUP_SCHEMA_JSON + "," + GROUP_RESOURCE})
+  public void testValidationDoesNotFailOnMissingIdOnResponse(String metaSchemaLocation, String documentLocation)
+  {
+    Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(metaSchemaLocation));
+    JsonNode resourceSchema = JsonHelper.loadJsonDocument(documentLocation);
+
+    serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+
+    JsonHelper.removeAttribute(resourceSchema, AttributeNames.RFC7643.ID);
+    Assertions.assertDoesNotThrow(() -> {
+      new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+                                  referenceUrlSupplier).validateDocument(metaSchema, resourceSchema);
+    });
+  }
+
+  /**
    * This test is explicitly for checking compatibility with microsoft Azure AD. Azure AD sends schema extension
    * references in the schema attribute even if the extension is not present within the document. So this test
    * verifies that the schema validation will not fail if the extension is explicitly set but not present within
@@ -1000,6 +1021,25 @@ public class SchemaValidatorTest implements FileReferences
       new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(userSchema, user);
     });
     Assertions.assertThrows(DocumentValidationException.class, () -> {
+      new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
+                                  referenceUrlSupplier).validateDocument(userSchema, user);
+    });
+  }
+
+  /**
+   * this test will verify that a required missing attribute will NOT cause an exception if it has been set to a
+   * jsonNull value if the service-provider ignores required attributes on response
+   */
+  @Test
+  public void testValidationWithJsonNullValueAndRequiredIgnored()
+  {
+    Schema userSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
+    JsonHelper.addAttribute(user, AttributeNames.RFC7643.USER_NAME, NullNode.instance);
+
+    serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+
+    Assertions.assertDoesNotThrow(() -> {
       new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
                                   referenceUrlSupplier).validateDocument(userSchema, user);
     });

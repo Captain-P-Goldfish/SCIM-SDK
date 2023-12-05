@@ -220,6 +220,7 @@ class ResponseAttributeValidator
    * </li>
    * </ol>
    *
+   * @param serviceProvider the current configuration of the {@link ServiceProvider}
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
@@ -255,7 +256,11 @@ class ResponseAttributeValidator
     {
       try
       {
-        validateRequiredAttribute(schemaAttribute, !validatedNode.isPresent(), attributesList, excludedAttributesList);
+        validateRequiredAttribute(serviceProvider,
+                                  schemaAttribute,
+                                  !validatedNode.isPresent(),
+                                  attributesList,
+                                  excludedAttributesList);
       }
       catch (AttributeValidationException ex)
       {
@@ -272,7 +277,7 @@ class ResponseAttributeValidator
   /**
    * the validation that checks if an attribute must be removed from the response document
    *
-   * @param serviceProvider
+   * @param serviceProvider the current configuration of the {@link ServiceProvider}
    * @param attributesList the list of attributes within the "attributes"-parameter
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
    *          returned-value of "request" or "default" should be returned if the attributes parameter is
@@ -295,7 +300,8 @@ class ResponseAttributeValidator
       public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode attribute)
         throws AttributeValidationException
       {
-        final boolean validateNode = validateNode(schemaAttribute,
+        final boolean validateNode = validateNode(serviceProvider,
+                                                  schemaAttribute,
                                                   attribute,
                                                   requestDocument,
                                                   attributesList,
@@ -312,6 +318,7 @@ class ResponseAttributeValidator
   /**
    * validates an attribute and will decide if the attribute should be returned to the client or not
    *
+   * @param serviceProvider the current configuration of the {@link ServiceProvider}
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
@@ -321,7 +328,8 @@ class ResponseAttributeValidator
    * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
    * @return true if the validation of this attribute should proceed, false else
    */
-  private static boolean validateNode(SchemaAttribute schemaAttribute,
+  private static boolean validateNode(ServiceProvider serviceProvider,
+                                      SchemaAttribute schemaAttribute,
                                       JsonNode attribute,
                                       JsonNode requestDocument,
                                       List<SchemaAttribute> attributesList,
@@ -341,7 +349,7 @@ class ResponseAttributeValidator
       return false;
     }
     final boolean isNodeNull = attribute == null || attribute.isNull();
-    validateRequiredAttribute(schemaAttribute, isNodeNull, attributesList, excludedAttributesList);
+    validateRequiredAttribute(serviceProvider, schemaAttribute, isNodeNull, attributesList, excludedAttributesList);
 
     if (isNodeNull)
     {
@@ -464,17 +472,19 @@ class ResponseAttributeValidator
   /**
    * validates if the attribute is required and present
    *
+   * @param serviceProvider
    * @param schemaAttribute the attributes definition
    * @param isNodeNull if the attribute is null or not
    * @param attributesList tells us if the returned set should be a minimal set or not
    * @param excludedAttributesList tells us if the client asked to exclude specific attributes
    */
-  private static void validateRequiredAttribute(SchemaAttribute schemaAttribute,
+  private static void validateRequiredAttribute(ServiceProvider serviceProvider,
+                                                SchemaAttribute schemaAttribute,
                                                 boolean isNodeNull,
                                                 List<SchemaAttribute> attributesList,
                                                 List<SchemaAttribute> excludedAttributesList)
   {
-    if (!schemaAttribute.isRequired())
+    if (!schemaAttribute.isRequired() || serviceProvider.isIgnoreRequiredAttributesOnResponse())
     {
       return;
     }

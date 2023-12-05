@@ -72,6 +72,20 @@ public class ServiceProvider extends ResourceNode
   private boolean useDefaultValuesOnResponse = true;
 
   /**
+   * if required attributes should only be validated on request or on request and response
+   */
+  @Getter
+  @Setter
+  private boolean ignoreRequiredAttributesOnResponse = false;
+
+  /**
+   * if required extensions should only be validated on request or on request and response
+   */
+  @Getter
+  @Setter
+  private boolean ignoreRequiredExtensionsOnResponse = false;
+
+  /**
    * @param documentationUri the URL to the documentation of the application
    * @param patchConfig the patch configuration
    * @param changePasswordConfig if changing passwords is supported or not

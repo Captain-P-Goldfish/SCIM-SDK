@@ -9,6 +9,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
@@ -63,6 +64,23 @@ public class ResponseResourceValidator extends AbstractResourceValidator
       return null;
     }
     return validatedResource;
+  }
+
+  /**
+   * validates the presence of the required schema-extensions only if not disabled by the
+   * {@link ServiceProvider#isIgnoreRequiredExtensionsOnResponse()} attribute
+   *
+   * @param requiredExtensionList the list of extensions that are required for the {@link #resourceType}
+   * @param inResourcePresentExtensions all extensions that were found within the documents body
+   */
+  @Override
+  protected void checkForMissingRequiredExtensions(List<Schema> requiredExtensionList,
+                                                   List<Schema> inResourcePresentExtensions)
+  {
+    if (!getSchemaValidator().getServiceProvider().isIgnoreRequiredExtensionsOnResponse())
+    {
+      super.checkForMissingRequiredExtensions(requiredExtensionList, inResourcePresentExtensions);
+    }
   }
 
   /**

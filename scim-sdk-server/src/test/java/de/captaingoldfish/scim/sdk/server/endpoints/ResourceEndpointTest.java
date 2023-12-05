@@ -1741,7 +1741,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
    * <ul>
    * <li>we remove the patch config from the service provider</li>
    * <li>we ask explicitly for the patch attribute of the service provider</li>
-   * <li>we expect an internal server error because the response does not contain the required attribute</li>
+   * <li>we expect no error because we are ignoring required attributes on response</li>
    * </ul>
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
@@ -1764,6 +1764,37 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
                             scimResponse.getHttpStatus(),
                             scimResponse.toPrettyString());
+  }
+
+  /**
+   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
+   * <ul>
+   * <li>we remove the patch config from the service provider</li>
+   * <li>we ask explicitly for the patch attribute of the service provider</li>
+   * <li>we expect a successful but basically empty response</li>
+   * </ul>
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
+   */
+  @Test
+  public void testAskForASpecificAttributeWithMissingRequiredAttribute()
+  {
+    serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+
+    // 1. set patch config to null
+    resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
+
+    // 2. ask explicitly for the patch attribute
+    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?attributes=patch";
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
+
+    // 3. we expect a successful but basically empty response
+    Assertions.assertEquals(GetResponse.class, scimResponse.getClass());
+    Assertions.assertEquals(1, scimResponse.size(), scimResponse.toPrettyString());
   }
 
   /**
