@@ -49,19 +49,6 @@ public final class RequestUtils
 {
 
   /**
-   * this method will parse either the attributes parameter or the excludedAttributes parameter into a list. The
-   * expected form of the attributes list is: form (e.g., userName, name, emails)
-   *
-   * @param attributes the comma separated string of scim attribute names
-   * @return the list of attributes
-   */
-  public static List<String> getAttributes(String attributes)
-  {
-    String[] attributeNameArray = getAttributeList(attributes).orElse(new String[0]);
-    return Arrays.asList(attributeNameArray);
-  }
-
-  /**
    * this method will parse either the attributes parameter or the excludedAttributes parameter into a list of
    * {@link SchemaAttribute}s. The expected form of the attributes list is: form (e.g., userName, name, emails)
    *
