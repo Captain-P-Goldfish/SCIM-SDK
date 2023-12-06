@@ -19,6 +19,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -35,6 +36,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
@@ -56,6 +58,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
@@ -445,6 +448,253 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that the schema uri can be used as attributes parameter
+   */
+  @DisplayName("Schema URI can be used as 'attributes'-parameter")
+  @Test
+  public void testSchemaUriWorksAsAttributesParameter()
+  {
+    final String userId = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .userName("goldfish")
+                    .emails(Arrays.asList(Email.builder().value("goldfish@test.de").build()))
+                    .active(true)
+                    .enterpriseUser(EnterpriseUser.builder().costCenter(UUID.randomUUID().toString()).build())
+                    .build();
+    user.setId(userId);
+
+    // set attributes that should be returned
+    ResourceType userResourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+
+    SchemaAttribute emailsAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.EMAILS).get();
+    emailsAttribute.setReturned(Returned.REQUEST);
+    SchemaAttribute activeAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.ACTIVE).get();
+    activeAttribute.setReturned(Returned.REQUEST);
+
+    // add meta to bypass schema validation
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    user.setMeta(meta);
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+
+    final int expectedNumberOfAttributesToBeReturned = 5;
+    MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
+    log.warn(user.toPrettyString());
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    userId,
+                                                                    SchemaUris.USER_URI,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
+    Mockito.verify(userHandler)
+           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
+
+
+    List<String> returnedAttributeNames = new ArrayList<>();
+    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    MatcherAssert.assertThat(returnedAttributeNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
+                                                         Matchers.equalTo("id"),
+                                                         Matchers.equalTo("userName"),
+                                                         Matchers.equalTo("emails"),
+                                                         Matchers.equalTo("active")));
+  }
+
+  /**
+   * verifies that an extension schema uri can be used as attributes parameter
+   */
+  @DisplayName("Extension Schema URI can be used as 'attributes'-parameter")
+  @Test
+  public void testExtensionSchemaUriWorksAsAttributesParameter()
+  {
+    final String userId = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .userName("goldfish")
+                    .emails(Arrays.asList(Email.builder().value("goldfish@test.de").build()))
+                    .active(true)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .costCenter(UUID.randomUUID().toString())
+                                                  .department("department")
+                                                  .employeeNumber(UUID.randomUUID().toString())
+                                                  .build())
+                    .build();
+    user.setId(userId);
+
+    // set attributes that should be returned
+    ResourceType userResourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+
+    SchemaAttribute costCenterAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.COST_CENTER).get();
+    costCenterAttribute.setReturned(Returned.REQUEST);
+    SchemaAttribute departmentAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.DEPARTMENT).get();
+    departmentAttribute.setReturned(Returned.DEFAULT);
+    SchemaAttribute employeeNumberAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.EMPLOYEE_NUMBER)
+                                                              .get();
+    employeeNumberAttribute.setReturned(Returned.NEVER);
+
+    // add meta to bypass schema validation
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    user.setMeta(meta);
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+
+    final int expectedNumberOfAttributesToBeReturned = 4;
+    MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    userId,
+                                                                    SchemaUris.ENTERPRISE_USER_URI,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
+    Mockito.verify(userHandler)
+           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
+
+    log.warn(getResponse.toPrettyString());
+
+    List<String> returnedAttributeNames = new ArrayList<>();
+    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    MatcherAssert.assertThat(returnedAttributeNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
+                                                         Matchers.equalTo("id"),
+                                                         Matchers.equalTo("userName"),
+                                                         Matchers.equalTo(SchemaUris.ENTERPRISE_USER_URI)));
+  }
+
+  /**
+   * verifies that the attributes parameter and the excludedAttributes parameter can be used together
+   */
+  @DisplayName("Attributes and ExcludedAttributes can be used together")
+  @Test
+  public void testAttributesAndExcludedAttributesCanBeUsedTogether()
+  {
+    final String userId = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .userName("goldfish")
+                    .emails(Arrays.asList(Email.builder().value("goldfish@test.de").build()))
+                    .active(true)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .costCenter(UUID.randomUUID().toString())
+                                                  .department("department")
+                                                  .employeeNumber(UUID.randomUUID().toString())
+                                                  .build())
+                    .build();
+    user.setId(userId);
+
+    // set attributes that should be returned
+    ResourceType userResourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+
+    SchemaAttribute costCenterAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.COST_CENTER).get();
+    costCenterAttribute.setReturned(Returned.REQUEST);
+    SchemaAttribute departmentAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.DEPARTMENT).get();
+    departmentAttribute.setReturned(Returned.DEFAULT);
+    SchemaAttribute employeeNumberAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.EMPLOYEE_NUMBER)
+                                                              .get();
+    employeeNumberAttribute.setReturned(Returned.NEVER);
+
+    // add meta to bypass schema validation
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    user.setMeta(meta);
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+
+    final int expectedNumberOfAttributesToBeReturned = 3;
+    MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    userId,
+                                                                    SchemaUris.ENTERPRISE_USER_URI,
+                                                                    AttributeNames.RFC7643.USER_NAME,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
+    Mockito.verify(userHandler).getResource(Mockito.eq(userId), Mockito.any(), Mockito.any(), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
+
+    log.warn(getResponse.toPrettyString());
+
+    List<String> returnedAttributeNames = new ArrayList<>();
+    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    MatcherAssert.assertThat(returnedAttributeNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
+                                                         Matchers.equalTo("id"),
+                                                         Matchers.equalTo(SchemaUris.ENTERPRISE_USER_URI)));
+  }
+
+  /**
+   * verifies schema-uris and simple attributes can be combined
+   */
+  @DisplayName("Schema URIs and simple attribute names work together in 'attributes'-parameter")
+  @Test
+  public void testSchemaUrisWorkTogetherWithSimpleNamesInAttributesParameter()
+  {
+    final String userId = UUID.randomUUID().toString();
+    User user = User.builder()
+                    .userName("goldfish")
+                    .emails(Arrays.asList(Email.builder().value("goldfish@test.de").build()))
+                    .active(true)
+                    .enterpriseUser(EnterpriseUser.builder()
+                                                  .costCenter(UUID.randomUUID().toString())
+                                                  .department("department")
+                                                  .employeeNumber(UUID.randomUUID().toString())
+                                                  .build())
+                    .build();
+    user.setId(userId);
+
+    // set attributes that should be returned
+    ResourceType userResourceType = resourceTypeFactory.getResourceType(EndpointPaths.USERS);
+
+    SchemaAttribute costCenterAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.COST_CENTER).get();
+    costCenterAttribute.setReturned(Returned.REQUEST);
+    SchemaAttribute departmentAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.DEPARTMENT).get();
+    departmentAttribute.setReturned(Returned.DEFAULT);
+    SchemaAttribute employeeNumberAttribute = userResourceType.getSchemaAttribute(AttributeNames.RFC7643.EMPLOYEE_NUMBER)
+                                                              .get();
+    employeeNumberAttribute.setReturned(Returned.NEVER);
+
+    // add meta to bypass schema validation
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    user.setMeta(meta);
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+
+    final int expectedNumberOfAttributesToBeReturned = 5;
+    MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    userId,
+                                                                    SchemaUris.ENTERPRISE_USER_URI + ","
+                                                                            + AttributeNames.RFC7643.USER_NAME + ","
+                                                                            + AttributeNames.RFC7643.ACTIVE,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
+    Mockito.verify(userHandler)
+           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
+
+    log.warn(getResponse.toPrettyString());
+
+    List<String> returnedAttributeNames = new ArrayList<>();
+    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    MatcherAssert.assertThat(returnedAttributeNames,
+                             Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
+                                                         Matchers.equalTo("id"),
+                                                         Matchers.equalTo("userName"),
+                                                         Matchers.equalTo("active"),
+                                                         Matchers.equalTo(SchemaUris.ENTERPRISE_USER_URI)));
+  }
+
+  /**
    * verifies that the attribute parameter is handed over correctly to the {@link ResourceHandler}
    */
   @Test
@@ -481,8 +731,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
 
-    final int expectedNumberOfAttributesToBeReturned = user.size() - excludedAttributeNames.size();
-    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size());
+    final int expectedNumberOfAttributesToBeReturned = user.size() - (excludedAttributeNames.size());
+    Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), scimResponse.toPrettyString());
 
     List<String> returnedAttributeNames = new ArrayList<>();
     getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
@@ -615,51 +865,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(HttpStatus.NOT_FOUND, errorResponse.getHttpStatus());
-  }
-
-  /**
-   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
-   * are set at the same time on get request
-   */
-  @Test
-  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnGet()
-  {
-    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
-                                                                    "123456",
-                                                                    "userName",
-                                                                    "name",
-                                                                    null,
-                                                                    getBaseUrlSupplier(),
-                                                                    null);
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
-  }
-
-  /**
-   * will show that a {@link BadRequestException} is thrown if the parameters attributes and excludedAttributes
-   * are set at the same time on list request
-   */
-  @Test
-  public void testThrowBadRequestIfAttributeAndExcludedAttribtesAreSetOnList()
-  {
-    ScimResponse scimResponse = resourceEndpointHandler.listResources("/Users",
-                                                                      1L,
-                                                                      50,
-                                                                      null,
-                                                                      null,
-                                                                      null,
-                                                                      "displayName",
-                                                                      "name",
-                                                                      getBaseUrlSupplier(),
-                                                                      null);
-    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
-    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
-    Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
-    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
   }
 
   /**

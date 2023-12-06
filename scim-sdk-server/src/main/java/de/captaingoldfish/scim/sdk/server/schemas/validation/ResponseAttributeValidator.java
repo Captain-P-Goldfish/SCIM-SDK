@@ -342,7 +342,7 @@ class ResponseAttributeValidator
       if (attribute != null && !attribute.isNull())
       {
         log.debug("Removing attribute '{}' from document due to its definition of mutability '{}' and returned '{}'",
-                  schemaAttribute.getScimNodeName(),
+                  schemaAttribute.getFullResourceName(),
                   schemaAttribute.getMutability(),
                   schemaAttribute.getReturned());
       }
@@ -361,44 +361,46 @@ class ResponseAttributeValidator
       return true;
     }
 
-    // the following two booleans are mutually exclusive meaning that only one of these boolean can evaluate to
-    // true. Both can be false but the previous evaluation must ensure that only one list is present.
-    final boolean useAttributes = attributesList != null && !attributesList.isEmpty();
-    final boolean useExcludedAttributes = excludedAttributesList != null && !excludedAttributesList.isEmpty();
+    final boolean isAttributesParamUsed = attributesList != null && !attributesList.isEmpty();
+    final boolean isRequestedAttribute = (isAttributesParamUsed
+                                          && isAttributePresentInList(schemaAttribute, attributesList))
+                                         || isAttributePresentInRequest(schemaAttribute, requestDocument);
 
-    if (!useAttributes && !useExcludedAttributes)
+    if (Returned.REQUEST.equals(schemaAttribute.getReturned()))
     {
-      final boolean removeAttribute = Returned.REQUEST.equals(schemaAttribute.getReturned())
-                                      && !isAttributePresentInRequest(schemaAttribute, requestDocument);
-      if (removeAttribute)
+      if (!isRequestedAttribute)
       {
         log.debug("Removing attribute '{}' from response. Returned value is '{}' and it was not present in the clients request",
                   schemaAttribute.getFullResourceName(),
                   Returned.REQUEST);
+        return false;
       }
-      return !removeAttribute;
     }
 
-    final boolean removeRequestOrDefaultAttribute = useAttributes
-                                                    && !isAttributePresentInList(schemaAttribute, attributesList)
-                                                    && !isAttributePresentInRequest(schemaAttribute, requestDocument);
-    if (removeRequestOrDefaultAttribute)
+    final boolean isExcludedAttributesParamUsed = excludedAttributesList != null && !excludedAttributesList.isEmpty();
+    final boolean isExcludedAttribute = isExcludedAttributesParamUsed
+                                        && isExcludedAttributePresentInList(schemaAttribute, excludedAttributesList);
+
+    if (isAttributesParamUsed && !isRequestedAttribute && Returned.DEFAULT.equals(schemaAttribute.getReturned()))
     {
-      log.debug("Removing attribute '{}' from response for its returned value is '{}' and its name is not in the list"
-                + " of requested attributes",
+      if (schemaAttribute.isRequired() && !isExcludedAttribute)
+      {
+        return true;
+      }
+      log.debug("Removing attribute '{}' from response. Param 'attributes' was used the returned value is '{}' and the "
+                + "attribute is not directly requested",
                 schemaAttribute.getFullResourceName(),
                 schemaAttribute.getReturned());
       return false;
     }
-    final boolean excludeAttribute = useExcludedAttributes
-                                     && (isExcludedAttributePresentInList(schemaAttribute, excludedAttributesList)
-                                         || Returned.REQUEST.equals(schemaAttribute.getReturned()));
-    if (excludeAttribute)
+
+    if (isExcludedAttribute)
     {
-      log.debug("Removing attribute '{}' from response for it was excluded by the 'excludedAttributes'-parameter",
+      log.debug("Removing attribute '{}' from response. Attribute is present in the list of 'excludedAttributes'",
                 schemaAttribute.getFullResourceName());
       return false;
     }
+
     return true;
   }
 

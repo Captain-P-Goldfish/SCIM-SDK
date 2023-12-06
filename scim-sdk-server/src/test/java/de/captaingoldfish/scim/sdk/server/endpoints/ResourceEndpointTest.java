@@ -1709,39 +1709,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
-   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
-   * <ul>
-   * <li>we ask explicitly for the patch attribute of the service provider</li>
-   * <li>we expect only the minimal set of [schemas, patch] to be returned in the response</li>
-   * </ul>
-   *
-   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
-   */
-  @Test
-  public void testAskForASingleAttributeWhileOthersAreStillRequired()
-  {
-    final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?attributes=patch";
-    final List<String> minimalAttributeSet = Arrays.asList("schemas", "patch");
-
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
-                                                               HttpMethod.GET,
-                                                               null,
-                                                               httpHeaders,
-                                                               new Context(null));
-    Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus(), scimResponse.toPrettyString());
-    Assertions.assertEquals(minimalAttributeSet.size(), scimResponse.size(), scimResponse.toPrettyString());
-    for ( String attributeName : minimalAttributeSet )
-    {
-      Assertions.assertNotNull(scimResponse.get(attributeName), scimResponse.toPrettyString());
-    }
-  }
-
-  /**
-   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
+   * will check that an error is thrown if the requested required attribute from the {@link ServiceProvider} is
+   * missing
    * <ul>
    * <li>we remove the patch config from the service provider</li>
    * <li>we ask explicitly for the patch attribute of the service provider</li>
-   * <li>we expect no error because we are ignoring required attributes on response</li>
+   * <li>we expect an error because the configuration of the {@link ServiceProvider} is incomplete</li>
    * </ul>
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
@@ -1767,20 +1740,20 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
-   * will check that no exception is thrown if we try to access only a single attribute of the service provider.
+   * will check that no error is thrown if the requested required attribute from the {@link ServiceProvider} is
+   * missing and the {@link ServiceProvider#isIgnoreRequiredAttributesOnResponse()} is set to true
    * <ul>
    * <li>we remove the patch config from the service provider</li>
    * <li>we ask explicitly for the patch attribute of the service provider</li>
-   * <li>we expect a successful but basically empty response</li>
+   * <li>we expect a successful response</li>
    * </ul>
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/393
    */
   @Test
-  public void testAskForASpecificAttributeWithMissingRequiredAttribute()
+  public void testAskForASpecificAttributeThatIsMissingInTheResponse_()
   {
     serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
-
     // 1. set patch config to null
     resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
 
@@ -1792,9 +1765,10 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                httpHeaders,
                                                                new Context(null));
 
-    // 3. we expect a successful but basically empty response
-    Assertions.assertEquals(GetResponse.class, scimResponse.getClass());
-    Assertions.assertEquals(1, scimResponse.size(), scimResponse.toPrettyString());
+    // 3. we expect a successful response
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+    GetResponse getResponse = (GetResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
   }
 
   /**

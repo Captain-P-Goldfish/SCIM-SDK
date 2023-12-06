@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -57,9 +59,32 @@ public final class RequestUtils
    */
   public static List<SchemaAttribute> getAttributes(ResourceType resourceType, String attributes)
   {
-    String[] attributeNameArray = getAttributeList(attributes).orElse(new String[0]);
-    return Arrays.stream(attributeNameArray)
-                 .map(s -> getSchemaAttributeByAttributeName(resourceType, s))
+    List<String> attributeNameArray = getAttributeList(attributes).map(Arrays::asList)
+                                                                  .map(ArrayList::new)
+                                                                  .orElse(new ArrayList<>());
+    // this if-block is used in cases if the client might try to use the schema-reference uris as attribute-names
+    List<SchemaAttribute> attributesList = new ArrayList<>();
+
+    {
+      List<String> schemaUris = new ArrayList<>();
+      List<Schema> schemas = resourceType.getAllSchemas();
+      for ( String attributeName : attributeNameArray )
+      {
+        for ( Schema schema : schemas )
+        {
+          if (schema.getNonNullId().equals(attributeName))
+          {
+            attributesList.addAll(schema.getAttributes());
+            schemaUris.add(schema.getNonNullId());
+            break;
+          }
+        }
+      }
+      attributeNameArray.removeAll(schemaUris);
+    }
+
+    return Stream.concat(attributesList.stream(),
+                         attributeNameArray.stream().map(s -> getSchemaAttributeByAttributeName(resourceType, s)))
                  .collect(Collectors.toList());
   }
 
@@ -82,32 +107,6 @@ public final class RequestUtils
       throw new BadRequestException(errorMessage, null, null);
     }
     return Optional.of(attributes.split(","));
-  }
-
-  /**
-   * From RFC7644 chapter 3.9:<br>
-   *
-   * <pre>
-   *     Clients MAY request a partial resource representation on any
-   *     operation that returns a resource within the response by specifying
-   *     either of the mutually exclusive URL query parameters "attributes" or
-   *     "excludedAttributes"
-   * </pre>
-   *
-   * so only one these parameters are allowed to be specified in a request
-   *
-   * @param attributes the required attributes that should be present in the response
-   * @param excludedAttributes the attributes that should not be returned in the response
-   */
-  public static void validateAttributesAndExcludedAttributes(String attributes, String excludedAttributes)
-  {
-    if (StringUtils.isNotBlank(attributes) && StringUtils.isNotBlank(excludedAttributes))
-    {
-      final String errorMessage = "the attributes and excludedAttributes parameter must not be set at the same time:"
-                                  + "\n\tattributes: '" + attributes + "'\n\texcludedAttributes: '" + excludedAttributes
-                                  + "'";
-      throw new BadRequestException(errorMessage, null, ScimType.Custom.INVALID_PARAMETERS);
-    }
   }
 
   /**

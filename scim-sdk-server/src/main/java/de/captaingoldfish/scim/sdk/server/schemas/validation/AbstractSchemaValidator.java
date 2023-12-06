@@ -108,7 +108,7 @@ public abstract class AbstractSchemaValidator
   }
 
   /**
-   * this method will validates either a resource document or an extension document that is part of the resource
+   * this method will validate either a resource document or an extension document that is part of the resource
    * document. Extensions are handled as individual schemas.
    *
    * @param validatedResource The object into which the validated attributes will be added. In case of main

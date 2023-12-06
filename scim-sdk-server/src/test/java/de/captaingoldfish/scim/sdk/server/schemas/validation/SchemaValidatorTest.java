@@ -1102,7 +1102,7 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * this test will have a always returned attribute that is not present in the response because it is not a
+   * this test will have an "always" returned attribute that is not present in the response because it is not a
    * required attribute. For this reason the validation will not throw an exception but print a log message.
    * This test is for code coverage and checking for NullPointerExceptions or similar
    */
@@ -1136,7 +1136,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode id = validatedDocument.get(AttributeNames.RFC7643.ID);
     Assertions.assertNotNull(id);
     JsonNode userName = validatedDocument.get(AttributeNames.RFC7643.USER_NAME);
-    Assertions.assertNull(userName);
+    Assertions.assertEquals(user.get(AttributeNames.RFC7643.USER_NAME), userName);
     JsonNode externalId = validatedDocument.get(AttributeNames.RFC7643.EXTERNAL_ID);
     Assertions.assertNull(externalId);
     JsonNode description = validatedDocument.get(AttributeNames.RFC7643.DESCRIPTION);
@@ -1322,11 +1322,11 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * Verifies that excluded attributes are removed from extensions
+   * Verifies that excluded attributes are removed from the resource
    */
   @ParameterizedTest
-  @ValueSource(strings = {AttributeNames.RFC7643.USER_NAME, AttributeNames.RFC7643.DISPLAY_NAME,
-                          AttributeNames.RFC7643.EXTERNAL_ID, AttributeNames.RFC7643.EMAILS,
+  @ValueSource(strings = {AttributeNames.RFC7643.DISPLAY_NAME, AttributeNames.RFC7643.EXTERNAL_ID,
+                          AttributeNames.RFC7643.EMAILS,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.GIVEN_NAME,
                           AttributeNames.RFC7643.NAME + "." + AttributeNames.RFC7643.MIDDLE_NAME})
   public void testExcludedAttributes(String excludedAttributeName)
@@ -1359,6 +1359,31 @@ public class SchemaValidatorTest implements FileReferences
         Assertions.assertNull(complexAttribute.get(attributeNameParts[1]), schemaAttribute.toString());
       }
     }
+  }
+
+  /**
+   * Verifies that a required attribute can be excluded from the resource if the returned-type is default
+   */
+  @DisplayName("Required excluded attribute is removed from resource if returned=default")
+  @Test
+  public void testRequiredExcludedAttributeIsRemovedIfReturnedIsDefault()
+  {
+    JsonNode userResourceType = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    JsonNode enterpriseUserExtension = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(false),
+                                                                         userResourceType,
+                                                                         userResourceSchema,
+                                                                         enterpriseUserExtension);
+    User userResource = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    TestHelper.addMetaToDocument(userResource);
+    List<SchemaAttribute> excludedAttributes = getSchemaAttributes(resourceType, AttributeNames.RFC7643.USER_NAME);
+    JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
+      return new ResponseResourceValidator(serviceProvider, resourceType, null, excludedAttributes, null,
+                                           referenceUrlSupplier).validateDocument(userResource);
+    });
+    JsonNode userNameNode = validatedDocument.get(AttributeNames.RFC7643.USER_NAME);
+    Assertions.assertNull(userNameNode);
   }
 
   /**

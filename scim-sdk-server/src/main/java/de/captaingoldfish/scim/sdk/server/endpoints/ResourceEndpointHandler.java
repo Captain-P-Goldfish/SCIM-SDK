@@ -360,7 +360,6 @@ class ResourceEndpointHandler
   {
     try
     {
-      RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
@@ -554,7 +553,6 @@ class ResourceEndpointHandler
   {
     try
     {
-      RequestUtils.validateAttributesAndExcludedAttributes(attributes, excludedAttributes);
       final ResourceType resourceType = getResourceType(endpoint);
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
