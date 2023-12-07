@@ -320,6 +320,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @ValueSource(strings = {"", "123456"})
   public void testGetResourceWithReturnedResourceHasDifferentId(String id)
   {
+    resourceEndpointHandler.getServiceProvider().setIgnoreRequiredAttributesOnResponse(false);
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
     user.setId(null);
     Mockito.doReturn(user)
@@ -996,6 +997,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testGetServiceProviderConfigurationWithoutAuthScheme()
   {
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
+    resourceEndpointHandler.getServiceProvider().setIgnoreRequiredAttributesOnResponse(false);
     ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                                                                     null,
                                                                     null,

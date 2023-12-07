@@ -112,7 +112,9 @@ public class ServiceProvider extends ResourceNode
                          ForkJoinPool forkJoinPool,
                          boolean caseInsensitiveValidation,
                          boolean useDefaultValuesOnRequest,
-                         boolean useDefaultValuesOnResponse)
+                         boolean useDefaultValuesOnResponse,
+                         Boolean ignoreRequiredAttributesOnResponse,
+                         Boolean ignoreRequiredExtensionsOnResponse)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -133,6 +135,8 @@ public class ServiceProvider extends ResourceNode
     this.caseInsensitiveValidation = caseInsensitiveValidation;
     this.useDefaultValuesOnRequest = useDefaultValuesOnRequest;
     this.useDefaultValuesOnResponse = useDefaultValuesOnResponse;
+    this.ignoreRequiredAttributesOnResponse = Optional.ofNullable(ignoreRequiredAttributesOnResponse).orElse(true);
+    this.ignoreRequiredExtensionsOnResponse = Optional.ofNullable(ignoreRequiredExtensionsOnResponse).orElse(true);
   }
 
   /**

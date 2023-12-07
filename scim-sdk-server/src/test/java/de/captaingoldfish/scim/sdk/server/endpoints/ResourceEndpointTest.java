@@ -1722,6 +1722,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   @Test
   public void testAskForASpecificAttributeThatIsMissingInTheResponse()
   {
+    resourceEndpoint.getServiceProvider().setIgnoreRequiredAttributesOnResponse(false);
     // 1. set patch config to null
     resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
 
