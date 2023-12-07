@@ -113,8 +113,8 @@ support attributes like "*ims*", "*phoneNumbers*" etc. All you need to do is sim
 - [x] bulk
   * resolving of bulkId references (@see [bulkId reference resolving](https://github.com/Captain-P-Goldfish/SCIM/wiki/BulkId-reference-resolving))
 - [x] resource versioning (@see [resource versioning](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Resource-versioning))
-- [x] attributes-parameter
-- [x] excludedAttributes-parameter
+- [x] attributes-parameter (@see [attributes-parameter](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Additional-Features#the-attributes-and-excludedattributes-parameter))
+- [x] excludedAttributes-parameter (@see [excludedAttributes-parameter](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Additional-Features#the-attributes-and-excludedattributes-parameter))
 
 for any registered resource
 
