@@ -90,7 +90,7 @@
 
         <!-- logging dependencies -->
         <version.log4j2>2.21.1</version.log4j2>
-        <version.slf4j>2.0.9</version.slf4j>
+        <version.slf4j>2.0.10</version.slf4j>
 
         <!-- test dependencies -->
         <version.junit.jupiter>5.9.3</version.junit.jupiter>
