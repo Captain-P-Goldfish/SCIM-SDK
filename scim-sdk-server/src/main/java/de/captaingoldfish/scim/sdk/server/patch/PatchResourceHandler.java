@@ -356,7 +356,7 @@ public class PatchResourceHandler extends AbstractPatch
       });
       JsonNode prime = complex.get(AttributeNames.RFC7643.PRIMARY);
       boolean primaryFound = prime != null && prime.booleanValue();
-      if (newPrimaryNodeDetected.get())
+      if (primaryFound && newPrimaryNodeDetected.get())
       {
         throw new BadRequestException("Found 2 primary values in the new dataset of node: "
                                       + schemaAttribute.getFullResourceName(), null, ScimType.RFC7644.INVALID_VALUE);

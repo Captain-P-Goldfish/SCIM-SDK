@@ -43,12 +43,14 @@ import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PersonRole;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -917,7 +919,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that it is illegal to add 2 primary values into a multi valued complex type
+   * verifies that it is illegal to add 2 primary values into a multivalued complex type
    */
   @Test
   public void testSetTwoPrimaryValues()
@@ -947,6 +949,36 @@ public class PatchAddResourceHandlerTest implements FileReferences
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
+  }
+
+  /**
+   * verifies that the emails array can be replaced if a primary is set once
+   */
+  @Test
+  public void testReplaceEmailsWithPrimary()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(emailsDef);
+    List<Email> emails = Arrays.asList(Email.builder().value("1@1.de").primary(true).build(),
+                                       Email.builder().value("2@2.de").build(),
+                                       Email.builder().value("3@3.de").build());
+    ScimArrayNode emailArray = new ScimArrayNode(null);
+    emails.forEach(emailArray::add);
+    allTypeChanges.set(AttributeNames.RFC7643.EMAILS, emailArray);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes patchedAllTypes = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                              patchOpRequest));
+    Assertions.assertEquals(emailArray, patchedAllTypes.get(AttributeNames.RFC7643.EMAILS));
   }
 
   /**
