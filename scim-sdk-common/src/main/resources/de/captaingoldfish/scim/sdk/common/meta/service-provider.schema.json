@@ -54,6 +54,17 @@
           "caseExact": false
         },
         {
+          "name": "doNotFailOnNoTarget",
+          "type": "boolean",
+          "description": "Prevents patch-failures if an attribute has no target in a patch request. A patch-remove operation will not be rejected anymore if the attribute does not exist e.g.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
           "name": "activateSailsPointWorkaround",
           "type": "boolean",
           "description": "A Workaround to handle patch replace-ops on single complex types as add operations.",

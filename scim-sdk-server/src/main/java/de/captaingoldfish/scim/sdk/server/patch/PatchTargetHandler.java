@@ -140,18 +140,28 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private void evaluatePatchPathOperation(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
-    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
-    {
-      throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is a '"
-                                    + Mutability.READ_ONLY + "' attribute and cannot be changed", null,
-                                    ScimType.RFC7644.INVALID_PATH);
-    }
+    isReadOnlyAttributeAddressed(schemaAttribute);
     if (!PatchOp.REMOVE.equals(patchOp) && Mutability.IMMUTABLE.equals(schemaAttribute.getMutability())
         && attribute != null)
     {
       throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is '"
                                     + Mutability.IMMUTABLE + "' and is not unassigned. Current value is: "
                                     + attribute.asText(), null, ScimType.RFC7644.INVALID_PATH);
+    }
+  }
+
+  /**
+   * checks if the current path is addressing a read-only attribute and throws an error if so
+   *
+   * @param schemaAttribute the attribute that is addressed in the path expression
+   */
+  private void isReadOnlyAttributeAddressed(SchemaAttribute schemaAttribute)
+  {
+    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
+    {
+      throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is a '"
+                                    + Mutability.READ_ONLY + "' attribute and cannot be changed", null,
+                                    ScimType.RFC7644.INVALID_PATH);
     }
   }
 
@@ -234,6 +244,7 @@ public class PatchTargetHandler extends AbstractPatch
 
     String firstAttributeName = fullAttributeNames[0];
     SchemaAttribute schemaAttribute = getSchemaAttribute(firstAttributeName);
+    isReadOnlyAttributeAddressed(schemaAttribute);
     boolean isExtension = resourceType.getSchemaExtensions()
                                       .stream()
                                       .anyMatch(ext -> ext.getSchema().equals(schemaAttribute.getResourceUri()));
@@ -309,8 +320,15 @@ public class PatchTargetHandler extends AbstractPatch
       evaluatePatchPathOperation(schemaAttribute, firstAttribute);
       if (firstAttribute == null)
       {
-        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                      ScimType.RFC7644.NO_TARGET);
+        if (patchConfig.isDoNotFailOnNoTarget())
+        {
+          return false;
+        }
+        else
+        {
+          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                        ScimType.RFC7644.NO_TARGET);
+        }
       }
       else
       {
@@ -367,8 +385,15 @@ public class PatchTargetHandler extends AbstractPatch
         }
         else
         {
-          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                        ScimType.RFC7644.NO_TARGET);
+          if (patchConfig.isDoNotFailOnNoTarget())
+          {
+            return false;
+          }
+          else
+          {
+            throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                          ScimType.RFC7644.NO_TARGET);
+          }
         }
         removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
         return effectiveChangeMade;
@@ -399,6 +424,11 @@ public class PatchTargetHandler extends AbstractPatch
           {
             currentParent.remove(schemaAttribute.getName());
           }
+        }
+        if (!effectiveChangeMade && !patchConfig.isDoNotFailOnNoTarget())
+        {
+          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                        ScimType.RFC7644.NO_TARGET);
         }
         return effectiveChangeMade;
       }
@@ -481,8 +511,15 @@ public class PatchTargetHandler extends AbstractPatch
                                                  && schemaAttribute.getParent().isMultiValued();
       if ((oldNode == null && isSimpleNode) || (oldNode == null && !isSimpleNodeInMultivaluedComplex))
       {
-        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                      ScimType.RFC7644.NO_TARGET);
+        if (patchConfig.isDoNotFailOnNoTarget())
+        {
+          return false;
+        }
+        else
+        {
+          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                        ScimType.RFC7644.NO_TARGET);
+        }
       }
       else
       {
@@ -561,10 +598,17 @@ public class PatchTargetHandler extends AbstractPatch
     PatchFilterResolver filterResolver = new PatchFilterResolver();
     boolean hasFilterExpression = path.getChild() != null;
     if (complexNode != null && hasFilterExpression
-        && !filterResolver.isNodeMatchingFilter(complexNode, path).isPresent())
+        && !filterResolver.isNodeMatchingFilter(complexNode, path, patchOp).isPresent())
     {
-      throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                    ScimType.RFC7644.NO_TARGET);
+      if (patchConfig.isDoNotFailOnNoTarget())
+      {
+        return false;
+      }
+      else
+      {
+        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                      ScimType.RFC7644.NO_TARGET);
+      }
     }
     boolean changeWasMade = false;
     if (PatchOp.ADD.equals(patchOp))
@@ -597,17 +641,25 @@ public class PatchTargetHandler extends AbstractPatch
                                                          List<String> values)
   {
     SchemaAttribute subAttribute = getSchemaAttribute(fullAttributeName);
+    isReadOnlyAttributeAddressed(subAttribute);
     ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
     if (complexNode == null)
     {
       complexNode = new ScimObjectNode(schemaAttribute);
       resource.set(schemaAttribute.getName(), complexNode);
     }
-    Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path);
+    Optional<ObjectNode> matchingNode = new PatchFilterResolver().isNodeMatchingFilter(complexNode, path, patchOp);
     if (!matchingNode.isPresent())
     {
-      throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                    ScimType.RFC7644.NO_TARGET);
+      if (patchConfig.isDoNotFailOnNoTarget())
+      {
+        return false;
+      }
+      else
+      {
+        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                      ScimType.RFC7644.NO_TARGET);
+      }
     }
     if (handleInnerComplexAttribute(subAttribute, complexNode, values))
     {
@@ -654,8 +706,15 @@ public class PatchTargetHandler extends AbstractPatch
         boolean isParentMultivalued = subAttribute.getParent().isMultiValued();
         if (!effectiveChange && !isParentMultivalued)
         {
-          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                        ScimType.RFC7644.NO_TARGET);
+          if (patchConfig.isDoNotFailOnNoTarget())
+          {
+            return false;
+          }
+          else
+          {
+            throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                          ScimType.RFC7644.NO_TARGET);
+          }
         }
         else if (!effectiveChange && isParentMultivalued)
         {
@@ -770,10 +829,17 @@ public class PatchTargetHandler extends AbstractPatch
     }
     if (matchingComplexNodes.isEmpty() && path.getChild() != null)
     {
-      throw new BadRequestException(String.format("Cannot '%s' value on path '%s' for no matching object was found",
-                                                  patchOp,
-                                                  path),
-                                    null, ScimType.RFC7644.NO_TARGET);
+      if (patchConfig.isDoNotFailOnNoTarget())
+      {
+        return false;
+      }
+      else
+      {
+        throw new BadRequestException(String.format("Cannot '%s' value on path '%s' for no matching object was found",
+                                                    patchOp,
+                                                    path),
+                                      null, ScimType.RFC7644.NO_TARGET);
+      }
     }
     if (PatchOp.REPLACE.equals(patchOp))
     {
@@ -855,8 +921,15 @@ public class PatchTargetHandler extends AbstractPatch
     if (path.getChild() != null && matchingComplexNodes.isEmpty())
     {
       // a filter expression was present and no matches were found e.g. (emails[type eq "work"].type)
-      throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
-                                    ScimType.RFC7644.NO_TARGET);
+      if (patchConfig.isDoNotFailOnNoTarget())
+      {
+        return false;
+      }
+      else
+      {
+        throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+                                      ScimType.RFC7644.NO_TARGET);
+      }
     }
     if (path.getChild() == null && matchingComplexNodes.isEmpty() && PatchOp.REMOVE.equals(patchOp))
     {
@@ -889,7 +962,7 @@ public class PatchTargetHandler extends AbstractPatch
     for ( int i = 0 ; i < multiValuedComplex.size() ; i++ )
     {
       JsonNode complex = multiValuedComplex.get(i);
-      Optional<ObjectNode> filteredNode = patchFilterResolver.isNodeMatchingFilter((ObjectNode)complex, path);
+      Optional<ObjectNode> filteredNode = patchFilterResolver.isNodeMatchingFilter((ObjectNode)complex, path, patchOp);
       if (filteredNode.isPresent())
       {
         matchingComplexNodes.add(new IndexNode(i, filteredNode.get()));

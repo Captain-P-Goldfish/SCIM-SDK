@@ -273,6 +273,12 @@ public final class AttributeNames
     public static final String IGNORE_UNKNOWN_ATTRIBUTES = "ignoreUnknownAttributes";
 
     /**
+     * prevents that a patch-operation fails if the target of the attributes pointer is missing. In this case the
+     * operation is simply ignored.
+     */
+    public static final String DO_NOT_FAIL_ON_NO_TARGET = "doNotFailOnNoTarget";
+
+    /**
      * A workaround to handle patch replace-ops on single complex types as add operations.
      *
      * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327

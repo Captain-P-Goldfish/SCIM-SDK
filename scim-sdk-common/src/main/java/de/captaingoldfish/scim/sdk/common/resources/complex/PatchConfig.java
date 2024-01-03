@@ -21,6 +21,7 @@ public class PatchConfig extends ScimObjectNode
   @Builder
   public PatchConfig(Boolean supported,
                      Boolean ignoreUnknownAttributes,
+                     Boolean doNotFailOnNoTarget,
                      Boolean activateSailsPointWorkaround,
                      Boolean activateMsAzureWorkaround,
                      Boolean activateMsAzureValueSubAttributeWorkaround,
@@ -29,6 +30,7 @@ public class PatchConfig extends ScimObjectNode
     super(null);
     setSupported(supported);
     setIgnoreUnknownAttribute(ignoreUnknownAttributes);
+    setDoNotFailOnNoTarget(doNotFailOnNoTarget);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);
     setMsAzureFilterWorkaroundActive(activateMsAzureWorkaround);
     setMsAzureValueSubAttributeWorkaroundActive(activateMsAzureValueSubAttributeWorkaround);
@@ -69,6 +71,24 @@ public class PatchConfig extends ScimObjectNode
   public void setIgnoreUnknownAttribute(Boolean ignoreUnknownAttribute)
   {
     setAttribute(AttributeNames.Custom.IGNORE_UNKNOWN_ATTRIBUTES, ignoreUnknownAttribute);
+  }
+
+  /**
+   * prevents that a patch-operation fails if the target of the attributes pointer is missing. In this case the
+   * operation is simply ignored.
+   */
+  public boolean isDoNotFailOnNoTarget()
+  {
+    return getBooleanAttribute(AttributeNames.Custom.DO_NOT_FAIL_ON_NO_TARGET).orElse(false);
+  }
+
+  /**
+   * prevents that a patch-operation fails if the target of the attributes pointer is missing. In this case the
+   * operation is simply ignored.
+   */
+  public void setDoNotFailOnNoTarget(Boolean doNotFailOnNoTarget)
+  {
+    setAttribute(AttributeNames.Custom.DO_NOT_FAIL_ON_NO_TARGET, doNotFailOnNoTarget);
   }
 
   /**

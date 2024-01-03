@@ -3518,6 +3518,8 @@ public class PatchTargetHandlerTest implements FileReferences
     JsonNode readOnlyEmailsDef = JsonHelper.loadJsonDocument(READ_ONLY_EMAILS_ATTRIBUTE);
     Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
     allTypesSchema.addAttribute(readOnlyEmailsDef);
+    SchemaAttribute emailsAttribute = allTypesSchema.getSchemaAttribute(RFC7643.EMAILS);
+    emailsAttribute.setMutability(Mutability.READ_WRITE);
 
     final String path = "emails.type";
     List<String> values = PatchOp.REMOVE.equals(patchOp) ? null : Arrays.asList("home");
@@ -4507,6 +4509,196 @@ public class PatchTargetHandlerTest implements FileReferences
                             ex.getMessage());
   }
 
+  @DisplayName("Do not fail if patch-operations have no valid target")
+  @Nested
+  public class DoNotFailOnNoTargetTests
+  {
+
+    @BeforeEach
+    public void init()
+    {
+      serviceProvider.getPatchConfig().setDoNotFailOnNoTarget(true);
+    }
+
+    @DisplayName("Do not fail on no target for when remove simple attribute")
+    @Test
+    public void testIgnoreNoTargetOnRemoveSimpleAttribute()
+    {
+      final String attributeName = "string";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(1, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+    }
+
+    @DisplayName("Do not fail on no target when remove simple-array attribute")
+    @Test
+    public void testIgnoreNoTargetOnRemoveSimpleArray()
+    {
+      final String attributeName = "stringArray";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(1, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+    }
+
+    @DisplayName("Do not fail on no target when remove simple-array-child value")
+    @Test
+    public void testIgnoreNoTargetOnRemoveSimpleArrayChild()
+    {
+      final String attributeName = "stringArray";
+      final String valuePath = attributeName + "[value eq \"no-match\"]";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(valuePath)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      allTypes.setStringArray(Arrays.asList("hello", "world"));
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(2, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+      Assertions.assertTrue(patchedResource.has(attributeName));
+      Assertions.assertEquals(2, patchedResource.getStringArray().size());
+      Assertions.assertTrue(patchedResource.getStringArray().containsAll(Arrays.asList("hello", "world")));
+    }
+
+    @DisplayName("Do not fail on no target when remove complex-child attribute")
+    @Test
+    public void testIgnoreNoTargetOnRemoveComplexChild()
+    {
+      final String attributeName = "complex.stringArray";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes complex = new AllTypes(false);
+      allTypes.setComplex(complex);
+      complex.setNumber(4L);
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(2, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+      Assertions.assertTrue(patchedResource.has("complex"));
+      Assertions.assertEquals(1, patchedResource.getComplex().get().size());
+      Assertions.assertTrue(patchedResource.getComplex().get().has("number"));
+    }
+
+    @DisplayName("Do not fail on no target when remove complex attribute")
+    @Test
+    public void testIgnoreNoTargetOnRemoveComplex()
+    {
+      final String attributeName = "complex";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(1, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+    }
+
+    @DisplayName("Do not fail on no target when remove multivalued-complex attribute")
+    @Test
+    public void testIgnoreNoTargetOnRemoveMultivaluedComplex()
+    {
+      final String attributeName = "multiComplex";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(1, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+    }
+
+    @DisplayName("Do not fail on no target when remove multivalued-complex-children attributes")
+    @Test
+    public void testIgnoreNoTargetOnRemoveMultivaluedComplexChildren()
+    {
+      final String attributeName = "multiComplex.string";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes complex = new AllTypes(false);
+      complex.setNumber(4L);
+      allTypes.setMultiComplex(Arrays.asList(complex));
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(2, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+      Assertions.assertTrue(patchedResource.has("multiComplex"));
+      Assertions.assertEquals(1, patchedResource.getMultiComplex().size());
+      Assertions.assertEquals(1, patchedResource.getMultiComplex().get(0).size());
+      Assertions.assertTrue(patchedResource.getMultiComplex().get(0).has("number"));
+    }
+
+    @DisplayName("Do not fail on no target when remove multivalued-complex-child attribute with filter")
+    @Test
+    public void testIgnoreNoTargetOnRemoveMultivaluedComplexChildWithFilter()
+    {
+      final String attributeName = "multiComplex";
+      final String valuePath = attributeName + "[string eq \"no-match\"]";
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(valuePath)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+      AllTypes allTypes = new AllTypes(true);
+      AllTypes complex = new AllTypes(false);
+      complex.setNumber(4L);
+      allTypes.setMultiComplex(Arrays.asList(complex));
+      AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
+                                                                                                patchOpRequest));
+      Assertions.assertFalse(patchHandler.isChangedResource());
+      Assertions.assertEquals(2, patchedResource.size());
+      Assertions.assertTrue(patchedResource.has(RFC7643.SCHEMAS));
+      Assertions.assertTrue(patchedResource.has("multiComplex"));
+      Assertions.assertEquals(1, patchedResource.getMultiComplex().size());
+      Assertions.assertEquals(1, patchedResource.getMultiComplex().get(0).size());
+      Assertions.assertTrue(patchedResource.getMultiComplex().get(0).has("number"));
+    }
+  }
+
   @DisplayName("Filter simple values from array with patch-remove")
   @Nested
   public class SimpleArrayFilterRemoveTests
@@ -4536,6 +4728,32 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertEquals(2, patchedAllTypes.getStringArray().size());
       Assertions.assertEquals("hello", patchedAllTypes.getStringArray().get(0));
       Assertions.assertEquals("next-day", patchedAllTypes.getStringArray().get(1));
+    }
+
+    /**
+     * will throw a no-target error because the filter does not match any values
+     */
+    @DisplayName("Remove value from simple string-array with: stringArray[value eq \"world\"]")
+    @Test
+    public void testRemoveValueFromSimpleStringArrayWithFilterExpressionButNoMatch()
+    {
+      AllTypes allTypes = new AllTypes(true);
+      allTypes.setStringArray(Arrays.asList("hello", "next-day"));
+
+      final String path = "stringArray[value eq \"world\"]";
+      PatchRequestOperation patchRequestOperation = PatchRequestOperation.builder()
+                                                                         .op(PatchOp.REMOVE)
+                                                                         .path(path)
+                                                                         .build();
+      List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> patchHandler.patchResource(allTypes, patchOpRequest));
+      Assertions.assertEquals(String.format("No target found for path-filter '%s'", path), ex.getMessage());
+      Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
     }
 
     /**

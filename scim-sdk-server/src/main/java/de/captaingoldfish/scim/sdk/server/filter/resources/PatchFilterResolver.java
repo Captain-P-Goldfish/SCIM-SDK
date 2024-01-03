@@ -5,6 +5,7 @@ import java.util.Optional;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
@@ -27,9 +28,10 @@ public class PatchFilterResolver
    *
    * @param complexNode the complex type that must be checked if it does fit onto the expression
    * @param path the filter expression that tells us how the check should be executed
+   * @param patchOp the patch-operation that is being executed
    * @return the complex node from the parameter if the node does match the filter expression, an empty else
    */
-  public Optional<ObjectNode> isNodeMatchingFilter(ObjectNode complexNode, FilterNode path)
+  public Optional<ObjectNode> isNodeMatchingFilter(ObjectNode complexNode, FilterNode path, PatchOp patchOp)
   {
     if (complexNode == null)
     {
@@ -38,16 +40,25 @@ public class PatchFilterResolver
     if (AttributePathRoot.class.isAssignableFrom(path.getClass()))
     {
       AttributePathRoot attributePathRoot = (AttributePathRoot)path;
+      // this case represents a simple attribute path like "name.givenName" or "nickName"
       if (attributePathRoot.getChild() == null)
       {
+        boolean isRemoveAndNotPresent = PatchOp.REMOVE.equals(patchOp)
+                                        && !complexNode.has(attributePathRoot.getSchemaAttribute().getName());
+        if (isRemoveAndNotPresent)
+        {
+          // if we would return the node here on a remove-operation while the path points to a non-existing attribute
+          // the operation would mark the patch-process as changeWasMade even if it was not. Therefore, we need to
+          // return an empty here in order to mark the operation as not changed
+          return Optional.empty();
+        }
         return Optional.of(complexNode);
       }
       else
       {
-        return isNodeMatchingFilter(complexNode, attributePathRoot.getChild());
+        return isNodeMatchingFilter(complexNode, attributePathRoot.getChild(), patchOp);
       }
     }
-
 
     if (AttributeExpressionLeaf.class.isAssignableFrom(path.getClass()))
     {
@@ -56,7 +67,7 @@ public class PatchFilterResolver
     else if (NotExpressionNode.class.isAssignableFrom(path.getClass()))
     {
       NotExpressionNode notExpressionNode = (NotExpressionNode)path;
-      Optional<ObjectNode> matchingNode = isNodeMatchingFilter(complexNode, notExpressionNode.getRightNode());
+      Optional<ObjectNode> matchingNode = isNodeMatchingFilter(complexNode, notExpressionNode.getRightNode(), patchOp);
       if (matchingNode.isPresent())
       {
         return Optional.empty();
@@ -69,19 +80,19 @@ public class PatchFilterResolver
     else if (OrExpressionNode.class.isAssignableFrom(path.getClass()))
     {
       OrExpressionNode orExpressionNode = (OrExpressionNode)path;
-      Optional<ObjectNode> leftNode = isNodeMatchingFilter(complexNode, orExpressionNode.getLeftNode());
+      Optional<ObjectNode> leftNode = isNodeMatchingFilter(complexNode, orExpressionNode.getLeftNode(), patchOp);
       if (leftNode.isPresent())
       {
         return leftNode;
       }
-      return isNodeMatchingFilter(complexNode, orExpressionNode.getRightNode());
+      return isNodeMatchingFilter(complexNode, orExpressionNode.getRightNode(), patchOp);
     }
     else
     {
       // this can only be the AndExpressionNode
       AndExpressionNode andExpressionNode = (AndExpressionNode)path;
-      Optional<ObjectNode> leftNode = isNodeMatchingFilter(complexNode, andExpressionNode.getLeftNode());
-      Optional<ObjectNode> rightNode = isNodeMatchingFilter(complexNode, andExpressionNode.getRightNode());
+      Optional<ObjectNode> leftNode = isNodeMatchingFilter(complexNode, andExpressionNode.getLeftNode(), patchOp);
+      Optional<ObjectNode> rightNode = isNodeMatchingFilter(complexNode, andExpressionNode.getRightNode(), patchOp);
       if (leftNode.isPresent() && rightNode.isPresent())
       {
         return leftNode;

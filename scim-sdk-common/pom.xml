@@ -5,7 +5,7 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-parent</artifactId>
-        <version>1.21.2-SNAPSHOT</version>
+        <version>1.22.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-sdk-common</artifactId>
@@ -55,7 +55,7 @@
                             <file>
                                 ${project.basedir}/src/main/resources/de/captaingoldfish/scim/sdk/common/meta/service-provider.schema.json
                             </file>
-                            <checksum>f8bd212c18ebf0c653bc83abac2ec478</checksum>
+                            <checksum>20478e30b6e05355edb885ba1115d4c8</checksum>
                             <type>md5</type>
                         </requireFileChecksum>
                         <requireFileChecksum>
