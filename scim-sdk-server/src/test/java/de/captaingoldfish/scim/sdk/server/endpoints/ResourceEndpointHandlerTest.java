@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -35,6 +36,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
@@ -87,6 +89,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
+import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -159,6 +162,22 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.registerEndpoint(endpointDefinition);
   }
 
+  private Context getContext(String id, HttpMethod httpMethod)
+  {
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Users"
+                                                                         + Optional.ofNullable(id)
+                                                                                   .map(s -> "/" + s)
+                                                                                   .orElse(""),
+                                                    httpMethod,
+                                                    httpHeaders));
+    return context;
+  }
+
   /**
    * When creating the {@link ResourceEndpointHandler} without any {@link EndpointDefinition}s no exception must
    * be thrown because this might cause problems for the developer. This is something that was discovered when
@@ -188,11 +207,17 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse deleteResponse = resourceEndpointHandler.deleteResource(endpoint,
                                                                          userId,
                                                                          Collections.emptyMap(),
-                                                                         null);
+                                                                         getContext(userId, HttpMethod.DELETE));
     MatcherAssert.assertThat(deleteResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
-    Mockito.verify(userHandler, Mockito.times(1)).deleteResource(userId, null);
-    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> resourceEndpointHandler.getResource(endpoint,
-                                                                                                        userId));
+    Mockito.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.eq(userId), Mockito.any());
+    ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
+      return resourceEndpointHandler.getResource(endpoint,
+                                                 userId,
+                                                 null,
+                                                 null,
+                                                 null,
+                                                 getContext(userId, HttpMethod.GET));
+    });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
@@ -280,7 +305,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
   @Test
   public void testGetResourceWithoutId()
   {
-    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", "", null, getBaseUrlSupplier());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    "",
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -301,11 +331,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
            .getResource(Mockito.eq(user.getId().get()),
                         Mockito.eq(Collections.emptyList()),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.isNull());
+                        Mockito.isNotNull());
     ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
                                                                     user.getId().get(),
                                                                     null,
-                                                                    getBaseUrlSupplier());
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    getContext(user.getId().get(), HttpMethod.GET));
     GetResponse createResponse = (GetResponse)scimResponse;
     User returnedUser = JsonHelper.copyResourceToObject(createResponse, User.class);
     Assertions.assertTrue(returnedUser.getMeta().isPresent());
@@ -328,8 +360,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
            .getResource(Mockito.eq(id),
                         Mockito.eq(Collections.emptyList()),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.isNull());
-    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", id, null, getBaseUrlSupplier());
+                        Mockito.isNotNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    id,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    getContext(id, HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(DocumentValidationException.class, errorResponse.getScimException().getClass());
@@ -353,8 +390,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
            .getResource(Mockito.eq(id),
                         Mockito.eq(Collections.emptyList()),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.isNull());
-    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", id, null, getBaseUrlSupplier());
+                        Mockito.notNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    id,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    getContext(id, HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
   }
 
@@ -368,8 +410,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResourceNotFoundException exception = new ResourceNotFoundException("blubb", null, null);
     Mockito.doThrow(exception)
            .when(userHandler)
-           .getResource(Mockito.any(), Mockito.isNull(), Mockito.isNull(), Mockito.isNull());
-    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", "123456", null, getBaseUrlSupplier());
+           .getResource(Mockito.any(), Mockito.isNull(), Mockito.isNull(), Mockito.isNotNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    "123456",
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -389,8 +436,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
            .getResource(Mockito.any(),
                         Mockito.eq(Collections.emptyList()),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.isNull());
-    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users", "123456", null, getBaseUrlSupplier());
+                        Mockito.isNotNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    "123456",
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    getContext("123456", HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
@@ -426,14 +478,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     userId,
                                                                     attributes,
                                                                     null,
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
+                                                                    getContext(userId, HttpMethod.GET));
     Mockito.verify(userHandler)
            .getResource(Mockito.eq(userId),
                         Mockito.eq(attributeList),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.isNull());
+                        Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size());
@@ -475,7 +526,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     // add meta to bypass schema validation
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
     user.setMeta(meta);
-    userHandler.getInMemoryMap().put(user.getId().get(), user);
+    userHandler.getInMemoryMap().put(userId, user);
 
     final int expectedNumberOfAttributesToBeReturned = 5;
     MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
@@ -485,11 +536,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     userId,
                                                                     SchemaUris.USER_URI,
                                                                     null,
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
+                                                                    getContext(userId, HttpMethod.GET));
     Mockito.verify(userHandler)
-           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNull());
+           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
@@ -539,7 +589,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     // add meta to bypass schema validation
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
     user.setMeta(meta);
-    userHandler.getInMemoryMap().put(user.getId().get(), user);
+    userHandler.getInMemoryMap().put(userId, user);
 
     final int expectedNumberOfAttributesToBeReturned = 4;
     MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
@@ -548,11 +598,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     userId,
                                                                     SchemaUris.ENTERPRISE_USER_URI,
                                                                     null,
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
+                                                                    getContext(userId, HttpMethod.GET));
     Mockito.verify(userHandler)
-           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNull());
+           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
@@ -602,7 +651,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     // add meta to bypass schema validation
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
     user.setMeta(meta);
-    userHandler.getInMemoryMap().put(user.getId().get(), user);
+    userHandler.getInMemoryMap().put(userId, user);
 
     final int expectedNumberOfAttributesToBeReturned = 3;
     MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
@@ -611,10 +660,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     userId,
                                                                     SchemaUris.ENTERPRISE_USER_URI,
                                                                     AttributeNames.RFC7643.USER_NAME,
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
-    Mockito.verify(userHandler).getResource(Mockito.eq(userId), Mockito.any(), Mockito.any(), Mockito.isNull());
+                                                                    getContext(userId, HttpMethod.GET));
+    Mockito.verify(userHandler).getResource(Mockito.eq(userId), Mockito.any(), Mockito.any(), Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
@@ -663,7 +711,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     // add meta to bypass schema validation
     Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
     user.setMeta(meta);
-    userHandler.getInMemoryMap().put(user.getId().get(), user);
+    userHandler.getInMemoryMap().put(userId, user);
 
     final int expectedNumberOfAttributesToBeReturned = 5;
     MatcherAssert.assertThat(user.size(), Matchers.greaterThan(expectedNumberOfAttributesToBeReturned));
@@ -674,11 +722,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                             + AttributeNames.RFC7643.USER_NAME + ","
                                                                             + AttributeNames.RFC7643.ACTIVE,
                                                                     null,
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
+                                                                    getContext(userId, HttpMethod.GET));
     Mockito.verify(userHandler)
-           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNull());
+           .getResource(Mockito.eq(userId), Mockito.any(), Mockito.eq(Collections.emptyList()), Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), getResponse.toPrettyString());
@@ -721,14 +768,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     userId,
                                                                     null,
                                                                     excludedAttributes,
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
+                                                                    getContext(userId, HttpMethod.GET));
     Mockito.verify(userHandler)
            .getResource(Mockito.eq(userId),
                         Mockito.eq(Collections.emptyList()),
                         Mockito.eq(excludedAttributeList),
-                        Mockito.isNull());
+                        Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
 
@@ -753,9 +799,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        UUID.randomUUID().toString(),
                                                                        user.toString(),
-                                                                       null,
                                                                        getBaseUrlSupplier(),
-                                                                       null);
+                                                                       getContext(user.getId().get(), HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -773,9 +818,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        UUID.randomUUID().toString(),
                                                                        user.toString(),
-                                                                       null,
                                                                        getBaseUrlSupplier(),
-                                                                       null);
+                                                                       getContext(user.getId().get(), HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -798,7 +842,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        id,
                                                                        user.toString(),
-                                                                       null,
                                                                        getBaseUrlSupplier(),
                                                                        null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
@@ -820,8 +863,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                        "123456",
                                                                        readResourceFile(USER_RESOURCE),
                                                                        null,
-                                                                       null,
-                                                                       null);
+                                                                       getContext("123456", HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -840,7 +882,6 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        "123456",
                                                                        readResourceFile(USER_RESOURCE),
-                                                                       null,
                                                                        null,
                                                                        null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
@@ -882,9 +923,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                     user.getId().get(),
                                                                     null,
                                                                     "costCenter",
-                                                                    null,
                                                                     getBaseUrlSupplier(),
-                                                                    null);
+                                                                    getContext(user.getId().get(), HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     User returnedUser = JsonHelper.copyResourceToObject(getResponse, User.class);
@@ -952,7 +992,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                                                                     null,
                                                                     null,
-                                                                    null);
+                                                                    null,
+                                                                    null,
+                                                                    getContext(UUID.randomUUID().toString(),
+                                                                               HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
@@ -979,7 +1022,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                                                                     randomId,
                                                                     null,
-                                                                    null);
+                                                                    null,
+                                                                    null,
+                                                                    getContext(randomId, HttpMethod.GET));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     GetResponse getResponse = (GetResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, getResponse.getHttpStatus());
@@ -1001,6 +1046,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                                                                     null,
                                                                     null,
+                                                                    null,
+                                                                    null,
                                                                     null);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -1017,10 +1064,14 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setSupported(true);
     resourceEndpointHandler.getServiceProvider().setIgnoreRequiredAttributesOnResponse(true);
+
+    Context context = getContext(UUID.randomUUID().toString(), HttpMethod.GET);
     ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                                                                     null,
                                                                     null,
-                                                                    null);
+                                                                    null,
+                                                                    null,
+                                                                    context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
   }
 
@@ -1216,7 +1267,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(BadRequestException.class, errorResponse.getScimException().getClass());
-    Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, errorResponse.getScimException().getScimType());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, errorResponse.getScimException().getScimType());
     MatcherAssert.assertThat(errorResponse.getScimException().getDetail(), Matchers.containsString(sortBy));
   }
 
@@ -1637,12 +1688,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
   public void testReturnNullInDeveloperImplementationOnUpdateResource()
   {
     Mockito.doReturn(null).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+    final String id = UUID.randomUUID().toString();
     ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
-                                                                       UUID.randomUUID().toString(),
+                                                                       id,
                                                                        readResourceFile(USER_RESOURCE),
                                                                        null,
-                                                                       null,
-                                                                       null);
+                                                                       getContext(id, HttpMethod.PUT));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(ResourceNotFoundException.class, errorResponse.getScimException().getClass());
@@ -1659,13 +1710,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     String providedLocation = getBaseUrlSupplier().get() + "/Users/custom";
     Meta meta = Meta.builder().location(providedLocation).build();
     user.setMeta(meta);
-    Mockito.doReturn(user).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.doReturn(user).when(userHandler).updateResource(Mockito.any(), Mockito.isNotNull());
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
                                                                        user.getId().get(),
                                                                        user.toString(),
-                                                                       null,
                                                                        getBaseUrlSupplier(),
-                                                                       null);
+                                                                       getContext(user.getId().get(), HttpMethod.GET));
 
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     User createdUser = JsonHelper.copyResourceToObject(updateResponse, User.class);
@@ -1929,7 +1979,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
-      return resourceEndpointHandler.updateResource(EndpointPaths.USERS, "123456", null, null, baseUrl, null);
+      return resourceEndpointHandler.updateResource(EndpointPaths.USERS, "123456", null, baseUrl, null);
     });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -1947,12 +1997,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     final Supplier<String> baseUrl = () -> "https://localhost/scim/v2";
     final String invalidRequestBody = "<root>invalid</root>";
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
-      return resourceEndpointHandler.updateResource(EndpointPaths.USERS,
-                                                    "123456",
-                                                    invalidRequestBody,
-                                                    null,
-                                                    baseUrl,
-                                                    null);
+      return resourceEndpointHandler.updateResource(EndpointPaths.USERS, "123456", invalidRequestBody, baseUrl, null);
     });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -1990,12 +2035,22 @@ public class ResourceEndpointHandlerTest implements FileReferences
     User copiedUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
     copiedUser.setName(name);
 
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Users/" + user.getId().get(),
+                                                    HttpMethod.PATCH,
+                                                    httpHeaders));
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
       return resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                    id,
                                                    patchOpRequest.toString(),
-                                                   Collections.emptyMap(),
-                                                   baseUrl);
+                                                   null,
+                                                   null,
+                                                   baseUrl,
+                                                   context);
     });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
@@ -2004,7 +2059,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     copiedUser.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(copiedUser, updateResponse);
 
-    GetResponse getResponse = (GetResponse)resourceEndpointHandler.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    GetResponse getResponse = (GetResponse)resourceEndpointHandler.getResource(EndpointPaths.USERS,
+                                                                               id,
+                                                                               null,
+                                                                               null,
+                                                                               baseUrl,
+                                                                               context);
     getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
@@ -2032,8 +2092,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
       return resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                    "123456",
                                                    patchOpRequest.toString(),
-                                                   Collections.emptyMap(),
-                                                   baseUrl);
+                                                   null,
+                                                   null,
+                                                   baseUrl,
+                                                   new Context(null));
     });
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
@@ -2066,13 +2128,23 @@ public class ResourceEndpointHandlerTest implements FileReferences
                         Mockito.eq(Collections.emptyList()),
                         Mockito.any());
 
-    Mockito.doReturn(patchedUser).when(userHandler).updateResource(Mockito.any(), Mockito.isNull());
+    Mockito.doReturn(patchedUser).when(userHandler).updateResource(Mockito.any(), Mockito.any());
 
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Users/" + user.getId().get(),
+                                                    HttpMethod.PATCH,
+                                                    httpHeaders));
     ScimResponse scimResponse = resourceEndpointHandler.patchResource("/Users",
                                                                       user.getId().get(),
                                                                       patchOpRequest.toString(),
                                                                       null,
-                                                                      getBaseUrlSupplier());
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
 
     UpdateResponse patchResponse = (UpdateResponse)scimResponse;
     User returnedUser = JsonHelper.copyResourceToObject(patchResponse, User.class);
@@ -2178,7 +2250,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
       ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
                                                                          user.toString(),
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         getContext(null, HttpMethod.POST));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
       CreateResponse createResponse = (CreateResponse)scimResponse;
       createdUser = JsonHelper.copyResourceToObject(createResponse, User.class);
@@ -2187,133 +2259,152 @@ public class ResourceEndpointHandlerTest implements FileReferences
       Assertions.assertTrue(createdUser.getMeta().get().getVersion().get().isWeak());
     }
 
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    Runnable resetHttpHeaders = () -> {
+      httpHeaders.clear();
+      httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    };
+    resetHttpHeaders.run();
+
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Users/" + createdUser.getId().get(),
+                                                    HttpMethod.PATCH,
+                                                    httpHeaders));
+
     List<DynamicTest> dynamicTests = new ArrayList<>();
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("get resource with If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
                                                                       createdUser.getId().get(),
-                                                                      httpHeaders,
-                                                                      getBaseUrlSupplier());
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
       GetResponse getResponse = (GetResponse)scimResponse;
       User user = JsonHelper.copyResourceToObject(getResponse, User.class);
       Assertions.assertEquals(createdUser.getMeta().get().getVersion().get(), user.getMeta().get().getVersion().get());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("get resource with non matching If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
                                                                       createdUser.getId().get(),
-                                                                      httpHeaders,
-                                                                      getBaseUrlSupplier());
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("get resource with If-None-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
                                                                       createdUser.getId().get(),
-                                                                      httpHeaders,
-                                                                      getBaseUrlSupplier());
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("get resource with non matching If-None-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
                                                                       createdUser.getId().get(),
-                                                                      httpHeaders,
-                                                                      getBaseUrlSupplier());
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
       GetResponse getResponse = (GetResponse)scimResponse;
       Assertions.assertEquals(createdUser, getResponse);
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("update resource with If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       User user = User.builder().userName(createdUser.getUserName().get()).nickName("happy").build();
       ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          user.toString(),
-                                                                         httpHeaders,
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
       UpdateResponse updateResponse = (UpdateResponse)scimResponse;
       Assertions.assertNotEquals(createdUser, updateResponse);
       user = JsonHelper.copyResourceToObject(updateResponse, User.class);
       createdUser.setNickName(user.getNickName().get());
       createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("update resource with non matching If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       User user = User.builder().userName(createdUser.getUserName().get()).nickName("happy").build();
       ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          user.toString(),
-                                                                         httpHeaders,
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("update resource with If-None-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       User user = User.builder().userName(createdUser.getUserName().get()).nickName("happy").build();
       ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          user.toString(),
-                                                                         httpHeaders,
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("update resource with non matching If-None-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       User user = User.builder().userName(createdUser.getUserName().get()).nickName("bloody mary").build();
       ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          user.toString(),
-                                                                         httpHeaders,
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
       UpdateResponse updateResponse = (UpdateResponse)scimResponse;
       Assertions.assertNotEquals(createdUser, updateResponse);
       user = JsonHelper.copyResourceToObject(updateResponse, User.class);
       createdUser.setNickName(user.getNickName().get());
       createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("patch resource with If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       PatchRequestOperation operation = PatchRequestOperation.builder().path("nickname").op(PatchOp.REMOVE).build();
       PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(Collections.singletonList(operation)).build();
       ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                                         createdUser.getId().get(),
                                                                         patchOpRequest.toString(),
-                                                                        httpHeaders,
-                                                                        getBaseUrlSupplier());
+                                                                        null,
+                                                                        null,
+                                                                        getBaseUrlSupplier(),
+                                                                        context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
       UpdateResponse updateResponse = (UpdateResponse)scimResponse;
       Assertions.assertNotEquals(createdUser, updateResponse);
@@ -2321,10 +2412,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
       createdUser.setNickName(user.getNickName().orElse(null));
       Assertions.assertFalse(createdUser.getNickName().isPresent());
       createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("patch resource with non matching If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       List<String> values = Arrays.asList("chucky");
       PatchRequestOperation operation = PatchRequestOperation.builder()
@@ -2336,15 +2427,17 @@ public class ResourceEndpointHandlerTest implements FileReferences
       ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                                         createdUser.getId().get(),
                                                                         patchOpRequest.toString(),
-                                                                        httpHeaders,
-                                                                        getBaseUrlSupplier());
+                                                                        null,
+                                                                        null,
+                                                                        getBaseUrlSupplier(),
+                                                                        context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("patch resource with If-None-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       List<String> values = Arrays.asList("chucky");
       PatchRequestOperation operation = PatchRequestOperation.builder()
@@ -2356,15 +2449,17 @@ public class ResourceEndpointHandlerTest implements FileReferences
       ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                                         createdUser.getId().get(),
                                                                         patchOpRequest.toString(),
-                                                                        httpHeaders,
-                                                                        getBaseUrlSupplier());
+                                                                        null,
+                                                                        null,
+                                                                        getBaseUrlSupplier(),
+                                                                        context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("patch resource with non matching If-None-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       List<String> values = Arrays.asList("chucky");
       PatchRequestOperation operation = PatchRequestOperation.builder()
@@ -2376,8 +2471,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
       ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                                         createdUser.getId().get(),
                                                                         patchOpRequest.toString(),
-                                                                        httpHeaders,
-                                                                        getBaseUrlSupplier());
+                                                                        null,
+                                                                        null,
+                                                                        getBaseUrlSupplier(),
+                                                                        context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
       UpdateResponse updateResponse = (UpdateResponse)scimResponse;
       Assertions.assertNotEquals(createdUser, updateResponse);
@@ -2385,57 +2482,58 @@ public class ResourceEndpointHandlerTest implements FileReferences
       createdUser.setNickName(user.getNickName().orElse(null));
       Assertions.assertTrue(createdUser.getNickName().isPresent());
       createdUser.getMeta().get().setVersion(user.getMeta().get().getVersion().get());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("delete resource with If-Match", () -> {
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          httpHeaders,
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
       DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("delete resource with non matching If-Match", () -> {
       userHandler.getInMemoryMap().put(createdUser.getId().get(), createdUser);
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          httpHeaders,
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.PRECONDITION_FAILED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("delete resource with If-None-Match", () -> {
       userHandler.getInMemoryMap().put(createdUser.getId().get(), createdUser);
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, createdUser.getMeta().get().getVersion().get().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          httpHeaders,
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
       ErrorResponse errorResponse = (ErrorResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.NOT_MODIFIED, errorResponse.getStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
     dynamicTests.add(DynamicTest.dynamicTest("delete resource with non matching If-None-Match", () -> {
       userHandler.getInMemoryMap().put(createdUser.getId().get(), createdUser);
-      Map<String, String> httpHeaders = new HashMap<>();
       httpHeaders.put(HttpHeader.IF_NONE_MATCH_HEADER, ETag.builder().tag("123456").build().getEntityTag());
       ScimResponse scimResponse = resourceEndpointHandler.deleteResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          httpHeaders,
-                                                                         null);
+                                                                         context);
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
       DeleteResponse deleteResponse = (DeleteResponse)scimResponse;
       Assertions.assertEquals(HttpStatus.NO_CONTENT, deleteResponse.getHttpStatus());
+      resetHttpHeaders.run();
     }));
     /* ************************************************************************************************************/
 
@@ -2507,12 +2605,26 @@ public class ResourceEndpointHandlerTest implements FileReferences
    */
   private User getUser(String endpoint, String userId)
   {
-    ScimResponse scimResponse = resourceEndpointHandler.getResource(endpoint, userId, null, getBaseUrlSupplier());
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Users/" + userId,
+                                                    HttpMethod.PATCH,
+                                                    httpHeaders));
+
+    ScimResponse scimResponse = resourceEndpointHandler.getResource(endpoint,
+                                                                    userId,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    context);
     Mockito.verify(userHandler, Mockito.times(1))
            .getResource(Mockito.eq(userId),
                         Mockito.eq(Collections.emptyList()),
                         Mockito.eq(Collections.emptyList()),
-                        Mockito.isNull());
+                        Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,
@@ -2545,13 +2657,21 @@ public class ResourceEndpointHandlerTest implements FileReferences
     updateUser.setNickName(nickname);
     updateUser.setTitle(title);
 
+
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Users/" + readUser.getId().get(),
+                                                    HttpMethod.PATCH,
+                                                    httpHeaders));
     ScimResponse scimResponse = resourceEndpointHandler.updateResource(endpoint,
                                                                        readUser.getId().get(),
                                                                        updateUser.toString(),
-                                                                       null,
                                                                        getBaseUrlSupplier(),
-                                                                       null);
-    Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.isNull());
+                                                                       context);
+    Mockito.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.isNotNull());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     Assertions.assertEquals(HttpStatus.OK, scimResponse.getHttpStatus());
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE,

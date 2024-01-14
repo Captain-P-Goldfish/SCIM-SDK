@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.filter.antlr;
 
+import java.util.Arrays;
+
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -17,9 +19,14 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
@@ -42,10 +49,9 @@ public class FilterVisitorTest
 {
 
   /**
-   * needed to extract the {@link ResourceType}s which are necessary to check if the given
-   * filter-attribute-names are valid or not
+   * needed to build {@link ResourceType} instances
    */
-  private ResourceTypeFactory resourceTypeFactory;
+  private ResourceEndpoint resourceEndpoint;
 
   /**
    * the user resource type
@@ -58,14 +64,18 @@ public class FilterVisitorTest
   @BeforeEach
   public void initialize()
   {
-    this.resourceTypeFactory = new ResourceTypeFactory();
+    this.resourceEndpoint = new ResourceEndpoint(ServiceProvider.builder()
+                                                                .filterConfig(FilterConfig.builder()
+                                                                                          .supported(true)
+                                                                                          .build())
+                                                                .build());
     JsonNode userResourceTypeJson = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    this.userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                     userResourceTypeJson,
-                                                                     userSchema,
-                                                                     enterpriseUser);
+    this.userResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(userResourceTypeJson, userSchema,
+                                                                                     Arrays.asList(enterpriseUser),
+                                                                                     new UserHandlerImpl(false)));
+
   }
 
   /**
@@ -323,7 +333,8 @@ public class FilterVisitorTest
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
 
     final String ambiguousAttributeName = "nickName";
-    this.userResourceType = TestHelper.addAttributeToSchema(resourceTypeFactory,
+    this.userResourceType = TestHelper.addAttributeToSchema(resourceEndpoint,
+                                                            new UserHandlerImpl(false),
                                                             ambiguousAttributeName,
                                                             Type.STRING,
                                                             userResourceTypeJson,
@@ -411,7 +422,8 @@ public class FilterVisitorTest
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
 
     final String ambiguousAttributeName = "nickName";
-    this.userResourceType = TestHelper.addAttributeToSchema(resourceTypeFactory,
+    this.userResourceType = TestHelper.addAttributeToSchema(resourceEndpoint,
+                                                            new UserHandlerImpl(false),
                                                             ambiguousAttributeName,
                                                             Type.STRING,
                                                             userResourceTypeJson,
@@ -439,7 +451,8 @@ public class FilterVisitorTest
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
 
     final String newAttributeName = "helloWorld";
-    this.userResourceType = TestHelper.addAttributeToSchema(resourceTypeFactory,
+    this.userResourceType = TestHelper.addAttributeToSchema(resourceEndpoint,
+                                                            new UserHandlerImpl(false),
                                                             newAttributeName,
                                                             type,
                                                             userResourceTypeJson,
@@ -506,7 +519,7 @@ public class FilterVisitorTest
     }
     catch (InvalidFilterException ex)
     {
-      Assertions.assertEquals("the attribute with the name 'unknownAttribute' is unknown to resource type 'User'",
+      Assertions.assertEquals("The attribute with the name 'unknownAttribute' is unknown to resource type 'User'",
                               ex.getMessage());
     }
   }

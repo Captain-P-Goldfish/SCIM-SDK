@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -51,7 +52,15 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PersonRole;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
+import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpointBridge;
+import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.AllTypesHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -59,6 +68,7 @@ import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -88,20 +98,76 @@ public class PatchAddResourceHandlerTest implements FileReferences
   private ServiceProvider serviceProvider;
 
   /**
+   * used to access the default
+   * {@link de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround}-handlers
+   */
+  private ResourceEndpoint resourceEndpoint;
+
+  /**
+   * the resource-handler used for the patch-tests
+   */
+  private AllTypesHandlerImpl allTypesHandler;
+
+  /**
    * initializes a new {@link ResourceTypeFactory} for the following tests
    */
   @BeforeEach
   public void initialize()
   {
     this.serviceProvider = ServiceProvider.builder().patchConfig(PatchConfig.builder().supported(true).build()).build();
-    this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    this.allTypesResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                         allTypesResourceType,
-                                                                         allTypesSchema,
-                                                                         enterpriseUserSchema);
+    resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    this.allTypesHandler = new AllTypesHandlerImpl();
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceType,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+    this.resourceTypeFactory = ResourceEndpointBridge.getResourceTypeFactory(resourceEndpoint);
+  }
+
+  /**
+   * adds an allTypes object to the {@link #allTypesHandler}
+   */
+  private void addAllTypesToProvider(AllTypes allTypes)
+  {
+    if (!allTypes.getId().isPresent())
+    {
+      allTypes.setId(UUID.randomUUID().toString());
+    }
+    allTypesHandler.getInMemoryMap().put(allTypes.getId().get(), allTypes);
+  }
+
+  /**
+   * adds an allTypes object to the {@link #allTypesHandler}
+   */
+  private void addUserToProvider(UserHandlerImpl userHandler, User user)
+  {
+    if (!user.getId().isPresent())
+    {
+      user.setId(UUID.randomUUID().toString());
+    }
+    userHandler.getInMemoryMap().put(user.getId().get(), user);
+  }
+
+  @Test
+  public void testFieldsAreSet()
+  {
+    final String notNeededId = UUID.randomUUID().toString();
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(notNeededId,
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    Assertions.assertNotNull(patchRequestHandler.getPatchConfig());
+    Assertions.assertNotNull(patchRequestHandler.getResourceHandler());
+    Assertions.assertNotNull(patchRequestHandler.getPatchWorkarounds());
+    Assertions.assertFalse(patchRequestHandler.getPatchWorkarounds().isEmpty());
+    Assertions.assertNotNull(patchRequestHandler.getMainSchema());
+    Assertions.assertNotNull(patchRequestHandler.getExtensionSchemas());
+    Assertions.assertFalse(patchRequestHandler.getExtensionSchemas().isEmpty());
+    Assertions.assertNotNull(patchRequestHandler.getResourceType());
+    Assertions.assertNotNull(patchRequestHandler.getPatchOperationHandler());
   }
 
   /**
@@ -163,13 +229,21 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertEquals(2, allTypes.getMultiComplex().size());
-    Assertions.assertEquals(multiComplex, allTypes.getMultiComplex().get(0));
-    Assertions.assertTrue(allTypes.getMeta().isPresent());
-    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.META));
+    Assertions.assertTrue(patchedAllTypes.has("multiComplex"));
+    Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(multiComplex, patchedAllTypes.getMultiComplex().get(0));
+    Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
+    Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
   }
 
   /**
@@ -180,7 +254,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
   public void testReplaceMultiValuedComplexTypeWithNoChange()
   {
     AllTypes allTypes = new AllTypes(true);
-    Meta meta = Meta.builder().created(LocalDateTime.now()).build();
+    LocalDateTime created = LocalDateTime.now();
+    Meta meta = Meta.builder().created(created).lastModified(created).build();
     allTypes.setMeta(meta);
 
     AllTypes multiComplex = new AllTypes(false);
@@ -197,13 +272,24 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
-    Assertions.assertEquals(multiComplex, allTypes.getMultiComplex().get(0));
-    Assertions.assertTrue(allTypes.getMeta().isPresent());
-    Assertions.assertFalse(allTypes.getMeta().get().getLastModified().isPresent(), allTypes.toPrettyString());
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged(), patchedAllTypes.toPrettyString());
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.META));
+    Assertions.assertTrue(patchedAllTypes.has("multiComplex"));
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(multiComplex, patchedAllTypes.getMultiComplex().get(0));
+    Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
+    Assertions.assertEquals(patchedAllTypes.getMeta().get().getCreated().get(),
+                            patchedAllTypes.getMeta().get().getLastModified().get());
   }
 
   /**
@@ -234,13 +320,22 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertEquals(1, allTypes.getMultiComplex().size());
-    Assertions.assertEquals(multiComplex2, allTypes.getMultiComplex().get(0));
-    Assertions.assertTrue(allTypes.getMeta().isPresent());
-    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent(), allTypes.toPrettyString());
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(4, patchedAllTypes.size());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.META));
+    Assertions.assertTrue(patchedAllTypes.has("multiComplex"));
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(multiComplex2, patchedAllTypes.getMultiComplex().get(0));
+    Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
+    Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
   }
 
   /**
@@ -259,10 +354,14 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail();
     }
     catch (ScimException ex)
@@ -273,6 +372,82 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that no exception is thrown if the addressed attribute does not exist and the configuration
+   * property {@link PatchConfig#isIgnoreUnknownAttribute()} is set to true
+   */
+  @Test
+  public void testAttributeDoesNotExistAndDoNotFailOnNoTarget()
+  {
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.set("emails", new TextNode("unknown"));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(2, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * this test will verify that a simple attribute reference that is unknown will not cause an error if the
+   * patchconfig has the field {@link PatchConfig#isIgnoreUnknownAttribute()} set to true
+   */
+  @Test
+  public void testAddWithMsAzureStyleSimpleAttributeReferenceWithUnknownAttributeButNotFailing()
+  {
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
+
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes allTypeChanges = new AllTypes(true);
+
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":number", new IntNode(4));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+    Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals(2, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+  }
+
+  /**
    * this test will verify that no changes are made to the resource if the given complex type is identical to
    * the existing one
    */
@@ -280,7 +455,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
   public void testComplexTypeAlreadyExists()
   {
     AllTypes allTypes = new AllTypes(true);
-    Meta meta = Meta.builder().created(LocalDateTime.now()).build();
+    LocalDateTime created = LocalDateTime.now();
+    Meta meta = Meta.builder().created(created).lastModified(created).build();
     allTypes.setMeta(meta);
 
     AllTypes complex = new AllTypes(false);
@@ -296,29 +472,38 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertTrue(allTypes.getComplex().isPresent());
-    Assertions.assertEquals(complex, allTypes.getComplex().get());
-    Assertions.assertTrue(allTypes.getMeta().isPresent());
-    // this is important. The change must not have been made so the lastModified value must not be present!
-    Assertions.assertFalse(allTypes.getMeta().get().getLastModified().isPresent());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertEquals(allTypes.getId().get(), patchedAllTypes.getId().get());
+    Assertions.assertTrue(patchedAllTypes.getComplex().isPresent());
+    Assertions.assertEquals(complex, patchedAllTypes.getComplex().get());
+    Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
+    // this is important. The change must not have been made so the lastModified value must be identical with the
+    // created value
+    Assertions.assertEquals(patchedAllTypes.getMeta().get().getCreated().get(),
+                            patchedAllTypes.getMeta().get().getLastModified().get());
   }
 
   /**
    * this test will verify that existing attributes from complex nodes are not removed if new attributes are
    * added
    */
+  @SneakyThrows
   @Test
   public void testAddSimpleValuesToComplexAttribute()
   {
     AllTypes allTypes = new AllTypes(true);
+    LocalDateTime created = LocalDateTime.now();
+    allTypes.setMeta(Meta.builder().created(created).lastModified(created).build());
     AllTypes innerComplex = new AllTypes(false);
     innerComplex.setString("hello world");
     allTypes.setComplex(innerComplex);
-    Meta meta = Meta.builder().created(LocalDateTime.now()).build();
-    allTypes.setMeta(meta);
 
     AllTypes complex = new AllTypes(false);
     complex.setNumber(Long.MAX_VALUE);
@@ -332,18 +517,28 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(allTypes.getComplex().isPresent());
-    Assertions.assertTrue(allTypes.getComplex().get().getString().isPresent(),
-                          allTypes.getComplex().get().toPrettyString());
-    Assertions.assertEquals("hello world", allTypes.getComplex().get().getString().get());
-    Assertions.assertEquals(3, allTypes.size(), allTypes.toPrettyString());
-    Assertions.assertNotEquals(complex, allTypes.getComplex().get());
-    Assertions.assertEquals(3, allTypes.getComplex().get().size());
-    Assertions.assertTrue(allTypes.getMeta().isPresent());
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    Thread.sleep(1); // to make sure that the lastModified value will differ
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertTrue(patchedAllTypes.getComplex().isPresent());
+    Assertions.assertTrue(patchedAllTypes.getComplex().get().getString().isPresent(),
+                          patchedAllTypes.getComplex().get().toPrettyString());
+    Assertions.assertEquals("hello world", patchedAllTypes.getComplex().get().getString().get());
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertEquals(allTypes.getId().get(), patchedAllTypes.getId().get());
+    Assertions.assertNotEquals(complex, patchedAllTypes.getComplex().get());
+    Assertions.assertEquals(3, patchedAllTypes.getComplex().get().size());
+    Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
     // this is important. The change must not have been made so the lastModified value must not be present!
-    Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+    Assertions.assertNotEquals(patchedAllTypes.getMeta().get().getCreated().get(),
+                               patchedAllTypes.getMeta().get().getLastModified().get());
   }
 
   /**
@@ -364,12 +559,20 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(allTypes.getString().isPresent());
-    Assertions.assertEquals("hello world", allTypes.getString().get());
-    // no change must have been made so last modified must not be present
-    Assertions.assertFalse(allTypes.getMeta().isPresent());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(3, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has("string"));
+    Assertions.assertTrue(patchedAllTypes.getString().isPresent());
+    Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
+    // no change must have been made so the last-modified value must be identical to before
+    Assertions.assertFalse(patchedAllTypes.getMeta().isPresent());
   }
 
   /**
@@ -389,10 +592,14 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(4, allTypes.getNumberArray().size());
-    MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(1L, 2L, 3L, 4L));
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(4, patchedAllTypes.getNumberArray().size());
+    MatcherAssert.assertThat(patchedAllTypes.getNumberArray(), Matchers.hasItems(1L, 2L, 3L, 4L));
   }
 
   /**
@@ -411,17 +618,116 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertEquals(2, allTypes.getNumberArray().size());
-    MatcherAssert.assertThat(allTypes.getNumberArray(), Matchers.hasItems(3L, 4L));
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(2, patchedAllTypes.getNumberArray().size());
+    MatcherAssert.assertThat(patchedAllTypes.getNumberArray(), Matchers.hasItems(3L, 4L));
   }
 
   /**
-   * this test will verify that attributes can be added to simple arrays
+   * this test will verify that an appropriate error is returned if the array contains illegal values
    */
   @Test
-  public void testAddMultiValuedArrayWithUnknownAttribute()
+  public void testAddIllegalValueOnMultivaluedArray()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    ArrayNode illegalNumberArray = new ArrayNode(JsonNodeFactory.instance);
+    illegalNumberArray.add("hello");
+    illegalNumberArray.add("world");
+    allTypeChanges.set("numberArray", illegalNumberArray);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    SchemaAttribute schemaAttribute = allTypesResourceType.getMainSchema().getSchemaAttribute("numberArray");
+    Assertions.assertEquals(String.format("Illegal type for attribute '%s'. Type must be '%s' but was of type 'STRING'",
+                                          schemaAttribute.getFullResourceName(),
+                                          schemaAttribute.getType()),
+                            ex.getMessage());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+  }
+
+  /**
+   * makes sure that a simple value is accepted for an array value. If the brackets in the json are missing we
+   * will accept it as single element array instead of throwing an error
+   */
+  @Test
+  public void testAddToArrayWithSimpleAttribute()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.set("numberArray", new IntNode(5));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(1, patchedAllTypes.getNumberArray().size());
+    Assertions.assertEquals(5, patchedAllTypes.getNumberArray().get(0));
+  }
+
+  /**
+   * makes sure that a simple value is accepted for an array value. If the brackets in the json are missing we
+   * will accept it as single element array instead of throwing an error
+   */
+  @Test
+  public void testAddIllegalValueToArrayWithSimpleAttribute()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.set("numberArray", new TextNode("illegal-value"));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    SchemaAttribute schemaAttribute = allTypesResourceType.getMainSchema().getSchemaAttribute("numberArray");
+    Assertions.assertEquals(String.format("Illegal type for attribute '%s'. Type must be '%s' but was of type 'STRING'",
+                                          schemaAttribute.getFullResourceName(),
+                                          schemaAttribute.getType()),
+                            ex.getMessage());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+  }
+
+  /**
+   * This test will make sure that unknown attributes in multivalued-complex direct references are not added to
+   * the resource
+   */
+  @Test
+  public void testAddMultiValuedArrayWithUnknownAttributeWithPatchAdd()
   {
     AllTypes allTypes = new AllTypes(true);
 
@@ -438,17 +744,110 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    try
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().size());
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
+      // the first attribute is unchanged
+      Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().get(0).size());
+      Assertions.assertEquals(multicomplex.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(0).getString().get());
+      Assertions.assertEquals(multicomplex.get("unknown"), patchedAllTypes.getMultiComplex().get(0).get("unknown"));
+      Assertions.assertEquals(multicomplex.get("unknown"), patchedAllTypes.getMultiComplex().get(0).get("unknown"));
     }
-    catch (ScimException ex)
     {
-      Assertions.assertEquals(ScimType.Custom.INVALID_PARAMETERS, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      // the added attribute does not have the unknown-attribute
+      Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().get(1).size());
+      Assertions.assertEquals(multicomplex.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(1).getString().get());
+      Assertions.assertNull(patchedAllTypes.getMultiComplex().get(1).get("unknown"));
     }
+  }
+
+  /**
+   * This test will make sure that unknown attributes in multivalued-complex direct references are not added to
+   * the resource
+   */
+  @Test
+  public void testAddMultiValuedArrayWithUnknownAttributeWithPatchReplace()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.setString("hello world");
+    multicomplex.set("unknown", new TextNode("unknown"));
+    allTypes.setMultiComplex(Collections.singletonList(multicomplex));
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setMultiComplex(Collections.singletonList(multicomplex));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    {
+      // the added attribute does not have the unknown-attribute
+      Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().get(0).size());
+      Assertions.assertEquals(multicomplex.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(0).getString().get());
+      Assertions.assertNull(patchedAllTypes.getMultiComplex().get(0).get("unknown"));
+    }
+  }
+
+  /**
+   * This test will make sure that unknown attributes in multivalued-complex direct references are not added to
+   * the resource
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testAddComplexWithUnknownAttribute(PatchOp patchOp)
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes complex = new AllTypes(false);
+    complex.setString("hello world");
+    allTypes.setComplex(complex);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    AllTypes complexChanges = new AllTypes(false);
+    complexChanges.setString("hello world");
+    complexChanges.set("unknown", new TextNode("unknown"));
+
+    allTypeChanges.setComplex(complexChanges);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(1, patchedAllTypes.getComplex().get().size());
+    {
+      // the added attribute does not have the unknown-attribute
+      Assertions.assertEquals(complex.getString().get(), patchedAllTypes.getComplex().get().getString().get());
+      Assertions.assertNull(patchedAllTypes.getComplex().get().get("unknown"));
+    }
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
   }
 
   /**
@@ -483,22 +882,30 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                   .valueNode(allTypeChanges)
                                                                                   .build());
       PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-      Assertions.assertEquals(1, allTypes.size(), allTypes.toPrettyString());
-      allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.assertTrue(allTypes.size() > 1, allTypes.toPrettyString());
+      addAllTypesToProvider(allTypes);
+      PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                  allTypesResourceType.getResourceHandlerImpl(),
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+      Assertions.assertEquals(2, allTypes.size(), allTypes.toPrettyString());
+      Assertions.assertTrue(allTypes.has(AttributeNames.RFC7643.ID));
+      AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+
+      Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+      Assertions.assertTrue(patchedAllTypes.size() > 1, patchedAllTypes.toPrettyString());
       // the added attribute and lastModifed have been added by patch
-      Assertions.assertEquals(3 + (nameValuePairs == null ? 0 : nameValuePairs.length), allTypes.size());
-      Assertions.assertNotNull(allTypes.get(nameValuePair.getAttributeName()));
-      Assertions.assertEquals(nameValuePair.getValue(), allTypes.get(nameValuePair.getAttributeName()));
-      Assertions.assertTrue(allTypes.getMeta().isPresent());
-      Assertions.assertTrue(allTypes.getMeta().get().getLastModified().isPresent());
+      Assertions.assertEquals(1/* id */ + 3 + (nameValuePairs == null ? 0 : nameValuePairs.length),
+                              patchedAllTypes.size());
+      Assertions.assertNotNull(patchedAllTypes.get(nameValuePair.getAttributeName()));
+      Assertions.assertEquals(nameValuePair.getValue(), patchedAllTypes.get(nameValuePair.getAttributeName()));
+      Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
+      Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
       if (nameValuePairs != null)
       {
         for ( NameValuePair valuePair : nameValuePairs )
         {
-          Assertions.assertNotNull(allTypes.get(valuePair.getAttributeName()));
-          Assertions.assertEquals(valuePair.getValue(), allTypes.get(valuePair.getAttributeName()));
+          Assertions.assertNotNull(patchedAllTypes.get(valuePair.getAttributeName()));
+          Assertions.assertEquals(valuePair.getValue(), patchedAllTypes.get(valuePair.getAttributeName()));
         }
       }
     });
@@ -512,16 +919,22 @@ public class PatchAddResourceHandlerTest implements FileReferences
   {
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder().op(PatchOp.ADD).build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(new AllTypes(true), patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail();
     }
     catch (ScimException ex)
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
     }
   }
 
@@ -537,16 +950,22 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .values(values)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    AllTypes allTypes = new AllTypes(true);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(new AllTypes(true), patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail();
     }
     catch (ScimException ex)
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
     }
   }
 
@@ -579,10 +998,15 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(allTypes.getString().isPresent());
-    Assertions.assertEquals("hello world", allTypes.getString().get());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertTrue(patchedAllTypes.getString().isPresent());
+    Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
   }
 
   /**
@@ -608,16 +1032,21 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.assertTrue(allTypes.getString().isPresent());
-      Assertions.assertEquals("hello world", allTypes.getString().get());
+      AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+      Assertions.assertTrue(patchedAllTypes.getString().isPresent());
+      Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
     }
     catch (ScimException ex)
     {
-      Assertions.fail("this point must not be reached");
+      Assertions.fail("this point must not be reached", ex);
     }
   }
 
@@ -644,12 +1073,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.assertTrue(allTypes.getString().isPresent());
-      Assertions.assertEquals("hello world", allTypes.getString().get());
+      AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+      Assertions.assertTrue(patchedAllTypes.getString().isPresent());
+      Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
     }
     catch (ScimException ex)
     {
@@ -659,16 +1093,24 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
+   * this test must verify that an attribute that has a mutability of immutable leads to a
    * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
    * within this test
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
-  public void testAddImmutableAndReadOnlyAttributeWithChange(Mutability mutability)
+  @Test
+  public void testAddImmutableAttributeWithChange()
   {
     JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
-    TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
+    TestHelper.modifyAttributeMetaData(allTypesMeta,
+                                       "string",
+                                       null,
+                                       Mutability.IMMUTABLE,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
     AllTypes allTypes = new AllTypes(true);
@@ -682,30 +1124,43 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
     }
   }
 
   /**
-   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
+   * this test must verify that an attribute that has a mutability of immutable leads to a
    * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
    * within this test
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
-  public void testReplaceImmutableAndReadOnlyAttributeWithChange(Mutability mutability)
+  @Test
+  public void testReplaceImmutableAttributeWithChange()
   {
     JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
-    TestHelper.modifyAttributeMetaData(allTypesMeta, "string", null, mutability, null, null, null, null, null, null);
+    TestHelper.modifyAttributeMetaData(allTypesMeta,
+                                       "string",
+                                       null,
+                                       Mutability.IMMUTABLE,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
 
     AllTypes allTypes = new AllTypes(true);
@@ -719,33 +1174,78 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
     }
   }
 
   /**
-   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
+   * this test must verify that an attribute that has a mutability of readOnly will not cause an error but will
+   * be ignored
+   */
+  @Test
+  public void testReplaceReadOnlyAttributeWithChange()
+  {
+    JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+    TestHelper.modifyAttributeMetaData(allTypesMeta,
+                                       "string",
+                                       null,
+                                       Mutability.READ_ONLY,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null,
+                                       null);
+    resourceTypeFactory.getSchemaFactory().registerResourceSchema(allTypesMeta);
+
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setString("hello world");
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.setString("new hello world");
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
+  }
+
+  /**
+   * this test must verify that an attribute that has a mutability of immutable leads to a
    * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
    * within this test
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
-  public void testAddImmutableAndReadOnlyAttributeForComplex(Mutability mutability)
+  @Test
+  public void testAddImmutableAndReadOnlyAttributeForComplex()
   {
     JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     TestHelper.modifyAttributeMetaData(allTypesMeta,
                                        "complex.string",
                                        null,
-                                       mutability,
+                                       Mutability.IMMUTABLE,
                                        null,
                                        null,
                                        null,
@@ -772,23 +1272,27 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
     }
   }
 
   /**
-   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
-   * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
-   * within this test
+   * this test will verify that immutable and readOnly subAttributes are ignored in case that a new multicomplex
+   * attribute is added
    */
   @ParameterizedTest
   @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
@@ -821,33 +1325,35 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    try
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().size());
+    for ( AllTypes patchedMultiComplex : patchedAllTypes.getMultiComplex() )
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
+      Assertions.assertEquals(1, patchedMultiComplex.size());
+      Assertions.assertEquals(multicomplex.getString().get(), patchedMultiComplex.getString().get());
     }
   }
 
   /**
-   * this test must verify that an attribute that has a mutability of immutable or readOnly leads to a
+   * this test must verify that an attribute that has a mutability of immutable leads to a
    * {@link BadRequestException} if tried to set. The immutable object should fail because it is already set
    * within this test
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
-  public void testAddImmutableAndReadOnlyAttributeForMultiComplex(Mutability mutability)
+  @Test
+  public void testAddImmutableAndReadOnlyAttributeForMultiComplex()
   {
     JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     TestHelper.modifyAttributeMetaData(allTypesMeta,
                                        "multiComplex",
                                        null,
-                                       mutability,
+                                       Mutability.IMMUTABLE,
                                        null,
                                        null,
                                        null,
@@ -870,16 +1376,22 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail("this point must not be reached");
     }
     catch (ScimException ex)
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
     }
   }
 
@@ -903,10 +1415,15 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
     AtomicBoolean primaryFound = new AtomicBoolean(false);
-    for ( JsonNode complex : allTypes.getMultiComplex() )
+    for ( JsonNode complex : patchedAllTypes.getMultiComplex() )
     {
       JsonNode prime = complex.get(AttributeNames.RFC7643.PRIMARY);
       if (primaryFound.get())
@@ -919,7 +1436,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that it is illegal to add 2 primary values into a multivalued complex type
+   * verifies that only the last added primary value will be kept primary. All members from before that were
+   * primary will have the primary attribute removed
    */
   @Test
   public void testSetTwoPrimaryValues()
@@ -928,6 +1446,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     AllTypes multicomplex = new AllTypes(false);
     multicomplex.set(AttributeNames.RFC7643.PRIMARY, BooleanNode.getTrue());
+    multicomplex.setNumber(4L);
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
     AllTypes allTypeChanges = new AllTypes(true);
@@ -938,16 +1457,132 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    try
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(3, patchedAllTypes.getMultiComplex().size());
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
+      Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().get(0).size());
+      Assertions.assertEquals(multicomplex.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(0).getNumber().get());
     }
-    catch (ScimException ex)
     {
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
+      Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().get(1).size());
+      Assertions.assertEquals(multicomplex.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(1).getNumber().get());
+    }
+    {
+      Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().get(2).size());
+      Assertions.assertEquals(multicomplex.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(2).getNumber().get());
+      Assertions.assertTrue(patchedAllTypes.getMultiComplex()
+                                           .get(2)
+                                           .get(AttributeNames.RFC7643.PRIMARY)
+                                           .booleanValue());
+    }
+  }
+
+  /**
+   * verifies that it is illegal to add 2 primary values into a multivalued complex type
+   */
+  @Test
+  public void testAddMultipleComplexValues()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.set(AttributeNames.RFC7643.PRIMARY, BooleanNode.getTrue());
+    allTypes.setMultiComplex(Collections.singletonList(multicomplex));
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    AllTypes newMultivalued = new AllTypes(false);
+    newMultivalued.setString("hello world");
+    newMultivalued.setNumber(5L);
+    allTypeChanges.setMultiComplex(Arrays.asList(newMultivalued, newMultivalued));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(3, patchedAllTypes.getMultiComplex().size());
+    {
+      Assertions.assertTrue(patchedAllTypes.getMultiComplex()
+                                           .get(0)
+                                           .get(AttributeNames.RFC7643.PRIMARY)
+                                           .booleanValue());
+    }
+    {
+      Assertions.assertEquals(newMultivalued.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(1).getString().get());
+      Assertions.assertEquals(newMultivalued.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(1).getNumber().get());
+    }
+    {
+      Assertions.assertEquals(newMultivalued.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(2).getString().get());
+      Assertions.assertEquals(newMultivalued.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(2).getNumber().get());
+    }
+  }
+
+  /**
+   * verifies that it is illegal to add 2 primary values into a multivalued complex type
+   */
+  @Test
+  public void testReplaceMultipleComplexValues()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.set(AttributeNames.RFC7643.PRIMARY, BooleanNode.getTrue());
+    allTypes.setMultiComplex(Collections.singletonList(multicomplex));
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    AllTypes newMultivalued = new AllTypes(false);
+    newMultivalued.setString("hello world");
+    newMultivalued.setNumber(5L);
+    allTypeChanges.setMultiComplex(Arrays.asList(newMultivalued, newMultivalued));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().size());
+    {
+      Assertions.assertEquals(newMultivalued.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(0).getString().get());
+      Assertions.assertEquals(newMultivalued.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(0).getNumber().get());
+    }
+    {
+      Assertions.assertEquals(newMultivalued.getString().get(),
+                              patchedAllTypes.getMultiComplex().get(1).getString().get());
+      Assertions.assertEquals(newMultivalued.getNumber().get(),
+                              patchedAllTypes.getMultiComplex().get(1).getNumber().get());
     }
   }
 
@@ -963,6 +1598,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
     Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
     allTypesSchema.addAttribute(emailsDef);
+
     List<Email> emails = Arrays.asList(Email.builder().value("1@1.de").primary(true).build(),
                                        Email.builder().value("2@2.de").build(),
                                        Email.builder().value("3@3.de").build());
@@ -975,10 +1611,48 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes patchedAllTypes = Assertions.assertDoesNotThrow(() -> patchHandler.patchResource(allTypes,
-                                                                                              patchOpRequest));
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
     Assertions.assertEquals(emailArray, patchedAllTypes.get(AttributeNames.RFC7643.EMAILS));
+  }
+
+  /**
+   * verifies that the email is accepted in the resource even if it was not set as arrayNode
+   */
+  @Test
+  public void testPatchEmailsWithWithNonArrayComplexNode()
+  {
+    AllTypes allTypes = new AllTypes(true);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    JsonNode emailsDef = JsonHelper.loadJsonDocument(EMAILS_ATTRIBUTE);
+    Schema allTypesSchema = resourceTypeFactory.getSchemaFactory().getResourceSchema(AllTypes.ALL_TYPES_URI);
+    allTypesSchema.addAttribute(emailsDef);
+
+    Email email = Email.builder().value("1@1.de").primary(true).build();
+    allTypeChanges.set(AttributeNames.RFC7643.EMAILS, email);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    ArrayNode emailsNode = (ArrayNode)patchedAllTypes.get(AttributeNames.RFC7643.EMAILS);
+    Assertions.assertNotNull(emailsNode);
+    Assertions.assertEquals(1, emailsNode.size());
+    Assertions.assertEquals(email, emailsNode.get(0));
   }
 
   /**
@@ -997,9 +1671,14 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
   }
 
   /**
@@ -1014,7 +1693,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
 
     final String ambiguousAttributeName = "number";
-    this.allTypesResourceType = TestHelper.addAttributeToSchema(resourceTypeFactory,
+    this.allTypesResourceType = TestHelper.addAttributeToSchema(resourceEndpoint,
+                                                                allTypesHandler,
                                                                 ambiguousAttributeName,
                                                                 Type.STRING,
                                                                 allTypesResourceTypeNode,
@@ -1035,10 +1715,15 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
-    Assertions.assertEquals("hello world", allTypes.getEnterpriseUser().get().get(ambiguousAttributeName).textValue());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals("hello world",
+                            patchedAllTypes.getEnterpriseUser().get().get(ambiguousAttributeName).textValue());
   }
 
   /**
@@ -1054,10 +1739,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
     attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
-    this.allTypesResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                         allTypesResourceTypeNode,
-                                                                         allTypesSchema,
-                                                                         enterpriseUserSchema);
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
     resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
 
     AllTypes allTypes = new AllTypes(true);
@@ -1077,10 +1764,298 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    allTypes = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(allTypes.getEnterpriseUser().isPresent());
-    Assertions.assertEquals("hello world", allTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals("hello world",
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+  }
+
+  /**
+   * this test will verify that attribute adding works also for extensions even if there are naming conflicts
+   * with the main schema with msAzure style sub-attribute reference on extension
+   */
+  @Test
+  public void testAddWithMsAzureStyleSubAttributeReference()
+  {
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complexAllTypes = new AllTypes(false);
+    complexAllTypes.setNumber(50L);
+    allTypes.setComplex(complexAllTypes);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex.number", new TextNode("hello world"));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals("hello world",
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+  }
+
+  /**
+   * this test will verify that complex attributes can be added with the msAzure style notation
+   */
+  @Test
+  public void testAddWithMsAzureStyleDirectComplexAttributeReference()
+  {
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complexAllTypes = new AllTypes(false);
+    // the generated extra-attribute has the field number defined as string
+    complexAllTypes.set("number", new TextNode("hello world"));
+    allTypes.setComplex(complexAllTypes);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.set("number", new TextNode("goodbye world"));
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex", complex);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals("goodbye world",
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+  }
+
+  /**
+   * this test will verify that complex sub-attributes can be added with the msAzure style notation
+   */
+  @Test
+  public void testAddWithMsAzureStyleComplexSubattributeReference()
+  {
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complexAllTypes = new AllTypes(false);
+    // the generated extra-attribute has the field number defined as string
+    complexAllTypes.set("number", new TextNode("hello world"));
+    allTypes.setComplex(complexAllTypes);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex.number", new TextNode("goodbye world"));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals("goodbye world",
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+  }
+
+  /**
+   * this test will verify that a simple attribute can be added with the msAzure style notation
+   */
+  @Test
+  public void testAddWithMsAzureStyleSimpleAttributeReference()
+  {
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setNumber(1L);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":" + AttributeNames.RFC7643.COST_CENTER,
+                       new TextNode("costCenterValue"));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+
+    Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals("costCenterValue",
+                            patchedAllTypes.getEnterpriseUser()
+                                           .get()
+                                           .get(AttributeNames.RFC7643.COST_CENTER)
+                                           .textValue());
+  }
+
+  /**
+   * this test will verify that a simple attribute reference that is unknown will cause an error
+   */
+  @Test
+  public void testAddWithMsAzureStyleSimpleAttributeReferenceWithUnknownAttribute()
+  {
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setNumber(1L);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    final String attributeName = enterpriseSchema.getNonNullId() + ":number";
+    allTypeChanges.set(attributeName, new IntNode(4));
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+
+    Assertions.assertEquals(String.format("Attribute '%s' is unknown to resource type 'AllTypes'", attributeName),
+                            ex.getMessage());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
+  }
+
+  /**
+   * this test will verify that attribute adding works also for extensions even if there are naming conflicts
+   * with the main schema with msAzure style attribute reference on extension
+   */
+  @Test
+  public void testAddAttributeWithIllegalType()
+  {
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+
+    Schema enterpriseSchema = resourceTypeFactory.getSchemaFactory().registerResourceSchema(enterpriseUserSchema);
+
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complexAllTypes = new AllTypes(false);
+    // the generated extra-attribute has the field number defined as string
+    complexAllTypes.set("number", new TextNode("hello world"));
+    allTypes.setComplex(complexAllTypes);
+
+    AllTypes allTypeChanges = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setNumber(10L);
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex", complex);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(allTypeChanges)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    SchemaAttribute schemaAttribute = enterpriseSchema.getSchemaAttribute("complex.number");
+    Assertions.assertEquals(String.format("Illegal type for attribute '%s'. Type must be '%s' but was of type 'NUMBER'",
+                                          schemaAttribute.getFullResourceName(),
+                                          schemaAttribute.getType()),
+                            ex.getMessage());
+    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
   }
 
   /**
@@ -1090,13 +2065,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureWorkaroundIsExecuted(PatchOp patchOp)
   {
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
     User user = new User();
 
     // @formatter:off
@@ -1112,12 +2084,18 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    user = patchHandler.patchResource(user, patchOpRequest);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
 
-    Assertions.assertTrue(user.isActive().orElse(false));
-    Assertions.assertEquals("Terrence", user.getName().flatMap(Name::getGivenName).orElse(null));
-    Assertions.assertEquals("William", user.getName().flatMap(Name::getFamilyName).orElse(null));
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertTrue(patchedUser.isActive().orElse(false));
+    Assertions.assertEquals("Terrence", patchedUser.getName().flatMap(Name::getGivenName).orElse(null));
+    Assertions.assertEquals("William", patchedUser.getName().flatMap(Name::getFamilyName).orElse(null));
   }
 
   /**
@@ -1127,13 +2105,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureNotationForMultivaluedComplexTypes(PatchOp patchOp)
   {
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
     User user = new User();
 
     final String patchValue = "{\"emails.value\": \"max@mustermann.de\"}";
@@ -1143,11 +2117,19 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    user = patchHandler.patchResource(user, patchOpRequest);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
 
-    Assertions.assertEquals(1, user.getEmails().size(), user.toPrettyString());
-    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(0).getValue().get());
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    log.warn(patchedUser.toPrettyString());
+
+    Assertions.assertEquals(1, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", patchedUser.getEmails().get(0).getValue().get());
   }
 
   /**
@@ -1195,13 +2177,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   {
     serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
     User user = new User();
 
     final String path = "emails[type eq \"work\"].value";
@@ -1213,12 +2191,18 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    user = patchHandler.patchResource(user, patchOpRequest);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
 
-    Assertions.assertEquals(1, user.getEmails().size(), user.toPrettyString());
-    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(0).getValue().get());
-    Assertions.assertEquals("work", user.getEmails().get(0).getType().get());
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertEquals(1, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", patchedUser.getEmails().get(0).getValue().get());
+    Assertions.assertEquals("work", patchedUser.getEmails().get(0).getType().get());
   }
 
   /**
@@ -1229,13 +2213,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpressionFail(PatchOp patchOp)
   {
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
     User user = new User();
 
     final String path = "emails[type eq \"work\"].value";
@@ -1247,10 +2227,16 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> patchHandler.patchResource(user, patchOpRequest));
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
     Assertions.assertEquals("No target found for path-filter 'emails[type eq \"work\"].value'", ex.getMessage());
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
   }
 
   /**
@@ -1297,19 +2283,93 @@ public class PatchAddResourceHandlerTest implements FileReferences
    *
    * if the user did have the email "erika@mustermann.de" before
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"ADD", "REPLACE"})
-  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2(PatchOp patchOp)
+  @Test
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Add()
   {
+    PatchOp patchOp = PatchOp.ADD;
     serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
+
+    final String path = "emails[type eq \"work\"].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertEquals(2, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", patchedUser.getEmails().get(1).getValue().get());
+    Assertions.assertEquals("work", patchedUser.getEmails().get(1).getType().get());
+  }
+
+  /**
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are added if
+   * the filter does not match an existing entry.<br>
+   * <br>
+   * Example:<br>
+   * the request
+   *
+   * <pre>
+   * {
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ],
+   *   "Operations": [
+   *     {
+   *       "op": "replace",
+   *       "path": "emails[type eq \"work\"].value",
+   *       "value": "max@mustermann.de"
+   *     }
+   *   ]
+   * }
+   * </pre>
+   *
+   * must result in
+   *
+   * <pre>
+   * {
+   *   "schemas" : [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+   *   "emails" : [
+   *     {
+   *       "type" : "work",
+   *       "value" : "max@mustermann.de"
+   *     }
+   *   ],
+   *   "meta" : {
+   *     "lastModified" : "2023-02-05T11:56:25.8049737+01:00"
+   *   }
+   * }
+   * </pre>
+   *
+   * if the user did have the email "erika@mustermann.de" before
+   */
+  @Test
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Replace()
+  {
+    PatchOp patchOp = PatchOp.REPLACE;
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
+
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
     User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
 
     final String path = "emails[type eq \"work\"].value";
@@ -1321,12 +2381,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    user = patchHandler.patchResource(user, patchOpRequest);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
 
-    Assertions.assertEquals(2, user.getEmails().size(), user.toPrettyString());
-    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(1).getValue().get());
-    Assertions.assertEquals("work", user.getEmails().get(1).getType().get());
+    Assertions.assertEquals(1, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", patchedUser.getEmails().get(0).getValue().get());
+    Assertions.assertEquals("work", patchedUser.getEmails().get(0).getType().get());
   }
 
   /**
@@ -1337,13 +2402,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Fail(PatchOp patchOp)
   {
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
     User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
 
     final String path = "emails[type eq \"work\"].value";
@@ -1355,11 +2417,16 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
 
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> patchHandler.patchResource(user, patchOpRequest));
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
     Assertions.assertEquals("No target found for path-filter 'emails[type eq \"work\"].value'", ex.getMessage());
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
   }
 
   /**
@@ -1406,19 +2473,92 @@ public class PatchAddResourceHandlerTest implements FileReferences
    *
    * if the user did have the email "erika@mustermann.de" before
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"ADD", "REPLACE"})
-  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression3(PatchOp patchOp)
+  @Test
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression3Add()
   {
+    PatchOp patchOp = PatchOp.ADD;
     serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
+
+    final String path = "emails[primary eq true].value";
+    final String patchValue = "max@mustermann.de";
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path(path)
+                                                                                .value(patchValue)
+                                                                                .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertEquals(2, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", patchedUser.getEmails().get(1).getValue().get());
+    Assertions.assertTrue(patchedUser.getEmails().get(1).isPrimary());
+  }
+
+  /**
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are added if
+   * the filter does not match an existing entry.<br>
+   * <br>
+   * Example:<br>
+   * the request
+   *
+   * <pre>
+   * {
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *   ],
+   *   "Operations": [
+   *     {
+   *       "op": "replace",
+   *       "path": "emails[primary eq true].value",
+   *       "value": "max@mustermann.de"
+   *     }
+   *   ]
+   * }
+   * </pre>
+   *
+   * must result in
+   *
+   * <pre>
+   * {
+   *   "schemas" : [ "urn:ietf:params:scim:schemas:core:2.0:User" ],
+   *   "emails" : [
+   *     {
+   *       "primary" : true,
+   *       "value" : "max@mustermann.de"
+   *     }
+   *   ],
+   *   "meta" : {
+   *     "lastModified" : "2023-02-05T11:56:25.8049737+01:00"
+   *   }
+   * }
+   * </pre>
+   *
+   * if the user did have the email "erika@mustermann.de" before
+   */
+  @Test
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression3Replace()
+  {
+    PatchOp patchOp = PatchOp.REPLACE;
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
+
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
     User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
 
     final String path = "emails[primary eq true].value";
@@ -1430,12 +2570,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    user = patchHandler.patchResource(user, patchOpRequest);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
 
-    Assertions.assertEquals(2, user.getEmails().size(), user.toPrettyString());
-    Assertions.assertEquals("max@mustermann.de", user.getEmails().get(1).getValue().get());
-    Assertions.assertTrue(user.getEmails().get(1).isPrimary());
+    Assertions.assertEquals(1, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("max@mustermann.de", patchedUser.getEmails().get(0).getValue().get());
+    Assertions.assertTrue(patchedUser.getEmails().get(0).isPrimary());
   }
 
   /**
@@ -1448,13 +2593,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   {
     serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
     User user = User.builder().emails(Arrays.asList(Email.builder().value("erika@mustermann.de").build())).build();
 
     final String path = "emails[type eq \"work\" and primary eq true].value";
@@ -1466,12 +2608,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
 
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> patchHandler.patchResource(user, patchOpRequest));
+                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
     Assertions.assertEquals("No target found for path-filter 'emails[type eq \"work\" and primary eq true].value'",
                             ex.getMessage());
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
   }
 
   /**
@@ -1506,9 +2653,18 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    patchHandler.patchResource(allTypeChanges, patchOpRequest);
-    Assertions.assertTrue(patchHandler.isChangedResource());
+    AllTypes allTypes = new AllTypes(true);
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertEquals(employeeNumberChanged, patchedAllTypes.getEnterpriseUser().get().getEmployeeNumber().get());
+    Assertions.assertEquals(costCenter, patchedAllTypes.getEnterpriseUser().get().getCostCenter().get());
   }
 
   /**
@@ -1535,11 +2691,11 @@ public class PatchAddResourceHandlerTest implements FileReferences
     String employeeNumber = "1111";
     String costCenter = "2222";
 
-    AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
-                                                   .employeeNumber(employeeNumber)
-                                                   .costCenter(costCenter)
-                                                   .build());
+    AllTypes allTypesWithEnterpriseUser = new AllTypes(true);
+    allTypesWithEnterpriseUser.setEnterpriseUser(EnterpriseUser.builder()
+                                                               .employeeNumber(employeeNumber)
+                                                               .costCenter(costCenter)
+                                                               .build());
 
     AllTypes allTypesWithEmptyEnterpriseUser = new AllTypes(true);
     allTypesWithEmptyEnterpriseUser.setEnterpriseUser(EnterpriseUser.builder().build());
@@ -1548,9 +2704,15 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(allTypesWithEmptyEnterpriseUser.toString())
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes patchedAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
-    Assertions.assertTrue(patchHandler.isChangedResource());
+    addAllTypesToProvider(allTypesWithEnterpriseUser);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypesWithEnterpriseUser.getId()
+                                                                                                          .get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
     Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
   }
 
@@ -1598,12 +2760,16 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .value(patchValue2.toString())
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes patchedAllTypes = patchHandler.patchResource(originalResource, patchOpRequest);
 
-    log.warn(patchedAllTypes.toPrettyString());
+    addAllTypesToProvider(originalResource);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(originalResource.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
 
-    Assertions.assertTrue(patchHandler.isChangedResource());
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
     Assertions.assertEquals("hello world", patchedAllTypes.getString().get());
     Assertions.assertEquals(2L, patchedAllTypes.getNumber().get());
     Assertions.assertEquals(999L, patchedAllTypes.getComplex().get().getNumber().get());
@@ -1653,23 +2819,22 @@ public class PatchAddResourceHandlerTest implements FileReferences
   {
     serviceProvider.getPatchConfig().setMsAzureValueSubAttributeWorkaroundActive(true);
 
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
 
     final String resourceId = UUID.randomUUID().toString();
     final String patchRequestString = getMsAzureSubValueAttributeTestString();
     PatchOpRequest patchOpRequest = JsonHelper.readJsonDocument(patchRequestString, PatchOpRequest.class);
     User user = User.builder().id(resourceId).userName("goldfish").build();
 
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    User patchedUser = patchHandler.patchResource(user, patchOpRequest);
-
-    log.info(patchedUser.toPrettyString());
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
 
     List<PersonRole> personRoles = patchedUser.getRoles();
     Assertions.assertEquals(2, personRoles.size());
@@ -1702,23 +2867,23 @@ public class PatchAddResourceHandlerTest implements FileReferences
   {
     serviceProvider.getPatchConfig().setMsAzureValueSubAttributeWorkaroundActive(false);
 
-    JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
-    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    ResourceType userResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                             userResourceTypeNode,
-                                                                             userSchema,
-                                                                             enterpriseUserSchema);
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
 
     final String resourceId = UUID.randomUUID().toString();
     final String patchRequestString = getMsAzureSubValueAttributeTestString();
     PatchOpRequest patchOpRequest = JsonHelper.readJsonDocument(patchRequestString, PatchOpRequest.class);
     User user = User.builder().id(resourceId).userName("goldfish").build();
 
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), userResourceType);
-    User patchedUser = patchHandler.patchResource(user, patchOpRequest);
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
 
-    log.info(patchedUser.toPrettyString());
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
 
     List<PersonRole> personRoles = patchedUser.getRoles();
     Assertions.assertEquals(2, personRoles.size());
@@ -1792,5 +2957,36 @@ public class PatchAddResourceHandlerTest implements FileReferences
     private String attributeName;
 
     private JsonNode value;
+  }
+
+  @Nested
+  public class IllegalRequestTests
+  {
+
+    /**
+     * verifies that an appropriate exception is thrown if the value is missing in a patch request
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"ADD", "REPLACE"})
+    public void testValueIsMissing(PatchOp patchOp)
+    {
+      AllTypes allTypes = new AllTypes(true);
+
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(patchOp)
+                                                                                  .path("string")
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      addAllTypesToProvider(allTypes);
+      PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                  allTypesResourceType.getResourceHandlerImpl(),
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+      Assertions.assertEquals("Missing value for patch-operation on attribute 'string'. ADD and REPLACE "
+                              + "operations require at least one value.",
+                              ex.getMessage());
+    }
   }
 }

@@ -138,7 +138,7 @@ public class UserHandlerImpl extends ResourceHandler<User>
     Optional.ofNullable(context).ifPresent(contextVerifier);
     Assertions.assertTrue(resource.getMeta().isPresent());
     Meta meta = resource.getMeta().get();
-    Assertions.assertTrue(meta.getLocation().isPresent());
+    Assertions.assertTrue(meta.getLocation().isPresent(), meta.toPrettyString());
     Assertions.assertTrue(meta.getResourceType().isPresent());
     Assertions.assertEquals(ResourceTypeNames.USER, meta.getResourceType().get());
     String userId = resource.getId().get();
@@ -158,8 +158,9 @@ public class UserHandlerImpl extends ResourceHandler<User>
     {
       lastModified = Instant.now();
     }
+    Instant created = oldMeta.getCreated().orElseGet(() -> oldMeta.getLastModified().orElseGet(Instant::now));
     resource.setMeta(Meta.builder()
-                         .created(oldMeta.getCreated().get())
+                         .created(created)
                          .lastModified(lastModified)
                          .version(returnETags ? oldMeta.getVersion().orElse(null) : null)
                          .build());

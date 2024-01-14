@@ -186,7 +186,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     }
     if (!(jsonNode instanceof ArrayNode))
     {
-      throw new InternalServerException("tried to extract a multi valued complex node from document with attribute "
+      throw new InternalServerException("Tried to extract a multivalued complex node from document with attribute "
                                         + "name '" + attributeName + "' but type is of: " + jsonNode.getNodeType(),
                                         null, null);
     }
@@ -196,7 +196,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     {
       if (!(node instanceof ObjectNode))
       {
-        throw new InternalServerException("tried to extract a complex node from document with attribute " + "name '"
+        throw new InternalServerException("Tried to extract a complex node from document with attribute " + "name '"
                                           + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
       }
       if (type.isAssignableFrom(node.getClass()))
@@ -587,7 +587,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   {
     if (attributeValue == null || attributeValue.isEmpty())
     {
-      JsonHelper.removeAttribute(this, attributeName);
+      remove(attributeName);
       return;
     }
     Class type = attributeValue.stream().filter(Objects::nonNull).findAny().orElse((T)"").getClass();
@@ -616,7 +616,25 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     }
     else
     {
-      attributeValue.forEach(t -> arrayNode.add(t == null ? null : String.valueOf(t)));
+      attributeValue.forEach(t -> {
+        String value = t == null ? null : String.valueOf(t);
+        if (value != null && value.startsWith("{"))
+        {
+          try
+          {
+            ObjectNode objectNode = (ObjectNode)JsonHelper.readJsonDocument(value);
+            arrayNode.add(objectNode);
+          }
+          catch (Exception ex)
+          {
+            arrayNode.add(value);
+          }
+        }
+        else
+        {
+          arrayNode.add(value);
+        }
+      });
     }
     JsonHelper.addAttribute(this, attributeName, arrayNode);
   }

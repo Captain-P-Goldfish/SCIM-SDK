@@ -6,8 +6,10 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -55,6 +57,11 @@ public final class SchemaAttribute extends ScimObjectNode
    * is used in case of subAttributes
    */
   private final SchemaAttribute parent;
+
+  /**
+   * this map contains the subAttributes of this attribute definition
+   */
+  private final Map<String, SchemaAttribute> subAttributes = new HashMap<>();
 
   /**
    * the uri of the resource to which this attribute belongs e.g.: urn:ietf:params:scim:schemas:core:2.0:User
@@ -168,6 +175,59 @@ public final class SchemaAttribute extends ScimObjectNode
   public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
   {
     this(schema, resourceUri, parent, jsonNode, null);
+  }
+
+  /**
+   * gets the attribute with the given name from this schemaAttribute
+   *
+   * @param attributeName the simple name of the sub-attribute e.g. "value" or "primary"
+   * @return the attribute if it does exist as child of this attribute
+   */
+  public SchemaAttribute getSubAttribute(String attributeName)
+  {
+    SchemaAttribute schemaAttribute = subAttributes.get(attributeName.toLowerCase());
+    if (schemaAttribute == null)
+    {
+      // maybe the fully qualified name of the attribute was used. In this case we will try to retrieve it from the
+      // schema
+      schemaAttribute = schema.getSchemaAttribute(attributeName);
+      if (schemaAttribute != null)
+      {
+        if (schemaAttribute.getParent() != null && schemaAttribute.getParent() == this)
+        {
+          return schemaAttribute;
+        }
+      }
+      return null;
+    }
+    else
+    {
+      return schemaAttribute;
+    }
+  }
+
+  /**
+   * @return true if this attribute is of type complex
+   */
+  public boolean isComplexAttribute()
+  {
+    return parent == null && Type.COMPLEX.equals(getType());
+  }
+
+  /**
+   * @return true if this attribute is of type complex and multivalued
+   */
+  public boolean isMultivaluedComplexAttribute()
+  {
+    return parent == null && Type.COMPLEX.equals(getType()) && isMultiValued();
+  }
+
+  /**
+   * @return true if this attribute has a parent
+   */
+  public boolean isChildOfComplexAttribute()
+  {
+    return parent != null;
   }
 
   /**
@@ -1240,7 +1300,7 @@ public final class SchemaAttribute extends ScimObjectNode
       SchemaAttribute schemaAttribute = new SchemaAttribute(schema, resourceUri, this, subAttribute, namePrefix);
       if (attributeNameSet.contains(schemaAttribute.getScimNodeName()))
       {
-        String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getFullResourceName()
+        String duplicateNameMessage = "The attribute with the name '" + schemaAttribute.getFullResourceName()
                                       + "' was found twice within the given schema declaration";
         throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
       }
@@ -1258,6 +1318,7 @@ public final class SchemaAttribute extends ScimObjectNode
       }
       attributeNameSet.add(schemaAttribute.getScimNodeName());
       schemaAttributeList.add(schemaAttribute);
+      subAttributes.put(schemaAttribute.getScimNodeName().toLowerCase(), schemaAttribute);
     }
     if (hasValueAttribute && isResourceReference)
     {
@@ -1313,14 +1374,14 @@ public final class SchemaAttribute extends ScimObjectNode
     final Returned returned = getReturned();
     if (Mutability.READ_ONLY.equals(mutability) && Returned.NEVER.equals(returned))
     {
-      String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
+      String errorMessage = "The attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
                             + "mutability 'readOnly' and returned 'never' are an illegal combination. The client is "
                             + "not able to write to the given attribute and the server will never return it.";
       throw getException(errorMessage, null);
     }
     else if (Mutability.WRITE_ONLY.equals(mutability) && !Returned.NEVER.equals(returned))
     {
-      String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
+      String errorMessage = "The attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
                             + "mutability 'writeOnly' must have a returned value of 'never' are an illegal in "
                             + "combination. The client should only write to this attribute but should never have it "
                             + "returned. The mutability writeOnly makes only sense for sensitive application data "
@@ -1330,7 +1391,7 @@ public final class SchemaAttribute extends ScimObjectNode
     // binaries must be case exact
     if (Type.BINARY.equals(getType()) && !isCaseExact())
     {
-      String errorMessage = "the attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
+      String errorMessage = "The attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
                             + "Binaries have to be case-exact by definition.";
       throw getException(errorMessage, null);
     }

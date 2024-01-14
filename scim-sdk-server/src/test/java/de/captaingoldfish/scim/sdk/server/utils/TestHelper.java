@@ -22,8 +22,10 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
-import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -197,7 +199,8 @@ public final class TestHelper
    * @param extensions additional extensions that must be present in the resource type
    * @return the new created {@link ResourceType}
    */
-  public static ResourceType addAttributeToSchema(ResourceTypeFactory resourceTypeFactory,
+  public static ResourceType addAttributeToSchema(ResourceEndpoint resourceEndpoint,
+                                                  ResourceHandler resourceHandler,
                                                   String ambigiousAttributeName,
                                                   Type type,
                                                   JsonNode resourceType,
@@ -217,9 +220,7 @@ public final class TestHelper
                                        Uniqueness.NONE);
     List<JsonNode> extensionList = extensions == null ? new ArrayList<>() : new ArrayList<>(Arrays.asList(extensions));
     extensionList.add(extension);
-    return resourceTypeFactory.registerResourceType(null,
-                                                    resourceType,
-                                                    resource,
-                                                    extensionList.toArray(new JsonNode[0]));
+    return resourceEndpoint.registerEndpoint(new EndpointDefinition(resourceType, resource, extensionList,
+                                                                    resourceHandler));
   }
 }

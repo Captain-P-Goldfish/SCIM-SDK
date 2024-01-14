@@ -69,7 +69,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                    new TextNode("foo"),
                                    new TextNode("bar")));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
     for ( int i = 0 ; i < arrayNode.size() ; i++ )
@@ -113,7 +113,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                    new TextNode("2019-09-29T24:00:00.0000000Z"),
                                    new TextNode("2019-09-29T24:00:00Z")));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
     for ( int i = 0 ; i < arrayNode.size() ; i++ )
@@ -153,7 +153,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.addAll(Arrays.asList(new IntNode(1), new IntNode(2), new IntNode(3)));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
     for ( int i = 0 ; i < arrayNode.size() ; i++ )
@@ -193,7 +193,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.addAll(Arrays.asList(new IntNode(1), new DoubleNode(2.5), new IntNode(3), new DoubleNode(1.8)));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
     for ( int i = 0 ; i < arrayNode.size() ; i++ )
@@ -236,7 +236,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                    BooleanNode.getFalse(),
                                    BooleanNode.getTrue()));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
     for ( int i = 0 ; i < arrayNode.size() ; i++ )
@@ -277,7 +277,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     arrayNode.addAll(Arrays.asList(new TextNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -325,7 +325,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     arrayNode.addAll(Arrays.asList(new TextNode("2019-09-29T24:00:00Z"), new TextNode("hello"), new IntNode(1)));
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -370,7 +370,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     arrayNode.addAll(Arrays.asList(new TextNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -422,7 +422,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                    new IntNode(3)));
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -477,7 +477,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     arrayNode.addAll(Arrays.asList(bad1, bad2, bad3));
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -519,7 +519,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     arrayNode.addAll(Arrays.asList(new TextNode("no"), new TextNode("objects"), bad));
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -559,7 +559,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, bad);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, bad);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -599,7 +599,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     TextNode attribute = new TextNode("simple value");
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
@@ -635,7 +635,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     IntNode attribute = new IntNode(1);
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
@@ -671,7 +671,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     BooleanNode attribute = BooleanNode.getTrue();
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
@@ -707,7 +707,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     DoubleNode attribute = new DoubleNode(1.9);
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
@@ -746,7 +746,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     arrayNode.addAll(Arrays.asList(new TextNode("hello"), new TextNode("hello"), new TextNode("world")));
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertEquals(arrayNode.size(), scimArrayNode.size());
     for ( int i = 0 ; i < arrayNode.size() ; i++ )
@@ -790,7 +790,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -834,7 +834,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -880,7 +880,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -926,7 +926,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -972,7 +972,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -1019,7 +1019,7 @@ public class SimpleMultivaluedAttributeValidatorTest
 
     try
     {
-      SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -1056,7 +1056,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(type).multivalued(true).build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute, arrayNode);
+      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
     Assertions.assertNull(scimArrayNode);
   }

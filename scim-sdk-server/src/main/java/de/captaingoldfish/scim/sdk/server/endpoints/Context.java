@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
+import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -23,11 +24,19 @@ import lombok.Setter;
 public class Context
 {
 
+
   /**
    * the authorization information of the current request
    */
   @Getter
   private Authorization authorization;
+
+  /**
+   * the request infos
+   */
+  @Getter
+  @Setter(AccessLevel.PACKAGE)
+  private UriInfos uriInfos;
 
   /**
    * allows to get the current resource URL reference by passing an id <br>

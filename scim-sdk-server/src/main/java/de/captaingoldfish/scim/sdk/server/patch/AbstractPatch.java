@@ -75,7 +75,7 @@ public abstract class AbstractPatch
   }
 
   /**
-   * creates a new multi valued or multi valued complex attribute and returns the inner deepest created node
+   * creates a new multivalued or multivalued complex attribute and returns the inner deepest created node
    *
    * @param parentNode the parent node to which the nodes will be added
    * @param schemaAttribute the attribute definition

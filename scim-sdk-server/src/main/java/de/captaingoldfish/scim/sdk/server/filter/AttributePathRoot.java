@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.filter;
 
+import java.util.Optional;
+
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.FilterAttributeName;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterParser;
@@ -37,10 +39,25 @@ public class AttributePathRoot extends FilterNode
   private final SchemaAttribute schemaAttribute;
 
   /**
+   * this attribute is only set if the field {@link #subAttributeName} is not null. It will hold the attributes
+   * definition to the sub-attribute
+   */
+  @Getter
+  private final SchemaAttribute subAttribute;
+
+  /**
    * represents the original expression of this node
    */
   @Setter
   private String originalExpressionString;
+
+  protected AttributePathRoot()
+  {
+    this.child = null;
+    this.filterAttributeName = null;
+    this.schemaAttribute = null;
+    this.subAttribute = null;
+  }
 
   public AttributePathRoot(FilterNode child, ResourceType resourceType, ScimFilterParser.ValuePathContext ctx)
   {
@@ -48,13 +65,54 @@ public class AttributePathRoot extends FilterNode
     this.filterAttributeName = new FilterAttributeName((ScimFilterParser.ValuePathContext)null, ctx.attributePath());
     this.schemaAttribute = RequestUtils.getSchemaAttributeForFilter(resourceType, filterAttributeName);
     setSubAttributeName(ctx.subattribute == null ? null : ctx.subattribute.getText());
+    if (getSubAttributeName() == null)
+    {
+      this.subAttribute = null;
+    }
+    else
+    {
+      String subAttributeNameRef = String.format("%s.%s", filterAttributeName, getSubAttributeName());
+      this.subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, subAttributeNameRef);
+    }
   }
 
-  protected AttributePathRoot()
+  public AttributePathRoot(SchemaAttribute schemaAttribute)
   {
+    final String parentAttributeName = Optional.ofNullable(schemaAttribute.getParent())
+                                               .map(SchemaAttribute::getName)
+                                               .orElseGet(schemaAttribute::getName);
+    final String childAttributeName = Optional.ofNullable(schemaAttribute.getParent())
+                                              .map(t -> schemaAttribute.getName())
+                                              .orElse(null);
+
     this.child = null;
-    this.filterAttributeName = null;
-    this.schemaAttribute = null;
+    this.filterAttributeName = new FilterAttributeName(schemaAttribute.getSchema().getNonNullId(), parentAttributeName,
+                                                       childAttributeName);
+    this.schemaAttribute = Optional.ofNullable(schemaAttribute.getParent()).orElse(schemaAttribute);
+    setSubAttributeName(childAttributeName);
+    this.subAttribute = schemaAttribute;
+  }
+
+  public boolean isWithFilter()
+  {
+    return child != null;
+  }
+
+  public boolean isWithSubAttributeRef()
+  {
+    return subAttribute != null;
+  }
+
+  public SchemaAttribute getDirectlyReferencedAttribute()
+  {
+    if (subAttribute == null)
+    {
+      return schemaAttribute;
+    }
+    else
+    {
+      return subAttribute;
+    }
   }
 
   public String getResourceUri()

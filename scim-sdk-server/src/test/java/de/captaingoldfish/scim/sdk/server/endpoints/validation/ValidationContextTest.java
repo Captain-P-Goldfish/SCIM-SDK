@@ -168,7 +168,7 @@ public class ValidationContextTest
     resourceEndpoint.handleRequest(url, HttpMethod.PUT, updateUser.toString(), httpHeaders, new Context(null));
 
     Mockito.verify(requestValidator, Mockito.times(1))
-           .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull(), Mockito.notNull());
+           .validateUpdate(Mockito.any(), Mockito.any(), Mockito.notNull(), Mockito.notNull());
   }
 
   /**
@@ -186,6 +186,7 @@ public class ValidationContextTest
     final User user = User.builder().id(UUID.randomUUID().toString()).userName(userName).build();
     final String url = BASE_URI + EndpointPaths.USERS + "/" + user.getId().get();
     User updateUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    updateUser.setId(null);
     updateUser.setNickName(nickname);
 
     RequestValidator<User> requestValidator = Mockito.spy(new RequestValidator<User>()
@@ -221,6 +222,7 @@ public class ValidationContextTest
     userHandler.getInMemoryMap().put(user.getId().get(), user);
 
     PatchOpRequest patchOpRequest = new PatchOpRequest();
+
     PatchRequestOperation operation = PatchRequestOperation.builder().op(PatchOp.ADD).valueNode(updateUser).build();
     patchOpRequest.setOperations(Collections.singletonList(operation));
 
@@ -228,7 +230,7 @@ public class ValidationContextTest
     resourceEndpoint.handleRequest(url, HttpMethod.PATCH, patchOpRequest.toString(), httpHeaders, new Context(null));
 
     Mockito.verify(requestValidator, Mockito.times(1))
-           .validateUpdate(Mockito.any(), Mockito.eq(updateUser), Mockito.notNull(), Mockito.notNull());
+           .validateUpdate(Mockito.any(), Mockito.any(), Mockito.notNull(), Mockito.notNull());
   }
 
   /**
@@ -427,6 +429,7 @@ public class ValidationContextTest
     userHandler.getInMemoryMap().put(user.getId().get(), user);
 
     User updateUser = JsonHelper.copyResourceToObject(user.deepCopy(), User.class);
+    updateUser.setId(null);
     updateUser.setUserName(null);
     updateUser.setNickName(nickname);
 

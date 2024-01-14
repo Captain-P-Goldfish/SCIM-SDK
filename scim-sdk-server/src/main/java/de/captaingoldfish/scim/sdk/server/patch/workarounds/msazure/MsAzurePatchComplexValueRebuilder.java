@@ -1,18 +1,23 @@
-package de.captaingoldfish.scim.sdk.server.patch.msazure;
+package de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import lombok.RequiredArgsConstructor;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -59,29 +64,64 @@ import lombok.extern.slf4j.Slf4j;
  * @since 31.10.2023
  */
 @Slf4j
-@RequiredArgsConstructor
-public class MsAzurePatchComplexValueRebuilder
+public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
 {
 
-  /**
-   * the attribute that is referenced by the patch-path expression
-   */
-  private final SchemaAttribute referencedAttribute;
+  private SchemaAttribute schemaAttribute;
 
-  /**
-   * the values of the patch operation. This attribute should actually be empty
-   */
-  private final List<String> patchValues;
-
-  public List<String> fixValues()
+  @Override
+  public boolean shouldBeHandled(PatchConfig patchConfig, ResourceType resourceType, PatchRequestOperation operation)
   {
-    if (!Type.COMPLEX.equals(referencedAttribute.getType()))
+    boolean isWorkaroundActive = patchConfig.isMsAzureComplexSimpleValueWorkaroundActive();
+    if (!isWorkaroundActive)
+    {
+      return false;
+    }
+    final String attributeName = operation.getPath().orElse(null);
+    if (attributeName == null)
+    {
+      return false;
+    }
+    try
+    {
+      schemaAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, attributeName);
+    }
+    catch (Exception ex)
+    {
+      return false;
+    }
+    boolean isComplexDefinition = Type.COMPLEX.equals(schemaAttribute.getType());
+    if (!isComplexDefinition)
     {
       log.trace("[MS Azure complex-patch-path-value workaround] ignoring non-complex attribute {}",
-                referencedAttribute.getScimNodeName());
-      return patchValues;
+                schemaAttribute.getScimNodeName());
+      return false;
     }
+    ArrayNode arrayNode = operation.getValueNode().orElse(null);
+    if (arrayNode == null)
+    {
+      return false;
+    }
+    for ( JsonNode jsonNode : arrayNode )
+    {
+      if (!jsonNode.isObject())
+      {
+        return true;
+      }
+    }
+    return false;
+  }
 
+  @Override
+  public boolean executeOtherHandlers()
+  {
+    return true;
+  }
+
+  @Override
+  public PatchRequestOperation fixPatchRequestOperaton(ResourceType resourceType, PatchRequestOperation operation)
+  {
+    List<String> patchValues = operation.getValues();
     List<String> fixedValues = new ArrayList<>();
     for ( int i = 0 ; i < patchValues.size() ; i++ )
     {
@@ -102,20 +142,19 @@ public class MsAzurePatchComplexValueRebuilder
       if (jsonNode.isObject() || jsonNode.isArray())
       {
         log.trace("[MS Azure complex-patch-path-value workaround] ignoring non-simple-value for attribute {}",
-                  referencedAttribute.getScimNodeName());
+                  schemaAttribute.getScimNodeName());
         fixedValues.add(patchValue);
         continue;
       }
 
       log.trace("[MS Azure complex-patch-path-value workaround] replacing simple-value with objectNode on attribute {}",
-                referencedAttribute.getScimNodeName());
-      ObjectNode complexObjectNode = new ScimObjectNode(referencedAttribute);
+                schemaAttribute.getScimNodeName());
+      ObjectNode complexObjectNode = new ScimObjectNode(schemaAttribute);
       complexObjectNode.set(AttributeNames.RFC7643.VALUE, new TextNode(patchValue));
       fixedValues.add(complexObjectNode.toString());
     }
 
-    return fixedValues;
+    operation.setValues(fixedValues);
+    return operation;
   }
-
-
 }

@@ -161,7 +161,7 @@ public class ServiceProvider extends ResourceNode
    */
   public PatchConfig getPatchConfig()
   {
-    return getObjectAttribute(AttributeNames.RFC7643.PATCH, PatchConfig.class).orElse(PatchConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.PATCH, PatchConfig.class).orElseGet(PatchConfig::new);
   }
 
   /**
@@ -169,7 +169,8 @@ public class ServiceProvider extends ResourceNode
    */
   public void setPatchConfig(PatchConfig patchConfig)
   {
-    setAttribute(AttributeNames.RFC7643.PATCH, Optional.ofNullable(patchConfig).orElse(PatchConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.PATCH,
+                 Optional.ofNullable(patchConfig).orElseGet(() -> PatchConfig.builder().build()));
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
@@ -178,7 +179,7 @@ public class ServiceProvider extends ResourceNode
    */
   public BulkConfig getBulkConfig()
   {
-    return getObjectAttribute(AttributeNames.RFC7643.BULK, BulkConfig.class).orElse(BulkConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.BULK, BulkConfig.class).orElseGet(BulkConfig::new);
   }
 
   /**
@@ -186,7 +187,8 @@ public class ServiceProvider extends ResourceNode
    */
   public void setBulkConfig(BulkConfig bulkConfig)
   {
-    setAttribute(AttributeNames.RFC7643.BULK, Optional.ofNullable(bulkConfig).orElse(BulkConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.BULK,
+                 Optional.ofNullable(bulkConfig).orElseGet(() -> BulkConfig.builder().build()));
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
@@ -195,7 +197,7 @@ public class ServiceProvider extends ResourceNode
    */
   public FilterConfig getFilterConfig()
   {
-    return getObjectAttribute(AttributeNames.RFC7643.FILTER, FilterConfig.class).orElse(FilterConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.FILTER, FilterConfig.class).orElseGet((FilterConfig::new));
   }
 
   /**
@@ -203,8 +205,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setFilterConfig(FilterConfig filterConfig)
   {
-    setAttribute(AttributeNames.RFC7643.FILTER,
-                 Optional.ofNullable(filterConfig).orElse(FilterConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.FILTER, Optional.ofNullable(filterConfig).orElseGet(FilterConfig::new));
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
@@ -214,7 +215,7 @@ public class ServiceProvider extends ResourceNode
   public ChangePasswordConfig getChangePasswordConfig()
   {
     return getObjectAttribute(AttributeNames.RFC7643.CHANGE_PASSWORD,
-                              ChangePasswordConfig.class).orElse(ChangePasswordConfig.builder().build());
+                              ChangePasswordConfig.class).orElseGet(ChangePasswordConfig::new);
   }
 
   /**
@@ -223,7 +224,7 @@ public class ServiceProvider extends ResourceNode
   public void setChangePasswordConfig(ChangePasswordConfig changePasswordConfig)
   {
     setAttribute(AttributeNames.RFC7643.CHANGE_PASSWORD,
-                 Optional.ofNullable(changePasswordConfig).orElse(ChangePasswordConfig.builder().build()));
+                 Optional.ofNullable(changePasswordConfig).orElseGet(ChangePasswordConfig::new));
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
@@ -232,7 +233,7 @@ public class ServiceProvider extends ResourceNode
    */
   public SortConfig getSortConfig()
   {
-    return getObjectAttribute(AttributeNames.RFC7643.SORT, SortConfig.class).orElse(SortConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.SORT, SortConfig.class).orElseGet(SortConfig::new);
   }
 
   /**
@@ -240,7 +241,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setSortConfig(SortConfig sortConfig)
   {
-    setAttribute(AttributeNames.RFC7643.SORT, Optional.ofNullable(sortConfig).orElse(SortConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.SORT, Optional.ofNullable(sortConfig).orElseGet(SortConfig::new));
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 
@@ -249,7 +250,7 @@ public class ServiceProvider extends ResourceNode
    */
   public ETagConfig getETagConfig()
   {
-    return getObjectAttribute(AttributeNames.RFC7643.ETAG, ETagConfig.class).orElse(ETagConfig.builder().build());
+    return getObjectAttribute(AttributeNames.RFC7643.ETAG, ETagConfig.class).orElseGet(ETagConfig::new);
   }
 
   /**
@@ -257,7 +258,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setETagConfig(ETagConfig eTagConfig)
   {
-    setAttribute(AttributeNames.RFC7643.ETAG, Optional.ofNullable(eTagConfig).orElse(ETagConfig.builder().build()));
+    setAttribute(AttributeNames.RFC7643.ETAG, Optional.ofNullable(eTagConfig).orElseGet(ETagConfig::new));
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 

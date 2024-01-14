@@ -19,9 +19,15 @@ import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import de.captaingoldfish.scim.sdk.server.patch.PatchHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
+import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpointBridge;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.AllTypesHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -44,6 +50,11 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
   private ServiceProvider serviceProvider;
 
   /**
+   * the base object that is used for registering resourceTypes
+   */
+  private ResourceEndpoint resourceEndpoint;
+
+  /**
    * needed to extract the {@link ResourceType}s which are necessary to check if the given attribute-names are
    * valid or not
    */
@@ -55,20 +66,39 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
   private ResourceType allTypesResourceType;
 
   /**
+   * the resourcehandler that is able to handle requests with the {@link AllTypes} object
+   */
+  private AllTypesHandlerImpl allTypesResourceHandler;
+
+  /**
    * initializes a new {@link ResourceTypeFactory} for the following tests
    */
   @BeforeEach
   public void initialize()
   {
     this.serviceProvider = ServiceProvider.builder().patchConfig(PatchConfig.builder().supported(true).build()).build();
-    this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
-    this.allTypesResourceType = resourceTypeFactory.registerResourceType(null,
-                                                                         allTypesResourceType,
-                                                                         allTypesSchema,
-                                                                         enterpriseUserSchema);
+    this.resourceEndpoint = new ResourceEndpoint(serviceProvider);
+    this.allTypesResourceHandler = new AllTypesHandlerImpl();
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceType,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         this.allTypesResourceHandler));
+    this.resourceTypeFactory = ResourceEndpointBridge.getResourceTypeFactory(resourceEndpoint);
+  }
+
+  /**
+   * adds an allTypes object to the {@link #allTypesHandler}
+   */
+  private void addAllTypesToProvider(AllTypes allTypes)
+  {
+    if (!allTypes.getId().isPresent())
+    {
+      allTypes.setId(UUID.randomUUID().toString());
+    }
+    allTypesResourceHandler.getInMemoryMap().put(allTypes.getId().get(), allTypes);
   }
 
   /**
@@ -118,8 +148,13 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+    AllTypes patchedResource = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
     Assertions.assertEquals(employeeNumber, patchedResource.getEnterpriseUser().get().getEmployeeNumber().get());
     Assertions.assertEquals(costCenter, patchedResource.getEnterpriseUser().get().getCostCenter().get());
@@ -129,7 +164,44 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
    * verifies that a complete complex type can be replaced if the value is set as object
    */
   @Test
-  public void testAddExtensionComplexValueInMsAzureAdStyle()
+  public void testAddExtensionComplexValueInMsAzureAddStyle()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complexAllTypes = new AllTypes(false);
+    complexAllTypes.setNumber(50L);
+    allTypes.setComplex(complexAllTypes);
+
+    // @formatter:off
+    String managerId = UUID.randomUUID().toString();
+    String valueNode = "{" +
+      "\"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager\": {" +
+                                                                                  "\"value\": \"" + managerId + "\",\n" +
+                                                                                  "\"$ref\": \"User\"\n" +
+                                                                                 "}" +
+      "}";
+    // @formatter:on
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .value(valueNode)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+    AllTypes patchedResource = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
+    Assertions.assertEquals(managerId, patchedResource.getEnterpriseUser().get().getManager().get().getValue().get());
+    Assertions.assertEquals("User", patchedResource.getEnterpriseUser().get().getManager().get().getRef().get());
+  }
+
+  /**
+   * verifies that the readOnly operation 'manager.displayName' on the resource will be ignored
+   */
+  @Test
+  public void testAddExtensionComplexValueInMsAzureAddStyleWithReadOnlyAttribute()
   {
     AllTypes allTypes = new AllTypes(true);
     AllTypes complexAllTypes = new AllTypes(false);
@@ -152,13 +224,28 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
-    Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
-    Assertions.assertEquals(managerId, patchedResource.getEnterpriseUser().get().getManager().get().getValue().get());
-    Assertions.assertEquals("User", patchedResource.getEnterpriseUser().get().getManager().get().getRef().get());
-    Assertions.assertEquals("Chuck Norris",
-                            patchedResource.getEnterpriseUser().get().getManager().get().getDisplayName().get());
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+    AllTypes patchedAllTypes = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(managerId,
+                            patchedAllTypes.getEnterpriseUser()
+                                           .flatMap(EnterpriseUser::getManager)
+                                           .flatMap(Manager::getValue)
+                                           .orElse(null));
+    Assertions.assertEquals("User",
+                            patchedAllTypes.getEnterpriseUser()
+                                           .flatMap(EnterpriseUser::getManager)
+                                           .flatMap(Manager::getRef)
+                                           .orElse(null));
+    Assertions.assertNull(patchedAllTypes.getEnterpriseUser()
+                                         .flatMap(EnterpriseUser::getManager)
+                                         .flatMap(Manager::getDisplayName)
+                                         .orElse(null));
   }
 
   /**
@@ -181,8 +268,13 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes patchedResource = patchHandler.patchResource(allTypes, patchOpRequest);
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+    AllTypes patchedResource = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchedResource.getEnterpriseUser().isPresent());
     Assertions.assertEquals(managerId, patchedResource.getEnterpriseUser().get().getManager().get().getValue().get());
   }
@@ -207,10 +299,14 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      addAllTypesToProvider(allTypes);
+      PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                    allTypesResourceHandler,
+                                                                                    resourceEndpoint.getPatchWorkarounds(),
+                                                                                    new Context(null));
+      patchRequestHandler.handlePatchRequest(patchOpRequest);
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
@@ -244,15 +340,21 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      patchRequestHandler.handlePatchRequest(patchOpRequest);
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
     {
-      String expectedMessage = String.format("Invalid value '%s' found for attribute '%s'", value, key);
+      String expectedMessage = String.format("Illegal type for attribute '%s'. Type must be 'STRING' but was of type 'ARRAY'",
+                                             key);
       Assertions.assertEquals(expectedMessage, ex.getMessage());
     }
   }
@@ -277,10 +379,15 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
+
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
     try
     {
-      patchHandler.patchResource(allTypes, patchOpRequest);
+      log.warn(patchRequestHandler.handlePatchRequest(patchOpRequest).toPrettyString());
       Assertions.fail("this point must not be reached");
     }
     catch (BadRequestException ex)
@@ -291,7 +398,7 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
   }
 
   /**
-   * verifies that multivalued attributes are not supported for the ms azure notation
+   * verifies that multivalued attributes are also supported for the msAzure notation
    */
   @Test
   public void testMsAzureNotationIsNotSupportedForMultivaluedAttributes()
@@ -326,17 +433,16 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    try
-    {
-      patchHandler.patchResource(allTypes, patchOpRequest);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (BadRequestException ex)
-    {
-      String expectedMessage = String.format("Unsupported patch operation with key-reference: %s", key);
-      Assertions.assertEquals(expectedMessage, ex.getMessage());
-    }
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+    AllTypes patchedResource = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertTrue(patchedResource.getEnterpriseUser().get().get("costCenter").isArray());
+    Assertions.assertEquals(1, patchedResource.getEnterpriseUser().get().get("costCenter").size());
+    Assertions.assertEquals("1111", patchedResource.getEnterpriseUser().get().get("costCenter").get(0).textValue());
   }
 
   /**
@@ -350,11 +456,8 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
     String employeeNumberChanged = "2222";
     String costCenter = "2222";
 
-    AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.setEnterpriseUser(EnterpriseUser.builder()
-                                                   .employeeNumber(employeeNumber)
-                                                   .costCenter(costCenter)
-                                                   .build());
+    AllTypes allTypes = new AllTypes(true);
+    allTypes.setEnterpriseUser(EnterpriseUser.builder().employeeNumber(employeeNumber).costCenter(costCenter).build());
 
     // @formatter:off
     String valueNode = "{" +
@@ -370,9 +473,14 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
                                                                                 .value(valueNode)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), allTypesResourceType);
-    AllTypes newAllTypes = patchHandler.patchResource(allTypeChanges, patchOpRequest);
-    Assertions.assertEquals(employeeNumberChanged, newAllTypes.getEnterpriseUser().get().getEmployeeNumber().get());
-    Assertions.assertTrue(patchHandler.isChangedResource());
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler<>(allTypes.getId().get(),
+                                                                                  allTypesResourceHandler,
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+    AllTypes patchedResource = patchRequestHandler.handlePatchRequest(patchOpRequest);
+
+    Assertions.assertEquals(employeeNumberChanged, patchedResource.getEnterpriseUser().get().getEmployeeNumber().get());
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
   }
 }

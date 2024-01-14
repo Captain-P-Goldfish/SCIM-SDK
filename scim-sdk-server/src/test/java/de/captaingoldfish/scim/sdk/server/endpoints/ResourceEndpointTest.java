@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -90,6 +91,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeAuthorizati
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
+import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -147,6 +149,21 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     userHandler = Mockito.spy(new UserHandlerImpl(true));
     resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler));
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+  }
+
+  private Context getContext(String id, HttpMethod httpMethod)
+  {
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> BASE_URI + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceEndpoint.getResourceTypeFactory(),
+                                                    BASE_URI + "/Users" + Optional.ofNullable(id)
+                                                                                  .map(s -> "/" + s)
+                                                                                  .orElse(""),
+                                                    httpMethod,
+                                                    httpHeaders));
+    return context;
   }
 
   /**
@@ -1334,7 +1351,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
                                                                httpHeaders,
-                                                               new Context(null));
+                                                               getContext(id, HttpMethod.PATCH));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
     UpdateResponse updateResponse = (UpdateResponse)scimResponse;
     updateResponse.remove(AttributeNames.RFC7643.META);
@@ -1342,7 +1359,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
     Assertions.assertEquals(copiedUser, updateResponse);
 
-    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS,
+                                                                        id,
+                                                                        null,
+                                                                        null,
+                                                                        baseUrl,
+                                                                        getContext(id, HttpMethod.GET));
     getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
@@ -1565,7 +1587,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                patchOpRequest.toString(),
                                                                httpHeaders,
                                                                resourceTypeConsumer,
-                                                               null);
+                                                               getContext(id, HttpMethod.PATCH));
     Assertions.assertTrue(wasCalled.get());
 
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
@@ -1575,7 +1597,12 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(HttpStatus.OK, updateResponse.getHttpStatus());
     Assertions.assertEquals(copiedUser, updateResponse);
 
-    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS, id, null, baseUrl);
+    GetResponse getResponse = (GetResponse)resourceEndpoint.getResource(EndpointPaths.USERS,
+                                                                        id,
+                                                                        null,
+                                                                        null,
+                                                                        baseUrl,
+                                                                        getContext(id, HttpMethod.GET));
     getResponse.remove(AttributeNames.RFC7643.META);
     Assertions.assertEquals(updateResponse, getResponse);
     Assertions.assertEquals(copiedUser, getResponse);
@@ -1687,7 +1714,6 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     String id = UUID.randomUUID().toString();
     User user = User.builder().id(id).userName("goldfish").active(true).meta(meta).build();
     userHandler.getInMemoryMap().put(id, user);
-
 
     final String url = BASE_URI + EndpointPaths.USERS + "/" + id + "?attributes=userName";
     final List<String> minimalAttributeSet = Arrays.asList("schemas", "id", "userName", "nickName");

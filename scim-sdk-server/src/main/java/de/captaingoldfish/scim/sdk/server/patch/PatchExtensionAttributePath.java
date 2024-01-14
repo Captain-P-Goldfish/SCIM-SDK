@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
-import lombok.Getter;
 
 
 /**
@@ -10,13 +9,12 @@ import lombok.Getter;
  * @author Pascal Knueppel
  * @since 05.09.2022
  */
-class PatchExtensionAttributePath extends AttributePathRoot
+public class PatchExtensionAttributePath extends AttributePathRoot
 {
 
   /**
    * the path that addresses an extension directly with its id value
    */
-  @Getter
   private final String path;
 
   public PatchExtensionAttributePath(String path)

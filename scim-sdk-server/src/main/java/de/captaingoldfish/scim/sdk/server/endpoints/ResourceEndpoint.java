@@ -274,7 +274,6 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
                              uriInfos.getQueryParameters()
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
-                             uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri,
                              effectiveContext);
         }
@@ -285,7 +284,6 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
         return updateResource(uriInfos.getResourceEndpoint(),
                               uriInfos.getResourceId(),
                               requestBody,
-                              uriInfos.getHttpHeaders(),
                               uriInfos::getBaseUri,
                               effectiveContext);
       case PATCH:
@@ -298,7 +296,6 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                              uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
                              uriInfos.getQueryParameters()
                                      .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
-                             uriInfos.getHttpHeaders(),
                              uriInfos::getBaseUri,
                              effectiveContext);
       default:
@@ -324,6 +321,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   private Context getEffectiveContext(UriInfos uriInfos, String requestBody, Context context)
   {
     Context effectiveContext = Optional.ofNullable(context).orElse(new Context(null));
+    effectiveContext.setUriInfos(uriInfos);
     effectiveContext.setResourceReferenceUrl(id -> {
       return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, uriInfos.getResourceType().getName());
     });

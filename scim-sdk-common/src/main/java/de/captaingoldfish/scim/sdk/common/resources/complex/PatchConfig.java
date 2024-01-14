@@ -5,7 +5,6 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -14,9 +13,13 @@ import lombok.NoArgsConstructor;
  * <br>
  * A complex type that specifies PATCH configuration options. REQUIRED. See Section 3.5.2 of [RFC7644].
  */
-@NoArgsConstructor
 public class PatchConfig extends ScimObjectNode
 {
+
+  public PatchConfig()
+  {
+    setSupported(false);
+  }
 
   @Builder
   public PatchConfig(Boolean supported,
@@ -28,7 +31,7 @@ public class PatchConfig extends ScimObjectNode
                      Boolean msAzureComplexSimpleValueWorkaroundActive)
   {
     super(null);
-    setSupported(supported);
+    setSupported(Optional.ofNullable(supported).orElse(false));
     setIgnoreUnknownAttribute(ignoreUnknownAttributes);
     setDoNotFailOnNoTarget(doNotFailOnNoTarget);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);

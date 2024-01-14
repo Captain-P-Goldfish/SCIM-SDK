@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -152,10 +153,15 @@ public class ResourceType extends ResourceNode
    */
   public List<Schema> getAllSchemaExtensions()
   {
-    return getSchemaExtensions().stream()
-                                .map(SchemaExtension::getSchema)
-                                .map(getSchemaFactory()::getResourceSchema)
-                                .collect(Collectors.toList());
+    return getAllSchemaExtensionsStream().collect(Collectors.toList());
+  }
+
+  /**
+   * @return the resource schema extensions that represents this resource type
+   */
+  public Stream<Schema> getAllSchemaExtensionsStream()
+  {
+    return getSchemaExtensions().stream().map(SchemaExtension::getSchema).map(schemaFactory::getResourceSchema);
   }
 
   /**
@@ -166,7 +172,7 @@ public class ResourceType extends ResourceNode
     return getSchemaExtensions().stream()
                                 .filter(SchemaExtension::isRequired)
                                 .map(SchemaExtension::getSchema)
-                                .map(getSchemaFactory()::getResourceSchema)
+                                .map(schemaFactory::getResourceSchema)
                                 .collect(Collectors.toList());
   }
 
@@ -458,6 +464,14 @@ public class ResourceType extends ResourceNode
   public void setDisabled(Boolean disabled)
   {
     getFeatures().setResourceTypeDisabled(disabled);
+  }
+
+  /**
+   * tries to extract the extension with the given id from the resourceType if it is part of this resourceType
+   */
+  public Optional<Schema> getExtensionById(String extensionId)
+  {
+    return getAllSchemaExtensionsStream().filter(schema -> schema.getNonNullId().equals(extensionId)).findAny();
   }
 
   /**

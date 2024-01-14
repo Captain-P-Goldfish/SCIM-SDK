@@ -274,7 +274,7 @@ public final class RequestUtils
     }
     catch (BadRequestException ex)
     {
-      ex.setScimType(ScimType.Custom.INVALID_PARAMETERS);
+      ex.setScimType(ScimType.RFC7644.INVALID_PATH);
       throw ex;
     }
   }
@@ -355,9 +355,9 @@ public final class RequestUtils
           }
         }
       }
-      throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
+      throw new BadRequestException("The attribute with the name '" + attributeName.getFullName() + "' is "
                                     + "unknown to resource type '" + resourceType.getName() + "'", null,
-                                    ScimType.Custom.INVALID_PARAMETERS);
+                                    ScimType.RFC7644.INVALID_PATH);
     }
     else if (schemaAttributeList.size() > 1)
     {
@@ -366,7 +366,7 @@ public final class RequestUtils
                                             .collect(Collectors.joining(","));
       String exampleAttributeName = schemaAttributeList.get(0).getSchema().getId().orElse(null) + ":"
                                     + attributeName.getShortName();
-      throw new BadRequestException("the attribute with the name '" + attributeName.getShortName() + "' is "
+      throw new BadRequestException("The attribute with the name '" + attributeName.getShortName() + "' is "
                                     + "ambiguous it was found in the schemas with the ids [" + schemaIds + "]. "
                                     + "Please use the fully qualified Uri for this attribute e.g.: "
                                     + exampleAttributeName, null, null);

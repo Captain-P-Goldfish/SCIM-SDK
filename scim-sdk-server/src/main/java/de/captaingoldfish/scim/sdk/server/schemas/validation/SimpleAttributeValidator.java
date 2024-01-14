@@ -1,13 +1,16 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.math.BigDecimal;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Base64;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -37,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-class SimpleAttributeValidator
+public class SimpleAttributeValidator
 {
 
   /**
@@ -46,17 +49,16 @@ class SimpleAttributeValidator
    * @param attribute the attribute from the document
    * @return true if the attribute is a json leaf node, false else
    */
-  protected static boolean isSimpleNode(JsonNode attribute)
+  public static boolean isSimpleNode(JsonNode attribute)
   {
     return attribute.isNull() || (!attribute.isArray() && !attribute.isObject());
   }
 
   /**
-   * will parse the given node type into a json representation that contains additional its schema attribute
-   * definition
+   * will parse the given node type into a json representation that also holds its schema attribute definition
    */
   @SneakyThrows
-  public static JsonNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
+  public static JsonNode parseNodeTypeAndValidate(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
     log.trace("Validating simple attribute '{}'", schemaAttribute.getScimNodeName());
     if (!isSimpleNode(attribute))
@@ -68,100 +70,159 @@ class SimpleAttributeValidator
     }
     checkCanonicalValues(schemaAttribute, attribute);
 
+    boolean isNodeTypeValid = false;
+    Supplier<JsonNode> validatedNodeSupplier;
     Type type = schemaAttribute.getType();
     switch (type)
     {
       case STRING:
-        isNodeOfExpectedType(schemaAttribute, attribute, jsonNode -> jsonNode.isTextual() || jsonNode.isObject());
-        return new ScimTextNode(schemaAttribute, attribute.isTextual() ? attribute.textValue() : attribute.toString());
+        isNodeTypeValid = attribute.isTextual() || attribute.isObject();
+        final String value = attribute.isTextual() ? attribute.textValue() : attribute.toString();
+        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, value);
+        break;
       case BINARY:
-        isNodeOfExpectedType(schemaAttribute, attribute, jsonNode -> {
-          if (jsonNode.isBinary())
-          {
-            return true;
-          }
-          if (jsonNode.isTextual())
-          {
-            try
-            {
-              Base64.getDecoder().decode(jsonNode.textValue());
-              return true;
-            }
-            catch (IllegalArgumentException ex)
-            {
-              log.trace(ex.getMessage(), ex);
-              log.debug(String.format("Data of attribute '%s' is not valid Base64 encoded data",
-                                      schemaAttribute.getFullResourceName()));
-              return false;
-            }
-          }
-          return false;
-        });
+        isNodeTypeValid = isNodeTypeBinary(schemaAttribute, attribute);
         if (attribute.isBinary())
         {
-          return new ScimBinaryNode(schemaAttribute, attribute.binaryValue());
+          validatedNodeSupplier = () -> new ScimBinaryNode(schemaAttribute, getBinaryValueOfJsonNode(attribute));
         }
         else
         {
-          return new ScimTextNode(schemaAttribute, attribute.textValue());
+          validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.textValue());
         }
+        break;
       case BOOLEAN:
-        isNodeOfExpectedType(schemaAttribute, attribute, JsonNode::isBoolean);
-        return new ScimBooleanNode(schemaAttribute, attribute.booleanValue());
+        isNodeTypeValid = attribute.isBoolean();
+        validatedNodeSupplier = () -> new ScimBooleanNode(schemaAttribute, attribute.booleanValue());
+        break;
       case INTEGER:
       {
-        isNodeOfExpectedType(schemaAttribute,
-                             attribute,
-                             jsonNode -> jsonNode.isInt() || jsonNode.isLong() || jsonNode.isBigDecimal());
+        isNodeTypeValid = attribute.isInt() || attribute.isLong() || attribute.isBigDecimal();
         if (attribute.intValue() == attribute.longValue())
         {
-          return new ScimIntNode(schemaAttribute, attribute.intValue());
+          validatedNodeSupplier = () -> new ScimIntNode(schemaAttribute, attribute.intValue());
         }
         else
         {
-          return new ScimLongNode(schemaAttribute, attribute.longValue());
+          validatedNodeSupplier = () -> new ScimLongNode(schemaAttribute, attribute.longValue());
         }
+        break;
       }
       case DECIMAL:
-        isNodeOfExpectedType(schemaAttribute,
-                             attribute,
-                             jsonNode -> jsonNode.isInt() || jsonNode.isLong() || jsonNode.isFloat()
-                                         || jsonNode.isDouble() || jsonNode.isBigDecimal());
-        return new ScimDoubleNode(schemaAttribute, attribute.doubleValue());
+        isNodeTypeValid = attribute.isInt() || attribute.isLong() || attribute.isFloat() || attribute.isDouble()
+                          || attribute.isBigDecimal();
+        validatedNodeSupplier = () -> new ScimDoubleNode(schemaAttribute, attribute.doubleValue());
+        break;
       case DATE_TIME:
-        isNodeOfExpectedType(schemaAttribute, attribute, JsonNode::isTextual);
-        parseDateTime(schemaAttribute, attribute.textValue());
-        return new ScimTextNode(schemaAttribute, attribute.textValue());
+        isNodeTypeValid = attribute.isTextual();
+        if (isNodeTypeValid)
+        {
+          parseDateTime(schemaAttribute, attribute.textValue());
+        }
+        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.textValue());
+        break;
       default:
-        isNodeOfExpectedType(schemaAttribute, attribute, JsonNode::isTextual);
-        validateValueNodeWithReferenceTypes(schemaAttribute, attribute);
-        return new ScimTextNode(schemaAttribute, attribute.textValue());
+        isNodeTypeValid = attribute.isTextual();
+        if (isNodeTypeValid)
+        {
+          validateValueNodeWithReferenceTypes(schemaAttribute, attribute);
+        }
+        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.textValue());
     }
-  }
 
-  /**
-   * checks if the given node is of the expected type
-   *
-   * @param schemaAttribute the meta attribute definition
-   * @param valueNode the current value node that should be checked
-   * @param isOfType the check that will validate if the node has the expected type
-   */
-  private static void isNodeOfExpectedType(SchemaAttribute schemaAttribute,
-                                           JsonNode valueNode,
-                                           Function<JsonNode, Boolean> ofType)
-  {
-    boolean isOfType = ofType.apply(valueNode);
-
-    if (!isOfType)
+    invalidNodeType: if (!isNodeTypeValid)
     {
-      Type type = schemaAttribute.getType();
+      Optional<JsonNode> fallbackNode = tryToParseFromStringValue(schemaAttribute, attribute);
+      if (fallbackNode.isPresent())
+      {
+        validatedNodeSupplier = fallbackNode::get;
+        break invalidNodeType;
+      }
+
       final String errorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
                                                 schemaAttribute.getFullResourceName(),
                                                 type.getValue(),
-                                                StringUtils.lowerCase(valueNode.getNodeType().toString()),
-                                                valueNode);
+                                                StringUtils.lowerCase(attribute.getNodeType().toString()),
+                                                attribute);
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
+    return validatedNodeSupplier.get();
+  }
+
+  /**
+   * a fallback method. If an attribute is not of the expected type but of type string, we will try to parse it
+   * into its correct type from the string-value
+   *
+   * @param schemaAttribute the attributes definition that will tell us what the correct type is
+   * @param valueNode the node that should be parsed into another type
+   * @return the parse node or the original node
+   */
+  private static Optional<JsonNode> tryToParseFromStringValue(SchemaAttribute schemaAttribute, JsonNode valueNode)
+  {
+    try
+    {
+      switch (schemaAttribute.getType())
+      {
+        case BOOLEAN:
+          boolean isBoolString = Arrays.asList("true", "false").contains(valueNode.textValue());
+          if (isBoolString)
+          {
+            return Optional.of(new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(valueNode.textValue())));
+          }
+          else
+          {
+            return Optional.empty();
+          }
+        case INTEGER:
+          long longValue = Long.parseLong(valueNode.textValue());
+          if (longValue == (int)longValue)
+          {
+            return Optional.of(new ScimIntNode(schemaAttribute, (int)longValue));
+          }
+          else
+          {
+            return Optional.of(new ScimLongNode(schemaAttribute, longValue));
+          }
+        case DECIMAL:
+          return Optional.of(new ScimDoubleNode(schemaAttribute, new BigDecimal(valueNode.textValue()).doubleValue()));
+      }
+    }
+    catch (Exception ex)
+    {
+      log.trace(ex.getMessage(), ex);
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * verifies if the given attribute node contains a valid binary value
+   *
+   * @param schemaAttribute the attributes definition
+   * @param attribute the attribute to check
+   * @return true if the node is compliant with the type binary
+   */
+  private static boolean isNodeTypeBinary(SchemaAttribute schemaAttribute, JsonNode attribute)
+  {
+    if (attribute.isBinary())
+    {
+      return true;
+    }
+    if (attribute.isTextual())
+    {
+      try
+      {
+        Base64.getDecoder().decode(attribute.textValue());
+        return true;
+      }
+      catch (IllegalArgumentException ex)
+      {
+        log.trace(ex.getMessage(), ex);
+        log.debug(String.format("Data of attribute '%s' is not valid Base64 encoded data",
+                                schemaAttribute.getFullResourceName()));
+        return false;
+      }
+    }
+    return false;
   }
 
   /**
@@ -302,5 +363,14 @@ class SimpleAttributeValidator
       }
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
+  }
+
+  /**
+   * simple method to wrap away the checked exception
+   */
+  @SneakyThrows
+  private static byte[] getBinaryValueOfJsonNode(JsonNode attribute)
+  {
+    return attribute.binaryValue();
   }
 }

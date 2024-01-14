@@ -5,7 +5,6 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -14,7 +13,6 @@ import lombok.NoArgsConstructor;
  * <br>
  * A complex type that specifies FILTER options. REQUIRED. See Section 3.4.2.2 of [RFC7644].
  */
-@NoArgsConstructor
 public class FilterConfig extends ScimObjectNode
 {
 
@@ -24,11 +22,16 @@ public class FilterConfig extends ScimObjectNode
    */
   protected static final Integer DEFAULT_MAX_RESULTS = 1;
 
+  public FilterConfig()
+  {
+    setSupported(false);
+  }
+
   @Builder
   public FilterConfig(Boolean supported, Integer maxResults)
   {
     super(null);
-    setSupported(supported);
+    setSupported(Optional.ofNullable(supported).orElse(false));
     setMaxResults(maxResults);
   }
 

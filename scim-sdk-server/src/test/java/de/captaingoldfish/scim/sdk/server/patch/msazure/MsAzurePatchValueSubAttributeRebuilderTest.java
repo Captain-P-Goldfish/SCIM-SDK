@@ -6,22 +6,63 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PersonRole;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchValueSubAttributeRebuilder;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
+import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 
 
 /**
  * @author Pascal Knueppel
  * @since 07.10.2023
  */
-public class MsAzurePatchValueSubAttributeRebuilderTest
+public class MsAzurePatchValueSubAttributeRebuilderTest implements FileReferences
 {
+
+  /**
+   * the patchConfig to activate or deactivate the workaround
+   */
+  private PatchConfig patchConfig;
+
+  /**
+   * needed to extract the {@link ResourceType}s which are necessary to check if the given attribute-names are
+   * valid or not
+   */
+  private ResourceTypeFactory resourceTypeFactory;
+
+  /**
+   * the resource type for all types definition. Contains data types of any possible scim representation
+   */
+  private ResourceType allTypesResourceType;
+
+  @BeforeEach
+  public void initPatchConfig()
+  {
+    patchConfig = PatchConfig.builder().supported(true).activateMsAzureValueSubAttributeWorkaround(true).build();
+
+    this.resourceTypeFactory = new ResourceTypeFactory();
+    JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    this.allTypesResourceType = resourceTypeFactory.registerResourceType(null,
+                                                                         allTypesResourceType,
+                                                                         allTypesSchema,
+                                                                         enterpriseUserSchema);
+  }
 
   /**
    * makes sure that the workaround-handler returns the original list in case of a remove-operation
@@ -31,14 +72,18 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
   public void testRemoveOperationsAreNotHandles()
   {
     final PatchOp patchOp = PatchOp.REMOVE;
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\": \"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\"}",
-                                                              "{\"value\": \"{\\\"display\\\":\\\"Buyer-Admin\\\"}\"}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\":\"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\"}",
+                                                              "{\"value\":\"{\\\"display\\\":\\\"Buyer-Admin\\\"}\"}"));
 
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -51,15 +96,26 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
     final PatchOp patchOp = PatchOp.ADD;
 
     {
-      MsAzurePatchValueSubAttributeRebuilder handler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                  new ArrayList<>());
-      List<String> fixedValues = handler.fixValues();
-      Assertions.assertTrue(fixedValues.isEmpty());
+      PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(new ArrayList<>()).build();
+      MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+      Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+      Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+      PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+      Assertions.assertEquals(patchOp, fixedOperation.getOp());
+      Assertions.assertFalse(fixedOperation.getPath().isPresent());
+      Assertions.assertTrue(fixedOperation.getValues().isEmpty());
     }
     {
-      MsAzurePatchValueSubAttributeRebuilder handler = new MsAzurePatchValueSubAttributeRebuilder(patchOp, null);
-      List<String> fixedValues = handler.fixValues();
-      Assertions.assertNull(fixedValues);
+      PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(new ArrayList<>()).build();
+      MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+      Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+      Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+      PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+      Assertions.assertEquals(patchOp, fixedOperation.getOp());
+      Assertions.assertFalse(fixedOperation.getPath().isPresent());
+      Assertions.assertTrue(fixedOperation.getValues().isEmpty());
     }
   }
 
@@ -73,10 +129,15 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
     final PatchOp patchOp = PatchOp.ADD;
     final List<String> values = new ArrayList<>(Arrays.asList("{\"display\" \"Admin\"", "{\"display\" \"User\""));
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -88,12 +149,17 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
   public void testNonJsonObjectInSubValueCausesNoError()
   {
     final PatchOp patchOp = PatchOp.ADD;
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"display\": \"Admin\"}", "{\"display\": \"User\"}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"display\":\"Admin\"}", "{\"display\":\"User\"}"));
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -105,13 +171,17 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
   public void testArrayJsonObjectInValueCausesNoError()
   {
     final PatchOp patchOp = PatchOp.ADD;
-    final List<String> values = new ArrayList<>(Arrays.asList("[{\"display\": \"Admin\"}]",
-                                                              "[{\"display\": \"User\"}]"));
+    final List<String> values = new ArrayList<>(Arrays.asList("[{\"display\":\"Admin\"}]", "[{\"display\":\"User\"}]"));
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -123,13 +193,17 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
   public void testArrayJsonObjectInSubValueCausesNoError()
   {
     final PatchOp patchOp = PatchOp.ADD;
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"display\": [\"Admin\"]}",
-                                                              "{\"display\": [\"User\"]}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"display\":[\"Admin\"]}", "{\"display\":[\"User\"]}"));
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -144,10 +218,15 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
                                                           + "\"$ref\": \"123456789\"}");
 
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -161,10 +240,15 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
     final List<String> values = Collections.singletonList("{\"value\": \"{\\\"display\\\"\\\"DocumentMgmt-BuyerAdmin\\\"\"}");
 
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -178,10 +262,15 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
     final List<String> values = Collections.singletonList("{\"value\": \"[{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}]\"}");
 
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(fixedValues, values);
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+    Assertions.assertEquals(values, fixedOperation.getValues());
   }
 
   /**
@@ -195,9 +284,16 @@ public class MsAzurePatchValueSubAttributeRebuilderTest
     final List<String> values = new ArrayList<>(Arrays.asList("{\"value\": \"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\"}",
                                                               "{\"value\": \"{\\\"display\\\":\\\"Buyer-Admin\\\"}\"}"));
 
-    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder(patchOp,
-                                                                                                          values);
-    List<String> fixedValues = workaroundHandler.fixValues();
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
+    MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(null, operation);
+
+    Assertions.assertEquals(patchOp, fixedOperation.getOp());
+    Assertions.assertFalse(fixedOperation.getPath().isPresent());
+
+    List<String> fixedValues = fixedOperation.getValues();
     Assertions.assertNotEquals(fixedValues, values);
     {
       PersonRole personRole1 = JsonHelper.readJsonDocument(fixedValues.get(0), PersonRole.class);

@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 10.04.2021
  */
 @Slf4j
-class SimpleMultivaluedAttributeValidator
+public class SimpleMultivaluedAttributeValidator
 {
 
   /**
@@ -31,7 +31,7 @@ class SimpleMultivaluedAttributeValidator
    * @param attribute the attribute to validate
    * @return the validated object that is returned as {@link ScimArrayNode} with scim node representations
    */
-  protected static ArrayNode parseNodeType(SchemaAttribute schemaAttribute, JsonNode attribute)
+  public static ArrayNode parseNodeTypeAndValidate(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
     log.trace("Validating simple multivalued attribute '{}'", schemaAttribute.getScimNodeName());
     ArrayNode arrayNode = toArrayNode(attribute).orElseThrow(() -> {
@@ -61,7 +61,7 @@ class SimpleMultivaluedAttributeValidator
 
         try
         {
-          JsonNode parsedSimpleNode = SimpleAttributeValidator.parseNodeType(schemaAttribute, jsonNode);
+          JsonNode parsedSimpleNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, jsonNode);
           scimArrayNode.add(parsedSimpleNode);
           CustomAttributeValidator.validateSimpleNode(schemaAttribute, parsedSimpleNode);
         }

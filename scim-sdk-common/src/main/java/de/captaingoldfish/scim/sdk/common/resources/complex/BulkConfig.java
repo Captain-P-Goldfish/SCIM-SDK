@@ -6,7 +6,6 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -17,7 +16,6 @@ import lombok.NoArgsConstructor;
  * <br>
  * A complex type that specifies bulk configuration options. See Section 3.7 of [RFC7644]. REQUIRED.
  */
-@NoArgsConstructor
 public class BulkConfig extends ScimObjectNode
 {
 
@@ -32,6 +30,11 @@ public class BulkConfig extends ScimObjectNode
    */
   protected static final Long DEFAULT_MAX_PAYLOAD_SIZE = (long)(Math.pow(1024, 2) * 2);
 
+  public BulkConfig()
+  {
+    setSupported(false);
+  }
+
   @Builder
   public BulkConfig(Boolean supported,
                     Integer maxOperations,
@@ -41,7 +44,7 @@ public class BulkConfig extends ScimObjectNode
                     Boolean supportBulkGet)
   {
     super(null);
-    setSupported(supported);
+    setSupported(Optional.ofNullable(supported).orElse(false));
     setMaxOperations(maxOperations);
     setMaxPayloadSize(maxPayloadSize);
     setReturnResourcesEnabled(returnResourcesEnabled);

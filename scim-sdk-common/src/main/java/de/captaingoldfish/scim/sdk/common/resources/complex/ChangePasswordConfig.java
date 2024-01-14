@@ -5,7 +5,6 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -14,15 +13,19 @@ import lombok.NoArgsConstructor;
  * <br>
  * A complex type that specifies configuration options related to changing a password. REQUIRED.
  */
-@NoArgsConstructor
 public class ChangePasswordConfig extends ScimObjectNode
 {
+
+  public ChangePasswordConfig()
+  {
+    setSupported(false);
+  }
 
   @Builder
   public ChangePasswordConfig(Boolean supported)
   {
     super(null);
-    setSupported(supported);
+    setSupported(Optional.ofNullable(supported).orElse(false));
   }
 
   /**

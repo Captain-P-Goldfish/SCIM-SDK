@@ -65,8 +65,8 @@ class ValidationSelector
       }
       else
       {
-        ArrayNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                         effectiveAttribute);
+        ArrayNode validatedAttribute = SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                    effectiveAttribute);
         CustomAttributeValidator.validateArrayNode(schemaAttribute, validatedAttribute);
         return Optional.ofNullable(validatedAttribute);
       }
@@ -82,7 +82,8 @@ class ValidationSelector
       }
       else
       {
-        JsonNode validatedAttribute = SimpleAttributeValidator.parseNodeType(schemaAttribute, effectiveAttribute);
+        JsonNode validatedAttribute = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                        effectiveAttribute);
         CustomAttributeValidator.validateSimpleNode(schemaAttribute, validatedAttribute);
         return Optional.of(validatedAttribute);
       }

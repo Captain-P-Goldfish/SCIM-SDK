@@ -285,8 +285,8 @@ public class SimpleAttributeTypeValidatorTest
 
     final String content = UUID.randomUUID().toString();
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -302,11 +302,48 @@ public class SimpleAttributeTypeValidatorTest
 
     final int content = new Random().nextInt();
     JsonNode attribute = new IntNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> {
+      return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+    });
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimIntNode.class));
     Assertions.assertEquals(content, parsedNode.intValue());
+  }
+
+  /**
+   * verifies that integer values are correctly parsed
+   */
+  @Test
+  public void testIntegerTypeAsString()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
+
+    final int content = new Random().nextInt();
+    TextNode attribute = new TextNode(String.valueOf(content));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> {
+      return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+    });
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimIntNode.class));
+    Assertions.assertEquals(content, parsedNode.intValue());
+  }
+
+  /**
+   * verifies that integer values are correctly parsed from long-string types
+   */
+  @Test
+  public void testLongStringType()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
+
+    final long content = Long.MAX_VALUE;
+    JsonNode attribute = new TextNode(String.valueOf(content));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> {
+      return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+    });
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
+    Assertions.assertEquals(content, parsedNode.longValue());
   }
 
   /**
@@ -319,8 +356,8 @@ public class SimpleAttributeTypeValidatorTest
 
     final long content = Long.MAX_VALUE;
     JsonNode attribute = new LongNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
     Assertions.assertEquals(content, parsedNode.longValue());
@@ -335,11 +372,28 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
     JsonNode attribute = BooleanNode.getTrue();
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
     Assertions.assertEquals(attribute.booleanValue(), parsedNode.booleanValue());
+  }
+
+  /**
+   * verifies that boolean values as string are correctly parsed to boolean nodes
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"true", "false"})
+  public void testBooleanStringType(String boolString)
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
+
+    JsonNode attribute = new TextNode(boolString);
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
+    Assertions.assertEquals(Boolean.parseBoolean(attribute.textValue()), parsedNode.booleanValue());
   }
 
   /**
@@ -351,11 +405,27 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
     JsonNode attribute = new DoubleNode(25.5);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
     Assertions.assertEquals(attribute.doubleValue(), parsedNode.doubleValue());
+  }
+
+  /**
+   * tests that decimal values are correctly parsed to double nodes from string values
+   */
+  @Test
+  public void testDecimalStringType()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
+
+    JsonNode attribute = new TextNode("25.5");
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
+    Assertions.assertNotNull(parsedNode);
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+    Assertions.assertEquals(Double.parseDouble(attribute.textValue()), parsedNode.doubleValue());
   }
 
   /**
@@ -367,8 +437,8 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
     JsonNode attribute = new IntNode(25);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
     Assertions.assertEquals(attribute.doubleValue(), parsedNode.doubleValue());
@@ -383,8 +453,8 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
     JsonNode attribute = new LongNode(Long.MAX_VALUE);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
     Assertions.assertEquals(attribute.doubleValue(), parsedNode.doubleValue());
@@ -401,8 +471,8 @@ public class SimpleAttributeTypeValidatorTest
     DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(3).toFormatter();
     String content = formatter.format(Instant.now());
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
@@ -422,8 +492,8 @@ public class SimpleAttributeTypeValidatorTest
 
     String content = "http://localhost:8080/auth/somewhere/myResource/123";
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -443,8 +513,8 @@ public class SimpleAttributeTypeValidatorTest
 
     String content = "urn:captaingoldfish:scim:custom:identifier";
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -464,8 +534,8 @@ public class SimpleAttributeTypeValidatorTest
 
     String content = "http://localhost:8080/hello-world?name=goldfish#type=work";
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -485,8 +555,8 @@ public class SimpleAttributeTypeValidatorTest
 
     String content = "id: 25";
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -503,8 +573,8 @@ public class SimpleAttributeTypeValidatorTest
 
     String content = "aWQ6IDI1";
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -521,8 +591,8 @@ public class SimpleAttributeTypeValidatorTest
 
     String content = "aWQ6IDI1";
     JsonNode attribute = new BinaryNode(content.getBytes(StandardCharsets.UTF_8));
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBinaryNode.class));
     Assertions.assertArrayEquals(content.getBytes(StandardCharsets.UTF_8), parsedNode.binaryValue());
@@ -543,8 +613,8 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -565,8 +635,8 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -586,8 +656,8 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -611,8 +681,8 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     JsonNode attribute = new TextNode(content);
-    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                                     attribute));
+    JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                                                attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
     Assertions.assertEquals(content, parsedNode.textValue());
@@ -632,7 +702,7 @@ public class SimpleAttributeTypeValidatorTest
 
     try
     {
-      SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -659,7 +729,7 @@ public class SimpleAttributeTypeValidatorTest
 
     try
     {
-      SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+      SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -690,7 +760,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new IntNode(0);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -716,7 +786,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new LongNode(1L);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -742,7 +812,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -769,7 +839,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new DoubleNode(2.5);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -803,7 +873,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new TextNode("abc");
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -826,10 +896,10 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
-      JsonNode attribute = new TextNode("123456");
+      JsonNode attribute = new TextNode("hello");
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -855,7 +925,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -881,7 +951,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new DoubleNode(2.5);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -915,7 +985,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new TextNode("abc");
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -941,7 +1011,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new IntNode(123456);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -967,7 +1037,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new LongNode(123456);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -993,7 +1063,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new DoubleNode(123456.6);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1027,7 +1097,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new TextNode("abc");
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1051,10 +1121,10 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
-      JsonNode attribute = new TextNode("5.5");
+      JsonNode attribute = new TextNode("hello");
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1080,7 +1150,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1114,7 +1184,7 @@ public class SimpleAttributeTypeValidatorTest
       try
       {
         JsonNode attribute = new TextNode("abc");
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1136,7 +1206,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1162,7 +1232,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new IntNode(123456);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1188,7 +1258,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new LongNode(Instant.now().getEpochSecond());
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1214,7 +1284,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new DoubleNode(Instant.now().getEpochSecond() + 0.2);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1254,7 +1324,7 @@ public class SimpleAttributeTypeValidatorTest
       try
       {
         JsonNode attribute = new TextNode(content);
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1285,7 +1355,7 @@ public class SimpleAttributeTypeValidatorTest
 
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, jsonNode);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, jsonNode);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1319,7 +1389,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new TextNode("abc_?/%");
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1345,7 +1415,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = new IntNode(5);
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -1371,7 +1441,7 @@ public class SimpleAttributeTypeValidatorTest
       JsonNode attribute = BooleanNode.getTrue();
       try
       {
-        SimpleAttributeValidator.parseNodeType(schemaAttribute, attribute);
+        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)

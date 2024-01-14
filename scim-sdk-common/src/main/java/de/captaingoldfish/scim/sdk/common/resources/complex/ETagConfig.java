@@ -5,7 +5,6 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
-import lombok.NoArgsConstructor;
 
 
 /**
@@ -14,15 +13,19 @@ import lombok.NoArgsConstructor;
  * <br>
  * A complex type that specifies ETag configuration options. REQUIRED.
  */
-@NoArgsConstructor
 public class ETagConfig extends ScimObjectNode
 {
+
+  public ETagConfig()
+  {
+    setSupported(false);
+  }
 
   @Builder
   public ETagConfig(Boolean supported)
   {
     super(null);
-    setSupported(supported);
+    setSupported(Optional.ofNullable(supported).orElse(false));
   }
 
   /**

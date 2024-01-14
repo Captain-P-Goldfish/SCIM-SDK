@@ -18,24 +18,18 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.IOException;
-import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.resources.PatchFilterResolver;
-import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder;
-import de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround;
+import de.captaingoldfish.scim.sdk.server.patch.operations.PatchOperation;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
+import de.captaingoldfish.scim.sdk.server.utils.ScimAttributeHelper;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -77,7 +71,7 @@ import lombok.extern.slf4j.Slf4j;
  * </pre>
  */
 @Slf4j
-public class PatchTargetHandler extends AbstractPatch
+public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHelper
 {
 
   /**
@@ -102,66 +96,15 @@ public class PatchTargetHandler extends AbstractPatch
   private SchemaAttribute schemaAttribute;
 
 
-  public PatchTargetHandler(PatchConfig patchConfig, ResourceType resourceType, PatchOp patchOp, String path)
+  public PatchTargetHandler(PatchConfig patchConfig, ResourceType resourceType, PatchOperation patchOperation)
   {
     super(resourceType);
     this.patchConfig = patchConfig;
-    try
+    this.path = patchOperation.getAttributePath();
+    this.patchOp = patchOperation.getPatchOp();
+    if (!(this.path instanceof PatchExtensionAttributePath))
     {
-      if (resourceType.getAllSchemaExtensions().stream().anyMatch(schema -> schema.getNonNullId().equals(path)))
-      {
-        this.path = new PatchExtensionAttributePath(path);
-        this.schemaAttribute = null;
-      }
-      else
-      {
-        this.path = RequestUtils.parsePatchPath(resourceType, path);
-        this.schemaAttribute = getSchemaAttribute();
-      }
-    }
-    catch (ScimException ex)
-    {
-      ex.setScimType(ScimType.RFC7644.INVALID_PATH);
-      throw ex;
-    }
-    this.patchOp = patchOp;
-  }
-
-  /**
-   * this method will check that the referenced attribute is not a readOnly or immutable node. If the client
-   * tries to process a patch operation on such an object the current value of the resource must meet the
-   * requirements of RFC7644 <br>
-   * <br>
-   *
-   * <pre>
-   * If the attribute path is "readOnly" an exception should be thrown
-   * If the attributes mutability is "immutable" an add operation is only allowed if the value is unassigned
-   * </pre>
-   */
-  private void evaluatePatchPathOperation(SchemaAttribute schemaAttribute, JsonNode attribute)
-  {
-    isReadOnlyAttributeAddressed(schemaAttribute);
-    if (!PatchOp.REMOVE.equals(patchOp) && Mutability.IMMUTABLE.equals(schemaAttribute.getMutability())
-        && attribute != null)
-    {
-      throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is '"
-                                    + Mutability.IMMUTABLE + "' and is not unassigned. Current value is: "
-                                    + attribute.asText(), null, ScimType.RFC7644.INVALID_PATH);
-    }
-  }
-
-  /**
-   * checks if the current path is addressing a read-only attribute and throws an error if so
-   *
-   * @param schemaAttribute the attribute that is addressed in the path expression
-   */
-  private void isReadOnlyAttributeAddressed(SchemaAttribute schemaAttribute)
-  {
-    if (Mutability.READ_ONLY.equals(schemaAttribute.getMutability()))
-    {
-      throw new BadRequestException("the attribute '" + schemaAttribute.getScimNodeName() + "' is a '"
-                                    + Mutability.READ_ONLY + "' attribute and cannot be changed", null,
-                                    ScimType.RFC7644.INVALID_PATH);
+      this.schemaAttribute = getSchemaAttribute();
     }
   }
 
@@ -182,6 +125,29 @@ public class PatchTargetHandler extends AbstractPatch
   }
 
   /**
+   * this method will check that the referenced attribute is not a readOnly or immutable node. If the client
+   * tries to process a patch operation on such an object the current value of the resource must meet the
+   * requirements of RFC7644 <br>
+   * <br>
+   *
+   * <pre>
+   * If the attribute path is "readOnly" an exception should be thrown
+   * If the attributes mutability is "immutable" an add operation is only allowed if the value is unassigned
+   * </pre>
+   */
+  private void evaluatePatchPathOperation(SchemaAttribute schemaAttribute, JsonNode attribute)
+  {
+    if (!PatchOp.REMOVE.equals(patchOp) && Mutability.IMMUTABLE.equals(schemaAttribute.getMutability())
+        && attribute != null)
+    {
+      String errorMessage = String.format("The attribute '%s' is 'IMMUTABLE' and is not unassigned. Current value is: %s",
+                                          schemaAttribute.getScimNodeName(),
+                                          attribute.asText());
+      throw new BadRequestException(errorMessage, null, ScimType.RFC7644.MUTABILITY);
+    }
+  }
+
+  /**
    * handles path references that will directly address an extension of a resource
    *
    * @param resource the resource to which the values should be handled
@@ -191,26 +157,12 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private boolean handleExtensionOperation(ResourceNode resource, List<String> values)
   {
-    final boolean areTooManyValuesPresent = values.size() > 1;
-    if (areTooManyValuesPresent)
-    {
-      throw new BadRequestException(String.format("Patch request contains too many values. Expected a single value "
-                                                  + "representing an extension but got several. '%s'",
-                                                  values));
-    }
-
     boolean changeMade;
     final boolean addOrReplaceValue = !PatchOp.REMOVE.equals(patchOp);
     ObjectNode currentNode = (ObjectNode)resource.get(path.getFullName());
     if (addOrReplaceValue)
     {
       ObjectNode extensionNode = (ObjectNode)JsonHelper.readJsonDocument(values.get(0));
-      if (extensionNode == null)
-      {
-        throw new BadRequestException(String.format("Received invalid data on patch values. Expected an extension "
-                                                    + "resource but got: '%s'",
-                                                    values.get(0)));
-      }
       changeMade = !extensionNode.equals(currentNode);
       if (extensionNode.isEmpty())
       {
@@ -239,12 +191,10 @@ public class PatchTargetHandler extends AbstractPatch
    */
   private boolean handlePathAttributeOperation(ResourceNode resource, List<String> values)
   {
-    validateRequest(values);
     String[] fullAttributeNames = getAttributeNames();
 
     String firstAttributeName = fullAttributeNames[0];
     SchemaAttribute schemaAttribute = getSchemaAttribute(firstAttributeName);
-    isReadOnlyAttributeAddressed(schemaAttribute);
     boolean isExtension = resourceType.getSchemaExtensions()
                                       .stream()
                                       .anyMatch(ext -> ext.getSchema().equals(schemaAttribute.getResourceUri()));
@@ -338,19 +288,13 @@ public class PatchTargetHandler extends AbstractPatch
       }
     }
 
-    if (patchConfig.isMsAzureComplexSimpleValueWorkaroundActive())
-    {
-      MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(schemaAttribute,
-                                                                                                  values);
-      values = workaroundHandler.fixValues();
-    }
     boolean changeMade = handleComplexAttribute(schemaAttribute, currentParent, fullAttributeNames, values);
     removeExtensionIfEmpty(resource, schemaAttribute, isExtension, currentParent);
     return changeMade;
   }
 
   /**
-   * handles a single patch operation on a multi valued type
+   * handles a single patch operation on a multivalued type
    *
    * @param resource the resource that is currently processed
    * @param values the values that should be added or replaced
@@ -495,14 +439,12 @@ public class PatchTargetHandler extends AbstractPatch
    */
   protected boolean handleSimpleNode(SchemaAttribute schemaAttribute, ObjectNode objectNode, List<String> values)
   {
-    if (!PatchOp.REMOVE.equals(patchOp) && values.size() > 1 && !schemaAttribute.isMultiValued())
-    {
-      throw new BadRequestException("found multiple values for simple attribute '"
-                                    + schemaAttribute.getFullResourceName() + "': " + String.join(",", values), null,
-                                    ScimType.RFC7644.INVALID_VALUE);
-    }
-
     JsonNode oldNode = objectNode.get(schemaAttribute.getName());
+    if (!PatchOp.REMOVE.equals(patchOp)
+        && values.get(0).equals(Optional.ofNullable(oldNode).map(JsonNode::textValue).orElse(null)))
+    {
+      return false;
+    }
     evaluatePatchPathOperation(schemaAttribute, oldNode);
     if (PatchOp.REMOVE.equals(patchOp))
     {
@@ -528,7 +470,7 @@ public class PatchTargetHandler extends AbstractPatch
       }
     }
 
-    JsonNode newNode = createNewNode(schemaAttribute, values.get(0));
+    JsonNode newNode = parseToJsonNode(schemaAttribute, values.get(0));
     if (!newNode.equals(oldNode))
     {
       objectNode.set(schemaAttribute.getName(), newNode);
@@ -582,19 +524,7 @@ public class PatchTargetHandler extends AbstractPatch
   {
     ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
     evaluatePatchPathOperation(schemaAttribute, complexNode);
-    if (values.size() != 1 || StringUtils.isBlank(values.get(0)))
-    {
-      throw new BadRequestException("found multiple or no values for non multi valued complex type '"
-                                    + schemaAttribute.getFullResourceName() + "': \n\t" + String.join(",", values),
-                                    null, ScimType.RFC7644.INVALID_VALUE);
-    }
     JsonNode newNode = JsonHelper.readJsonDocument(values.get(0));
-    if (newNode == null || !newNode.isObject())
-    {
-      throw new BadRequestException("given value is not a complex json representation for attribute '"
-                                    + schemaAttribute.getFullResourceName() + "':\n\t" + String.join(",", values), null,
-                                    ScimType.RFC7644.INVALID_VALUE);
-    }
     PatchFilterResolver filterResolver = new PatchFilterResolver();
     boolean hasFilterExpression = path.getChild() != null;
     if (complexNode != null && hasFilterExpression
@@ -641,7 +571,6 @@ public class PatchTargetHandler extends AbstractPatch
                                                          List<String> values)
   {
     SchemaAttribute subAttribute = getSchemaAttribute(fullAttributeName);
-    isReadOnlyAttributeAddressed(subAttribute);
     ObjectNode complexNode = (ObjectNode)resource.get(schemaAttribute.getName());
     if (complexNode == null)
     {
@@ -773,7 +702,7 @@ public class PatchTargetHandler extends AbstractPatch
    *              urn:gold:params:scim:schemas:custom:2.0:AllTypes:name.givenName
    *          </pre>
    *
-   * @param values the values that should be added to the multi valued complex type
+   * @param values the values that should be added to the multivalued complex type
    * @return true if an effective change has been made, false else
    */
   private boolean handleMultiValuedAttribute(SchemaAttribute schemaAttribute,
@@ -801,7 +730,7 @@ public class PatchTargetHandler extends AbstractPatch
       }
       for ( String value : values )
       {
-        multiValued.add(createNewNode(schemaAttribute, value));
+        multiValued.add(parseToJsonNode(schemaAttribute, value));
       }
       return true;
     }
@@ -846,23 +775,29 @@ public class PatchTargetHandler extends AbstractPatch
       for ( int i = matchingComplexNodes.size() - 1 ; i >= 0 ; i-- )
       {
         IndexNode indexNode = matchingComplexNodes.get(i);
+        boolean isEquals = indexNode.getObjectNode().equals(JsonHelper.readJsonDocument(values.get(0)));
+        if (isEquals)
+        {
+          return false;
+        }
         multiValued.remove(indexNode.getIndex());
       }
     }
     for ( String value : values )
     {
+      JsonNode jsonNode;
       try
       {
-        JsonNode jsonNode = JsonHelper.readJsonDocument(value);
-        JsonNode primary = jsonNode.get(AttributeNames.RFC7643.PRIMARY);
-        checkForPrimary(multiValued, primary != null && primary.booleanValue());
-        multiValued.add(jsonNode);
+        jsonNode = JsonHelper.readJsonDocument(value);
       }
       catch (IOException ex)
       {
-        throw new BadRequestException("the value must be a whole complex type json structure but was: '" + value + "'",
+        throw new BadRequestException("The value must be a whole complex type json structure but was: '" + value + "'",
                                       ex, ScimType.RFC7644.INVALID_VALUE);
       }
+      JsonNode primary = jsonNode.get(AttributeNames.RFC7643.PRIMARY);
+      checkForPrimary(multiValued, primary != null && primary.booleanValue());
+      multiValued.add(jsonNode);
     }
     return true;
   }
@@ -886,7 +821,7 @@ public class PatchTargetHandler extends AbstractPatch
   }
 
   /**
-   * handles a multivalued complex type with a path reference that points to a sub attribute of the multi-valued
+   * handles a multivalued complex type with a path reference that points to a sub attribute of the multivalued
    * complex type e.g. emails.value
    *
    * @param multiValued the array of the multivalued complex node
@@ -900,19 +835,6 @@ public class PatchTargetHandler extends AbstractPatch
   {
     SchemaAttribute subAttribute = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullAttributeName);
     List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
-    if (patchConfig.isMsAzureFilterWorkaroundActive())
-    {
-      if (matchingComplexNodes.isEmpty())
-      {
-        MsAzurePatchFilterWorkaround filterWorkaround = new MsAzurePatchFilterWorkaround();
-        ScimObjectNode newNode = filterWorkaround.createAttributeFromPatchFilter(path);
-        if (!newNode.isEmpty())
-        {
-          multiValued.add(newNode);
-          matchingComplexNodes.add(new IndexNode(multiValued.size() - 1, newNode));
-        }
-      }
-    }
     AtomicBoolean changeWasMade = new AtomicBoolean(false);
     if (AttributeNames.RFC7643.PRIMARY.equals(subAttribute.getName()))
     {
@@ -973,162 +895,6 @@ public class PatchTargetHandler extends AbstractPatch
       return new ArrayList<>();
     }
     return matchingComplexNodes;
-  }
-
-  /**
-   * creates a new json node with the given value
-   *
-   * @param schemaAttribute the attribute schema definition
-   * @param value the value that should be added into the node
-   * @return the simple json node
-   */
-  private JsonNode createNewNode(SchemaAttribute schemaAttribute, String value)
-  {
-    switch (schemaAttribute.getType())
-    {
-      case STRING:
-      case DATE_TIME:
-      case REFERENCE:
-      case BINARY:
-        return new ScimTextNode(schemaAttribute, value);
-      case BOOLEAN:
-        return new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(value));
-      case INTEGER:
-        Long longVal = Long.parseLong(value);
-        if (longVal == longVal.intValue())
-        {
-          return new ScimIntNode(schemaAttribute, longVal.intValue());
-        }
-        else
-        {
-          return new ScimLongNode(schemaAttribute, longVal);
-        }
-      default:
-        return new ScimDoubleNode(schemaAttribute, Double.parseDouble(value));
-    }
-  }
-
-  /**
-   * will check that the expressions are correctly written for the defined patch operation
-   *
-   * @param values the values of the request
-   */
-  protected void validateRequest(List<String> values)
-  {
-    validateAttributeType(values);
-    validatePath(path, patchOp, values);
-  }
-
-  /**
-   * this method will check the the expression send by the client does follow its syntax rules based on the used
-   * operation
-   *
-   * @param path the target expression
-   * @param patchOp the operation
-   * @param values the values (should be empty on delete)
-   */
-  private void validatePath(AttributePathRoot path, PatchOp patchOp, List<String> values)
-  {
-    switch (patchOp)
-    {
-      case ADD:
-        checkIsValidComplexJson(path, values);
-        break;
-      case REPLACE:
-        validateReplaceOperation(path, values);
-        break;
-      case REMOVE:
-        validateRemoveOperation(path, values);
-        break;
-    }
-  }
-
-  /**
-   * will validate that no values are present in the values list all other path representations should be valid
-   * except for an empty representation
-   *
-   * @param path the attribute path expression
-   * @param values in remove operation no values should be present
-   */
-  private void validateRemoveOperation(AttributePathRoot path, List<String> values)
-  {
-    if (values != null && !values.isEmpty())
-    {
-      throw new BadRequestException("values must not be set for remove operation but was: " + String.join(",", values),
-                                    null, ScimType.RFC7644.INVALID_VALUE);
-    }
-    if (path == null)
-    {
-      throw new BadRequestException("no target present within the request", null, ScimType.RFC7644.INVALID_PATH);
-    }
-  }
-
-  /**
-   * will validate that the given attribute path expression is valid for a replace operation
-   *
-   * @param path the attribute path expression
-   * @param values the values that should replace other values
-   */
-  private void validateReplaceOperation(AttributePathRoot path, List<String> values)
-  {
-    if (values == null || values.size() == 0)
-    {
-      throw new BadRequestException("values parameter must be set for replace operation but was empty", null,
-                                    ScimType.RFC7644.INVALID_VALUE);
-    }
-    if (StringUtils.isBlank(path.getSubAttributeName()) && path.getChild() != null
-        && !values.stream().allMatch(JsonHelper::isValidJson))
-    {
-      throw new BadRequestException("the values are expected to be valid json representations for an expression as "
-                                    + "'" + path + "' but was: " + String.join(",\n", values), null,
-                                    ScimType.RFC7644.INVALID_PATH);
-    }
-    checkIsValidComplexJson(path, values);
-  }
-
-  /**
-   * verifies that the values are valid json representations if we have an injection into a complex type without
-   * a sub-attribute
-   *
-   * @param path the target of the expression
-   * @param values the values should be added or replaced
-   */
-  private void checkIsValidComplexJson(AttributePathRoot path, List<String> values)
-  {
-    String[] namePath = path.getShortName().split("\\.");
-    // emails or name
-    if (path.getChild() == null && Type.COMPLEX.equals(path.getSchemaAttribute().getType()) && namePath.length == 1
-        && !values.stream().allMatch(JsonHelper::isValidJson))
-    {
-      throw new BadRequestException("the value parameters must be valid json representations but was '"
-                                    + String.join(",", values) + "'", null, ScimType.RFC7644.INVALID_VALUE);
-
-    }
-  }
-
-  /**
-   * checks that if the attribute is a simple type and not multivalued that only a single attribute is allowed
-   * in the values parameter of the patch request
-   *
-   * @param values the values parameter that is under test
-   */
-  private void validateAttributeType(List<String> values)
-  {
-    switch (schemaAttribute.getType())
-    {
-      case STRING:
-      case DATE_TIME:
-      case REFERENCE:
-      case BOOLEAN:
-      case INTEGER:
-      case DECIMAL:
-        if (!schemaAttribute.isMultiValued() && values.size() > 1)
-        {
-          throw new BadRequestException("several values found for non multivalued node of type '"
-                                        + schemaAttribute.getType() + "'", null, ScimType.RFC7644.INVALID_VALUE);
-        }
-        break;
-    }
   }
 
   /**

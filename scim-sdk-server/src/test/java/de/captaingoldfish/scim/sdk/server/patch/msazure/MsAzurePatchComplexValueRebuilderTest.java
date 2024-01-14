@@ -13,8 +13,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
@@ -28,6 +31,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
 {
+
+  /**
+   * the patchConfig to activate or deactivate the workaround
+   */
+  private PatchConfig patchConfig;
 
   /**
    * needed to extract the {@link ResourceType}s which are necessary to check if the given attribute-names are
@@ -46,6 +54,7 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
+    this.patchConfig = PatchConfig.builder().supported(true).msAzureComplexSimpleValueWorkaroundActive(true).build();
     this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
@@ -68,8 +77,16 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
     Assertions.assertEquals(Type.COMPLEX, manager.getType());
     List<String> patchValues = Arrays.asList("271", "281");
 
-    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(manager, patchValues);
-    List<String> fixedValues = workaroundHandler.fixValues();
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(manager.getScimNodeName())
+                                                           .values(patchValues)
+                                                           .build();
+
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(allTypesResourceType, operation);
+    List<String> fixedValues = fixedOperation.getValues();
     Assertions.assertEquals(2, fixedValues.size());
     {
       JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(0));
@@ -99,10 +116,14 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
     Assertions.assertNotNull(costCenter);
     List<String> patchValues = Arrays.asList("271", "281");
 
-    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(costCenter,
-                                                                                                patchValues);
-    List<String> fixedValues = workaroundHandler.fixValues();
-    Assertions.assertEquals(patchValues, fixedValues);
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(costCenter.getScimNodeName())
+                                                           .values(patchValues)
+                                                           .build();
+
+    Assertions.assertFalse(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
   }
 
   /**
@@ -115,10 +136,22 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
     SchemaAttribute manager = allTypesResourceType.getAllSchemaExtensions().get(0).getSchemaAttribute(RFC7643.MANAGER);
     Assertions.assertNotNull(manager);
     Assertions.assertEquals(Type.COMPLEX, manager.getType());
-    List<String> patchValues = Arrays.asList("{\"value\": \"271\"}", "{\"value\": \"281\"}");
+    List<String> patchValues = Arrays.asList("{\"value\":\"271\"}", "{\"value\":\"281\"}");
 
-    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(manager, patchValues);
-    List<String> fixedValues = workaroundHandler.fixValues();
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(manager.getScimNodeName())
+                                                           .values(patchValues)
+                                                           .build();
+    log.warn(operation.toPrettyString());
+    operation = JsonHelper.readJsonDocument(operation.toString(), PatchRequestOperation.class);
+    log.warn(operation.toPrettyString());
+
+    Assertions.assertFalse(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(allTypesResourceType, operation);
+
+    List<String> fixedValues = fixedOperation.getValues();
     Assertions.assertEquals(patchValues, fixedValues);
   }
 
@@ -134,8 +167,17 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
     Assertions.assertEquals(Type.COMPLEX, manager.getType());
     List<String> patchValues = Arrays.asList("[271]", "[281]");
 
-    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(manager, patchValues);
-    List<String> fixedValues = workaroundHandler.fixValues();
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(manager.getScimNodeName())
+                                                           .values(patchValues)
+                                                           .build();
+
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(allTypesResourceType, operation);
+
+    List<String> fixedValues = fixedOperation.getValues();
     Assertions.assertEquals(patchValues, fixedValues);
   }
 
@@ -151,8 +193,17 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
     Assertions.assertEquals(Type.COMPLEX, manager.getType());
     List<String> patchValues = Arrays.asList("[271", "{281]");
 
-    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder(manager, patchValues);
-    List<String> fixedValues = workaroundHandler.fixValues();
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(manager.getScimNodeName())
+                                                           .values(patchValues)
+                                                           .build();
+
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(allTypesResourceType, operation);
+
+    List<String> fixedValues = fixedOperation.getValues();
     Assertions.assertEquals(patchValues, fixedValues);
   }
 }

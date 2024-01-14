@@ -1,8 +1,10 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.hamcrest.MatcherAssert;
@@ -15,7 +17,9 @@ import org.mockito.Mockito;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -30,6 +34,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 
 
 /**
@@ -67,6 +72,21 @@ public class ETagRequestTests
     this.resourceEndpointHandler = new ResourceEndpointHandler(serviceProvider, userEndpoint);
   }
 
+  private Context getContext(String id, HttpMethod httpMethod)
+  {
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Users/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceEndpointHandler.getResourceTypeFactory(),
+                                                    getBaseUrlSupplier().get() + "/Users" + Optional.ofNullable(id)
+                                                                                                    .map(s -> "/" + s)
+                                                                                                    .orElse(""),
+                                                    httpMethod,
+                                                    httpHeaders));
+    return context;
+  }
+
   /**
    * will verify that ETags are set correctly if not set manually
    */
@@ -83,7 +103,7 @@ public class ETagRequestTests
       ScimResponse scimResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
                                                                          user.toString(),
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         getContext(null, HttpMethod.POST));
       MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
       createdUser = JsonHelper.copyResourceToObject(scimResponse, User.class);
       Assertions.assertTrue(createdUser.getMeta().isPresent());
@@ -94,8 +114,11 @@ public class ETagRequestTests
     {
       ScimResponse scimResponse = resourceEndpointHandler.getResource(EndpointPaths.USERS,
                                                                       createdUser.getId().get(),
-                                                                      Collections.emptyMap(),
-                                                                      getBaseUrlSupplier());
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      getContext(createdUser.getId().get(),
+                                                                                 HttpMethod.GET));
       User retrievedUser = JsonHelper.copyResourceToObject(scimResponse, User.class);
       Assertions.assertEquals(createdUser, retrievedUser);
     }
@@ -104,7 +127,7 @@ public class ETagRequestTests
       ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
                                                                         SearchRequest.builder().build(),
                                                                         getBaseUrlSupplier(),
-                                                                        null);
+                                                                        getContext(".search", HttpMethod.POST));
       ListResponse listResponse = JsonHelper.copyResourceToObject(scimResponse, ListResponse.class);
       User retrievedUser = JsonHelper.copyResourceToObject((JsonNode)listResponse.getListedResources().get(0),
                                                            User.class);
@@ -115,9 +138,9 @@ public class ETagRequestTests
       ScimResponse scimResponse = resourceEndpointHandler.updateResource(EndpointPaths.USERS,
                                                                          createdUser.getId().get(),
                                                                          createdUser.toString(),
-                                                                         Collections.emptyMap(),
                                                                          getBaseUrlSupplier(),
-                                                                         null);
+                                                                         getContext(createdUser.getId().get(),
+                                                                                    HttpMethod.PUT));
       User retrievedUser = JsonHelper.copyResourceToObject(scimResponse, User.class);
       Assertions.assertEquals(createdUser, retrievedUser);
     }
@@ -130,8 +153,11 @@ public class ETagRequestTests
       ScimResponse scimResponse = resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                                         createdUser.getId().get(),
                                                                         patchOpRequest.toString(),
-                                                                        Collections.emptyMap(),
-                                                                        getBaseUrlSupplier());
+                                                                        null,
+                                                                        null,
+                                                                        getBaseUrlSupplier(),
+                                                                        getContext(createdUser.getId().get(),
+                                                                                   HttpMethod.PATCH));
       User retrievedUser = JsonHelper.copyResourceToObject(scimResponse, User.class);
       Assertions.assertEquals(createdUser, retrievedUser);
     }

@@ -108,7 +108,7 @@ public class Schema extends ResourceNode
       SchemaAttribute schemaAttribute = new SchemaAttribute(this, getNonNullId(), null, node, namePrefix);
       if (attributeNameSet.contains(schemaAttribute.getName()))
       {
-        String duplicateNameMessage = "the attribute with the name '" + schemaAttribute.getName() + "' was found "
+        String duplicateNameMessage = "The attribute with the name '" + schemaAttribute.getName() + "' was found "
                                       + "twice within the given schema declaration";
         throw new InvalidSchemaException(duplicateNameMessage, null, null, null);
       }

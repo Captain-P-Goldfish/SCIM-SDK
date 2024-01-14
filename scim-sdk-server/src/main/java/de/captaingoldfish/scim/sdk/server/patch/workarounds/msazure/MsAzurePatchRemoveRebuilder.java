@@ -1,4 +1,4 @@
-package de.captaingoldfish.scim.sdk.server.patch.msazure;
+package de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure;
 
 import java.util.List;
 import java.util.Optional;
@@ -7,7 +7,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,7 +40,7 @@ import lombok.extern.slf4j.Slf4j;
  * }
  * </pre>
  *
- * the value in the request must not be present. Instead the request should look like this:
+ * the value in the request must not be present. Instead, the request should look like this:
  *
  * <pre>
  * PATCH /scim/Groups/2752513
@@ -60,23 +64,28 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class MsAzurePatchRemoveRebuilder
+public final class MsAzurePatchRemoveRebuilder extends PatchWorkaround
 {
 
   /**
-   * the patch operation that is currently executed
+   * execute this handler if we have a remove-operation with a path and at least one value
    */
-  private final PatchOp patchOp;
+  @Override
+  public boolean shouldBeHandled(PatchConfig patchConfig, ResourceType resourceType, PatchRequestOperation operation)
+  {
+    return PatchOp.REMOVE.equals(operation.getOp()) && operation.getPath().isPresent()
+           && !operation.getValues().isEmpty();
+  }
 
   /**
-   * the path of the patch operation
+   * also execute other handlers if this one was executed
    */
-  private final String path;
+  @Override
+  public boolean executeOtherHandlers()
+  {
+    return true;
+  }
 
-  /**
-   * the values of the patch operation. This attribute should actually be empty
-   */
-  private final List<String> values;
 
   /**
    * tries to build a valid path operation from the illegal Azure request. If a new path is created it will also
@@ -84,21 +93,11 @@ public final class MsAzurePatchRemoveRebuilder
    *
    * @return the original path if the request not illegal or the path could not be fixed or a new fixed path
    */
-  public String fixPath()
+  @Override
+  public PatchRequestOperation fixPatchRequestOperaton(ResourceType resourceType, PatchRequestOperation operation)
   {
-    // just a security check to make sure that the if-block that prevents this class to be executed in case of ADD
-    // and REPLACE should disappear
-    if (!PatchOp.REMOVE.equals(patchOp))
-    {
-      log.trace("[MS Azure workaround] only handling 'REMOVE' requests");
-      return path;
-    }
-    // nothing must be done patch request can be handled normally since no illegal value operand is present
-    if (values.isEmpty())
-    {
-      log.trace("[MS Azure workaround] workaround not executed for values-list is empty");
-      return path;
-    }
+    String path = operation.getPath().get();
+    final List<String> values = operation.getValues();
 
     StringBuilder newPath = new StringBuilder(path).append('[');
     for ( int i = 0 ; i < values.size() ; i++ )
@@ -114,7 +113,7 @@ public final class MsAzurePatchRemoveRebuilder
       {
         // do nothing anymore this will cause the request to normally abort at the specific validation point
         log.trace("[MS Azure workaround] attribute in 'value' operand is not valid json: {}", value);
-        return path;
+        return operation;
       }
       JsonNode jsonNode = JsonHelper.readJsonDocument(value);
       final boolean isNodeAnObject = Optional.ofNullable(jsonNode).map(JsonNode::isObject).orElse(false);
@@ -122,7 +121,7 @@ public final class MsAzurePatchRemoveRebuilder
       {
         // do nothing anymore this will cause the request to normally abort at the specific validation point
         log.trace("[MS Azure workaround] attribute in 'value' operand is not an object: {}", value);
-        return path;
+        return operation;
       }
       ObjectNode objectNode = (ObjectNode)jsonNode;
       // we will only support the case when one attribute is present per object
@@ -132,7 +131,7 @@ public final class MsAzurePatchRemoveRebuilder
         log.trace("[MS Azure workaround] workaround not executed for 'value' operand object has more than one "
                   + "attributes: {}",
                   objectNode.toPrettyString());
-        return path;
+        return operation;
       }
       final String fieldName = objectNode.fieldNames().next();
       final JsonNode valueNode = objectNode.get(fieldName);
@@ -142,12 +141,12 @@ public final class MsAzurePatchRemoveRebuilder
         // for simplicity we will only support simple values in such a case
         log.trace("[MS Azure workaround] workaround not executed for attribute in value 'operand' is not a simple type: {}",
                   valueNode.toPrettyString());
-        return path;
+        return operation;
       }
       newPath.append(fieldName).append(" eq \"").append(valueNode.textValue()).append("\"");
     }
     // removes all value references from the PatchTargetHandler to bypass the request validation
     values.clear();
-    return newPath.append(']').toString();
+    return PatchRequestOperation.builder().op(operation.getOp()).path(newPath.append(']').toString()).build();
   }
 }

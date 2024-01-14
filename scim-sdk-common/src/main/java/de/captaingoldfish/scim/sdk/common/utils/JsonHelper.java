@@ -9,7 +9,6 @@ import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
 import java.util.Objects;
@@ -29,12 +28,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
-import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -595,7 +589,7 @@ public final class JsonHelper
     catch (IOException ex)
     {
       log.info(ex.getMessage());
-      log.debug(ex.getMessage(), ex);
+      log.trace(ex.getMessage(), ex);
       return false;
     }
   }

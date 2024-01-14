@@ -18,6 +18,8 @@ import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
+import de.captaingoldfish.scim.sdk.server.patch.DefaultPatchOperationHandler;
+import de.captaingoldfish.scim.sdk.server.patch.PatchOperationHandler;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.AbstractResourceValidator;
@@ -40,6 +42,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * the generic type of this class
    */
   @Getter
+  @Setter(AccessLevel.PROTECTED)
   private Class<T> type;
 
   /**
@@ -206,6 +209,20 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public abstract void deleteResource(String id, Context context);
 
   /**
+   * Retrieves a handler that is able to apply single
+   * {@link de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation}s to a resource. The lifetime of
+   * the returned implementation will end after all patch-operations were applied to the resource and the
+   * {@link PatchOperationHandler#doAfter()} method was called.
+   *
+   * @param context the current SCIM request context
+   * @return the patch-handler implementation that applies specific patch-operation to the current resource
+   */
+  public PatchOperationHandler<T> getPatchOpResourceHandler(Context context)
+  {
+    return new DefaultPatchOperationHandler<>(type, serviceProvider.getPatchConfig(), resourceType, context);
+  }
+
+  /**
    * @return true if the value in the in the corresponding value in the
    *         {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider} configuration is true, false
    *         else
@@ -272,4 +289,6 @@ public abstract class ResourceHandler<T extends ResourceNode>
     return Optional.of(new ResponseResourceValidator(serviceProvider, resourceType, attributesList,
                                                      excludedAttributesList, requestDocument, referenceUrlSupplier));
   }
+
+
 }

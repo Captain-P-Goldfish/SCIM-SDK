@@ -7,10 +7,11 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
-import de.captaingoldfish.scim.sdk.common.exceptions.IOException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
@@ -114,28 +115,37 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   public Optional<ArrayNode> getValueNode()
   {
+    // TODO fix this method it is not performant
     JsonNode jsonNode = get(AttributeNames.RFC7643.VALUE);
     if (jsonNode == null)
     {
       return Optional.empty();
     }
-    if (jsonNode.isTextual())
+    if (jsonNode instanceof TextNode)
     {
+      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
       try
       {
-        jsonNode = JsonHelper.readJsonDocument(jsonNode.textValue(), ScimObjectNode.class);
+        arrayNode.add(JsonHelper.readJsonDocument(jsonNode.textValue()));
       }
-      catch (IOException ex)
+      catch (Exception ex)
       {
-        // do nothing
+        arrayNode.add(jsonNode.textValue());
       }
-      setValueNode(jsonNode);
+      setValueNode(arrayNode);
+      return Optional.of(arrayNode);
     }
-    if (jsonNode.isObject())
+    if (!jsonNode.isArray())
     {
-      setValueNode(jsonNode);
+      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+      arrayNode.add(jsonNode);
+      setValueNode(arrayNode);
+      return Optional.of(arrayNode);
     }
-    return Optional.of((ArrayNode)get(AttributeNames.RFC7643.VALUE));
+    else
+    {
+      return Optional.ofNullable((ArrayNode)jsonNode);
+    }
   }
 
   /**

@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,7 +55,12 @@ import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorH
 import de.captaingoldfish.scim.sdk.server.etag.ETagHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.resources.FilterResourceResolver;
-import de.captaingoldfish.scim.sdk.server.patch.PatchHandler;
+import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchFilterWorkaround;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchRemoveRebuilder;
+import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchValueSubAttributeRebuilder;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -87,6 +93,13 @@ class ResourceEndpointHandler
   private final ServiceProvider serviceProvider;
 
   /**
+   * contains a number of patch-workarounds that can be executed on patch-requests to fix illegal
+   * operation-setups
+   */
+  @Getter
+  private final List<Supplier<PatchWorkaround>> patchWorkarounds = new ArrayList<>();
+
+  /**
    * this is used to prevent application context pollution in unit tests
    */
   @Getter(AccessLevel.PROTECTED)
@@ -106,6 +119,18 @@ class ResourceEndpointHandler
     registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
     registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
     endpointDefinitionList.forEach(this::registerEndpoint);
+    addDefaultPatchWorkarounds();
+  }
+
+  /**
+   * adds the default patch-workaround-handlers to the given serviceprovider configuration
+   */
+  public void addDefaultPatchWorkarounds()
+  {
+    patchWorkarounds.add(MsAzurePatchRemoveRebuilder::new);
+    patchWorkarounds.add(MsAzurePatchValueSubAttributeRebuilder::new);
+    patchWorkarounds.add(MsAzurePatchFilterWorkaround::new);
+    patchWorkarounds.add(MsAzurePatchComplexValueRebuilder::new);
   }
 
   /**
@@ -291,44 +316,6 @@ class ResourceEndpointHandler
    *
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
-   * @return the scim response for the client
-   */
-  protected ScimResponse getResource(String endpoint, String id)
-  {
-    return getResource(endpoint, id, null, null, Collections.emptyMap(), null, null);
-  }
-
-  /**
-   * checks if a resource type exists under the given endpoint and will then give the id to the developers
-   * custom implementation stored under the found resource type. The returned {@link ResourceNode} will then be
-   * validated and eventually returned to the client
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param id the id of the resource that was requested
-   * @param httpHeaders the http request headers
-   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
-   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
-   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
-   *          If this parameter is not present the application will try to read a hardcoded URL from the service
-   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
-   *          thrown
-   * @return the scim response for the client
-   */
-  protected ScimResponse getResource(String endpoint,
-                                     String id,
-                                     Map<String, String> httpHeaders,
-                                     Supplier<String> baseUrlSupplier)
-  {
-    return getResource(endpoint, id, null, null, httpHeaders, baseUrlSupplier, null);
-  }
-
-  /**
-   * checks if a resource type exists under the given endpoint and will then give the id to the developers
-   * custom implementation stored under the found resource type. The returned {@link ResourceNode} will then be
-   * validated and eventually returned to the client
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param id the id of the resource that was requested
    * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
    *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
    *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
@@ -339,7 +326,6 @@ class ResourceEndpointHandler
    *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
    *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
    *          name, emails).
-   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -354,7 +340,6 @@ class ResourceEndpointHandler
                                      String id,
                                      String attributes,
                                      String excludedAttributes,
-                                     Map<String, String> httpHeaders,
                                      Supplier<String> baseUrlSupplier,
                                      Context context)
   {
@@ -370,7 +355,10 @@ class ResourceEndpointHandler
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-      ETagHandler.validateVersion(serviceProvider, resourceType, () -> resourceNode, httpHeaders);
+      ETagHandler.validateVersion(serviceProvider,
+                                  resourceType,
+                                  () -> resourceNode,
+                                  context.getUriInfos().getHttpHeaders());
       String resourceId = resourceNode.getId().orElse(null);
       if (resourceId != null && !resourceId.equals(id))
       {
@@ -811,7 +799,6 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that was requested
    * @param resourceDocument the resource document
-   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -825,7 +812,6 @@ class ResourceEndpointHandler
   protected ScimResponse updateResource(String endpoint,
                                         String id,
                                         String resourceDocument,
-                                        Map<String, String> httpHeaders,
                                         Supplier<String> baseUrlSupplier,
                                         Context context)
   {
@@ -856,7 +842,10 @@ class ResourceEndpointHandler
       };
       try
       {
-        ETagHandler.validateVersion(serviceProvider, resourceType, oldResourceSupplier, httpHeaders);
+        ETagHandler.validateVersion(serviceProvider,
+                                    resourceType,
+                                    oldResourceSupplier,
+                                    context.getUriInfos().getHttpHeaders());
       }
       catch (ResourceNotFoundException ex)
       {
@@ -987,32 +976,6 @@ class ResourceEndpointHandler
    * @param endpoint the resource endpoint that was called
    * @param id the id of the resource that should be patched
    * @param requestBody the patch request body
-   * @param httpHeaders the http request headers
-   * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
-   *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
-   *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
-   *          If this parameter is not present the application will try to read a hardcoded URL from the service
-   *          provider configuration that is also an optional attribute. If both ways fail an exception will be
-   *          thrown
-   * @return the updated resource or an error response
-   */
-  protected ScimResponse patchResource(String endpoint,
-                                       String id,
-                                       String requestBody,
-                                       Map<String, String> httpHeaders,
-                                       Supplier<String> baseUrlSupplier)
-  {
-    return patchResource(endpoint, id, requestBody, null, null, httpHeaders, baseUrlSupplier, null);
-  }
-
-  /**
-   * gets the resource that should be patched and will inject the patch operations into the returned resource.
-   * After the patch operation has been processed the patched object will be given to the
-   * {@link ResourceHandler#updateResource(ResourceNode, Context)} method
-   *
-   * @param endpoint the resource endpoint that was called
-   * @param id the id of the resource that should be patched
-   * @param requestBody the patch request body
    * @param attributes When specified, the default list of attributes SHALL be overridden, and each resource
    *          returned MUST contain the minimum set of resource attributes and any attributes or sub-attributes
    *          explicitly requested by the "attributes" parameter. The query parameter attributes value is a
@@ -1023,7 +986,6 @@ class ResourceEndpointHandler
    *          "excludedAttributes" is returned. The query parameter attributes value is a comma-separated list
    *          of resource attribute names in standard attribute notation (Section 3.10) form (e.g., userName,
    *          name, emails).
-   * @param httpHeaders the http request headers
    * @param baseUrlSupplier this supplier is an optional attribute that should be used to supply the information
    *          of the base URL of this application e.g.: https://example.com/scim/v2. This return value will be
    *          used to create the location URL of the resources like 'https://example.com/scim/v2/Users/123456'.
@@ -1039,7 +1001,6 @@ class ResourceEndpointHandler
                                        String requestBody,
                                        String attributes,
                                        String excludedAttributes,
-                                       Map<String, String> httpHeaders,
                                        Supplier<String> baseUrlSupplier,
                                        Context context)
   {
@@ -1055,81 +1016,91 @@ class ResourceEndpointHandler
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
       patchDocument = new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
                                                  HttpMethod.PATCH).validateDocument(patchSchema, patchDocument);
-      // attributes and excludedAttributes are not passed here because the update is done on the whole resource so
-      // we must also extract the whole resource now
-      ResourceNode resourceNode = resourceHandler.getResource(id,
-                                                              Collections.emptyList(),
-                                                              Collections.emptyList(),
-                                                              context);
-      if (resourceNode == null)
-      {
-        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
-                                            + "not exist", null, null);
-      }
-      ETagHandler.validateVersion(serviceProvider, resourceType, () -> resourceNode, httpHeaders);
-      Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
-      resourceNode.remove(AttributeNames.RFC7643.META);
-      final String location = getLocation(resourceType, id, baseUrlSupplier);
-      meta.setLocation(location);
-      meta.setResourceType(resourceType.getName());
-      resourceNode.setMeta(meta);
-      ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
+
       PatchOpRequest patchOpRequest = JsonHelper.copyResourceToObject(patchDocument, PatchOpRequest.class);
-      PatchHandler patchHandler = new PatchHandler(serviceProvider.getPatchConfig(), resourceType);
-      ResourceNode patchedResourceNode = patchHandler.patchResource(resourceNode, patchOpRequest);
+
+      PatchRequestHandler patchRequestHandler = new PatchRequestHandler(id, resourceHandler, getPatchWorkarounds(),
+                                                                        context);
+
+      final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
+      final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
+      Supplier<ResourceNode> oldResourceSupplier = patchRequestHandler.getOldResourceSupplier(id,
+                                                                                              attributesList,
+                                                                                              excludedAttributesList);
+
+      ResourceNode resourceNode = null;
+      if (serviceProvider.getETagConfig().isSupported())
+      {
+        resourceNode = oldResourceSupplier.get();
+        Meta meta = resourceNode.getMeta().orElseGet(Meta::new);
+        resourceNode.remove(AttributeNames.RFC7643.META);
+        final String location = context.getResourceReferenceUrl(id);
+        meta.setLocation(location);
+        meta.setResourceType(resourceType.getName());
+        resourceNode.setMeta(meta);
+        ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
+      }
+
+      ResourceNode patchedResourceNode = patchRequestHandler.handlePatchRequest(patchOpRequest);
 
       // validates the patched resource and throws an exception if an error was found
+      ResourceNode validatedResource;
       {
         RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
                                                                                          HttpMethod.PATCH);
-        requestResourceValidator.validateDocument(patchedResourceNode);
-        Supplier<ResourceNode> oldResourceSupplier = () -> resourceHandler.getResource(id,
-                                                                                       Collections.emptyList(),
-                                                                                       Collections.emptyList(),
-                                                                                       context);
-        new RequestValidatorHandler(resourceHandler, requestResourceValidator,
-                                    context).validateUpdate(oldResourceSupplier, resourceNode);
-      }
-
-      if (patchHandler.isChangedResource())
-      {
-        // in case of singleton endpoints we do allow to omit the id from the url so the id to set would be null. And
-        // since the id is still a required attribute we must not override an existing id with a null value
-        if (!resourceType.getFeatures().isSingletonEndpoint())
+        validatedResource = (ResourceNode)requestResourceValidator.validateDocument(patchedResourceNode);
+        // handle meta attribute
         {
-          // a security call In case that someone finds a way to manipulate the id within a patch operation
-          patchedResourceNode.setId(id);
-        }
-
-        patchedResourceNode = resourceHandler.updateResource(patchedResourceNode, context);
-        meta = patchedResourceNode.getMeta().orElseThrow(() -> {
-          return new InternalServerException("The mandatory meta attribute is missing in the updated user");
-        });
-        if (!meta.getLastModified().isPresent())
-        {
-          meta.setLastModified(meta.getCreated().orElse(null));
-        }
-        meta.setResourceType(resourceType.getName());
-        if (!meta.getLocation().isPresent())
-        {
+          final Meta meta = validatedResource.getMeta().orElseGet(() -> {
+            Meta newMeta = new Meta();
+            validatedResource.setMeta(newMeta);
+            return newMeta;
+          });
+          final String location = context.getResourceReferenceUrl(id);
           meta.setLocation(location);
+          meta.setResourceType(resourceType.getName());
+          if (!meta.getCreated().isPresent())
+          {
+            meta.setCreated(meta.getLastModified().orElseGet(Instant::now));
+          }
+          if (!meta.getLastModified().isPresent())
+          {
+            meta.setLastModified(meta.getCreated().orElse(null));
+          }
         }
+        // we need to override the oldResourceSupplier here because the resourceNode from above is now patched and
+        // does not hold the original resource details anymore.
+        oldResourceSupplier = () -> resourceHandler.getResource(id,
+                                                                Collections.emptyList(),
+                                                                Collections.emptyList(),
+                                                                context);
+        new RequestValidatorHandler(resourceHandler, requestResourceValidator,
+                                    context).validateUpdate(oldResourceSupplier, validatedResource);
       }
-      final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
-      final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
+
+      validatedResource.setId(id);
+      ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(validatedResource);
+
+      ETagHandler.validateVersion(serviceProvider,
+                                  resourceType,
+                                  () -> updatedResource,
+                                  context.getUriInfos().getHttpHeaders());
+
       Optional<AbstractResourceValidator> responseValidator = //
         resourceHandler.getResponseValidator(attributesList,
                                              excludedAttributesList,
-                                             patchHandler.getRequestedAttributes(),
+                                             patchRequestHandler.getRequestedAttributes(),
                                              getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = patchedResourceNode;
+      JsonNode responseResource = updatedResource;
       if (responseValidator.isPresent())
       {
-        responseResource = responseValidator.get().validateDocument(patchedResourceNode);
+        responseResource = responseValidator.get().validateDocument(responseResource);
       }
 
-
-      return new UpdateResponse(responseResource, location, meta);
+      return new UpdateResponse(responseResource, getLocation(resourceType, id, baseUrlSupplier),
+                                updatedResource.getMeta().orElseThrow(() -> {
+                                  return new InternalServerException("Missing meta-attribute on patched resource");
+                                }));
     }
     catch (RequestContextException ex)
     {
