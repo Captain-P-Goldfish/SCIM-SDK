@@ -58,7 +58,9 @@ public class ComplexAttributeValidatorTest
     attribute.set("lastname", new TextNode("Goldfish"));
     attribute.set("age", new IntNode(35));
 
-    JsonNode validatedNode = ComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+    JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                attribute,
+                                                                                contextValidator);
     Assertions.assertNotNull(validatedNode);
     Assertions.assertEquals(attribute, validatedNode);
   }
@@ -101,7 +103,9 @@ public class ComplexAttributeValidatorTest
     attribute.set("lastname", new TextNode("Goldfish"));
     attribute.set("age", new IntNode(35));
 
-    JsonNode validatedNode = ComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+    JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                attribute,
+                                                                                contextValidator);
     Assertions.assertNotNull(validatedNode);
     Assertions.assertNotEquals(attribute, validatedNode);
     // now remove the read-only attribute from the original request and compare again. Objects should be equal now
@@ -155,7 +159,9 @@ public class ComplexAttributeValidatorTest
     attribute.set("lastname", new TextNode("Goldfish"));
     attribute.set("age", new IntNode(35));
 
-    JsonNode validatedNode = ComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+    JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                attribute,
+                                                                                contextValidator);
     // all attributes in the complex attribute are readOnly so the returned complex attribute must be empty.
     Assertions.assertNull(validatedNode);
   }
@@ -193,7 +199,7 @@ public class ComplexAttributeValidatorTest
 
     try
     {
-      ComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)

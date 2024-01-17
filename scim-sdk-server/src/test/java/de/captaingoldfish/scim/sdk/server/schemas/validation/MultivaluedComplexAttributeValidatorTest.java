@@ -89,9 +89,9 @@ public class MultivaluedComplexAttributeValidatorTest
     attribute.set("lastname", new TextNode("Goldfish"));
     attribute.set("age", new IntNode(35));
 
-    JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                attribute,
-                                                                                contextValidator);
+    JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                           attribute,
+                                                                                           contextValidator);
     Assertions.assertNotNull(validatedNode);
     Assertions.assertEquals(1, validatedNode.size());
     Assertions.assertEquals(attribute, validatedNode.get(0));
@@ -141,9 +141,9 @@ public class MultivaluedComplexAttributeValidatorTest
     element.set("age", new IntNode(35));
     attribute.add(element);
 
-    JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                attribute,
-                                                                                contextValidator);
+    JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                           attribute,
+                                                                                           contextValidator);
     Assertions.assertNotNull(validatedNode);
     Assertions.assertEquals(1, validatedNode.size());
     Assertions.assertEquals(attribute, validatedNode);
@@ -199,9 +199,9 @@ public class MultivaluedComplexAttributeValidatorTest
     attribute.add(element);
     attribute.add(element);
 
-    JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                                attribute,
-                                                                                contextValidator);
+    JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                           attribute,
+                                                                                           contextValidator);
     Assertions.assertNotNull(validatedNode);
     Assertions.assertEquals(2, validatedNode.size());
     Assertions.assertEquals(attribute, validatedNode);
@@ -260,7 +260,7 @@ public class MultivaluedComplexAttributeValidatorTest
 
     try
     {
-      MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -321,7 +321,7 @@ public class MultivaluedComplexAttributeValidatorTest
 
     try
     {
-      MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -371,7 +371,7 @@ public class MultivaluedComplexAttributeValidatorTest
 
     try
     {
-      MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -431,7 +431,7 @@ public class MultivaluedComplexAttributeValidatorTest
 
     try
     {
-      MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -506,7 +506,7 @@ public class MultivaluedComplexAttributeValidatorTest
 
     try
     {
-      MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
       Assertions.fail("this point must not be reached");
     }
     catch (AttributeValidationException ex)
@@ -590,7 +590,9 @@ public class MultivaluedComplexAttributeValidatorTest
     attribute.add(element3);
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      return MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                           attribute,
+                                                                           contextValidator);
     });
     Assertions.assertEquals(attribute, validatedNode);
   }
@@ -638,7 +640,9 @@ public class MultivaluedComplexAttributeValidatorTest
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, attribute, contextValidator);
+      return MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                           attribute,
+                                                                           contextValidator);
     });
     Assertions.assertNull(validatedNode);
   }
@@ -685,9 +689,9 @@ public class MultivaluedComplexAttributeValidatorTest
     };
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                NullNode.getInstance(),
-                                                                contextValidator);
+      return MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                           NullNode.getInstance(),
+                                                                           contextValidator);
     });
     Assertions.assertNull(validatedNode);
   }
@@ -734,7 +738,7 @@ public class MultivaluedComplexAttributeValidatorTest
     };
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
-      return MultivaluedComplexAttributeValidator.parseNodeType(schemaAttribute, null, contextValidator);
+      return MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, null, contextValidator);
     });
     Assertions.assertNull(validatedNode);
   }

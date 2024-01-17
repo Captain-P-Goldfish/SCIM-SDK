@@ -1,16 +1,21 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorHandler;
 import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexSubAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.ExtensionRefOperation;
@@ -20,6 +25,7 @@ import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedSimpleAttr
 import de.captaingoldfish.scim.sdk.server.patch.operations.PatchOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.SimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
 
 
 /**
@@ -92,11 +98,9 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
       if (patchedResource == null)
       {
         patchedResource = (T)resourceType.getResourceHandlerImpl()
-                                         .getResource(id, attributes, excludedAttributes, context);
-      }
-      if (oldResource == null)
-      {
-        oldResource = JsonHelper.copyResourceToObject(patchedResource, type);
+                                         .getResource(id, Collections.emptyList(), Collections.emptyList(), context);
+        // TODO enhance this creepy copy creation
+        oldResource = JsonHelper.readJsonDocument(patchedResource.toString(), type);
       }
       return oldResource;
     };
@@ -194,6 +198,8 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
     {
       patchedResource = (T)resourceType.getResourceHandlerImpl()
                                        .getResource(id, Collections.emptyList(), Collections.emptyList(), context);
+      // TODO enhance this creepy copy creation
+      oldResource = JsonHelper.readJsonDocument(patchedResource.toString(), type);
     }
     return patchedResource;
   }
@@ -202,15 +208,47 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public T getUpdatedResource(String resourceId, T validatedPatchedResource, boolean wasResourceChanged)
+  public T getUpdatedResource(String resourceId, T patchedResource, boolean wasResourceChanged)
   {
     if (wasResourceChanged)
     {
-      return (T)resourceType.getResourceHandlerImpl().updateResource(validatedPatchedResource, context);
+      T validatedResource;
+      ServiceProvider serviceProvider = resourceType.getResourceHandlerImpl().getServiceProvider();
+      RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+                                                                                       HttpMethod.PATCH);
+      validatedResource = (T)requestResourceValidator.validateDocument(patchedResource);
+      Supplier<T> oldResourceSupplier = getOldResourceSupplier(resourceId,
+                                                               Collections.emptyList(),
+                                                               Collections.emptyList());
+      // handle meta attribute
+      {
+        final Meta meta = validatedResource.getMeta().orElseGet(() -> {
+          Meta newMeta = new Meta();
+          validatedResource.setMeta(newMeta);
+          return newMeta;
+        });
+        final String location = context.getResourceReferenceUrl(resourceId);
+        meta.setLocation(location);
+        meta.setResourceType(resourceType.getName());
+        if (!meta.getCreated().isPresent())
+        {
+          meta.setCreated(meta.getLastModified().orElseGet(Instant::now));
+        }
+        if (!meta.getLastModified().isPresent())
+        {
+          meta.setLastModified(meta.getCreated().orElse(null));
+        }
+      }
+      new RequestValidatorHandler(resourceType.getResourceHandlerImpl(), requestResourceValidator,
+                                  context).validateUpdate((Supplier<ResourceNode>)oldResourceSupplier,
+                                                          validatedResource);
+
+
+      return (T)resourceType.getResourceHandlerImpl().updateResource(patchedResource, context);
     }
     else
     {
-      return validatedPatchedResource;
+      return patchedResource;
     }
   }
 }

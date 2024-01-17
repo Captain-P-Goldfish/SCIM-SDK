@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 10.04.2021
  */
 @Slf4j
-class RequestAttributeValidator
+public class RequestAttributeValidator
 {
 
   /**
@@ -28,7 +28,7 @@ class RequestAttributeValidator
    * @param attribute the attribute to validate
    * @param httpMethod the current request type that is either POST or PUT
    * @return the validated json node or an empty if the attribute is not present or should be ignored
-   * @throws AttributeValidationException if the client has send an invalid attribute that does not match its
+   * @throws AttributeValidationException if the client has sent an invalid attribute that does not match its
    *           definition
    */
   public static Optional<JsonNode> validateAttribute(ServiceProvider serviceProvider,

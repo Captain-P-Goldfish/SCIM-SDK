@@ -4,7 +4,6 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -16,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 10.04.2021
  */
 @Slf4j
-class ComplexAttributeValidator
+public class ComplexAttributeValidator
 {
 
   /**
@@ -31,9 +30,9 @@ class ComplexAttributeValidator
    * @throws AttributeValidationException if the complex attribute or one of its children do not match its
    *           attribute definition
    */
-  public static JsonNode parseNodeType(SchemaAttribute schemaAttribute,
-                                       JsonNode attribute,
-                                       ContextValidator contextValidator)
+  static JsonNode parseNodeTypeAndValidate(SchemaAttribute schemaAttribute,
+                                           JsonNode attribute,
+                                           ContextValidator contextValidator)
   {
     log.trace("Validating complex attribute '{}'", schemaAttribute.getScimNodeName());
     if (!attribute.isObject())

@@ -1,6 +1,5 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -1042,44 +1041,14 @@ class ResourceEndpointHandler
       }
 
       ResourceNode patchedResourceNode = patchRequestHandler.handlePatchRequest(patchOpRequest);
-
-      // validates the patched resource and throws an exception if an error was found
-      ResourceNode validatedResource;
-      {
-        RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
-                                                                                         HttpMethod.PATCH);
-        validatedResource = (ResourceNode)requestResourceValidator.validateDocument(patchedResourceNode);
-        // handle meta attribute
-        {
-          final Meta meta = validatedResource.getMeta().orElseGet(() -> {
-            Meta newMeta = new Meta();
-            validatedResource.setMeta(newMeta);
-            return newMeta;
-          });
-          final String location = context.getResourceReferenceUrl(id);
-          meta.setLocation(location);
-          meta.setResourceType(resourceType.getName());
-          if (!meta.getCreated().isPresent())
-          {
-            meta.setCreated(meta.getLastModified().orElseGet(Instant::now));
-          }
-          if (!meta.getLastModified().isPresent())
-          {
-            meta.setLastModified(meta.getCreated().orElse(null));
-          }
-        }
-        // we need to override the oldResourceSupplier here because the resourceNode from above is now patched and
-        // does not hold the original resource details anymore.
-        oldResourceSupplier = () -> resourceHandler.getResource(id,
-                                                                Collections.emptyList(),
-                                                                Collections.emptyList(),
-                                                                context);
-        new RequestValidatorHandler(resourceHandler, requestResourceValidator,
-                                    context).validateUpdate(oldResourceSupplier, validatedResource);
-      }
-
-      validatedResource.setId(id);
-      ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(validatedResource);
+      patchedResourceNode.setId(id);
+      Meta meta = patchedResourceNode.getMeta().get();
+      Optional.ofNullable(resourceNode).flatMap(ResourceNode::getMeta).ifPresent(previousMeta -> {
+        meta.setResourceType(resourceType.getName());
+        meta.setLocation(previousMeta.getLocation().orElse(getLocation(resourceType, id, baseUrlSupplier)));
+        meta.setVersion(previousMeta.getVersion().orElse(null));
+      });
+      ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(patchedResourceNode);
 
       ETagHandler.validateVersion(serviceProvider,
                                   resourceType,

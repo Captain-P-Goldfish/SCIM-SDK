@@ -18,6 +18,7 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -26,6 +27,7 @@ import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
@@ -34,6 +36,8 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexSubAttributeOperation;
@@ -44,8 +48,8 @@ import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedSimpleAttr
 import de.captaingoldfish.scim.sdk.server.patch.operations.SimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
-import de.captaingoldfish.scim.sdk.server.schemas.validation.SimpleAttributeValidator;
-import de.captaingoldfish.scim.sdk.server.schemas.validation.SimpleMultivaluedAttributeValidator;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestAttributeValidator;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.ScimAttributeHelper;
 import lombok.Getter;
@@ -70,6 +74,11 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
    * the id of the resource that is being patched
    */
   private final String resourceId;
+
+  /**
+   * required for attribute validation
+   */
+  private final ServiceProvider serviceProvider;
 
   /**
    * the current patch configuration
@@ -102,6 +111,11 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   private final List<Schema> extensionSchemas;
 
   /**
+   * the validation context is used to return appropriate error messages the validation on an attribute did fail
+   */
+  private final ValidationContext validationContext;
+
+  /**
    * an object on which we will gather the attributes that were present within the patch-operations. This is
    * necessary for the eventual resource-validation to determine which attributes should be returned in the
    * response and which should not. (Handling of the
@@ -126,12 +140,14 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   {
     this.resourceId = resourceId;
     this.resourceHandler = resourceHandler;
+    this.serviceProvider = resourceHandler.getServiceProvider();
     this.patchConfig = resourceHandler.getServiceProvider().getPatchConfig();
     this.resourceType = resourceHandler.getResourceType();
     this.patchWorkarounds = patchWorkarounds;
     this.mainSchema = resourceType.getMainSchema();
     this.extensionSchemas = resourceType.getAllSchemaExtensions();
     this.patchOperationHandler = resourceHandler.getPatchOpResourceHandler(context);
+    this.validationContext = new ValidationContext(resourceType);
   }
 
   /**
@@ -163,6 +179,12 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     for ( PatchRequestOperation operation : patchOpRequest.getOperations() )
     {
       handleSinglePatchOperation(operation);
+    }
+
+    if (validationContext.hasErrors())
+    {
+      validationContext.logErrors();
+      throw new RequestContextException(validationContext);
     }
 
     T resource = patchOperationHandler.getPatchedResource(resourceId);
@@ -218,6 +240,10 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         PatchResourceHandler patchResourceHandler = new PatchResourceHandler();
         resourceChanged = patchResourceHandler.handlePatchResourceOperations(patchRequestOperation) || resourceChanged;
       }
+    }
+    catch (AttributeValidationException ex)
+    {
+      validationContext.addExceptionMessages(ex);
     }
     catch (IgnoreOperationException ex)
     {
@@ -424,20 +450,34 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
                                                    schemaAttribute.getName(),
                                                    attributePath.getSubAttributeName());
           SchemaAttribute subAttribute = getAttributePathByScimNodeName(subNodeName);
-          if (schemaAttribute.isMultiValued())
+          if (subAttribute.isMultiValued())
           {
-            patchValidations.validatePath(attributePath, patchOp, values);
+            AttributePathRoot subAttributePath = new AttributePathRoot(subAttribute);
+            patchValidations.validatePath(subAttributePath, patchOp, values);
+            PatchRequestOperation subAttributeOperation = PatchRequestOperation.builder()
+                                                                               .op(patchOp)
+                                                                               .path(subAttribute.getFullResourceName())
+                                                                               .valueNode(valueNode)
+                                                                               .build();
+            ArrayNode validatedArray = patchValidations.validateSimpleMultivaluedAttribute(subAttributePath,
+                                                                                           subAttributeOperation);
+            Optional.ofNullable(validatedArray).ifPresent(arrayNode -> {
+              values.clear();
+              arrayNode.forEach(jsonNode -> values.add(jsonNode.asText()));
+            });
             changeMade = patchOperationHandler.handleOperation(resourceId,
                                                                new MultivaluedComplexSubAttributeOperation(attributePath,
                                                                                                            subAttribute,
                                                                                                            patchOp,
-                                                                                                           valueNode,
+                                                                                                           validatedArray,
                                                                                                            values));
           }
           else
           {
             if (subAttribute.isMultiValued())
             {
+              patchValidations.validatePath(new AttributePathRoot(subAttribute), patchOp, values);
+              assert 1 == 2;
               changeMade = patchOperationHandler.handleOperation(resourceId,
                                                                  new MultivaluedComplexSubAttributeOperation(attributePath,
                                                                                                              subAttribute,
@@ -447,9 +487,12 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
             }
             else
             {
+              AttributePathRoot subAttributePath = new AttributePathRoot(subAttribute);
+              JsonNode validatedNode = patchValidations.validateSimpleAttribute(subAttributePath, fixedOperation);
               changeMade = patchOperationHandler.handleOperation(resourceId,
                                                                  new ComplexSubAttributeOperation(attributePath,
-                                                                                                  patchOp, valueNode,
+                                                                                                  patchOp,
+                                                                                                  validatedNode,
                                                                                                   values));
             }
           }
@@ -458,7 +501,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         {
           if (schemaAttribute.isMultiValued())
           {
-            final ArrayNode arrayNode;
+            ArrayNode arrayNode;
             if (PatchOp.REMOVE.equals(patchOp))
             {
               arrayNode = null;
@@ -466,18 +509,31 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
             else
             {
               arrayNode = fixedOperation.getValueNode().get();
+              arrayNode = (ArrayNode)RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                                                 schemaAttribute,
+                                                                                 arrayNode,
+                                                                                 HttpMethod.PATCH)
+                                                              .orElseThrow(IgnoreOperationException::new);
             }
             changeMade = patchOperationHandler.handleOperation(resourceId,
-                                                               new MultivaluedSimpleAttributeOperation(attributePath,
-                                                                                                       patchOp,
-                                                                                                       arrayNode,
-                                                                                                       values));
+                                                               new MultivaluedComplexAttributeOperation(attributePath,
+                                                                                                        patchOp,
+                                                                                                        arrayNode,
+                                                                                                        values));
           }
           else
           {
-            final ObjectNode complexNode = patchValidations.validateValueOfDirectComplexAttributePath(schemaAttribute,
-                                                                                                      patchOp,
-                                                                                                      valueNode);
+            ObjectNode complexNode = patchValidations.validateValueOfDirectComplexAttributePath(schemaAttribute,
+                                                                                                patchOp,
+                                                                                                valueNode);
+            if (!PatchOp.REMOVE.equals(patchOp))
+            {
+              complexNode = (ObjectNode)RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                                                    schemaAttribute,
+                                                                                    complexNode,
+                                                                                    HttpMethod.PATCH)
+                                                                 .orElseThrow(IgnoreOperationException::new);
+            }
             changeMade = patchOperationHandler.handleOperation(resourceId,
                                                                new ComplexAttributeOperation(attributePath, patchOp,
                                                                                              complexNode, values));
@@ -489,9 +545,10 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         if (attributePath.getSchemaAttribute().isMultiValued())
         {
           ArrayNode valuesNode = patchValidations.validateSimpleMultivaluedAttribute(attributePath, fixedOperation);
+          SchemaAttribute subAttribute = attributePath.getSchemaAttribute();
           changeMade = patchOperationHandler.handleOperation(resourceId,
                                                              new MultivaluedComplexSubAttributeOperation(attributePath,
-                                                                                                         attributePath.getSchemaAttribute(),
+                                                                                                         subAttribute,
                                                                                                          patchOp,
                                                                                                          valuesNode,
                                                                                                          values));
@@ -524,8 +581,9 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
           }
           else
           {
-            value = fixedOperation.getValueNode().get().get(0);
+            value = patchValidations.validateSimpleAttribute(attributePath, fixedOperation);
           }
+          patchValidations.validatePath(attributePath, patchOp, values);
           changeMade = patchOperationHandler.handleOperation(resourceId,
                                                              new SimpleAttributeOperation(attributePath, patchOp, value,
                                                                                           values));
@@ -693,7 +751,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
                                                                       .getSchemaAttribute(extensionField.getKey());
                 wasChanged.compareAndSet(false,
                                          handleResourceAttribute(extensionAttribute,
-                                                                 resourceNode,
+                                                                 extensionNode,
                                                                  extensionField,
                                                                  patchOp));
               });
@@ -900,6 +958,11 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
           patchNode.add(complexNode);
           valuesStringList.add(complexNode.toString());
         }
+        patchNode = (ArrayNode)RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                                           schemaAttribute,
+                                                                           patchNode,
+                                                                           HttpMethod.PATCH)
+                                                        .orElseThrow(IgnoreOperationException::new);
         AttributePathRoot attributePath = new AttributePathRoot(schemaAttribute);
         MultivaluedComplexAttributeOperation operation = new MultivaluedComplexAttributeOperation(attributePath,
                                                                                                   patchOp, patchNode,
@@ -974,57 +1037,9 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
                                       Map.Entry<String, JsonNode> attributeEntry,
                                       PatchOp patchOp)
     {
-      List<Object> values = new ArrayList<>();
       JsonNode value = attributeEntry.getValue();
-      if (schemaAttribute.isMultiValued())
-      // multivalued shallow nodes are allowed to be simple values and array values.
-      {
-        if (value instanceof ArrayNode)
-        {
-          ArrayNode arrayNode = (ArrayNode)value;
-          arrayNode.forEach(val -> {
-            Object javaValue = getValueOfJsonNode(schemaAttribute, val);
-            if (javaValue == null)
-            {
-              throw new BadRequestException(String.format("Illegal type for attribute '%s'. Type must be '%s' "
-                                                          + "but was of type '%s'",
-                                                          schemaAttribute.getFullResourceName(),
-                                                          schemaAttribute.getType(),
-                                                          val.getNodeType()),
-                                            ScimType.RFC7644.INVALID_VALUE);
-            }
-            values.add(javaValue);
-          });
-        }
-        else
-        {
-          Object javaValue = getValueOfJsonNode(schemaAttribute, value);
-          if (javaValue == null)
-          {
-            throw new BadRequestException(String.format("Illegal type for attribute '%s'. Type must be '%s' "
-                                                        + "but was of type '%s'",
-                                                        schemaAttribute.getFullResourceName(),
-                                                        schemaAttribute.getType(),
-                                                        value.getNodeType()),
-                                          ScimType.RFC7644.INVALID_VALUE);
-          }
-          values.add(javaValue);
-        }
-      }
-      else
-      {
-        Object javaValue = getValueOfJsonNode(schemaAttribute, attributeEntry.getValue());
-        if (javaValue == null)
-        {
-          throw new BadRequestException(String.format("Illegal type for attribute '%s'. Type must be '%s' "
-                                                      + "but was of type '%s'",
-                                                      schemaAttribute.getFullResourceName(),
-                                                      schemaAttribute.getType(),
-                                                      attributeEntry.getValue().getNodeType()),
-                                        ScimType.RFC7644.INVALID_VALUE);
-        }
-        values.add(javaValue);
-      }
+      value = RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, value, HttpMethod.PATCH)
+                                       .orElseThrow(IgnoreOperationException::new);
       AttributePathRoot attributePath = new AttributePathRoot(schemaAttribute);
       List<String> valuesStringList = new ArrayList<>();
       if (value.isObject())
@@ -1254,9 +1269,10 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       {
         return null;
       }
-      SchemaAttribute schemaAttribute = attributePath.getSchemaAttribute();
+      SchemaAttribute schemaAttribute = attributePath.getDirectlyReferencedAttribute();
       JsonNode value = patchRequestOperation.getValueNode().map(arrayNode -> arrayNode.get(0)).orElse(null);
-      return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, value);
+      return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, value, HttpMethod.PATCH)
+                                      .orElseThrow(IgnoreOperationException::new);
     }
 
     /**
@@ -1273,9 +1289,13 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       {
         return null;
       }
-      SchemaAttribute schemaAttribute = attributePath.getSchemaAttribute();
-      return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
-                                                                          patchRequestOperation.getValueNode().get());
+      SchemaAttribute schemaAttribute = attributePath.getDirectlyReferencedAttribute();
+      JsonNode value = patchRequestOperation.getValueNode().get();
+      return (ArrayNode)RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                                    schemaAttribute,
+                                                                    value,
+                                                                    HttpMethod.PATCH)
+                                                 .orElseThrow(IgnoreOperationException::new);
     }
   }
 

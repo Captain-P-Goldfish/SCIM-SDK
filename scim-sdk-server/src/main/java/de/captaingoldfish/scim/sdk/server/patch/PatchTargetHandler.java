@@ -653,7 +653,11 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       }
       else
       {
-        values.forEach(arrayNode::add);
+        for ( String value : values )
+        {
+          JsonNode jsonValue = parseToJsonNode(subAttribute, value);
+          arrayNode.add(jsonValue);
+        }
       }
       return true;
     }
@@ -785,19 +789,37 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     }
     for ( String value : values )
     {
-      JsonNode jsonNode;
+      ObjectNode complexNode;
       try
       {
-        jsonNode = JsonHelper.readJsonDocument(value);
+        complexNode = (ObjectNode)JsonHelper.readJsonDocument(value);
       }
       catch (IOException ex)
       {
         throw new BadRequestException("The value must be a whole complex type json structure but was: '" + value + "'",
                                       ex, ScimType.RFC7644.INVALID_VALUE);
       }
-      JsonNode primary = jsonNode.get(AttributeNames.RFC7643.PRIMARY);
+      JsonNode primary = complexNode.get(AttributeNames.RFC7643.PRIMARY);
       checkForPrimary(multiValued, primary != null && primary.booleanValue());
-      multiValued.add(jsonNode);
+
+      if (path.isWithFilter() && !matchingComplexNodes.isEmpty())
+      {
+        complexNode.fields().forEachRemaining(entry -> {
+          for ( IndexNode matchingComplexIndexNode : matchingComplexNodes )
+          {
+            ObjectNode matchingNode = matchingComplexIndexNode.getObjectNode();
+            matchingNode.set(entry.getKey(), entry.getValue());
+          }
+        });
+        if (PatchOp.REPLACE.equals(patchOp))
+        {
+          multiValued.add(complexNode);
+        }
+      }
+      else if (!path.isWithFilter() || matchingComplexNodes.isEmpty())
+      {
+        multiValued.add(complexNode);
+      }
     }
     return true;
   }
@@ -902,6 +924,8 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
    */
   private String[] getAttributeNames()
   {
+    // TODO somethings wrong here. See test:
+    // PatchRequestValidationTests.ComplexAttributeTests.ResourcePatchTests#testAddSubNumberArrayWithMsAzureStyleRef
     String attributeName = path.getShortName()
                            + (StringUtils.isBlank(path.getSubAttributeName()) ? "" : "." + path.getSubAttributeName());
     String[] attributeNames = attributeName.split("\\.");

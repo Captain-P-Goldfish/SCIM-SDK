@@ -2076,22 +2076,56 @@ public class SchemaValidatorTest implements FileReferences
       failValidationForRequest(resourceType, allTypes, errorMessage);
       failValidationForResponse(resourceType, allTypes, errorMessage);
     }));
-    /* *********************************************************************************************************/
-    dynamicTests.add(DynamicTest.dynamicTest("multiComplex string validation fails (too long)", () -> {
-      AllTypes allTypes = buildAllTypesForValidation();
-      AllTypes complex = new AllTypes();
-      allTypes.setMultiComplex(Arrays.asList(complex, complex));
-      complex.setString("01234567890");
-
-      final String errorMessage1 = "Found unsupported value in multivalued complex attribute "
-                                   + "'[{\"string\":\"01234567890\"},{\"string\":\"01234567890\"}]'";
-      final String errorMessage2 = "The 'STRING'-attribute 'multiComplex.string' with value '01234567890' must not be "
-                                   + "longer than '10' characters but is '11' characters long";
-      String[] errorMessages = new String[]{errorMessage1, errorMessage2};
-      failValidationForRequest(resourceType, allTypes, errorMessages);
-      failValidationForResponse(resourceType, allTypes, errorMessage2);
-    }));
     return dynamicTests;
+  }
+
+  @DisplayName("multiComplex string validation fails (too long)")
+  @Test
+  public void testMulticomplexStringValidationFailsForTooLong()
+  {
+    JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_VALIDATION_SCHEMA);
+    JsonNode enterpriseUserValidationSchema = JsonHelper.loadJsonDocument(ENTERPRISE_USER_VALIDATION_SCHEMA);
+
+    ResourceType resourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(false),
+                                                                         allTypesResourceTypeJson,
+                                                                         allTypesValidationSchema,
+                                                                         enterpriseUserValidationSchema);
+
+    AllTypes allTypes = buildAllTypesForValidation();
+    AllTypes complex = new AllTypes();
+    allTypes.setMultiComplex(Arrays.asList(complex, complex));
+    complex.setString("01234567890");
+
+    final String errorMessage1 = "Found unsupported value in multivalued complex attribute "
+                                 + "'[{\"string\":\"01234567890\"},{\"string\":\"01234567890\"}]'";
+    final String errorMessage2 = "The 'STRING'-attribute 'multiComplex.string' with value '01234567890' must not be "
+                                 + "longer than '10' characters but is '11' characters long";
+
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+                                                                                     HttpMethod.POST);
+    requestResourceValidator.validateDocument(allTypes);
+
+    ValidationContext validationContext = requestResourceValidator.getValidationContext();
+    Assertions.assertTrue(validationContext.hasErrors());
+
+    Assertions.assertEquals(2,
+                            validationContext.getFieldErrors().size(),
+                            validationContext.getFieldErrors().toString());
+
+    SchemaAttribute multiComplexString = resourceType.getSchemaAttribute("multiComplex.string").get();
+    SchemaAttribute multiComplex = multiComplexString.getParent();
+
+    {
+      List<String> fieldErrorMessages = validationContext.getFieldErrors().get(multiComplex.getScimNodeName());
+      Assertions.assertEquals(1, fieldErrorMessages.size());
+      Assertions.assertEquals(errorMessage1, fieldErrorMessages.get(0));
+    }
+    {
+      List<String> fieldErrorMessages = validationContext.getFieldErrors().get(multiComplexString.getScimNodeName());
+      Assertions.assertEquals(1, fieldErrorMessages.size());
+      Assertions.assertEquals(errorMessage2, fieldErrorMessages.get(0));
+    }
   }
 
   /**

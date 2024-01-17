@@ -14,7 +14,7 @@ import lombok.Setter;
  * author Pascal Knueppel <br>
  * created at: 28.09.2019 - 15:19 <br>
  * <br>
- * the base exception of all scim errors
+ * the base-exception of all scim errors
  */
 @Getter
 @Setter

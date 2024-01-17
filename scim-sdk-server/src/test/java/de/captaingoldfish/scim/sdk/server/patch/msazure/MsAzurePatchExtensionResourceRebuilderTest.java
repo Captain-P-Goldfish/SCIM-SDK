@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,7 @@ import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
+import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -351,11 +354,13 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
       patchRequestHandler.handlePatchRequest(patchOpRequest);
       Assertions.fail("this point must not be reached");
     }
-    catch (BadRequestException ex)
+    catch (RequestContextException ex)
     {
-      String expectedMessage = String.format("Illegal type for attribute '%s'. Type must be 'STRING' but was of type 'ARRAY'",
+      String expectedMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '[\"1111\"]'",
                                              key);
-      Assertions.assertEquals(expectedMessage, ex.getMessage());
+      ErrorResponse errorResponse = new ErrorResponse(ex);
+      ex.getValidationContext().writeToErrorResponse(errorResponse);
+      Assertions.assertEquals(expectedMessage, errorResponse.getDetail().get());
     }
   }
 

@@ -145,10 +145,19 @@ public class ValidationContext
    */
   public void addExceptionMessages(AttributeValidationException ex)
   {
-    final String fieldName = ex.getSchemaAttribute().getScimNodeName();
+    String fieldName;
     Throwable cause = ex;
     while (cause != null)
     {
+      if (cause instanceof AttributeValidationException)
+      {
+        AttributeValidationException e = (AttributeValidationException)cause;
+        fieldName = e.getSchemaAttribute().getScimNodeName();
+      }
+      else
+      {
+        fieldName = ex.getSchemaAttribute().getScimNodeName();
+      }
       addError(fieldName, cause.getMessage());
       cause = cause.getCause();
     }

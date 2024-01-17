@@ -12,6 +12,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,9 +36,9 @@ class MultivaluedComplexAttributeValidator
    * @throws AttributeValidationException if the multivalued complex attribute or one of its elements do not
    *           match its attribute definition
    */
-  public static ArrayNode parseNodeType(SchemaAttribute schemaAttribute,
-                                        JsonNode attribute,
-                                        ContextValidator contextValidator)
+  public static ArrayNode parseNodeTypeAndValidate(SchemaAttribute schemaAttribute,
+                                                   JsonNode attribute,
+                                                   ContextValidator contextValidator)
   {
     log.trace("Validating multivalued complex attribute '{}'", schemaAttribute.getScimNodeName());
     if (attribute == null || attribute.isNull())
@@ -58,15 +59,15 @@ class MultivaluedComplexAttributeValidator
       boolean primaryValueFound = false;
       for ( JsonNode jsonNode : arrayNode )
       {
-        checkIsObject(jsonNode, schemaAttribute, attribute);
+        jsonNode = checkIsObject(jsonNode, schemaAttribute, attribute);
         primaryValueFound = checkForDuplicatePrimary(primaryValueFound, jsonNode, schemaAttribute, attribute);
         checkForUniqueness(uniqueValueList, jsonNode, schemaAttribute, attribute);
 
         try
         {
-          JsonNode parsedComplexNode = ComplexAttributeValidator.parseNodeType(schemaAttribute,
-                                                                               jsonNode,
-                                                                               contextValidator);
+          JsonNode parsedComplexNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                          jsonNode,
+                                                                                          contextValidator);
           if (parsedComplexNode != null)
           {
             scimArrayNode.add(parsedComplexNode);
@@ -120,17 +121,31 @@ class MultivaluedComplexAttributeValidator
    * @param schemaAttribute the multi valued complex attributes definition (only used for exception)
    * @param multivaluedComplexParent the multivalued complex attribute (only used for exception)
    */
-  private static void checkIsObject(JsonNode multivaluedComplexParentElement,
-                                    SchemaAttribute schemaAttribute,
-                                    JsonNode multivaluedComplexParent)
+  private static JsonNode checkIsObject(JsonNode multivaluedComplexParentElement,
+                                        SchemaAttribute schemaAttribute,
+                                        JsonNode multivaluedComplexParent)
   {
     if (!multivaluedComplexParentElement.isObject())
     {
+      JsonNode parsedNode = null;
+      try
+      {
+        parsedNode = JsonHelper.readJsonDocument(multivaluedComplexParentElement.asText());
+        if (parsedNode != null && parsedNode.isObject())
+        {
+          return parsedNode;
+        }
+      }
+      catch (Exception ex)
+      {
+        // do nothing
+      }
       String errorMessage = String.format("Attribute '%s' is expected to hold only complex attributes but is '%s'",
                                           schemaAttribute.getFullResourceName(),
                                           multivaluedComplexParent);
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
+    return multivaluedComplexParentElement;
   }
 
   /**

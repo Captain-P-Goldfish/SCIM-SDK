@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
@@ -1711,6 +1712,8 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2, multiComplex3));
 
     AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
+
+    log.warn(patchedAllTypes.toPrettyString());
 
     Assertions.assertEquals(3, patchedAllTypes.getMultiComplex().size());
     Assertions.assertEquals(1,
@@ -4271,7 +4274,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * this test will verify that two add operations will be applied to the resource if the filter expression do
+   * this test will verify that two add operations will be applied to the resource if the filter expression does
    * match in both cases
    */
   @Test
@@ -4283,9 +4286,9 @@ public class PatchTargetHandlerTest implements FileReferences
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
     AllTypes firstChangeMulticomplex = new AllTypes(false);
-    firstChangeMulticomplex.setString("hello goldfish");
+    firstChangeMulticomplex.setNumber(5L);
     AllTypes secondChangeMulticomplex = new AllTypes(false);
-    secondChangeMulticomplex.setString("hello chuck");
+    secondChangeMulticomplex.setBinary("Mtox".getBytes(StandardCharsets.UTF_8));
     final String path = "multicomplex[string eq \"hello world\"]";
     PatchRequestOperation firstOperation = PatchRequestOperation.builder()
                                                                 .op(PatchOp.ADD)
@@ -4304,10 +4307,12 @@ public class PatchTargetHandlerTest implements FileReferences
 
     AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
 
-    Assertions.assertEquals(3, patchedAllTypes.getMultiComplex().size());
-    Assertions.assertEquals(multicomplex, patchedAllTypes.getMultiComplex().get(0));
-    Assertions.assertEquals(firstChangeMulticomplex, patchedAllTypes.getMultiComplex().get(1));
-    Assertions.assertEquals(secondChangeMulticomplex, patchedAllTypes.getMultiComplex().get(2));
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(multicomplex.getString().get(), patchedAllTypes.getMultiComplex().get(0).getString().get());
+    Assertions.assertEquals(firstChangeMulticomplex.getNumber().get(),
+                            patchedAllTypes.getMultiComplex().get(0).getNumber().get());
+    Assertions.assertArrayEquals(secondChangeMulticomplex.getBinary().get(),
+                                 patchedAllTypes.getMultiComplex().get(0).getBinary().get());
   }
 
   /**
@@ -4365,15 +4370,16 @@ public class PatchTargetHandlerTest implements FileReferences
     firstChangeMulticomplex.setString("hello goldfish");
     AllTypes secondChangeMulticomplex = new AllTypes(false);
     secondChangeMulticomplex.setString("hello chuck");
-    final String path = "multicomplex[string eq \"hello world\"]";
+    final String path1 = "multicomplex[string eq \"hello world\"]";
     PatchRequestOperation firstOperation = PatchRequestOperation.builder()
                                                                 .op(PatchOp.ADD)
-                                                                .path(path)
+                                                                .path(path1)
                                                                 .valueNode(firstChangeMulticomplex)
                                                                 .build();
+    final String path2 = "multicomplex[string eq \"hello goldfish\"]";
     PatchRequestOperation secondOperation = PatchRequestOperation.builder()
                                                                  .op(PatchOp.REPLACE)
-                                                                 .path(path)
+                                                                 .path(path2)
                                                                  .valueNode(secondChangeMulticomplex)
                                                                  .build();
     // the same operation twice in a row should fail because the value should be changed after the first execution
@@ -4381,11 +4387,54 @@ public class PatchTargetHandlerTest implements FileReferences
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation, secondOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
+    addAllTypesToProvider(allTypes);
     AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
 
-    Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().size());
-    Assertions.assertEquals(firstChangeMulticomplex, patchedAllTypes.getMultiComplex().get(0));
-    Assertions.assertEquals(secondChangeMulticomplex, patchedAllTypes.getMultiComplex().get(1));
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(secondChangeMulticomplex, patchedAllTypes.getMultiComplex().get(0));
+  }
+
+  /**
+   * this test will verify that a replace and an add operation do work after another if the filter expression do
+   * match in both cases
+   */
+  @Test
+  public void testFirstReplaceThenAdd()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.setString("hello world");
+    allTypes.setMultiComplex(Collections.singletonList(multicomplex));
+
+    AllTypes firstChangeMulticomplex = new AllTypes(false);
+    firstChangeMulticomplex.setNumber(5L);
+    AllTypes secondChangeMulticomplex = new AllTypes(false);
+    secondChangeMulticomplex.setString("hello chuck");
+    final String path1 = "multicomplex[string eq \"hello world\"]";
+    PatchRequestOperation firstOperation = PatchRequestOperation.builder()
+                                                                .op(PatchOp.REPLACE)
+                                                                .path(path1)
+                                                                .valueNode(firstChangeMulticomplex)
+                                                                .build();
+    final String path2 = "multicomplex[number eq 5]";
+    PatchRequestOperation secondOperation = PatchRequestOperation.builder()
+                                                                 .op(PatchOp.ADD)
+                                                                 .path(path2)
+                                                                 .valueNode(secondChangeMulticomplex)
+                                                                 .build();
+    // the same operation twice in a row should fail because the value should be changed after the first execution
+    // so the second must fail
+    List<PatchRequestOperation> operations = Arrays.asList(firstOperation, secondOperation);
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    addAllTypesToProvider(allTypes);
+    AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
+
+    Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().size());
+    Assertions.assertEquals(firstChangeMulticomplex.getNumber().get(),
+                            patchedAllTypes.getMultiComplex().get(0).getNumber().get());
+    Assertions.assertEquals(secondChangeMulticomplex.getString().get(),
+                            patchedAllTypes.getMultiComplex().get(0).getString().get());
   }
 
   /**

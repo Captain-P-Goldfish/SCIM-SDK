@@ -51,6 +51,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PersonRole;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -61,6 +62,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpointBridge;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.AllTypesHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -652,14 +654,23 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
-    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
     SchemaAttribute schemaAttribute = allTypesResourceType.getMainSchema().getSchemaAttribute("numberArray");
-    Assertions.assertEquals(String.format("Illegal type for attribute '%s'. Type must be '%s' but was of type 'STRING'",
-                                          schemaAttribute.getFullResourceName(),
-                                          schemaAttribute.getType()),
-                            ex.getMessage());
-    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+
+    Assertions.assertEquals("Found unsupported value in multivalued attribute '[\"hello\",\"world\"]'",
+                            errorResponse.getDetail().get());
+
+    List<String> fieldErrors = errorResponse.getFieldErrors().get(schemaAttribute.getScimNodeName());
+    Assertions.assertEquals(2, fieldErrors.size());
+    Assertions.assertEquals("Found unsupported value in multivalued attribute '[\"hello\",\"world\"]'",
+                            fieldErrors.get(0));
+    Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'integer' but of type 'string' "
+                                          + "with value '\"hello\"'",
+                                          schemaAttribute.getFullResourceName()),
+                            fieldErrors.get(1));
   }
 
   /**
@@ -712,14 +723,23 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
-    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
     SchemaAttribute schemaAttribute = allTypesResourceType.getMainSchema().getSchemaAttribute("numberArray");
-    Assertions.assertEquals(String.format("Illegal type for attribute '%s'. Type must be '%s' but was of type 'STRING'",
-                                          schemaAttribute.getFullResourceName(),
-                                          schemaAttribute.getType()),
-                            ex.getMessage());
-    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+
+    log.warn(errorResponse.toPrettyString());
+    Assertions.assertEquals("Found unsupported value in multivalued attribute '[\"illegal-value\"]'",
+                            errorResponse.getDetail().get());
+    List<String> fieldErrors = errorResponse.getFieldErrors().get(schemaAttribute.getScimNodeName());
+    Assertions.assertEquals(2, fieldErrors.size());
+    Assertions.assertEquals("Found unsupported value in multivalued attribute '[\"illegal-value\"]'",
+                            fieldErrors.get(0));
+    Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'integer' but of type 'string' "
+                                          + "with value '\"illegal-value\"'",
+                                          schemaAttribute.getFullResourceName()),
+                            fieldErrors.get(1));
   }
 
   /**
@@ -1291,18 +1311,17 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * this test will verify that immutable and readOnly subAttributes are ignored in case that a new multicomplex
-   * attribute is added
+   * this test will verify that immutable subAttributes are ignored in case that a new multiComplex attribute is
+   * added without a filter
    */
-  @ParameterizedTest
-  @ValueSource(strings = {"IMMUTABLE", "READ_ONLY"})
-  public void testAddImmutableAndReadOnlyAttributeForMultiComplexSubAttribute(Mutability mutability)
+  @Test
+  public void testAddImmutableAndReadOnlyAttributeForMultiComplexSubAttribute()
   {
     JsonNode allTypesMeta = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
     TestHelper.modifyAttributeMetaData(allTypesMeta,
                                        "multiComplex.string",
                                        null,
-                                       mutability,
+                                       Mutability.IMMUTABLE,
                                        null,
                                        null,
                                        null,
@@ -1436,8 +1455,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that only the last added primary value will be kept primary. All members from before that were
-   * primary will have the primary attribute removed
+   * verifies that a patch request containing two primary elements is rejected
    */
   @Test
   public void testSetTwoPrimaryValues()
@@ -1463,28 +1481,15 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
-    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
-    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
-    Assertions.assertEquals(3, patchedAllTypes.getMultiComplex().size());
-    {
-      Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().get(0).size());
-      Assertions.assertEquals(multicomplex.getNumber().get(),
-                              patchedAllTypes.getMultiComplex().get(0).getNumber().get());
-    }
-    {
-      Assertions.assertEquals(1, patchedAllTypes.getMultiComplex().get(1).size());
-      Assertions.assertEquals(multicomplex.getNumber().get(),
-                              patchedAllTypes.getMultiComplex().get(1).getNumber().get());
-    }
-    {
-      Assertions.assertEquals(2, patchedAllTypes.getMultiComplex().get(2).size());
-      Assertions.assertEquals(multicomplex.getNumber().get(),
-                              patchedAllTypes.getMultiComplex().get(2).getNumber().get());
-      Assertions.assertTrue(patchedAllTypes.getMultiComplex()
-                                           .get(2)
-                                           .get(AttributeNames.RFC7643.PRIMARY)
-                                           .booleanValue());
-    }
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    SchemaAttribute schemaAttribute = allTypesResourceType.getSchemaAttribute("multiComplex").get();
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+    Assertions.assertEquals(String.format("Attribute '%s' has at least two primary values but only one primary is "
+                                          + "allowed '[{\"primary\":true,\"number\":4},{\"primary\":true,\"number\":4}]'",
+                                          schemaAttribute.getFullResourceName()),
+                            errorResponse.getDetail().get());
   }
 
   /**
@@ -2048,14 +2053,21 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
-    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
     SchemaAttribute schemaAttribute = enterpriseSchema.getSchemaAttribute("complex.number");
-    Assertions.assertEquals(String.format("Illegal type for attribute '%s'. Type must be '%s' but was of type 'NUMBER'",
-                                          schemaAttribute.getFullResourceName(),
-                                          schemaAttribute.getType()),
-                            ex.getMessage());
-    Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+
+    Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type 'number' with value '10'",
+                                          schemaAttribute.getFullResourceName()),
+                            errorResponse.getDetail().get());
+
+    List<String> fieldErrors = errorResponse.getFieldErrors().get(schemaAttribute.getScimNodeName());
+    Assertions.assertEquals(1, fieldErrors.size());
+    Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type 'number' with value '10'",
+                                          schemaAttribute.getFullResourceName()),
+                            fieldErrors.get(0));
   }
 
   /**
