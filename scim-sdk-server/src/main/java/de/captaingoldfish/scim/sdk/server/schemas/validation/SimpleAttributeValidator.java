@@ -58,15 +58,28 @@ class SimpleAttributeValidator
    * will parse the given node type into a json representation that also holds its schema attribute definition
    */
   @SneakyThrows
-  public static JsonNode parseNodeTypeAndValidate(SchemaAttribute schemaAttribute, JsonNode attribute)
+  public static JsonNode parseNodeTypeAndValidate(SchemaAttribute schemaAttribute, JsonNode jsonNode)
   {
     log.trace("Validating simple attribute '{}'", schemaAttribute.getScimNodeName());
-    if (!isSimpleNode(attribute))
+    final JsonNode attribute;
+    invalidAttributeBlock: if (!isSimpleNode(jsonNode))
     {
-      String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
+      // fallback. If an array is used, but it contains only one simple-valued element we will still accept it as
+      // simple-attribute
+      if (jsonNode.isArray() && jsonNode.size() == 1 && isSimpleNode(jsonNode.get(0)))
+      {
+        attribute = jsonNode.get(0);
+        break invalidAttributeBlock;
+      }
+      String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute of type '%s' but is '%s'",
                                           schemaAttribute.getFullResourceName(),
-                                          attribute);
+                                          schemaAttribute.getType(),
+                                          jsonNode);
       throw new AttributeValidationException(schemaAttribute, errorMessage);
+    }
+    else
+    {
+      attribute = jsonNode;
     }
     checkCanonicalValues(schemaAttribute, attribute);
 

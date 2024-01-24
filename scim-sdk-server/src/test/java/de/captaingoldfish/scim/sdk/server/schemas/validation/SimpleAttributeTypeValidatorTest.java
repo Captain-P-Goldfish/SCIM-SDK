@@ -708,7 +708,8 @@ public class SimpleAttributeTypeValidatorTest
     catch (AttributeValidationException ex)
     {
       Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-      final String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
+      final String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute of type 'STRING' "
+                                                + "but is '%s'",
                                                 schemaAttribute.getFullResourceName(),
                                                 attribute);
       Assertions.assertEquals(errorMessage, ex.getMessage());
@@ -716,7 +717,8 @@ public class SimpleAttributeTypeValidatorTest
   }
 
   /**
-   * verifies that an array is not successfully validated as simple type
+   * verifies that an array is not successfully validated as simple type if multiple values are present in the
+   * array
    */
   @Test
   public void testParseArrayNodeAsSimpleNode()
@@ -725,6 +727,7 @@ public class SimpleAttributeTypeValidatorTest
 
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     JsonNode content = new TextNode("hello world");
+    attribute.add(content);
     attribute.add(content);
 
     try
@@ -735,7 +738,8 @@ public class SimpleAttributeTypeValidatorTest
     catch (AttributeValidationException ex)
     {
       Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-      final String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '%s'",
+      final String errorMessage = String.format("Attribute '%s' is expected to be a simple attribute of type 'STRING' "
+                                                + "but is '%s'",
                                                 schemaAttribute.getFullResourceName(),
                                                 attribute);
       Assertions.assertEquals(errorMessage, ex.getMessage());

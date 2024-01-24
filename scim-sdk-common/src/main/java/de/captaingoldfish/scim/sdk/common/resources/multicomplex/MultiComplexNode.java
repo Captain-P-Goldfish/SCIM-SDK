@@ -13,7 +13,7 @@ import lombok.NoArgsConstructor;
  * created at: 11.10.2019 - 13:01 <br>
  * <br>
  *
- * Multi-valued attributes contain a list of elements using the JSON
+ * Multivalued attributes contain a list of elements using the JSON
  * array format defined in Section 5 of [RFC7159].  Elements can be
  * either of the following:
  *
@@ -24,11 +24,11 @@ import lombok.NoArgsConstructor;
  *    they SHALL be considered to be complex attributes.  As with
  *    complex attributes, the order of sub-attributes is not
  *    significant.  The predefined sub-attributes listed in this section
- *    can be used with multi-valued attribute objects, but these
+ *    can be used with multivalued attribute objects, but these
  *    sub-attributes MUST be used with the meanings defined here.
  *
  * If not otherwise defined, the default set of sub-attributes for a
- * multi-valued attribute is as follows:
+ * multivalued attribute is as follows:
  *
  *    type
  *       A label indicating the attribute's function, e.g., "work" or
@@ -59,7 +59,7 @@ import lombok.NoArgsConstructor;
  *       example, "https://example.com/Users/12345" is equivalent to
  *       "https://example.com/v2/Users/12345".
  *
- * When returning multi-valued attributes, service providers SHOULD
+ * When returning multivalued attributes, service providers SHOULD
  * canonicalize the value returned (e.g., by returning a value for the
  * sub-attribute "type", such as "home" or "work") when appropriate
  * (e.g., for email addresses and URLs).
@@ -70,7 +70,7 @@ import lombok.NoArgsConstructor;
  * SHOULD NOT return the same (type, value) combination more than once
  * per attribute, as this complicates processing by the client.
  *
- * When defining schema for multi-valued attributes, it is considered a
+ * When defining schema for multivalued attributes, it is considered a
  * good practice to provide a type attribute that MAY be used for the
  * purpose of canonicalization of values.  In the schema definition for
  * an attribute, the service provider MAY define the recommended

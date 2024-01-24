@@ -14,7 +14,6 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -829,32 +828,30 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * This test will make sure that unknown attributes in multivalued-complex direct references are not added to
-   * the resource
+   * This test will make sure that unknown attributes in complex direct references are not added to the resource
    */
   @ParameterizedTest
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testAddComplexWithUnknownAttribute(PatchOp patchOp)
   {
-    AllTypes allTypes = new AllTypes(true);
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
 
-    AllTypes complex = new AllTypes(false);
-    complex.setString("hello world");
-    allTypes.setComplex(complex);
-
-    AllTypes allTypeChanges = new AllTypes(true);
-    AllTypes complexChanges = new AllTypes(false);
-    complexChanges.setString("hello world");
-    complexChanges.set("unknown", new TextNode("unknown"));
-
-    allTypeChanges.setComplex(complexChanges);
+    AllTypes patchResource = new AllTypes(true);
+    AllTypes patchComplex = new AllTypes(false);
+    patchComplex.setString("hello world");
+    patchComplex.set("unknown", new TextNode("unknown"));
+    patchResource.setComplex(patchComplex);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(patchOp)
-                                                                                .valueNode(allTypeChanges)
+                                                                                .valueNode(patchResource)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes complex = new AllTypes(false);
+    complex.setString("hello world");
+    allTypes.setComplex(complex);
     addAllTypesToProvider(allTypes);
     PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
@@ -2853,14 +2850,14 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     {
       PersonRole role1 = personRoles.get(0);
-      Assertions.assertEquals("827f0d2e-be15-4d8f-a8e3-f7697239c112", role1.getRef().get());
+      Assertions.assertFalse(role1.getRef().isPresent(), "this attribute is not defined in the schema");
       Assertions.assertEquals("DocumentMgmt-BuyerAdmin", role1.getValue().get());
       Assertions.assertEquals("DocumentMgmt BuyerAdmin", role1.getDisplay().get());
     }
 
     {
       PersonRole role2 = personRoles.get(1);
-      Assertions.assertEquals("8ae06bd4-35bb-4fcd-977e-12e074ad1192", role2.getRef().get());
+      Assertions.assertFalse(role2.getRef().isPresent(), "this attribute is not defined in the schema");
       Assertions.assertEquals("Buyer-Admin", role2.getValue().get());
       Assertions.assertEquals("Buyer Admin", role2.getDisplay().get());
     }
@@ -2969,36 +2966,5 @@ public class PatchAddResourceHandlerTest implements FileReferences
     private String attributeName;
 
     private JsonNode value;
-  }
-
-  @Nested
-  public class IllegalRequestTests
-  {
-
-    /**
-     * verifies that an appropriate exception is thrown if the value is missing in a patch request
-     */
-    @ParameterizedTest
-    @ValueSource(strings = {"ADD", "REPLACE"})
-    public void testValueIsMissing(PatchOp patchOp)
-    {
-      AllTypes allTypes = new AllTypes(true);
-
-      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                  .op(patchOp)
-                                                                                  .path("string")
-                                                                                  .build());
-      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-      addAllTypesToProvider(allTypes);
-      PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
-                                                                                  allTypesResourceType.getResourceHandlerImpl(),
-                                                                                  resourceEndpoint.getPatchWorkarounds(),
-                                                                                  new Context(null));
-      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                       () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
-      Assertions.assertEquals("Missing value for patch-operation on attribute 'string'. ADD and REPLACE "
-                              + "operations require at least one value.",
-                              ex.getMessage());
-    }
   }
 }

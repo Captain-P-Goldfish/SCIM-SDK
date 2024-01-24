@@ -79,7 +79,8 @@ public final class AttributeExpressionLeaf extends FilterNode
       String subName = attributeValuePath.subattribute == null ? null : attributeValuePath.subattribute.getText();
       if (subName != null)
       {
-        String fullSubname = StringUtils.stripToEmpty(parentName) + subName;
+        String fullSubname = Optional.ofNullable(attributeName.getResourceUri()).map(s -> s + ":").orElse("")
+                             + StringUtils.stripToEmpty(parentName) + subName;
         SchemaAttribute subAttributeSchema = RequestUtils.getSchemaAttributeByAttributeName(resourceType, fullSubname);
         super.setSubAttributeName(subAttributeSchema == null ? null : subAttributeSchema.getName());
       }

@@ -1,8 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch.operations;
 
-import java.util.Collections;
-import java.util.Optional;
-
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -16,7 +14,7 @@ import lombok.Getter;
  * @since 12.01.2024
  */
 @Getter
-public class ExtensionRefOperation extends PatchOperation<ObjectNode>
+public class RemoveExtensionRefOperation extends PatchOperation<ObjectNode>
 {
 
   /**
@@ -24,12 +22,15 @@ public class ExtensionRefOperation extends PatchOperation<ObjectNode>
    */
   private final PatchExtensionAttributePath attributePath;
 
-  public ExtensionRefOperation(Schema schema, String path, PatchOp patchOp, ObjectNode value)
+  public RemoveExtensionRefOperation(Schema schema, String path, PatchOp patchOp)
   {
-    super(schema, null, patchOp, value,
-          Optional.ofNullable(value)
-                  .map(v -> Collections.singletonList(v.toString()))
-                  .orElseGet(Collections::emptyList));
+    super(schema, null, patchOp, null);
     this.attributePath = new PatchExtensionAttributePath(path);
+  }
+
+  @Override
+  public ObjectNode parseJsonNode(JsonNode jsonNode)
+  {
+    return null;
   }
 }

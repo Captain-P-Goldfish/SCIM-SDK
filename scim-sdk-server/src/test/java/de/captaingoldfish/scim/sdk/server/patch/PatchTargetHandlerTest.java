@@ -38,7 +38,6 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
-import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -52,6 +51,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -64,6 +64,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.AllTypesHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -949,7 +950,18 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that a complex type can be completely replaced
+   * verifies that a complex type can be completely replaced<br />
+   *
+   * <pre>
+   * 3.5.2.3.  Replace Operation
+   * ...
+   * o  If the target location specifies a complex attribute, a set of
+   *       sub-attributes SHALL be specified in the "value" parameter, which
+   *       replaces any existing values or adds where an attribute did not
+   *       previously exist.  Sub-attributes that are not specified in the
+   *       "value" parameter are left unchanged.
+   * ...
+   * </pre>
    */
   @Test
   public void testReplaceComplexAttribute()
@@ -986,13 +998,14 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(patchedAllTypes.getString().isPresent());
     Assertions.assertEquals("hf", patchedAllTypes.getString().get());
     Assertions.assertTrue(patchedAllTypes.getComplex().isPresent());
-    Assertions.assertEquals(2,
+    Assertions.assertEquals(3,
                             patchedAllTypes.getComplex().get().size(),
                             patchedAllTypes.getComplex().get().toPrettyString());
     Assertions.assertEquals(2, patchedAllTypes.getComplex().get().getStringArray().size());
-    Assertions.assertFalse(patchedAllTypes.getComplex().get().getString().isPresent());
+    Assertions.assertTrue(patchedAllTypes.getComplex().get().getString().isPresent());
     Assertions.assertTrue(patchedAllTypes.getComplex().get().getNumber().isPresent());
     Assertions.assertEquals(Long.MAX_VALUE, patchedAllTypes.getComplex().get().getNumber().get());
+    Assertions.assertEquals("goldfish", patchedAllTypes.getComplex().get().getString().get());
     Assertions.assertEquals(2, patchedAllTypes.getComplex().get().getStringArray().size());
     Assertions.assertEquals("hello world", patchedAllTypes.getComplex().get().getStringArray().get(0));
     Assertions.assertEquals("goodbye world", patchedAllTypes.getComplex().get().getStringArray().get(1));
@@ -1360,36 +1373,6 @@ public class PatchTargetHandlerTest implements FileReferences
 
   /**
    * this test will show that a sanitized exception is thrown if the client gave an illegal value for a complex
-   * type injection
-   */
-  @Test
-  public void testAddComplexIntoMultiValuedWithIllegalValue()
-  {
-    List<String> values = Collections.singletonList("goldfish");
-    final String path = "multiComplex";
-    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
-                                                                                .op(PatchOp.ADD)
-                                                                                .path(path)
-                                                                                .values(values)
-                                                                                .build());
-    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
-    AllTypes allTypes = new AllTypes(true);
-    try
-    {
-      patchAllTypes(allTypes, patchOpRequest, false);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("the value parameters must be valid json representations but was 'goldfish'",
-                              ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
-  }
-
-  /**
-   * this test will show that a sanitized exception is thrown if the client gave an illegal value for a complex
    * type replacement
    */
   @Test
@@ -1404,20 +1387,15 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     AllTypes allTypes = new AllTypes(true);
-    try
-    {
-      patchAllTypes(allTypes, patchOpRequest, false);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("the values are expected to be valid json representations for an expression as "
-                              + "'multiComplex[stringarray eq \"hello world\" or stringarray eq \"goodbye world\"]' "
-                              + "but was: goldfish",
-                              ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
+
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchAllTypes(allTypes, patchOpRequest, false));
+    SchemaAttribute multiComplexAttribute = allTypesResourceType.getSchemaAttribute("multiComplex").get();
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+    Assertions.assertEquals(String.format("Attribute '%s' is expected to be an array but is '\"goldfish\"'",
+                                          multiComplexAttribute.getFullResourceName()),
+                            errorResponse.getDetail().get());
   }
 
   /**
@@ -1467,18 +1445,14 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     AllTypes allTypes = new AllTypes(true);
-    try
-    {
-      patchAllTypes(allTypes, patchOpRequest, false);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("the value parameters must be valid json representations but was 'goldfish'",
-                              ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchAllTypes(allTypes, patchOpRequest, false));
+    SchemaAttribute multiComplexAttribute = allTypesResourceType.getSchemaAttribute(path).get();
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+    Assertions.assertEquals(String.format("Attribute '%s' is expected to be an array but is '\"goldfish\"'",
+                                          multiComplexAttribute.getFullResourceName()),
+                            errorResponse.getDetail().get());
   }
 
   /**
@@ -1497,18 +1471,15 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     AllTypes allTypes = new AllTypes(true);
-    try
-    {
-      patchAllTypes(allTypes, patchOpRequest, false);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals("Too many values found for 'STRING'-type attribute 'string': [value1, value2]",
-                              ex.getDetail());
-      Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-    }
+    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                         () -> patchAllTypes(allTypes, patchOpRequest, false));
+    SchemaAttribute stringAttribute = allTypesResourceType.getSchemaAttribute("string").get();
+    ErrorResponse errorResponse = new ErrorResponse(ex);
+    ex.getValidationContext().writeToErrorResponse(errorResponse);
+    Assertions.assertEquals(String.format("Attribute '%s' is expected to be a simple attribute of type 'STRING' but "
+                                          + "is '[\"value1\",\"value2\"]'",
+                                          stringAttribute.getFullResourceName()),
+                            errorResponse.getDetail().get());
   }
 
   /**
@@ -1539,9 +1510,7 @@ public class PatchTargetHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
-      ex.printStackTrace();
-      Assertions.assertEquals("The attribute with the name 'multiComplex.unknown' is unknown to "
-                              + "resource type 'AllTypes'",
+      Assertions.assertEquals("Attribute 'multiComplex.unknown' is unknown to resource type 'AllTypes'",
                               ex.getDetail());
       Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
@@ -2354,7 +2323,7 @@ public class PatchTargetHandlerTest implements FileReferences
     {
       Assertions.assertEquals(ScimType.RFC7644.INVALID_VALUE, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals("Values must not be set for remove operation but was: hello world", ex.getDetail());
+      Assertions.assertEquals("Values must not be set for remove operation but was: [\"hello world\"]", ex.getDetail());
     }
   }
 
@@ -2403,9 +2372,12 @@ public class PatchTargetHandlerTest implements FileReferences
     }
     catch (ScimException ex)
     {
+      SchemaAttribute schemaAttribute = allTypesResourceType.getSchemaAttribute(path).get();
       Assertions.assertEquals(BadRequestException.class, ex.getClass());
       Assertions.assertEquals(ScimType.RFC7644.NO_TARGET, ex.getScimType());
-      Assertions.assertEquals(String.format("No target found for path-filter '%s'", path), ex.getMessage());
+      Assertions.assertEquals(String.format("No target found for path-filter '%s'",
+                                            schemaAttribute.getFullResourceName()),
+                              ex.getMessage());
     }
   }
 
@@ -4197,8 +4169,8 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes();
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
                                                      () -> patchAllTypes(allTypes, patchOpRequest, false));
-    String expectedErrorMessage = "Value for path 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager' "
-                                  + "must be a complex-node representation but was: 271";
+    String expectedErrorMessage = "Value for attribute 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager' "
+                                  + "must be an object but was '\"271\"'";
     Assertions.assertEquals(expectedErrorMessage, ex.getMessage());
   }
 
@@ -4747,20 +4719,23 @@ public class PatchTargetHandlerTest implements FileReferences
   public void testReplaceMultivaluedComplexWithFilterAndSeveralMatches()
   {
     AllTypes allTypes = new AllTypes(true);
+
     AllTypes multicomplex1 = new AllTypes(false);
     multicomplex1.setString("hello world");
     multicomplex1.setNumberArray(Arrays.asList(1L, 2L));
+
     AllTypes multicomplex2 = new AllTypes(false);
     multicomplex2.setString("hello goldfish");
+
     AllTypes multicomplex3 = new AllTypes(false);
-    multicomplex3.setString("hello pool");
-    multicomplex3.setNumberArray(Arrays.asList(1L, 2L));
+    multicomplex3.setBool(true);
+    multicomplex3.setDecimalArray(Arrays.asList(3.3, 4.1));
     allTypes.setMultiComplex(Arrays.asList(multicomplex1, multicomplex2, multicomplex3));
 
     AllTypes replacement = new AllTypes(false);
     replacement.setNumber(999L);
     replacement.setDate(Instant.now());
-    final String path = "multicomplex[numberArray co 1 or numberArray co 2]";
+    final String path = "multicomplex[numberArray co 1 or decimalArray gt 3.3]";
     PatchRequestOperation firstOperation = PatchRequestOperation.builder()
                                                                 .op(PatchOp.REPLACE)
                                                                 .path(path)
@@ -4772,6 +4747,7 @@ public class PatchTargetHandlerTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
     AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
+
     Assertions.assertEquals(4, patchedAllTypes.size());
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.SCHEMAS));
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.ID));
@@ -4781,13 +4757,28 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
 
     List<AllTypes> multiComplexNodes = patchedAllTypes.getMultiComplex();
-    Assertions.assertEquals(2, multiComplexNodes.size());
-    Assertions.assertEquals("hello goldfish", multiComplexNodes.get(0).getString().get());
-    Assertions.assertFalse(multiComplexNodes.get(1).getString().isPresent());
-    Assertions.assertTrue(multiComplexNodes.get(1).getNumberArray().isEmpty());
-    Assertions.assertTrue(multiComplexNodes.get(1).getDate().isPresent());
-    Assertions.assertTrue(multiComplexNodes.get(1).getNumber().isPresent());
-    Assertions.assertEquals(999L, multiComplexNodes.get(1).getNumber().get());
+    Assertions.assertEquals(3, multiComplexNodes.size());
+    {
+      Assertions.assertEquals("hello goldfish", multiComplexNodes.get(0).getString().get());
+    }
+    {
+      Assertions.assertTrue(multiComplexNodes.get(1).getString().isPresent());
+      Assertions.assertFalse(multiComplexNodes.get(1).getNumberArray().isEmpty());
+      Assertions.assertEquals(1L, multiComplexNodes.get(1).getNumberArray().get(0).longValue());
+      Assertions.assertEquals(2L, multiComplexNodes.get(1).getNumberArray().get(1).longValue());
+      Assertions.assertTrue(multiComplexNodes.get(1).getDate().isPresent());
+      Assertions.assertTrue(multiComplexNodes.get(1).getNumber().isPresent());
+      Assertions.assertEquals(999L, multiComplexNodes.get(1).getNumber().get());
+    }
+    {
+      Assertions.assertTrue(multiComplexNodes.get(2).getBool().orElse(false));
+      Assertions.assertFalse(multiComplexNodes.get(2).getDecimalArray().isEmpty());
+      Assertions.assertEquals(3.3, multiComplexNodes.get(2).getDecimalArray().get(0).doubleValue());
+      Assertions.assertEquals(4.1, multiComplexNodes.get(2).getDecimalArray().get(1).doubleValue());
+      Assertions.assertTrue(multiComplexNodes.get(2).getDate().isPresent());
+      Assertions.assertTrue(multiComplexNodes.get(2).getNumber().isPresent());
+      Assertions.assertEquals(999L, multiComplexNodes.get(2).getNumber().get());
+    }
   }
 
   /**
@@ -5022,8 +5013,8 @@ public class PatchTargetHandlerTest implements FileReferences
     List<PatchRequestOperation> operations = Arrays.asList(firstOperation);
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
-    InvalidFilterException ex = Assertions.assertThrows(InvalidFilterException.class,
-                                                        () -> patchAllTypes(allTypes, patchOpRequest, false));
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> patchAllTypes(allTypes, patchOpRequest, false));
     Assertions.assertEquals("binary types like 'urn:gold:params:scim:schemas:custom:2.0:AllTypes:"
                             + "multiComplex.binary' are not suitable for filter expressions",
                             ex.getMessage());
@@ -5311,6 +5302,40 @@ public class PatchTargetHandlerTest implements FileReferences
       AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
       Assertions.assertEquals(1, patchedAllTypes.getDecimalArray().size());
       Assertions.assertEquals(1.1, patchedAllTypes.getDecimalArray().get(0));
+    }
+  }
+
+  @DisplayName("Illegal request tests")
+  @Nested
+  public class IllegalRequestTests
+  {
+
+    /**
+     * makes sure that operations on readOnly attributes are ignored
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"string", "stringArray", "complex", "complex.string", "complex.stringArray", "multiComplex",
+                            "multiComplex.string", "multiComplex.stringArray"})
+    public void testRemoveReadOnlyAttribute(String attributeName)
+    {
+      AllTypes allTypes = new AllTypes(true);
+
+      SchemaAttribute schemaAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
+      schemaAttribute.setMutability(Mutability.READ_ONLY);
+
+      List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                  .op(PatchOp.REMOVE)
+                                                                                  .path(attributeName)
+                                                                                  .build());
+      PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+      addAllTypesToProvider(allTypes);
+      PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                  allTypesResourceType.getResourceHandlerImpl(),
+                                                                                  resourceEndpoint.getPatchWorkarounds(),
+                                                                                  new Context(null));
+      AllTypes patchedAllTypes = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+      Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+      Assertions.assertEquals(allTypes, patchedAllTypes);
     }
   }
 }

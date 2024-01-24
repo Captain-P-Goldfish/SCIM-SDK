@@ -519,8 +519,7 @@ public class FilterVisitorTest
     }
     catch (InvalidFilterException ex)
     {
-      Assertions.assertEquals("The attribute with the name 'unknownAttribute' is unknown to resource type 'User'",
-                              ex.getMessage());
+      Assertions.assertEquals("Attribute 'unknownAttribute' is unknown to resource type 'User'", ex.getMessage());
     }
   }
 

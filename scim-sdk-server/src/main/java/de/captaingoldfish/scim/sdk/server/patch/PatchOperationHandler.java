@@ -8,11 +8,11 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
-import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexSubAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.ExtensionRefOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexSimpleSubAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveComplexAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveExtensionRefOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexSubAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexMultivaluedSubAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedSimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.SimpleAttributeOperation;
 
@@ -83,7 +83,7 @@ public interface PatchOperationHandler<T extends ResourceNode>
    * @return true if the resource was effectively changed or false if the values of the patch request did match
    *         the existing state of the resource
    */
-  public boolean handleOperation(String id, ExtensionRefOperation patchOperation);
+  public boolean handleOperation(String id, RemoveExtensionRefOperation patchOperation);
 
   /**
    * this method gets patch-requests assigned that have simple attribute references. This includes references on
@@ -230,14 +230,15 @@ public interface PatchOperationHandler<T extends ResourceNode>
    * <br />
    * get the attributes you need to handle from the given {@link com.fasterxml.jackson.databind.node.ObjectNode}
    * and try to make sure that they match their definition<br />
-   * The direct complex-attributes definition is accessible by {@link ComplexAttributeOperation#schemaAttribute}
+   * The direct complex-attributes definition is accessible by
+   * {@link RemoveComplexAttributeOperation#schemaAttribute}
    *
    * @param id the id of the resource that is being patched
    * @param patchOperation the validated patch-operation with all necessary infos
    * @return true if the resource was effectively changed or false if the values of the patch request did match
    *         the existing state of the resource
    */
-  public boolean handleOperation(String id, ComplexAttributeOperation patchOperation);
+  public boolean handleOperation(String id, RemoveComplexAttributeOperation patchOperation);
 
   /**
    * this method gets patch-requests assigned that directly reference a multivalued-complex-attribute e.g.
@@ -317,49 +318,6 @@ public interface PatchOperationHandler<T extends ResourceNode>
    */
   public boolean handleOperation(String id, MultivaluedComplexAttributeOperation patchOperation);
 
-
-  /**
-   * this method gets patch-requests assigned that directly reference a complex--sub-attribute e.g.
-   *
-   * <pre>
-   * {
-   *    "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
-   *    "Operations" : [
-   *    {
-   *      "path" : "name.givenName",
-   *      "op" : "remove"
-   *    }
-   *  }
-   * </pre>
-   *
-   * or
-   *
-   * <pre>
-   * {
-   *    "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
-   *    "Operations" : [
-   *    {
-   *      "path" : "name.givenName",
-   *      "op" : "add/replace",
-   *      "value": "Mario"
-   *    }
-   *  }
-   * </pre>
-   *
-   * <b>NOTE:</b><br />
-   * This use-case should never have a filter-expression. So the {@link AttributePathRoot#getChild()} should
-   * always be null. <br />
-   * <br />
-   * The direct complex-attributes definition is accessible by
-   * {@link MultivaluedComplexAttributeOperation#schemaAttribute}
-   *
-   * @param id the id of the resource that is being patched
-   * @param patchOperation the validated patch-operation with all necessary infos
-   * @return true if the resource was effectively changed or false if the values of the patch request did match
-   *         the existing state of the resource
-   */
-  public boolean handleOperation(String id, ComplexSubAttributeOperation patchOperation);
-
   /**
    * this method gets patch-requests assigned that directly reference a multivalued-complex-sub-attribute. This
    * includes also array-sub-attributes e.g.
@@ -412,16 +370,18 @@ public interface PatchOperationHandler<T extends ResourceNode>
    * get the attributes you need to handle from the given {@link com.fasterxml.jackson.databind.node.ArrayNode}
    * and try to make sure that they match their definition<br />
    * The direct sub-attributes definition is accessible by
-   * {@link MultivaluedComplexSubAttributeOperation#schemaAttribute} and
-   * {@link MultivaluedComplexSubAttributeOperation#subAttribute} and the parent-attribute can be addressed by
-   * {@link MultivaluedComplexSubAttributeOperation#parentAttribute}
+   * {@link MultivaluedComplexMultivaluedSubAttributeOperation#schemaAttribute} and
+   * {@link MultivaluedComplexMultivaluedSubAttributeOperation#subAttribute} and the parent-attribute can be
+   * addressed by {@link MultivaluedComplexMultivaluedSubAttributeOperation#parentAttribute}
    *
    * @param id the id of the resource that is being patched
    * @param patchOperation the validated patch-operation with all necessary infos
    * @return true if the resource was effectively changed or false if the values of the patch request did match
    *         the existing state of the resource
    */
-  public boolean handleOperation(String id, MultivaluedComplexSubAttributeOperation patchOperation);
+  public boolean handleOperation(String id, MultivaluedComplexMultivaluedSubAttributeOperation patchOperation);
+
+  public boolean handleOperation(String id, MultivaluedComplexSimpleSubAttributeOperation patchOperation);
 
   /**
    * this method is called after the last call of {@link #handleOperation(PreparedPatchOperation)}. It assumes

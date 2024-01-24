@@ -17,6 +17,10 @@
                 additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
+        <Logger name="de.captaingoldfish.scim.sdk.server.patch.DefaultPatchOperationHandler" level="trace"
+                additivity="false">
+            <AppenderRef ref="Console"/>
+        </Logger>
 
         <Root level="debug">
             <AppenderRef ref="Console"/>

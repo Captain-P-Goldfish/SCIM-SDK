@@ -44,7 +44,8 @@ public class PatchFilterResolver
       if (attributePathRoot.getChild() == null)
       {
         boolean isRemoveAndNotPresent = PatchOp.REMOVE.equals(patchOp)
-                                        && !complexNode.has(attributePathRoot.getSchemaAttribute().getName());
+                                        && !complexNode.has(attributePathRoot.getDirectlyReferencedAttribute()
+                                                                             .getName());
         if (isRemoveAndNotPresent)
         {
           // if we would return the node here on a remove-operation while the path points to a non-existing attribute

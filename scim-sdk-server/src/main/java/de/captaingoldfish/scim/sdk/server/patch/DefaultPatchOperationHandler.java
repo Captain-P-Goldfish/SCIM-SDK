@@ -16,16 +16,17 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorHandler;
-import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.ComplexSubAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.ExtensionRefOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexSubAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexSimpleSubAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexMultivaluedSubAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedSimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.PatchOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveComplexAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveExtensionRefOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.SimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceValidator;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -34,6 +35,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.validation.RequestResourceVali
  * @author Pascal Knueppel
  * @since 06.01.2024
  */
+@Slf4j
 public class DefaultPatchOperationHandler<T extends ResourceNode> implements PatchOperationHandler<T>
 {
 
@@ -122,6 +124,13 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
                                                       .stream()
                                                       .map(object -> String.valueOf(object))
                                                       .collect(Collectors.toList());
+    if (log.isTraceEnabled())
+    {
+      log.trace("handling '{}'-operation of type '{}' with values '{}'",
+                patchOperation.getPatchOp(),
+                patchOperation.getClass().getSimpleName(),
+                values);
+    }
     return patchTargetHandler.handleOperationValues(patchedResourceNode, values);
   }
 
@@ -129,7 +138,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public boolean handleOperation(String id, ExtensionRefOperation patchOperation)
+  public boolean handleOperation(String id, RemoveExtensionRefOperation patchOperation)
   {
     return handlePatchOperation(id, patchOperation);
   }
@@ -156,7 +165,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public boolean handleOperation(String id, ComplexAttributeOperation patchOperation)
+  public boolean handleOperation(String id, RemoveComplexAttributeOperation patchOperation)
   {
     return handlePatchOperation(id, patchOperation);
   }
@@ -174,7 +183,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public boolean handleOperation(String id, ComplexSubAttributeOperation patchOperation)
+  public boolean handleOperation(String id, MultivaluedComplexMultivaluedSubAttributeOperation patchOperation)
   {
     return handlePatchOperation(id, patchOperation);
   }
@@ -183,7 +192,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public boolean handleOperation(String id, MultivaluedComplexSubAttributeOperation patchOperation)
+  public boolean handleOperation(String id, MultivaluedComplexSimpleSubAttributeOperation patchOperation)
   {
     return handlePatchOperation(id, patchOperation);
   }

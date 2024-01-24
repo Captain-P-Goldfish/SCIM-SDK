@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
-import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,17 +21,18 @@ import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
+import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpointBridge;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.AllTypesHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
-import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
@@ -322,7 +321,7 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
   }
 
   /**
-   * verifies that a simiple type does not accept an array as value and throws a {@link BadRequestException}
+   * verifies that a simple type does not accept an array as value and throws a {@link BadRequestException}
    */
   @Test
   public void testSimpleTypeDoesNotAcceptArrays()
@@ -334,7 +333,7 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
 
     // @formatter:off
     String key = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:employeeNumber";
-    String value = "[\"1111\"]";
+    String value = "[\"1111\", \"2222\"]";
     String valueNode = String.format("{\"%s\": %s}", key, value);
     // @formatter:on
 
@@ -356,7 +355,8 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
     }
     catch (RequestContextException ex)
     {
-      String expectedMessage = String.format("Attribute '%s' is expected to be a simple attribute but is '[\"1111\"]'",
+      String expectedMessage = String.format("Attribute '%s' is expected to be a simple attribute of type 'STRING' "
+                                             + "but is '[\"1111\",\"2222\"]'",
                                              key);
       ErrorResponse errorResponse = new ErrorResponse(ex);
       ex.getValidationContext().writeToErrorResponse(errorResponse);

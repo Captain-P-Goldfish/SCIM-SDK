@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch.operations;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -10,7 +11,6 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.utils.ScimAttributeHelper;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 
 /**
@@ -18,7 +18,6 @@ import lombok.RequiredArgsConstructor;
  * @since 12.01.2024
  */
 @Getter
-@RequiredArgsConstructor
 public abstract class PatchOperation<T extends JsonNode> implements ScimAttributeHelper
 {
 
@@ -41,14 +40,28 @@ public abstract class PatchOperation<T extends JsonNode> implements ScimAttribut
 
   protected final List<String> valueStringList;
 
-  public PatchOperation(SchemaAttribute schemaAttribute, PatchOp patchOp, T valuesNode, List<String> valueStringList)
+  public PatchOperation(SchemaAttribute schemaAttribute, PatchOp patchOp, JsonNode valuesNode)
   {
     this.schema = schemaAttribute.getSchema();
     this.schemaAttribute = schemaAttribute;
     this.patchOp = patchOp;
-    this.valuesNode = valuesNode;
-    this.valueStringList = valueStringList;
+    this.valuesNode = parseJsonNode(valuesNode);
+    this.valueStringList = new ArrayList<>();
   }
+
+  public PatchOperation(Schema schema, SchemaAttribute schemaAttribute, PatchOp patchOp, JsonNode valuesNode)
+  {
+    this.schema = schema;
+    this.schemaAttribute = schemaAttribute;
+    this.patchOp = patchOp;
+    this.valuesNode = parseJsonNode(valuesNode);
+    this.valueStringList = new ArrayList<>();
+  }
+
+  /**
+   * will parse the given jsonNode into its appropriate representation
+   */
+  public abstract T parseJsonNode(JsonNode jsonNode);
 
   /**
    * @return the representational path-expression on the attribute

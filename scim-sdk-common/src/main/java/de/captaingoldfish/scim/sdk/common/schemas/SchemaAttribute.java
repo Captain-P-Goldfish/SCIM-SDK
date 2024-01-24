@@ -231,6 +231,46 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   /**
+   * @return true if this attribute has a parent and the parent is multivalued
+   */
+  public boolean isChildOfMultivaluedComplexAttribute()
+  {
+    return isChildOfComplexAttribute() && parent.isMultiValued();
+  }
+
+  /**
+   * @return true if this is a readOnly attribute
+   */
+  public boolean isReadOnly()
+  {
+    return getMutability().equals(Mutability.READ_ONLY);
+  }
+
+  /**
+   * @return true if this is an immutable attribute
+   */
+  public boolean isReadImmutable()
+  {
+    return getMutability().equals(Mutability.IMMUTABLE);
+  }
+
+  /**
+   * @return true if this is a read-write attribute
+   */
+  public boolean isReadWrite()
+  {
+    return getMutability().equals(Mutability.READ_WRITE);
+  }
+
+  /**
+   * @return true if this is a writeOnly attribute
+   */
+  public boolean isWriteOnly()
+  {
+    return getMutability().equals(Mutability.WRITE_ONLY);
+  }
+
+  /**
    * this method will verify if this attribute is a direct resource-reference. Which means it must look like
    * this:
    *

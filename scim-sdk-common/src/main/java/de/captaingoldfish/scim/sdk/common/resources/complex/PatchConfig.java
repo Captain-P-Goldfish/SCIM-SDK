@@ -118,7 +118,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
-   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround
+   * @see de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchFilterWorkaround
    */
   public boolean isMsAzureFilterWorkaroundActive()
   {
@@ -129,7 +129,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle filter-expressions in patch-paths as attributes that will be added to the resource
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/416
-   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchFilterWorkaround
+   * @see de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchFilterWorkaround
    */
   public void setMsAzureFilterWorkaroundActive(Boolean msAzureWorkaroundActive)
   {
@@ -140,7 +140,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle MsAzures illegal value-subattribute notation
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
-   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchValueSubAttributeRebuilder
+   * @see de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchValueSubAttributeRebuilder
    */
   public boolean isMsAzureValueSubAttributeWorkaroundActive()
   {
@@ -151,7 +151,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle MsAzures illegal value-subattribute notation
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
-   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchValueSubAttributeRebuilder
+   * @see de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchValueSubAttributeRebuilder
    */
   public void setMsAzureValueSubAttributeWorkaroundActive(Boolean msAzureValueSubAttributeWorkaroundActive)
   {
@@ -163,7 +163,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle MsAzures illegal complex-simple-value notation.
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
-   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder
+   * @see de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder
    */
   public boolean isMsAzureComplexSimpleValueWorkaroundActive()
   {
@@ -174,7 +174,7 @@ public class PatchConfig extends ScimObjectNode
    * A workaround to handle MsAzures illegal complex-simple-value notation.
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/541
-   * @see de.captaingoldfish.scim.sdk.server.patch.msazure.MsAzurePatchComplexValueRebuilder
+   * @see de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder
    */
   public void setMsAzureComplexSimpleValueWorkaroundActive(Boolean msAzureComplexSimpleValueWorkaroundActive)
   {

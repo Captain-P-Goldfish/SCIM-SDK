@@ -28,6 +28,11 @@ import lombok.NoArgsConstructor;
 public class PatchRequestOperation extends ScimObjectNode
 {
 
+  /**
+   * if the value-attribute was extracted once. This will prevent repeated parsing of specific node-types
+   */
+  private boolean valueExtracted = false;
+
   @Builder
   public PatchRequestOperation(String path, PatchOp op, List<String> values, JsonNode valueNode)
   {
@@ -82,6 +87,60 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
+   * the new value of the targeted attribute
+   */
+  public Optional<JsonNode> getValue()
+  {
+    JsonNode valueNode = get(AttributeNames.RFC7643.VALUE);
+    if (valueNode == null || valueNode.isNull())
+    {
+      return Optional.empty();
+    }
+    if (valueExtracted)
+    {
+      return Optional.of(valueNode);
+    }
+    if (valueNode.isObject() || valueNode.isArray())
+    {
+      valueExtracted = true;
+      return Optional.of(valueNode);
+    }
+    String textValue = valueNode.asText();
+    if (valueNode instanceof TextNode && textValue.contains("{"))
+    {
+      try
+      {
+        valueNode = JsonHelper.readJsonDocument(textValue);
+        setValue(valueNode);
+      }
+      catch (Exception ex)
+      {
+        // do nothing
+      }
+    }
+    valueExtracted = true;
+    return Optional.of(valueNode);
+  }
+
+  /**
+   * the new value of the targeted attribute
+   */
+  public void setValue(String value)
+  {
+    valueExtracted = false;
+    setAttribute(AttributeNames.RFC7643.VALUE, value);
+  }
+
+  /**
+   * the new value of the targeted attribute
+   */
+  public void setValue(JsonNode value)
+  {
+    valueExtracted = false;
+    set(AttributeNames.RFC7643.VALUE, value);
+  }
+
+  /**
    * the new value of the targeted attribute <br>
    * (This will never return null on server side for schema validation is executed before this method is called)
    */
@@ -95,6 +154,7 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   public void setValues(List<String> value)
   {
+    valueExtracted = false;
     if (value == null || value.size() > 1)
     {
       setAttributeList(AttributeNames.RFC7643.VALUE, value);
@@ -115,18 +175,22 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   public Optional<ArrayNode> getValueNode()
   {
-    // TODO fix this method it is not performant
     JsonNode jsonNode = get(AttributeNames.RFC7643.VALUE);
-    if (jsonNode == null)
+    if (jsonNode == null || jsonNode.isNull())
     {
       return Optional.empty();
+    }
+    if (jsonNode.isArray())
+    {
+      return Optional.of((ArrayNode)jsonNode);
     }
     if (jsonNode instanceof TextNode)
     {
       ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
       try
       {
-        arrayNode.add(JsonHelper.readJsonDocument(jsonNode.textValue()));
+        JsonNode jsonValue = JsonHelper.readJsonDocument(jsonNode.textValue());
+        arrayNode.add(jsonValue);
       }
       catch (Exception ex)
       {
@@ -135,17 +199,10 @@ public class PatchRequestOperation extends ScimObjectNode
       setValueNode(arrayNode);
       return Optional.of(arrayNode);
     }
-    if (!jsonNode.isArray())
-    {
-      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-      arrayNode.add(jsonNode);
-      setValueNode(arrayNode);
-      return Optional.of(arrayNode);
-    }
-    else
-    {
-      return Optional.ofNullable((ArrayNode)jsonNode);
-    }
+    ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+    arrayNode.add(jsonNode);
+    setValueNode(arrayNode);
+    return Optional.of(arrayNode);
   }
 
   /**

@@ -3,9 +3,11 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,18 +37,35 @@ public class ComplexAttributeValidator
                                            ContextValidator contextValidator)
   {
     log.trace("Validating complex attribute '{}'", schemaAttribute.getScimNodeName());
-    if (!attribute.isObject())
+    JsonNode effectiveAttribute = attribute;
+    errorIfBlock: if (!effectiveAttribute.isObject())
     {
+      if (effectiveAttribute.isArray() && effectiveAttribute.size() == 1)
+      {
+        if (effectiveAttribute.get(0).isObject())
+        {
+          effectiveAttribute = effectiveAttribute.get(0);
+          break errorIfBlock;
+        }
+        else if (effectiveAttribute.get(0) instanceof TextNode)
+        {
+          effectiveAttribute = JsonHelper.readJsonDocument(effectiveAttribute.get(0).textValue());
+          if (effectiveAttribute.isObject())
+          {
+            break errorIfBlock;
+          }
+        }
+      }
       String errorMessage = String.format("Attribute '%s' must be of type object but is '%s'",
                                           schemaAttribute.getFullResourceName(),
-                                          attribute);
+                                          effectiveAttribute);
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
 
     ScimObjectNode scimObjectNode = new ScimObjectNode(schemaAttribute);
     for ( SchemaAttribute subAttribute : schemaAttribute.getSubAttributes() )
     {
-      JsonNode subNode = attribute.get(subAttribute.getName());
+      JsonNode subNode = effectiveAttribute.get(subAttribute.getName());
       Optional<JsonNode> validatedNode = ValidationSelector.validateNode(subAttribute, subNode, contextValidator);
       if (validatedNode.isPresent())
       {

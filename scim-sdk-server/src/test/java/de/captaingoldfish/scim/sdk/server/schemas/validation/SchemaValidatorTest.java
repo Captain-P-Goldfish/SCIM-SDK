@@ -351,7 +351,8 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * shows that the validation will fail if a field is an array but is expected by the schema as a simple value
+   * shows that the validation will fail if a field is an array with several elements but is expected by the
+   * schema as a simple value
    */
   @Test
   public void testValidationFailsIfNodeIsArrayInsteadOfSimple()
@@ -362,6 +363,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNodeFactory factory = new JsonNodeFactory(false);
     ArrayNode arrayNode = new ArrayNode(factory);
     arrayNode.add("bla");
+    arrayNode.add("bla2");
     JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
                             () -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,

@@ -229,7 +229,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
                                                currentParent,
                                                firstAttribute);
     }
-    else if (Type.COMPLEX.equals(schemaAttribute.getType()))
+    else if (schemaAttribute.isComplexAttribute())
     {
       return handlePatchOperationOnComplex(resource,
                                            values,
@@ -276,7 +276,8 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
         }
         else
         {
-          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+          throw new BadRequestException(String.format("No target found for path-filter '%s'",
+                                                      schemaAttribute.getFullResourceName()),
                                         ScimType.RFC7644.NO_TARGET);
         }
       }
@@ -335,7 +336,8 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
           }
           else
           {
-            throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+            throw new BadRequestException(String.format("No target found for path-filter '%s'",
+                                                        schemaAttribute.getFullResourceName()),
                                           ScimType.RFC7644.NO_TARGET);
           }
         }
@@ -459,7 +461,8 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
         }
         else
         {
-          throw new BadRequestException(String.format("No target found for path-filter '%s'", path),
+          throw new BadRequestException(String.format("No target found for path-filter '%s'",
+                                                      schemaAttribute.getFullResourceName()),
                                         ScimType.RFC7644.NO_TARGET);
         }
       }
@@ -808,12 +811,32 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
           for ( IndexNode matchingComplexIndexNode : matchingComplexNodes )
           {
             ObjectNode matchingNode = matchingComplexIndexNode.getObjectNode();
-            matchingNode.set(entry.getKey(), entry.getValue());
+            if (PatchOp.REPLACE.equals(patchOp))
+            {
+              matchingNode.set(entry.getKey(), entry.getValue());
+            }
+            else // patchOp == ADD
+            {
+              JsonNode originalValue = matchingNode.get(entry.getKey());
+              if (originalValue == null || originalValue.isNull() || !originalValue.isArray())
+              {
+                matchingNode.set(entry.getKey(), entry.getValue());
+              }
+              else // we are operating on a complex type and complex types may never have other complex types
+              {
+                ArrayNode originalArray = (ArrayNode)originalValue;
+                ArrayNode newValue = (ArrayNode)entry.getValue();
+                originalArray.addAll(newValue);
+              }
+            }
           }
         });
         if (PatchOp.REPLACE.equals(patchOp))
         {
-          multiValued.add(complexNode);
+          for ( IndexNode matchingComplexNode : matchingComplexNodes )
+          {
+            multiValued.add(matchingComplexNode.getObjectNode());
+          }
         }
       }
       else if (!path.isWithFilter() || matchingComplexNodes.isEmpty())

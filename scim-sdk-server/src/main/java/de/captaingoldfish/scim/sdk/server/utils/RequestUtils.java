@@ -355,9 +355,10 @@ public final class RequestUtils
           }
         }
       }
-      throw new BadRequestException("The attribute with the name '" + attributeName.getFullName() + "' is "
-                                    + "unknown to resource type '" + resourceType.getName() + "'", null,
-                                    ScimType.RFC7644.INVALID_PATH);
+      throw new BadRequestException(String.format("Attribute '%s' is unknown to resource type '%s'",
+                                                  attributeName.getFullName(),
+                                                  resourceType.getName()),
+                                    null, ScimType.RFC7644.INVALID_PATH);
     }
     else if (schemaAttributeList.size() > 1)
     {
