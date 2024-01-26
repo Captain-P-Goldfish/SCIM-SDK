@@ -641,9 +641,9 @@ public final class JsonHelper
    *
    * @return true if the list contains a node that is equal to given complexNode, false else
    */
-  public static boolean hasEqualObject(List<ObjectNode> originalObjects, ObjectNode complexNode)
+  public static <T extends JsonNode> boolean containsEqualObject(List<T> originalNodes, T jsonNode)
   {
-    return originalObjects.parallelStream().anyMatch(originalNode -> isEqual(originalNode, complexNode));
+    return originalNodes.parallelStream().anyMatch(originalNode -> isEqual(originalNode, jsonNode));
   }
 
   /**

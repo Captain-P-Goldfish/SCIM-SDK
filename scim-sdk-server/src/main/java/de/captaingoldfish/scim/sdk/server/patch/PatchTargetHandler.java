@@ -860,7 +860,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       else if (!path.isWithFilter() || matchingComplexNodes.isEmpty())
       {
         multiValued.add(complexNode);
-        isResourceChanged = isResourceChanged || !JsonHelper.hasEqualObject(originalNodes, complexNode);
+        isResourceChanged = isResourceChanged || !JsonHelper.containsEqualObject(originalNodes, complexNode);
       }
     }
     return isResourceChanged;
