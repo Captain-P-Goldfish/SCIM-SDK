@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.server.patch;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.AbstractMap;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -89,11 +90,6 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   private final PatchConfig patchConfig;
 
   /**
-   * this resource-handler will accept the handled patch-operations
-   */
-  private final ResourceHandler<T> resourceHandler;
-
-  /**
    * the definition of the resource that is being patched
    */
   private final ResourceType resourceType;
@@ -142,7 +138,6 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
                              Context context)
   {
     this.resourceId = resourceId;
-    this.resourceHandler = resourceHandler;
     this.serviceProvider = resourceHandler.getServiceProvider();
     this.patchConfig = resourceHandler.getServiceProvider().getPatchConfig();
     this.resourceType = resourceHandler.getResourceType();
@@ -150,6 +145,22 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     this.mainSchema = resourceType.getMainSchema();
     this.extensionSchemas = resourceType.getAllSchemaExtensions();
     this.patchOperationHandler = resourceHandler.getPatchOpResourceHandler(context);
+    this.validationContext = new ValidationContext(resourceType);
+  }
+
+  public PatchRequestHandler(String resourceId,
+                             ServiceProvider serviceProviderConfig,
+                             ResourceType resourceType,
+                             PatchOperationHandler<T> patchOperationHandler)
+  {
+    this.resourceId = resourceId;
+    this.serviceProvider = serviceProviderConfig;
+    this.patchConfig = serviceProviderConfig.getPatchConfig();
+    this.resourceType = resourceType;
+    this.patchWorkarounds = Collections.emptyList();
+    this.mainSchema = resourceType.getMainSchema();
+    this.extensionSchemas = resourceType.getAllSchemaExtensions();
+    this.patchOperationHandler = patchOperationHandler;
     this.validationContext = new ValidationContext(resourceType);
   }
 
@@ -290,7 +301,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   {
     try
     {
-      return RequestUtils.parsePatchPath(resourceHandler.getResourceType(), fixedOperation.getPath().orElse(null));
+      return RequestUtils.parsePatchPath(resourceType, fixedOperation.getPath().orElse(null));
     }
     catch (InvalidFilterException ex)
     {

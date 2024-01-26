@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -31,7 +32,6 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.ScimAttributeHelper;
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -621,11 +621,20 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
   {
     if (subAttribute.isMultiValued())
     {
-      ArrayNode arrayNode = (ArrayNode)complexNode.get(subAttribute.getName());
-      if (arrayNode == null)
+      ArrayNode arrayNode;
+      JsonNode jsonNode = complexNode.get(subAttribute.getName());
+      if (jsonNode == null || jsonNode.isNull() || !jsonNode.isArray())
       {
         arrayNode = new ScimArrayNode(subAttribute);
         complexNode.set(subAttribute.getName(), arrayNode);
+        if (jsonNode != null && !jsonNode.isNull())
+        {
+          arrayNode.add(jsonNode);
+        }
+      }
+      else
+      {
+        arrayNode = (ArrayNode)jsonNode;
       }
       if (PatchOp.REPLACE.equals(patchOp))
       {
@@ -777,40 +786,47 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
                                       null, ScimType.RFC7644.NO_TARGET);
       }
     }
+
+    List<ObjectNode> valueNodes = values.stream().map(val -> {
+      try
+      {
+        return JsonHelper.readJsonDocument(val, ObjectNode.class);
+      }
+      catch (IOException ex)
+      {
+        throw new BadRequestException("The value must be a whole complex type json structure but was: '" + val + "'",
+                                      ex, ScimType.RFC7644.INVALID_VALUE);
+      }
+    }).collect(Collectors.toList());
+
+    List<ObjectNode> originalNodes = new ArrayList<>();
     if (PatchOp.REPLACE.equals(patchOp))
     {
       for ( int i = matchingComplexNodes.size() - 1 ; i >= 0 ; i-- )
       {
         IndexNode indexNode = matchingComplexNodes.get(i);
-        boolean isEquals = indexNode.getObjectNode().equals(JsonHelper.readJsonDocument(values.get(0)));
-        if (isEquals)
+        if (path.isWithFilter())
         {
-          return false;
+          indexNode.createCopy();
         }
+        originalNodes.add((ObjectNode)multiValued.get(indexNode.getIndex()));
         multiValued.remove(indexNode.getIndex());
       }
     }
-    for ( String value : values )
+
+    boolean isResourceChanged = false;
+    for ( ObjectNode complexNode : valueNodes )
     {
-      ObjectNode complexNode;
-      try
-      {
-        complexNode = (ObjectNode)JsonHelper.readJsonDocument(value);
-      }
-      catch (IOException ex)
-      {
-        throw new BadRequestException("The value must be a whole complex type json structure but was: '" + value + "'",
-                                      ex, ScimType.RFC7644.INVALID_VALUE);
-      }
       JsonNode primary = complexNode.get(AttributeNames.RFC7643.PRIMARY);
       checkForPrimary(multiValued, primary != null && primary.booleanValue());
 
       if (path.isWithFilter() && !matchingComplexNodes.isEmpty())
       {
-        complexNode.fields().forEachRemaining(entry -> {
-          for ( IndexNode matchingComplexIndexNode : matchingComplexNodes )
-          {
-            ObjectNode matchingNode = matchingComplexIndexNode.getObjectNode();
+        for ( IndexNode matchingComplexIndexNode : matchingComplexNodes )
+        {
+          ObjectNode matchingNode = matchingComplexIndexNode.getObjectNode();
+          ObjectNode originalNode = JsonHelper.readJsonDocument(matchingNode.toString(), ObjectNode.class);
+          complexNode.fields().forEachRemaining(entry -> {
             if (PatchOp.REPLACE.equals(patchOp))
             {
               matchingNode.set(entry.getKey(), entry.getValue());
@@ -829,12 +845,14 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
                 originalArray.addAll(newValue);
               }
             }
-          }
-        });
+          });
+          isResourceChanged = isResourceChanged || !originalNode.equals(matchingNode);
+        }
         if (PatchOp.REPLACE.equals(patchOp))
         {
           for ( IndexNode matchingComplexNode : matchingComplexNodes )
           {
+            isResourceChanged = isResourceChanged || matchingComplexNode.isResultUnchanged();
             multiValued.add(matchingComplexNode.getObjectNode());
           }
         }
@@ -842,9 +860,32 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       else if (!path.isWithFilter() || matchingComplexNodes.isEmpty())
       {
         multiValued.add(complexNode);
+        isResourceChanged = isResourceChanged || !hasEqualObject(originalNodes, complexNode);
       }
     }
-    return true;
+    return isResourceChanged;
+  }
+
+  /**
+   * jackson is failing on int and long comparison even if the nodes do have the same values. for this reason we
+   * are overriding the comparison here in case for number nodes
+   *
+   * @return true if the list contains a node that is equal to given complexNode, false else
+   */
+  private boolean hasEqualObject(List<ObjectNode> originalObjects, ObjectNode complexNode)
+  {
+    return originalObjects.parallelStream().anyMatch(originalNode -> {
+      return originalNode.equals((o1, o2) -> {
+        if (o1.isNumber() && o2.isNumber())
+        {
+          return o1.longValue() == o2.longValue() ? 0 : 1;
+        }
+        else
+        {
+          return o1.equals(o2) ? 0 : 1;
+        }
+      }, complexNode);
+    });
   }
 
   /**
@@ -978,7 +1019,6 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
    * a helper class that is used in case of filtering. We will also hold the index of the filtered nodes
    */
   @Getter
-  @AllArgsConstructor
   private static class IndexNode
   {
 
@@ -991,5 +1031,26 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
      * a filtered node
      */
     private ObjectNode objectNode;
+
+    /**
+     * a copy of this node that must explicitly be created
+     */
+    private ObjectNode copyNode;
+
+    public IndexNode(int index, ObjectNode objectNode)
+    {
+      this.index = index;
+      this.objectNode = objectNode;
+    }
+
+    public void createCopy()
+    {
+      copyNode = JsonHelper.readJsonDocument(objectNode.toString(), ObjectNode.class);
+    }
+
+    public boolean isResultUnchanged()
+    {
+      return objectNode.equals(copyNode);
+    }
   }
 }

@@ -161,7 +161,6 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
     Assertions.assertNotNull(patchRequestHandler.getPatchConfig());
-    Assertions.assertNotNull(patchRequestHandler.getResourceHandler());
     Assertions.assertNotNull(patchRequestHandler.getPatchWorkarounds());
     Assertions.assertFalse(patchRequestHandler.getPatchWorkarounds().isEmpty());
     Assertions.assertNotNull(patchRequestHandler.getMainSchema());
@@ -1613,12 +1612,15 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 .valueNode(allTypeChanges)
                                                                                 .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    log.debug(patchOpRequest.toPrettyString());
     addAllTypesToProvider(allTypes);
+    log.info(allTypes.toPrettyString());
     PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    log.warn(patchedAllTypes.toPrettyString());
     Assertions.assertTrue(patchRequestHandler.isResourceChanged());
     Assertions.assertEquals(emailArray, patchedAllTypes.get(AttributeNames.RFC7643.EMAILS));
   }

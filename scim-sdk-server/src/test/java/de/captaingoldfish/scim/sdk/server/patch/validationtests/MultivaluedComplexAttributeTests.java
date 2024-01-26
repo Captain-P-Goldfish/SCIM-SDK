@@ -1200,6 +1200,89 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
             }
           }
 
+          /**
+           * replace a multiComplex with identical value
+           */
+          @DisplayName("success: Replace multiComplex with identical value")
+          @ParameterizedTest
+          @ValueSource(strings = {"multiComplex", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex"})
+          public void testReplaceMultiComplexWithIdenticalValue(String attributeName)
+          {
+            PatchRequestOperation patchRequestOperation;
+            {
+              ArrayNode values = new ArrayNode(JsonNodeFactory.instance);
+              {
+                AllTypes complex = new AllTypes(false);
+                complex.setString("hello world");
+                complex.setNumber(5L);
+                values.add(complex);
+              }
+              {
+                AllTypes complex = new AllTypes(false);
+                complex.setStringArray(Arrays.asList("hello", "world"));
+                complex.setNumberArray(Arrays.asList(6L, 7L));
+                values.add(complex);
+              }
+              patchRequestOperation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.REPLACE)
+                                                           .path(attributeName)
+                                                           .valueNode(values)
+                                                           .build();
+            }
+
+            List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+            PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+            AllTypes allTypes = new AllTypes(true);
+            allTypes.set("multiComplex", patchRequestOperation.getValueNode().get());
+            addAllTypesToProvider(allTypes);
+
+            PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                        allTypesResourceType.getResourceHandlerImpl(),
+                                                                                        resourceEndpoint.getPatchWorkarounds(),
+                                                                                        new Context(null));
+            AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+            Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+            Assertions.assertEquals(2, patchedResource.getMultiComplex().size());
+            {
+              AllTypes patchedComplex = patchedResource.getMultiComplex().get(0);
+              Assertions.assertEquals(2, patchedComplex.size());
+              Assertions.assertEquals("hello world", patchedComplex.getString().get());
+              Assertions.assertEquals(5L, patchedComplex.getNumber().get());
+            }
+            {
+              AllTypes patchedComplex = patchedResource.getMultiComplex().get(1);
+              Assertions.assertEquals(2, patchedComplex.size());
+              Assertions.assertEquals(2, patchedComplex.getStringArray().size());
+              Assertions.assertEquals("hello", patchedComplex.getStringArray().get(0));
+              Assertions.assertEquals("world", patchedComplex.getStringArray().get(1));
+              Assertions.assertEquals(2, patchedComplex.getNumberArray().size());
+              Assertions.assertEquals(6L, patchedComplex.getNumberArray().get(0));
+              Assertions.assertEquals(7L, patchedComplex.getNumberArray().get(1));
+            }
+            // must be called
+            {
+              Mockito.verify(defaultPatchOperationHandler)
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexAttributeOperation.class));
+            }
+            // must not be called
+            {
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveComplexAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexSimpleSubAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(),
+                                      Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
+            }
+          }
+          /* *************************************************************************************** */
         }
 
         @DisplayName("With Filter Tests")
@@ -1731,7 +1814,78 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
                                       Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
             }
           }
+
+          /**
+           * add operation does not change multiComplex with identical value
+           */
+          @DisplayName("success: Add multiComplex with identical value")
+          @ParameterizedTest
+          @ValueSource(strings = {"multiComplex", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex"})
+          public void testAddMultiComplexWithIdenticalValue(String attributeName)
+          {
+            PatchRequestOperation patchRequestOperation;
+            {
+              ArrayNode values = new ArrayNode(JsonNodeFactory.instance);
+              {
+                AllTypes complex = new AllTypes(false);
+                complex.setString("hello world");
+                complex.setNumber(5L);
+                values.add(complex);
+              }
+
+              final String filterPath = String.format("%s[string eq \"hello world\"]", attributeName);
+              patchRequestOperation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.ADD)
+                                                           .path(filterPath)
+                                                           .valueNode(values)
+                                                           .build();
+            }
+
+            List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+            PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+            AllTypes allTypes = new AllTypes(true);
+            allTypes.set("multiComplex", patchRequestOperation.getValueNode().get());
+            addAllTypesToProvider(allTypes);
+
+            PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                        allTypesResourceType.getResourceHandlerImpl(),
+                                                                                        resourceEndpoint.getPatchWorkarounds(),
+                                                                                        new Context(null));
+            AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+            Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+            Assertions.assertEquals(1, patchedResource.getMultiComplex().size());
+            {
+              AllTypes patchedComplex = patchedResource.getMultiComplex().get(0);
+              Assertions.assertEquals(2, patchedComplex.size());
+              Assertions.assertEquals("hello world", patchedComplex.getString().get());
+              Assertions.assertEquals(5L, patchedComplex.getNumber().get());
+            }
+            // must be called
+            {
+              Mockito.verify(defaultPatchOperationHandler)
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexAttributeOperation.class));
+            }
+            // must not be called
+            {
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveComplexAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexSimpleSubAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(),
+                                      Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
+            }
+          }
+          /* **************************************************************************************** */
         }
+        /* **************************************************************************************** */
       }
 
       @DisplayName("Extension Resource Tests")
