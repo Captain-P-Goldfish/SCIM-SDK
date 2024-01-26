@@ -860,32 +860,10 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       else if (!path.isWithFilter() || matchingComplexNodes.isEmpty())
       {
         multiValued.add(complexNode);
-        isResourceChanged = isResourceChanged || !hasEqualObject(originalNodes, complexNode);
+        isResourceChanged = isResourceChanged || !JsonHelper.hasEqualObject(originalNodes, complexNode);
       }
     }
     return isResourceChanged;
-  }
-
-  /**
-   * jackson is failing on int and long comparison even if the nodes do have the same values. for this reason we
-   * are overriding the comparison here in case for number nodes
-   *
-   * @return true if the list contains a node that is equal to given complexNode, false else
-   */
-  private boolean hasEqualObject(List<ObjectNode> originalObjects, ObjectNode complexNode)
-  {
-    return originalObjects.parallelStream().anyMatch(originalNode -> {
-      return originalNode.equals((o1, o2) -> {
-        if (o1.isNumber() && o2.isNumber())
-        {
-          return o1.longValue() == o2.longValue() ? 0 : 1;
-        }
-        else
-        {
-          return o1.equals(o2) ? 0 : 1;
-        }
-      }, complexNode);
-    });
   }
 
   /**

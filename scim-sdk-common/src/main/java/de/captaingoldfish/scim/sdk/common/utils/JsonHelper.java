@@ -635,4 +635,58 @@ public final class JsonHelper
     return jsonNode.size() == 0;
   }
 
+  /**
+   * jackson is currently not supporting comparison of int and long-nodes even if the nodes do have the same
+   * values. for this reason we are overriding the comparison here in case for number nodes
+   *
+   * @return true if the list contains a node that is equal to given complexNode, false else
+   */
+  public static boolean hasEqualObject(List<ObjectNode> originalObjects, ObjectNode complexNode)
+  {
+    return originalObjects.parallelStream().anyMatch(originalNode -> isEqual(originalNode, complexNode));
+  }
+
+  /**
+   * jackson is currently not supporting comparison of int and long-nodes even if the nodes do have the same
+   * values. for this reason we are overriding the comparison here in case for number nodes
+   *
+   * @return true if the list contains a node that is equal to given complexNode, false else
+   */
+  public static boolean isEqual(JsonNode node1, JsonNode node2)
+  {
+    if (node1 == null && node2 == null)
+    {
+      return true;
+    }
+    else if (node1 == null || node2 == null)
+    {
+      return false;
+    }
+    return node1.equals((o1, o2) -> {
+      boolean isO1Null = o1 == null || o1.isNull();
+      boolean isO2Null = o2 == null || o2.isNull();
+      if (isO1Null && isO2Null)
+      {
+        return 0;
+      }
+      else if (isO1Null || isO2Null)
+      {
+        return 1;
+      }
+
+      if (o1.isNumber() && o2.isNumber())
+      {
+        return o1.longValue() == o2.longValue() ? 0 : 1;
+      }
+      if (o1.isNumber() && o2.isNumber())
+      {
+        return o1.longValue() == o2.longValue() ? 0 : 1;
+      }
+      else
+      {
+        return o1.equals(o2) ? 0 : 1;
+      }
+    }, node2);
+  }
+
 }

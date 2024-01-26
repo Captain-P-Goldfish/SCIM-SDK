@@ -161,7 +161,7 @@ public final class ResourceTypeFactory
     else
     {
       if (registeredResourceSchema != null && resourceSchema != null
-          && !registeredResourceSchema.equals(resourceSchema))
+          && !JsonHelper.isEqual(registeredResourceSchema, resourceSchema))
       {
         log.debug("Resource schema with id '{}' is already registered. The new instance is not equal to"
                   + " the old schema document. The old document is being replaced by the new one",
