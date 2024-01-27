@@ -115,6 +115,11 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   private final ValidationContext validationContext;
 
   /**
+   * the current request context
+   */
+  private final Context requestContext;
+
+  /**
    * an object on which we will gather the attributes that were present within the patch-operations. This is
    * necessary for the eventual resource-validation to determine which attributes should be returned in the
    * response and which should not. (Handling of the
@@ -144,14 +149,24 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     this.patchWorkarounds = patchWorkarounds;
     this.mainSchema = resourceType.getMainSchema();
     this.extensionSchemas = resourceType.getAllSchemaExtensions();
-    this.patchOperationHandler = resourceHandler.getPatchOpResourceHandler(context);
+    this.patchOperationHandler = resourceHandler.getPatchOpResourceHandler(resourceId, context);
     this.validationContext = new ValidationContext(resourceType);
+    this.requestContext = context;
   }
 
   public PatchRequestHandler(String resourceId,
                              ServiceProvider serviceProviderConfig,
                              ResourceType resourceType,
                              PatchOperationHandler<T> patchOperationHandler)
+  {
+    this(resourceId, serviceProviderConfig, resourceType, patchOperationHandler, null);
+  }
+
+  public PatchRequestHandler(String resourceId,
+                             ServiceProvider serviceProviderConfig,
+                             ResourceType resourceType,
+                             PatchOperationHandler<T> patchOperationHandler,
+                             Context context)
   {
     this.resourceId = resourceId;
     this.serviceProvider = serviceProviderConfig;
@@ -162,6 +177,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     this.extensionSchemas = resourceType.getAllSchemaExtensions();
     this.patchOperationHandler = patchOperationHandler;
     this.validationContext = new ValidationContext(resourceType);
+    this.requestContext = context;
   }
 
   /**
@@ -171,7 +187,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
                                             List<SchemaAttribute> attributes,
                                             List<SchemaAttribute> excludedAttributes)
   {
-    return patchOperationHandler.getOldResourceSupplier(id, attributes, excludedAttributes);
+    return patchOperationHandler.getOldResourceSupplier(id, attributes, excludedAttributes, requestContext);
   }
 
   /**
@@ -179,7 +195,10 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
    */
   public ResourceNode getUpdatedResource(T validatedPatchedResource)
   {
-    return patchOperationHandler.getUpdatedResource(resourceId, validatedPatchedResource, resourceChanged);
+    return patchOperationHandler.getUpdatedResource(resourceId,
+                                                    validatedPatchedResource,
+                                                    resourceChanged,
+                                                    requestContext);
   }
 
   /**

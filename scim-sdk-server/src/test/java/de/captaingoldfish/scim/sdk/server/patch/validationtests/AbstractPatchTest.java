@@ -74,9 +74,11 @@ public abstract class AbstractPatchTest implements FileReferences
                                                                                          allTypesHandler));
 
     this.defaultPatchOperationHandler = //
-      (DefaultPatchOperationHandler)allTypesHandler.getPatchOpResourceHandler(new Context(null));
+      (DefaultPatchOperationHandler)allTypesHandler.getPatchOpResourceHandler(null, new Context(null));
     this.defaultPatchOperationHandler = Mockito.spy(this.defaultPatchOperationHandler);
-    Mockito.doReturn(this.defaultPatchOperationHandler).when(allTypesHandler).getPatchOpResourceHandler(Mockito.any());
+    Mockito.doReturn(this.defaultPatchOperationHandler)
+           .when(allTypesHandler)
+           .getPatchOpResourceHandler(Mockito.any(), Mockito.any());
   }
 
   /**

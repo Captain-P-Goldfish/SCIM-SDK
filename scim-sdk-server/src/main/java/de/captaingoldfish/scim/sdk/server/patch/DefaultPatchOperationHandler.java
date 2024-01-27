@@ -17,8 +17,8 @@ import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorHandler;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexAttributeOperation;
-import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexSimpleSubAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexMultivaluedSubAttributeOperation;
+import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexSimpleSubAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedSimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.PatchOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveComplexAttributeOperation;
@@ -94,7 +94,8 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
   @Override
   public Supplier<T> getOldResourceSupplier(String id,
                                             List<SchemaAttribute> attributes,
-                                            List<SchemaAttribute> excludedAttributes)
+                                            List<SchemaAttribute> excludedAttributes,
+                                            Context context)
   {
     return () -> {
       if (patchedResource == null)
@@ -217,7 +218,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public T getUpdatedResource(String resourceId, T patchedResource, boolean wasResourceChanged)
+  public T getUpdatedResource(String resourceId, T patchedResource, boolean wasResourceChanged, Context context)
   {
     if (wasResourceChanged)
     {
@@ -229,7 +230,8 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
       validatedResource.setId(resourceId);
       Supplier<T> oldResourceSupplier = getOldResourceSupplier(resourceId,
                                                                Collections.emptyList(),
-                                                               Collections.emptyList());
+                                                               Collections.emptyList(),
+                                                               context);
       // handle meta attribute
       {
         final Meta meta = validatedResource.getMeta().orElseGet(() -> {

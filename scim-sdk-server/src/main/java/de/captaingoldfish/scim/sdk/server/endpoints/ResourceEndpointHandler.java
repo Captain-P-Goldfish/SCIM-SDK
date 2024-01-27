@@ -37,6 +37,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
+import de.captaingoldfish.scim.sdk.common.response.EmptyPatchResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.GetResponse;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
@@ -1042,13 +1043,19 @@ class ResourceEndpointHandler
 
       ResourceNode patchedResourceNode = patchRequestHandler.handlePatchRequest(patchOpRequest);
       patchedResourceNode.setId(id);
-      Meta meta = patchedResourceNode.getMeta().get();
+      Meta meta = patchedResourceNode.getMeta().orElseGet(Meta::new);
       Optional.ofNullable(resourceNode).flatMap(ResourceNode::getMeta).ifPresent(previousMeta -> {
         meta.setResourceType(resourceType.getName());
         meta.setLocation(previousMeta.getLocation().orElse(getLocation(resourceType, id, baseUrlSupplier)));
         meta.setVersion(previousMeta.getVersion().orElse(null));
       });
       ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(patchedResourceNode);
+
+      if (updatedResource == null)
+      // can only happen with custom implementations
+      {
+        return new EmptyPatchResponse(getLocation(resourceType, id, baseUrlSupplier));
+      }
 
       ETagHandler.validateVersion(serviceProvider,
                                   resourceType,

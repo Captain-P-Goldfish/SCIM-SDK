@@ -217,7 +217,7 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param context the current SCIM request context
    * @return the patch-handler implementation that applies specific patch-operation to the current resource
    */
-  public PatchOperationHandler<T> getPatchOpResourceHandler(Context context)
+  public PatchOperationHandler<T> getPatchOpResourceHandler(String resourceId, Context context)
   {
     return new DefaultPatchOperationHandler<>(type, serviceProvider.getPatchConfig(), resourceType, context);
   }

@@ -13,11 +13,11 @@
                 additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext" level="debug"
+        <Logger name="de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext" level="info"
                 additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="de.captaingoldfish.scim.sdk.server.patch.DefaultPatchOperationHandler" level="trace"
+        <Logger name="de.captaingoldfish.scim.sdk.server.patch.DefaultPatchOperationHandler" level="info"
                 additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
