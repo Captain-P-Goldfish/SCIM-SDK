@@ -729,9 +729,18 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         }
         else
         {
-          return patchOperationHandler.handleOperation(resourceId,
-                                                       new MultivaluedComplexAttributeOperation(attributePath, patchOp,
-                                                                                                valueNode));
+          if (schemaAttribute.isComplexAttribute())
+          {
+            return patchOperationHandler.handleOperation(resourceId,
+                                                         new MultivaluedComplexAttributeOperation(attributePath,
+                                                                                                  patchOp, valueNode));
+          }
+          else
+          {
+            return patchOperationHandler.handleOperation(resourceId,
+                                                         new MultivaluedSimpleAttributeOperation(attributePath, patchOp,
+                                                                                                 (ArrayNode)valueNode));
+          }
         }
       }
 

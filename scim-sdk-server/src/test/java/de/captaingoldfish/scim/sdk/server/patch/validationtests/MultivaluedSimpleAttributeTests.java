@@ -693,6 +693,54 @@ public class MultivaluedSimpleAttributeTests extends AbstractPatchTest
       }
 
       /**
+       * Verifies that no exception is thrown if the numberArray is assigned a simple value that is not an array
+       */
+      @DisplayName("success: Remove value from numberArray with filter")
+      @ParameterizedTest
+      @ValueSource(strings = {"numberArray", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:numberArray"})
+      public void testRemoveElementFromNumberArrayWithFilter(String attributeName)
+      {
+        final String filterPath = String.format("%s[value eq 6]", attributeName);
+        List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                    .op(PatchOp.REMOVE)
+                                                                                    .path(filterPath)
+                                                                                    .build());
+        PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+        AllTypes allTypes = new AllTypes(true);
+        allTypes.setNumberArray(Arrays.asList(5L, 6L, 7L));
+        addAllTypesToProvider(allTypes);
+        PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                    allTypesResourceType.getResourceHandlerImpl(),
+                                                                                    resourceEndpoint.getPatchWorkarounds(),
+                                                                                    new Context(null));
+        AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+        Assertions.assertEquals(2, patchedResource.getNumberArray().size());
+        Assertions.assertEquals(5L, patchedResource.getNumberArray().get(0));
+        Assertions.assertEquals(7L, patchedResource.getNumberArray().get(1));
+        // must be called
+        {
+          Mockito.verify(defaultPatchOperationHandler)
+                 .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
+        }
+        // must not be called
+        {
+          Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                 .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
+          Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                 .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
+          Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                 .handleOperation(Mockito.any(), Mockito.any(RemoveComplexAttributeOperation.class));
+          Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                 .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexAttributeOperation.class));
+          Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                 .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
+          Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                 .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexSimpleSubAttributeOperation.class));
+        }
+      }
+
+      /**
        * verifies that strings are not allowed in number-type arrays
        */
       @DisplayName("failure: NumberArray with string value")
