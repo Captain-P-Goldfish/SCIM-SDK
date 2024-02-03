@@ -55,6 +55,16 @@ public class Schema extends ResourceNode
   private Map<String, SchemaAttribute> attributeRegister = new HashMap<>();
 
   /**
+   * a reference map that contains all non-multivalued complex attributes of this schema
+   */
+  private Map<SchemaAttribute, List<SchemaAttribute>> complexRegister = new HashMap<>();
+
+  /**
+   * a reference map that contains all multivalued complex attributes of this schema
+   */
+  private Map<SchemaAttribute, List<SchemaAttribute>> multivaluedComplexRegister = new HashMap<>();
+
+  /**
    * this list will hold references to all schema attributes that might be used to set bulkId references in a
    * bulk request. The condition to get added into this list for an attribute is: be of type
    * {@link Type#COMPLEX}, mutability of other than {@link Mutability#READ_ONLY} and define the following three

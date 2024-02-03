@@ -170,6 +170,15 @@ public final class SchemaAttribute extends ScimObjectNode
     validateAttribute();
     Optional.ofNullable(schema).ifPresent(schemaDefinition -> schemaDefinition.addSchemaAttribute(this));
     checkForDirectResourceReference();
+
+    if (schema != null && isMultivaluedComplexAttribute())
+    {
+      schema.getMultivaluedComplexRegister().put(this, subAttributes);
+    }
+    else if (schema != null && isComplexAttribute())
+    {
+      schema.getComplexRegister().put(this, subAttributes);
+    }
   }
 
   public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)
