@@ -258,7 +258,7 @@ public final class SchemaAttribute extends ScimObjectNode
   /**
    * @return true if this is an immutable attribute
    */
-  public boolean isReadImmutable()
+  public boolean isImmutable()
   {
     return getMutability().equals(Mutability.IMMUTABLE);
   }

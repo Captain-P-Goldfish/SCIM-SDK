@@ -22,10 +22,10 @@ public class RemoveExtensionRefOperation extends PatchOperation<ObjectNode>
    */
   private final PatchExtensionAttributePath attributePath;
 
-  public RemoveExtensionRefOperation(Schema schema, String path, PatchOp patchOp)
+  public RemoveExtensionRefOperation(Schema schema, PatchOp patchOp)
   {
     super(schema, null, patchOp, null);
-    this.attributePath = new PatchExtensionAttributePath(path);
+    this.attributePath = new PatchExtensionAttributePath(schema);
   }
 
   @Override

@@ -193,11 +193,15 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   /**
    * delegate method to {@link PatchOperationHandler#getUpdatedResource(String, ResourceNode, boolean)}
    */
-  public ResourceNode getUpdatedResource(T validatedPatchedResource)
+  public ResourceNode getUpdatedResource(T validatedPatchedResource,
+                                         List<SchemaAttribute> attributes,
+                                         List<SchemaAttribute> excludedAttributes)
   {
     return patchOperationHandler.getUpdatedResource(resourceId,
                                                     validatedPatchedResource,
                                                     resourceChanged,
+                                                    attributes,
+                                                    excludedAttributes,
                                                     requestContext);
   }
 
@@ -387,13 +391,11 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
    */
   private boolean handlePatchOnExtension(Schema schema, PatchRequestOperation fixedOperation)
   {
-    final String path = schema.getNonNullId();
     // remove the whole extension
     if (PatchOp.REMOVE.equals(fixedOperation.getOp()))
     {
       return patchOperationHandler.handleOperation(resourceId,
-                                                   new RemoveExtensionRefOperation(schema, path,
-                                                                                   fixedOperation.getOp()));
+                                                   new RemoveExtensionRefOperation(schema, fixedOperation.getOp()));
     }
 
     if (fixedOperation.getValues().size() > 1)
@@ -413,6 +415,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     }
     PatchResourceHandler patchResourceHandler = new PatchResourceHandler();
     boolean changeMade = patchResourceHandler.handleExtensionResource(schema, extension, fixedOperation.getOp());
+    final String path = schema.getNonNullId();
     requestedAttributes.set(path, extension);
     return changeMade;
   }
@@ -924,9 +927,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       {
         // a null node is considered a remove-operation
         return patchOperationHandler.handleOperation(resourceId,
-                                                     new RemoveExtensionRefOperation(extensionSchema,
-                                                                                     extensionSchema.getNonNullId(),
-                                                                                     PatchOp.REMOVE));
+                                                     new RemoveExtensionRefOperation(extensionSchema, PatchOp.REMOVE));
       }
       ObjectNode extensionNode = (ObjectNode)jsonNode;
 
@@ -945,7 +946,6 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         }
       });
 
-      // TODO handle non present value
       requestedAttributes.set(extensionSchema.getNonNullId(), requestedExtensionAttributes);
       return wasChanged.get();
     }

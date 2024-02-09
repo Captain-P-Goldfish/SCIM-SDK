@@ -36,5 +36,4 @@ public class MultivaluedComplexSimpleSubAttributeOperation extends SimpleAttribu
     this.subAttribute = subAttribute;
     this.parentAttribute = this.subAttribute.getParent();
   }
-
 }

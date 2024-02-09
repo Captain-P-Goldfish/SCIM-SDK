@@ -1049,7 +1049,9 @@ class ResourceEndpointHandler
         meta.setLocation(previousMeta.getLocation().orElse(getLocation(resourceType, id, baseUrlSupplier)));
         meta.setVersion(previousMeta.getVersion().orElse(null));
       });
-      ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(patchedResourceNode);
+      ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(patchedResourceNode,
+                                                                            attributesList,
+                                                                            excludedAttributesList);
 
       if (updatedResource == null)
       // can only happen with custom implementations

@@ -218,7 +218,12 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
    * {@inheritDoc}
    */
   @Override
-  public T getUpdatedResource(String resourceId, T patchedResource, boolean wasResourceChanged, Context context)
+  public T getUpdatedResource(String resourceId,
+                              T patchedResource,
+                              boolean wasResourceChanged,
+                              List<SchemaAttribute> attributes,
+                              List<SchemaAttribute> excludedAttributes,
+                              Context context)
   {
     if (wasResourceChanged)
     {

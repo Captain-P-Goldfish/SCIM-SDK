@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 
 
@@ -13,19 +14,19 @@ public class PatchExtensionAttributePath extends AttributePathRoot
 {
 
   /**
-   * the path that addresses an extension directly with its id value
+   * the extension to be removed
    */
-  private final String path;
+  private final Schema extensionSchema;
 
-  public PatchExtensionAttributePath(String path)
+  public PatchExtensionAttributePath(Schema extensionSchema)
   {
     super();
-    this.path = path;
+    this.extensionSchema = extensionSchema;
   }
 
   @Override
   public String getFullName()
   {
-    return path;
+    return extensionSchema.getNonNullId();
   }
 }

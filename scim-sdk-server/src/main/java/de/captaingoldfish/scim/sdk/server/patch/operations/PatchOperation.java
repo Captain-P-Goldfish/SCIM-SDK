@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.patch.operations;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -9,6 +10,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
+import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.utils.ScimAttributeHelper;
 import lombok.Getter;
 
@@ -36,8 +38,14 @@ public abstract class PatchOperation<T extends JsonNode> implements ScimAttribut
    */
   protected final PatchOp patchOp;
 
+  /**
+   * the jackson representation of the values-node
+   */
   protected final T valuesNode;
 
+  /**
+   * the single nodes of the {@link #valuesNode} as strings.
+   */
   protected final List<String> valueStringList;
 
   public PatchOperation(SchemaAttribute schemaAttribute, PatchOp patchOp, JsonNode valuesNode)
@@ -68,9 +76,36 @@ public abstract class PatchOperation<T extends JsonNode> implements ScimAttribut
    */
   public abstract AttributePathRoot getAttributePath();
 
+  /**
+   * delegate method for direct access
+   *
+   * @return the directly referenced attribute. So If a sub-attribute is referenced this is returned instead of
+   *         the parent-attribute
+   */
+  public SchemaAttribute getDirectlyReferencedAttribute()
+  {
+    return getAttributePath().getDirectlyReferencedAttribute();
+  }
+
+  /**
+   * @return the filter-expression if a filter expression is present in the patch-request
+   */
+  public FilterNode getFilter()
+  {
+    return getAttributePath().getChild();
+  }
+
   public boolean isWithFilter()
   {
     return getAttributePath().getChild() != null;
+  }
+
+  public boolean isReferencingSubAttribute()
+  {
+    return schemaAttribute.getParent() != null
+           || Optional.ofNullable(getAttributePath())
+                      .map(attributePathRoot -> attributePathRoot.getDirectlyReferencedAttribute().getParent() != null)
+                      .orElse(false);
   }
 
   public boolean isRemoveOp()

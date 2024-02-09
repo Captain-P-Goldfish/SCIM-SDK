@@ -67,7 +67,12 @@ public interface PatchOperationHandler<T extends ResourceNode>
    * @return the full patched resource as it would be returned by
    *         {@link de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler#getResource(String, List, List, Context)}
    */
-  public T getUpdatedResource(String id, T validatedPatchedResource, boolean wasResourceChanged, Context context);
+  public T getUpdatedResource(String id,
+                              T validatedPatchedResource,
+                              boolean wasResourceChanged,
+                              List<SchemaAttribute> attributes,
+                              List<SchemaAttribute> excludedAttributes,
+                              Context context);
 
   /**
    * this method gets patch-requests assigned that want to remove all attributes of an extension e.g.
