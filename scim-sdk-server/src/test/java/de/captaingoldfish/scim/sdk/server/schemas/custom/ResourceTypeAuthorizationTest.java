@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -48,7 +49,7 @@ public class ResourceTypeAuthorizationTest implements FileReferences
   public void testRolesLoadedFromJsonFile()
   {
     JsonNode rolesResourceType = JsonHelper.loadJsonDocument(USER_AUTHORIZED_RESOURCE_TYPE);
-    JsonNode rolesSchema = JsonHelper.loadJsonDocument(ROLE_RESOURCE_SCHEMA);
+    JsonNode rolesSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
     ResourceType resourceType = resourceTypeFactory.registerResourceType(null, rolesResourceType, rolesSchema);
 
     MatcherAssert.assertThat(resourceType.getFeatures().getAuthorization().getRoles(), Matchers.contains("admin"));

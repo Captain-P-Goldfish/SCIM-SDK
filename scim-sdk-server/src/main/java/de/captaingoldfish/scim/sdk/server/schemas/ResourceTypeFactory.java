@@ -91,6 +91,7 @@ public final class ResourceTypeFactory
     checkResourceSchema(resourceTypeObject, resourceSchema);
     resourceTypeObject.setResourceHandlerImpl(resourceHandler);
     resourceTypes.put(resourceTypeObject.getEndpoint(), resourceTypeObject);
+    resourceTypeObject.loadAttributeRegister();
     return resourceTypeObject;
   }
 

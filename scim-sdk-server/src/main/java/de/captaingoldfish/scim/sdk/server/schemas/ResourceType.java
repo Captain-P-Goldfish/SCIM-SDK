@@ -4,7 +4,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -61,6 +63,24 @@ public class ResourceType extends ResourceNode
   @Setter(AccessLevel.PUBLIC)
   private ResourceHandler resourceHandlerImpl;
 
+  /**
+   * a reference map that contains all non-multivalued complex attributes of this schema
+   */
+  @Getter(AccessLevel.PUBLIC)
+  private Map<String, SchemaAttribute> attributeRegister = new HashMap<>();
+
+  /**
+   * a reference map that contains all non-multivalued complex attributes of this schema
+   */
+  @Getter(AccessLevel.PUBLIC)
+  private Map<SchemaAttribute, List<SchemaAttribute>> complexRegister = new HashMap<>();
+
+  /**
+   * a reference map that contains all multivalued complex attributes of this schema
+   */
+  @Getter(AccessLevel.PUBLIC)
+  private Map<SchemaAttribute, List<SchemaAttribute>> multivaluedComplexRegister = new HashMap<>();
+
   public ResourceType()
   {
     this.schemaFactory = null;
@@ -101,6 +121,24 @@ public class ResourceType extends ResourceNode
     ResourceTypeFeatures resourceTypeFeatures = JsonHelper.copyResourceToObject(featureNode,
                                                                                 ResourceTypeFeatures.class);
     setFeatures(resourceTypeFeatures);
+  }
+
+  /**
+   * fill the resource-type attribute-register
+   */
+  protected void loadAttributeRegister()
+  {
+    Schema mainSchema = getMainSchema();
+    attributeRegister.putAll(mainSchema.getAttributeRegister());
+    complexRegister.putAll(mainSchema.getComplexRegister());
+    multivaluedComplexRegister.putAll(mainSchema.getMultivaluedComplexRegister());
+
+    for ( Schema schemaExtension : getAllSchemaExtensions() )
+    {
+      attributeRegister.putAll(schemaExtension.getAttributeRegister());
+      complexRegister.putAll(schemaExtension.getComplexRegister());
+      multivaluedComplexRegister.putAll(schemaExtension.getMultivaluedComplexRegister());
+    }
   }
 
   /**

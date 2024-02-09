@@ -1367,7 +1367,7 @@ public final class SchemaAttribute extends ScimObjectNode
       }
       attributeNameSet.add(schemaAttribute.getScimNodeName());
       schemaAttributeList.add(schemaAttribute);
-      subAttributes.put(schemaAttribute.getScimNodeName().toLowerCase(), schemaAttribute);
+      subAttributes.put(schemaAttribute.getName().toLowerCase(), schemaAttribute);
     }
     if (hasValueAttribute && isResourceReference)
     {
