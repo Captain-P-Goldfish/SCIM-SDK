@@ -73,4 +73,19 @@ public abstract class PatchOperation<T extends JsonNode> implements ScimAttribut
     return getAttributePath().getChild() != null;
   }
 
+  public boolean isRemoveOp()
+  {
+    return PatchOp.REMOVE.equals(patchOp);
+  }
+
+  public boolean isReplaceOp()
+  {
+    return PatchOp.REPLACE.equals(patchOp);
+  }
+
+  public boolean isAddOp()
+  {
+    return PatchOp.ADD.equals(patchOp);
+  }
+
 }
