@@ -134,6 +134,6 @@ public class FilterAttributeName
   @Override
   public String toString()
   {
-    return fullName;
+    return fullName.replaceFirst("\\.$", "");
   }
 }
