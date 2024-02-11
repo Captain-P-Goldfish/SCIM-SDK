@@ -64,19 +64,19 @@ public class ResourceType extends ResourceNode
   private ResourceHandler resourceHandlerImpl;
 
   /**
-   * a reference map that contains all non-multivalued complex attributes of this schema
+   * a reference map that contains all non-multivalued complex attributes all the schemas of this resource-type
    */
   @Getter(AccessLevel.PUBLIC)
   private Map<String, SchemaAttribute> attributeRegister = new HashMap<>();
 
   /**
-   * a reference map that contains all non-multivalued complex attributes of this schema
+   * a reference map that contains all non-multivalued complex attributes all the schemas of this resource-type
    */
   @Getter(AccessLevel.PUBLIC)
   private Map<SchemaAttribute, List<SchemaAttribute>> complexRegister = new HashMap<>();
 
   /**
-   * a reference map that contains all multivalued complex attributes of this schema
+   * a reference map that contains all multivalued complex attributes of all the schemas of this resource-type
    */
   @Getter(AccessLevel.PUBLIC)
   private Map<SchemaAttribute, List<SchemaAttribute>> multivaluedComplexRegister = new HashMap<>();
