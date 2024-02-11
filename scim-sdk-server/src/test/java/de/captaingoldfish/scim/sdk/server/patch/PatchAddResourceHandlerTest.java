@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -244,6 +245,39 @@ public class PatchAddResourceHandlerTest implements FileReferences
     Assertions.assertEquals(multiComplex, patchedAllTypes.getMultiComplex().get(0));
     Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
     Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
+  }
+
+  /**
+   * this test will verify that the meta-attribute will be ignored in a patch-resource request
+   */
+  @DisplayName("Ignore meta-attribute in patch-resource-request")
+  @Test
+  public void testMetaAttributeDoesNotCauseProblems()
+  {
+    AllTypes allTypes = new AllTypes(true);
+    Meta meta = Meta.builder().created(LocalDateTime.now()).build();
+    allTypes.setMeta(meta);
+
+    AllTypes patchResource = new AllTypes(true);
+    patchResource.setString("hello world");
+    patchResource.setMeta(Meta.builder().created(Instant.now()).version("1").build());
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(patchResource)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has("string"));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.META));
   }
 
   /**

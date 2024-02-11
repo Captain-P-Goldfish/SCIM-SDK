@@ -101,7 +101,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
       if (patchedResource == null)
       {
         patchedResource = (T)resourceType.getResourceHandlerImpl()
-                                         .getResource(id, Collections.emptyList(), Collections.emptyList(), context);
+                                         .getResource(id, attributes, excludedAttributes, context);
         // TODO enhance this creepy copy creation
         oldResource = JsonHelper.readJsonDocument(patchedResource.toString(), type);
       }

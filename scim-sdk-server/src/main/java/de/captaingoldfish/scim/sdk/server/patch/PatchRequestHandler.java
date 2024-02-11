@@ -860,6 +860,10 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
 
       AtomicReference<Boolean> wasChanged = new AtomicReference<>(false);
       resourceNode.fields().forEachRemaining(field -> {
+        if (field.getKey().equals(AttributeNames.RFC7643.META))
+        {
+          return; // do not handle the meta attribute here
+        }
         // if the field is referencing an extension
         // the pair here is used to determine if we have an unknown attribute or a direct-schema-reference:
         // urn:ietf:params:scim:schemas:extension:enterprise:2.0:User (direct schema-reference)
