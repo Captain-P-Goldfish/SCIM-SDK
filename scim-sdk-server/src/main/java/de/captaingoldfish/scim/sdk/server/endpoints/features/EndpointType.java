@@ -15,5 +15,6 @@ public enum EndpointType
    * represents UPDATE and PATCH
    */
   UPDATE,
+  PATCH,
   DELETE
 }

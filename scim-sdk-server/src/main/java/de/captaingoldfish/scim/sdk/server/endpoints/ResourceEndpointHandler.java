@@ -14,7 +14,6 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import de.captaingoldfish.scim.sdk.server.transaction.TransactionManager;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -51,11 +50,13 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ResourceTypeEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.SchemaEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.ServiceProviderEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorHandler;
 import de.captaingoldfish.scim.sdk.server.etag.ETagHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.resources.FilterResourceResolver;
+import de.captaingoldfish.scim.sdk.server.interceptor.Interceptor;
 import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder;
@@ -256,9 +257,10 @@ class ResourceEndpointHandler
       resourceNode.remove(AttributeNames.RFC7643.META);
       resourceNode.setMeta(meta);
       new RequestValidatorHandler(resourceHandler, resourceValidator, context).validateCreate(resourceNode);
-      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
-      ResourceNode resourceNodeCreated = transactionManager.executeInTransaction(() -> resourceHandler.createResource(resourceNode,
-                                                                                                                      context));
+      Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.CREATE);
+      ResourceNode resourceNodeCreated = interceptor.doAround(() -> {
+        return resourceHandler.createResource(resourceNode, context);
+      });
       if (resourceNodeCreated == null)
       {
         throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
@@ -353,11 +355,10 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
-      TransactionManager transactionManager = resourceHandler.getTransactionManager(true);
-      ResourceNode resourceNode = transactionManager.executeInTransaction(() -> resourceHandler.getResource(id,
-                                                                                                            attributesList,
-                                                                                                            excludedAttributesList,
-                                                                                                            context));
+      Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.GET);
+      ResourceNode resourceNode = interceptor.doAround(() -> {
+        return resourceHandler.getResource(id, attributesList, excludedAttributesList, context);
+      });
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -561,21 +562,17 @@ class ResourceEndpointHandler
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
 
       ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
-      TransactionManager transactionManager = resourceHandler.getTransactionManager(true);
-      PartialListResponse<T> resources = transactionManager.executeInTransaction(() -> resourceHandler.listResources(effectiveStartIndex,
-                                                                                                                     effectiveCount,
-                                                                                                                     autoFiltering
-                                                                                                                       ? null
-                                                                                                                       : filterNode,
-                                                                                                                     autoSorting
-                                                                                                                       ? null
-                                                                                                                       : sortByAttribute,
-                                                                                                                     autoSorting
-                                                                                                                       ? null
-                                                                                                                       : sortOrdering,
-                                                                                                                     attributesList,
-                                                                                                                     excludedAttributesList,
-                                                                                                                     context));
+      Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.LIST);
+      PartialListResponse<T> resources = interceptor.doAround(() -> {
+        return resourceHandler.listResources(effectiveStartIndex,
+                                             effectiveCount,
+                                             autoFiltering ? null : filterNode,
+                                             autoSorting ? null : sortByAttribute,
+                                             autoSorting ? null : sortOrdering,
+                                             attributesList,
+                                             excludedAttributesList,
+                                             context);
+      });
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"
@@ -871,11 +868,12 @@ class ResourceEndpointHandler
 
       AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
       Supplier<ResourceNode> oldResourceSupplier = () -> {
-        oldResourceNode.compareAndSet(null, resourceHandler.getResourceForUpdate(id, null, null, context));
+        ResourceNode oldResource = resourceHandler.getResourceForUpdate(id, null, null, context, EndpointType.UPDATE);
+        oldResourceNode.compareAndSet(null, oldResource);
         return oldResourceNode.get();
       };
-      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
-      ResourceNode resourceNode = transactionManager.executeInTransaction(() -> {
+      Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.UPDATE);
+      ResourceNode resourceNode = interceptor.doAround(() -> {
         validateResourceVersion(id, resourceType, oldResourceSupplier, context.getUriInfos().getHttpHeaders());
         new RequestValidatorHandler(resourceHandler, requestResourceValidator,
                                     context).validateUpdate(oldResourceSupplier, resourceNodeForUpdate);
@@ -952,12 +950,11 @@ class ResourceEndpointHandler
     {
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
-      return transactionManager.executeInTransaction(() -> {
-        Supplier<ResourceNode> oldResourceSupplier = () -> resourceHandler.getResourceForUpdate(id,
-                                                                                                null,
-                                                                                                null,
-                                                                                                context);
+      Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.DELETE);
+      return interceptor.doAround(() -> {
+        Supplier<ResourceNode> oldResourceSupplier = () -> {
+          return resourceHandler.getResourceForUpdate(id, null, null, context, EndpointType.DELETE);
+        };
         validateResourceVersion(id, resourceType, oldResourceSupplier, httpHeaders);
         resourceHandler.deleteResource(id, context);
         return new DeleteResponse();
@@ -1033,8 +1030,8 @@ class ResourceEndpointHandler
                                                                                               attributesList,
                                                                                               excludedAttributesList);
 
-      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
-      ResourceNode updatedResource = transactionManager.executeInTransaction(() -> {
+      Interceptor patchInterceptor = resourceHandler.getInterceptor(EndpointType.PATCH);
+      ResourceNode updatedResource = patchInterceptor.doAround(() -> {
         ResourceNode resourceNode = null;
         if (serviceProvider.getETagConfig().isSupported())
         {

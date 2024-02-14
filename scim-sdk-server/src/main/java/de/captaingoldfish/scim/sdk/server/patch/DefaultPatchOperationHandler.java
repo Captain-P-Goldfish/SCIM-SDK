@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
+import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidatorHandler;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexMultivaluedSubAttributeOperation;
@@ -101,7 +102,11 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
       if (patchedResource == null)
       {
         patchedResource = (T)resourceType.getResourceHandlerImpl()
-                                         .getResourceForUpdate(id, attributes, excludedAttributes, context);
+                                         .getResourceForUpdate(id,
+                                                               attributes,
+                                                               excludedAttributes,
+                                                               context,
+                                                               EndpointType.PATCH);
         // TODO enhance this creepy copy creation
         oldResource = JsonHelper.readJsonDocument(patchedResource.toString(), type);
       }

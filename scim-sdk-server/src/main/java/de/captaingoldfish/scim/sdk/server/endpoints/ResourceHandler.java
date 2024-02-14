@@ -16,16 +16,17 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestValidator;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
+import de.captaingoldfish.scim.sdk.server.interceptor.Interceptor;
+import de.captaingoldfish.scim.sdk.server.interceptor.NoopInterceptor;
 import de.captaingoldfish.scim.sdk.server.patch.DefaultPatchOperationHandler;
 import de.captaingoldfish.scim.sdk.server.patch.PatchOperationHandler;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.AbstractResourceValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
-import de.captaingoldfish.scim.sdk.server.transaction.NoopTransactionManager;
-import de.captaingoldfish.scim.sdk.server.transaction.TransactionManager;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -154,8 +155,8 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                 Context context);
 
   /**
-   * extracts a resource by its id for further update or delete operation. This method might apply a row lock to
-   * control concurrent access to data
+   * extracts a resource by its id for further update or delete operation. This method may be used to apply a
+   * row lock to control concurrent access to data
    *
    * @param id the id of the resource to return
    * @param attributes the attributes that should be returned to the client. If the client sends this parameter
@@ -171,7 +172,8 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public T getResourceForUpdate(String id,
                                 List<SchemaAttribute> attributes,
                                 List<SchemaAttribute> excludedAttributes,
-                                Context context)
+                                Context context,
+                                EndpointType endpointType)
   {
     return getResource(id, attributes, excludedAttributes, context);
   }
@@ -287,14 +289,13 @@ public abstract class ResourceHandler<T extends ResourceNode>
   }
 
   /**
-   * Retrieves a transaction manager to execute a single transaction on this resource
+   * Retrieves an interceptor to execute a single operation within customized code
    *
-   * @param readOnly indicates that transaction manager will execute a read only transaction
-   * @return appropriate transaction manager
+   * @param endpointType tells you from which endpoint the interceptor was requested
    */
-  public TransactionManager getTransactionManager(boolean readOnly)
+  public Interceptor getInterceptor(EndpointType endpointType)
   {
-    return new NoopTransactionManager();
+    return new NoopInterceptor();
   }
 
   /**
