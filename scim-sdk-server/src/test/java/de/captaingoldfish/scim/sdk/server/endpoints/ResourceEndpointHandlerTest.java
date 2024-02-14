@@ -1,34 +1,5 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
-
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.DynamicTest;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestFactory;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import org.mockito.Mockito;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
@@ -87,10 +58,43 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.schemas.custom.ResourceTypeFeatures;
+import de.captaingoldfish.scim.sdk.server.transaction.NoopTransactionManager;
+import de.captaingoldfish.scim.sdk.server.transaction.TransactionManager;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.InOrder;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 
 /**
@@ -135,6 +139,16 @@ public class ResourceEndpointHandlerTest implements FileReferences
    */
   private ServiceProviderHandler serviceProviderHandler;
 
+  /**
+   * a mockito spy to verify that ResourceHandler's methods are called within a transaction
+   */
+  private TransactionManager transactionManager;
+
+  /**
+   * a mockito spy to verify that ResourceHandler's methods are called within a read-only transaction
+   */
+  private TransactionManager readOnlyTransactionManager;
+
 
   /**
    * initializes this test
@@ -160,6 +174,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     endpointDefinition = new ServiceProviderEndpointDefinition(serviceProvider);
     endpointDefinition.setResourceHandler(serviceProviderHandler);
     resourceEndpointHandler.registerEndpoint(endpointDefinition);
+
+    transactionManager = Mockito.spy(new NoopTransactionManager());
+    Mockito.doReturn(transactionManager).when(userHandler).getTransactionManager(false);
+
+    readOnlyTransactionManager = Mockito.spy(new NoopTransactionManager());
+    Mockito.doReturn(readOnlyTransactionManager).when(userHandler).getTransactionManager(true);
   }
 
   private Context getContext(String id, HttpMethod httpMethod)
@@ -235,12 +255,16 @@ public class ResourceEndpointHandlerTest implements FileReferences
   {
     User u = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
     u.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
+    ResultCaptor<User> transactionResult = new ResultCaptor<>();
+    Mockito.doAnswer(transactionResult).when(transactionManager).executeInTransaction(Mockito.any());
     ScimResponse scimResponse = resourceEndpointHandler.createResource(endpoint,
                                                                        u.toString(),
                                                                        getBaseUrlSupplier(),
                                                                        null);
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.isNull());
+    Mockito.verify(transactionManager, Mockito.times(1)).executeInTransaction(Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+    MatcherAssert.assertThat(transactionResult.getResult().getClass(), Matchers.typeCompatibleWith(User.class));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
     String createResponse = scimResponse.toString();
     Assertions.assertNotNull(createResponse);
@@ -296,6 +320,37 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(exception, errorResponse.getScimException().getCause());
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * this test checks that no {@link ResourceHandler} methods unexpectedly called outside of transaction manager
+   */
+  @Test
+  public void testCreateUserEnsureTransaction()
+  {
+    User u = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    u.setMeta(Meta.builder().created(Instant.now()).lastModified(Instant.now()).build());
+    Mockito.when(userHandler.getTransactionManager(false)).thenReturn(new TransactionManager()
+    {
+
+      @Override
+      public <T> T executeInTransaction(Supplier<T> supplier)
+      {
+        return (T)u; // don't call the supplier
+      }
+    });
+    Mockito.clearInvocations(userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
+                                                                       u.toString(),
+                                                                       getBaseUrlSupplier(),
+                                                                       null);
+    Mockito.verify(userHandler, Mockito.times(1)).getTransactionManager(false);
+    Mockito.verify(userHandler, Mockito.times(2)).getType();
+    Mockito.verify(userHandler, Mockito.times(1)).getRequestValidator();
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResponseValidator(Mockito.isNull(), Mockito.isNull(), Mockito.any(), Mockito.any());
+    Mockito.verifyNoMoreInteractions(userHandler);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
   }
 
   /**
@@ -2597,6 +2652,394 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that {@link ResourceHandler#getResource(String, List, List, Context)} getResource } method is
+   * called within readonlyTransactionManager
+   */
+  @Test
+  public void testGetResourceWithTransactionManager()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String id = user.getId().get();
+    ResultCaptor<User> transactionResult = new ResultCaptor<>();
+    Mockito.doAnswer(transactionResult).when(readOnlyTransactionManager).executeInTransaction(Mockito.any());
+    Mockito.doReturn(user)
+           .when(userHandler)
+           .getResource(Mockito.eq(id),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.notNull());
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    id,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    getContext(id, HttpMethod.GET));
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResource(Mockito.eq(id),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.eq(Collections.emptyList()),
+                        Mockito.notNull());
+    Mockito.verify(readOnlyTransactionManager, Mockito.times(1)).executeInTransaction(Mockito.any());
+    MatcherAssert.assertThat(transactionResult.getResult().getClass(), Matchers.typeCompatibleWith(User.class));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+  }
+
+  /**
+   * this test checks that no {@link ResourceHandler} methods unexpectedly called outside of transaction manager
+   */
+  @Test
+  public void testGetResourceEnsureTransaction()
+  {
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    String id = user.getId().get();
+    Mockito.when(userHandler.getTransactionManager(true)).thenReturn(new TransactionManager()
+    {
+
+      @Override
+      public <T> T executeInTransaction(Supplier<T> supplier)
+      {
+        return (T)user; // don't call the supplier
+      }
+    });
+    Mockito.clearInvocations(userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.getResource("/Users",
+                                                                    id,
+                                                                    null,
+                                                                    null,
+                                                                    getBaseUrlSupplier(),
+                                                                    getContext(id, HttpMethod.GET));
+    Mockito.verify(userHandler, Mockito.times(1)).getTransactionManager(true);
+    Mockito.verify(userHandler, Mockito.times(1)).getType();
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResponseValidator(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    Mockito.verifyNoMoreInteractions(userHandler);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
+  }
+
+  /**
+   * verifies that
+   * {@link ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder, List, List, Context)}}
+   * method is called within readonlyTransactionManager
+   */
+  @Test
+  public void testListUsersWithTransactionManager()
+  {
+    List<User> userList = createUsers(1);
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(1)
+                                                                       .resources(userList)
+                                                                       .build();
+    ResultCaptor<PartialListResponse<User>> transactionResult = new ResultCaptor<>();
+    Mockito.doAnswer(transactionResult).when(readOnlyTransactionManager).executeInTransaction(Mockito.any());
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1L,
+                                                                      1,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    Mockito.verify(readOnlyTransactionManager, Mockito.times(1)).executeInTransaction(Mockito.any());
+    MatcherAssert.assertThat(transactionResult.getResult().getClass(),
+                             Matchers.typeCompatibleWith(PartialListResponse.class));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+  }
+
+  /**
+   * this test checks that no {@link ResourceHandler} methods unexpectedly called outside of transaction manager
+   */
+  @Test
+  public void testListUsersEnsureTransaction()
+  {
+    List<User> userList = createUsers(1);
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(1)
+                                                                       .resources(userList)
+                                                                       .build();
+    Mockito.when(userHandler.getTransactionManager(true)).thenReturn(new TransactionManager()
+    {
+
+      @Override
+      public <T> T executeInTransaction(Supplier<T> supplier)
+      {
+        return (T)partialListResponse; // don't call the supplier
+      }
+    });
+    Mockito.clearInvocations(userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1L,
+                                                                      1,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null);
+    Mockito.verify(userHandler, Mockito.times(1)).getTransactionManager(true);
+    Mockito.verify(userHandler, Mockito.times(1)).getType();
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResponseValidator(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    Mockito.verifyNoMoreInteractions(userHandler);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+  }
+
+  /**
+   * verifies that {@link ResourceHandler#deleteResource(String, Context)} method is called within
+   * transactionManager
+   */
+  @Test
+  public void testDeleteResourceWithTransactionManager()
+  {
+    resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+    ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
+    User user = createUser("/Users");
+    String id = user.getId().get();
+    ETag etag = user.getMeta().get().getVersion().get();
+    Context context = getContext(id, HttpMethod.DELETE);
+    Mockito.clearInvocations(transactionManager);
+    ScimResponse scimResponse = resourceEndpointHandler.deleteResource("/Users",
+                                                                       id,
+                                                                       Collections.singletonMap(HttpHeader.IF_MATCH_HEADER,
+                                                                                                etag.getEntityTag()),
+                                                                       context);
+    Mockito.verify(transactionManager, Mockito.times(1)).executeInTransaction(Mockito.any());
+    InOrder orderVerifier = Mockito.inOrder(userHandler);
+    orderVerifier.verify(userHandler, Mockito.times(1))
+                 .getResourceForUpdate(Mockito.eq(id), Mockito.isNull(), Mockito.isNull(), Mockito.eq(context));
+    orderVerifier.verify(userHandler, Mockito.times(1)).deleteResource(Mockito.eq(id), Mockito.eq(context));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+  }
+
+  /**
+   * this test checks that no {@link ResourceHandler} methods unexpectedly called outside of transaction manager
+   */
+  @Test
+  public void testDeleteResourceEnsureTransaction()
+  {
+    resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+    ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
+    Mockito.when(userHandler.getTransactionManager(false)).thenReturn(new TransactionManager()
+    {
+
+      @Override
+      public <T> T executeInTransaction(Supplier<T> supplier)
+      {
+        return (T)new DeleteResponse(); // don't call the supplier
+      }
+    });
+    Mockito.clearInvocations(userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.deleteResource("/Users",
+                                                                       "123456",
+                                                                       Collections.singletonMap(HttpHeader.IF_MATCH_HEADER,
+                                                                                                ETag.builder()
+                                                                                                    .tag("123")
+                                                                                                    .build()
+                                                                                                    .getEntityTag()),
+                                                                       null);
+    Mockito.verify(userHandler, Mockito.times(1)).getTransactionManager(false);
+    Mockito.verifyNoMoreInteractions(userHandler);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
+  }
+
+  /**
+   * verifies that {@link ResourceHandler#updateResource(ResourceNode, Context)} method is called within
+   * transactionManager
+   */
+
+  @Test
+  public void testUpdateUserWithTransactionManager()
+  {
+    resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+    ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
+    User user = createUser("/Users");
+    String id = user.getId().get();
+    ETag etag = user.getMeta().get().getVersion().get();
+    ResultCaptor<User> transactionResult = new ResultCaptor<>();
+    Mockito.doAnswer(transactionResult).when(transactionManager).executeInTransaction(Mockito.any());
+    Mockito.clearInvocations(transactionManager);
+    Context context = getContext(user.getId().get(), HttpMethod.PUT);
+    context.getUriInfos().getHttpHeaders().put(HttpHeader.IF_MATCH_HEADER, etag.getEntityTag());
+    ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
+                                                                       id,
+                                                                       user.toString(),
+                                                                       getBaseUrlSupplier(),
+                                                                       context);
+    Mockito.verify(transactionManager, Mockito.times(1)).executeInTransaction(Mockito.any());
+    InOrder orderVerifier = Mockito.inOrder(userHandler);
+    orderVerifier.verify(userHandler, Mockito.times(1))
+                 .getResourceForUpdate(Mockito.eq(id), Mockito.isNull(), Mockito.isNull(), Mockito.eq(context));
+    orderVerifier.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(context));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    MatcherAssert.assertThat(transactionResult.getResult().getClass(), Matchers.typeCompatibleWith(User.class));
+  }
+
+  /**
+   * this test checks that no {@link ResourceHandler} methods unexpectedly called outside of transaction manager
+   */
+  @Test
+  public void testUpdateUserEnsureTransaction()
+  {
+    resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+    ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE, User.class);
+    user.setMeta(new Meta());
+    Mockito.when(userHandler.getTransactionManager(false)).thenReturn(new TransactionManager()
+    {
+
+      @Override
+      public <T> T executeInTransaction(Supplier<T> supplier)
+      {
+        return (T)user; // don't call the supplier
+      }
+    });
+    Context context = getContext(user.getId().get(), HttpMethod.PUT);
+    context.getUriInfos()
+           .getHttpHeaders()
+           .put(HttpHeader.IF_MATCH_HEADER, ETag.builder().tag("123").build().getEntityTag());
+    Mockito.clearInvocations(userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
+                                                                       user.getId().get(),
+                                                                       user.toString(),
+                                                                       getBaseUrlSupplier(),
+                                                                       context);
+    Mockito.verify(userHandler, Mockito.times(1)).getTransactionManager(false);
+    Mockito.verify(userHandler, Mockito.times(2)).getType();
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResponseValidator(Mockito.isNull(), Mockito.isNull(), Mockito.any(), Mockito.any());
+    Mockito.verifyNoMoreInteractions(userHandler);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+  }
+
+  /**
+   * verifies that {@link ResourceHandler#updateResource(ResourceNode, Context)} method is called within
+   * transactionManager
+   */
+  @Test
+  public void testPathUserWithTransactionManager()
+  {
+    resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+    ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
+    resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+    User user = createUser("/Users");
+    String id = user.getId().get();
+    ETag etag = user.getMeta().get().getVersion().get();
+    ResultCaptor<User> transactionResult = new ResultCaptor<>();
+    Mockito.doAnswer(transactionResult).when(transactionManager).executeInTransaction(Mockito.any());
+
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    Mockito.doReturn(user).when(userHandler).updateResource(Mockito.any(), Mockito.any());
+    Context context = getContext(user.getId().get(), HttpMethod.PATCH);
+    context.getUriInfos().getHttpHeaders().put(HttpHeader.IF_MATCH_HEADER, etag.getEntityTag());
+    Mockito.clearInvocations(transactionManager, userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.patchResource("/Users",
+                                                                      id,
+                                                                      patchOpRequest.toString(),
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
+    Mockito.verify(transactionManager, Mockito.times(1)).executeInTransaction(Mockito.any());
+    InOrder orderVerifier = Mockito.inOrder(userHandler);
+    orderVerifier.verify(userHandler, Mockito.times(1))
+                 .getResourceForUpdate(Mockito.eq(id), Mockito.any(), Mockito.any(), Mockito.eq(context));
+    orderVerifier.verify(userHandler, Mockito.times(1)).updateResource(Mockito.any(), Mockito.eq(context));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+    MatcherAssert.assertThat(transactionResult.getResult().getClass(), Matchers.typeCompatibleWith(User.class));
+  }
+
+  /**
+   * this test checks that no {@link ResourceHandler} methods unexpectedly called outside of transaction manager
+   */
+  @Test
+  public void testPatchUserEnsureTransaction()
+  {
+    resourceEndpointHandler.getServiceProvider().getETagConfig().setSupported(true);
+    ResourceType userResourceType = resourceTypeFactory.getResourceTypeByName(ResourceTypeNames.USER).get();
+    userResourceType.getFeatures().getETagFeature().setEnabled(true);
+    resourceEndpointHandler.getServiceProvider().getPatchConfig().setSupported(true);
+    User user = createUser("/Users");
+    String id = user.getId().get();
+    ETag etag = user.getMeta().get().getVersion().get();
+
+    final String path = "name";
+    Name name = Name.builder().givenName("goldfish").familyName("captain").build();
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .valueNode(name)
+                                                                                .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    Context context = getContext(user.getId().get(), HttpMethod.PATCH);
+    context.getUriInfos().getHttpHeaders().put(HttpHeader.IF_MATCH_HEADER, etag.getEntityTag());
+
+    Mockito.when(userHandler.getTransactionManager(false)).thenReturn(new TransactionManager()
+    {
+
+      @Override
+      public <T> T executeInTransaction(Supplier<T> supplier)
+      {
+        return (T)user; // don't call the supplier
+      }
+    });
+
+    Mockito.clearInvocations(transactionManager, userHandler);
+    ScimResponse scimResponse = resourceEndpointHandler.patchResource("/Users",
+                                                                      id,
+                                                                      patchOpRequest.toString(),
+                                                                      null,
+                                                                      null,
+                                                                      getBaseUrlSupplier(),
+                                                                      context);
+
+    Mockito.verify(userHandler, Mockito.times(1)).getTransactionManager(false);
+    Mockito.verify(userHandler, Mockito.times(1)).getType();
+    Mockito.verify(userHandler, Mockito.times(1))
+           .getResponseValidator(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(2)).getServiceProvider();
+    Mockito.verify(userHandler, Mockito.times(1)).getResourceType();
+    Mockito.verify(userHandler, Mockito.times(1)).getPatchOpResourceHandler(id, context);
+    Mockito.verifyNoMoreInteractions(userHandler);
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
+  }
+
+  /**
    * reads a user from the endpoint
    *
    * @param endpoint the resource endpoint that should be used
@@ -2736,5 +3179,23 @@ public class ResourceEndpointHandlerTest implements FileReferences
       userList.add(user);
     }
     return userList;
+  }
+
+  private static class ResultCaptor<T> implements Answer<T>
+  {
+
+    private T result;
+
+    public T getResult()
+    {
+      return result;
+    }
+
+    @Override
+    public T answer(InvocationOnMock invocationOnMock) throws Throwable
+    {
+      result = (T)invocationOnMock.callRealMethod();
+      return result;
+    }
   }
 }

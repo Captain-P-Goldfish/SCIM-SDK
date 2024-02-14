@@ -14,6 +14,7 @@ import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.server.transaction.TransactionManager;
 import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -255,18 +256,20 @@ class ResourceEndpointHandler
       resourceNode.remove(AttributeNames.RFC7643.META);
       resourceNode.setMeta(meta);
       new RequestValidatorHandler(resourceHandler, resourceValidator, context).validateCreate(resourceNode);
-      resourceNode = resourceHandler.createResource(resourceNode, context);
-      if (resourceNode == null)
+      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
+      ResourceNode resourceNodeCreated = transactionManager.executeInTransaction(() -> resourceHandler.createResource(resourceNode,
+                                                                                                                      context));
+      if (resourceNodeCreated == null)
       {
         throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
                                           + "'");
       }
-      String resourceId = resourceNode.getId().orElseThrow(() -> {
+      String resourceId = resourceNodeCreated.getId().orElseThrow(() -> {
         String errorMessage = "ID attribute not set on created resource";
         return new InternalServerException(errorMessage, null, null);
       });
       final String location = getLocation(resourceType, resourceId, baseUrlSupplier);
-      Meta createdMeta = resourceNode.getMeta().orElseThrow(() -> {
+      Meta createdMeta = resourceNodeCreated.getMeta().orElseThrow(() -> {
         String metaErrorMessage = "Meta attribute not set on created resource";
         return new InternalServerException(metaErrorMessage, null, null);
       });
@@ -283,13 +286,14 @@ class ResourceEndpointHandler
         createdMeta.setLocation(location);
       }
       createdMeta.setResourceType(resourceType.getName());
-      ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(createdMeta::setVersion);
+      ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNodeCreated)
+                 .ifPresent(createdMeta::setVersion);
       Optional<AbstractResourceValidator> responseValidator = //
         resourceHandler.getResponseValidator(null, null, resource, getReferenceUrlSupplier(baseUrlSupplier));
-      JsonNode responseResource = resourceNode;
+      JsonNode responseResource = resourceNodeCreated;
       if (responseValidator.isPresent())
       {
-        responseResource = responseValidator.get().validateDocument(resourceNode);
+        responseResource = responseValidator.get().validateDocument(resourceNodeCreated);
       }
       return new CreateResponse(responseResource, location, createdMeta);
     }
@@ -349,7 +353,11 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
-      ResourceNode resourceNode = resourceHandler.getResource(id, attributesList, excludedAttributesList, context);
+      TransactionManager transactionManager = resourceHandler.getTransactionManager(true);
+      ResourceNode resourceNode = transactionManager.executeInTransaction(() -> resourceHandler.getResource(id,
+                                                                                                            attributesList,
+                                                                                                            excludedAttributesList,
+                                                                                                            context));
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -553,14 +561,21 @@ class ResourceEndpointHandler
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
 
       ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
-      PartialListResponse<T> resources = resourceHandler.listResources(effectiveStartIndex,
-                                                                       effectiveCount,
-                                                                       autoFiltering ? null : filterNode,
-                                                                       autoSorting ? null : sortByAttribute,
-                                                                       autoSorting ? null : sortOrdering,
-                                                                       attributesList,
-                                                                       excludedAttributesList,
-                                                                       context);
+      TransactionManager transactionManager = resourceHandler.getTransactionManager(true);
+      PartialListResponse<T> resources = transactionManager.executeInTransaction(() -> resourceHandler.listResources(effectiveStartIndex,
+                                                                                                                     effectiveCount,
+                                                                                                                     autoFiltering
+                                                                                                                       ? null
+                                                                                                                       : filterNode,
+                                                                                                                     autoSorting
+                                                                                                                       ? null
+                                                                                                                       : sortByAttribute,
+                                                                                                                     autoSorting
+                                                                                                                       ? null
+                                                                                                                       : sortOrdering,
+                                                                                                                     attributesList,
+                                                                                                                     excludedAttributesList,
+                                                                                                                     context));
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"
@@ -834,44 +849,38 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
                                                                                        HttpMethod.PUT);
-      ResourceNode resourceNode = (ResourceNode)requestResourceValidator.validateDocument(resource);
-      AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
-      Supplier<ResourceNode> oldResourceSupplier = () -> {
-        oldResourceNode.compareAndSet(null, resourceHandler.getResource(id, null, null, context));
-        return oldResourceNode.get();
-      };
-      try
-      {
-        ETagHandler.validateVersion(serviceProvider,
-                                    resourceType,
-                                    oldResourceSupplier,
-                                    context.getUriInfos().getHttpHeaders());
-      }
-      catch (ResourceNotFoundException ex)
-      {
-        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
-                                            + "not exist", ex, null);
-      }
+      ResourceNode resourceNodeForUpdate = (ResourceNode)requestResourceValidator.validateDocument(resource);
+
       if (resource == null)
       {
         throw new BadRequestException("the request body does not contain any writable parameters", null,
                                       ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      if (resourceNode == null)
+      if (resourceNodeForUpdate == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
                                             + "not exist", null, null);
       }
-      resourceNode.setId(id);
+      resourceNodeForUpdate.setId(id);
       final String location = getLocation(resourceType, id, baseUrlSupplier);
-      Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
-      resourceNode.remove(AttributeNames.RFC7643.META);
+      Meta meta = resourceNodeForUpdate.getMeta().orElse(Meta.builder().build());
+      resourceNodeForUpdate.remove(AttributeNames.RFC7643.META);
       meta.setLocation(location);
       meta.setResourceType(resourceType.getName());
-      resourceNode.setMeta(meta);
-      new RequestValidatorHandler(resourceHandler, requestResourceValidator,
-                                  context).validateUpdate(oldResourceSupplier, resourceNode);
-      resourceNode = resourceHandler.updateResource(resourceNode, context);
+      resourceNodeForUpdate.setMeta(meta);
+
+      AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
+      Supplier<ResourceNode> oldResourceSupplier = () -> {
+        oldResourceNode.compareAndSet(null, resourceHandler.getResourceForUpdate(id, null, null, context));
+        return oldResourceNode.get();
+      };
+      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
+      ResourceNode resourceNode = transactionManager.executeInTransaction(() -> {
+        validateResourceVersion(id, resourceType, oldResourceSupplier, context.getUriInfos().getHttpHeaders());
+        new RequestValidatorHandler(resourceHandler, requestResourceValidator,
+                                    context).validateUpdate(oldResourceSupplier, resourceNodeForUpdate);
+        return resourceHandler.updateResource(resourceNodeForUpdate, context);
+      });
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -943,20 +952,16 @@ class ResourceEndpointHandler
     {
       ResourceType resourceType = getResourceType(endpoint);
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
-      try
-      {
-        ETagHandler.validateVersion(serviceProvider,
-                                    resourceType,
-                                    () -> resourceHandler.getResource(id, null, null, context),
-                                    httpHeaders);
-      }
-      catch (ResourceNotFoundException ex)
-      {
-        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
-                                            + "not exist", ex, null);
-      }
-      resourceHandler.deleteResource(id, context);
-      return new DeleteResponse();
+      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
+      return transactionManager.executeInTransaction(() -> {
+        Supplier<ResourceNode> oldResourceSupplier = () -> resourceHandler.getResourceForUpdate(id,
+                                                                                                null,
+                                                                                                null,
+                                                                                                context);
+        validateResourceVersion(id, resourceType, oldResourceSupplier, httpHeaders);
+        resourceHandler.deleteResource(id, context);
+        return new DeleteResponse();
+      });
     }
     catch (ScimException ex)
     {
@@ -1028,30 +1033,31 @@ class ResourceEndpointHandler
                                                                                               attributesList,
                                                                                               excludedAttributesList);
 
-      ResourceNode resourceNode = null;
-      if (serviceProvider.getETagConfig().isSupported())
-      {
-        resourceNode = oldResourceSupplier.get();
-        Meta meta = resourceNode.getMeta().orElseGet(Meta::new);
-        resourceNode.remove(AttributeNames.RFC7643.META);
-        final String location = context.getResourceReferenceUrl(id);
-        meta.setLocation(location);
-        meta.setResourceType(resourceType.getName());
-        resourceNode.setMeta(meta);
-        ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
-      }
+      TransactionManager transactionManager = resourceHandler.getTransactionManager(false);
+      ResourceNode updatedResource = transactionManager.executeInTransaction(() -> {
+        ResourceNode resourceNode = null;
+        if (serviceProvider.getETagConfig().isSupported())
+        {
+          resourceNode = oldResourceSupplier.get();
+          Meta meta = resourceNode.getMeta().orElseGet(Meta::new);
+          resourceNode.remove(AttributeNames.RFC7643.META);
+          final String location = context.getResourceReferenceUrl(id);
+          meta.setLocation(location);
+          meta.setResourceType(resourceType.getName());
+          resourceNode.setMeta(meta);
+          ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
+        }
 
-      ResourceNode patchedResourceNode = patchRequestHandler.handlePatchRequest(patchOpRequest);
-      patchedResourceNode.setId(id);
-      Meta meta = patchedResourceNode.getMeta().orElseGet(Meta::new);
-      Optional.ofNullable(resourceNode).flatMap(ResourceNode::getMeta).ifPresent(previousMeta -> {
-        meta.setResourceType(resourceType.getName());
-        meta.setLocation(previousMeta.getLocation().orElse(getLocation(resourceType, id, baseUrlSupplier)));
-        meta.setVersion(previousMeta.getVersion().orElse(null));
+        ResourceNode patchedResourceNode = patchRequestHandler.handlePatchRequest(patchOpRequest);
+        patchedResourceNode.setId(id);
+        Meta meta = patchedResourceNode.getMeta().orElseGet(Meta::new);
+        Optional.ofNullable(resourceNode).flatMap(ResourceNode::getMeta).ifPresent(previousMeta -> {
+          meta.setResourceType(resourceType.getName());
+          meta.setLocation(previousMeta.getLocation().orElse(getLocation(resourceType, id, baseUrlSupplier)));
+          meta.setVersion(previousMeta.getVersion().orElse(null));
+        });
+        return patchRequestHandler.getUpdatedResource(patchedResourceNode, attributesList, excludedAttributesList);
       });
-      ResourceNode updatedResource = patchRequestHandler.getUpdatedResource(patchedResourceNode,
-                                                                            attributesList,
-                                                                            excludedAttributesList);
 
       if (updatedResource == null)
       // can only happen with custom implementations
@@ -1157,5 +1163,21 @@ class ResourceEndpointHandler
       String id = StringUtils.isBlank(resourceId) ? "" : "/" + resourceId;
       return resourceType.map(jsonNodes -> baseUrl.get() + jsonNodes.getEndpoint() + id).orElse(null);
     };
+  }
+
+  private void validateResourceVersion(String id,
+                                       ResourceType resourceType,
+                                       Supplier<ResourceNode> oldResourceSupplier,
+                                       Map<String, String> httpHeaders)
+  {
+    try
+    {
+      ETagHandler.validateVersion(serviceProvider, resourceType, oldResourceSupplier, httpHeaders);
+    }
+    catch (ResourceNotFoundException ex)
+    {
+      throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                          + "not exist", ex, null);
+    }
   }
 }

@@ -24,6 +24,8 @@ import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.AbstractResourceValidator;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.ResponseResourceValidator;
+import de.captaingoldfish.scim.sdk.server.transaction.NoopTransactionManager;
+import de.captaingoldfish.scim.sdk.server.transaction.TransactionManager;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
@@ -136,8 +138,6 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * extract a resource by its id
    *
    * @param id the id of the resource to return
-   * @param authorization should return the roles of an user and may contain arbitrary data needed in the
-   *          handler implementation
    * @param attributes the attributes that should be returned to the client. If the client sends this parameter
    *          the evaluation of these parameters might help to improve database performance by omitting
    *          unnecessary table joins
@@ -152,6 +152,29 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                 List<SchemaAttribute> attributes,
                                 List<SchemaAttribute> excludedAttributes,
                                 Context context);
+
+  /**
+   * extracts a resource by its id for further update or delete operation. This method might apply a row lock to
+   * control concurrent access to data
+   *
+   * @param id the id of the resource to return
+   * @param attributes the attributes that should be returned to the client. If the client sends this parameter
+   *          the evaluation of these parameters might help to improve database performance by omitting
+   *          unnecessary table joins
+   * @param excludedAttributes the attributes that should NOT be returned to the client. If the client send this
+   *          parameter the evaluation of these parameters might help to improve database performance by
+   *          omitting unnecessary table joins
+   * @param context the current request context that holds additional useful information. This object is never
+   *          null
+   * @return the found resource
+   */
+  public T getResourceForUpdate(String id,
+                                List<SchemaAttribute> attributes,
+                                List<SchemaAttribute> excludedAttributes,
+                                Context context)
+  {
+    return getResource(id, attributes, excludedAttributes, context);
+  }
 
   /**
    * queries several resources based on the following values
@@ -261,6 +284,17 @@ public abstract class ResourceHandler<T extends ResourceNode>
   public Optional<ResourceType> getResourceTypeByRef(String ref)
   {
     return Optional.ofNullable(getResourceTypeByRef).map(function -> function.apply(ref));
+  }
+
+  /**
+   * Retrieves a transaction manager to execute a single transaction on this resource
+   *
+   * @param readOnly indicates that transaction manager will execute a read only transaction
+   * @return appropriate transaction manager
+   */
+  public TransactionManager getTransactionManager(boolean readOnly)
+  {
+    return new NoopTransactionManager();
   }
 
   /**
