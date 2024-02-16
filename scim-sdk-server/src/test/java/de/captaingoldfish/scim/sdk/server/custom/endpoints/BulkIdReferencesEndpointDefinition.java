@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.custom.resourcehandler.BulkIdReferencesResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 
 
 public class BulkIdReferencesEndpointDefinition extends EndpointDefinition
@@ -35,5 +36,11 @@ public class BulkIdReferencesEndpointDefinition extends EndpointDefinition
   {
     super(JsonHelper.loadJsonDocument(RESOURCE_TYPE_LOCATION), JsonHelper.loadJsonDocument(RESOURCE_SCHEMA_LOCATION),
           Arrays.asList(SCHEMA_EXTENSION), new BulkIdReferencesResourceHandler());
+  }
+
+  public BulkIdReferencesEndpointDefinition(ResourceHandler resourceHandler)
+  {
+    super(JsonHelper.loadJsonDocument(RESOURCE_TYPE_LOCATION), JsonHelper.loadJsonDocument(RESOURCE_SCHEMA_LOCATION),
+          Arrays.asList(SCHEMA_EXTENSION), resourceHandler);
   }
 }

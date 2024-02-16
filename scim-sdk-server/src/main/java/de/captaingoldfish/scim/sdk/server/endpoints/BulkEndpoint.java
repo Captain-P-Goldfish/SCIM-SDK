@@ -244,6 +244,8 @@ class BulkEndpoint
         return HttpStatus.CREATED == responseOperation.getStatus();
       case DELETE:
         return HttpStatus.NO_CONTENT == responseOperation.getStatus();
+      case PATCH:
+        return HttpStatus.OK == responseOperation.getStatus() || HttpStatus.NO_CONTENT == responseOperation.getStatus();
       default:
         return HttpStatus.OK == responseOperation.getStatus();
     }

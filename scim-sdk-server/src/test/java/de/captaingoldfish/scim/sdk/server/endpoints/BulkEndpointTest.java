@@ -19,6 +19,7 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -57,11 +58,13 @@ import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.custom.endpoints.BulkIdReferencesEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.custom.resourcehandler.BulkIdReferencesResourceHandler;
 import de.captaingoldfish.scim.sdk.server.custom.resources.BulkIdReferences;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
+import de.captaingoldfish.scim.sdk.server.patch.PatchOperationHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import lombok.extern.slf4j.Slf4j;
@@ -102,6 +105,11 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
   private GroupHandlerImpl groupHandler;
 
   /**
+   * a mockito spy to verify the class that have been made on this instance
+   */
+  private BulkIdReferencesResourceHandler bulkIdReferencesResourceHandler;
+
+  /**
    * a resource type consumer that can be dynamically changed during the test execution
    */
   private Consumer<ResourceType> dynamicResourceTypeConsumer;
@@ -115,9 +123,10 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     serviceProvider = ServiceProvider.builder().build();
     userHandler = Mockito.spy(new UserHandlerImpl(true));
     groupHandler = Mockito.spy(new GroupHandlerImpl());
+    bulkIdReferencesResourceHandler = Mockito.spy(new BulkIdReferencesResourceHandler());
     ResourceEndpoint resourceEndpoint = new ResourceEndpoint(serviceProvider, new UserEndpointDefinition(userHandler),
                                                              new GroupEndpointDefinition(groupHandler),
-                                                             new BulkIdReferencesEndpointDefinition());
+                                                             new BulkIdReferencesEndpointDefinition(bulkIdReferencesResourceHandler));
     bulkEndpoint = new BulkEndpoint(resourceEndpoint, serviceProvider, resourceEndpoint.getResourceTypeFactory(),
                                     new HashMap<>(), new HashMap<>(),
                                     resourceType -> Optional.ofNullable(dynamicResourceTypeConsumer)
@@ -2036,6 +2045,59 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       return id.startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     }));
     Assertions.assertTrue(resolvedIds.stream().allMatch(this::isUuid));
+  }
+
+  /**
+   * verifies that the noContent http-status is also accepted as valid in bulk-requests
+   */
+  @DisplayName("204 is accepted for PATCH in BulkResponses")
+  @Test
+  public void test204IsAcceptedInPatchBulkResponses()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(20);
+    serviceProvider.getBulkConfig().setMaxPayloadSize(Long.MAX_VALUE);
+    serviceProvider.getBulkConfig().setReturnResourcesEnabled(true);
+
+    // make sure that status-code 204 is returned by returning null from getUpdatedResource
+    {
+      PatchOperationHandler patchOperationHandler = //
+        Mockito.spy(bulkIdReferencesResourceHandler.getPatchOpResourceHandler(Mockito.any(), Mockito.any()));
+      Mockito.doReturn(patchOperationHandler)
+             .when(bulkIdReferencesResourceHandler)
+             .getPatchOpResourceHandler(Mockito.any(), Mockito.any());
+      Mockito.doReturn(null)
+             .when(patchOperationHandler)
+             .getUpdatedResource(Mockito.any(),
+                                 Mockito.any(),
+                                 Mockito.anyBoolean(),
+                                 Mockito.any(),
+                                 Mockito.any(),
+                                 Mockito.any());
+    }
+
+    BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_PATCH_WITH_PATH_ENSEMBLE,
+                                                          BulkRequest.class);
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    log.warn(bulkResponse.toPrettyString());
+
+    for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
+    {
+      if ("3".equals(bulkResponseOperation.getBulkId().get()))
+      {
+        Assertions.assertEquals(HttpStatus.NO_CONTENT,
+                                bulkResponseOperation.getStatus(),
+                                bulkResponse.toPrettyString());
+      }
+      else
+      {
+        Assertions.assertEquals(HttpStatus.CREATED, bulkResponseOperation.getStatus(), bulkResponse.toPrettyString());
+      }
+    }
   }
 
   /**
