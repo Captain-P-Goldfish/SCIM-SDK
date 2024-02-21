@@ -35,7 +35,7 @@ public class Context
    * the request infos
    */
   @Getter
-  @Setter(AccessLevel.PACKAGE)
+  @Setter(AccessLevel.PROTECTED)
   private UriInfos uriInfos;
 
   /**
@@ -44,11 +44,11 @@ public class Context
    * e.g. if called on the {@link ResourceHandler} implementation for Groups
    *
    * <pre>
-   * getResourceReferenceUrl().apply("123456")
-   * => http://localhost:8080/scim/v2/Groups/123456
+   *     getResourceReferenceUrl().apply("123456")
+   *     => http://localhost:8080/scim/v2/Groups/123456
    * </pre>
    */
-  @Setter(AccessLevel.PACKAGE)
+  @Setter(AccessLevel.PROTECTED)
   private Function<String, String> resourceReferenceUrl;
 
   /**
@@ -57,20 +57,17 @@ public class Context
    * e.g. if called on the {@link ResourceHandler} implementation for Groups
    *
    * <pre>
-   * getExternalResourceReferenceUrl().apply("User", "123456")
-   * => http://localhost:8080/scim/v2/Users/123456
-   * </pre>
-   *
-   * <pre>
+   *     getExternalResourceReferenceUrl().apply("User", "123456")
+   *     => http://localhost:8080/scim/v2/Users/123456
    * </pre>
    */
-  @Setter(AccessLevel.PACKAGE)
+  @Setter(AccessLevel.PROTECTED)
   private BiFunction<String, String, String> crossResourceReferenceUrl;
 
   /**
    * allows to access the original request body if necessary
    */
-  @Setter(AccessLevel.PACKAGE)
+  @Setter(AccessLevel.PROTECTED)
   private Supplier<String> requestBodySupplier;
 
   public Context(Authorization authorization)
