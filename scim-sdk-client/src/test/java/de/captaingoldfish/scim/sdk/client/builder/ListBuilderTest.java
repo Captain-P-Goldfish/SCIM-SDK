@@ -161,6 +161,46 @@ public class ListBuilderTest extends HttpServerMockup
     parseFilterWithAntlr(filter);
   }
 
+  @ParameterizedTest
+  @MethodSource("filterBuilderParamsString")
+  public void testBuildFilterWithStringsWithOr(String attributeName, Comparator comparator, String value)
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.filter()
+               .or(attributeName, comparator, value)
+               .or(true, attributeName, comparator, value)
+               .closeParenthesis()
+               .build();
+    final String filter = listBuilder.getRequestParameters().get(AttributeNames.RFC7643.FILTER);
+    String val = Comparator.PR.equals(comparator) ? "" : " \"" + value + "\"";
+    Assertions.assertEquals(attributeName + " " + comparator + val + " or (" + attributeName + " " + comparator + val
+                            + ")",
+                            filter);
+    parseFilterWithAntlr(filter);
+  }
+
+  @ParameterizedTest
+  @MethodSource("filterBuilderParamsString")
+  public void testBuildFilterWithStringsWithAnd(String attributeName, Comparator comparator, String value)
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.filter()
+               .and(attributeName, comparator, value)
+               .and(true, attributeName, comparator, value)
+               .closeParenthesis()
+               .build();
+    final String filter = listBuilder.getRequestParameters().get(AttributeNames.RFC7643.FILTER);
+    String val = Comparator.PR.equals(comparator) ? "" : " \"" + value + "\"";
+    Assertions.assertEquals(attributeName + " " + comparator + val + " and (" + attributeName + " " + comparator + val
+                            + ")",
+                            filter);
+    parseFilterWithAntlr(filter);
+  }
+
   /**
    * verifies that using the full url does also work with get
    */

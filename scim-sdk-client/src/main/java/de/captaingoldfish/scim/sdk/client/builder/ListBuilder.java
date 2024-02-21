@@ -183,6 +183,14 @@ public class ListBuilder<T extends ResourceNode>
   /**
    * creates a new filter-builder that can be used to create filter expressions
    */
+  public FilterBuilder<T> filter()
+  {
+    return new FilterBuilder<>(this);
+  }
+
+  /**
+   * creates a new filter-builder that can be used to create filter expressions
+   */
   public FilterBuilder<T> filter(String attributeName, Comparator comparator, String value)
   {
     return filter(false, attributeName, comparator, value);
@@ -567,6 +575,11 @@ public class ListBuilder<T extends ResourceNode>
      */
     private int closedParenthesis = 0;
 
+    public FilterBuilder(ListBuilder<T> listBuilder)
+    {
+      this.listBuilder = listBuilder;
+    }
+
     public FilterBuilder(ListBuilder<T> listBuilder,
                          String attributeName,
                          Comparator comparator,
@@ -808,7 +821,10 @@ public class ListBuilder<T extends ResourceNode>
                                 String value,
                                 boolean closeParenthesis)
     {
-      filterString.append(" and ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" and ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -821,7 +837,10 @@ public class ListBuilder<T extends ResourceNode>
                                String value,
                                boolean closeParenthesis)
     {
-      filterString.append(" or ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" or ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -834,7 +853,10 @@ public class ListBuilder<T extends ResourceNode>
                                 Boolean value,
                                 boolean closeParenthesis)
     {
-      filterString.append(" and ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" and ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -847,7 +869,10 @@ public class ListBuilder<T extends ResourceNode>
                                Boolean value,
                                boolean closeParenthesis)
     {
-      filterString.append(" or ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" or ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -860,7 +885,10 @@ public class ListBuilder<T extends ResourceNode>
                                 Integer value,
                                 boolean closeParenthesis)
     {
-      filterString.append(" and ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" and ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -873,7 +901,10 @@ public class ListBuilder<T extends ResourceNode>
                                Integer value,
                                boolean closeParenthesis)
     {
-      filterString.append(" or ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" or ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -886,7 +917,10 @@ public class ListBuilder<T extends ResourceNode>
                                 Long value,
                                 boolean closeParenthesis)
     {
-      filterString.append(" and ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" and ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -899,7 +933,10 @@ public class ListBuilder<T extends ResourceNode>
                                Long value,
                                boolean closeParenthesis)
     {
-      filterString.append(" or ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" or ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -912,7 +949,10 @@ public class ListBuilder<T extends ResourceNode>
                                 Double value,
                                 boolean closeParenthesis)
     {
-      filterString.append(" and ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" and ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -925,7 +965,10 @@ public class ListBuilder<T extends ResourceNode>
                                Double value,
                                boolean closeParenthesis)
     {
-      filterString.append(" or ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" or ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value);
       closeParenthesis(closeParenthesis);
@@ -938,7 +981,10 @@ public class ListBuilder<T extends ResourceNode>
                                 Instant value,
                                 boolean closeParenthesis)
     {
-      filterString.append(" and ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" and ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value.toString());
       closeParenthesis(closeParenthesis);
@@ -951,7 +997,10 @@ public class ListBuilder<T extends ResourceNode>
                                Instant value,
                                boolean closeParenthesis)
     {
-      filterString.append(" or ");
+      if (filterString.length() != 0)
+      {
+        filterString.append(" or ");
+      }
       openParenthesis(openParenthesis);
       setExpression(attributeName, comparator, value.toString());
       closeParenthesis(closeParenthesis);
