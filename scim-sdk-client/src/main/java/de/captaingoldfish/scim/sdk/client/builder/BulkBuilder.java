@@ -860,7 +860,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   private List<List<BulkRequestOperation>> splitRequestsSimple(List<BulkRequestOperation> operationsToSplit)
   {
-    final int maxNumberOfOperationns = getMaxNumberOfOperations();
+    final int maxNumberOfOperationns = Math.max(1, getMaxNumberOfOperations());
 
     List<List<BulkRequestOperation>> splittedListParts = new ArrayList<>();
     if (operationsToSplit.size() <= maxNumberOfOperationns)
