@@ -3,12 +3,16 @@ package de.captaingoldfish.scim.sdk.common.response;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import lombok.Builder;
 
 
@@ -91,6 +95,23 @@ public class BulkResponse extends ScimResponse
   }
 
   /**
+   * tries to find several bulk response operations matching the given bulkIds.
+   *
+   * @param bulkIds the bulk ids of the operations that should be extracted
+   * @return the operations or an empty list if no operation did match the bulkIds
+   */
+  public Stream<BulkResponseOperation> getByBulkIds(Set<String> bulkIds)
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      if (!op.getBulkId().isPresent())
+      {
+        return false;
+      }
+      return bulkIds.contains(op.getBulkId().get());
+    });
+  }
+
+  /**
    * tries to find a bulk response operation by searching for a resource's id. This can be used on update/patch
    * or delete requests
    *
@@ -124,6 +145,54 @@ public class BulkResponse extends ScimResponse
   public List<BulkResponseOperation> getOperationsWithoutBulkId()
   {
     return getBulkResponseOperations().stream().filter(op -> !op.getBulkId().isPresent()).collect(Collectors.toList());
+  }
+
+  /**
+   * @return the operations from the bulk-response that were successful
+   */
+  public Stream<BulkResponseOperation> getSuccessfulOperations()
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      return HttpStatus.isResponseSuccessful(op.getMethod(), op.getStatus());
+    });
+  }
+
+  /**
+   * @return the operations from the bulk-response that were successful and apply to the given http-method
+   */
+  public Stream<BulkResponseOperation> getSuccessfulOperations(HttpMethod httpMethod)
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      if (!httpMethod.equals(op.getMethod()))
+      {
+        return false;
+      }
+      return HttpStatus.isResponseSuccessful(op.getMethod(), op.getStatus());
+    });
+  }
+
+  /**
+   * @return the operations from the bulk-response that have failed
+   */
+  public Stream<BulkResponseOperation> getFailedOperations()
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      return !HttpStatus.isResponseSuccessful(op.getMethod(), op.getStatus());
+    });
+  }
+
+  /**
+   * @return the operations from the bulk-response that were successful and apply to the given http-method
+   */
+  public Stream<BulkResponseOperation> getFailedOperations(HttpMethod httpMethod)
+  {
+    return getBulkResponseOperations().stream().filter(op -> {
+      if (!httpMethod.equals(op.getMethod()))
+      {
+        return false;
+      }
+      return !HttpStatus.isResponseSuccessful(op.getMethod(), op.getStatus());
+    });
   }
 
   /**

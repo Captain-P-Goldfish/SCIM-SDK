@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants;
 
+import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
@@ -51,5 +52,26 @@ public final class HttpStatus
   public static final int INTERNAL_SERVER_ERROR = 500;
 
   public static final int NOT_IMPLEMENTED = 501;
+
+  /**
+   * checks if the response operation indicates success or failure
+   *
+   * @param op the response operation from the remote server
+   * @return true if the operation seems to be successful, false else
+   */
+  public static boolean isResponseSuccessful(HttpMethod httpMethod, int status)
+  {
+    switch (httpMethod)
+    {
+      case POST:
+        return status == HttpStatus.CREATED;
+      case PATCH:
+        return status == HttpStatus.OK || status == HttpStatus.NO_CONTENT;
+      case DELETE:
+        return status == HttpStatus.NO_CONTENT;
+      default:
+        return status == HttpStatus.OK;
+    }
+  }
 
 }
