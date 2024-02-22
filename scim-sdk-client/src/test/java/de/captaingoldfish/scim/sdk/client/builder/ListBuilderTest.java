@@ -410,7 +410,7 @@ public class ListBuilderTest extends HttpServerMockup
   @DisplayName("Get all resources")
   @ParameterizedTest(name = "startIndex: {0}, count: {1}, useGet: {2}")
   @CsvSource({",,true", ",,false", "1,500,true", "2501,30,false", "3846,25,true", "4000,100,false", "4945,50,true",
-              "4946,50,false"})
+              "4946,50,false", "4500,500,false"})
   public void testSendListGetAllRequest(Long startIndex, Integer count, boolean useGet)
   {
     final String sortBy = "username";
@@ -434,13 +434,27 @@ public class ListBuilderTest extends HttpServerMockup
 
     int allUserCount = ((UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl()).getInMemoryMap().size();
     ListResponse<User> listResponse = response.getResource();
-    Assertions.assertEquals(allUserCount - Optional.ofNullable(startIndex).map(i -> i - 1).orElse(0L),
-                            listResponse.getItemsPerPage());
     Assertions.assertEquals(Optional.ofNullable(startIndex).filter(i -> i > 0).orElse(1L),
                             listResponse.getStartIndex());
-    Assertions.assertEquals(allUserCount - Optional.ofNullable(startIndex).map(i -> i - 1).orElse(0L),
-                            listResponse.getListedResources().size());
-    Assertions.assertEquals(listResponse.getItemsPerPage(), listResponse.getListedResources().size());
+
+    if (count == null || count + Optional.ofNullable(startIndex).orElse(1L) >= listResponse.getTotalResults())
+    {
+      Assertions.assertEquals(allUserCount - Optional.ofNullable(startIndex).map(i -> i - 1).orElse(0L),
+                              listResponse.getListedResources().size());
+    }
+    else if (listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L) > count)
+    {
+      Assertions.assertEquals(count, listResponse.getListedResources().size());
+      Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    }
+    else
+    {
+      Assertions.assertEquals(listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L),
+                              listResponse.getListedResources().size());
+      Assertions.assertEquals(listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L),
+                              listResponse.getItemsPerPage());
+    }
+
   }
 
   /**

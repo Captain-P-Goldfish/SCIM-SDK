@@ -271,15 +271,21 @@ public class ListBuilder<T extends ResourceNode>
 
       final long originalStartIndex = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.START_INDEX))
                                               .map(Long::parseLong)
+                                              .filter(index -> index > 0)
                                               .orElse(1L);
-      final Integer originalCount = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.START_INDEX))
+      final Integer originalCount = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.COUNT))
                                             .map(Integer::parseInt)
                                             .orElse(null);
       int iterations = 0;
+      int currentlyRetrievedResources = 0;
       ArrayNode resources = new ArrayNode(JsonNodeFactory.instance);
       do
       {
         log.trace("Loading resources in iteration: {}", iterations++);
+        if (originalCount != null && originalCount - currentlyRetrievedResources < originalCount)
+        {
+          listBuilder.count(originalCount - currentlyRetrievedResources);
+        }
         ServerResponse<ListResponse<T>> response = sendRequest();
         if (!response.isSuccess())
         {
@@ -296,8 +302,14 @@ public class ListBuilder<T extends ResourceNode>
         totalResults = listResponse.getTotalResults();
         final int itemsPerPage = listResponse.getItemsPerPage();
         final long usedStartIndex = listResponse.getStartIndex();
-        needsAdditionalRequest = (originalCount == null || originalCount > 0)
-                                 && (usedStartIndex - 1) + itemsPerPage < totalResults;
+
+        currentlyRetrievedResources += itemsPerPage;
+
+        final boolean hasReachedEndOfRemoteResources = (usedStartIndex - 1) + itemsPerPage >= totalResults;
+        final boolean hasReachedWantedResourceCount = originalCount != null
+                                                      && currentlyRetrievedResources >= originalCount;
+        needsAdditionalRequest = !hasReachedEndOfRemoteResources && !hasReachedWantedResourceCount;
+
         if (needsAdditionalRequest)
         {
           listBuilder.startIndex(usedStartIndex + itemsPerPage);
@@ -308,7 +320,7 @@ public class ListBuilder<T extends ResourceNode>
       ListResponse<T> rebuildListResponse = new ListResponse<>();
       rebuildListResponse.setTotalResults(totalResults);
       // we have merged all requests into a single response
-      rebuildListResponse.setItemsPerPage((int)(totalResults - (originalStartIndex - 1)));
+      rebuildListResponse.setItemsPerPage(currentlyRetrievedResources);
       rebuildListResponse.setStartIndex(originalStartIndex);
       rebuildListResponse.set(AttributeNames.RFC7643.RESOURCES, resources);
 

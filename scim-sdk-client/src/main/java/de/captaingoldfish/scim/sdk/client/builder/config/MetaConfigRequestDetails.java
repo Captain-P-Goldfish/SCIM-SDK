@@ -3,13 +3,10 @@ package de.captaingoldfish.scim.sdk.client.builder.config;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
-import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -73,12 +70,6 @@ public class MetaConfigRequestDetails
   @Getter
   private final List<String> metaSchemaUris;
 
-  /**
-   * if the serviceProvider is misconfigured this supplier can be overridden to fix the max-result value to its
-   * best fit
-   */
-  @Getter
-  private final Function<ServiceProvider, Integer> maxCountPerRequest;
 
   public MetaConfigRequestDetails()
   {
@@ -89,10 +80,6 @@ public class MetaConfigRequestDetails
     this.excludeMetaResourceTypes = false;
     this.metaResourceTypeNames = DEFAULT_META_RESOURCE_TYPES_NAMES;
     this.metaSchemaUris = DEFAULT_META_SCHEMA_URIS;
-    this.maxCountPerRequest = serviceProvider -> Optional.ofNullable(serviceProvider)
-                                                         .map(ServiceProvider::getFilterConfig)
-                                                         .map(FilterConfig::getMaxResults)
-                                                         .orElse(50);
   }
 
   @Builder
@@ -102,8 +89,7 @@ public class MetaConfigRequestDetails
                                   boolean excludeMetaSchemas,
                                   boolean excludeMetaResourceTypes,
                                   List<String> metaSchemaUris,
-                                  List<String> metaResourceTypeNames,
-                                  Function<ServiceProvider, Integer> maxCountPerRequest)
+                                  List<String> metaResourceTypeNames)
   {
     this.serviceProviderEndpoint = Optional.ofNullable(serviceProviderEndpoint)
                                            .orElse(EndpointPaths.SERVICE_PROVIDER_CONFIG);
@@ -113,11 +99,5 @@ public class MetaConfigRequestDetails
     this.excludeMetaResourceTypes = excludeMetaResourceTypes;
     this.metaSchemaUris = Optional.ofNullable(metaSchemaUris).orElse(DEFAULT_META_SCHEMA_URIS);
     this.metaResourceTypeNames = Optional.ofNullable(metaResourceTypeNames).orElse(DEFAULT_META_RESOURCE_TYPES_NAMES);
-    this.maxCountPerRequest = Optional.ofNullable(maxCountPerRequest).orElseGet(() -> {
-      return serviceProvider -> Optional.ofNullable(serviceProvider)
-                                        .map(ServiceProvider::getFilterConfig)
-                                        .map(FilterConfig::getMaxResults)
-                                        .orElse(50);
-    });
   }
 }

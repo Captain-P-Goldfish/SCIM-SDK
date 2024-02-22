@@ -3,9 +3,6 @@ package de.captaingoldfish.scim.sdk.client.builder;
 import java.util.List;
 import java.util.Optional;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.Setter;
 import org.apache.http.client.methods.HttpUriRequest;
 
 import de.captaingoldfish.scim.sdk.client.builder.ListBuilder.FilterBuilder;
@@ -21,6 +18,9 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.response.ListResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -173,8 +173,6 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
   private ServerResponse<ListResponse<ResourceType>> loadResourceTypes(ServerResponse<ServiceProvider> serviceProviderResponse)
   {
     ServiceProvider serviceProvider = serviceProviderResponse.getResource();
-    Integer count = metaConfigLoaderDetails.getMaxCountPerRequest().apply(serviceProvider);
-    resourceTypeLoaderBuilder.count(count);
 
     if (metaConfigLoaderDetails.isExcludeMetaResourceTypes() && serviceProviderResponse.isSuccess())
     {
@@ -217,8 +215,6 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
   private ServerResponse<ListResponse<Schema>> loadSchemas(ServerResponse<ServiceProvider> serviceProviderResponse)
   {
     ServiceProvider serviceProvider = serviceProviderResponse.getResource();
-    Integer count = metaConfigLoaderDetails.getMaxCountPerRequest().apply(serviceProvider);
-    schemaLoaderBuilder.count(count);
 
     if (metaConfigLoaderDetails.isExcludeMetaSchemas() && serviceProviderResponse.isSuccess())
     {
