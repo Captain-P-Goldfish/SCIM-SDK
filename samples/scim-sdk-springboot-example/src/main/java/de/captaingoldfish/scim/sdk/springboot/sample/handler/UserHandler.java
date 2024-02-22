@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +38,13 @@ public class UserHandler extends ResourceHandler<User>
    * an in memory map that holds our 5000 users
    */
   @Getter
-  private Map<String, User> inMemoryMap = new HashMap<>();
+  private Map<String, User> inMemoryMap = Collections.synchronizedMap(new HashMap<>());
+
+  /**
+   * an in memory map that holds our 5000 users
+   */
+  @Getter
+  private Map<String, User> usernameMap = Collections.synchronizedMap(new HashMap<>());
 
   /**
    * adds approximately 5000 users into the in memory map
@@ -74,8 +81,13 @@ public class UserHandler extends ResourceHandler<User>
     {
       throw new ConflictException("resource with id '" + userId + "' does already exist");
     }
+    if (usernameMap.containsKey(resource.getUserName().get()))
+    {
+      throw new ConflictException("resource with username '" + resource.getUserName().get() + "' does already exist");
+    }
     resource.setId(userId);
     inMemoryMap.put(userId, resource);
+    usernameMap.put(resource.getUserName().get(), resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());
       meta.setLastModified(Instant.now());
@@ -125,6 +137,8 @@ public class UserHandler extends ResourceHandler<User>
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
     inMemoryMap.put(userId, resource);
+    usernameMap.remove(oldUser.getUserName().get(), resource);
+    usernameMap.put(resource.getUserName().get(), resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(oldUser.getMeta().get().getCreated().get());
       meta.setLastModified(Instant.now());
