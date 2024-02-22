@@ -394,6 +394,10 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
                                                                   Consumer<ServerResponse<BulkResponse>> responseHandler,
                                                                   boolean runSplittedRequestsParallel)
   {
+    if (bulkRequestOperationList.isEmpty())
+    {
+      throw new IllegalStateException("Cannot send bulk-request without any operations");
+    }
     final int maxNumberOfOperationns = getMaxNumberOfOperations();
     final boolean isSplittingFeatureDisabled = !getScimHttpClient().getScimClientConfig()
                                                                    .isEnableAutomaticBulkRequestSplitting();
@@ -474,10 +478,13 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
       indexStream.forEach(index -> {
         List<BulkRequestOperation> bulkRequestOperations = bulkRequestOperationsList.get(index);
 
-        log.debug("Handling bulk request '{}' of '{}' with '{}' operations.",
-                  index + 1,
-                  bulkRequestIdResolverWrapper.getRequestsList().size(),
-                  bulkRequestOperations.size());
+        if (log.isDebugEnabled())
+        {
+          log.debug("Handling bulk request '{}' of '{}' with '{}' operations.",
+                    index + 1,
+                    bulkRequestIdResolverWrapper.getRequestsList().size(),
+                    bulkRequestOperations.size());
+        }
         boolean isFullUrl = getBaseUrl() == null;
         replaceBulkRequestOperations(bulkRequestOperations, bulkRequestIdResolverWrapper);
         BulkBuilder splitBulkBuilder = new BulkBuilder(getBaseUrl(), getScimHttpClient(), isFullUrl,
@@ -488,9 +495,12 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
         // afterwards we are changing it back to restore the original state
         ServerResponse<BulkResponse> response = splitBulkBuilder.sendRequestWithMultiHeaders(httpHeaders);
 
-        log.debug("Received response for bulk request '{}' of '{}'.",
-                  index + 1,
-                  bulkRequestIdResolverWrapper.getRequestsList().size());
+        if (log.isDebugEnabled())
+        {
+          log.debug("Received response for bulk request '{}' of '{}'.",
+                    index + 1,
+                    bulkRequestIdResolverWrapper.getRequestsList().size());
+        }
 
         validateResponseAndResolveResults(bulkRequestOperations,
                                           bulkRequestIdResolverWrapper,
@@ -507,7 +517,6 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
 
     log.debug("Finished handling all bulk requests. The requests will be merged and returned in a single "
               + "response-object");
-
 
     // validate responses and also content of responses
     // if no error occurred until now everything is fine and all operations completed successfully

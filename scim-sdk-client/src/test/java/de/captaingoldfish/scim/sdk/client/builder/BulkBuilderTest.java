@@ -9,11 +9,14 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.RandomStringUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -25,6 +28,7 @@ import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup;
 import de.captaingoldfish.scim.sdk.client.setup.scim.handler.GroupHandler;
+import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
@@ -35,6 +39,7 @@ import de.captaingoldfish.scim.sdk.common.request.BulkRequest;
 import de.captaingoldfish.scim.sdk.common.request.BulkRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.BulkResponseGetOperation;
@@ -286,7 +291,52 @@ public class BulkBuilderTest extends HttpServerMockup
     // verify that 0 responses have been evaluated. The responses are evaluated on an internal built
     // BulkBuilder-object
     Mockito.verify(bulkBuilder, Mockito.never()).toResponse(Mockito.any());
-    log.debug(bulkResponse.toPrettyString());
+  }
+
+  /**
+   * verifies that no operations are being lost if a lot of operations is sent to the remote system
+   */
+  @DisplayName("Update all 5000 resources on remote system with parallel bulk requests")
+  @Test
+  public void testUpdateAllResourcesInParallel()
+  {
+    final int maxNumberOfOperations = 25;
+    scimConfig.getServiceProvider().getBulkConfig().setMaxOperations(maxNumberOfOperations);
+
+
+    ScimClientConfig scimClientConfig = ScimClientConfig.builder().enableAutomaticBulkRequestSplitting(true).build();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+
+    Map<String, User> remoteUserMap = ((UserHandler)scimConfig.getUserResourceType()
+                                                              .getResourceHandlerImpl()).getInMemoryMap();
+    List<User> copiedModifiedUsers = remoteUserMap.values().stream().map(user -> {
+      User copiedUser = JsonHelper.readJsonDocument(user.toString(), User.class);
+      copiedUser.setName(Name.builder().givenName(RandomStringUtils.randomAlphabetic(10, 15)).build());
+      return copiedUser;
+    }).collect(Collectors.toList());
+
+    List<BulkRequestOperation> requestOperations = copiedModifiedUsers.stream().map(user -> {
+      return BulkRequestOperation.builder()
+                                 .bulkId(user.getUserName().get())
+                                 .method(HttpMethod.PUT)
+                                 .path(String.format("%s/%s", EndpointPaths.USERS, user.getId().get()))
+                                 .data(user.toString())
+                                 .build();
+    }).collect(Collectors.toList());
+
+    BulkBuilder bulkBuilder = Mockito.spy(new BulkBuilder(getServerUrl(), scimHttpClient, false,
+                                                          scimConfig::getServiceProvider));
+
+    final boolean useMultithreading = true;
+    ServerResponse<BulkResponse> response = bulkBuilder.failOnErrors(0)
+                                                       .addOperations(requestOperations)
+                                                       .sendRequest(useMultithreading);
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    BulkResponse bulkResponse = response.getResource();
+    Assertions.assertEquals(requestOperations.size(), bulkResponse.getBulkResponseOperations().size());
+    // verify that 0 responses have been evaluated. The responses are evaluated on an internal built
+    // BulkBuilder-object
+    Mockito.verify(bulkBuilder, Mockito.never()).toResponse(Mockito.any());
   }
 
   /**
