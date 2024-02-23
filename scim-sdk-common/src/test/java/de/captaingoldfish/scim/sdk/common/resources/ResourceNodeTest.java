@@ -7,6 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
@@ -15,9 +16,12 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Manager;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
@@ -135,6 +139,60 @@ public class ResourceNodeTest implements FileReferences
                .location(location)
                .version(version)
                .build();
+  }
+
+  /**
+   * makes sure that the method {@link ResourceNode#remove(SchemaAttribute)} works as expected on the main
+   * resource
+   */
+  @DisplayName("removeFromResource works as expected on main resource")
+  @Test
+  public void testRemoveFromResource()
+  {
+    Schema userSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    SchemaAttribute nameAttribute = userSchema.getSchemaAttribute(RFC7643.NAME);
+    SchemaAttribute givenNameAttribute = userSchema.getSchemaAttribute(String.format("%s.%s",
+                                                                                     RFC7643.NAME,
+                                                                                     RFC7643.GIVEN_NAME));
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE_WITH_EXTENSION, User.class);
+    Assertions.assertNotNull(user.getName().flatMap(Name::getGivenName).orElse(null));
+    Assertions.assertTrue(user.remove(givenNameAttribute));
+    Assertions.assertNull(user.getName().flatMap(Name::getGivenName).orElse(null));
+
+    Assertions.assertNotNull(user.getName().orElse(null));
+    Assertions.assertTrue(user.remove(nameAttribute));
+    Assertions.assertNull(user.getName().orElse(null));
+  }
+
+  /**
+   * makes sure that the method {@link ResourceNode#remove(SchemaAttribute)} works as expected on the main
+   * resources extensions
+   */
+  @DisplayName("removeFromResource works as expected on extensions")
+  @Test
+  public void testRemoveFromExtensionResource()
+  {
+    Schema enterpriseUserSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON));
+    SchemaAttribute managerAttribute = enterpriseUserSchema.getSchemaAttribute(RFC7643.MANAGER);
+    SchemaAttribute managerRefAttribute = enterpriseUserSchema.getSchemaAttribute(String.format("%s.%s",
+                                                                                                RFC7643.MANAGER,
+                                                                                                RFC7643.REF));
+
+    User user = JsonHelper.loadJsonDocument(USER_RESOURCE_WITH_EXTENSION, User.class);
+    Assertions.assertNotNull(user.getEnterpriseUser()
+                                 .flatMap(EnterpriseUser::getManager)
+                                 .flatMap(Manager::getRef)
+                                 .orElse(null));
+    Assertions.assertTrue(user.remove(managerRefAttribute));
+    Assertions.assertNull(user.getEnterpriseUser()
+                              .flatMap(EnterpriseUser::getManager)
+                              .flatMap(Manager::getRef)
+                              .orElse(null));
+
+    Assertions.assertNotNull(user.getEnterpriseUser().flatMap(EnterpriseUser::getManager).orElse(null));
+    Assertions.assertTrue(user.remove(managerAttribute));
+    Assertions.assertNull(user.getEnterpriseUser().flatMap(EnterpriseUser::getManager).orElse(null));
   }
 
   /**

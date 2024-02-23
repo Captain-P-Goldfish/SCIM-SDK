@@ -4,6 +4,7 @@ import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -228,5 +229,41 @@ public abstract class ResourceNode extends AbstractSchemasHolder
       primaryNode = arrayNode.get(0);
     }
     return primaryNode;
+  }
+
+  /**
+   * this method will remove the attribute defined by the given schema-attribute from this resource.
+   *
+   * @param resource the resource from which the attribute should be removed
+   * @return true if an attribute was removed, false else
+   */
+  public boolean remove(SchemaAttribute attribute)
+  {
+    if (attribute == null)
+    {
+      return false;
+    }
+
+    ObjectNode resourceToHandle = this;
+
+    final boolean isExtensionReference = has(attribute.getSchema().getNonNullId());
+    if (isExtensionReference)
+    {
+      resourceToHandle = (ObjectNode)get(attribute.getSchema().getNonNullId());
+    }
+
+    if (attribute.getParent() == null)
+    {
+      return resourceToHandle.remove(attribute.getName()) != null;
+    }
+    else
+    {
+      ObjectNode complexNode = (ObjectNode)resourceToHandle.get(attribute.getParent().getName());
+      if (complexNode == null)
+      {
+        return false;
+      }
+      return complexNode.remove(attribute.getName()) != null;
+    }
   }
 }

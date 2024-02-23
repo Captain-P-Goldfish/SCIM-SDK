@@ -20,6 +20,8 @@ public interface FileReferences
 
   String USER_RESOURCE = RESOURCE_BASE_PATH + "/user/user-resource.json";
 
+  String USER_RESOURCE_WITH_EXTENSION = RESOURCE_BASE_PATH + "/user/user-resource-with-extension.json";
+
   String ALL_TYPES_JSON = RESOURCE_BASE_PATH + "/miscellaneous/all-types.json";
 
   String VALIDATION_TEST_SCHEMA = RESOURCE_BASE_PATH + "/schemas/validation-test-schema.json";
