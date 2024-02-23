@@ -8,7 +8,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.common.utils.SchemaAttributeBuilder;
 
 
@@ -16,7 +19,7 @@ import de.captaingoldfish.scim.sdk.common.utils.SchemaAttributeBuilder;
  * @author Pascal Knueppel
  * @since 11.11.2023
  */
-public class SchemaAttributeTest
+public class SchemaAttributeTest implements FileReferences
 {
 
   /**
@@ -154,5 +157,26 @@ public class SchemaAttributeTest
                                                             .build();
     schemaAttribute.setDefaultValue("x55.5");
     Assertions.assertNull(schemaAttribute.getDefaultValue());
+  }
+
+  /**
+   * makes sure that the method {@link SchemaAttribute#getSubAttribute(String)} works as expected
+   */
+  @DisplayName("getSubAttribute works as expected")
+  @Test
+  public void testGetSubAttribute()
+  {
+    Schema schema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON));
+    SchemaAttribute nameAttribute = schema.getSchemaAttribute(AttributeNames.RFC7643.NAME);
+    SchemaAttribute givenNameAttribute = schema.getSchemaAttribute(String.format("%s.%s",
+                                                                                 AttributeNames.RFC7643.NAME,
+                                                                                 AttributeNames.RFC7643.GIVEN_NAME));
+
+    // this attribute does not exist in name
+    Assertions.assertNull(nameAttribute.getSubAttribute(AttributeNames.RFC7643.VALUE));
+    Assertions.assertEquals(givenNameAttribute, nameAttribute.getSubAttribute(AttributeNames.RFC7643.GIVEN_NAME));
+    Assertions.assertEquals(givenNameAttribute,
+                            nameAttribute.getSubAttribute(givenNameAttribute.getFullResourceName()));
+
   }
 }

@@ -179,6 +179,14 @@ public final class SchemaAttribute extends ScimObjectNode
     {
       schema.getComplexRegister().put(this, subAttributes);
     }
+    if (schema != null && isReadOnly())
+    {
+      schema.getReadOnlyRegister().add(this);
+    }
+    else if (schema != null && isImmutable())
+    {
+      schema.getImmutableRegister().add(this);
+    }
   }
 
   public SchemaAttribute(Schema schema, String resourceUri, SchemaAttribute parent, JsonNode jsonNode)

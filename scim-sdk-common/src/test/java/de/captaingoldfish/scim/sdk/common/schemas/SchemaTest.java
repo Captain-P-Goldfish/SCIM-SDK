@@ -51,6 +51,9 @@ public class SchemaTest implements FileReferences
                             schema.getSchemaAttribute("date").getNotBefore().get());
     Assertions.assertEquals(Instant.parse("2020-12-01T00:00:00Z"),
                             schema.getSchemaAttribute("date").getNotAfter().get());
+    // all attributes within this schema are readOnly
+    Assertions.assertEquals(schema.getAttributes().size(), schema.getReadOnlyRegister().size());
+    Assertions.assertEquals(0, schema.getImmutableRegister().size());
   }
 
   /**

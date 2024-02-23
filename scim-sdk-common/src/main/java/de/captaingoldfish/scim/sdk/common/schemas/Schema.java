@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.schemas;
 
+import java.sql.Array;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,6 +54,16 @@ public class Schema extends ResourceNode
    * in lowercase
    */
   private Map<String, SchemaAttribute> attributeRegister = new HashMap<>();
+
+  /**
+   * a reference map that contains all readOnly attributes
+   */
+  private List<SchemaAttribute> readOnlyRegister = new ArrayList<>();
+
+  /**
+   * a reference map that contains all immutable attributes
+   */
+  private List<SchemaAttribute> immutableRegister = new ArrayList<>();
 
   /**
    * a reference map that contains all non-multivalued complex attributes of this schema
