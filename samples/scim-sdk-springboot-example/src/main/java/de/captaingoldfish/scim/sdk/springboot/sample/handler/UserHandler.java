@@ -81,7 +81,7 @@ public class UserHandler extends ResourceHandler<User>
     {
       throw new ConflictException("resource with id '" + userId + "' does already exist");
     }
-    if (usernameMap.containsKey(resource.getUserName().get()))
+    if (usernameMap.get(resource.getUserName().get()) != null)
     {
       throw new ConflictException("resource with username '" + resource.getUserName().get() + "' does already exist");
     }
@@ -152,9 +152,11 @@ public class UserHandler extends ResourceHandler<User>
   @Override
   public void deleteResource(String id, Context context)
   {
-    if (inMemoryMap.containsKey(id))
+    User user = inMemoryMap.get(id);
+    if (user != null)
     {
       inMemoryMap.remove(id);
+      usernameMap.remove(user.getUserName().get());
     }
     else
     {
