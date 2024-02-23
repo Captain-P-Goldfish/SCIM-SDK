@@ -1,6 +1,5 @@
 package de.captaingoldfish.scim.sdk.common.schemas;
 
-import java.sql.Array;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,16 +55,6 @@ public class Schema extends ResourceNode
   private Map<String, SchemaAttribute> attributeRegister = new HashMap<>();
 
   /**
-   * a reference map that contains all readOnly attributes
-   */
-  private List<SchemaAttribute> readOnlyRegister = new ArrayList<>();
-
-  /**
-   * a reference map that contains all immutable attributes
-   */
-  private List<SchemaAttribute> immutableRegister = new ArrayList<>();
-
-  /**
    * a reference map that contains all non-multivalued complex attributes of this schema
    */
   private Map<SchemaAttribute, List<SchemaAttribute>> complexRegister = new HashMap<>();
@@ -83,6 +72,16 @@ public class Schema extends ResourceNode
    * {@link AttributeNames.RFC7643#REF} as a resource-reference
    */
   private List<SchemaAttribute> complexBulkIdCandidates = new ArrayList<>();
+
+  /**
+   * a reference map that contains all readOnly attributes
+   */
+  private List<SchemaAttribute> readOnlyAttributeRegister = new ArrayList<>();
+
+  /**
+   * a reference map that contains all immutable attributes
+   */
+  private List<SchemaAttribute> immutableAttributeRegister = new ArrayList<>();
 
   /**
    * this list will hold references to all schema attributes that define itself as type 'reference' with

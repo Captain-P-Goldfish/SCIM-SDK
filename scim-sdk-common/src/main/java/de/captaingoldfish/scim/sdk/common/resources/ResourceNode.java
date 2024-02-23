@@ -258,11 +258,23 @@ public abstract class ResourceNode extends AbstractSchemasHolder
     }
     else
     {
-      ObjectNode complexNode = (ObjectNode)resourceToHandle.get(attribute.getParent().getName());
-      if (complexNode == null)
+      JsonNode attribteNode = resourceToHandle.get(attribute.getParent().getName());
+      if (attribteNode == null)
       {
         return false;
       }
+      else if (attribteNode.isArray())
+      {
+        ArrayNode arrayNode = (ArrayNode)attribteNode;
+        boolean removedAnElement = false;
+        for ( JsonNode jsonNode : arrayNode )
+        {
+          ObjectNode complexNode = (ObjectNode)jsonNode;
+          removedAnElement = complexNode.remove(attribute.getName()) != null || removedAnElement;
+        }
+        return removedAnElement;
+      }
+      ObjectNode complexNode = (ObjectNode)attribteNode;
       return complexNode.remove(attribute.getName()) != null;
     }
   }

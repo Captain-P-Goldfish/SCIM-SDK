@@ -181,11 +181,11 @@ public final class SchemaAttribute extends ScimObjectNode
     }
     if (schema != null && isReadOnly())
     {
-      schema.getReadOnlyRegister().add(this);
+      schema.getReadOnlyAttributeRegister().add(this);
     }
     else if (schema != null && isImmutable())
     {
-      schema.getImmutableRegister().add(this);
+      schema.getImmutableAttributeRegister().add(this);
     }
   }
 

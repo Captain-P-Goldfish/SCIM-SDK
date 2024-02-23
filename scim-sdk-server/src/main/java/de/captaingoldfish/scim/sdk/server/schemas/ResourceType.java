@@ -81,6 +81,18 @@ public class ResourceType extends ResourceNode
   @Getter(AccessLevel.PUBLIC)
   private Map<SchemaAttribute, List<SchemaAttribute>> multivaluedComplexRegister = new HashMap<>();
 
+  /**
+   * a reference map that contains all readOnly attributes
+   */
+  @Getter(AccessLevel.PUBLIC)
+  private List<SchemaAttribute> readOnlyAttributeRegister = new ArrayList<>();
+
+  /**
+   * a reference map that contains all immutable attributes
+   */
+  @Getter(AccessLevel.PUBLIC)
+  private List<SchemaAttribute> immutableAttributeRegister = new ArrayList<>();
+
   public ResourceType()
   {
     this.schemaFactory = null;
@@ -132,12 +144,16 @@ public class ResourceType extends ResourceNode
     attributeRegister.putAll(mainSchema.getAttributeRegister());
     complexRegister.putAll(mainSchema.getComplexRegister());
     multivaluedComplexRegister.putAll(mainSchema.getMultivaluedComplexRegister());
+    readOnlyAttributeRegister.addAll(mainSchema.getReadOnlyAttributeRegister());
+    immutableAttributeRegister.addAll(mainSchema.getImmutableAttributeRegister());
 
     for ( Schema schemaExtension : getAllSchemaExtensions() )
     {
       attributeRegister.putAll(schemaExtension.getAttributeRegister());
       complexRegister.putAll(schemaExtension.getComplexRegister());
       multivaluedComplexRegister.putAll(schemaExtension.getMultivaluedComplexRegister());
+      readOnlyAttributeRegister.addAll(schemaExtension.getReadOnlyAttributeRegister());
+      immutableAttributeRegister.addAll(schemaExtension.getImmutableAttributeRegister());
     }
   }
 

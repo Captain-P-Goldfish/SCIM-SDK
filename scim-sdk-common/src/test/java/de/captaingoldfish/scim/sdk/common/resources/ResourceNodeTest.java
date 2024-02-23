@@ -156,13 +156,38 @@ public class ResourceNodeTest implements FileReferences
                                                                                      RFC7643.GIVEN_NAME));
 
     User user = JsonHelper.loadJsonDocument(USER_RESOURCE_WITH_EXTENSION, User.class);
-    Assertions.assertNotNull(user.getName().flatMap(Name::getGivenName).orElse(null));
-    Assertions.assertTrue(user.remove(givenNameAttribute));
-    Assertions.assertNull(user.getName().flatMap(Name::getGivenName).orElse(null));
+    // test complex sub-attribute
+    {
+      Assertions.assertNotNull(user.getName().flatMap(Name::getGivenName).orElse(null));
+      Assertions.assertTrue(user.remove(givenNameAttribute));
+      Assertions.assertNull(user.getName().flatMap(Name::getGivenName).orElse(null));
+    }
 
-    Assertions.assertNotNull(user.getName().orElse(null));
-    Assertions.assertTrue(user.remove(nameAttribute));
-    Assertions.assertNull(user.getName().orElse(null));
+    // test complex
+    {
+      Assertions.assertNotNull(user.getName().orElse(null));
+      Assertions.assertTrue(user.remove(nameAttribute));
+      Assertions.assertNull(user.getName().orElse(null));
+    }
+
+    SchemaAttribute emailsAttribute = userSchema.getSchemaAttribute(RFC7643.EMAILS);
+    SchemaAttribute emailsTypeAttribute = userSchema.getSchemaAttribute(String.format("%s.%s",
+                                                                                      RFC7643.EMAILS,
+                                                                                      RFC7643.TYPE));
+
+    // test multivalued-complex sub-attribute
+    {
+      Assertions.assertTrue(user.getEmails().stream().allMatch(email -> email.getType().isPresent()));
+      Assertions.assertTrue(user.remove(emailsTypeAttribute));
+      Assertions.assertTrue(user.getEmails().stream().noneMatch(email -> email.getType().isPresent()));
+    }
+
+    // test multivalued-complex
+    {
+      Assertions.assertFalse(user.getEmails().isEmpty());
+      Assertions.assertTrue(user.remove(emailsAttribute));
+      Assertions.assertTrue(user.getEmails().isEmpty());
+    }
   }
 
   /**
