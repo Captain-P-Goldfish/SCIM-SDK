@@ -452,7 +452,8 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
       bulkRequestIdResolverWrapper = new BulkRequestIdResolverWrapper(bulkRequestOperationRequestList, new HashMap<>());
     }
 
-    BulkResponse compositeBulkResponse = new BulkResponse();
+
+    List<BulkResponseOperation> synchronizedResponseOperations = Collections.synchronizedList(new ArrayList<>());
 
     List<List<BulkRequestOperation>> bulkRequestOperationsList = bulkRequestIdResolverWrapper.getRequestsList();
     // @formatter:off
@@ -505,7 +506,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
         validateResponseAndResolveResults(bulkRequestOperations,
                                           bulkRequestIdResolverWrapper,
                                           response,
-                                          compositeBulkResponse);
+                                          synchronizedResponseOperations);
 
         Optional.ofNullable(responseHandler).ifPresent(handler -> handler.accept(response));
 
@@ -517,6 +518,9 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
 
     log.debug("Finished handling all bulk requests. The requests will be merged and returned in a single "
               + "response-object");
+
+    BulkResponse compositeBulkResponse = new BulkResponse();
+    compositeBulkResponse.setBulkResponseOperations(synchronizedResponseOperations);
 
     // validate responses and also content of responses
     // if no error occurred until now everything is fine and all operations completed successfully
@@ -581,13 +585,13 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    * @param bulkRequestIdResolverWrapper the wrapper object that shall be extended by the created ids of
    *          previous requests
    * @param response the response from the server
-   * @param compositeBulkResponse a composition of response-operations. Since we are sending several requests we
+   * @param responseOperations a composition of response-operations. Since we are sending several requests we
    *          will gather all response-operations in a single BulkResponse that will be returned
    */
   private void validateResponseAndResolveResults(List<BulkRequestOperation> bulkRequestOperations,
                                                  BulkRequestIdResolverWrapper bulkRequestIdResolverWrapper,
                                                  ServerResponse<BulkResponse> response,
-                                                 BulkResponse compositeBulkResponse)
+                                                 List<BulkResponseOperation> responseOperations)
   {
     if (!response.isSuccess())
     {
@@ -632,9 +636,7 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
       {
         bulkRequestIdResolverWrapper.getResolvedBulkIds().put(bulkId, resourceId);
       }
-      List<BulkResponseOperation> compositeOperations = compositeBulkResponse.getBulkResponseOperations();
-      compositeOperations.add(bulkResponseOperation);
-      compositeBulkResponse.setBulkResponseOperations(compositeOperations);
+      responseOperations.add(bulkResponseOperation);
     }
   }
 
