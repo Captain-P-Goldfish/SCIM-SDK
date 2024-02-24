@@ -7,6 +7,7 @@ import java.io.InputStreamReader;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,12 @@ public class GroupHandler extends ResourceHandler<Group>
    */
   @Getter
   private Map<String, Group> inMemoryMap = new HashMap<>();
+
+  /**
+   * an in memory map that holds our 5000 groups
+   */
+  @Getter
+  private Map<String, Group> groupnameMap = Collections.synchronizedMap(new HashMap<>());
 
   /**
    * adds approximately 5000 groups into the in memory map
@@ -75,8 +82,14 @@ public class GroupHandler extends ResourceHandler<Group>
     {
       throw new ConflictException("resource with id '" + groupId + "' does already exist");
     }
+    if (groupnameMap.get(resource.getDisplayName().get()) != null)
+    {
+      throw new ConflictException("resource with groupname '" + resource.getDisplayName().get()
+                                  + "' does already exist");
+    }
     resource.setId(groupId);
     inMemoryMap.put(groupId, resource);
+    groupnameMap.put(resource.getDisplayName().get(), resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());
       meta.setLastModified(Instant.now());
@@ -126,6 +139,8 @@ public class GroupHandler extends ResourceHandler<Group>
       throw new ResourceNotFoundException("resource with id '" + groupId + "' does not exist", null, null);
     }
     inMemoryMap.put(groupId, resource);
+    groupnameMap.remove(oldGroup.getDisplayName().get(), resource);
+    groupnameMap.put(resource.getDisplayName().get(), resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(oldGroup.getMeta().get().getCreated().get());
       meta.setLastModified(Instant.now());
@@ -139,9 +154,11 @@ public class GroupHandler extends ResourceHandler<Group>
   @Override
   public void deleteResource(String id, Context context)
   {
-    if (inMemoryMap.containsKey(id))
+    Group group = inMemoryMap.get(id);
+    if (group != null)
     {
       inMemoryMap.remove(id);
+      groupnameMap.remove(group.getDisplayName().get());
     }
     else
     {
