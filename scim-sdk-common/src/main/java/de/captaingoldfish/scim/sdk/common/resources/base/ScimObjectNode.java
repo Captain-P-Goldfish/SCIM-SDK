@@ -677,4 +677,18 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   {
     return JsonHelper.isEmpty(this);
   }
+
+  /**
+   * the equals method was overridden because long and integer-nodes might otherwise get comparison failures
+   * even if the value is identical
+   */
+  @Override
+  public boolean equals(Object o)
+  {
+    if (!(o instanceof JsonNode))
+    {
+      return false;
+    }
+    return JsonHelper.isEqual(this, (JsonNode)o);
+  }
 }
