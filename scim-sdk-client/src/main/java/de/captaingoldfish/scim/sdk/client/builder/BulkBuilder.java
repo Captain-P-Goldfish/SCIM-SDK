@@ -414,10 +414,15 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    */
   private int getMaxNumberOfOperations()
   {
-    return Optional.ofNullable(serviceProviderSupplier.get())
-                   .map(ServiceProvider::getBulkConfig)
-                   .map(BulkConfig::getMaxOperations)
-                   .orElse(Integer.MAX_VALUE);
+    int maxNumberOfOperations = Optional.ofNullable(serviceProviderSupplier.get())
+                                        .map(ServiceProvider::getBulkConfig)
+                                        .map(BulkConfig::getMaxOperations)
+                                        .orElse(Integer.MAX_VALUE);
+    if (maxNumberOfOperations <= 0)
+    {
+      throw new IllegalStateException("Maximum number of operations must not be 0 or smaller.");
+    }
+    return maxNumberOfOperations;
   }
 
   /**
