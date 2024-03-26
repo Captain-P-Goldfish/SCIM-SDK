@@ -626,10 +626,21 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       }
       errorIfBlock: if (!attributeValue.isObject())
       {
-        if (attributeValue.isArray() && attributeValue.size() == 1 && attributeValue.get(0).isObject())
+        if (attributeValue.isArray() && attributeValue.size() == 1)
         {
-          attributeValue = attributeValue.get(0);
-          break errorIfBlock;
+          if (attributeValue.get(0).isObject())
+          {
+            attributeValue = attributeValue.get(0);
+            break errorIfBlock;
+          }
+          else if (attributeValue.get(0).isTextual())
+          {
+            attributeValue = JsonHelper.readJsonDocument(attributeValue.get(0).textValue());
+            if (attributeValue != null && attributeValue.isObject())
+            {
+              break errorIfBlock;
+            }
+          }
         }
         throw new BadRequestException(String.format("Value for attribute '%s' must be an object but was '%s'",
                                                     complexAttribute.getFullResourceName(),

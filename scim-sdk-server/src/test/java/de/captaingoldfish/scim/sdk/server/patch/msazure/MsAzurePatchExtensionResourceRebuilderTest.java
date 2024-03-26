@@ -397,7 +397,9 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
     }
     catch (BadRequestException ex)
     {
-      String expectedMessage = String.format("Value for attribute '%s' must be an object but was '%s'", key, value);
+      String expectedMessage = String.format("Value for attribute '%s' must be an object but was '%s'",
+                                             key,
+                                             value.replaceAll("\\[\"", "").replaceAll("\"]", ""));
       Assertions.assertEquals(expectedMessage, ex.getMessage());
     }
   }

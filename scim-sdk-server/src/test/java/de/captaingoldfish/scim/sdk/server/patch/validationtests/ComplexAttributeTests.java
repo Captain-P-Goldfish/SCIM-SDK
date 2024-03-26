@@ -862,6 +862,64 @@ public class ComplexAttributeTests extends AbstractPatchTest
         }
 
         /**
+         * adds a complex attribute as a string-representation in an array structure with a single attribute. This is
+         * a special case that is actually invalid syntax. The SCIM SDK should still support this case because it
+         * might happen more often than expected that requests will contain the details like this.
+         */
+        @DisplayName("success: add complex as string representation in array")
+        @ParameterizedTest
+        @ValueSource(strings = {"complex", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex"})
+        public void testAddStringAndNumberArrayToComplexAsString(String attributeName)
+        {
+          AllTypes complex = new AllTypes(false);
+          complex.setString("hello world");
+          complex.setNumberArray(Arrays.asList(5L, 6L));
+
+          ArrayNode valueNode = new ArrayNode(JsonNodeFactory.instance);
+          valueNode.add(complex.toString());
+          List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                      .op(PatchOp.REPLACE)
+                                                                                      .path(attributeName)
+                                                                                      .valueNode(valueNode)
+                                                                                      .build());
+          PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+          AllTypes allTypes = new AllTypes(true);
+          addAllTypesToProvider(allTypes);
+          PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                      allTypesResourceType.getResourceHandlerImpl(),
+                                                                                      resourceEndpoint.getPatchWorkarounds(),
+                                                                                      new Context(null));
+          AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+          Assertions.assertEquals("hello world", patchedResource.getComplex().flatMap(AllTypes::getString).get());
+          Assertions.assertEquals(2, patchedResource.getComplex().get().getNumberArray().size());
+          Assertions.assertEquals(5L, patchedResource.getComplex().get().getNumberArray().get(0));
+          Assertions.assertEquals(6L, patchedResource.getComplex().get().getNumberArray().get(1));
+
+          // must be called
+          {
+            Mockito.verify(defaultPatchOperationHandler)
+                   .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
+            Mockito.verify(defaultPatchOperationHandler)
+                   .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
+          }
+          // must not be called
+          {
+            Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                   .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
+            Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                   .handleOperation(Mockito.any(), Mockito.any(RemoveComplexAttributeOperation.class));
+            Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                   .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexAttributeOperation.class));
+            Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                   .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexSimpleSubAttributeOperation.class));
+            Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                   .handleOperation(Mockito.any(),
+                                    Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
+          }
+        }
+
+        /**
          * remove a complex attribute
          */
         @DisplayName("success: remove complex")
