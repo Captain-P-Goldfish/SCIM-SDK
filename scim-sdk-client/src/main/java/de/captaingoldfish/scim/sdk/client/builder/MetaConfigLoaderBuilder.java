@@ -201,11 +201,11 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
         return Optional.ofNullable(filterBuilder)
                        .map(FilterBuilder::build)
                        .orElse(resourceTypeLoaderBuilder)
-                       .post()
+                       .get()
                        .getAll();
       }
     }
-    return resourceTypeLoaderBuilder.post().getAll();
+    return resourceTypeLoaderBuilder.get().getAll();
   }
 
   /**
@@ -232,9 +232,9 @@ public class MetaConfigLoaderBuilder extends RequestBuilder<MetaConfiguration>
             filterBuilder.and(AttributeNames.RFC7643.ID, Comparator.NE, metaSchemaUri);
           }
         }
-        return Optional.ofNullable(filterBuilder).map(FilterBuilder::build).orElse(schemaLoaderBuilder).post().getAll();
+        return Optional.ofNullable(filterBuilder).map(FilterBuilder::build).orElse(schemaLoaderBuilder).get().getAll();
       }
     }
-    return schemaLoaderBuilder.post().getAll();
+    return schemaLoaderBuilder.get().getAll();
   }
 }
