@@ -265,7 +265,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
                                   context).validateUpdate((Supplier<ResourceNode>)oldResourceSupplier,
                                                           validatedResource);
 
-
+      validatedResource.setId(resourceId); // this will make sure that the id is not lost after resource-validation
       return (T)resourceType.getResourceHandlerImpl().updateResource(patchedResource, context);
     }
     else
