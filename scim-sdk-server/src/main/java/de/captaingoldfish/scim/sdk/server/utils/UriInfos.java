@@ -273,6 +273,7 @@ public class UriInfos
         else if (lenientContentTypeChecking && hasApplicationJsonContentType)
         {
           // accepting applicationJson
+          log.debug("Accepting Content-Type: 'application/json' as specified by to 'lenientContentTypeChecking' setting.");
         }
         else
         {
