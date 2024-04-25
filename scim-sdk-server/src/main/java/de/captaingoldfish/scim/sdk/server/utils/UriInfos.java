@@ -85,7 +85,8 @@ public class UriInfos
                    String queryParameters,
                    ResourceType resourceType,
                    HttpMethod httpMethod,
-                   Map<String, String> httpHeaders)
+                   Map<String, String> httpHeaders,
+                   boolean lenientContentTypeChecking)
   {
     this.resourceEndpoint = resourceEndpoint;
     this.resourceId = resourceId;
@@ -95,7 +96,7 @@ public class UriInfos
     this.resourceType = resourceType;
     this.httpMethod = Objects.requireNonNull(httpMethod);
     validateUriInfos(resourceType);
-    this.httpHeaders = validateHttpHeaders(httpHeaders);
+    this.httpHeaders = validateHttpHeaders(httpHeaders, lenientContentTypeChecking);
   }
 
   /**
@@ -108,7 +109,8 @@ public class UriInfos
   public static UriInfos getRequestUrlInfos(ResourceTypeFactory resourceTypeFactory,
                                             String requestUrl,
                                             HttpMethod httpMethod,
-                                            Map<String, String> httpHeaders)
+                                            Map<String, String> httpHeaders,
+                                            boolean lenientContentTypeChecking)
   {
     final URL url = toUrl(requestUrl);
     final String[] pathParts = url.getPath().split("/");
@@ -120,6 +122,7 @@ public class UriInfos
                      .resourceEndpoint(EndpointPaths.BULK)
                      .httpMethod(httpMethod)
                      .httpHeaders(httpHeaders)
+                     .lenientContentTypeChecking(lenientContentTypeChecking)
                      .build();
     }
     final boolean endsOfSearch = EndpointPaths.SEARCH.endsWith(pathParts[pathParts.length - 1]);
@@ -138,6 +141,7 @@ public class UriInfos
                                 .resourceType(resourceType)
                                 .httpMethod(httpMethod)
                                 .httpHeaders(httpHeaders)
+                                .lenientContentTypeChecking(lenientContentTypeChecking)
                                 .build();
     return uriInfos;
   }
@@ -223,7 +227,7 @@ public class UriInfos
    * @param httpHeaders the http headers sent by the client
    * @return the validated map
    */
-  private Map<String, String> validateHttpHeaders(Map<String, String> httpHeaders)
+  private Map<String, String> validateHttpHeaders(Map<String, String> httpHeaders, boolean lenientContentTypeChecking)
   {
     if (httpHeaders == null)
     {
@@ -237,6 +241,7 @@ public class UriInfos
       httpHeaders.remove(EndpointPaths.BULK);
       return httpHeaders;
     }
+
     String contentType = httpHeaders.keySet()
                                     .stream()
                                     .filter(header -> StringUtils.equalsIgnoreCase(header,
@@ -244,13 +249,39 @@ public class UriInfos
                                     .findAny()
                                     .map(httpHeaders::get)
                                     .orElse(null);
-    if ((HttpMethod.POST.equals(httpMethod) || HttpMethod.PUT.equals(httpMethod) || HttpMethod.PATCH.equals(httpMethod))
-        && (contentType == null || !StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE)))
+
+    boolean shouldCheckContentType = HttpMethod.POST.equals(httpMethod) || HttpMethod.PUT.equals(httpMethod)
+                                     || HttpMethod.PATCH.equals(httpMethod);
+    if (shouldCheckContentType)
     {
-      throw new BadRequestException(String.format("Invalid content type. Was '%s' but should be %s",
-                                                  contentType,
-                                                  HttpHeader.SCIM_CONTENT_TYPE),
-                                    null, null);
+      if (contentType == null)
+      {
+        throw new BadRequestException(String.format("Invalid content type. Was '%s' but should be %s",
+                                                    contentType,
+                                                    HttpHeader.SCIM_CONTENT_TYPE),
+                                      null, null);
+      }
+      else
+      {
+        boolean hasScimContentType = StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE);
+        boolean hasApplicationJsonContentType = StringUtils.startsWith(contentType,
+                                                                       HttpHeader.APPLICATION_JSON_CONTENT_TYPE);
+        if (hasScimContentType)
+        {
+          // happy case
+        }
+        else if (lenientContentTypeChecking && hasApplicationJsonContentType)
+        {
+          // accepting applicationJson
+        }
+        else
+        {
+          throw new BadRequestException(String.format("Invalid content type. Was '%s' but should be %s",
+                                                      contentType,
+                                                      HttpHeader.SCIM_CONTENT_TYPE),
+                                        null, null);
+        }
+      }
     }
     // other headers do not need to be validated currently
     return httpHeaders;

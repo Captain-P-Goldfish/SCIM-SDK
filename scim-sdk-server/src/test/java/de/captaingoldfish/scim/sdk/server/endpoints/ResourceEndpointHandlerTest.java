@@ -179,7 +179,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                                    .map(s -> "/" + s)
                                                                                    .orElse(""),
                                                     httpMethod,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
     return context;
   }
 
@@ -2085,7 +2086,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
                                                     getBaseUrlSupplier().get() + "/Users/" + user.getId().get(),
                                                     HttpMethod.PATCH,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
     ScimResponse scimResponse = Assertions.assertDoesNotThrow(() -> {
       return resourceEndpointHandler.patchResource(EndpointPaths.USERS,
                                                    id,
@@ -2180,7 +2182,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
                                                     getBaseUrlSupplier().get() + "/Users/" + user.getId().get(),
                                                     HttpMethod.PATCH,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
     ScimResponse scimResponse = resourceEndpointHandler.patchResource("/Users",
                                                                       user.getId().get(),
                                                                       patchOpRequest.toString(),
@@ -2314,7 +2317,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
                                                     getBaseUrlSupplier().get() + "/Users/" + createdUser.getId().get(),
                                                     HttpMethod.PATCH,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
 
     List<DynamicTest> dynamicTests = new ArrayList<>();
     /* ************************************************************************************************************/
@@ -3068,7 +3072,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
                                                     getBaseUrlSupplier().get() + "/Users/" + userId,
                                                     HttpMethod.PATCH,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
 
     ScimResponse scimResponse = resourceEndpointHandler.getResource(endpoint,
                                                                     userId,
@@ -3121,7 +3126,8 @@ public class ResourceEndpointHandlerTest implements FileReferences
     context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
                                                     getBaseUrlSupplier().get() + "/Users/" + readUser.getId().get(),
                                                     HttpMethod.PATCH,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
     ScimResponse scimResponse = resourceEndpointHandler.updateResource(endpoint,
                                                                        readUser.getId().get(),
                                                                        updateUser.toString(),

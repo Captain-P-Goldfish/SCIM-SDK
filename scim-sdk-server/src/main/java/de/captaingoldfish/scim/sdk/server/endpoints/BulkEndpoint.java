@@ -267,10 +267,13 @@ class BulkEndpoint
   {
     HttpMethod httpMethod = operation.getMethod();
     Map<String, String> httpHeaders = getHttpHeadersForBulk(operation);
+    boolean lenientContentTypeChecking = getServiceProvider().isLenientContentTypeChecking();
+
     UriInfos operationUriInfo = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                             baseUri + operation.getPath(),
                                                             httpMethod,
-                                                            httpHeaders);
+                                                            httpHeaders,
+                                                            lenientContentTypeChecking);
     operationUriInfo.getQueryParameters().putAll(originalQueryParams);
     String id = Optional.ofNullable(operationUriInfo.getResourceId()).map(resourceId -> "/" + resourceId).orElse("");
     String location = baseUri + operationUriInfo.getResourceEndpoint() + id;
@@ -405,6 +408,7 @@ class BulkEndpoint
                                                                                       Map<String, String> httpHeaders,
                                                                                       Context context)
   {
+    boolean lenientContentTypeChecking = getServiceProvider().isLenientContentTypeChecking();
     return (resourceId, resourceType) -> {
       UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                       String.format("%s%s/%s",
@@ -412,7 +416,8 @@ class BulkEndpoint
                                                                     resourceType.getEndpoint(),
                                                                     resourceId),
                                                       HttpMethod.GET,
-                                                      httpHeaders);
+                                                      httpHeaders,
+                                                      lenientContentTypeChecking);
       return resourceEndpoint.resolveRequest(uriInfos.getHttpMethod(), null, uriInfos, doBeforeExecution, context);
     };
   }

@@ -85,6 +85,9 @@ public class ServiceProvider extends ResourceNode
   @Setter
   private boolean ignoreRequiredExtensionsOnResponse = false;
 
+  @Getter
+  private boolean lenientContentTypeChecking = false;
+
   /**
    * @param documentationUri the URL to the documentation of the application
    * @param patchConfig the patch configuration
@@ -114,7 +117,8 @@ public class ServiceProvider extends ResourceNode
                          boolean useDefaultValuesOnRequest,
                          boolean useDefaultValuesOnResponse,
                          Boolean ignoreRequiredAttributesOnResponse,
-                         Boolean ignoreRequiredExtensionsOnResponse)
+                         Boolean ignoreRequiredExtensionsOnResponse,
+                         boolean lenientContentTypeChecking)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
