@@ -11,6 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -77,7 +78,7 @@ public class UriInfosTest
     final String baseUrl = "https://localhost/management/Users/scim/v2";
     final String resourceUrl = baseUrl + resourcePath + (resourceId == null ? "" : "/" + resourceId)
                                + (query == null ? "" : "?" + query);
-    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, resourceUrl, httpMethod, httpHeaders);
+    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, resourceUrl, httpMethod, httpHeaders, false);
     Assertions.assertEquals(baseUrl, uriInfos.getBaseUri());
     Assertions.assertEquals(ResourceTypeNames.USER, uriInfos.getResourceType().getName());
     Assertions.assertEquals(resourcePath.replaceFirst(EndpointPaths.SEARCH, ""), uriInfos.getResourceEndpoint());
@@ -110,7 +111,7 @@ public class UriInfosTest
                                        attributes,
                                        excludedAttributes);
     final String url = BASE_URI + EndpointPaths.USERS + "?" + query;
-    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders);
+    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders, false);
     Assertions.assertEquals(BASE_URI, uriInfos.getBaseUri());
     Assertions.assertEquals(EndpointPaths.USERS, uriInfos.getResourceEndpoint());
     Assertions.assertNull(uriInfos.getResourceId());
@@ -136,7 +137,7 @@ public class UriInfosTest
   {
     final String url = BASE_URI + unknownPath + StringUtils.stripToEmpty(id);
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class, () -> {
-      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders);
+      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders, false);
     });
 
     Assertions.assertEquals(String.format("the request url '%s' does not point to a registered resource type. "
@@ -154,7 +155,11 @@ public class UriInfosTest
   {
     final String url = BASE_URI + EndpointPaths.USERS + (id == null ? "" : "/" + id);
     Assertions.assertThrows(BadRequestException.class,
-                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders));
+                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                              url,
+                                                              httpMethod,
+                                                              httpHeaders,
+                                                              false));
   }
 
   /**
@@ -167,7 +172,8 @@ public class UriInfosTest
     Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
                                                                     url,
                                                                     HttpMethod.POST,
-                                                                    httpHeaders));
+                                                                    httpHeaders,
+                                                                    false));
   }
 
   /**
@@ -180,7 +186,11 @@ public class UriInfosTest
   {
     final String url = BASE_URI + EndpointPaths.BULK;
     Assertions.assertThrows(BadRequestException.class,
-                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders));
+                            () -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                              url,
+                                                              httpMethod,
+                                                              httpHeaders,
+                                                              false));
   }
 
   /**
@@ -188,49 +198,200 @@ public class UriInfosTest
    * a {@link BadRequestException}s
    */
   @ParameterizedTest
-  @CsvSource({"POST,", "POST,application/json", "PUT,", "PUT,application/json", "PATCH,", "PATCH,application/json"})
-  public void testValidationOfHttpHeader(HttpMethod httpMethod, String contentType)
+  @CsvSource({"POST,application/scim+json", "PUT,application/scim+json", "PATCH,application/scim+json"})
+  public void testScimContentTypeAlwaysAllowed(HttpMethod httpMethod, String contentType)
   {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
     final String url = BASE_URI + EndpointPaths.USERS + (HttpMethod.POST.equals(httpMethod) ? "" : "/123456");
     httpHeaders.clear();
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
-    try
-    {
-      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
-                              + HttpHeader.SCIM_CONTENT_TYPE,
-                              ex.getDetail());
-    }
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    httpMethod,
+                                                                    httpHeaders,
+                                                                    lenientContentTypeCheckingDisabled));
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    httpMethod,
+                                                                    httpHeaders,
+                                                                    lenientContentTypeCheckingEnabled));
   }
 
   /**
-   * will verify that calling the bulk endpoint with post and an invalid content-type results in a
-   * {@link BadRequestException}s
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
    */
   @ParameterizedTest
-  @CsvSource({"POST,", "POST,application/json"})
-  public void testValidationOfHttpHeaderForPostAndBulk(HttpMethod httpMethod, String contentType)
+  @CsvSource({"POST,application/json", "PUT,application/json", "PATCH,application/json"})
+  public void testApplicationJsonContentTypeAllowedWhenLenient(HttpMethod httpMethod, String contentType)
   {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
+    final String url = BASE_URI + EndpointPaths.USERS + (HttpMethod.POST.equals(httpMethod) ? "" : "/123456");
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingDisabled));
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    httpMethod,
+                                                                    httpHeaders,
+                                                                    lenientContentTypeCheckingEnabled));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,", "PUT,", "PATCH,"})
+  public void testEmptyContentTypeNeverAllowed(HttpMethod httpMethod, String contentType)
+  {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
+    final String url = BASE_URI + EndpointPaths.USERS + (HttpMethod.POST.equals(httpMethod) ? "" : "/123456");
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingDisabled));
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingEnabled));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,application/xml", "POST,text/plain", "POST,text/xml", "PUT,application/xml", "PUT,text/plain",
+              "PUT,text/xml", "PATCH,application/xml", "PATCH,text/plain", "PATCH,text/xml"})
+  public void testOtherContentTypesNeverAllowed(HttpMethod httpMethod, String contentType)
+  {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
+    final String url = BASE_URI + EndpointPaths.USERS + (HttpMethod.POST.equals(httpMethod) ? "" : "/123456");
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingDisabled));
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingEnabled));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,application/scim+json"})
+  public void testScimContentTypeAlwaysAllowedForBulkEndpoint(HttpMethod httpMethod, String contentType)
+  {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
     final String url = BASE_URI + EndpointPaths.BULK;
     httpHeaders.clear();
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
-    try
-    {
-      UriInfos.getRequestUrlInfos(resourceTypeFactory, url, httpMethod, httpHeaders);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (ScimException ex)
-    {
-      Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
-      Assertions.assertEquals("Invalid content type. Was '" + contentType + "' but should be "
-                              + HttpHeader.SCIM_CONTENT_TYPE,
-                              ex.getDetail());
-    }
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    httpMethod,
+                                                                    httpHeaders,
+                                                                    lenientContentTypeCheckingDisabled));
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    httpMethod,
+                                                                    httpHeaders,
+                                                                    lenientContentTypeCheckingEnabled));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,application/json"})
+  public void testApplicationJsonContentTypeAllowedWhenLenientForBulkEndpoint(HttpMethod httpMethod, String contentType)
+  {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
+    final String url = BASE_URI + EndpointPaths.BULK;
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingDisabled));
+    Assertions.assertDoesNotThrow(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                    url,
+                                                                    httpMethod,
+                                                                    httpHeaders,
+                                                                    lenientContentTypeCheckingEnabled));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,"})
+  public void testEmptyContentTypeNeverAllowedForBulkEndpoint(HttpMethod httpMethod, String contentType)
+  {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
+    final String url = BASE_URI + EndpointPaths.BULK;
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingDisabled));
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingEnabled));
+  }
+
+  /**
+   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
+   * a {@link BadRequestException}s
+   */
+  @ParameterizedTest
+  @CsvSource({"POST,application/xml", "POST,text/plain", "POST,text/xml"})
+  public void testOtherContentTypesNeverAllowedForBulkEndpoint(HttpMethod httpMethod, String contentType)
+  {
+    boolean lenientContentTypeCheckingEnabled = true;
+    boolean lenientContentTypeCheckingDisabled = false;
+    final String url = BASE_URI + EndpointPaths.BULK;
+    httpHeaders.clear();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, contentType);
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingDisabled));
+    assertThrowsInvalidContentType(() -> UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                                     url,
+                                                                     httpMethod,
+                                                                     httpHeaders,
+                                                                     lenientContentTypeCheckingEnabled));
   }
 
   /**
@@ -242,8 +403,14 @@ public class UriInfosTest
     final String url = BASE_URI + EndpointPaths.USERS;
     httpHeaders.clear();
     httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER.toLowerCase(), HttpHeader.SCIM_CONTENT_TYPE);
-    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.POST, httpHeaders);
+    UriInfos uriInfos = UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.POST, httpHeaders, false);
     Assertions.assertEquals(1, uriInfos.getHttpHeaders().size());
     Assertions.assertEquals(HttpHeader.SCIM_CONTENT_TYPE, uriInfos.getHttpHeaders().values().iterator().next());
+  }
+
+  private void assertThrowsInvalidContentType(Executable function)
+  {
+    BadRequestException bre = Assertions.assertThrows(BadRequestException.class, function);
+    Assertions.assertTrue(bre.getDetail().startsWith("Invalid content type. "));
   }
 }
