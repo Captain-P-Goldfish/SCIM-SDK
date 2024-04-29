@@ -194,8 +194,7 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies the scim content-type is always allowed.
    */
   @ParameterizedTest
   @CsvSource({"POST,application/scim+json", "PUT,application/scim+json", "PATCH,application/scim+json"})
@@ -219,8 +218,8 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies the application/json content type is allowed if content-type checking is configured to be lenient,
+   * disallowed otherwise.
    */
   @ParameterizedTest
   @CsvSource({"POST,application/json", "PUT,application/json", "PATCH,application/json"})
@@ -244,8 +243,7 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies an amepty or missing content type is never allowed.
    */
   @ParameterizedTest
   @CsvSource({"POST,", "PUT,", "PATCH,"})
@@ -269,8 +267,7 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies content-types other than application/scim+json and application/json are never allowed.
    */
   @ParameterizedTest
   @CsvSource({"POST,application/xml", "POST,text/plain", "POST,text/xml", "PUT,application/xml", "PUT,text/plain",
@@ -295,8 +292,7 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies the scim content-type is always allowed.
    */
   @ParameterizedTest
   @CsvSource({"POST,application/scim+json"})
@@ -320,8 +316,8 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies the application/json content type is allowed if content-type checking is configured to be lenient,
+   * disallowed otherwise.
    */
   @ParameterizedTest
   @CsvSource({"POST,application/json"})
@@ -345,8 +341,7 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies an amepty or missing content type is never allowed.
    */
   @ParameterizedTest
   @CsvSource({"POST,"})
@@ -370,8 +365,7 @@ public class UriInfosTest
   }
 
   /**
-   * will verify that calling the users endpoint with post, put or patch and an invalid content-type results in
-   * a {@link BadRequestException}s
+   * Verifies content-types other than application/scim+json and application/json are never allowed.
    */
   @ParameterizedTest
   @CsvSource({"POST,application/xml", "POST,text/plain", "POST,text/xml"})
