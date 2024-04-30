@@ -139,6 +139,7 @@ public class ServiceProvider extends ResourceNode
     this.caseInsensitiveValidation = caseInsensitiveValidation;
     this.useDefaultValuesOnRequest = useDefaultValuesOnRequest;
     this.useDefaultValuesOnResponse = useDefaultValuesOnResponse;
+    this.lenientContentTypeChecking = lenientContentTypeChecking;
     this.ignoreRequiredAttributesOnResponse = Optional.ofNullable(ignoreRequiredAttributesOnResponse).orElse(true);
     this.ignoreRequiredExtensionsOnResponse = Optional.ofNullable(ignoreRequiredExtensionsOnResponse).orElse(true);
   }
