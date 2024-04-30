@@ -162,7 +162,8 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                                   .map(s -> "/" + s)
                                                                                   .orElse(""),
                                                     httpMethod,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
     return context;
   }
 

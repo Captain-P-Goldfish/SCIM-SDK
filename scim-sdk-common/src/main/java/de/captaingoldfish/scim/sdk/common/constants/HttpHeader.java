@@ -18,6 +18,8 @@ public final class HttpHeader
 
   public static final String SCIM_CONTENT_TYPE = "application/scim+json";
 
+  public static final String APPLICATION_JSON_CONTENT_TYPE = "application/json";
+
   public static final String LOCATION_HEADER = "Location";
 
   public static final String E_TAG_HEADER = "ETag";

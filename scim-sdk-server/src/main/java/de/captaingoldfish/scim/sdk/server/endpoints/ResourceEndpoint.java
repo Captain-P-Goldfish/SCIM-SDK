@@ -175,10 +175,15 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     Context context)
   {
     ScimResponse scimResponse;
+    boolean lenientContentTypeChecking = getServiceProvider().isLenientContentTypeChecking();
 
     handleScimRequest: try
     {
-      UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(), requestUrl, httpMethod, httpHeaders);
+      UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
+                                                      requestUrl,
+                                                      httpMethod,
+                                                      httpHeaders,
+                                                      lenientContentTypeChecking);
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),

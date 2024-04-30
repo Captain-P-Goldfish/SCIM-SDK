@@ -83,7 +83,8 @@ public class ETagRequestTests
                                                                                                     .map(s -> "/" + s)
                                                                                                     .orElse(""),
                                                     httpMethod,
-                                                    httpHeaders));
+                                                    httpHeaders,
+                                                    false));
     return context;
   }
 
