@@ -5,6 +5,7 @@ import java.util.Optional;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -13,6 +14,7 @@ import lombok.Builder;
  * <br>
  * A complex type that specifies FILTER options. REQUIRED. See Section 3.4.2.2 of [RFC7644].
  */
+@Slf4j
 public class FilterConfig extends ScimObjectNode
 {
 
@@ -65,8 +67,10 @@ public class FilterConfig extends ScimObjectNode
   public void setMaxResults(Integer maxResults)
   {
     Long results = maxResults == null ? null : Long.valueOf(maxResults);
-    setAttribute(AttributeNames.RFC7643.MAX_RESULTS,
-                 Optional.ofNullable(results).orElse(Long.valueOf(DEFAULT_MAX_RESULTS)));
+    setAttribute(AttributeNames.RFC7643.MAX_RESULTS, Optional.ofNullable(results).orElseGet(() -> {
+      log.warn("No value set for 'FilterConfig.maxResults'. Value is defaulting to: {}", DEFAULT_MAX_RESULTS);
+      return Long.valueOf(DEFAULT_MAX_RESULTS);
+    }));
   }
 
   /**
