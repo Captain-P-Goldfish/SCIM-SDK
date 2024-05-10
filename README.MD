@@ -1,9 +1,9 @@
 # SCIM 2.0 Open Source Implementation
 
 
-|  Branch | Circle CI Status | Code Coverage |
-| :------ | :--------------- | :------------ | 
-| master  | [![CircleCI](https://circleci.com/gh/Captain-P-Goldfish/SCIM-SDK/tree/master.svg?style=shield)](https://circleci.com/gh/Captain-P-Goldfish/SCIM-SDK/tree/master) | [![codecov](https://codecov.io/gh/Captain-P-Goldfish/SCIM-SDK/branch/master/graph/badge.svg?token=z8URG24FO3)](https://codecov.io/gh/Captain-P-Goldfish/SCIM-SDK) |
+| Branch  | Current Release                                                                                                                                     | Circle CI Status | Code Coverage | License                                                                       |
+|:------- |:----------------------------------------------------------------------------------------------------------------------------------------------------| :--------------- | :------------ |:------------------------------------------------------------------------------| 
+| master  | ![Release](https://img.shields.io/github/v/release/Captain-P-Goldfish/SCIM-SDK)                                                                     | [![CircleCI](https://circleci.com/gh/Captain-P-Goldfish/SCIM-SDK/tree/master.svg?style=shield)](https://circleci.com/gh/Captain-P-Goldfish/SCIM-SDK/tree/master) | [![codecov](https://codecov.io/gh/Captain-P-Goldfish/SCIM-SDK/branch/master/graph/badge.svg?token=z8URG24FO3)](https://codecov.io/gh/Captain-P-Goldfish/SCIM-SDK) | ![License](https://img.shields.io/github/license/Captain-P-Goldfish/SCIM-SDK) |
 
 This is an open source implementation of the SCIM (System for Cross-domain Identity Management) protocol that is
  defined by RFC7643 and RFC7644. 
