@@ -19,7 +19,9 @@ import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -29,6 +31,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
@@ -1731,7 +1734,7 @@ public class FilterResourceResolverTest implements FileReferences
    * verifies that bracket filters are also working
    */
   @Test
-  public void testFilterWithBrackeNotation()
+  public void testFilterWithBracketNotation()
   {
     AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
                                 JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
@@ -1756,7 +1759,7 @@ public class FilterResourceResolverTest implements FileReferences
    * verifies that the given filter expression is correctly resolved as expected by MsAzure
    */
   @Test
-  public void testFilterWithMsAzureBrackeNotation()
+  public void testFilterWithMsAzureBracketNotation()
   {
     AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
                                 JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
@@ -1781,7 +1784,7 @@ public class FilterResourceResolverTest implements FileReferences
    * verifies that bracket filters can be resolved as they have to be for patch expressions
    */
   @Test
-  public void testFilterWithBrackeNotationAndSubattributeSuffix()
+  public void testFilterWithBracketNotationAndSubattributeSuffix()
   {
     AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
                                 JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
@@ -2106,4 +2109,106 @@ public class FilterResourceResolverTest implements FileReferences
     return userList;
   }
 
+  @Nested
+  class FailureTests
+  {
+
+    /**
+     * this test is based on <a href=
+     * "https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650">https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650</a>
+     */
+    @DisplayName("Illegal comparator in simple filter does not cause NullPointer")
+    @Test
+    public void testIllegalComparator()
+    {
+      AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class)};
+
+      allTypesArray[0].setString("hello-world");
+      allTypesArray[2].setString("hello-world");
+
+      final String filter = "string eq1 \"hello-world\"";
+
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> RequestUtils.parseFilter(allTypesResourceType, filter));
+      Assertions.assertEquals(String.format("Failed to parse patch-filter expression '%s'", filter), ex.getMessage());
+    }
+
+    /**
+     * this test is based on <a href=
+     * "https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650">https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650</a>
+     */
+    @DisplayName("Illegal comparator in complex filter does not cause NullPointer")
+    @Test
+    public void testIllegalComparator2()
+    {
+      AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class)};
+
+      allTypesArray[0].setString("hello-world");
+      allTypesArray[2].setString("hello-world");
+
+      final String filter = "string eq \"hello-world\" or string eq1 \"hello-world\"";
+
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> RequestUtils.parseFilter(allTypesResourceType, filter));
+      Assertions.assertEquals(String.format("Failed to parse patch-filter expression '%s'", filter), ex.getMessage());
+    }
+
+    /**
+     * this test is based on <a href=
+     * "https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650">https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650</a>
+     */
+    @DisplayName("Illegal comparator in simple bracket-filter does not cause Nullpointer")
+    @Test
+    public void testIllegalComparator3()
+    {
+      AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class)};
+
+      AllTypes complex = new AllTypes();
+      complex.setString("hello-world");
+      allTypesArray[0].setComplex(complex);
+      allTypesArray[2].setComplex(complex);
+
+      final String filter = "complex[string eq1 \"hello-world\"]";
+
+      InvalidFilterException ex = Assertions.assertThrows(InvalidFilterException.class,
+                                                          () -> RequestUtils.parseFilter(allTypesResourceType, filter));
+      Assertions.assertEquals("The specified filter syntax was invalid, or the specified attribute and "
+                              + "filter comparison combination is not supported: mismatched input 'eq1' expecting "
+                              + "{'[', ']', '.', OR, AND}",
+                              ex.getMessage());
+    }
+
+    /**
+     * this test is based on <a href=
+     * "https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650">https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650</a>
+     */
+    @DisplayName("Illegal comparator in complex bracket-filter does not cause Nullpointer")
+    @Test
+    public void testIllegalComparator4()
+    {
+      AllTypes[] allTypesArray = {JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class),
+                                  JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class)};
+
+      AllTypes complex = new AllTypes();
+      complex.setString("hello-world");
+      allTypesArray[0].setComplex(complex);
+      allTypesArray[2].setComplex(complex);
+
+      final String filter = "complex[string eq \"hello-world\" or string eq1 \"hello-world\"]";
+
+      InvalidFilterException ex = Assertions.assertThrows(InvalidFilterException.class,
+                                                          () -> RequestUtils.parseFilter(allTypesResourceType, filter));
+      Assertions.assertEquals("The specified filter syntax was invalid, or the specified attribute and "
+                              + "filter comparison combination is not supported: mismatched input 'eq1' expecting "
+                              + "{'[', ']', '.', OR, AND}",
+                              ex.getMessage());
+    }
+  }
 }

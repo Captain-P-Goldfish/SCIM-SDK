@@ -4,6 +4,7 @@ import java.util.Objects;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import de.captaingoldfish.scim.sdk.server.exceptions.UnparseableFilterException;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
@@ -31,11 +32,17 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
    * all attributes given in the filter must belong to a specific resource type and this instance is used to
    * check if the given attribute names belong to the given resource type
    */
-  private ResourceType resourceType;
+  private final ResourceType resourceType;
 
-  public FilterVisitor(ResourceType resourceType)
+  /**
+   * if the current filter is based on a patch-expression or a list-filter-expression
+   */
+  private final boolean patchFilter;
+
+  public FilterVisitor(ResourceType resourceType, boolean patchFilter)
   {
     this.resourceType = Objects.requireNonNull(resourceType);
+    this.patchFilter = patchFilter;
   }
 
   /**
@@ -122,6 +129,11 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
     {
       FilterNode outerExpression = new AttributeExpressionLeaf(ctx, resourceType);
       return new AndExpressionNode(childNode, outerExpression);
+    }
+    // the following if-block is based on: https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/650
+    if (!patchFilter && childNode == null && ctx.compareOperator() == null)
+    {
+      throw new UnparseableFilterException(String.format("Invalid unparseable filter '%s'", ctx.getText()));
     }
     return new AttributePathRoot(childNode, resourceType, ctx);
   }

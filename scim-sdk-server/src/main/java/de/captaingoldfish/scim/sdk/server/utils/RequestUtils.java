@@ -25,6 +25,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
+import de.captaingoldfish.scim.sdk.server.exceptions.UnparseableFilterException;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.FilterAttributeName;
@@ -133,8 +134,17 @@ public final class RequestUtils
     scimFilterParser.removeErrorListeners();
     scimFilterParser.addErrorListener(filterRuleErrorListener);
     ScimFilterParser.FilterContext filterContext = scimFilterParser.filter();
-    FilterVisitor filterVisitor = new FilterVisitor(resourceType);
-    return filterVisitor.visit(filterContext);
+    FilterVisitor filterVisitor = new FilterVisitor(resourceType, false);
+    FilterNode filterNode;
+    try
+    {
+      filterNode = filterVisitor.visit(filterContext);
+    }
+    catch (UnparseableFilterException ex)
+    {
+      throw new BadRequestException(String.format("Failed to parse patch-filter expression '%s'", filter), ex);
+    }
+    return filterNode;
   }
 
   /**
@@ -160,7 +170,7 @@ public final class RequestUtils
     scimFilterParser.removeErrorListeners();
     scimFilterParser.addErrorListener(filterRuleErrorListener);
     ScimFilterParser.ValuePathContext valuePathContext = scimFilterParser.valuePath();
-    FilterVisitor filterVisitor = new FilterVisitor(resourceType);
+    FilterVisitor filterVisitor = new FilterVisitor(resourceType, true);
     FilterNode filterNode = filterVisitor.visit(valuePathContext);
     if (filterNode == null || !AttributePathRoot.class.isAssignableFrom(filterNode.getClass()))
     {
