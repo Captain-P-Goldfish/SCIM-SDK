@@ -39,7 +39,7 @@ public class GroupHandler extends ResourceHandler<Group>
    * an in memory map that holds our 5000 groups
    */
   @Getter
-  private Map<String, Group> inMemoryMap = new HashMap<>();
+  private Map<String, Group> inMemoryMap = Collections.synchronizedMap(new HashMap<>());
 
   /**
    * an in memory map that holds our 5000 groups
