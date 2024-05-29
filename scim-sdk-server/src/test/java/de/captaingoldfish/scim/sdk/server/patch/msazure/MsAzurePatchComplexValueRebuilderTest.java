@@ -206,4 +206,43 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
     List<String> fixedValues = fixedOperation.getValues();
     Assertions.assertEquals(patchValues, fixedValues);
   }
+
+  /**
+   * verifies that a patch request with an empty string as simple-value attribute is correctly wrapped into an
+   * object
+   */
+  @DisplayName("Fix empty string as simple attribute-value on complex-path expression")
+  @Test
+  public void testReplaceEmptyString()
+  {
+    SchemaAttribute manager = allTypesResourceType.getAllSchemaExtensions().get(0).getSchemaAttribute(RFC7643.MANAGER);
+    Assertions.assertNotNull(manager);
+    Assertions.assertEquals(Type.COMPLEX, manager.getType());
+    List<String> patchValues = Arrays.asList("", "");
+
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(manager.getScimNodeName())
+                                                           .values(patchValues)
+                                                           .build();
+
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(allTypesResourceType, operation);
+
+    List<String> fixedValues = fixedOperation.getValues();
+    Assertions.assertEquals(2, fixedValues.size());
+    {
+      JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(0));
+      Assertions.assertNotNull(jsonNode);
+      Assertions.assertTrue(jsonNode.isObject());
+      Assertions.assertEquals("", jsonNode.get(RFC7643.VALUE).textValue());
+    }
+    {
+      JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(1));
+      Assertions.assertNotNull(jsonNode);
+      Assertions.assertTrue(jsonNode.isObject());
+      Assertions.assertEquals("", jsonNode.get(RFC7643.VALUE).textValue());
+    }
+  }
 }
