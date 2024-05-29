@@ -139,7 +139,7 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
         continue;
       }
 
-      if (jsonNode.isObject() || jsonNode.isArray())
+      if (jsonNode != null && (jsonNode.isObject() || jsonNode.isArray()))
       {
         log.trace("[MS Azure complex-patch-path-value workaround] ignoring non-simple-value for attribute {}",
                   schemaAttribute.getScimNodeName());
