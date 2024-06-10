@@ -38,6 +38,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -2761,11 +2762,36 @@ public class PatchAddResourceHandlerTest implements FileReferences
     Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
   }
 
+  @Test
+  public void testPatchOfNonexistentUser()
+  {
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+            .op(PatchOp.REPLACE)
+            .path("active")
+            .value("false")
+            .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler("nonexistent-user-id",
+            userResourceType.getResourceHandlerImpl(),
+            resourceEndpoint.getPatchWorkarounds(),
+            new Context(null));
+
+    ResourceNotFoundException ex = Assertions.assertThrows(ResourceNotFoundException.class,
+            () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    Assertions.assertEquals("the 'User' resource with id 'nonexistent-user-id' does not exist",
+            ex.getMessage());
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
+  }
+
   /**
-   * this test will make sure that the sailspoint workaround for complex types does correctly work.
-   *
-   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
-   */
+     * this test will make sure that the sailspoint workaround for complex types does correctly work.
+     *
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
+     */
   @Test
   public void testHandleReplaceOnComplexTypesAsAdd()
   {
@@ -2824,9 +2850,9 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * this patch request is based on the github-issue: https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516.
-   * MsAzure is building illegal patch-requests that prevents a correct resolving of the patch request.
-   */
+     * this patch request is based on the github-issue: https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516.
+     * MsAzure is building illegal patch-requests that prevents a correct resolving of the patch request.
+     */
   private String getMsAzureSubValueAttributeTestString()
   {
     return " { \"schemas\" : [ \"urn:ietf:params:scim:api:messages:2.0:PatchOp\" ], "//
@@ -2852,12 +2878,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * This test makes sure that the illegal MsAzure Patch-Requests with the value sub-attribute object structure
-   * is resolved correctly if the feature is activated
-   *
-   * @see #getMsAzureSubValueAttributeTestString()
-   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
-   */
+     * This test makes sure that the illegal MsAzure Patch-Requests with the value sub-attribute object structure
+     * is resolved correctly if the feature is activated
+     *
+     * @see #getMsAzureSubValueAttributeTestString()
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+     */
   @DisplayName("MsAzure value-subAttribute workaround is active and resolves correctly")
   @Test
   public void testMsAzureSubValueAttributeResolvingWithWorkaroundActive()
@@ -2900,12 +2926,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * This test makes sure that the illegal MsAzure Patch-Requests with the value sub-attribute object structure
-   * is not resolved anymore if the feature is deactivated
-   *
-   * @see #getMsAzureSubValueAttributeTestString()
-   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
-   */
+     * This test makes sure that the illegal MsAzure Patch-Requests with the value sub-attribute object structure
+     * is not resolved anymore if the feature is deactivated
+     *
+     * @see #getMsAzureSubValueAttributeTestString()
+     * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/516
+     */
   @DisplayName("MsAzure value-subAttribute workaround is inactive and resolves correctly")
   @Test
   public void testMsAzureSubValueAttributeResolvingWithWorkaroundInActive()
@@ -2957,10 +2983,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * this method returns a specific attribute definition that will be added to the enterprise user that is used
-   * as extension for the alltypes schema. this shall provoke a naming conflict with a complex type in the
-   * extension
-   */
+     * this method returns a specific attribute definition that will be added to the enterprise user that is used
+     * as extension for the alltypes schema. this shall provoke a naming conflict with a complex type in the
+     * extension
+     */
   private String getComplexNodeDefinitionForTest()
   {
     // @formatter:off
