@@ -177,10 +177,10 @@ class SimpleAttributeValidator
       switch (schemaAttribute.getType())
       {
         case BOOLEAN:
-          boolean isBoolString = Arrays.asList("true", "false").contains(valueNode.textValue());
+          boolean isBoolString = valueNode.isTextual() && Arrays.asList("true", "false").contains(valueNode.textValue().toLowerCase());
           if (isBoolString)
           {
-            return Optional.of(new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(valueNode.textValue())));
+            return Optional.of(new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(valueNode.textValue().toLowerCase())));
           }
           else
           {
