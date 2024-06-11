@@ -65,7 +65,7 @@ public class PatchConfigTest
     PatchConfig patchConfig = PatchConfig.builder()
                                          .supported(true)
                                          .activateSailsPointWorkaround(true)
-                                         .activateMsAzureWorkaround(true)
+                                         .activateMsAzureFilterWorkaround(true)
                                          .build();
     Assertions.assertTrue(patchConfig.isSupported());
     Assertions.assertTrue(patchConfig.isActivateSailsPointWorkaround());

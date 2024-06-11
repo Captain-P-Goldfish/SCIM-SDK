@@ -26,7 +26,7 @@ public class PatchConfig extends ScimObjectNode
                      Boolean ignoreUnknownAttributes,
                      Boolean doNotFailOnNoTarget,
                      Boolean activateSailsPointWorkaround,
-                     Boolean activateMsAzureWorkaround,
+                     Boolean activateMsAzureFilterWorkaround,
                      Boolean activateMsAzureValueSubAttributeWorkaround,
                      Boolean msAzureComplexSimpleValueWorkaroundActive)
   {
@@ -35,7 +35,7 @@ public class PatchConfig extends ScimObjectNode
     setIgnoreUnknownAttribute(ignoreUnknownAttributes);
     setDoNotFailOnNoTarget(doNotFailOnNoTarget);
     setActivateSailsPointWorkaround(activateSailsPointWorkaround);
-    setMsAzureFilterWorkaroundActive(activateMsAzureWorkaround);
+    setMsAzureFilterWorkaroundActive(activateMsAzureFilterWorkaround);
     setMsAzureValueSubAttributeWorkaroundActive(activateMsAzureValueSubAttributeWorkaround);
     setMsAzureComplexSimpleValueWorkaroundActive(msAzureComplexSimpleValueWorkaroundActive);
   }
