@@ -1372,6 +1372,31 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
+   * Verifies that an appropriate error is returned if the patch request body is missing
+   */
+  @Test
+  public void testPatchResourceWithoutRequestBody()
+  {
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    String id = UUID.randomUUID().toString();
+    User user = User.builder().id(id).userName("goldfish").nickName("captain").build();
+    userHandler.getInMemoryMap().put(id, user);
+
+    final String url = BASE_URI + EndpointPaths.USERS + "/" + id;
+
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.PATCH,
+                                                               null,
+                                                               httpHeaders,
+                                                               getContext(id, HttpMethod.PATCH));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals("Missing patch request body", errorResponse.getDetail().get());
+  }
+
+  /**
    * This test adds the name-attribute to a user and lets the name.familyName attribute not be returned by the
    * developer implementation. This test will assure that the name.familyName attribute in this case will not be
    * returned to the client if this happens. <br>

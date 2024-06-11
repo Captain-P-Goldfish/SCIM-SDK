@@ -1016,6 +1016,10 @@ class ResourceEndpointHandler
       ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
+      if (patchDocument == null)
+      {
+        throw new BadRequestException("Missing patch request body");
+      }
       patchDocument = new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
                                                  HttpMethod.PATCH).validateDocument(patchSchema, patchDocument);
 
