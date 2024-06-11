@@ -2794,7 +2794,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
   @Test
   public void testHandleReplaceOnComplexTypesAsAdd()
   {
-    serviceProvider.getPatchConfig().setActivateSailsPointWorkaround(true);
+    serviceProvider.getPatchConfig().setSailsPointWorkaroundActive(true);
 
     AllTypes originalResource = new AllTypes(true);
     {

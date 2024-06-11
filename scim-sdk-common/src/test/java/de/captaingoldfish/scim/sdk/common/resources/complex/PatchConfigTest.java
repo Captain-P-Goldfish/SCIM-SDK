@@ -27,7 +27,7 @@ public class PatchConfigTest
     MatcherAssert.assertThat(patchConfig, Matchers.not(Matchers.emptyIterable()));
     Assertions.assertEquals(1, patchConfig.size());
     Assertions.assertFalse(patchConfig.isSupported());
-    Assertions.assertFalse(patchConfig.isActivateSailsPointWorkaround());
+    Assertions.assertFalse(patchConfig.isSailsPointWorkaroundActive());
     Assertions.assertFalse(patchConfig.isMsAzureFilterWorkaroundActive());
   }
 
@@ -66,9 +66,17 @@ public class PatchConfigTest
                                          .supported(true)
                                          .activateSailsPointWorkaround(true)
                                          .activateMsAzureFilterWorkaround(true)
+                                         .activateMsAzureValueSubAttributeWorkaround(true)
+                                         .activateMsAzureComplexSimpleValueWorkaround(true)
+                                         .doNotFailOnNoTarget(true)
+                                         .ignoreUnknownAttributes(true)
                                          .build();
     Assertions.assertTrue(patchConfig.isSupported());
-    Assertions.assertTrue(patchConfig.isActivateSailsPointWorkaround());
+    Assertions.assertTrue(patchConfig.isSailsPointWorkaroundActive());
     Assertions.assertTrue(patchConfig.isMsAzureFilterWorkaroundActive());
+    Assertions.assertTrue(patchConfig.isMsAzureValueSubAttributeWorkaroundActive());
+    Assertions.assertTrue(patchConfig.isMsAzureComplexSimpleValueWorkaroundActive());
+    Assertions.assertTrue(patchConfig.isDoNotFailOnNoTarget());
+    Assertions.assertTrue(patchConfig.isIgnoreUnknownAttribute());
   }
 }

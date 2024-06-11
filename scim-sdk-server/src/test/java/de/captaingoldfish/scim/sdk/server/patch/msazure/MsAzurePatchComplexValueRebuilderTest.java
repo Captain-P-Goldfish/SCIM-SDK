@@ -54,7 +54,7 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    this.patchConfig = PatchConfig.builder().supported(true).msAzureComplexSimpleValueWorkaroundActive(true).build();
+    this.patchConfig = PatchConfig.builder().supported(true).activateMsAzureComplexSimpleValueWorkaround(true).build();
     this.resourceTypeFactory = new ResourceTypeFactory();
     JsonNode allTypesResourceType = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);

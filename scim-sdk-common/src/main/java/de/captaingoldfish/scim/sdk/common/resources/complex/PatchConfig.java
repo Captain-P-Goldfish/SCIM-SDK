@@ -28,16 +28,16 @@ public class PatchConfig extends ScimObjectNode
                      Boolean activateSailsPointWorkaround,
                      Boolean activateMsAzureFilterWorkaround,
                      Boolean activateMsAzureValueSubAttributeWorkaround,
-                     Boolean msAzureComplexSimpleValueWorkaroundActive)
+                     Boolean activateMsAzureComplexSimpleValueWorkaround)
   {
     super(null);
     setSupported(Optional.ofNullable(supported).orElse(false));
     setIgnoreUnknownAttribute(ignoreUnknownAttributes);
     setDoNotFailOnNoTarget(doNotFailOnNoTarget);
-    setActivateSailsPointWorkaround(activateSailsPointWorkaround);
+    setSailsPointWorkaroundActive(activateSailsPointWorkaround);
     setMsAzureFilterWorkaroundActive(activateMsAzureFilterWorkaround);
     setMsAzureValueSubAttributeWorkaroundActive(activateMsAzureValueSubAttributeWorkaround);
-    setMsAzureComplexSimpleValueWorkaroundActive(msAzureComplexSimpleValueWorkaroundActive);
+    setMsAzureComplexSimpleValueWorkaroundActive(activateMsAzureComplexSimpleValueWorkaround);
   }
 
   /**
@@ -99,7 +99,7 @@ public class PatchConfig extends ScimObjectNode
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
    */
-  public boolean isActivateSailsPointWorkaround()
+  public boolean isSailsPointWorkaroundActive()
   {
     return getBooleanAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND).orElse(false);
   }
@@ -109,9 +109,9 @@ public class PatchConfig extends ScimObjectNode
    *
    * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/327
    */
-  public void setActivateSailsPointWorkaround(Boolean activateSailsPointWorkaround)
+  public void setSailsPointWorkaroundActive(Boolean sailsPointWorkaroundActive)
   {
-    setAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND, activateSailsPointWorkaround);
+    setAttribute(AttributeNames.Custom.ACTIVATE_SAILS_POINT_WORKAROUND, sailsPointWorkaroundActive);
   }
 
   /**
