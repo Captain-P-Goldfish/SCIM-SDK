@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
@@ -213,6 +214,11 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
     {
       patchedResource = (T)resourceType.getResourceHandlerImpl()
                                        .getResource(id, Collections.emptyList(), Collections.emptyList(), context);
+      if (patchedResource == null)
+      {
+        throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
+                                            + "not exist", null, null);
+      }
       // TODO enhance this creepy copy creation
       oldResource = JsonHelper.readJsonDocument(patchedResource.toString(), type);
     }

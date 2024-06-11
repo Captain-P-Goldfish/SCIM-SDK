@@ -38,6 +38,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -2759,6 +2760,30 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchRequestHandler.isResourceChanged());
     Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+  }
+
+  @Test
+  public void testPatchOfNonexistentUser()
+  {
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("active")
+                                                                                .value("false")
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler("nonexistent-user-id",
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+
+    ResourceNotFoundException ex = Assertions.assertThrows(ResourceNotFoundException.class,
+                                                           () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+    Assertions.assertEquals("the 'User' resource with id 'nonexistent-user-id' does not exist", ex.getMessage());
+    Assertions.assertFalse(patchRequestHandler.isResourceChanged());
   }
 
   /**
