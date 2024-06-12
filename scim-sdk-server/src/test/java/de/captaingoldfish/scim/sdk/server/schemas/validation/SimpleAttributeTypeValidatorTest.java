@@ -383,7 +383,7 @@ public class SimpleAttributeTypeValidatorTest
    * verifies that boolean values as string are correctly parsed to boolean nodes
    */
   @ParameterizedTest
-  @ValueSource(strings = {"true", "false"})
+  @ValueSource(strings = {"true", "false", "True", "False", "TRUE"})
   public void testBooleanStringType(String boolString)
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
