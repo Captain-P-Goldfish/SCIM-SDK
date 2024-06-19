@@ -14,6 +14,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -22,9 +23,11 @@ import de.captaingoldfish.scim.sdk.common.exceptions.IOException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
 import de.captaingoldfish.scim.sdk.server.filter.resources.PatchFilterResolver;
 import de.captaingoldfish.scim.sdk.server.patch.operations.PatchOperation;
@@ -907,6 +910,21 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     if (path.getChild() != null && matchingComplexNodes.isEmpty())
     {
       // a filter expression was present and no matches were found e.g. (emails[type eq "work"].type)
+      if (patchConfig.isMsAzureFilterWorkaroundActive() && PatchOp.REPLACE.equals(patchOp)
+          && path.getChild() instanceof AttributeExpressionLeaf)
+      {
+        ScimObjectNode value = new ScimObjectNode();
+        value.set(subAttribute.getName(), new ScimTextNode(null, values.get(0)));
+
+        AttributeExpressionLeaf attributeExpressionLeaf = (AttributeExpressionLeaf)path.getChild();
+        if (attributeExpressionLeaf.getComparator() == Comparator.EQ)
+        {
+          value.set(attributeExpressionLeaf.getSchemaAttribute().getName(),
+                    new ScimTextNode(null, attributeExpressionLeaf.getValue()));
+          multiValued.add(value);
+          return true;
+        }
+      }
       if (patchConfig.isDoNotFailOnNoTarget())
       {
         return false;

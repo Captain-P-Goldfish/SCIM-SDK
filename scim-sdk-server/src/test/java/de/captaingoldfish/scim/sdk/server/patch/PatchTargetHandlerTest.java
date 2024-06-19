@@ -6,6 +6,8 @@ import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -4138,6 +4140,76 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     AllTypes patchedResource = patchAllTypes(allTypes, patchOpRequest, false);
     Assertions.assertEquals(allTypes, patchedResource);
+  }
+
+  /**
+   * verifies that the {@link MsAzurePatchFilterWorkaround} can add new value for nonexistent filter path
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/668
+   */
+  @DisplayName("MsAzure workaround can add new complex value using Replace operation")
+  @Test
+  public void testMsAzurePatchFilterWorkaroundForReplaceOperationWithNoTarget()
+  {
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
+    AllTypes allTypes = new AllTypes(true);
+    String path = "multiComplex[string eq \"myString\"].date";
+    String newValue = "2024-06-19T12:58:35.273910Z";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(path)
+                                                                                .value(newValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    AllTypes patchedResource = patchAllTypes(allTypes, patchOpRequest, true);
+
+    AllTypes newMultiComplexNode = patchedResource.getMultiComplex().get(0);
+    Assertions.assertEquals(Optional.of("myString"), newMultiComplexNode.getString());
+    Assertions.assertEquals(Optional.of(Instant.parse("2024-06-19T12:58:35.273910Z")), newMultiComplexNode.getDate());
+  }
+
+  /**
+   * verifies that the {@link MsAzurePatchFilterWorkaround} do not replace entire list
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/668
+   */
+  @DisplayName("MsAzure workaround should not clear the entire list during a Replace operation")
+  @Test
+  public void testMsAzurePatchFilterWorkaroundForReplaceOperationWithMultipleItemsInTheList()
+  {
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multicomplex = new AllTypes(false);
+    multicomplex.setString("value1");
+    multicomplex.setDate(Instant.parse("2024-06-19T01:01:01.000001Z"));
+    AllTypes multicomplex2 = new AllTypes(false);
+    multicomplex2.setString("value2");
+    multicomplex2.setDate(Instant.parse("2024-06-19T02:02:02.000002Z"));
+    AllTypes multicomplex3 = new AllTypes(false);
+    multicomplex3.setString("value3");
+    multicomplex3.setDate(Instant.parse("2024-06-19T03:03:03.000003Z"));
+    allTypes.setMultiComplex(Arrays.asList(multicomplex, multicomplex2, multicomplex3));
+
+    String path = "multiComplex[string eq \"value2\"].date";
+    String newValue = "2024-06-19T22:22:22.000022Z";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path(path)
+                                                                                .value(newValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    AllTypes patchedResource = patchAllTypes(allTypes, patchOpRequest, true);
+
+    Assertions.assertEquals(3, patchedResource.getMultiComplex().size());
+    Map<String, Instant> patchedValues = patchedResource.getMultiComplex()
+                                                        .stream()
+                                                        .collect(Collectors.toMap(node -> node.getString().orElse(null),
+                                                                                  node -> node.getDate().orElse(null)));
+    Assertions.assertEquals(Instant.parse("2024-06-19T01:01:01.000001Z"), patchedValues.get("value1"));
+    Assertions.assertEquals(Instant.parse("2024-06-19T22:22:22.000022Z"), patchedValues.get("value2"));
+    Assertions.assertEquals(Instant.parse("2024-06-19T03:03:03.000003Z"), patchedValues.get("value3"));
   }
 
   /**
