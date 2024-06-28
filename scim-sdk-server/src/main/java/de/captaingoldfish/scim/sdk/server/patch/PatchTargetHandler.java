@@ -910,8 +910,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     if (path.getChild() != null && matchingComplexNodes.isEmpty())
     {
       // a filter expression was present and no matches were found e.g. (emails[type eq "work"].type)
-      if (patchConfig.isMsAzureFilterWorkaroundActive()
-          && !PatchOp.REMOVE.equals(patchOp)
+      if (patchConfig.isMsAzureFilterWorkaroundActive() && !PatchOp.REMOVE.equals(patchOp)
           && path.getChild() instanceof AttributeExpressionLeaf)
       {
         ScimObjectNode value = new ScimObjectNode();

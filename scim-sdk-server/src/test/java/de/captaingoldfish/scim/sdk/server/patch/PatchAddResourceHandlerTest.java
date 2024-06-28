@@ -2366,8 +2366,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are
-   * added if the filter does not match an existing entry or replaced if entry exists.<br>
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are added if
+   * the filter does not match an existing entry or replaced if entry exists.<br>
    * <br>
    * Example:<br>
    * the request
@@ -2416,40 +2416,37 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
   @ParameterizedTest
   @ValueSource(strings = {"ADD", "REPLACE"})
-  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Update(PatchOp patchOp) {
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Update(PatchOp patchOp)
+  {
     serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
 
     UserHandlerImpl userHandler = new UserHandlerImpl(false);
     UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
     ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
 
-    User user = User.builder()
-            .userName("erika@mustermann.de")
-            .build();
+    User user = User.builder().userName("erika@mustermann.de").build();
 
-    List<PatchRequestOperation> operations = Arrays.asList(
-            PatchRequestOperation.builder()
-                    .op(patchOp)
-                    .path("addresses[type eq \"work\"].formatted")
-                    .value("USZLTUSJXBYV")
-                    .build(),
-            PatchRequestOperation.builder()
-                    .op(patchOp)
-                    .path("addresses[type eq \"work\"].locality")
-                    .value("OSGODHEVDCVD")
-                    .build(),
-            PatchRequestOperation.builder()
-                    .op(patchOp)
-                    .path("addresses[type eq \"work\"].region")
-                    .value("YMVMOEMXAYGD")
-                    .build()
-    );
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path("addresses[type eq \"work\"].formatted")
+                                                                                .value("USZLTUSJXBYV")
+                                                                                .build(),
+                                                           PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path("addresses[type eq \"work\"].locality")
+                                                                                .value("OSGODHEVDCVD")
+                                                                                .build(),
+                                                           PatchRequestOperation.builder()
+                                                                                .op(patchOp)
+                                                                                .path("addresses[type eq \"work\"].region")
+                                                                                .value("YMVMOEMXAYGD")
+                                                                                .build());
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     addUserToProvider(userHandler, user);
     PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
-            userResourceType.getResourceHandlerImpl(),
-            resourceEndpoint.getPatchWorkarounds(),
-            new Context(null));
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
     User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchRequestHandler.isResourceChanged());
 
