@@ -70,9 +70,12 @@ public class MsAzurePatchFilterWorkaround extends PatchWorkaround
   @Override
   public boolean shouldBeHandled(PatchConfig patchConfig, ResourceType resourceType, PatchRequestOperation operation)
   {
-    Optional<String> path = operation.getPath();
-    return patchConfig.isMsAzureFilterWorkaroundActive() && PatchOp.ADD.equals(operation.getOp()) && path.isPresent()
-           && operation.getValues().size() == 1 && path.get().matches(".*?\\[.*?]\\..*");
+    // workaround is not needed
+    // if enabled unit-test testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Update will fail
+    return false;
+//    Optional<String> path = operation.getPath();
+//    return patchConfig.isMsAzureFilterWorkaroundActive() && PatchOp.ADD.equals(operation.getOp()) && path.isPresent()
+//           && operation.getValues().size() == 1 && path.get().matches(".*?\\[.*?]\\..*");
   }
 
   @Override

@@ -2366,6 +2366,100 @@ public class PatchAddResourceHandlerTest implements FileReferences
   }
 
   /**
+   * verifies that if the ms-azure patch filter workaround is active that the values of the filter are
+   * added if the filter does not match an existing entry or replaced if entry exists.<br>
+   * <br>
+   * Example:<br>
+   * the request
+   *
+   * <pre>
+   * {
+   *   "Operations": [
+   *     {
+   *       "op": "add",
+   *       "path": "addresses[type eq \"work\"].formatted",
+   *       "value": "USZLTUSJXBYV"
+   *     },
+   *     {
+   *       "op": "add",
+   *       "path": "addresses[type eq \"work\"].locality",
+   *       "value": "OSGODHEVDCVD"
+   *     },
+   *     {
+   *       "op": "add",
+   *       "path": "addresses[type eq \"work\"].region",
+   *       "value": "YMVMOEMXAYGD"
+   *     },
+   * 	  ],
+   *   "schemas": ["urn:ietf:params:scim:api:messages:2.0:PatchOp"]
+   * }
+   * </pre>
+   *
+   * must result in
+   *
+   * <pre>
+   * {
+   *   "schemas": ["urn:ietf:params:scim:schemas:core:2.0:User"],
+   *   "userName": "erika@mustermann.de",
+   *   "addresses": [{
+   *       "formatted": "USZLTUSJXBYV",
+   *       "type": "work",
+   *       "locality": "OSGODHEVDCVD",
+   *       "region": "YMVMOEMXAYGD"
+   *     }
+   *   ]
+   * }
+   * </pre>
+   *
+   * if the user did have the email "erika@mustermann.de" before
+   */
+
+  @ParameterizedTest
+  @ValueSource(strings = {"ADD", "REPLACE"})
+  public void testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2Update(PatchOp patchOp) {
+    serviceProvider.getPatchConfig().setMsAzureFilterWorkaroundActive(true);
+
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    User user = User.builder()
+            .userName("erika@mustermann.de")
+            .build();
+
+    List<PatchRequestOperation> operations = Arrays.asList(
+            PatchRequestOperation.builder()
+                    .op(patchOp)
+                    .path("addresses[type eq \"work\"].formatted")
+                    .value("USZLTUSJXBYV")
+                    .build(),
+            PatchRequestOperation.builder()
+                    .op(patchOp)
+                    .path("addresses[type eq \"work\"].locality")
+                    .value("OSGODHEVDCVD")
+                    .build(),
+            PatchRequestOperation.builder()
+                    .op(patchOp)
+                    .path("addresses[type eq \"work\"].region")
+                    .value("YMVMOEMXAYGD")
+                    .build()
+    );
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+            userResourceType.getResourceHandlerImpl(),
+            resourceEndpoint.getPatchWorkarounds(),
+            new Context(null));
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+
+    Assertions.assertEquals(1, patchedUser.getAddresses().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals("USZLTUSJXBYV", patchedUser.getAddresses().get(0).getFormatted().get());
+    Assertions.assertEquals("OSGODHEVDCVD", patchedUser.getAddresses().get(0).getLocality().get());
+    Assertions.assertEquals("YMVMOEMXAYGD", patchedUser.getAddresses().get(0).getRegion().get());
+  }
+
+  /**
    * the same as {@link #testMsAzureBehaviourForMultivaluedComplexTypesWithFilterInPathExpression2(PatchOp)}
    * except that the ms-azure workaround is deactivated
    */
