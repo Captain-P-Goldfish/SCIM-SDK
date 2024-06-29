@@ -60,7 +60,6 @@ import de.captaingoldfish.scim.sdk.server.interceptor.Interceptor;
 import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.PatchWorkaround;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchComplexValueRebuilder;
-import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchFilterWorkaround;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchRemoveRebuilder;
 import de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure.MsAzurePatchValueSubAttributeRebuilder;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
@@ -131,7 +130,6 @@ class ResourceEndpointHandler
   {
     patchWorkarounds.add(MsAzurePatchRemoveRebuilder::new);
     patchWorkarounds.add(MsAzurePatchValueSubAttributeRebuilder::new);
-    patchWorkarounds.add(MsAzurePatchFilterWorkaround::new);
     patchWorkarounds.add(MsAzurePatchComplexValueRebuilder::new);
   }
 
