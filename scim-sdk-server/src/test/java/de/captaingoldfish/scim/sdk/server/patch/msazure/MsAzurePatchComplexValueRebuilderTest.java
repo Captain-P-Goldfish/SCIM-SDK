@@ -7,6 +7,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -66,9 +68,9 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
   }
 
   /**
-   * verifies that a patch request with an illegal simple-value attribute is correctly wrapped into an object
+   * verifies that a patch request with an illegal simple-value attributes are correctly wrapped into an object
    */
-  @DisplayName("Fix simple attribute-value on complex-path expression")
+  @DisplayName("Fix simple attribute-value array on complex-path expression")
   @Test
   public void testValuesAreCorrectlyFixed()
   {
@@ -99,6 +101,37 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
       Assertions.assertNotNull(jsonNode);
       Assertions.assertTrue(jsonNode.isObject());
       Assertions.assertEquals("281", jsonNode.get(RFC7643.VALUE).textValue());
+    }
+  }
+
+  /**
+   * verifies that a patch request with an illegal simple-value attribute is correctly wrapped into an object
+   */
+  @DisplayName("Fix simple attribute-value on complex-path expression")
+  @ParameterizedTest
+  @ValueSource(strings = {"271", "271-11a-asdasd", "asdasd"})
+  public void testSingleValueIsCorrectlyFixed(String inputValue)
+  {
+    SchemaAttribute manager = allTypesResourceType.getAllSchemaExtensions().get(0).getSchemaAttribute(RFC7643.MANAGER);
+    Assertions.assertNotNull(manager);
+    Assertions.assertEquals(Type.COMPLEX, manager.getType());
+
+    MsAzurePatchComplexValueRebuilder workaroundHandler = new MsAzurePatchComplexValueRebuilder();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .path(manager.getScimNodeName())
+                                                           .value(inputValue)
+                                                           .build();
+
+    Assertions.assertTrue(workaroundHandler.shouldBeHandled(patchConfig, allTypesResourceType, operation));
+    Assertions.assertTrue(workaroundHandler.executeOtherHandlers());
+    PatchRequestOperation fixedOperation = workaroundHandler.fixPatchRequestOperaton(allTypesResourceType, operation);
+    List<String> fixedValues = fixedOperation.getValues();
+    Assertions.assertEquals(1, fixedValues.size());
+    {
+      JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(0));
+      Assertions.assertNotNull(jsonNode);
+      Assertions.assertTrue(jsonNode.isObject());
+      Assertions.assertEquals(inputValue, jsonNode.get(RFC7643.VALUE).textValue());
     }
   }
 
