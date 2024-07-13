@@ -1590,7 +1590,42 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
   }
 
   /**
-   * verifies that a dedicated error message is thrown if the patch operation created an erroneous resource
+   * verifies that a dedicated error message is thrown if the patch operation created an erroneous resource. The
+   * patch operation in this test is built like this:
+   *
+   * <pre>
+   *   {
+   *     "method" : "PATCH",
+   *     "bulkId" : "ba2eddfe-c8fe-4c49-b536-402fa88885eb",
+   *     "path" : "/Users/269ed3f9-4f1e-4b85-b19e-13b33da79baa",
+   *     "data" : {
+   *       "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+   *       "Operations" : [ {
+   *         "path" : "manager[displayname eq \"chuck\"]",
+   *         "op" : "replace",
+   *         "value" : "{\"manager\":{\"value\":\"05d3d1f1-e6e3-4ea9-b674-af1422033d03\"}}"
+   *       } ]
+   *     }
+   *   }
+   * </pre>
+   *
+   * but the correct representation would be like this:
+   *
+   * <pre>
+   *   {
+   *     "method" : "PATCH",
+   *     "bulkId" : "ba2eddfe-c8fe-4c49-b536-402fa88885eb",
+   *     "path" : "/Users/269ed3f9-4f1e-4b85-b19e-13b33da79baa",
+   *     "data" : {
+   *       "schemas" : [ "urn:ietf:params:scim:api:messages:2.0:PatchOp" ],
+   *       "Operations" : [ {
+   *         "path" : "manager[displayname eq \"chuck\"]",
+   *         "op" : "replace",
+   *         "value" : "{\"value\":\"05d3d1f1-e6e3-4ea9-b674-af1422033d03\"}"
+   *       } ]
+   *     }
+   *   }
+   * </pre>
    */
   @Test
   public void testBulkIdReferenceOnPatchAddWithPathOnComplexAttributeWithErroneousType()
@@ -1635,6 +1670,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(patchOpRequest.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
+    log.warn(bulkRequest.toPrettyString());
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();

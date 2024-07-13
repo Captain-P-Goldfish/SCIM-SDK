@@ -1,8 +1,12 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
@@ -37,36 +41,43 @@ public class ComplexAttributeValidator
                                            ContextValidator contextValidator)
   {
     log.trace("Validating complex attribute '{}'", schemaAttribute.getScimNodeName());
-    JsonNode effectiveAttribute = attribute;
-    errorIfBlock: if (!effectiveAttribute.isObject())
-    {
-      if (effectiveAttribute.isArray() && effectiveAttribute.size() == 1)
-      {
-        if (effectiveAttribute.get(0).isObject())
-        {
-          effectiveAttribute = effectiveAttribute.get(0);
-          break errorIfBlock;
-        }
-        else if (effectiveAttribute.get(0) instanceof TextNode)
-        {
-          effectiveAttribute = JsonHelper.readJsonDocument(effectiveAttribute.get(0).textValue());
-          if (effectiveAttribute.isObject())
-          {
-            break errorIfBlock;
-          }
-        }
-      }
-      String errorMessage = String.format("Attribute '%s' must be of type object but is '%s'",
-                                          schemaAttribute.getFullResourceName(),
-                                          effectiveAttribute);
-      throw new AttributeValidationException(schemaAttribute, errorMessage);
-    }
+    ObjectNode effectiveAttribute = getEffectiveAttributeNode(schemaAttribute, attribute);
 
     ScimObjectNode scimObjectNode = new ScimObjectNode(schemaAttribute);
+
+    // we are gathering the attribute validation errors in the list and throw them later. This is done due to a
+    // very special use-case that will be explained in the following:
+    // If we get an object like this: { "manager": { "value": null } }. We need to interpret this object
+    // as if it would look like this: { "manager": null }.
+    // The following code parts that directly refer to this use-case are marked with "empty-object-use-case"
+    List<AttributeValidationException> errorValidations = new ArrayList<>();
+    boolean allNodesAreNullNodes = true;
+
     for ( SchemaAttribute subAttribute : schemaAttribute.getSubAttributes() )
     {
       JsonNode subNode = effectiveAttribute.get(subAttribute.getName());
-      Optional<JsonNode> validatedNode = ValidationSelector.validateNode(subAttribute, subNode, contextValidator);
+      if (subNode != null && !NullNode.getInstance().equals(subNode))
+      {
+        allNodesAreNullNodes = false;
+      }
+      else
+      {
+        // empty-object-use-case
+        effectiveAttribute.remove(subAttribute.getName());
+      }
+
+      Optional<JsonNode> validatedNode;
+      try
+      {
+        validatedNode = ValidationSelector.validateNode(subAttribute, subNode, contextValidator);
+      }
+      catch (AttributeValidationException ex)
+      {
+        // empty-object-use-case
+        errorValidations.add(ex);
+        continue;
+      }
+
       if (validatedNode.isPresent())
       {
         scimObjectNode.set(subAttribute.getName(), validatedNode.get());
@@ -76,6 +87,57 @@ public class ComplexAttributeValidator
     {
       log.trace("Evaluated complex node '{}' to an empty object.", schemaAttribute.getFullResourceName());
     }
+    if (allNodesAreNullNodes && !effectiveAttribute.isEmpty())
+    {
+      // empty-object-use-case
+      allNodesAreNullNodes = false;
+    }
+    if (!errorValidations.isEmpty() && !allNodesAreNullNodes)
+    {
+      // empty-object-use-case
+      throw errorValidations.get(0);
+    }
     return scimObjectNode.isEmpty() ? null : scimObjectNode;
+  }
+
+  /**
+   * retrieves the attribute node from the given attribute-parameter. We require a JSON object but the attribute
+   * might be a string-representation or an array-representation, but still these representations can be
+   * interpreted as JSON objects if the array contains a single element or the string-representation represents
+   * a JSON object
+   *
+   * @param schemaAttribute the definition of the object
+   * @param originalAttribute the attributes representation
+   * @return the attribute itself or an underlying object-node that was nested in a one-element array or was
+   *         simply a string representation
+   */
+  private static ObjectNode getEffectiveAttributeNode(SchemaAttribute schemaAttribute, JsonNode originalAttribute)
+  {
+    JsonNode attribute = originalAttribute;
+    if (attribute.isObject())
+    {
+      return (ObjectNode)attribute;
+    }
+
+    if (attribute.isArray() && attribute.size() == 1)
+    {
+      if (attribute.get(0).isObject())
+      {
+        return (ObjectNode)attribute.get(0);
+
+      }
+      else if (attribute.get(0) instanceof TextNode)
+      {
+        attribute = JsonHelper.readJsonDocument(attribute.get(0).textValue());
+        if (attribute.isObject())
+        {
+          return (ObjectNode)attribute;
+        }
+      }
+    }
+    String errorMessage = String.format("Attribute '%s' must be of type object but is '%s'",
+                                        schemaAttribute.getFullResourceName(),
+                                        attribute);
+    throw new AttributeValidationException(schemaAttribute, errorMessage);
   }
 }

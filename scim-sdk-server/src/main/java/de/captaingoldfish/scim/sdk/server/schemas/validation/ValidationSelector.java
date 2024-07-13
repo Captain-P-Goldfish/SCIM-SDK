@@ -41,7 +41,7 @@ class ValidationSelector
   {
     final JsonNode effectiveAttribute = contextValidator.handleDefaultValue(schemaAttribute, attribute);
     final boolean isContextValidation = contextValidator.validateContext(schemaAttribute, effectiveAttribute);
-    if (!isContextValidation)
+    if (!isContextValidation || effectiveAttribute == null)
     {
       return Optional.empty();
     }

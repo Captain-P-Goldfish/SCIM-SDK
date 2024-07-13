@@ -14,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.NullNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -226,6 +227,59 @@ public class RequestResourceValidatorTest implements FileReferences
     Assertions.assertEquals(2, user.getSchemas().size(), user.getSchemas().toString());
     MatcherAssert.assertThat(user.getSchemas(),
                              Matchers.containsInAnyOrder(SchemaUris.USER_URI, SchemaUris.ENTERPRISE_USER_URI));
+  }
+
+  /**
+   * validates that a PUT request of the following type does not result in an error:
+   *
+   * <pre>
+   * {
+   *     "schemas": [
+   *         "urn:ietf:params:scim:schemas:core:2.0:User",
+   *         "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"
+   *     ],
+   *     (...)
+   *     "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User": {
+   *         (...)
+   *         "manager": {
+   *             "value": null
+   *         }
+   *     },
+   * }
+   * </pre>
+   *
+   * The manager-object must be interpreted as an empty object as if {@code {"manager" : null}} would be used
+   *
+   * @see https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/689
+   */
+  @Test
+  public void testManagerValueIsNullNode()
+  {
+    final JsonNode userResourceTypeNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
+    final JsonNode userSchemaNode = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
+    final JsonNode enterpriseUserNode = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    ResourceType userResourceType = resourceTypeFactory.registerResourceType(new UserHandlerImpl(true),
+                                                                             userResourceTypeNode,
+                                                                             userSchemaNode,
+                                                                             enterpriseUserNode);
+
+    Manager manager = new Manager();
+    manager.set(AttributeNames.RFC7643.VALUE, NullNode.getInstance());
+    EnterpriseUser enterpriseUser = EnterpriseUser.builder().manager(manager).build();
+    final User userResource = User.builder().externalId("123").userName("max").enterpriseUser(enterpriseUser).build();
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
+                                                                                     HttpMethod.PUT);
+    User validatedUser = (User)Assertions.assertDoesNotThrow(() -> {
+      return requestResourceValidator.validateDocument(userResource);
+    });
+    Assertions.assertFalse(requestResourceValidator.getValidationContext().hasErrors(),
+                           requestResourceValidator.getValidationContext().getFieldErrors().toString());
+    Assertions.assertNotNull(validatedUser);
+
+    User expectedUser = User.builder().userName("max").externalId("123").build();
+    Assertions.assertEquals(expectedUser, validatedUser);
+    Assertions.assertEquals(1, validatedUser.getSchemas().size(), validatedUser.getSchemas().toString());
+    MatcherAssert.assertThat(validatedUser.getSchemas(), Matchers.containsInAnyOrder(SchemaUris.USER_URI));
   }
 
   /**
