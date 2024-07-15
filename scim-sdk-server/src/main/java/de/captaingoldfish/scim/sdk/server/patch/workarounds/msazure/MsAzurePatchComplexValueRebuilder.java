@@ -71,6 +71,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
 {
+
   private static final String JSON_RESERVED_CHARS_PATTERN = "[\\[\\]{}:,]";
 
   private SchemaAttribute schemaAttribute;
@@ -129,12 +130,12 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
   {
     List<String> patchValues = operation.getValues();
     List<String> fixedValues = new ArrayList<>();
-    for (String patchValue : patchValues)
+    for ( String patchValue : patchValues )
     {
       if (!shouldBeFixed(patchValue))
       {
         log.trace("[MS Azure complex-patch-path-value workaround] ignored value-node because it is already in the correct form"
-              + " or cannot be fixed");
+                  + " or cannot be fixed");
         fixedValues.add(patchValue);
         continue;
       }
@@ -169,7 +170,8 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
     {
       JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
       return jsonNode != null && !jsonNode.isObject() && !jsonNode.isArray();
-    } catch (IOException ex)
+    }
+    catch (IOException ex)
     {
       return false;
     }
