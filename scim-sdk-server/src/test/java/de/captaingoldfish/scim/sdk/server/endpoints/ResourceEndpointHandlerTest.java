@@ -32,6 +32,8 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.fasterxml.jackson.databind.node.TextNode;
+
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
@@ -1937,6 +1939,193 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertNotEquals(resourceTypes.size(), listResponse.getListedResources().size());
     Assertions.assertEquals(resourceTypes.stream().filter(rt -> rt.getSchemaExtensions().size() > 0).count(),
                             listResponse.getListedResources().size());
+  }
+
+  /**
+   * makes sure that a comma separated list is supported in the attributes-parameter of a {@link SearchRequest}
+   */
+  @DisplayName("Attributes can be sent as comma separated list in SearchRequest")
+  @Test
+  public void testAttributesCanBeSentAsCommaSeparatedList()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    SearchRequest searchRequest = SearchRequest.builder().build();
+    searchRequest.set(AttributeNames.RFC7643.ATTRIBUTES,
+                      new TextNode(String.format("%s,%s,%s",
+                                                 AttributeNames.RFC7643.SCHEMA,
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.ENDPOINT)));
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null,
+                                                                      null);
+
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.anyInt(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Collection<ResourceType> resourceTypes = resourceTypeFactory.getAllResourceTypes();
+
+    Assertions.assertEquals(resourceTypes.size(), listResponse.getListedResources().size());
+    listResponse.getListedResources().forEach(rt -> {
+      ResourceType resourceType = (ResourceType)rt;
+      Assertions.assertEquals(4, resourceType.size());
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMA));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.NAME));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.ENDPOINT));
+    });
+  }
+
+  /**
+   * makes sure that an array supported for the attributes-parameter in a {@link SearchRequest}
+   */
+  @DisplayName("Attributes can be sent as array in SearchRequest")
+  @Test
+  public void testAttributesCanBeSentAsArray()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    SearchRequest searchRequest = SearchRequest.builder().build();
+    searchRequest.setAttributes(Arrays.asList(AttributeNames.RFC7643.SCHEMA,
+                                              AttributeNames.RFC7643.NAME,
+                                              AttributeNames.RFC7643.ENDPOINT));
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null,
+                                                                      null);
+
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.anyInt(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Collection<ResourceType> resourceTypes = resourceTypeFactory.getAllResourceTypes();
+
+    Assertions.assertEquals(resourceTypes.size(), listResponse.getListedResources().size());
+    listResponse.getListedResources().forEach(rt -> {
+      ResourceType resourceType = (ResourceType)rt;
+      Assertions.assertEquals(4, resourceType.size());
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMA));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.NAME));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.ENDPOINT));
+    });
+  }
+
+  /**
+   * makes sure that a comma separated list is supported in the excludedAttributes-parameter of a
+   * {@link SearchRequest}
+   */
+  @DisplayName("ExcludedAttributes can be sent as comma separated list in SearchRequest")
+  @Test
+  public void testExcludedAttributesCanBeSentAsCommaSeparatedList()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    SearchRequest searchRequest = SearchRequest.builder().build();
+    searchRequest.set(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES,
+                      new TextNode(String.format("%s,%s,%s,%s,%s",
+                                                 AttributeNames.RFC7643.DESCRIPTION,
+                                                 AttributeNames.RFC7643.SCHEMA_EXTENSIONS,
+                                                 AttributeNames.RFC7643.NAME,
+                                                 AttributeNames.RFC7643.ENDPOINT,
+                                                 SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI)));
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null,
+                                                                      null);
+
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.anyInt(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Collection<ResourceType> resourceTypes = resourceTypeFactory.getAllResourceTypes();
+
+    Assertions.assertEquals(resourceTypes.size(), listResponse.getListedResources().size());
+    listResponse.getListedResources().forEach(rt -> {
+      ResourceType resourceType = (ResourceType)rt;
+      Assertions.assertEquals(4, resourceType.size());
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.ID));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMA));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.META));
+
+      Assertions.assertFalse(resourceType.has(AttributeNames.RFC7643.ENDPOINT));
+      Assertions.assertFalse(resourceType.has(AttributeNames.RFC7643.NAME));
+      Assertions.assertFalse(resourceType.has(AttributeNames.RFC7643.SCHEMA_EXTENSIONS));
+      Assertions.assertFalse(resourceType.has(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI));
+    });
+  }
+
+  /**
+   * makes sure that an array supported for the excludedAttributes-parameter in a {@link SearchRequest}
+   */
+  @DisplayName("ExcludedAttributes can be sent as array in SearchRequest")
+  @Test
+  public void testExcludedAttributesCanBeSentAsArray()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
+    SearchRequest searchRequest = SearchRequest.builder().build();
+    searchRequest.setExcludedAttributes(Arrays.asList(AttributeNames.RFC7643.DESCRIPTION,
+                                                      AttributeNames.RFC7643.SCHEMA_EXTENSIONS,
+                                                      AttributeNames.RFC7643.NAME,
+                                                      AttributeNames.RFC7643.ENDPOINT,
+                                                      SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI));
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
+                                                                      searchRequest,
+                                                                      null,
+                                                                      null);
+
+    Mockito.verify(resourceTypeHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.anyInt(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.isNull(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.isNull());
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Collection<ResourceType> resourceTypes = resourceTypeFactory.getAllResourceTypes();
+
+    Assertions.assertEquals(resourceTypes.size(), listResponse.getListedResources().size());
+    listResponse.getListedResources().forEach(rt -> {
+      ResourceType resourceType = (ResourceType)rt;
+      Assertions.assertEquals(4, resourceType.size());
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.ID));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.SCHEMA));
+      Assertions.assertTrue(resourceType.has(AttributeNames.RFC7643.META));
+
+      Assertions.assertFalse(resourceType.has(AttributeNames.RFC7643.ENDPOINT));
+      Assertions.assertFalse(resourceType.has(AttributeNames.RFC7643.NAME));
+      Assertions.assertFalse(resourceType.has(AttributeNames.RFC7643.SCHEMA_EXTENSIONS));
+      Assertions.assertFalse(resourceType.has(SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI));
+    });
   }
 
   /**

@@ -61,8 +61,8 @@ public class SearchRequestTest
                                                                                    .filter(filter)
                                                                                    .sortBy(sortBy)
                                                                                    .sortOrder(sortOrder)
-                                                                                   .attributes(attributes)
-                                                                                   .excludedAttributes(excludedAttr)
+                                                                                   .attributesString(attributes)
+                                                                                   .excludedAttributesString(excludedAttr)
                                                                                    .build());
 
     Assertions.assertEquals(startIndex, searchRequest.getStartIndex().get());
@@ -70,8 +70,8 @@ public class SearchRequestTest
     Assertions.assertEquals(filter, searchRequest.getFilter().get());
     Assertions.assertEquals(sortBy, searchRequest.getSortBy().get());
     Assertions.assertEquals(sortOrder.name().toLowerCase(), searchRequest.getSortOrder().get());
-    Assertions.assertEquals(attributes, searchRequest.getAttributes().get());
-    Assertions.assertEquals(excludedAttr, searchRequest.getExcludedAttributes().get());
+    Assertions.assertEquals(attributes, searchRequest.getAttributes().get(0));
+    Assertions.assertEquals(excludedAttr, searchRequest.getExcludedAttributes().get(0));
   }
 
   /**
@@ -94,8 +94,8 @@ public class SearchRequestTest
                                                                                    .filter(filter)
                                                                                    .sortBy(sortBy)
                                                                                    .sortOrder(sortOrder)
-                                                                                   .attributes(attributes)
-                                                                                   .excludedAttributes(excludedAttr)
+                                                                                   .attributesString(attributes)
+                                                                                   .excludedAttributesString(excludedAttr)
                                                                                    .build());
 
     searchRequest.setStartIndex(null);
@@ -103,8 +103,8 @@ public class SearchRequestTest
     searchRequest.setFilter(null);
     searchRequest.setSortBy(null);
     searchRequest.setSortOrder(null);
-    searchRequest.setAttributes(null);
-    searchRequest.setExcludedAttributes(null);
+    searchRequest.setAttributes((String)null);
+    searchRequest.setExcludedAttributes((String)null);
 
     Assertions.assertEquals(1, searchRequest.size());
     Assertions.assertFalse(searchRequest.getSchemas().isEmpty());
@@ -130,8 +130,8 @@ public class SearchRequestTest
                                                                                    .filter(filter)
                                                                                    .sortBy(sortBy)
                                                                                    .sortOrder(sortOrder)
-                                                                                   .attributes(attributes)
-                                                                                   .excludedAttributes(excludedAttr)
+                                                                                   .attributesString(attributes)
+                                                                                   .excludedAttributesString(excludedAttr)
                                                                                    .build());
 
     searchRequest.remove("startIndex");

@@ -472,8 +472,8 @@ class ResourceEndpointHandler
                          searchRequest.getFilter().orElse(null),
                          searchRequest.getSortBy().orElse(null),
                          searchRequest.getSortOrder().orElse(null),
-                         searchRequest.getAttributes().orElse(null),
-                         searchRequest.getExcludedAttributes().orElse(null),
+                         searchRequest.getAttributes(),
+                         searchRequest.getExcludedAttributes(),
                          baseUrlSupplier,
                          context);
   }
@@ -541,8 +541,8 @@ class ResourceEndpointHandler
                                                                 String filter,
                                                                 String sortBy,
                                                                 String sortOrder,
-                                                                String attributes,
-                                                                String excludedAttributes,
+                                                                List<String> attributes,
+                                                                List<String> excludedAttributes,
                                                                 Supplier<String> baseUrlSupplier,
                                                                 Context context)
   {

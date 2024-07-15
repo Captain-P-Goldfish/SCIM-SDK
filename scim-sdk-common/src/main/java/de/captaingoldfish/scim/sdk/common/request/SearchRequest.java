@@ -1,12 +1,21 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.resources.AbstractSchemasHolder;
+import de.captaingoldfish.scim.sdk.common.utils.RequestUtils;
 import lombok.Builder;
 
 
@@ -21,7 +30,7 @@ public class SearchRequest extends AbstractSchemasHolder
 
   public SearchRequest()
   {
-    this(null, null, null, null, null, null, null);
+    this(null, null, null, null, null, null, null, null, null);
   }
 
   @Builder
@@ -30,8 +39,10 @@ public class SearchRequest extends AbstractSchemasHolder
                        String filter,
                        String sortBy,
                        SortOrder sortOrder,
-                       String attributes,
-                       String excludedAttributes)
+                       String attributesString,
+                       List<String> attributes,
+                       String excludedAttributesString,
+                       List<String> excludedAttributes)
   {
     setSchemas(Collections.singletonList(SchemaUris.SEARCH_REQUEST_URI));
     setStartIndex(startIndex);
@@ -39,8 +50,22 @@ public class SearchRequest extends AbstractSchemasHolder
     setFilter(filter);
     setSortBy(sortBy);
     setSortOrder(sortOrder);
-    setAttributes(attributes);
-    setExcludedAttributes(excludedAttributes);
+    if (StringUtils.isNotBlank(excludedAttributesString))
+    {
+      setAttributes(attributesString);
+    }
+    else
+    {
+      setAttributes(attributes);
+    }
+    if (StringUtils.isNotBlank(excludedAttributesString))
+    {
+      setExcludedAttributes(excludedAttributesString);
+    }
+    else
+    {
+      setExcludedAttributes(excludedAttributes);
+    }
   }
 
   /**
@@ -136,9 +161,21 @@ public class SearchRequest extends AbstractSchemasHolder
    * attribute notation (Section 3.10) form. See Section 3.9 for additional retrieval query parameters.
    * OPTIONAL.
    */
-  public Optional<String> getAttributes()
+  public List<String> getAttributes()
   {
-    return getStringAttribute(AttributeNames.RFC7643.ATTRIBUTES);
+    JsonNode attributes = get(AttributeNames.RFC7643.ATTRIBUTES);
+    if (attributes instanceof ArrayNode)
+    {
+      return getSimpleArrayAttribute(AttributeNames.RFC7643.ATTRIBUTES);
+    }
+    else if (attributes instanceof TextNode)
+    {
+      return Optional.ofNullable(attributes.textValue()).map(RequestUtils::getAttributeList).orElseGet(ArrayList::new);
+    }
+    else
+    {
+      return Collections.emptyList();
+    }
   }
 
   /**
@@ -149,7 +186,19 @@ public class SearchRequest extends AbstractSchemasHolder
    */
   public void setAttributes(String attributes)
   {
-    setAttribute(AttributeNames.RFC7643.ATTRIBUTES, attributes);
+    List<String> attributeList = RequestUtils.getAttributeList(attributes);
+    setAttributes(attributeList);
+  }
+
+  /**
+   * A multi-valued list of strings indicating the names of resource attributes to return in the response,
+   * overriding the set of attributes that would be returned by default. Attribute names MUST be in standard
+   * attribute notation (Section 3.10) form. See Section 3.9 for additional retrieval query parameters.
+   * OPTIONAL.
+   */
+  public void setAttributes(List<String> attributes)
+  {
+    setStringAttributeList(AttributeNames.RFC7643.ATTRIBUTES, attributes);
   }
 
   /**
@@ -158,9 +207,21 @@ public class SearchRequest extends AbstractSchemasHolder
    * setting is "always" (see Sections 2.2 and 7 of [RFC7643]). Attribute names MUST be in standard attribute
    * notation (Section 3.10) form. See Section 3.9 for additional retrieval query parameters. OPTIONAL.
    */
-  public Optional<String> getExcludedAttributes()
+  public List<String> getExcludedAttributes()
   {
-    return getStringAttribute(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES);
+    JsonNode attributes = get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES);
+    if (attributes instanceof ArrayNode)
+    {
+      return getSimpleArrayAttribute(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES);
+    }
+    else if (attributes instanceof TextNode)
+    {
+      return Optional.ofNullable(attributes.textValue()).map(RequestUtils::getAttributeList).orElseGet(ArrayList::new);
+    }
+    else
+    {
+      return Collections.emptyList();
+    }
   }
 
   /**
@@ -171,7 +232,19 @@ public class SearchRequest extends AbstractSchemasHolder
    */
   public void setExcludedAttributes(String excludedAttributes)
   {
-    setAttribute(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES, excludedAttributes);
+    List<String> excludedAttributeList = RequestUtils.getAttributeList(excludedAttributes);
+    setExcludedAttributes(excludedAttributeList);
+  }
+
+  /**
+   * A multi-valued list of strings indicating the names of resource attributes to be removed from the default
+   * set of attributes to return. This parameter SHALL have no effect on attributes whose schema "returned"
+   * setting is "always" (see Sections 2.2 and 7 of [RFC7643]). Attribute names MUST be in standard attribute
+   * notation (Section 3.10) form. See Section 3.9 for additional retrieval query parameters. OPTIONAL.
+   */
+  public void setExcludedAttributes(List<String> excludedAttributes)
+  {
+    setStringAttributeList(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES, excludedAttributes);
   }
 
   /**

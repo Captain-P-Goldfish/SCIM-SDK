@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -58,18 +57,29 @@ public final class RequestUtils
    * @param attributes the comma separated string of scim attribute names
    * @return the list of attributes
    */
-  public static List<SchemaAttribute> getAttributes(ResourceType resourceType, String attributes)
+  public static List<SchemaAttribute> getAttributes(ResourceType resourceType, String attributesString)
   {
-    List<String> attributeNameArray = getAttributeList(attributes).map(Arrays::asList)
-                                                                  .map(ArrayList::new)
-                                                                  .orElse(new ArrayList<>());
+    List<String> attributesList = de.captaingoldfish.scim.sdk.common.utils.RequestUtils.getAttributeList(attributesString);
+    return getAttributes(resourceType, attributesList);
+  }
+
+  /**
+   * this method will parse either the attributes parameter or the excludedAttributes parameter into a list of
+   * {@link SchemaAttribute}s. The expected form of the attributes list is: form (e.g., userName, name, emails)
+   *
+   * @param attributeNames the list of scim attribute names
+   * @return the list of attributes
+   */
+  public static List<SchemaAttribute> getAttributes(ResourceType resourceType, List<String> attributeNames)
+  {
+    attributeNames = Optional.ofNullable(attributeNames).orElseGet(ArrayList::new);
     // this if-block is used in cases if the client might try to use the schema-reference uris as attribute-names
     List<SchemaAttribute> attributesList = new ArrayList<>();
 
     {
       List<String> schemaUris = new ArrayList<>();
       List<Schema> schemas = resourceType.getAllSchemas();
-      for ( String attributeName : attributeNameArray )
+      for ( String attributeName : attributeNames )
       {
         for ( Schema schema : schemas )
         {
@@ -81,33 +91,12 @@ public final class RequestUtils
           }
         }
       }
-      attributeNameArray.removeAll(schemaUris);
+      attributeNames.removeAll(schemaUris);
     }
 
     return Stream.concat(attributesList.stream(),
-                         attributeNameArray.stream().map(s -> getSchemaAttributeByAttributeName(resourceType, s)))
+                         attributeNames.stream().map(s -> getSchemaAttributeByAttributeName(resourceType, s)))
                  .collect(Collectors.toList());
-  }
-
-  /**
-   * parses the given attributes into an array of strings
-   *
-   * @param attributes the attributes request parameter that is expected to be a comma separated string
-   * @return the array of the separated attribute names or an empty
-   */
-  private static Optional<String[]> getAttributeList(String attributes)
-  {
-    if (StringUtils.isBlank(attributes))
-    {
-      return Optional.empty();
-    }
-    if (!attributes.matches("(^[a-zA-Z0-9$]([:a-zA-Z0-9.,$]+)?[a-zA-Z0-9$]$)*"))
-    {
-      String errorMessage = "the attributes or excludedAttributes parameter '" + attributes + "' is malformed please "
-                            + "check your syntax and please note that whitespaces are not allowed.";
-      throw new BadRequestException(errorMessage, null, null);
-    }
-    return Optional.of(attributes.split(","));
   }
 
   /**

@@ -4,6 +4,7 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -488,7 +489,8 @@ public class ListBuilderTest extends HttpServerMockup
       Assertions.assertEquals(startIndex, searchRequest.getStartIndex().get());
       Assertions.assertEquals("username SW \"a\"", searchRequest.getFilter().get());
       Assertions.assertEquals(sortOrder.name().toLowerCase(), searchRequest.getSortOrder().get());
-      Assertions.assertEquals(String.join(",", attributes), searchRequest.getAttributes().get());
+      Assertions.assertEquals(String.join(",", attributes),
+                              searchRequest.getAttributes().stream().collect(Collectors.joining(",")));
       wasCalled.set(true);
     });
 
@@ -538,7 +540,8 @@ public class ListBuilderTest extends HttpServerMockup
       Assertions.assertEquals(startIndex, searchRequest.getStartIndex().get());
       Assertions.assertEquals("username SW \"a\"", searchRequest.getFilter().get());
       Assertions.assertEquals(sortOrder.name().toLowerCase(), searchRequest.getSortOrder().get());
-      Assertions.assertEquals(String.join(",", attributes), searchRequest.getAttributes().get());
+      Assertions.assertEquals(String.join(",", attributes),
+                              searchRequest.getAttributes().stream().collect(Collectors.joining(",")));
       wasCalled.set(true);
     });
 
@@ -589,7 +592,8 @@ public class ListBuilderTest extends HttpServerMockup
       Assertions.assertEquals(startIndex, searchRequest.getStartIndex().get());
       Assertions.assertEquals("username SW \"a\"", searchRequest.getFilter().get());
       Assertions.assertEquals(sortOrder.name().toLowerCase(), searchRequest.getSortOrder().get());
-      Assertions.assertEquals(String.join(",", attributes), searchRequest.getAttributes().get());
+      Assertions.assertEquals(String.join(",", attributes),
+                              searchRequest.getAttributes().stream().collect(Collectors.joining(",")));
       wasCalled.set(true);
     });
 

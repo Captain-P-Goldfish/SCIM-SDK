@@ -35,7 +35,7 @@ public class SearchRequestExtensionTest
                                   String excludedAttributes,
                                   String test)
     {
-      super(startIndex, count, filter, sortBy, sortOrder, attributes, excludedAttributes);
+      super(startIndex, count, filter, sortBy, sortOrder, attributes, null, excludedAttributes, null);
     }
 
 

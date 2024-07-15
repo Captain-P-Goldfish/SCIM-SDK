@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
@@ -263,9 +264,8 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.FILTER),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_BY.toLowerCase()),
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()),
-                               uriInfos.getQueryParameters().get(AttributeNames.RFC7643.ATTRIBUTES),
-                               uriInfos.getQueryParameters()
-                                       .get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
+                               getAttributeList(uriInfos, AttributeNames.RFC7643.ATTRIBUTES),
+                               getAttributeList(uriInfos, AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
                                uriInfos::getBaseUri,
                                effectiveContext);
         }
@@ -312,6 +312,17 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                               uriInfos.getHttpHeaders(),
                               effectiveContext);
     }
+  }
+
+  /**
+   * Gets the list representation of the comma separated list of attribute-names<br/>
+   * <br/>
+   * just moved into its own method due to formatting issues
+   */
+  private List<String> getAttributeList(UriInfos uriInfos, String attributes)
+  {
+    return de.captaingoldfish.scim.sdk.common.utils.RequestUtils.getAttributeList(uriInfos.getQueryParameters()
+                                                                                          .get(attributes));
   }
 
   /**
