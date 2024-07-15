@@ -541,8 +541,14 @@ class ResponseAttributeValidator
   {
     for ( SchemaAttribute attribute : attributes )
     {
-      boolean isPresentInList = attribute.getFullResourceName().startsWith(schemaAttribute.getFullResourceName())
-                                || schemaAttribute.getFullResourceName().startsWith(attribute.getFullResourceName());
+      boolean isPresentInList = attribute.getFullResourceName().equals(schemaAttribute.getFullResourceName())
+                                || (attribute.getParent() != null
+                                    && schemaAttribute.getFullResourceName()
+                                                      .equals(attribute.getParent().getFullResourceName()))
+                                || (schemaAttribute.getParent() != null
+                                    && schemaAttribute.getParent()
+                                                      .getFullResourceName()
+                                                      .equals(attribute.getFullResourceName()));
       if (isPresentInList)
       {
         return true;
