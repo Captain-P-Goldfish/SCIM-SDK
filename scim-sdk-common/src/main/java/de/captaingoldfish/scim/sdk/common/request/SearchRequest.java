@@ -50,7 +50,7 @@ public class SearchRequest extends AbstractSchemasHolder
     setFilter(filter);
     setSortBy(sortBy);
     setSortOrder(sortOrder);
-    if (StringUtils.isNotBlank(excludedAttributesString))
+    if (StringUtils.isNotBlank(attributesString))
     {
       setAttributes(attributesString);
     }

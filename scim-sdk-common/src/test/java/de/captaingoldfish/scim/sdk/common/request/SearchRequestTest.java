@@ -1,9 +1,17 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
+import java.util.Arrays;
+import java.util.List;
+
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.ThrowingSupplier;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -146,5 +154,46 @@ public class SearchRequestTest
     Assertions.assertFalse(searchRequest.getSchemas().isEmpty());
   }
 
+  @DisplayName("Parameter 'attributesString' is correctly set when present")
+  @Test
+  public void testAttributesStringIsCorrectlySet()
+  {
+    final String attributesString = "userName,displayName";
+    SearchRequest searchRequest = SearchRequest.builder().attributesString(attributesString).build();
+    Assertions.assertEquals(2, searchRequest.size(), searchRequest.toPrettyString());
+
+    ArrayNode expectedNode = new ArrayNode(JsonNodeFactory.instance);
+    expectedNode.add("userName");
+    expectedNode.add("displayName");
+    Assertions.assertEquals(expectedNode, searchRequest.get(AttributeNames.RFC7643.ATTRIBUTES));
+  }
+
+  @DisplayName("Parameter 'attributes' is correctly set when present")
+  @Test
+  public void testAttributesIsCorrectlySet()
+  {
+    final List<String> attributesString = Arrays.asList("userName", "displayName");
+    SearchRequest searchRequest = SearchRequest.builder().attributes(attributesString).build();
+    Assertions.assertEquals(2, searchRequest.size(), searchRequest.toPrettyString());
+
+    ArrayNode expectedNode = new ArrayNode(JsonNodeFactory.instance);
+    expectedNode.add("userName");
+    expectedNode.add("displayName");
+    Assertions.assertEquals(expectedNode, searchRequest.get(AttributeNames.RFC7643.ATTRIBUTES));
+  }
+
+  @DisplayName("Parameter 'excludedAttributes' is correctly set when present")
+  @Test
+  public void testExcludedAttributesStringIsCorrectlySet()
+  {
+    final List<String> excludedAttributesString = Arrays.asList("userName", "displayName");
+    SearchRequest searchRequest = SearchRequest.builder().excludedAttributes(excludedAttributesString).build();
+    Assertions.assertEquals(2, searchRequest.size(), searchRequest.toPrettyString());
+
+    ArrayNode expectedNode = new ArrayNode(JsonNodeFactory.instance);
+    expectedNode.add("userName");
+    expectedNode.add("displayName");
+    Assertions.assertEquals(expectedNode, searchRequest.get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES));
+  }
 
 }
