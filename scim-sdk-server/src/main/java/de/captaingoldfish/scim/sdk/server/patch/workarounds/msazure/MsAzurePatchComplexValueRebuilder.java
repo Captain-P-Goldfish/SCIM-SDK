@@ -151,6 +151,14 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
     return operation;
   }
 
+  /**
+   * Decides whether the input JSON document is in an incorrect form and needs to be fixed. For input to be
+   * fixable, it must be a valid JSON in one of the following formats: blank, a simple string, a simple number,
+   * an object, or an array.
+   *
+   * @param jsonDocument the input JSON document to check
+   * @return true when the input JSON document needs to be fixed
+   */
   private boolean shouldBeFixed(String jsonDocument)
   {
     if (StringUtils.isBlank(jsonDocument))
@@ -160,10 +168,12 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
 
     Pattern pattern = Pattern.compile(JSON_RESERVED_CHARS_PATTERN);
     Matcher matcher = pattern.matcher(jsonDocument);
+    boolean isInputSimpleString = !matcher.find();
 
-    if (!matcher.find())
+    if (isInputSimpleString)
     {
-      jsonDocument = String.format("\"%s\"", jsonDocument);
+      // Wraps input in double quotes to make it a valid json
+      jsonDocument = wrapInDoubleQuotes(jsonDocument);
     }
 
     try
@@ -175,5 +185,10 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
     {
       return false;
     }
+  }
+
+  private String wrapInDoubleQuotes(String jsonDocument)
+  {
+    return String.format("\"%s\"", jsonDocument);
   }
 }
