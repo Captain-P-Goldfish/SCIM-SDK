@@ -104,7 +104,7 @@
         <!-- version conflicts -->
         <version.apiguardian>1.1.2</version.apiguardian>
         <version.antlr.st4>4.3.4</version.antlr.st4>
-        <version.antlr.runtime>4.13.1</version.antlr.runtime>
+        <version.antlr.runtime>4.13.2</version.antlr.runtime>
 
         <!-- plugins -->
         <version.maven.compiler.plugin>3.13.0</version.maven.compiler.plugin>
