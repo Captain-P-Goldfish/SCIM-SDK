@@ -300,8 +300,12 @@ public class ListBuilder<T extends ResourceNode>
         }
         ListResponse<T> listResponse = response.getResource();
         totalResults = listResponse.getTotalResults();
-        final int itemsPerPage = listResponse.getItemsPerPage();
-        final long usedStartIndex = listResponse.getStartIndex();
+        final int itemsPerPage = listResponse.getItemsPerPage() == 0 //
+          ? listResponse.getListedResources().size() //
+          : listResponse.getItemsPerPage();
+        final long usedStartIndex = listResponse.getStartIndex() <= 1 //
+          ? originalStartIndex + currentlyRetrievedResources //
+          : listResponse.getStartIndex();
 
         currentlyRetrievedResources += itemsPerPage;
 

@@ -51,23 +51,23 @@ public class UserHandler extends ResourceHandler<User>
    */
   public UserHandler()
   {
-    // try (InputStream inputStream = getClass().getResourceAsStream("/firstnames.txt");
-    // InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
-    // BufferedReader reader = new BufferedReader(inputStreamReader))
-    // {
-    //
-    // String name;
-    // while ((name = reader.readLine()) != null)
-    // {
-    // String id = UUID.randomUUID().toString();
-    // Meta meta = Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build();
-    // inMemoryMap.put(id, User.builder().id(id).userName(name).nickName(name).meta(meta).build());
-    // }
-    // }
-    // catch (IOException e)
-    // {
-    // throw new IllegalStateException(e.getMessage(), e);
-    // }
+    try (InputStream inputStream = getClass().getResourceAsStream("/firstnames.txt");
+      InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
+      BufferedReader reader = new BufferedReader(inputStreamReader))
+    {
+
+      String name;
+      while ((name = reader.readLine()) != null)
+      {
+        String id = UUID.randomUUID().toString();
+        Meta meta = Meta.builder().created(LocalDateTime.now()).lastModified(LocalDateTime.now()).build();
+        inMemoryMap.put(id, User.builder().id(id).userName(name).nickName(name).meta(meta).build());
+      }
+    }
+    catch (IOException e)
+    {
+      throw new IllegalStateException(e.getMessage(), e);
+    }
   }
 
   /**

@@ -455,7 +455,69 @@ public class ListBuilderTest extends HttpServerMockup
       Assertions.assertEquals(listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L),
                               listResponse.getItemsPerPage());
     }
+  }
 
+  /**
+   * verifies that the {@link ListBuilder.GetRequestBuilder#getAll()} method will retrieve all resources from
+   * the given startIndex while the itemsPerPage and startIndex parameters are missing in the response. This
+   * test was added due to a bug-report that the getAll method results in an infinite call-attempt to fetch all
+   * resources if the parameters startIndex and itemsPerPage are not present in the response.
+   */
+  @DisplayName("Get all resources (with missing response params)")
+  @ParameterizedTest(name = "startIndex: {0}, count: {1}, useGet: {2}")
+  @CsvSource({",,true", ",,false", "1,500,true", "2501,30,false", "3846,25,true", "4000,100,false", "4945,50,true",
+              "4946,50,false", "4500,500,false"})
+  public void testSendListGetAllRequestWithMissingParams(Long startIndex, Integer count, boolean useGet)
+  {
+    final String sortBy = "username";
+    final SortOrder sortOrder = SortOrder.DESCENDING;
+    final String[] attributes = new String[]{"username", "meta.created"};
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
+                                                      scimHttpClient).sortBy(sortBy)
+                                                                     .sortOrder(sortOrder)
+                                                                     .excludedAttributes(attributes);
+    Optional.ofNullable(startIndex).ifPresent(listBuilder::startIndex);
+    Optional.ofNullable(count).ifPresent(listBuilder::count);
+
+    setManipulateResponse(responseBody -> {
+      ListResponse listResponse = JsonHelper.readJsonDocument(responseBody, ListResponse.class);
+      listResponse.setItemsPerPage(null);
+      listResponse.setStartIndex(null);
+      return listResponse.toString();
+    });
+
+    ServerResponse<ListResponse<User>> response = useGet ? listBuilder.get().getAll() : listBuilder.post().getAll();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+
+    int allUserCount = ((UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl()).getInMemoryMap().size();
+    ListResponse<User> listResponse = response.getResource();
+
+    Assertions.assertEquals(Optional.ofNullable(startIndex).filter(i -> i > 0).orElse(1L),
+                            listResponse.getStartIndex());
+
+    if (count == null || count + Optional.ofNullable(startIndex).orElse(1L) >= listResponse.getTotalResults())
+    {
+      Assertions.assertEquals(allUserCount - Optional.ofNullable(startIndex).map(i -> i - 1).orElse(0L),
+                              listResponse.getListedResources().size());
+    }
+    else if (listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L) > count)
+    {
+      Assertions.assertEquals(count, listResponse.getListedResources().size());
+      Assertions.assertEquals(count, listResponse.getItemsPerPage());
+    }
+    else
+    {
+      Assertions.assertEquals(listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L),
+                              listResponse.getListedResources().size());
+      Assertions.assertEquals(listResponse.getTotalResults() - Optional.ofNullable(startIndex).orElse(1L),
+                              listResponse.getItemsPerPage());
+    }
   }
 
   /**

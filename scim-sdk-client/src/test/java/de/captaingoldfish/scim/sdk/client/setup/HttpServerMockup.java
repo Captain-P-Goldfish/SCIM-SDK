@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.http.HttpHeaders;
 import org.apache.http.HttpStatus;
 import org.junit.jupiter.api.AfterEach;
@@ -179,25 +180,31 @@ public abstract class HttpServerMockup
     server = HttpServer.create(new InetSocketAddress(serverPort), 0);
     server.createContext("/", httpExchange -> {
       log.trace("handles request: {}", httpExchange.getLocalAddress());
-      Optional<String> responseBodyOptional;
+      Pair<Integer, Optional<String>> responseOptional;
       try
       {
         String requestBody = getRequestBody(httpExchange);
         verifyRequestAttributes.accept(httpExchange, requestBody);
-        responseBodyOptional = handleMockedServerRequest(httpExchange, requestBody);
+        responseOptional = handleMockedServerRequest(httpExchange, requestBody);
       }
       catch (Exception | AssertionError ex)
       {
-        responseBodyOptional = handleMockedServerError(httpExchange, ex);
+        responseOptional = handleMockedServerError(httpExchange, ex);
       }
       finally
       {
         log.trace("calling server behaviour changer");
       }
-      responseBodyOptional.ifPresent(responseBody -> {
+      if (responseOptional.getRight().isPresent())
+      {
+        Integer responseStatus = Optional.ofNullable(getResponseStatus)
+                                         .map(Supplier::get)
+                                         .orElse(responseOptional.getLeft());
+        String responseBody = responseOptional.getRight().get();
         String actualResponse = Optional.ofNullable(manipulateResponse)
                                         .map(function -> function.apply(responseBody))
                                         .orElse(responseBody);
+        httpExchange.sendResponseHeaders(responseStatus, actualResponse == null ? 0 : actualResponse.length());
         try (OutputStream outputStream = httpExchange.getResponseBody())
         {
           outputStream.write(actualResponse.getBytes());
@@ -206,7 +213,11 @@ public abstract class HttpServerMockup
         {
           log.error(e.getMessage(), e);
         }
-      });
+      }
+      else
+      {
+        httpExchange.sendResponseHeaders(responseOptional.getLeft(), 0);
+      }
       httpExchange.close();
       log.trace("finished handling server request");
     });
@@ -220,7 +231,8 @@ public abstract class HttpServerMockup
    *
    * @param httpExchange the http object to handle request and response
    */
-  private Optional<String> handleMockedServerRequest(HttpExchange httpExchange, String requestBody) throws IOException
+  private Pair<Integer, Optional<String>> handleMockedServerRequest(HttpExchange httpExchange, String requestBody)
+    throws IOException
   {
     log.trace("handling server request");
     log.trace("http-method: {}", httpExchange.getRequestMethod());
@@ -254,33 +266,15 @@ public abstract class HttpServerMockup
       getResponseHeaders.get().forEach((key, value) -> headerMap.put(key, Arrays.asList(value)));
     }
     responseHeaders.putAll(headerMap);
-    if (getResponseStatus == null)
+    if (getResponseBody == null)
     {
-      httpExchange.sendResponseHeaders(scimResponse.getHttpStatus(), responseBody == null ? 0 : responseBody.length());
-      if (getResponseBody == null)
-      {
-        log.trace("finished handling server request");
-        return Optional.ofNullable(responseBody);
-      }
-      else
-      {
-        log.trace("finished handling server request");
-        return Optional.ofNullable(getResponseBody.get());
-      }
+      log.trace("finished handling server request");
+      return Pair.of(scimResponse.getHttpStatus(), Optional.ofNullable(responseBody));
     }
     else
     {
-      httpExchange.sendResponseHeaders(getResponseStatus.get(), 0);
-      if (getResponseBody == null)
-      {
-        log.trace("finished handling server request");
-        return Optional.ofNullable(responseBody);
-      }
-      else
-      {
-        log.trace("finished handling server request");
-        return Optional.ofNullable(getResponseBody.get());
-      }
+      log.trace("finished handling server request");
+      return Pair.of(scimResponse.getHttpStatus(), Optional.ofNullable(getResponseBody.get()));
     }
   }
 
@@ -312,19 +306,19 @@ public abstract class HttpServerMockup
    * @param httpExchange the http object to handle request and response
    * @param ex the error that occured that is either an {@link Exception} or an {@link AssertionError}
    */
-  private Optional<String> handleMockedServerError(HttpExchange httpExchange, Throwable ex) throws IOException
+  private Pair<Integer, Optional<String>> handleMockedServerError(HttpExchange httpExchange, Throwable ex)
+    throws IOException
   {
     log.error("handle server exception", ex);
     this.ex = ex;
     String message = StringUtils.stripToNull(ex.getMessage());
     log.error("setting server response status code to 500");
-    httpExchange.sendResponseHeaders(HttpStatus.SC_INTERNAL_SERVER_ERROR, message == null ? 0 : message.length());
     Map<String, List<String>> headerMap = new HashMap<>();
     headerMap.put(HttpHeaders.CONTENT_TYPE, Collections.singletonList("text/plain"));
     Headers responseHeaders = httpExchange.getResponseHeaders();
     responseHeaders.putAll(headerMap);
     log.trace("finished handling server error");
-    return Optional.ofNullable(message);
+    return Pair.of(HttpStatus.SC_INTERNAL_SERVER_ERROR, Optional.ofNullable(message));
   }
 
   /**
