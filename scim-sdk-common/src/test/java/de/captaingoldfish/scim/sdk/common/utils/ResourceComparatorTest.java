@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
+import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
@@ -801,6 +802,47 @@ public class ResourceComparatorTest implements FileReferences
 
         Assertions.assertFalse(resourceComparator.equals(user1, user2));
       }
+      /* ******************************************************************************************** */
+    }
+
+    @DisplayName("Compare by EnterpriseUser costCenter only")
+    @Nested
+    class CompareByEnterpriseUserCostCenter
+    {
+
+      @BeforeEach
+      public void initializeComparator()
+      {
+        SchemaAttribute costCenterAttribute = enterpriseUserSchema.getSchemaAttribute(RFC7643.COST_CENTER);
+        resourceComparator.addAttributes(costCenterAttribute);
+      }
+
+      @DisplayName("success: compare costCenter")
+      @Test
+      public void testCompareCostCenter()
+      {
+        EnterpriseUser enterpriseUser1 = EnterpriseUser.builder().costCenter("hello").build();
+        User user1 = User.builder().userName("chuck").enterpriseUser(enterpriseUser1).build();
+
+        EnterpriseUser enterpriseUser2 = EnterpriseUser.builder().costCenter("hello").build();
+        User user2 = User.builder().userName("chucky").enterpriseUser(enterpriseUser2).build();
+
+        Assertions.assertTrue(resourceComparator.equals(user1, user2));
+      }
+
+      @DisplayName("failure: compare costCenter")
+      @Test
+      public void testCompareCostCenterDifferentValues()
+      {
+        EnterpriseUser enterpriseUser1 = EnterpriseUser.builder().costCenter("hello").build();
+        User user1 = User.builder().userName("chuck").enterpriseUser(enterpriseUser1).build();
+
+        EnterpriseUser enterpriseUser2 = EnterpriseUser.builder().costCenter("world").build();
+        User user2 = User.builder().userName("chucky").enterpriseUser(enterpriseUser2).build();
+
+        Assertions.assertFalse(resourceComparator.equals(user1, user2));
+      }
+
       /* ******************************************************************************************** */
     }
 

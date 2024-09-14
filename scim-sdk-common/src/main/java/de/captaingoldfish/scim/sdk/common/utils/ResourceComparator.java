@@ -2,9 +2,11 @@ package de.captaingoldfish.scim.sdk.common.utils;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -97,7 +99,14 @@ public class ResourceComparator
       return false;
     }
 
-    for ( SchemaAttribute mainSchemaAttribute : mainSchema.getAttributes() )
+    Set<SchemaAttribute> attributesToCheck = AttributeHandlingType.EXCLUDE.equals(attributeHandlingType)
+      ? new HashSet<>(mainSchema.getAttributes())
+      : attributes.stream()
+                  .filter(s -> s.getSchema() == mainSchema)
+                  .map(s -> s.getParent() == null ? s : s.getParent())
+                  .collect(Collectors.toSet());
+
+    for ( SchemaAttribute mainSchemaAttribute : attributesToCheck )
     {
       JsonNode node1 = resource1.get(mainSchemaAttribute.getName());
       JsonNode node2 = resource2.get(mainSchemaAttribute.getName());
@@ -109,10 +118,27 @@ public class ResourceComparator
     }
     for ( Schema extension : extensions )
     {
-      for ( SchemaAttribute extensionSchemaAttribute : extension.getAttributes() )
+      JsonNode extensionResource1 = resource1.get(extension.getNonNullId());
+      if (extensionResource1 == null)
       {
-        JsonNode node1 = resource1.get(extensionSchemaAttribute.getName());
-        JsonNode node2 = resource2.get(extensionSchemaAttribute.getName());
+        extensionResource1 = resource1;
+      }
+      JsonNode extensionResource2 = resource2.get(extension.getNonNullId());
+      if (extensionResource2 == null)
+      {
+        extensionResource2 = resource2;
+      }
+
+      attributesToCheck = AttributeHandlingType.EXCLUDE.equals(attributeHandlingType)
+        ? new HashSet<>(extension.getAttributes())
+        : attributes.stream()
+                    .filter(s -> s.getSchema() == extension)
+                    .map(s -> s.getParent() == null ? s : s.getParent())
+                    .collect(Collectors.toSet());
+      for ( SchemaAttribute extensionSchemaAttribute : attributesToCheck )
+      {
+        JsonNode node1 = extensionResource1.get(extensionSchemaAttribute.getName());
+        JsonNode node2 = extensionResource2.get(extensionSchemaAttribute.getName());
         boolean isEqual = compareNodes(extensionSchemaAttribute, node1, node2);
         if (!isEqual)
         {
