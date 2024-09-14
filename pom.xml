@@ -474,6 +474,7 @@
                         <localCheckout>true</localCheckout>
                         <pushChanges>false</pushChanges>
                         <mavenExecutorId>forked-path</mavenExecutorId>
+                        <autoVersionSubmodules>true</autoVersionSubmodules>
                         <!--suppress UnresolvedMavenProperty -->
                         <arguments>-Dgpg.passphrase=${gpg.passphrase} -DprepareAndPerformRelease</arguments>
                     </configuration>
