@@ -14,7 +14,7 @@
     <name>SCIM SDK jboss example</name>
 
     <properties>
-        <version.cdi.api>2.0</version.cdi.api>
+        <version.cdi.api>2.0-PFD2</version.cdi.api>
         <version.servlet.api>4.0.1</version.servlet.api>
         <version.jaxrs>3.0.12.Final</version.jaxrs>
         <version.ejb.api>3.2.2</version.ejb.api>
