@@ -9,6 +9,8 @@ import java.util.Optional;
 
 import javax.net.ssl.HostnameVerifier;
 
+import org.apache.http.impl.client.HttpClientBuilder;
+
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
 import de.captaingoldfish.scim.sdk.client.http.ConfigManipulator;
 import de.captaingoldfish.scim.sdk.client.http.ProxyHelper;
@@ -121,6 +123,11 @@ public class ScimClientConfig
    */
   private String tlsVersion;
 
+  /**
+   * a {@link HttpClientBuilder} instance for custom HTTP clients
+   */
+  private HttpClientBuilder httpClientBuilder;
+
   @Builder
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
@@ -137,7 +144,8 @@ public class ScimClientConfig
                           ConfigManipulator configManipulator,
                           boolean useLowerCaseInFilterComparators,
                           Map<String, String> expectedHttpResponseHeaders,
-                          String tlsVersion)
+                          String tlsVersion,
+                          HttpClientBuilder httpClientBuilder)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -154,6 +162,7 @@ public class ScimClientConfig
     this.useLowerCaseInFilterComparators = useLowerCaseInFilterComparators;
     this.expectedHttpResponseHeaders = expectedHttpResponseHeaders;
     this.tlsVersion = Optional.ofNullable(tlsVersion).map(StringUtils::stripToNull).orElse("TLSv1.2");
+    this.httpClientBuilder = httpClientBuilder;
   }
 
   /**
@@ -196,5 +205,13 @@ public class ScimClientConfig
       return this;
     }
 
+  }
+
+  /**
+   * Get the custom HttpClientBuilder if set, get a default HttpClientBuilder otherwise.
+   */
+  public HttpClientBuilder getHttpClientBuilder()
+  {
+    return this.httpClientBuilder == null ? HttpClientBuilder.create() : this.httpClientBuilder;
   }
 }

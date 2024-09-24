@@ -103,7 +103,7 @@ public class ScimHttpClient implements Closeable
     {
       return httpClient;
     }
-    HttpClientBuilder clientBuilder = HttpClientBuilder.create();
+    HttpClientBuilder clientBuilder = scimClientConfig.getHttpClientBuilder();
     CredentialsProvider credentialsProvider = null;
     if (scimClientConfig.getProxy() != null && scimClientConfig.getProxy().isProxySet())
     {
