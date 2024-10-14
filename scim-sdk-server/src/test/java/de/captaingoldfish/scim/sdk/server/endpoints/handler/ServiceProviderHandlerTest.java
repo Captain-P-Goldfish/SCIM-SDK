@@ -1,15 +1,19 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.handler;
 
+import java.util.Arrays;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.exceptions.NotImplementedException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpointHandlerUtil;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -61,7 +65,16 @@ public class ServiceProviderHandlerTest
    */
   private ServiceProvider buildServiceProvider()
   {
+    AuthenticationScheme authenticationScheme = AuthenticationScheme.builder()
+                                                                    .name("Bearer")
+                                                                    .description("Authentication scheme using the OAuth"
+                                                                                 + " Bearer Token Standard")
+                                                                    .specUri("http://www.rfc-editor.org/info/rfc6750")
+                                                                    .primary(true)
+                                                                    .type("oauthbearertoken")
+                                                                    .build();
     return ServiceProvider.builder()
+                          .authenticationSchemes(Arrays.asList(authenticationScheme))
                           .filterConfig(FilterConfig.builder().supported(true).maxResults(10).build())
                           .sortConfig(SortConfig.builder().supported(true).build())
                           .build();
@@ -73,7 +86,13 @@ public class ServiceProviderHandlerTest
   @Test
   public void testGetServiceProvider()
   {
-    Assertions.assertEquals(serviceProviderHandler.getResource(null, null, null, null), serviceProvider);
+    ServiceProvider returnedServiceProvider = serviceProviderHandler.getResource(null, null, null, null);
+    Assertions.assertEquals(returnedServiceProvider, serviceProvider);
+
+    for ( AuthenticationScheme authenticationScheme : returnedServiceProvider.getAuthenticationSchemes() )
+    {
+      Assertions.assertNotNull(authenticationScheme.get(AttributeNames.RFC7643.PRIMARY));
+    }
   }
 
   /**
