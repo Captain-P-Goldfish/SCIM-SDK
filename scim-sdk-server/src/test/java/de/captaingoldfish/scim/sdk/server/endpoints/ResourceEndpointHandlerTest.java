@@ -32,6 +32,8 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -64,6 +66,7 @@ import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
@@ -2812,6 +2815,70 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(1, adminGroup.getMembers().size());
     Assertions.assertEquals(getBaseUrlSupplier().get() + EndpointPaths.USERS + "/" + userId,
                             adminGroup.getMembers().get(0).getRef().orElse(null));
+  }
+
+  /**
+   *
+   */
+  @Test
+  public void test()
+  {
+    serviceProviderHandler.getServiceProvider().setPatchConfig(PatchConfig.builder().supported(true).build());
+    String userId;
+    // first of all create a group and a user that is a member of this group
+    {
+      User chuck = User.builder().userName("chuck_norris").active(true).build();
+      ScimResponse createUserResponse = resourceEndpointHandler.createResource(EndpointPaths.USERS,
+                                                                               chuck.toString(),
+                                                                               getBaseUrlSupplier(),
+                                                                               null);
+      MatcherAssert.assertThat(createUserResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
+      chuck = JsonHelper.copyResourceToObject(createUserResponse, User.class);
+      userId = chuck.getId().get();
+    }
+
+
+    // now we created a user and we will create a group that has this user set as a member. The response must
+    // contain the $ref value with a fully qualified url to the user resource
+    Group adminGroup = Group.builder()
+                            .displayName("admin")
+                            .members(Arrays.asList(Member.builder().value(userId).type(ResourceTypeNames.USER).build()))
+                            .build();
+    ScimResponse createGroupResponse = resourceEndpointHandler.createResource(EndpointPaths.GROUPS,
+                                                                              adminGroup.toString(),
+                                                                              getBaseUrlSupplier(),
+                                                                              null);
+
+    adminGroup = JsonHelper.copyResourceToObject(createGroupResponse, Group.class);
+    final String adminGroupId = adminGroup.getId().get();
+
+    ArrayNode members = new ArrayNode(JsonNodeFactory.instance);
+    members.add(Member.builder().value("123-456").build());
+    members.add(new Member());
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .path("members")
+                                                                                .op(PatchOp.ADD)
+                                                                                .valueNode(members)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+    Context context = new Context(null);
+    context.setResourceReferenceUrl(s -> getBaseUrlSupplier().get() + "/Groups/" + s);
+    Map<String, String> httpHeaders = new HashMap<>();
+    httpHeaders.put(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+    context.setUriInfos(UriInfos.getRequestUrlInfos(resourceTypeFactory,
+                                                    getBaseUrlSupplier().get() + "/Groups/" + adminGroupId,
+                                                    HttpMethod.PATCH,
+                                                    httpHeaders,
+                                                    false));
+    ScimResponse patchGroupResponse = resourceEndpointHandler.patchResource(EndpointPaths.GROUPS,
+                                                                            adminGroupId,
+                                                                            patchOpRequest.toString(),
+                                                                            null,
+                                                                            null,
+                                                                            getBaseUrlSupplier(),
+                                                                            context);
+    log.warn(patchGroupResponse.toPrettyString());
   }
 
   /**

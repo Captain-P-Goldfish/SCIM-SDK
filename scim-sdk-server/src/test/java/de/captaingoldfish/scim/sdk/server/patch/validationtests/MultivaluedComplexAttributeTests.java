@@ -3,6 +3,8 @@ package de.captaingoldfish.scim.sdk.server.patch.validationtests;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,10 +29,14 @@ import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.EnterpriseUser;
+import de.captaingoldfish.scim.sdk.common.resources.Group;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
+import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
+import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.RequestContextException;
 import de.captaingoldfish.scim.sdk.server.patch.PatchRequestHandler;
 import de.captaingoldfish.scim.sdk.server.patch.operations.MultivaluedComplexAttributeOperation;
@@ -300,6 +306,127 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
           }
         }
 
+        /**
+         * verifies that an empty complex attribute like this:
+         *
+         * <pre>
+         *  {
+         *     "schemas": [
+         *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+         *     ],
+         *     "Operations": [
+         *         {
+         *             "name": "addMember",
+         *             "op": "add",
+         *             "path": "members",
+         *             "value": [
+         *                 {
+         *                     "value": "123-456"
+         *                 },
+         *                 {}
+         *             ]
+         *         }
+         *     ]
+         * }
+         * </pre>
+         *
+         * will simply be ignored. It is handled as if it were not present.
+         */
+        @DisplayName("success: empty object is ignored if other valid objects are present")
+        @Test
+        public void testEmptyObjectCausesBadRequest()
+        {
+          GroupHandlerImpl groupHandler = new GroupHandlerImpl();
+          resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(groupHandler));
+
+          Group adminsGroup = Group.builder().id(UUID.randomUUID().toString()).displayName("admins").build();
+          groupHandler.getInMemoryMap().put(adminsGroup.getId().get(), adminsGroup);
+
+          ArrayNode members = new ArrayNode(JsonNodeFactory.instance);
+          members.add(Member.builder().value("123-456").build());
+          members.add(new Member());
+          List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                      .path("members")
+                                                                                      .op(PatchOp.ADD)
+                                                                                      .valueNode(members)
+                                                                                      .build());
+
+          PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+          PatchRequestHandler<Group> patchRequestHandler = new PatchRequestHandler<>(adminsGroup.getId().get(),
+                                                                                     groupHandler,
+                                                                                     resourceEndpoint.getPatchWorkarounds(),
+                                                                                     new Context(null));
+          Group patchedGroup = patchRequestHandler.handlePatchRequest(patchOpRequest);
+          Assertions.assertEquals(1, patchedGroup.getMembers().size());
+          Assertions.assertEquals("123-456", patchedGroup.getMembers().get(0).getValue().get());
+        }
+
+        /**
+         * verifies that an empty complex attribute like this:
+         *
+         * <pre>
+         *  {
+         *     "schemas": [
+         *         "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+         *     ],
+         *     "Operations": [
+         *         {
+         *             "name": "addMember",
+         *             "op": "add",
+         *             "path": "members",
+         *             "value": [
+         *                 {}
+         *             ]
+         *         }
+         *     ]
+         * }
+         * </pre>
+         *
+         * causes a BadRequestException because there is no object that can be handled
+         */
+        @DisplayName("failure: empty object on multi-complex is not accepted if single object")
+        @Test
+        public void testEmptyObjectCausesBadRequest2()
+        {
+          GroupHandlerImpl groupHandler = new GroupHandlerImpl();
+          resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(groupHandler));
+
+          Group adminsGroup = Group.builder()
+                                   .id(UUID.randomUUID().toString())
+                                   .displayName("admins")
+                                   .members(Arrays.asList(Member.builder().value("123-456").build()))
+                                   .build();
+          groupHandler.getInMemoryMap().put(adminsGroup.getId().get(), adminsGroup);
+
+          ArrayNode members = new ArrayNode(JsonNodeFactory.instance);
+          members.add(new Member());
+          List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                      .path("members")
+                                                                                      .op(PatchOp.ADD)
+                                                                                      .valueNode(members)
+                                                                                      .build());
+
+          PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+          PatchRequestHandler<Group> patchRequestHandler = new PatchRequestHandler<>(adminsGroup.getId().get(),
+                                                                                     groupHandler,
+                                                                                     resourceEndpoint.getPatchWorkarounds(),
+                                                                                     new Context(null));
+          RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
+                                                               () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+          Assertions.assertEquals("The request document contains errors", ex.getMessage());
+          Map<String, List<String>> fieldErrors = ex.getValidationContext().getFieldErrors();
+          Assertions.assertEquals(1, fieldErrors.size());
+          List<String> memberValueErrors = fieldErrors.get("members.value");
+          Assertions.assertNotNull(memberValueErrors);
+          Assertions.assertEquals(1, memberValueErrors.size());
+          Assertions.assertEquals("Required sub-attribute 'urn:ietf:params:scim:schemas:core:2.0:Group:members.value' "
+                                  + "is missing in patch object.",
+                                  memberValueErrors.get(0));
+        }
+
+        /* ********************************************************************************************* */
       }
 
       @DisplayName("Extension-Resource Tests")

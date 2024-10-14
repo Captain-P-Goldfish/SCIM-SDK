@@ -138,6 +138,13 @@ public class RequestAttributeValidator
                                           schemaAttribute.getFullResourceName());
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
+
+    if (HttpMethod.PATCH.equals(httpMethod) && schemaAttribute.getParent() != null && isNodeNull)
+    {
+      String errorMessage = String.format("Required sub-attribute '%s' is missing in patch object.",
+                                          schemaAttribute.getFullResourceName());
+      throw new AttributeValidationException(schemaAttribute, errorMessage);
+    }
   }
 
 }

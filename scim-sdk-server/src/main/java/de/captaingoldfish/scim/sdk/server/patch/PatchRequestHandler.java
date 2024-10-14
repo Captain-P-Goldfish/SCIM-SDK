@@ -265,6 +265,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         }
         else
         {
+
           PatchPathHandler patchPathHandler = new PatchPathHandler();
           resourceChanged = patchPathHandler.handlePathOperation(fixedOperation) || resourceChanged;
         }
@@ -1036,6 +1037,30 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
                                                                            attributeValue,
                                                                            HttpMethod.PATCH)
                                                         .orElse(NullNode.getInstance());
+      if (schemaAttribute.isMultivaluedComplexAttribute())
+      {
+
+        ArrayNode arrayNode;
+        if (validatedNode.isArray())
+        {
+          arrayNode = (ArrayNode)validatedNode;
+        }
+        else
+        {
+          arrayNode = new ArrayNode(JsonNodeFactory.instance);
+          arrayNode.add(validatedNode);
+        }
+        for ( JsonNode complexNode : arrayNode )
+        {
+          for ( SchemaAttribute subAttribute : schemaAttribute.getSubAttributes() )
+          {
+            RequestAttributeValidator.validateAttribute(serviceProvider,
+                                                        subAttribute,
+                                                        complexNode.get(subAttribute.getName()),
+                                                        HttpMethod.PATCH);
+          }
+        }
+      }
       return validatedNode;
     }
 
