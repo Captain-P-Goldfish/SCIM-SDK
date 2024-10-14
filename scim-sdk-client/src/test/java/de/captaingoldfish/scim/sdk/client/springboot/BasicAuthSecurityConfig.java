@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
@@ -40,15 +41,17 @@ public class BasicAuthSecurityConfig
   @Bean
   protected SecurityFilterChain configure(HttpSecurity http) throws Exception
   {
-    http.csrf()
-        .disable()
-        .authorizeHttpRequests()
-        .requestMatchers(String.format("/%s/**", AbstractSpringBootWebTest.TestController.GET_ENDPOINT_PATH),
-                         String.format("/%s/**", AbstractSpringBootWebTest.TestController.TIMEOUT_ENDPOINT_PATH),
-                         String.format("/%s/**", AbstractSpringBootWebTest.TestController.SCIM_ENDPOINT_PATH))
-        .authenticated()
-        .and()
-        .httpBasic();
+    http.csrf(AbstractHttpConfigurer::disable)//
+        .authorizeHttpRequests(httpRequestConfigurer -> {
+          httpRequestConfigurer.requestMatchers(String.format("/%s/**",
+                                                              AbstractSpringBootWebTest.TestController.GET_ENDPOINT_PATH),
+                                                String.format("/%s/**",
+                                                              AbstractSpringBootWebTest.TestController.TIMEOUT_ENDPOINT_PATH),
+                                                String.format("/%s/**",
+                                                              AbstractSpringBootWebTest.TestController.SCIM_ENDPOINT_PATH))
+                               .authenticated();
+        })
+        .httpBasic(basicAuthConfigurer -> basicAuthConfigurer.init(http));
     return http.build();
   }
 
