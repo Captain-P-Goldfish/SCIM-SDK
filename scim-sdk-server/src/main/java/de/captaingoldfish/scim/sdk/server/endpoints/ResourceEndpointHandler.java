@@ -1038,6 +1038,11 @@ class ResourceEndpointHandler
         if (serviceProvider.getETagConfig().isSupported())
         {
           resourceNode = oldResourceSupplier.get();
+          ETagHandler.validateVersion(serviceProvider,
+                                      resourceType,
+                                      oldResourceSupplier,
+                                      context.getUriInfos().getHttpHeaders());
+
           Meta meta = resourceNode.getMeta().orElseGet(Meta::new);
           resourceNode.remove(AttributeNames.RFC7643.META);
           final String location = context.getResourceReferenceUrl(id);
@@ -1063,11 +1068,6 @@ class ResourceEndpointHandler
       {
         return new EmptyPatchResponse(getLocation(resourceType, id, baseUrlSupplier));
       }
-
-      ETagHandler.validateVersion(serviceProvider,
-                                  resourceType,
-                                  () -> updatedResource,
-                                  context.getUriInfos().getHttpHeaders());
 
       Optional<AbstractResourceValidator> responseValidator = //
         resourceHandler.getResponseValidator(attributesList,
