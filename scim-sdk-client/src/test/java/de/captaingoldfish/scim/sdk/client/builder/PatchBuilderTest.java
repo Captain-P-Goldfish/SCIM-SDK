@@ -1,15 +1,20 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.mockito.Mockito;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
@@ -19,6 +24,8 @@ import de.captaingoldfish.scim.sdk.client.setup.scim.handler.UserHandler;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
+import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
+import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
@@ -158,5 +165,73 @@ public class PatchBuilderTest extends HttpServerMockup
     Assertions.assertEquals(2, patchedUser.getEmails().size(), patchedUser.toPrettyString());
     Assertions.assertTrue(patchedUser.getEmails().stream().anyMatch(email -> email.equals(email1)));
     Assertions.assertTrue(patchedUser.getEmails().stream().anyMatch(email -> email.equals(email2)));
+  }
+
+  /**
+   * this test will verify that the patch operations are split correctly into several lists and that these
+   * operations are all sent in different requests to the remote provider
+   */
+  @DisplayName("Patch operations are split into several requests")
+  @Test
+  public void testBuildPatchOperationsWithMaxNumberExceeded()
+  {
+    final String userId = currentUser.getId().get();
+
+    int maxNumberOfOperations = 3;
+    ScimClientConfig scimClientConfig = ScimClientConfig.builder()
+                                                        .maxPatchOperationsPerRequest(maxNumberOfOperations)
+                                                        .build();
+    ScimHttpClient scimHttpClient = Mockito.spy(new ScimHttpClient(scimClientConfig));
+
+    PatchBuilder<User> patchBuilder = new PatchBuilder<>(getServerUrl(), EndpointPaths.USERS, userId, User.class,
+                                                         scimHttpClient);
+
+    final int expectedNumberOfLists = 10;
+    List<PatchRequestOperation> requestOperations = new ArrayList<>();
+    for ( int i = 1 ; i < maxNumberOfOperations * expectedNumberOfLists ; i++ )
+    {
+      requestOperations.add(PatchRequestOperation.builder()
+                                                 .path("displayName")
+                                                 .op(PatchOp.ADD)
+                                                 .value("displayName-" + i)
+                                                 .build());
+    }
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(requestOperations).build();
+    patchBuilder.setPatchResource(patchOpRequest);
+
+    patchBuilder = Mockito.spy(patchBuilder);
+    AtomicReference<List<List<PatchRequestOperation>>> splittedOperationListRef = new AtomicReference<>();
+    Mockito.doAnswer(invocation -> {
+      splittedOperationListRef.set((List<List<PatchRequestOperation>>)invocation.callRealMethod());
+      return splittedOperationListRef.get();
+    }).when(patchBuilder).splitOperations(Mockito.anyInt());
+
+    ServerResponse<User> patchResponse = patchBuilder.sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, patchResponse.getHttpStatus());
+    Mockito.verify(patchBuilder).sendRequest();
+    Mockito.verify(scimHttpClient, Mockito.times(splittedOperationListRef.get().size())).sendRequest(Mockito.any());
+
+    Assertions.assertEquals(expectedNumberOfLists, splittedOperationListRef.get().size());
+    List<PatchRequestOperation> mergedOperationsList = splittedOperationListRef.get()
+                                                                               .stream()
+                                                                               .flatMap(List::stream)
+                                                                               .collect(Collectors.toList());
+    for ( int i = 0 ; i < mergedOperationsList.size() ; i++ )
+    {
+      Assertions.assertEquals("displayName-" + (i + 1), mergedOperationsList.get(i).getValue().get().textValue());
+    }
+
+    for ( int i = 0 ; i < splittedOperationListRef.get().size() ; i++ )
+    {
+      List<PatchRequestOperation> patchRequestOperations = splittedOperationListRef.get().get(i);
+      if (i < expectedNumberOfLists - 1)
+      {
+        Assertions.assertEquals(maxNumberOfOperations, patchRequestOperations.size());
+      }
+      else
+      {
+        Assertions.assertEquals(mergedOperationsList.size() % maxNumberOfOperations, patchRequestOperations.size());
+      }
+    }
   }
 }

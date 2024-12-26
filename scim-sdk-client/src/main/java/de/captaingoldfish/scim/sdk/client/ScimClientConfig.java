@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import javax.net.ssl.HostnameVerifier;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.impl.client.HttpClientBuilder;
 
 import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
@@ -19,7 +20,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.apache.commons.lang3.StringUtils;
 
 
 /**
@@ -128,6 +128,13 @@ public class ScimClientConfig
    */
   private HttpClientBuilder httpClientBuilder;
 
+  /**
+   * the maximum number of operations in a single patch requests. This can be useful if a provider is not
+   * capable of handling large number of operations in a single request. Value "0" or lower indicates that there
+   * is no restriction and that all operations are sent in a single request.
+   */
+  private int maxPatchOperationsPerRequest;
+
   @Builder
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
@@ -145,7 +152,8 @@ public class ScimClientConfig
                           boolean useLowerCaseInFilterComparators,
                           Map<String, String> expectedHttpResponseHeaders,
                           String tlsVersion,
-                          HttpClientBuilder httpClientBuilder)
+                          HttpClientBuilder httpClientBuilder,
+                          int maxPatchOperationsPerRequest)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -163,6 +171,7 @@ public class ScimClientConfig
     this.expectedHttpResponseHeaders = expectedHttpResponseHeaders;
     this.tlsVersion = Optional.ofNullable(tlsVersion).map(StringUtils::stripToNull).orElse("TLSv1.2");
     this.httpClientBuilder = httpClientBuilder;
+    this.maxPatchOperationsPerRequest = maxPatchOperationsPerRequest;
   }
 
   /**
@@ -194,6 +203,14 @@ public class ScimClientConfig
   }
 
   /**
+   * Get the custom HttpClientBuilder if set, get a default HttpClientBuilder otherwise.
+   */
+  public HttpClientBuilder getHttpClientBuilder()
+  {
+    return this.httpClientBuilder == null ? HttpClientBuilder.create() : this.httpClientBuilder;
+  }
+
+  /**
    * override lombok builder
    */
   public static class ScimClientConfigBuilder
@@ -205,13 +222,5 @@ public class ScimClientConfig
       return this;
     }
 
-  }
-
-  /**
-   * Get the custom HttpClientBuilder if set, get a default HttpClientBuilder otherwise.
-   */
-  public HttpClientBuilder getHttpClientBuilder()
-  {
-    return this.httpClientBuilder == null ? HttpClientBuilder.create() : this.httpClientBuilder;
   }
 }

@@ -15,13 +15,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 
+import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
+import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
+import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -31,6 +36,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
  *
  * @author Pascal Knüppel
  */
+@Slf4j
 public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
 {
 
@@ -127,6 +133,14 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   @Override
   protected HttpUriRequest getHttpUriRequest()
   {
+    return getHttpUriRequest(operations);
+  }
+
+  /**
+   * builds the http-request for the apache http client
+   */
+  protected HttpUriRequest getHttpUriRequest(List<PatchRequestOperation> operations)
+  {
     HttpPatch httpPatch;
     if (StringUtils.isBlank(fullUrl))
     {
@@ -136,7 +150,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     {
       httpPatch = new HttpPatch(fullUrl);
     }
-    StringEntity stringEntity = new StringEntity(getResource(), StandardCharsets.UTF_8);
+    StringEntity stringEntity = new StringEntity(getResource(operations), StandardCharsets.UTF_8);
     httpPatch.setEntity(stringEntity);
     return httpPatch;
   }
@@ -148,6 +162,89 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
   public final String getResource()
   {
     return new PatchOpRequest(operations).toString();
+  }
+
+  /**
+   * allows to set a specific set of operations. We use this method if we automatically split the patch request
+   * into several requests due to the amount of operations
+   */
+  public final String getResource(List<PatchRequestOperation> operations)
+  {
+    return new PatchOpRequest(operations).toString();
+  }
+
+  /**
+   * this method will split the operations into the appropriate number of max operations per requests and will
+   * send all patch-requests one by one to the remote SCIM provider.
+   */
+  @Override
+  public ServerResponse<T> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
+  {
+    if (operations.isEmpty())
+    {
+      throw new IllegalStateException("No patch operations found in request");
+    }
+
+    ScimClientConfig scimClientConfig = getScimHttpClient().getScimClientConfig();
+    int maxNumberOfOperations = scimClientConfig.getMaxPatchOperationsPerRequest();
+    List<List<PatchRequestOperation>> requestOperations = new ArrayList<>();
+    if (maxNumberOfOperations > 0)
+    {
+      requestOperations.addAll(splitOperations(maxNumberOfOperations));
+    }
+    else
+    {
+      requestOperations.add(operations);
+    }
+
+    ServerResponse<T> patchResponse = null;
+    for ( int i = 0 ; i < requestOperations.size() ; i++ )
+    {
+      List<PatchRequestOperation> operationList = requestOperations.get(i);
+
+      HttpUriRequest request = getHttpUriRequest(operationList);
+      request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
+      addHeaderToRequest(scimClientConfig.getHttpHeaders(), httpHeaders, request);
+      if (scimClientConfig.getBasicAuth() != null)
+      {
+        request.setHeader(HttpHeader.AUTHORIZATION,
+                          getScimHttpClient().getScimClientConfig().getBasicAuth().getAuthorizationHeaderValue());
+      }
+      HttpResponse response = getScimHttpClient().sendRequest(request);
+      patchResponse = toResponse(response);
+
+      if (!patchResponse.isSuccess() && i > 0)
+      {
+        log.warn("CAUTION: patch-request was split into several requests and request number '{}' did fail. Patch "
+                 + "requests are actually treated as atomic operations and should be rolled back if a single operation "
+                 + "fails. The rollback cannot be initiated, and therefore the first '{}' operations have "
+                 + "been applied",
+                 i + 1,
+                 i * scimClientConfig.getMaxPatchOperationsPerRequest());
+      }
+    }
+    return patchResponse;
+  }
+
+  /**
+   * splits the operations list into several lists with a maximum number of the given parameter
+   */
+  protected List<List<PatchRequestOperation>> splitOperations(int maxNumberOfOperations)
+  {
+    if (operations.size() <= maxNumberOfOperations)
+    {
+      return Collections.singletonList(operations);
+    }
+
+    List<List<PatchRequestOperation>> splittedOperationList = new ArrayList<>();
+    int numberOfLists = (int)Math.ceil((double)operations.size() / (double)maxNumberOfOperations);
+    for ( int i = 0 ; i < numberOfLists ; i++ )
+    {
+      splittedOperationList.add(operations.subList(i * maxNumberOfOperations,
+                                                   Math.min(i * maxNumberOfOperations + maxNumberOfOperations,
+                                                            operations.size())));
+    }
+    return splittedOperationList;
   }
 
   /**

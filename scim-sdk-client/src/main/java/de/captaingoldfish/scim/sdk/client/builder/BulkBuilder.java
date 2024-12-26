@@ -173,25 +173,6 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
   }
 
   /**
-   * {@inheritDoc}
-   */
-  protected HttpUriRequest getHttpUriRequest(JsonNode requestData)
-  {
-    HttpPost httpPost;
-    if (StringUtils.isBlank(fullUrl))
-    {
-      httpPost = new HttpPost(getBaseUrl() + getEndpoint());
-    }
-    else
-    {
-      httpPost = new HttpPost(fullUrl);
-    }
-    StringEntity stringEntity = new StringEntity(requestData.toString(), StandardCharsets.UTF_8);
-    httpPost.setEntity(stringEntity);
-    return httpPost;
-  }
-
-  /**
    * overrides the default method from the superclass to have easier control of the resource that will be put
    * into the request body
    */
