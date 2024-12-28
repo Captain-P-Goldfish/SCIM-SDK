@@ -69,36 +69,36 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.basedir}</formatter-path>
 
-        <version.lombok>1.18.34</version.lombok>
+        <version.lombok>1.18.36</version.lombok>
 
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.17.0</version.apache.commons.lang3>
-        <version.commons.io>2.17.0</version.commons.io>
-        <version.jackson>2.18.0</version.jackson>
-        <version.jackson-databind>2.18.0</version.jackson-databind>
+        <version.commons.io>2.18.0</version.commons.io>
+        <version.jackson>2.18.2</version.jackson>
+        <version.jackson-databind>2.18.2</version.jackson-databind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.jakarta.ws.rs.api>4.0.0</version.jakarta.ws.rs.api>
         <version.antlr>4.13.2</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
-        <version.bouncy.castle>1.78.1</version.bouncy.castle>
+        <version.bouncy.castle>1.79</version.bouncy.castle>
 
         <!-- dependency conflicts -->
         <version.javassist>3.29.2-GA</version.javassist>
         <version.jboss.jaxb.api>2.0.1.Final</version.jboss.jaxb.api>
 
         <!-- logging dependencies -->
-        <version.log4j2>2.24.1</version.log4j2>
+        <version.log4j2>2.24.3</version.log4j2>
         <version.slf4j>2.0.16</version.slf4j>
 
         <!-- test dependencies -->
-        <version.junit.jupiter>5.10.3</version.junit.jupiter>
+        <version.junit.jupiter>5.11.4</version.junit.jupiter>
         <version.hamcrest>2.2</version.hamcrest>
         <version.reflections>0.10.2</version.reflections>
-        <version.mockito>5.14.1</version.mockito>
+        <version.mockito>5.14.2</version.mockito>
         <version.resteasy.jaxrs>3.15.6.Final</version.resteasy.jaxrs>
-        <version.equalsverifier>3.17.1</version.equalsverifier>
-        <version.springboot>3.3.4</version.springboot>
+        <version.equalsverifier>3.18</version.equalsverifier>
+        <version.springboot>3.4.1</version.springboot>
         <version.spring.security>6.1.4</version.spring.security>
 
         <!-- version conflicts -->
@@ -110,13 +110,13 @@
         <version.maven.compiler.plugin>3.13.0</version.maven.compiler.plugin>
         <version.maven.formatter.plugin>2.24.1</version.maven.formatter.plugin>
         <version.maven.enforcer.plugin>3.5.0</version.maven.enforcer.plugin>
-        <version.maven.surefire.plugin>3.5.1</version.maven.surefire.plugin>
+        <version.maven.surefire.plugin>3.5.2</version.maven.surefire.plugin>
         <version.maven.source.plugin>3.3.1</version.maven.source.plugin>
-        <version.maven.javadoc.plugin>3.10.1</version.maven.javadoc.plugin>
+        <version.maven.javadoc.plugin>3.11.2</version.maven.javadoc.plugin>
         <version.maven.gpg.plugin>3.2.7</version.maven.gpg.plugin>
         <version.maven.deploy.plugin>3.1.3</version.maven.deploy.plugin>
         <version.maven.release.plugin>3.1.1</version.maven.release.plugin>
-        <version.maven.versions.plugin>2.17.1</version.maven.versions.plugin>
+        <version.maven.versions.plugin>2.18.0</version.maven.versions.plugin>
         <version.maven.jar.plugin>3.4.2</version.maven.jar.plugin>
         <version.jacoco>0.8.12</version.jacoco>
         <version.maven.lombok.plugin>1.18.20.0</version.maven.lombok.plugin>
