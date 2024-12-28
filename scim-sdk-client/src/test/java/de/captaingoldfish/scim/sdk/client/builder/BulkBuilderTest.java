@@ -311,7 +311,7 @@ public class BulkBuilderTest extends HttpServerMockup
                                                               .getResourceHandlerImpl()).getInMemoryMap();
     List<User> copiedModifiedUsers = remoteUserMap.values().stream().map(user -> {
       User copiedUser = JsonHelper.readJsonDocument(user.toString(), User.class);
-      copiedUser.setName(Name.builder().givenName(RandomStringUtils.randomAlphabetic(10, 15)).build());
+      copiedUser.setName(Name.builder().givenName(RandomStringUtils.insecure().nextAlphanumeric(10, 15)).build());
       return copiedUser;
     }).collect(Collectors.toList());
 
