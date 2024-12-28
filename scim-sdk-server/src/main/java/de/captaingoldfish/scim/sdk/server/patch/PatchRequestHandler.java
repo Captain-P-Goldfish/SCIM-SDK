@@ -1028,7 +1028,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         throw new IgnoreSingleAttributeException();
       }
       JsonNode attributeValue = resourceField.getValue();
-      if (attributeValue == null || attributeValue.isNull())
+      if (attributeValue == null || attributeValue.isNull() || (attributeValue.isArray() && attributeValue.isEmpty()))
       {
         return attributeValue;
       }
