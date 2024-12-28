@@ -3231,6 +3231,136 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
           }
 
           /**
+           * replace multiComplex.number with an empty value
+           */
+          @DisplayName("success: REPLACE multiComplex.number with empty value")
+          @ParameterizedTest
+          @ValueSource(strings = {"multiComplex.number",
+                                  "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex.number"})
+          public void testReplaceMultiComplexNumberWithEmptyValue(String attributeName)
+          {
+
+            SchemaAttribute multiComplexNumberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
+            multiComplexNumberAttribute.setRequired(true);
+
+            List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                        .op(PatchOp.REPLACE)
+                                                                                        .path(attributeName)
+                                                                                        .build());
+            PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+            AllTypes allTypes = new AllTypes(true);
+            {
+              AllTypes multiComplex1 = new AllTypes(false);
+              multiComplex1.setNumber(1L);
+              multiComplex1.setString("hello");
+
+              AllTypes multiComplex2 = new AllTypes(false);
+              multiComplex2.setNumber(2L);
+              multiComplex2.setString("world");
+
+              allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2));
+            }
+            addAllTypesToProvider(allTypes);
+            PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                        allTypesResourceType.getResourceHandlerImpl(),
+                                                                                        resourceEndpoint.getPatchWorkarounds(),
+                                                                                        new Context(null));
+            AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+            Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+            Assertions.assertEquals(2, patchedResource.getMultiComplex().size());
+
+            AllTypes patchedMultiComplex1 = patchedResource.getMultiComplex().get(0);
+            Assertions.assertNull(patchedMultiComplex1.getNumber().orElse(null));
+
+            AllTypes patchedMultiComplex2 = patchedResource.getMultiComplex().get(1);
+            Assertions.assertNull(patchedMultiComplex2.getNumber().orElse(null));
+
+            // must be called
+            {
+              Mockito.verify(defaultPatchOperationHandler)
+                     .handleOperation(Mockito.any(),
+                                      Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
+            }
+            // must not be called
+            {
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveComplexAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexSimpleSubAttributeOperation.class));
+            }
+          }
+
+          /**
+           * replace multiComplex.number with an empty value with the resulting objects being empty
+           */
+          @DisplayName("success: REPLACE multiComplex.number with empty value (objects cleared because empty)")
+          @ParameterizedTest
+          @ValueSource(strings = {"multiComplex.number",
+                                  "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex.number"})
+          public void testReplaceMultiComplexNumberWithEmptyValueAndClearTheObjects(String attributeName)
+          {
+
+            SchemaAttribute multiComplexNumberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
+            multiComplexNumberAttribute.setRequired(true);
+
+            List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                        .op(PatchOp.REPLACE)
+                                                                                        .path(attributeName)
+                                                                                        .build());
+            PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+            AllTypes allTypes = new AllTypes(true);
+            {
+              AllTypes multiComplex1 = new AllTypes(false);
+              multiComplex1.setNumber(1L);
+
+              AllTypes multiComplex2 = new AllTypes(false);
+              multiComplex2.setNumber(2L);
+
+              allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2));
+            }
+            addAllTypesToProvider(allTypes);
+            PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                        allTypesResourceType.getResourceHandlerImpl(),
+                                                                                        resourceEndpoint.getPatchWorkarounds(),
+                                                                                        new Context(null));
+            AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+            Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+            Assertions.assertEquals(0, patchedResource.getMultiComplex().size());
+
+            // must be called
+            {
+              Mockito.verify(defaultPatchOperationHandler)
+                     .handleOperation(Mockito.any(),
+                                      Mockito.any(MultivaluedComplexMultivaluedSubAttributeOperation.class));
+            }
+            // must not be called
+            {
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(RemoveComplexAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexAttributeOperation.class));
+              Mockito.verify(defaultPatchOperationHandler, Mockito.never())
+                     .handleOperation(Mockito.any(), Mockito.any(MultivaluedComplexSimpleSubAttributeOperation.class));
+            }
+          }
+
+          /**
            * Replace a number with string on multivalued complex
            */
           @DisplayName("failure: replace multiComplex.number with string value")

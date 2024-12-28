@@ -940,7 +940,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       // no filter expression was present e.g. (emails.type)
       return false;
     }
-    for ( int i = 0 ; i < matchingComplexNodes.size() ; i++ )
+    for ( int i = matchingComplexNodes.size() - 1 ; i >= 0 ; i-- )
     {
       ObjectNode complexNode = matchingComplexNodes.get(i).getObjectNode();
       changeWasMade.weakCompareAndSet(false, handleInnerComplexAttribute(subAttribute, complexNode, values));
