@@ -11,7 +11,9 @@ import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
+import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -20,6 +22,7 @@ import lombok.AllArgsConstructor;
  * <br>
  * the service provider configuration endpoint implementation
  */
+@Slf4j
 @AllArgsConstructor
 public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
 {
@@ -37,6 +40,16 @@ public class ServiceProviderHandler extends ResourceHandler<ServiceProvider>
    * the same object reference in order for the application to work correctly
    */
   private final ServiceProvider serviceProvider;
+
+  @Override
+  protected void postConstruct(ResourceType resourceType)
+  {
+    if (serviceProvider.getAuthenticationSchemes() == null || serviceProvider.getAuthenticationSchemes().isEmpty())
+    {
+      log.error("No authentication scheme has been set, this will cause a DocumentValidationException on the "
+                + "'/ServiceProviderConfig' endpoint!");
+    }
+  }
 
   /**
    * creating of service provider configurations not supported
