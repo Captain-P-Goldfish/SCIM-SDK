@@ -17,6 +17,7 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -296,6 +297,7 @@ public class BulkBuilderTest extends HttpServerMockup
   /**
    * verifies that no operations are being lost if a lot of operations is sent to the remote system
    */
+  @Tag("circle-ci-ignore") // circle-ci stopped being able to execute this test
   @DisplayName("Update all 5000 resources on remote system with parallel bulk requests")
   @Test
   public void testUpdateAllResourcesInParallel()

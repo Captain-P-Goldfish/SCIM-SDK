@@ -498,9 +498,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>${version.maven.surefire.plugin}</version>
-                <configuration>
-                    <groups>!integration-tests</groups>
-                </configuration>
             </plugin>
 
             <plugin>

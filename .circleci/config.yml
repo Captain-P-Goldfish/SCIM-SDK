@@ -11,7 +11,7 @@ jobs:
       - checkout
       - run:
           name: Build
-          command: mvn clean package
+          command: mvn clean package -DexcludedGroups=circle-ci-ignore
       - store_artifacts:
           path: target/site/jacoco-aggregate/index.html
       - codecov/upload:
