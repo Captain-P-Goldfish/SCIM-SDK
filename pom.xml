@@ -81,7 +81,7 @@
         <version.antlr>4.13.2</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
-        <version.bouncy.castle>1.79</version.bouncy.castle>
+        <version.bouncy.castle>1.80</version.bouncy.castle>
 
         <!-- dependency conflicts -->
         <version.javassist>3.29.2-GA</version.javassist>
