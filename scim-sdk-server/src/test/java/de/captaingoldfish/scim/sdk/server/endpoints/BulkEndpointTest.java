@@ -2373,6 +2373,138 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     Assertions.assertEquals(0, userResponses.get(1).getChildren().size());
   }
 
+
+
+  /**
+   * This test shall show that the following bulk-request can be correctly handled
+   *
+   * <pre>
+   * {@code
+   * {
+   *   "schemas": [
+   *     "urn:ietf:params:scim:api:messages:2.0:BulkRequest"
+   *   ],
+   *   "failOnErrors": 0,
+   *   "Operations": [
+   *     {
+   *       "method": "POST",
+   *       "bulkId": "2",
+   *       "path": "/Users",
+   *       "data": {
+   *         "schemas": [
+   *           "urn:ietf:params:scim:schemas:core:2.0:User"
+   *         ],
+   *         "userName": "my-user"
+   *       }
+   *     },
+   *     {
+   *       "method": "PATCH",
+   *       "bulkId": "1",
+   *       "path": "/Groups/bb292095-b984-4685-b596-2ea0ab3576b8",
+   *       "data": {
+   *         "schemas": [
+   *           "urn:ietf:params:scim:api:messages:2.0:PatchOp"
+   *         ],
+   *         "Operations": [
+   *           {
+   *             "path": "members",
+   *             "op": "add",
+   *             "value": "{\"value\": \"bulkId:2\", \"type\": \"User\"}"
+   *           }
+   *         ]
+   *       }
+   *     }
+   *   ]
+   * }
+   * }
+   * </pre>
+   *
+   * The clue in this example is to make sure that the following statement works:
+   *
+   * <pre>
+   * {@code
+   * {
+   *   "path": "members",
+   *   "op": "add",
+   *   "value": {
+   *     "type": "User",
+   *     "value": "bulkId:1"
+   *   }
+   * }
+   * }
+   * </pre>
+   *
+   * which normally expects an array at the value node like this:
+   *
+   * <pre>
+   * {@code
+   * {
+   *   "path": "members",
+   *   "op": "add",
+   *   "value": [
+   *     {
+   *       "type": "User",
+   *       "value": "bulkId:1"
+   *     }
+   *   ]
+   * }
+   * }
+   * </pre>
+   */
+  @DisplayName("Bulk works with patch and non-array-object in patch value")
+  @Test
+  public void testBulkWithNestedPathAndMembersNonArrayObjectInValue()
+  {
+    serviceProvider.getBulkConfig().setSupported(true);
+    serviceProvider.getBulkConfig().setMaxOperations(10);
+
+    serviceProvider.getPatchConfig().setSupported(true);
+
+    String adminGroupId = UUID.randomUUID().toString();
+    Group adminGroup = Group.builder().id(adminGroupId).displayName("admin").build();
+    groupHandler.getInMemoryMap().put(adminGroupId, adminGroup);
+
+    List<BulkRequestOperation> bulkRequestOperations = new ArrayList<>();
+    bulkRequestOperations.add(BulkRequestOperation.builder()
+                                                  .bulkId("1")
+                                                  .path(EndpointPaths.USERS)
+                                                  .method(HttpMethod.POST)
+                                                  .data(User.builder().userName("my-user").build().toString())
+                                                  .build());
+
+    List<PatchRequestOperation> patchOperations = new ArrayList<>();
+    patchOperations.add(PatchRequestOperation.builder()
+                                             .op(PatchOp.ADD)
+                                             .path(AttributeNames.RFC7643.MEMBERS)
+                                             .valueNode(Member.builder()
+                                                              .value(String.format("%s:1",
+                                                                                   AttributeNames.RFC7643.BULK_ID))
+                                                              .type(ResourceTypeNames.USER)
+                                                              .build())
+                                             .build());
+
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(patchOperations).build();
+    bulkRequestOperations.add(BulkRequestOperation.builder()
+                                                  .bulkId("2")
+                                                  .path(String.format("%s/%s", EndpointPaths.GROUPS, adminGroupId))
+                                                  .method(HttpMethod.PATCH)
+                                                  .data(patchOpRequest.toString())
+                                                  .build());
+    final BulkRequest bulkRequest = BulkRequest.builder()
+                                               .failOnErrors(0)
+                                               .bulkRequestOperation(bulkRequestOperations)
+                                               .build();
+
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI,
+                                                  bulkRequest.toString()
+                                                             .replaceFirst("\"value\":\\[(.*?)]", "\"value\":$1"),
+                                                  null);
+    Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
+
+    Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());
+    Assertions.assertEquals(0, bulkResponse.getFailedOperations().count());
+  }
+
   private boolean isUuid(String id)
   {
     try
@@ -2385,4 +2517,14 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       return false;
     }
   }
+
+
+
+
+
+
+
+
+
+
 }

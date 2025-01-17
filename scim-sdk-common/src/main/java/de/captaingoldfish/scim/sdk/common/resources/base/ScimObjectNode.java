@@ -250,18 +250,9 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     }
     if (!(jsonNode instanceof ArrayNode))
     {
-      if (jsonNode instanceof ObjectNode)
-      {
-        throw new InternalServerException("tried to extract a multi valued complex node from document with attribute "
-                                          + "name '" + attributeName + "' but type is of: " + jsonNode.getNodeType(),
-                                          null, null);
-      }
-      else
-      {
-        ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-        arrayNode.add(jsonNode);
-        jsonNode = arrayNode;
-      }
+      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
+      arrayNode.add(jsonNode);
+      jsonNode = arrayNode;
     }
     List<T> multiValuedSimpleTypes = new ArrayList<>();
     for ( JsonNode node : jsonNode )

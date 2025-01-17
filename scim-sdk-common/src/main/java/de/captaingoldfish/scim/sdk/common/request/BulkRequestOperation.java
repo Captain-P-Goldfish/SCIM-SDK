@@ -4,6 +4,8 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.databind.JsonNode;
+
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
@@ -177,6 +179,19 @@ public class BulkRequestOperation extends ScimObjectNode
       return;
     }
     set(AttributeNames.RFC7643.DATA, JsonHelper.readJsonDocument(data));
+  }
+
+  /**
+   * The resource data as it would appear for a single SCIM POST, PUT, or PATCH operation. REQUIRED in a request
+   * when "method" is "POST", "PUT", or "PATCH".
+   */
+  public void setData(JsonNode data)
+  {
+    if (data == null || data.isNull())
+    {
+      return;
+    }
+    set(AttributeNames.RFC7643.DATA, data);
   }
 
   /**
