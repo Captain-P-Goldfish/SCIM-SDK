@@ -97,7 +97,7 @@
         <version.reflections>0.10.2</version.reflections>
         <version.mockito>5.14.2</version.mockito>
         <version.resteasy.jaxrs>3.15.6.Final</version.resteasy.jaxrs>
-        <version.equalsverifier>3.18</version.equalsverifier>
+        <version.equalsverifier>3.18.2</version.equalsverifier>
         <version.springboot>3.4.1</version.springboot>
         <version.spring.security>6.1.4</version.spring.security>
 
