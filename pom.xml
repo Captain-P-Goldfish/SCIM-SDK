@@ -89,7 +89,7 @@
 
         <!-- logging dependencies -->
         <version.log4j2>2.24.3</version.log4j2>
-        <version.slf4j>2.0.16</version.slf4j>
+        <version.slf4j>2.0.17</version.slf4j>
 
         <!-- test dependencies -->
         <version.junit.jupiter>5.11.4</version.junit.jupiter>
