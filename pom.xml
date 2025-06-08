@@ -69,22 +69,22 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.basedir}</formatter-path>
 
-        <version.lombok>1.18.36</version.lombok>
+        <version.lombok>1.18.38</version.lombok>
 
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.17.0</version.apache.commons.lang3>
-        <version.commons.io>2.18.0</version.commons.io>
-        <version.jackson>2.18.2</version.jackson>
-        <version.jackson-databind>2.18.2</version.jackson-databind>
+        <version.commons.io>2.19.0</version.commons.io>
+        <version.jackson>2.19.0</version.jackson>
+        <version.jackson-databind>2.19.0</version.jackson-databind>
         <version.ws.rs.api>2.1.1</version.ws.rs.api>
         <version.jakarta.ws.rs.api>4.0.0</version.jakarta.ws.rs.api>
         <version.antlr>4.13.2</version.antlr>
         <version.apache.http.client>4.5.14</version.apache.http.client>
         <version.apache.http.core>4.4.16</version.apache.http.core>
-        <version.bouncy.castle>1.79</version.bouncy.castle>
+        <version.bouncy.castle>1.80</version.bouncy.castle>
 
         <!-- dependency conflicts -->
-        <version.javassist>3.29.2-GA</version.javassist>
+        <version.javassist>3.30.2-GA</version.javassist>
         <version.jboss.jaxb.api>2.0.1.Final</version.jboss.jaxb.api>
 
         <!-- logging dependencies -->
