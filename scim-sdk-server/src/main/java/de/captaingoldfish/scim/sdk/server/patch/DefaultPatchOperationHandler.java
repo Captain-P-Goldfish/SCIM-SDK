@@ -108,7 +108,12 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
                                                                excludedAttributes,
                                                                context,
                                                                EndpointType.PATCH);
-        // TODO enhance this creepy copy creation
+        if (patchedResource == null)
+        {
+          throw new ResourceNotFoundException(String.format("%s with id '%s' does not exist.",
+                                                            resourceType.getName(),
+                                                            id));
+        }
         oldResource = JsonHelper.readJsonDocument(patchedResource.toString(), type);
       }
       return oldResource;
