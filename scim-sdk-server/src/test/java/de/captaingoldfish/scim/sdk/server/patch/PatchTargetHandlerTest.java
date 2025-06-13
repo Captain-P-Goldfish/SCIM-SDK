@@ -1485,7 +1485,7 @@ public class PatchTargetHandlerTest implements FileReferences
   }
 
   /**
-   * verifies that an exception is thrown if the subAttribute of a expression filter is unknown
+   * verifies that an exception is thrown if the subAttribute of an expression filter is unknown
    */
   @Test
   public void testAddSimpleAttributeToComplexTypesWithUnknownSubAttribute()
@@ -1517,6 +1517,33 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertEquals(ScimType.RFC7644.INVALID_PATH, ex.getScimType());
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
     }
+  }
+
+  /**
+   * verifies that an unknown multivalued-subattribute is ignored in case that the patch configuration is set to
+   * ignore such unknown attributes
+   */
+  @Test
+  public void testMultivaluedSubAttributeIsIgnoredIfUnknown()
+  {
+    resourceEndpoint.getServiceProvider().getPatchConfig().setIgnoreUnknownAttribute(true);
+
+    List<String> values = Collections.singletonList("goldfish");
+    final String path = "multiComplex.unknown";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(path)
+                                                                                .values(values)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    AllTypes allTypes = new AllTypes(true);
+    AllTypes multiComplex1 = new AllTypes(false);
+    multiComplex1.setStringArray(Collections.singletonList("hello world"));
+    AllTypes multiComplex2 = new AllTypes(false);
+    multiComplex2.setStringArray(Collections.singletonList("goodbye world"));
+
+    allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2));
+    Assertions.assertDoesNotThrow(() -> patchAllTypes(allTypes, patchOpRequest, false));
   }
 
   /**

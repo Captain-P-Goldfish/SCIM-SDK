@@ -327,16 +327,24 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     {
       return RequestUtils.parsePatchPath(resourceType, fixedOperation.getPath().orElse(null));
     }
-    catch (InvalidFilterException ex)
+    catch (InvalidFilterException | BadRequestException ex)
     {
+      if (ex instanceof BadRequestException)
+      {
+        BadRequestException badRequestException = (BadRequestException)ex;
+        if (!ScimType.RFC7644.INVALID_PATH.equals(badRequestException.getScimType()))
+        {
+          throw ex;
+        }
+      }
       if (patchConfig.isIgnoreUnknownAttribute())
       {
-        log.debug("Ignoring invalid path '{}'", fixedOperation.getPath());
+        log.debug("Ignoring invalid path '{}'", fixedOperation.getPath().orElse(null));
         throw new IgnoreWholeOperationException();
       }
       else
       {
-        throw new BadRequestException(ex.getMessage(), ex);
+        throw new BadRequestException(ex.getMessage(), ex, ex.getScimType());
       }
     }
   }
