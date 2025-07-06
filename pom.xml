@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.captaingoldfish</groupId>
@@ -36,18 +37,6 @@
         <url>https://github.com/Captain-P-Goldfish/SCIM/tree/master</url>
         <tag>1.27.1</tag>
     </scm>
-
-    <distributionManagement>
-        <snapshotRepository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-        </snapshotRepository>
-
-        <repository>
-            <id>ossrh</id>
-            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-        </repository>
-    </distributionManagement>
 
     <modules>
         <module>scim-sdk-server</module>
@@ -120,6 +109,7 @@
         <version.maven.jar.plugin>3.4.2</version.maven.jar.plugin>
         <version.jacoco>0.8.12</version.jacoco>
         <version.maven.lombok.plugin>1.18.20.0</version.maven.lombok.plugin>
+        <version.maven.central.deploy.plugin>0.8.0</version.maven.central.deploy.plugin>
     </properties>
 
     <dependencyManagement>
@@ -545,9 +535,9 @@
                             <onlyWhenRelease>true</onlyWhenRelease>
                         </requireReleaseDeps>
 
-                        <banDuplicatePomDependencyVersions />
+                        <banDuplicatePomDependencyVersions/>
 
-                        <dependencyConvergence />
+                        <dependencyConvergence/>
                     </rules>
                 </configuration>
             </plugin>
@@ -737,6 +727,26 @@
                         </executions>
                     </plugin>
 
+                    <!-- Zentral-Publishing Plugin -->
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${version.maven.central.deploy.plugin}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>maven-central</publishingServerId>
+                            <autoPublish>true</autoPublish>
+                            <waitUntil>published</waitUntil>
+                            <excludeArtifacts>
+                                <artifact>scim-sdk-samples</artifact>
+                                <artifact>scim-sdk-sample-common</artifact>
+                                <artifact>scim-sdk-springboot-example</artifact>
+                                <artifact>scim-sdk-quarkus-example</artifact>
+                                <artifact>scim-sdk-jboss-example</artifact>
+                                <artifact>scim-sdk-schema-pojo-creator</artifact>
+                            </excludeArtifacts>
+                        </configuration>
+                    </plugin>
                 </plugins>
             </build>
         </profile>
