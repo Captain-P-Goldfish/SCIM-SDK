@@ -764,6 +764,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
    */
   private boolean handleDirectMultiValuedComplexPathReference(ArrayNode multiValued, List<String> values)
   {
+    final int originalNodeSize = multiValued.size();
     List<IndexNode> matchingComplexNodes = resolveFilter(multiValued, path);
     if (PatchOp.REMOVE.equals(patchOp))
     {
@@ -866,7 +867,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
         isResourceChanged = isResourceChanged || !JsonHelper.containsEqualObject(originalNodes, complexNode);
       }
     }
-    return isResourceChanged;
+    return isResourceChanged || multiValued.size() != originalNodeSize;
   }
 
   /**

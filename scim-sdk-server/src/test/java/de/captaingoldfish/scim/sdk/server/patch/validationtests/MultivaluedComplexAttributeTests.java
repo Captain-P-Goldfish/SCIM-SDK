@@ -1943,6 +1943,63 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
           }
 
           /**
+           * uses the replace operation to remove one element from a multivalued complex array
+           */
+          @DisplayName("Remove one element by using replace")
+          @Test
+          public void testRemoveOneElementWithReplace()
+          {
+            PatchRequestOperation patchRequestOperation;
+            {
+              ArrayNode values = new ArrayNode(JsonNodeFactory.instance);
+              {
+                AllTypes complex = new AllTypes(false);
+                complex.setString("hello world");
+                complex.setNumber(5L);
+                values.add(complex);
+              }
+
+              patchRequestOperation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.REPLACE)
+                                                           .path("multicomplex")
+                                                           .valueNode(values)
+                                                           .build();
+            }
+
+            List<PatchRequestOperation> operations = Arrays.asList(patchRequestOperation);
+            PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+
+            AllTypes allTypes = new AllTypes(true);
+            {
+              ArrayNode multicomplex = new ArrayNode(JsonNodeFactory.instance);
+              {
+                AllTypes complex = new AllTypes(false);
+                complex.setString("hello world");
+                complex.setNumber(5L);
+                multicomplex.add(complex);
+                AllTypes complex2 = new AllTypes(false);
+                complex2.setString("hello world 2");
+                complex2.setNumber(6L);
+                multicomplex.add(complex2);
+              }
+              allTypes.set("multiComplex", multicomplex);
+              addAllTypesToProvider(allTypes);
+            }
+
+            PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                        allTypesResourceType.getResourceHandlerImpl(),
+                                                                                        resourceEndpoint.getPatchWorkarounds(),
+                                                                                        new Context(null));
+            AllTypes patchedResource = Assertions.assertDoesNotThrow(() -> patchRequestHandler.handlePatchRequest(patchOpRequest));
+            Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+            Assertions.assertEquals(1, patchedResource.getMultiComplex().size());
+            AllTypes multicomplex = patchedResource.getMultiComplex().get(0);
+            Assertions.assertEquals(2, multicomplex.size());
+            Assertions.assertEquals("hello world", multicomplex.getString().get());
+            Assertions.assertEquals(5L, multicomplex.getNumber().get());
+          }
+
+          /**
            * add operation does not change multiComplex with identical value
            */
           @DisplayName("success: Add multiComplex with identical value")
