@@ -15,6 +15,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import de.captaingoldfish.scim.sdk.server.endpoints.bulkcontext.BulkRequestContext;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -90,6 +91,11 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
   private BulkEndpoint bulkEndpoint;
 
   /**
+   * the request context for the current bulkRequest
+   */
+  private Context context;
+
+  /**
    * the service provider configuration
    */
   private ServiceProvider serviceProvider;
@@ -131,6 +137,8 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                     new HashMap<>(), new HashMap<>(),
                                     resourceType -> Optional.ofNullable(dynamicResourceTypeConsumer)
                                                             .ifPresent(consumer -> consumer.accept(resourceType)));
+    context = new Context(null);
+    context.setBulkRequestContext(new BulkRequestContext());
   }
 
   /**
@@ -155,7 +163,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(maxOperations, userHandler.getInMemoryMap().size());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
@@ -177,7 +185,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     operations.addAll(getUpdateUserBulkOperations(userHandler.getInMemoryMap().values()));
     operations.addAll(getDeleteUserBulkOperations(userHandler.getInMemoryMap().values()));
     bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
-    scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -226,7 +234,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -253,7 +261,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -288,7 +296,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -315,7 +323,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
@@ -343,7 +351,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     final int failOnErrors = 0;
     BulkRequest bulkRequest = BulkRequest.builder().failOnErrors(failOnErrors).bulkRequestOperation(operations).build();
     Assertions.assertEquals(0, userHandler.getInMemoryMap().size());
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -387,7 +395,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     createOperations.get(createOperations.size() - 1).setBulkId(null);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
 
@@ -449,7 +457,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
 
     operations.forEach(operation -> operation.setBulkId(null));
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
@@ -474,7 +482,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                          .failOnErrors(failOnErrors)
                                          .bulkRequestOperation(createOperations)
                                          .build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(bulkRequest.getBulkRequestOperations().size(),
@@ -618,7 +626,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
            .createResource(Mockito.any(), Mockito.any());
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
@@ -636,7 +644,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     serviceProvider.getBulkConfig().setMaxOperations(maxOperations);
     List<BulkRequestOperation> createOperations = getCreateUserBulkOperations(maxOperations);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    ScimResponse scimResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(BulkResponse.class));
     BulkResponse bulkResponse = (BulkResponse)scimResponse;
     Assertions.assertEquals(maxOperations, bulkResponse.getBulkResponseOperations().size());
@@ -678,7 +686,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     createOperations.add(0, requestOperation);
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -816,7 +824,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(bulkOperations).build();
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
 
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
@@ -852,7 +860,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                                                 .build();
     createOperations.add(requestOperation);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, bulkResponse.getBulkResponseOperations().get(0).getStatus());
@@ -902,7 +910,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     createOperations.add(1, requestOperation2);
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(3, responseOperations.size());
@@ -941,7 +949,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                                                 .build();
     requestOperationList.add(0, requestOperation);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(requestOperationList).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseList.size());
@@ -987,7 +995,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     createOperations.add(requestOperation);
     createOperations.add(requestOperation2);
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(createOperations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());
     ErrorResponse firstResponse = bulkResponse.getBulkResponseOperations()
@@ -1048,7 +1056,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1099,7 +1107,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -1139,7 +1147,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -1179,7 +1187,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -1223,7 +1231,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus(), bulkResponse.toPrettyString());
     List<BulkResponseOperation> responseOperationList = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperationList.size(), bulkResponse.toPrettyString());
@@ -1288,7 +1296,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(patchedUser.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1371,7 +1379,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1436,7 +1444,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .build());
 
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperations.size());
@@ -1499,7 +1507,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(patchedUser.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1571,7 +1579,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(patchedUser.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1671,7 +1679,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
     log.warn(bulkRequest.toPrettyString());
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responseOperations.size());
@@ -1719,7 +1727,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                                          .version(ETag.builder().tag("unknown").build())
                                                          .build();
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(Collections.singletonList(operation)).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     List<BulkResponseOperation> responses = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(1, responses.size());
     BulkResponseOperation responseOperation = responses.get(0);
@@ -1760,7 +1768,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                        .data(user.toString())
                                        .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(operations).build();
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     List<BulkResponseOperation> responseOperations = bulkResponse.getBulkResponseOperations();
     Assertions.assertEquals(2, responseOperations.size());
@@ -1886,7 +1894,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     String worstPossibleBulkRequestString = readResourceFile(WORST_POSSIBLE_BULK_REQUEST);
     BulkRequest bulkRequest = JsonHelper.readJsonDocument(worstPossibleBulkRequestString, BulkRequest.class);
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -1908,7 +1916,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     String worstPossibleBulkRequestString = readResourceFile(BULK_ID_REFERENCE_RESOURCE_ENSEMBLE);
     BulkRequest bulkRequest = JsonHelper.readJsonDocument(worstPossibleBulkRequestString, BulkRequest.class);
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
     {
@@ -1949,7 +1957,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
 
     BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_PATCH_NO_PATH_ENSEMBLE, BulkRequest.class);
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
@@ -2006,7 +2014,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       bulkRequest.getBulkRequestOperations().get(0).setData(objectNode.toString());
     }
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
@@ -2048,7 +2056,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_PATCH_WITH_PATH_ENSEMBLE,
                                                           BulkRequest.class);
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     for ( BulkResponseOperation bulkResponseOperation : bulkResponse.getBulkResponseOperations() )
@@ -2116,7 +2124,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     BulkRequest bulkRequest = JsonHelper.loadJsonDocument(BULK_ID_REFERENCE_PATCH_WITH_PATH_ENSEMBLE,
                                                           BulkRequest.class);
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     log.warn(bulkResponse.toPrettyString());
@@ -2214,7 +2222,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                                                                          .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(bulkRequestOperations).failOnErrors(0).build();
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
@@ -2331,7 +2339,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
                                                                                          .build());
     BulkRequest bulkRequest = BulkRequest.builder().bulkRequestOperation(bulkRequestOperations).failOnErrors(0).build();
 
-    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), null);
+    BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI, bulkRequest.toString(), context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     Assertions.assertEquals(1, bulkResponse.getBulkResponseOperations().size());
@@ -2498,7 +2506,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
     BulkResponse bulkResponse = bulkEndpoint.bulk(BASE_URI,
                                                   bulkRequest.toString()
                                                              .replaceFirst("\"value\":\\[(.*?)]", "\"value\":$1"),
-                                                  null);
+                                                  context);
     Assertions.assertEquals(HttpStatus.OK, bulkResponse.getHttpStatus());
 
     Assertions.assertEquals(2, bulkResponse.getBulkResponseOperations().size());

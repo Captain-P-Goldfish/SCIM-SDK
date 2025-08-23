@@ -18,6 +18,7 @@ import de.captaingoldfish.scim.sdk.common.response.BulkResponse;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.response.ScimResponse;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.bulkcontext.BulkRequestContext;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointFeatureHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.features.EndpointType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
@@ -185,15 +186,20 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                                       httpMethod,
                                                       httpHeaders,
                                                       lenientContentTypeChecking);
+      Context effectiveContext = Optional.ofNullable(context).orElseGet(() -> new Context(null));
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),
                                                      uriInfos.getHttpHeaders(), uriInfos.getQueryParameters(),
                                                      doBeforeExecution);
-        scimResponse = bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, context);
+        if (!effectiveContext.getBulkRequestContext().isPresent())
+        {
+          effectiveContext.setBulkRequestContext(new BulkRequestContext());
+        }
+        scimResponse = bulkEndpoint.bulk(uriInfos.getBaseUri(), requestBody, effectiveContext);
         break handleScimRequest;
       }
-      scimResponse = resolveRequest(httpMethod, requestBody, uriInfos, doBeforeExecution, context);
+      scimResponse = resolveRequest(httpMethod, requestBody, uriInfos, doBeforeExecution, effectiveContext);
     }
     catch (ScimException ex)
     {
@@ -336,7 +342,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
    */
   private Context getEffectiveContext(UriInfos uriInfos, String requestBody, Context context)
   {
-    Context effectiveContext = Optional.ofNullable(context).orElse(new Context(null));
+    Context effectiveContext = Optional.ofNullable(context).orElseGet(() -> new Context(null));
     effectiveContext.setUriInfos(uriInfos);
     effectiveContext.setResourceReferenceUrl(id -> {
       return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, uriInfos.getResourceType().getName());

@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.interceptor;
 
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
+
 import java.util.function.Supplier;
 
 
@@ -20,5 +22,5 @@ public interface Interceptor
    * @param <T> type of result object
    * @return a result object returned by the supplier, or null if none
    */
-  <T> T doAround(Supplier<T> resourceSupplier);
+  <T> T doAround(Supplier<T> resourceSupplier, Context context);
 }

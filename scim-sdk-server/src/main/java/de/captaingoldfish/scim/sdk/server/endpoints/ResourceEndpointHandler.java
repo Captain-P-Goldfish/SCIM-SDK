@@ -258,7 +258,7 @@ class ResourceEndpointHandler
       Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.CREATE);
       ResourceNode resourceNodeCreated = interceptor.doAround(() -> {
         return resourceHandler.createResource(resourceNode, context);
-      });
+      }, context);
       if (resourceNodeCreated == null)
       {
         throw new NotImplementedException("create was not implemented for resourceType '" + resourceType.getName()
@@ -356,7 +356,7 @@ class ResourceEndpointHandler
       Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.GET);
       ResourceNode resourceNode = interceptor.doAround(() -> {
         return resourceHandler.getResource(id, attributesList, excludedAttributesList, context);
-      });
+      }, context);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -570,7 +570,7 @@ class ResourceEndpointHandler
                                              attributesList,
                                              excludedAttributesList,
                                              context);
-      });
+      }, context);
       if (resources == null)
       {
         throw new NotImplementedException("listResources was not implemented for resourceType '"
@@ -876,7 +876,7 @@ class ResourceEndpointHandler
         new RequestValidatorHandler(resourceHandler, requestResourceValidator,
                                     context).validateUpdate(oldResourceSupplier, resourceNodeForUpdate);
         return resourceHandler.updateResource(resourceNodeForUpdate, context);
-      });
+      }, context);
       if (resourceNode == null)
       {
         throw new ResourceNotFoundException("the '" + resourceType.getName() + "' resource with id '" + id + "' does "
@@ -956,7 +956,7 @@ class ResourceEndpointHandler
         validateResourceVersion(id, resourceType, oldResourceSupplier, httpHeaders);
         resourceHandler.deleteResource(id, context);
         return new DeleteResponse();
-      });
+      }, context);
     }
     catch (ScimException ex)
     {
@@ -1061,7 +1061,7 @@ class ResourceEndpointHandler
           meta.setVersion(previousMeta.getVersion().orElse(null));
         });
         return patchRequestHandler.getUpdatedResource(patchedResourceNode, attributesList, excludedAttributesList);
-      });
+      }, context);
 
       if (updatedResource == null)
       // can only happen with custom implementations

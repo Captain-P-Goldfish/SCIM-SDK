@@ -7,6 +7,7 @@ import java.util.function.Supplier;
 
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
+import de.captaingoldfish.scim.sdk.server.endpoints.bulkcontext.BulkRequestContext;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -70,6 +71,12 @@ public class Context
   @Setter(AccessLevel.PROTECTED)
   private Supplier<String> requestBodySupplier;
 
+  /**
+   * will be set if the current request is a bulk request, this object will be null otherwise.
+   */
+  @Setter(AccessLevel.PROTECTED)
+  private BulkRequestContext bulkRequestContext;
+
   public Context(Authorization authorization)
   {
     this.authorization = Optional.ofNullable(authorization).orElse(new DefaultAuthorization());
@@ -119,5 +126,13 @@ public class Context
   public String getRequestBody()
   {
     return requestBodySupplier.get();
+  }
+
+  /**
+   * will be set if the current request is a bulk request.
+   */
+  public Optional<BulkRequestContext> getBulkRequestContext()
+  {
+    return Optional.ofNullable(bulkRequestContext);
   }
 }

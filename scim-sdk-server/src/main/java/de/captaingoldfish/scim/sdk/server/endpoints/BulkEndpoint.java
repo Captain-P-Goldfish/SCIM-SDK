@@ -129,6 +129,7 @@ class BulkEndpoint
     List<BulkRequestOperation> operations = bulkRequest.getBulkRequestOperations();
     List<BulkResponseOperation> responseOperations = new ArrayList<>();
     final int failOnErrors = RequestUtils.getEffectiveFailOnErrors(bulkRequest);
+    context.getBulkRequestContext().get().setFailOnErrors(failOnErrors);
     int httpStatus = handleBulkOperationList(baseUri, operations, responseOperations, failOnErrors, context);
     return BulkResponse.builder().httpStatus(httpStatus).bulkResponseOperation(responseOperations).build();
   }
@@ -164,6 +165,8 @@ class BulkEndpoint
       }
       iterations++;
       BulkRequestOperation requestOperation = operations.get(0);
+      context.getBulkRequestContext().get().setCurrentlyHandledOperation(requestOperation);
+      context.getBulkRequestContext().get().setLastOperation(operations.size() == 1);
       if (errorCounter >= failOnErrors)
       {
         operations.remove(0);
@@ -173,11 +176,13 @@ class BulkEndpoint
                                                   requestOperation.getBulkId().orElse(null),
                                                   iterations);
         PreconditionFailedException ex = new PreconditionFailedException(errorMessage);
-        responseOperations.add(responseBuilder.status(HttpStatus.PRECONDITION_FAILED)
-                                              .bulkId(requestOperation.getBulkId().orElse(null))
-                                              .response(new ErrorResponse(ex))
-                                              .method(requestOperation.getMethod())
-                                              .build());
+        BulkResponseOperation responseOperation = responseBuilder.status(HttpStatus.PRECONDITION_FAILED)
+                                                                 .bulkId(requestOperation.getBulkId().orElse(null))
+                                                                 .response(new ErrorResponse(ex))
+                                                                 .method(requestOperation.getMethod())
+                                                                 .build();
+        responseOperations.add(responseOperation);
+        context.getBulkRequestContext().get().addFailedOperation(requestOperation, responseOperation);
         // The service provider stops processing the bulk operation and immediately returns a response to the client
         continue;
       }
@@ -188,8 +193,13 @@ class BulkEndpoint
       catch (BadRequestException ex)
       {
         errorCounter++;
+        context.getBulkRequestContext().get().setCurrentNumberOfErrors(errorCounter);
         BulkResponseOperation.BulkResponseOperationBuilder responseBuilder = BulkResponseOperation.builder();
-        responseOperations.add(responseBuilder.status(ex.getStatus()).response(new ErrorResponse(ex)).build());
+        BulkResponseOperation responseOperation = responseBuilder.status(ex.getStatus())
+                                                                 .response(new ErrorResponse(ex))
+                                                                 .build();
+        responseOperations.add(responseOperation);
+        context.getBulkRequestContext().get().addFailedOperation(requestOperation, responseOperation);
         operations.remove(0);
         continue;
       }
@@ -210,9 +220,15 @@ class BulkEndpoint
         operations.remove(0);
       }
       boolean isSuccessfulResponseCode = isSuccessResponseCode(requestOperation, bulkResponseOperation);
-      if (!isSuccessfulResponseCode)
+      if (isSuccessfulResponseCode)
+      {
+        context.getBulkRequestContext().get().addSuccessOperation(requestOperation, bulkResponseOperation);
+      }
+      else
       {
         errorCounter++;
+        context.getBulkRequestContext().get().setCurrentNumberOfErrors(errorCounter);
+        context.getBulkRequestContext().get().addFailedOperation(requestOperation, bulkResponseOperation);
       }
       responseOperations.add(bulkResponseOperation);
     }

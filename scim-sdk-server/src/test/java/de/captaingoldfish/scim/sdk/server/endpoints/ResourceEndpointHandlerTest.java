@@ -249,13 +249,13 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResultCaptor<User> interceptorResult = new ResultCaptor<>();
     Interceptor interceptor = Mockito.spy(new NoopInterceptor());
     Mockito.doReturn(interceptor).when(userHandler).getInterceptor(EndpointType.CREATE);
-    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any());
+    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any(), Mockito.any());
     ScimResponse scimResponse = resourceEndpointHandler.createResource(endpoint,
                                                                        u.toString(),
                                                                        getBaseUrlSupplier(),
                                                                        null);
     Mockito.verify(userHandler, Mockito.times(1)).createResource(Mockito.any(), Mockito.isNull());
-    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any());
+    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any(), Mockito.any());
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(CreateResponse.class));
     MatcherAssert.assertThat(interceptorResult.getResult().getClass(), Matchers.typeCompatibleWith(User.class));
     Assertions.assertEquals(HttpStatus.CREATED, scimResponse.getHttpStatus());
@@ -328,8 +328,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
 
       @Override
-      public <T> T doAround(Supplier<T> resourceSupplier)
+      public <T> T doAround(Supplier<T> resourceSupplier, Context context)
       {
+        Assertions.assertNotNull(context);
         return (T)u; // don't call the supplier
       }
     });
@@ -337,7 +338,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ScimResponse scimResponse = resourceEndpointHandler.createResource("/Users",
                                                                        u.toString(),
                                                                        getBaseUrlSupplier(),
-                                                                       null);
+                                                                       new Context(null));
     Mockito.verify(userHandler, Mockito.times(1)).getInterceptor(EndpointType.CREATE);
     Mockito.verify(userHandler, Mockito.times(2)).getType();
     Mockito.verify(userHandler, Mockito.times(1)).getRequestValidator();
@@ -2986,7 +2987,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResultCaptor<User> interceptorResult = new ResultCaptor<>();
     Interceptor interceptor = Mockito.spy(new NoopInterceptor());
     Mockito.doReturn(interceptor).when(userHandler).getInterceptor(EndpointType.GET);
-    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any());
+    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any(), Mockito.any());
     Mockito.doReturn(user)
            .when(userHandler)
            .getResource(Mockito.eq(id),
@@ -3005,7 +3006,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                         Mockito.eq(Collections.emptyList()),
                         Mockito.notNull());
     Mockito.verify(userHandler).getInterceptor(EndpointType.GET);
-    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any());
+    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any(), Mockito.any());
     MatcherAssert.assertThat(interceptorResult.getResult().getClass(), Matchers.typeCompatibleWith(User.class));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
   }
@@ -3023,8 +3024,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
 
       @Override
-      public <T> T doAround(Supplier<T> resourceSupplier)
+      public <T> T doAround(Supplier<T> resourceSupplier, Context context)
       {
+        Assertions.assertNotNull(context);
         return (T)user; // don't call the supplier
       }
     });
@@ -3059,7 +3061,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResultCaptor<PartialListResponse<User>> interceptorResult = new ResultCaptor<>();
     Interceptor interceptor = Mockito.spy(new NoopInterceptor());
     Mockito.doReturn(interceptor).when(userHandler).getInterceptor(EndpointType.LIST);
-    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any());
+    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any(), Mockito.any());
     Mockito.doReturn(partialListResponse)
            .when(userHandler)
            .listResources(Mockito.anyLong(),
@@ -3090,7 +3092,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                           Mockito.any(),
                           Mockito.any(),
                           Mockito.isNull());
-    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any());
+    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any(), Mockito.any());
     MatcherAssert.assertThat(interceptorResult.getResult().getClass(),
                              Matchers.typeCompatibleWith(PartialListResponse.class));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
@@ -3111,8 +3113,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
 
       @Override
-      public <T> T doAround(Supplier<T> resourceSupplier)
+      public <T> T doAround(Supplier<T> resourceSupplier, Context context)
       {
+        Assertions.assertNotNull(context);
         return (T)partialListResponse; // don't call the supplier
       }
     });
@@ -3126,7 +3129,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       null,
                                                                       null,
                                                                       null,
-                                                                      null);
+                                                                      new Context(null));
     Mockito.verify(userHandler, Mockito.times(1)).getInterceptor(EndpointType.LIST);
     Mockito.verify(userHandler, Mockito.times(1)).getType();
     Mockito.verify(userHandler, Mockito.times(1))
@@ -3156,7 +3159,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                                                 etag.getEntityTag()),
                                                                        context);
     Mockito.verify(userHandler, Mockito.times(1)).getInterceptor(EndpointType.DELETE);
-    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any());
+    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any(), Mockito.any());
     InOrder orderVerifier = Mockito.inOrder(userHandler);
     orderVerifier.verify(userHandler, Mockito.times(1))
                  .getResourceForUpdate(Mockito.eq(id),
@@ -3181,8 +3184,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
 
       @Override
-      public <T> T doAround(Supplier<T> resourceSupplier)
+      public <T> T doAround(Supplier<T> resourceSupplier, Context context)
       {
+        Assertions.assertNotNull(context);
         return (T)new DeleteResponse(); // don't call the supplier
       }
     });
@@ -3194,7 +3198,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                                                     .tag("123")
                                                                                                     .build()
                                                                                                     .getEntityTag()),
-                                                                       null);
+                                                                       new Context(null));
     Mockito.verify(userHandler, Mockito.times(1)).getInterceptor(EndpointType.DELETE);
     Mockito.verifyNoMoreInteractions(userHandler);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(DeleteResponse.class));
@@ -3217,7 +3221,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResultCaptor<User> interceptorResult = new ResultCaptor<>();
     Interceptor interceptor = Mockito.spy(new NoopInterceptor());
     Mockito.doReturn(interceptor).when(userHandler).getInterceptor(EndpointType.UPDATE);
-    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any());
+    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any(), Mockito.any());
     Context context = getContext(user.getId().get(), HttpMethod.PUT);
     context.getUriInfos().getHttpHeaders().put(HttpHeader.IF_MATCH_HEADER, etag.getEntityTag());
     ScimResponse scimResponse = resourceEndpointHandler.updateResource("/Users",
@@ -3226,7 +3230,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                        getBaseUrlSupplier(),
                                                                        context);
     Mockito.verify(userHandler, Mockito.times(1)).getInterceptor(EndpointType.UPDATE);
-    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any());
+    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any(), Mockito.any());
     InOrder orderVerifier = Mockito.inOrder(userHandler);
     orderVerifier.verify(userHandler, Mockito.times(1))
                  .getResourceForUpdate(Mockito.eq(id),
@@ -3254,8 +3258,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
 
       @Override
-      public <T> T doAround(Supplier<T> resourceSupplier)
+      public <T> T doAround(Supplier<T> resourceSupplier, Context context)
       {
+        Assertions.assertNotNull(context);
         return (T)user; // don't call the supplier
       }
     });
@@ -3294,7 +3299,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ResultCaptor<User> interceptorResult = new ResultCaptor<>();
     Interceptor interceptor = Mockito.spy(new NoopInterceptor());
     Mockito.doReturn(interceptor).when(userHandler).getInterceptor(EndpointType.PATCH);
-    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any());
+    Mockito.doAnswer(interceptorResult).when(interceptor).doAround(Mockito.any(), Mockito.any());
 
     final String path = "name";
     Name name = Name.builder().givenName("goldfish").familyName("captain").build();
@@ -3317,7 +3322,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
                                                                       getBaseUrlSupplier(),
                                                                       context);
     Mockito.verify(userHandler, Mockito.times(1)).getInterceptor(EndpointType.PATCH);
-    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any());
+    Mockito.verify(interceptor, Mockito.times(1)).doAround(Mockito.any(), Mockito.any());
     InOrder orderVerifier = Mockito.inOrder(userHandler);
     orderVerifier.verify(userHandler, Mockito.times(1))
                  .getResourceForUpdate(Mockito.eq(id),
@@ -3360,8 +3365,9 @@ public class ResourceEndpointHandlerTest implements FileReferences
     {
 
       @Override
-      public <T> T doAround(Supplier<T> resourceSupplier)
+      public <T> T doAround(Supplier<T> resourceSupplier, Context context)
       {
+        Assertions.assertNotNull(context);
         return (T)user; // don't call the supplier
       }
     });
