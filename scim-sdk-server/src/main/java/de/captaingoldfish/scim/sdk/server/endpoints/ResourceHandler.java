@@ -325,5 +325,21 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                                      excludedAttributesList, requestDocument, referenceUrlSupplier));
   }
 
+  /**
+   * this method is called if a create-operation has failed either due to an exception or due to a validation
+   * error
+   */
+  public void rollbackCreate(T resource, Context context, Exception ex)
+  {
+    // do nothing by default
+  }
 
+  /**
+   * this method is called if an update-operation has failed either due to an exception or due to a validation
+   * error
+   */
+  public void rollbackUpdate(T resource, Context context, Exception ex)
+  {
+    // do nothing by default
+  }
 }

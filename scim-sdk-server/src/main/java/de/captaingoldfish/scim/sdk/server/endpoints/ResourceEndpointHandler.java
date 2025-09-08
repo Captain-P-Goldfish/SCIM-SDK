@@ -230,6 +230,9 @@ class ResourceEndpointHandler
                                         Supplier<String> baseUrlSupplier,
                                         Context context)
   {
+    ResourceHandler resourceHandler = null;
+    ResourceNode resourceNode = null;
+    ResourceNode resourceNodeCreated = null;
     try
     {
       if (StringUtils.isBlank(resourceDocument))
@@ -246,18 +249,19 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
+      resourceHandler = resourceType.getResourceHandlerImpl();
       RequestResourceValidator resourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
                                                                                 HttpMethod.POST);
-      ResourceNode resourceNode = (ResourceNode)resourceValidator.validateDocument(resource);
+      resourceNode = (ResourceNode)resourceValidator.validateDocument(resource);
       Meta meta = resourceNode.getMeta().orElse(Meta.builder().build());
       meta.setResourceType(resourceType.getName());
       resourceNode.remove(AttributeNames.RFC7643.META);
       resourceNode.setMeta(meta);
       new RequestValidatorHandler(resourceHandler, resourceValidator, context).validateCreate(resourceNode);
       Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.CREATE);
-      ResourceNode resourceNodeCreated = interceptor.doAround(() -> {
-        return resourceHandler.createResource(resourceNode, context);
+      ResourceNode finalResourceNode = resourceNode;
+      resourceNodeCreated = interceptor.doAround(() -> {
+        return resourceType.getResourceHandlerImpl().createResource(finalResourceNode, context);
       }, context);
       if (resourceNodeCreated == null)
       {
@@ -299,16 +303,28 @@ class ResourceEndpointHandler
     }
     catch (RequestContextException ex)
     {
+      if (resourceHandler != null && resourceNode != null)
+      {
+        resourceHandler.rollbackCreate(Optional.ofNullable(resourceNodeCreated).orElse(resourceNode), context, ex);
+      }
       ErrorResponse errorResponse = new ErrorResponse(ex);
       ex.getValidationContext().writeToErrorResponse(errorResponse);
       return errorResponse;
     }
     catch (ScimException ex)
     {
+      if (resourceHandler != null && resourceNode != null)
+      {
+        resourceHandler.rollbackCreate(Optional.ofNullable(resourceNodeCreated).orElse(resourceNode), context, ex);
+      }
       return new ErrorResponse(ex);
     }
     catch (Exception ex)
     {
+      if (resourceHandler != null && resourceNode != null)
+      {
+        resourceHandler.rollbackCreate(Optional.ofNullable(resourceNodeCreated).orElse(resourceNode), context, ex);
+      }
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
   }
@@ -825,6 +841,8 @@ class ResourceEndpointHandler
                                         Supplier<String> baseUrlSupplier,
                                         Context context)
   {
+    ResourceHandler resourceHandler = null;
+    ResourceNode resourceNode = null;
     try
     {
       if (StringUtils.isBlank(resourceDocument))
@@ -832,6 +850,7 @@ class ResourceEndpointHandler
         throw new BadRequestException("the request body is empty", null, ScimType.Custom.INVALID_PARAMETERS);
       }
       ResourceType resourceType = getResourceType(endpoint);
+      resourceHandler = resourceType.getResourceHandlerImpl();
       JsonNode resource;
       try
       {
@@ -841,7 +860,6 @@ class ResourceEndpointHandler
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
-      ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
                                                                                        HttpMethod.PUT);
       ResourceNode resourceNodeForUpdate = (ResourceNode)requestResourceValidator.validateDocument(resource);
@@ -866,16 +884,18 @@ class ResourceEndpointHandler
 
       AtomicReference<ResourceNode> oldResourceNode = new AtomicReference<>();
       Supplier<ResourceNode> oldResourceSupplier = () -> {
-        ResourceNode oldResource = resourceHandler.getResourceForUpdate(id, null, null, context, EndpointType.UPDATE);
+        ResourceNode oldResource = resourceType.getResourceHandlerImpl()
+                                               .getResourceForUpdate(id, null, null, context, EndpointType.UPDATE);
         oldResourceNode.compareAndSet(null, oldResource);
         return oldResourceNode.get();
       };
       Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.UPDATE);
-      ResourceNode resourceNode = interceptor.doAround(() -> {
+      resourceNode = interceptor.doAround(() -> {
         validateResourceVersion(id, resourceType, oldResourceSupplier, context.getUriInfos().getHttpHeaders());
-        new RequestValidatorHandler(resourceHandler, requestResourceValidator,
-                                    context).validateUpdate(oldResourceSupplier, resourceNodeForUpdate);
-        return resourceHandler.updateResource(resourceNodeForUpdate, context);
+        ResourceHandler rh = resourceType.getResourceHandlerImpl();
+        new RequestValidatorHandler(rh, requestResourceValidator, context).validateUpdate(oldResourceSupplier,
+                                                                                          resourceNodeForUpdate);
+        return rh.updateResource(resourceNodeForUpdate, context);
       }, context);
       if (resourceNode == null)
       {
@@ -917,16 +937,28 @@ class ResourceEndpointHandler
     }
     catch (RequestContextException ex)
     {
+      if (resourceHandler != null && resourceNode != null)
+      {
+        resourceHandler.rollbackUpdate(resourceNode, context, ex);
+      }
       ErrorResponse errorResponse = new ErrorResponse(ex);
       ex.getValidationContext().writeToErrorResponse(errorResponse);
       return errorResponse;
     }
     catch (ScimException ex)
     {
+      if (resourceHandler != null && resourceNode != null)
+      {
+        resourceHandler.rollbackUpdate(resourceNode, context, ex);
+      }
       return new ErrorResponse(ex);
     }
     catch (Exception ex)
     {
+      if (resourceHandler != null && resourceNode != null)
+      {
+        resourceHandler.rollbackUpdate(resourceNode, context, ex);
+      }
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
   }
@@ -1004,14 +1036,16 @@ class ResourceEndpointHandler
                                        Supplier<String> baseUrlSupplier,
                                        Context context)
   {
+    ResourceNode updatedResource = null;
+    ResourceHandler resourceHandler = null;
     try
     {
+      ResourceType resourceType = getResourceType(endpoint);
+      resourceHandler = resourceType.getResourceHandlerImpl();
       if (!serviceProvider.getPatchConfig().isSupported())
       {
         throw new NotImplementedException("patch is not supported by this service provider");
       }
-      ResourceType resourceType = getResourceType(endpoint);
-      ResourceHandler resourceHandler = resourceType.getResourceHandlerImpl();
       Schema patchSchema = resourceTypeFactory.getSchemaFactory().getMetaSchema(SchemaUris.PATCH_OP);
       JsonNode patchDocument = JsonHelper.readJsonDocument(requestBody);
       if (patchDocument == null)
@@ -1033,7 +1067,7 @@ class ResourceEndpointHandler
                                                                                               excludedAttributesList);
 
       Interceptor patchInterceptor = resourceHandler.getInterceptor(EndpointType.PATCH);
-      ResourceNode updatedResource = patchInterceptor.doAround(() -> {
+      updatedResource = patchInterceptor.doAround(() -> {
         ResourceNode resourceNode = null;
         if (serviceProvider.getETagConfig().isSupported())
         {
@@ -1087,16 +1121,28 @@ class ResourceEndpointHandler
     }
     catch (RequestContextException ex)
     {
+      if (resourceHandler != null && updatedResource != null)
+      {
+        resourceHandler.rollbackUpdate(updatedResource, context, ex);
+      }
       ErrorResponse errorResponse = new ErrorResponse(ex);
       ex.getValidationContext().writeToErrorResponse(errorResponse);
       return errorResponse;
     }
     catch (ScimException ex)
     {
+      if (resourceHandler != null && updatedResource != null)
+      {
+        resourceHandler.rollbackUpdate(updatedResource, context, ex);
+      }
       return new ErrorResponse(ex);
     }
     catch (Exception ex)
     {
+      if (resourceHandler != null && updatedResource != null)
+      {
+        resourceHandler.rollbackUpdate(updatedResource, context, ex);
+      }
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
   }
