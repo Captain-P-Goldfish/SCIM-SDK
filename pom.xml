@@ -719,7 +719,7 @@
                         <configuration>
                             <publishingServerId>maven-central</publishingServerId>
                             <autoPublish>false</autoPublish>
-                            <waitUntil>published</waitUntil>
+                            <waitUntil>uploaded</waitUntil>
                             <excludeArtifacts>
                                 <artifact>scim-sdk-samples</artifact>
                                 <artifact>scim-sdk-sample-common</artifact>
