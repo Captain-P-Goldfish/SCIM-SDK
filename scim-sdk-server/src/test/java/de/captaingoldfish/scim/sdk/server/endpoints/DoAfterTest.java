@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
+import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
@@ -207,5 +208,9 @@ public class DoAfterTest extends AbstractEndpointTest
                                                                null);
     Assertions.assertTrue(wasExecuted.get());
     Assertions.assertEquals(1, counter.get());
+    ResourceHandler resourceHandler = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.USER)
+                                                      .get()
+                                                      .getResourceHandlerImpl();
+    Mockito.verify(resourceHandler).createResource(Mockito.any(), Mockito.any());
   }
 }

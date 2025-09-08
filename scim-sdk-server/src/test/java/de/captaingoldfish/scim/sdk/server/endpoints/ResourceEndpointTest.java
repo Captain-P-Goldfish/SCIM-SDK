@@ -3517,7 +3517,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   }
 
   /**
-   * verifies that a bad request is returned if the the sent body is not a json object
+   * verifies that a bad request is returned if the sent body is not a json object
    */
   @Test
   public void testBadRequestOnNoneObjectRequestBody()
@@ -3543,6 +3543,10 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(errorMessage, errorResponse.getDetail().get());
     MatcherAssert.assertThat(errorResponse.getFieldErrors(), Matchers.anEmptyMap());
     MatcherAssert.assertThat(errorResponse.getErrorMessages(), Matchers.hasItem(errorMessage));
+    ResourceHandler resourceHandler = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.USER)
+                                                      .get()
+                                                      .getResourceHandlerImpl();
+    Mockito.verify(resourceHandler, Mockito.never()).createResource(Mockito.any(), Mockito.any());
   }
 
   /**

@@ -293,6 +293,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
     ErrorResponse errorResponse = (ErrorResponse)scimResponse;
     Assertions.assertEquals(exception, errorResponse.getScimException());
     Assertions.assertEquals(HttpStatus.CONFLICT, errorResponse.getHttpStatus());
+    ResourceHandler resourceHandler = resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER)
+                                                             .get()
+                                                             .getResourceHandlerImpl();
+    Mockito.verify(resourceHandler).createResource(Mockito.any(), Mockito.any());
   }
 
   /**
@@ -313,6 +317,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(InternalServerException.class, errorResponse.getScimException().getClass());
     Assertions.assertEquals(exception, errorResponse.getScimException().getCause());
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+    ResourceHandler resourceHandler = resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER)
+                                                             .get()
+                                                             .getResourceHandlerImpl();
+    Mockito.verify(resourceHandler).createResource(Mockito.any(), Mockito.any());
   }
 
   /**
@@ -2186,6 +2194,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
     MatcherAssert.assertThat(errorResponse.getScimException().getClass(),
                              Matchers.typeCompatibleWith(BadRequestException.class));
     Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    ResourceHandler resourceHandler = resourceEndpointHandler.getResourceTypeByName(ResourceTypeNames.USER)
+                                                             .get()
+                                                             .getResourceHandlerImpl();
+    Mockito.verify(resourceHandler, Mockito.never()).createResource(Mockito.any(), Mockito.any());
   }
 
   /**
