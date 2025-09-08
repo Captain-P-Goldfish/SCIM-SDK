@@ -718,7 +718,7 @@
                         <extensions>true</extensions>
                         <configuration>
                             <publishingServerId>maven-central</publishingServerId>
-                            <autoPublish>true</autoPublish>
+                            <autoPublish>false</autoPublish>
                             <waitUntil>published</waitUntil>
                             <excludeArtifacts>
                                 <artifact>scim-sdk-samples</artifact>
