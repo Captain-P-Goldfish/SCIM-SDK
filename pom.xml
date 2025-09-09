@@ -72,7 +72,7 @@
         <version.bouncy.castle>1.81</version.bouncy.castle>
 
         <!-- logging dependencies -->
-        <version.log4j2>2.25.0</version.log4j2>
+        <version.log4j2>2.25.1</version.log4j2>
         <version.slf4j>2.0.17</version.slf4j>
 
         <!-- test dependencies -->
