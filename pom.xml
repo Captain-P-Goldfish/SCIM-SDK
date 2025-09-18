@@ -57,7 +57,7 @@
         <!--suppress UnresolvedMavenProperty -->
         <formatter-path>${project.parent.basedir}</formatter-path>
 
-        <version.lombok>1.18.40</version.lombok>
+        <version.lombok>1.18.42</version.lombok>
 
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.18.0</version.apache.commons.lang3>
