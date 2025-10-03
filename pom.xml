@@ -710,7 +710,7 @@
                         </executions>
                     </plugin>
 
-                    <!-- Zentral-Publishing Plugin -->
+                    <!-- Central-Publishing Plugin -->
                     <plugin>
                         <groupId>org.sonatype.central</groupId>
                         <artifactId>central-publishing-maven-plugin</artifactId>
