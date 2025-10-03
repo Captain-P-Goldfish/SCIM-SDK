@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.springboot.sample.config;
 
 import java.util.Collections;
 
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

@@ -68,6 +68,7 @@ import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
+import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -480,6 +481,54 @@ public class PatchAddResourceHandlerTest implements FileReferences
     Assertions.assertEquals(2, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
     Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
     Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+  }
+
+  /**
+   * This test verifies that attributes can have underscores as starting character.
+   */
+  @DisplayName("Attribute names may have underscore '_' characters as starting character")
+  @Test
+  public void testUndersoresAreValidAsStartingCharacterForPatchAndSchemaAttributes()
+  {
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
+
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)allTypesSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    SchemaAttribute timeZoneAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("__timeZone")
+                                                              .mutability(Mutability.READ_WRITE)
+                                                              .build();
+    attributes.add(timeZoneAttribute);
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+    AllTypes allTypes = new AllTypes(true);
+
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(timeZoneAttribute.getName())
+                                                                                .value("4")
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.META));
+    Assertions.assertTrue(patchedAllTypes.has(timeZoneAttribute.getName()));
   }
 
   /**

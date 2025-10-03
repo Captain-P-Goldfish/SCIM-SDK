@@ -54,7 +54,7 @@ TEXT: '"' STRING '"';
 EXCLUDE: [ \b\t\n]+ -> skip ;
 
 
-fragment ALPHA: ([a-zA-Z]);
+fragment ALPHA: ([a-zA-Z_]);
 fragment INTEGER: '0' | [1-9] DIGIT*;
 fragment DIGIT: [0-9] ;
 fragment STRING: .+?;
