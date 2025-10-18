@@ -5,6 +5,7 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -267,6 +268,14 @@ public class ResourceType extends ResourceNode
       }
     }
     return Optional.empty();
+  }
+
+  /**
+   * @return true if the given attribute belongs to the main-schema of this resource-type, false else
+   */
+  public boolean isAttributeOfMainSchema(SchemaAttribute schemaAttribute)
+  {
+    return new HashSet<>(getMainSchema().getAttributeRegister().values()).contains(schemaAttribute);
   }
 
   /**
