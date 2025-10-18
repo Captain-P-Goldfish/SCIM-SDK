@@ -54,6 +54,17 @@ public class ServerResponse<T extends ScimObjectNode>
   private ErrorResponse errorResponse;
 
   /**
+   * the plaintext response
+   */
+  private String responseBody;
+
+  /**
+   * the http status code of the response
+   */
+  @Getter
+  private Integer httpStatus;
+
+  /**
    * if this response is a valid scim response
    */
   private Boolean validScimResponse;
@@ -84,6 +95,7 @@ public class ServerResponse<T extends ScimObjectNode>
                         Map<String, String> requiredResponseHeaders)
   {
     this.httpResponse = httpResponse;
+    this.httpStatus = httpResponse.getHttpStatusCode();
     this.requiredResponseHeaders = requiredResponseHeaders;
     this.success = expectedResponseCode && isValidScimResponse();
     this.type = type;
@@ -93,9 +105,30 @@ public class ServerResponse<T extends ScimObjectNode>
   public ServerResponse(HttpResponse httpResponse, boolean expectedResponseCode, T resource)
   {
     this.httpResponse = httpResponse;
+    this.httpStatus = httpResponse.getHttpStatusCode();
     this.success = expectedResponseCode;
     this.resource = resource;
     this.isResponseParseable = response -> false; // should never be called
+  }
+
+  public ServerResponse(boolean success,
+                        String responseBody,
+                        Boolean validScimResponse,
+                        Integer httpStatus,
+                        Class<T> type,
+                        Function<HttpResponse, Boolean> isResponseParseable,
+                        Map<String, String> requiredResponseHeaders)
+  {
+    this.httpResponse = null;
+    this.success = success;
+    this.resource = null;
+    this.errorResponse = null;
+    this.responseBody = responseBody;
+    this.httpStatus = httpStatus;
+    this.validScimResponse = validScimResponse;
+    this.type = type;
+    this.isResponseParseable = isResponseParseable;
+    this.requiredResponseHeaders = requiredResponseHeaders;
   }
 
   /**
@@ -179,15 +212,11 @@ public class ServerResponse<T extends ScimObjectNode>
    */
   public String getResponseBody()
   {
-    return httpResponse.getResponseBody();
-  }
-
-  /**
-   * the status code of the response
-   */
-  public int getHttpStatus()
-  {
-    return httpResponse.getHttpStatusCode();
+    if (responseBody == null)
+    {
+      responseBody = httpResponse.getResponseBody();
+    }
+    return responseBody;
   }
 
   /**
