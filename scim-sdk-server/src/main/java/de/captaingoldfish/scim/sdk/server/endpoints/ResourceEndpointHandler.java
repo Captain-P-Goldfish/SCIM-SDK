@@ -161,9 +161,17 @@ class ResourceEndpointHandler
     resourceHandler.setMaxResults(() -> serviceProvider.getFilterConfig().getMaxResults());
     resourceHandler.setGetResourceTypeByRef(resourceTypeRefValue -> {
       return getResourceTypeByName((String)resourceTypeRefValue).orElseGet(() -> {
+        if (resourceTypeRefValue == null)
+        {
+          return null;
+        }
         final String[] urlParts = ((String)resourceTypeRefValue).split("/");
-        final String resourceTypeEndpointOrV2 = "/" + urlParts[urlParts.length - 2];
         final String idOrResourceTypeEndpoint = "/" + urlParts[urlParts.length - 1];
+        if (urlParts.length < 2)
+        {
+          return resourceTypeFactory.getResourceType(idOrResourceTypeEndpoint);
+        }
+        final String resourceTypeEndpointOrV2 = "/" + urlParts[urlParts.length - 2];
         return Optional.ofNullable(resourceTypeFactory.getResourceType(resourceTypeEndpointOrV2))
                        .orElseGet(() -> resourceTypeFactory.getResourceType(idOrResourceTypeEndpoint));
       });

@@ -2977,13 +2977,18 @@ public class ResourceEndpointHandlerTest implements FileReferences
               ResourceTypeNames.GROUPS + "," + ResourceTypeNames.GROUPS,
               "https://localhost/scim/v2/Users/1" + "," + ResourceTypeNames.USER,
               "https://localhost/scim/v2/Groups/1" + "," + ResourceTypeNames.GROUPS,
-              "https://localhost/scim/v2/ServiceProviderConfig" + "," + ResourceTypeNames.SERVICE_PROVIDER_CONFIG})
+              "https://localhost/scim/v2/ServiceProviderConfig" + "," + ResourceTypeNames.SERVICE_PROVIDER_CONFIG,
+              ResourceTypeNames.USER + "s," + ResourceTypeNames.USER,
+              ResourceTypeNames.GROUPS + "s," + ResourceTypeNames.GROUPS, //
+              "unknown,", //
+              ","})
   public void testGetResourceTypeByReferenceWorks(String resourceTypeRef, String expectedResourceType)
   {
-    ResourceType resourceType1 = userHandler.getResourceTypeByRef(resourceTypeRef).get();
-    ResourceType resourceType2 = groupHandler.getResourceTypeByRef(resourceTypeRef).get();
+    ResourceType resourceType1 = userHandler.getResourceTypeByRef(resourceTypeRef).orElse(null);
+    ResourceType resourceType2 = groupHandler.getResourceTypeByRef(resourceTypeRef).orElse(null);
     Assertions.assertEquals(resourceType1, resourceType2);
-    Assertions.assertEquals(expectedResourceType, resourceType1.getName());
+    Assertions.assertEquals(expectedResourceType,
+                            Optional.ofNullable(resourceType1).map(ResourceType::getName).orElse(null));
   }
 
   /**
