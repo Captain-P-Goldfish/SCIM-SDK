@@ -579,16 +579,19 @@ public class ListBuilder<T extends ResourceNode>
     /**
      * this builder will represent the built filter expression
      */
+    @Getter
     private final StringBuilder filterString = new StringBuilder();
 
     /**
      * tells us how many parenthesis' have been opened so far
      */
+    @Getter
     private int openedParenthesis = 0;
 
     /**
      * tells us how many parenthesis' have been closed so far
      */
+    @Getter
     private int closedParenthesis = 0;
 
     public FilterBuilder(ListBuilder<T> listBuilder)
