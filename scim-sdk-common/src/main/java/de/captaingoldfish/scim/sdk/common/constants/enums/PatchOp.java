@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants.enums;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -33,7 +33,7 @@ public enum PatchOp
   {
     for ( PatchOp patchOp : PatchOp.values() )
     {
-      if (StringUtils.equalsIgnoreCase(value, patchOp.getValue()))
+      if (Strings.CI.equals(value, patchOp.getValue()))
       {
         return patchOp;
       }

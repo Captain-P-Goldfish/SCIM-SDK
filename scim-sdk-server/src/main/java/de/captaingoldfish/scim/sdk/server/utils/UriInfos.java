@@ -8,8 +8,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import lombok.Builder;
@@ -244,8 +245,7 @@ public class UriInfos
 
     String contentType = httpHeaders.keySet()
                                     .stream()
-                                    .filter(header -> StringUtils.equalsIgnoreCase(header,
-                                                                                   HttpHeader.CONTENT_TYPE_HEADER))
+                                    .filter(header -> Strings.CI.equals(header, HttpHeader.CONTENT_TYPE_HEADER))
                                     .findAny()
                                     .map(httpHeaders::get)
                                     .orElse(null);
@@ -263,9 +263,9 @@ public class UriInfos
       }
       else
       {
-        boolean hasScimContentType = StringUtils.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE);
-        boolean hasApplicationJsonContentType = StringUtils.startsWith(contentType,
-                                                                       HttpHeader.APPLICATION_JSON_CONTENT_TYPE);
+        boolean hasScimContentType = Strings.CS.startsWith(contentType, HttpHeader.SCIM_CONTENT_TYPE);
+        boolean hasApplicationJsonContentType = Strings.CS.startsWith(contentType,
+                                                                      HttpHeader.APPLICATION_JSON_CONTENT_TYPE);
         if (hasScimContentType)
         {
           // happy case

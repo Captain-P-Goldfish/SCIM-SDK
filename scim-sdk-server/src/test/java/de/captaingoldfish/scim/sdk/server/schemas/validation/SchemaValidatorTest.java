@@ -213,7 +213,7 @@ public class SchemaValidatorTest implements FileReferences
     log.trace(scimNode.getScimNodeName());
     if (validatedDocument.isArray() || validatedDocument.isObject())
     {
-      validatedDocument.fields().forEachRemaining(stringJsonNodeEntry -> {
+      validatedDocument.properties().forEach(stringJsonNodeEntry -> {
         validateJsonNodeIsScimNode(stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
       });
     }

@@ -220,11 +220,11 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, s) -> {
-      UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl("http://localhost/"
-                                                                     + httpExchange.getRequestURI().toString())
+      UriComponents uriComponents = UriComponentsBuilder.fromUriString("http://localhost/"
+                                                                       + httpExchange.getRequestURI().toString())
                                                         .build();
-      Assertions.assertEquals(uriComponents.getQueryParams().get("hello").get(0), "world");
-      Assertions.assertEquals(uriComponents.getQueryParams().get("world").get(0), "hello");
+      Assertions.assertEquals("world", uriComponents.getQueryParams().get("hello").get(0));
+      Assertions.assertEquals("hello", uriComponents.getQueryParams().get("world").get(0));
       wasCalled.set(true);
     });
 
@@ -253,11 +253,11 @@ public class ScimRequestBuilderTest extends HttpServerMockup
   {
     AtomicBoolean wasCalled = new AtomicBoolean(false);
     super.setVerifyRequestAttributes((httpExchange, s) -> {
-      UriComponents uriComponents = UriComponentsBuilder.fromHttpUrl("http://localhost/"
-                                                                     + httpExchange.getRequestURI().toString())
+      UriComponents uriComponents = UriComponentsBuilder.fromUriString("http://localhost/"
+                                                                       + httpExchange.getRequestURI().toString())
                                                         .build();
-      Assertions.assertEquals(uriComponents.getQueryParams().get("hello").get(0), "world");
-      Assertions.assertEquals(uriComponents.getQueryParams().get("world").get(0), "hello");
+      Assertions.assertEquals("world", uriComponents.getQueryParams().get("hello").get(0));
+      Assertions.assertEquals("hello", uriComponents.getQueryParams().get("world").get(0));
       wasCalled.set(true);
     });
 

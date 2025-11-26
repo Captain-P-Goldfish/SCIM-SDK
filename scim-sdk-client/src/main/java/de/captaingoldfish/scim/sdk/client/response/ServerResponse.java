@@ -6,6 +6,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -246,8 +247,7 @@ public class ServerResponse<T extends ScimObjectNode>
                  String.join(", ", headerNameList));
       }
       boolean isHeaderPresent = headerNameList.size() == 1
-                                && StringUtils.startsWithIgnoreCase(httpHeaders.get(headerNameList.get(0)),
-                                                                    expectedValue);
+                                && Strings.CI.startsWith(httpHeaders.get(headerNameList.get(0)), expectedValue);
       if (isHeaderPresent)
       {
         log.trace("Successfully validated {} header with value '{}'", headerName, expectedValue);

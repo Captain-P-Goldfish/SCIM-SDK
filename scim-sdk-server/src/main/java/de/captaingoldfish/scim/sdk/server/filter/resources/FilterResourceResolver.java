@@ -10,7 +10,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.LongNode;
@@ -332,99 +332,99 @@ public class FilterResourceResolver
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.equals(string, attributeExpressionLeaf.getValue());
+            return Strings.CS.equals(string, attributeExpressionLeaf.getValue());
           }
           else
           {
-            return StringUtils.equalsIgnoreCase(string, attributeExpressionLeaf.getValue());
+            return Strings.CI.equals(string, attributeExpressionLeaf.getValue());
           }
         });
       case NE:
         return !evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.equals(string, attributeExpressionLeaf.getValue());
+            return Strings.CS.equals(string, attributeExpressionLeaf.getValue());
           }
           else
           {
-            return StringUtils.equalsIgnoreCase(string, attributeExpressionLeaf.getValue());
+            return Strings.CI.equals(string, attributeExpressionLeaf.getValue());
           }
         });
       case EW:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.endsWith(string, attributeExpressionLeaf.getValue());
+            return Strings.CS.endsWith(string, attributeExpressionLeaf.getValue());
           }
           else
           {
-            return StringUtils.endsWithIgnoreCase(string, attributeExpressionLeaf.getValue());
+            return Strings.CI.endsWith(string, attributeExpressionLeaf.getValue());
           }
         });
       case SW:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.startsWith(string, attributeExpressionLeaf.getValue());
+            return Strings.CS.startsWith(string, attributeExpressionLeaf.getValue());
           }
           else
           {
-            return StringUtils.startsWithIgnoreCase(string, attributeExpressionLeaf.getValue());
+            return Strings.CI.startsWith(string, attributeExpressionLeaf.getValue());
           }
         });
       case CO:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.contains(string, attributeExpressionLeaf.getValue());
+            return Strings.CS.contains(string, attributeExpressionLeaf.getValue());
           }
           else
           {
-            return StringUtils.containsIgnoreCase(string, attributeExpressionLeaf.getValue());
+            return Strings.CI.contains(string, attributeExpressionLeaf.getValue());
           }
         });
       case LT:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) < 0;
+            return Strings.CS.compare(string, attributeExpressionLeaf.getValue()) < 0;
           }
           else
           {
-            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) < 0;
+            return Strings.CI.compare(string, attributeExpressionLeaf.getValue()) < 0;
           }
         });
       case LE:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) <= 0;
+            return Strings.CS.compare(string, attributeExpressionLeaf.getValue()) <= 0;
           }
           else
           {
-            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) <= 0;
+            return Strings.CI.compare(string, attributeExpressionLeaf.getValue()) <= 0;
           }
         });
       case GT:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) > 0;
+            return Strings.CS.compare(string, attributeExpressionLeaf.getValue()) > 0;
           }
           else
           {
-            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) > 0;
+            return Strings.CI.compare(string, attributeExpressionLeaf.getValue()) > 0;
           }
         });
       case GE:
         return evaluateString(jsonNode, string -> {
           if (attributeExpressionLeaf.getSchemaAttribute().isCaseExact())
           {
-            return StringUtils.compare(string, attributeExpressionLeaf.getValue()) >= 0;
+            return Strings.CS.compare(string, attributeExpressionLeaf.getValue()) >= 0;
           }
           else
           {
-            return StringUtils.compareIgnoreCase(string, attributeExpressionLeaf.getValue()) >= 0;
+            return Strings.CI.compare(string, attributeExpressionLeaf.getValue()) >= 0;
           }
         });
       default:

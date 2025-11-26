@@ -164,7 +164,7 @@ public class ErrorResponse extends ScimResponse
       return new HashMap<>();
     }
     Map<String, List<String>> errorMessageList = new HashMap<>();
-    fieldErrors.fields().forEachRemaining(nodeDefinition -> {
+    fieldErrors.properties().forEach(nodeDefinition -> {
       List<String> errorMessages = new ArrayList<>();
       nodeDefinition.getValue().forEach(node -> errorMessages.add(node.textValue()));
       errorMessageList.put(nodeDefinition.getKey(), errorMessages);

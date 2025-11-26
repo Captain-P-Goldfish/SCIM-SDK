@@ -691,7 +691,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     {
       return newNode;
     }
-    oldNode.fields().forEachRemaining(stringJsonNodeEntry -> {
+    oldNode.properties().forEach(stringJsonNodeEntry -> {
       final String key = stringJsonNodeEntry.getKey();
       final JsonNode value = stringJsonNodeEntry.getValue();
       JsonNode newSubNode = newNode.get(key);
@@ -830,7 +830,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
         {
           ObjectNode matchingNode = matchingComplexIndexNode.getObjectNode();
           ObjectNode originalNode = JsonHelper.readJsonDocument(matchingNode.toString(), ObjectNode.class);
-          complexNode.fields().forEachRemaining(entry -> {
+          complexNode.properties().forEach(entry -> {
             if (PatchOp.REPLACE.equals(patchOp))
             {
               matchingNode.set(entry.getKey(), entry.getValue());

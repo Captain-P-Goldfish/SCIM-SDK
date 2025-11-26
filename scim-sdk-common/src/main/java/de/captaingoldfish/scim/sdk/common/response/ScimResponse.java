@@ -36,7 +36,7 @@ public abstract class ScimResponse extends AbstractSchemasHolder
     super();
     if (responseNode != null)
     {
-      responseNode.fields().forEachRemaining(childNode -> {
+      responseNode.properties().forEach(childNode -> {
         this.set(childNode.getKey(), childNode.getValue());
       });
     }

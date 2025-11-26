@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants.enums;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import lombok.Getter;
 
@@ -47,7 +47,7 @@ public enum ReferenceTypes
   {
     for ( ReferenceTypes referenceTypes : ReferenceTypes.values() )
     {
-      if (StringUtils.equalsIgnoreCase(value, referenceTypes.getValue()))
+      if (Strings.CI.equals(value, referenceTypes.getValue()))
       {
         return referenceTypes;
       }

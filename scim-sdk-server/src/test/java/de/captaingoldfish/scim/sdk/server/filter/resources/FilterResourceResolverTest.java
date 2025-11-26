@@ -15,6 +15,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -2056,7 +2057,7 @@ public class FilterResourceResolverTest implements FileReferences
                                          Comparator comparator,
                                          User... expectedValues)
   {
-    boolean isBoolean = StringUtils.equals(value, "true") || StringUtils.equals(value, "false");
+    boolean isBoolean = Strings.CS.equals(value, "true") || Strings.CS.equals(value, "false");
     final String filter = attributeName + " " + comparator
                           + (value == null ? "" : (isBoolean ? " " + value : " \"" + value + "\""));
     return DynamicTest.dynamicTest(filter, () -> {
