@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.springboot.sample.config;
 
 import java.util.Collections;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
@@ -79,9 +80,10 @@ public class WebAppConfig
    * @return the user resource type
    */
   @Bean
-  public ResourceType getUserResourceType(ResourceEndpoint resourceEndpoint)
+  public ResourceType getUserResourceType(ResourceEndpoint resourceEndpoint,
+                                          @Value("${add-test-users:true}") boolean addTestUsers)
   {
-    ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler()));
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(new UserEndpointDefinition(new UserHandler(addTestUsers)));
     userResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     return userResourceType;
   }
@@ -94,9 +96,10 @@ public class WebAppConfig
    * @return the group resource type
    */
   @Bean
-  public ResourceType getGroupResourceType(ResourceEndpoint resourceEndpoint)
+  public ResourceType getGroupResourceType(ResourceEndpoint resourceEndpoint,
+                                           @Value("${add-test-groups:true}") boolean addTestGroups)
   {
-    ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler()));
+    ResourceType groupResourceType = resourceEndpoint.registerEndpoint(new GroupEndpointDefinition(new GroupHandler(addTestGroups)));
     groupResourceType.setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).autoSorting(true).build());
     return groupResourceType;
   }

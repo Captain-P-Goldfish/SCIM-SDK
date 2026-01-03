@@ -50,8 +50,12 @@ public class GroupHandler extends ResourceHandler<Group>
   /**
    * adds approximately 5000 groups into the in memory map
    */
-  public GroupHandler()
+  public GroupHandler(boolean addTestGroups)
   {
+    if (!addTestGroups)
+    {
+      return;
+    }
     try (InputStream inputStream = getClass().getResourceAsStream("/groupnames.txt");
       InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
       BufferedReader reader = new BufferedReader(inputStreamReader))

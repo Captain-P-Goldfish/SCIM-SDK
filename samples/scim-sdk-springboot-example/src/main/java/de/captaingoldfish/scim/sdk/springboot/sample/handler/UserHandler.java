@@ -46,11 +46,16 @@ public class UserHandler extends ResourceHandler<User>
   @Getter
   private Map<String, User> usernameMap = Collections.synchronizedMap(new HashMap<>());
 
+
   /**
    * adds approximately 5000 users into the in memory map
    */
-  public UserHandler()
+  public UserHandler(boolean addTestUsers)
   {
+    if (!addTestUsers)
+    {
+      return;
+    }
     try (InputStream inputStream = getClass().getResourceAsStream("/firstnames.txt");
       InputStreamReader inputStreamReader = new InputStreamReader(inputStream);
       BufferedReader reader = new BufferedReader(inputStreamReader))
