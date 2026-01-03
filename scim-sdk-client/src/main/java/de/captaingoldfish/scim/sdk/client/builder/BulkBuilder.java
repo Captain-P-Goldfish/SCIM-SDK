@@ -330,9 +330,9 @@ public class BulkBuilder extends RequestBuilder<BulkResponse>
    * {@inheritDoc}
    */
   @Override
-  public ServerResponse<BulkResponse> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
+  public <R extends ServerResponse<BulkResponse>> R sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
   {
-    return sendRequestWithMultiHeaders(httpHeaders, null, false);
+    return (R)sendRequestWithMultiHeaders(httpHeaders, null, false);
   }
 
   /**

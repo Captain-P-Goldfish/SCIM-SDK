@@ -33,6 +33,7 @@ public class ScimRequestBuilder implements AutoCloseable
   /**
    * must contain the baseUrl to the scim service
    */
+  @Getter
   private final String baseUrl;
 
   /**

@@ -17,7 +17,6 @@ import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -36,6 +35,7 @@ public class ServerResponse<T extends ScimObjectNode>
   /**
    * the original http response object
    */
+  @Getter
   private final HttpResponse httpResponse;
 
   /**
@@ -73,20 +73,21 @@ public class ServerResponse<T extends ScimObjectNode>
   /**
    * the expected response type
    */
-  @Getter(AccessLevel.PROTECTED)
+  @Getter
   private Class<T> type;
 
   /**
    * an implementation provided by a request builder that tells this response if the response body may be parsed
    * into a resource object
    */
+  @Getter
   private Function<HttpResponse, Boolean> isResponseParseable;
 
   /**
    * these headers are expected within the response in order to make sure that the content-type of a response
    * matches a scim response
    */
-  @Getter(AccessLevel.PROTECTED)
+  @Getter
   private Map<String, String> requiredResponseHeaders;
 
   public ServerResponse(HttpResponse httpResponse,
@@ -103,11 +104,11 @@ public class ServerResponse<T extends ScimObjectNode>
     this.isResponseParseable = isResponseParseable;
   }
 
-  public ServerResponse(HttpResponse httpResponse, boolean expectedResponseCode, T resource)
+  public ServerResponse(HttpResponse httpResponse, boolean success, T resource)
   {
     this.httpResponse = httpResponse;
     this.httpStatus = httpResponse.getHttpStatusCode();
-    this.success = expectedResponseCode;
+    this.success = success;
     this.resource = resource;
     this.isResponseParseable = response -> false; // should never be called
   }
@@ -120,7 +121,20 @@ public class ServerResponse<T extends ScimObjectNode>
                         Function<HttpResponse, Boolean> isResponseParseable,
                         Map<String, String> requiredResponseHeaders)
   {
-    this.httpResponse = null;
+    this(null, success, responseBody, validScimResponse, httpStatus, type, isResponseParseable,
+         requiredResponseHeaders);
+  }
+
+  public ServerResponse(HttpResponse httpResponse,
+                        boolean success,
+                        String responseBody,
+                        Boolean validScimResponse,
+                        Integer httpStatus,
+                        Class<T> type,
+                        Function<HttpResponse, Boolean> isResponseParseable,
+                        Map<String, String> requiredResponseHeaders)
+  {
+    this.httpResponse = httpResponse;
     this.success = success;
     this.resource = null;
     this.errorResponse = null;

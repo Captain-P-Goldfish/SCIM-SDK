@@ -178,7 +178,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
    * send all patch-requests one by one to the remote SCIM provider.
    */
   @Override
-  public ServerResponse<T> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
+  public <R extends ServerResponse<T>> R sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
   {
     if (operations.isEmpty())
     {
@@ -223,7 +223,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
                  i * scimClientConfig.getMaxPatchOperationsPerRequest());
       }
     }
-    return patchResponse;
+    return (R)patchResponse;
   }
 
   /**

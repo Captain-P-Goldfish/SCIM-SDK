@@ -116,7 +116,7 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
    * @return the response from the given request. A response must not be returned in any case from the service
    *         provider so the returned type is still optional
    */
-  public ServerResponse<T> sendRequest()
+  public <R extends ServerResponse<T>> R sendRequest()
   {
     return this.sendRequestWithMultiHeaders(Collections.emptyMap());
   }
@@ -128,7 +128,7 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
    * @return the response from the given request. A response must not be returned in any case from the service
    *         provider so the returned type is still optional
    */
-  public ServerResponse<T> sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
+  public <R extends ServerResponse<T>> R sendRequestWithMultiHeaders(Map<String, String[]> httpHeaders)
   {
     HttpUriRequest request = getHttpUriRequest();
     request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
@@ -139,7 +139,7 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
                         scimHttpClient.getScimClientConfig().getBasicAuth().getAuthorizationHeaderValue());
     }
     HttpResponse response = scimHttpClient.sendRequest(request);
-    return toResponse(response);
+    return (R)toResponse(response);
   }
 
   /**
@@ -180,7 +180,7 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
    * @return the response from the given request. A response must not be returned in any case from the service
    *         provider so the returned type is still optional
    */
-  public ServerResponse<T> sendRequest(Map<String, String> headers)
+  public <R extends ServerResponse<T>> R sendRequest(Map<String, String> headers)
   {
     Map<String, String[]> multiHeader = new HashMap<>();
     headers.forEach((key, value) -> multiHeader.put(key, new String[]{value}));
@@ -190,10 +190,20 @@ public abstract class RequestBuilder<T extends ScimObjectNode>
   /**
    * moved into its own method to override the returned class in the list-builder that has a sub-generic type
    */
-  protected ServerResponse<T> toResponse(HttpResponse response)
+  protected <R extends ServerResponse<T>> R toResponse(HttpResponse response)
   {
-    return new ServerResponse<>(response, isExpectedResponseCode(response.getHttpStatusCode()), responseEntityType,
-                                isResponseParseable(), getRequiredResponseHeaders());
+    ServerResponse<T> serverResponse = new ServerResponse<>(response,
+                                                            isExpectedResponseCode(response.getHttpStatusCode()),
+                                                            responseEntityType, isResponseParseable(),
+                                                            getRequiredResponseHeaders());
+    if (scimHttpClient.getScimClientConfig().getResponseConverter() == null)
+    {
+      return (R)serverResponse;
+    }
+    else
+    {
+      return (R)scimHttpClient.getScimClientConfig().getResponseConverter().apply(serverResponse);
+    }
   }
 
   /**

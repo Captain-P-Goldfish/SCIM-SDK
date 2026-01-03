@@ -5,7 +5,7 @@
     <parent>
         <groupId>de.captaingoldfish</groupId>
         <artifactId>scim-sdk-samples</artifactId>
-        <version>1.28.2-SNAPSHOT</version>
+        <version>1.29.0-SNAPSHOT</version>
     </parent>
 
     <artifactId>scim-sdk-sample-common</artifactId>

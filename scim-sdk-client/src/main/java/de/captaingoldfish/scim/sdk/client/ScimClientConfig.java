@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.net.ssl.HostnameVerifier;
 
@@ -16,6 +17,8 @@ import de.captaingoldfish.scim.sdk.client.http.BasicAuth;
 import de.captaingoldfish.scim.sdk.client.http.ConfigManipulator;
 import de.captaingoldfish.scim.sdk.client.http.ProxyHelper;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreWrapper;
+import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -135,6 +138,41 @@ public class ScimClientConfig
    */
   private int maxPatchOperationsPerRequest;
 
+  // @formatter:off
+  /**
+   * an optional converter method that allows to modify the responses into specific customized responses for
+   * special use-cases. Here is an example of how to make use of it:
+   *
+   * <pre>
+   *
+   * {@code
+   *
+   * @Data
+   * @EqualsAndHashCode(callSuper = true)
+   * public class RemoteProviderResponse<T extends ScimObjectNode> extends ServerResponse<T>
+   * {
+   *
+   *   private Exception exception;
+   *
+   *
+   *   public RemoteProviderResponse(ServerResponse<T> serverResponse)
+   *   {
+   *     super(serverResponse.getHttpResponse(), serverResponse.isSuccess(), serverResponse.getResponseBody(),
+   *           serverResponse.isValidScimResponse(), serverResponse.getHttpStatus(), serverResponse.getType(),
+   *           serverResponse.getIsResponseParseable(), serverResponse.getRequiredResponseHeaders());
+   *   }
+   *
+   *   public static Function<ServerResponse<? extends ScimObjectNode>, ? extends ServerResponse<? extends ScimObjectNode>> getResponseConverter()
+   *   {
+   *     return RemoteProviderResponse::new;
+   *   }
+   * }
+   * }
+   * </pre>
+   */
+   // @formatter:on
+  private Function<ServerResponse<? extends ScimObjectNode>, ? extends ServerResponse<? extends ScimObjectNode>> responseConverter;
+
   @Builder
   public ScimClientConfig(Integer requestTimeout,
                           Integer socketTimeout,
@@ -153,7 +191,8 @@ public class ScimClientConfig
                           Map<String, String> expectedHttpResponseHeaders,
                           String tlsVersion,
                           HttpClientBuilder httpClientBuilder,
-                          int maxPatchOperationsPerRequest)
+                          int maxPatchOperationsPerRequest,
+                          Function<ServerResponse<? extends ScimObjectNode>, ? extends ServerResponse<? extends ScimObjectNode>> responseConverter)
   {
     this.requestTimeout = requestTimeout == null ? DEFAULT_TIMEOUT : requestTimeout;
     this.socketTimeout = socketTimeout == null ? DEFAULT_TIMEOUT : socketTimeout;
@@ -172,6 +211,7 @@ public class ScimClientConfig
     this.tlsVersion = Optional.ofNullable(tlsVersion).map(StringUtils::stripToNull).orElse("TLSv1.2");
     this.httpClientBuilder = httpClientBuilder;
     this.maxPatchOperationsPerRequest = maxPatchOperationsPerRequest;
+    this.responseConverter = responseConverter;
   }
 
   /**
