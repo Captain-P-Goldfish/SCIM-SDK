@@ -17,6 +17,7 @@ import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
@@ -193,14 +194,14 @@ public class UriInfos
     {
       return resourceType;
     }
-    throw new BadRequestException(String.format("the request url '%s' does not point to a registered resource type. "
-                                                + "Registered resource types are: [%s]",
-                                                String.join("/", urlParts),
-                                                resourceTypeFactory.getAllResourceTypes()
-                                                                   .stream()
-                                                                   .map(ResourceType::getEndpoint)
-                                                                   .collect(Collectors.joining(","))),
-                                  null, ScimType.Custom.INVALID_PARAMETERS);
+    throw new ResourceNotFoundException(String.format("the request url '%s' does not point to a registered resource type. "
+                                                      + "Registered resource types are: [%s]",
+                                                      String.join("/", urlParts),
+                                                      resourceTypeFactory.getAllResourceTypes()
+                                                                         .stream()
+                                                                         .map(ResourceType::getEndpoint)
+                                                                         .collect(Collectors.joining(","))),
+                                        null, ScimType.Custom.INVALID_PARAMETERS);
   }
 
   /**

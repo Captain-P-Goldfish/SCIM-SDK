@@ -1,12 +1,9 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,11 +18,11 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
-import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
-import de.captaingoldfish.scim.sdk.common.exceptions.ScimException;
+import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -136,7 +133,7 @@ public class UriInfosTest
   public void testUnknownResourceType(String unknownPath, String id)
   {
     final String url = BASE_URI + unknownPath + StringUtils.stripToEmpty(id);
-    BadRequestException ex = Assertions.assertThrows(BadRequestException.class, () -> {
+    ResourceNotFoundException ex = Assertions.assertThrows(ResourceNotFoundException.class, () -> {
       UriInfos.getRequestUrlInfos(resourceTypeFactory, url, HttpMethod.GET, httpHeaders, false);
     });
 
