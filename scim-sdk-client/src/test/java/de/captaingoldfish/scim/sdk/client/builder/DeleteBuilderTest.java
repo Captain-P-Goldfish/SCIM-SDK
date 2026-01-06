@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -55,6 +56,29 @@ public class DeleteBuilderTest extends HttpServerMockup
     {
       response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class, scimHttpClient).sendRequest();
     }
+    Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+  }
+
+  /**
+   * verifies simply that the request is setup correctly for simple cases even if the id needs to be url encoded
+   */
+  @Test
+  public void testSimpleDeleteRequestSuccessWithUrlEncodedId()
+  {
+    final String id = "abc|def";
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+
+    ServerResponse<User> response = new DeleteBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                                        scimHttpClient).sendRequest();
     Assertions.assertEquals(HttpStatus.NO_CONTENT, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNull(response.getResource());

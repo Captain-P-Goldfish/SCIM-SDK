@@ -25,6 +25,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -70,8 +71,8 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
                       Class<T> responseEntityType,
                       ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
-          scimHttpClient);
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + EncodingUtils.urlEncode(resourceId)),
+          responseEntityType, scimHttpClient);
     operations = new ArrayList<>();
     this.fullUrl = null;
   }

@@ -58,6 +58,32 @@ public class UpdateBuilderTest extends HttpServerMockup
   }
 
   /**
+   * verifies that a resource can successfully be updated even if the id needs to be url encoded
+   */
+  @Test
+  public void testUpdateResourceSuccessWithUrlEncodedId()
+  {
+    final String id = "abc|def";
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    User updateUser = User.builder()
+                          .userName(user.getUserName().get())
+                          .name(Name.builder().givenName("goldfish").build())
+                          .build();
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ServerResponse<User> response = new UpdateBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                                        scimHttpClient).setResource(updateUser).sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+  }
+
+  /**
    * verifies that an error response is correctly parsed
    */
   @ParameterizedTest

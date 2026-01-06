@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
+import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 
 
 /**
@@ -49,8 +50,8 @@ public class UpdateBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
                        Class<T> responseEntityType,
                        ScimHttpClient scimHttpClient)
   {
-    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + resourceId), responseEntityType,
-          scimHttpClient);
+    super(baseUrl, endpoint + (StringUtils.isBlank(resourceId) ? "" : "/" + EncodingUtils.urlEncode(resourceId)),
+          responseEntityType, scimHttpClient);
     this.fullUrl = null;
   }
 

@@ -5,6 +5,7 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
@@ -54,6 +55,25 @@ public class GetBuilderTest extends HttpServerMockup
     {
       response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class, scimHttpClient).sendRequest();
     }
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertNotNull(response.getResource());
+    Assertions.assertNull(response.getErrorResponse());
+  }
+
+  @Test
+  public void testGetRequestWithUrlEncodedId()
+  {
+    final String id = "abc|def";
+    Meta meta = Meta.builder().created(Instant.now()).lastModified(Instant.now()).build();
+    User user = User.builder().id(id).userName(UUID.randomUUID().toString()).meta(meta).build();
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    userHandler.getInMemoryMap().put(id, user);
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ServerResponse<User> response = new GetBuilder<>(getServerUrl(), EndpointPaths.USERS, id, User.class,
+                                                     scimHttpClient).sendRequest();
     Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());

@@ -135,6 +135,59 @@ public class PatchBuilderTest extends HttpServerMockup
   }
 
   /**
+   * verifies that a patch operation can successfully be applied to the current user even if the id needs to be
+   * url encoded
+   */
+  @Test
+  public void testBuildPatchOperationWithUrlEncodedId()
+  {
+    UserHandler userHandler = (UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl();
+    // get the id of an existing user
+    final String userId = "abc|def";
+
+    User currentUser = User.builder().id(userId).userName("patch-test").build();
+    userHandler.getInMemoryMap().put(userId, currentUser);
+
+    PatchBuilder<User> patchBuilder = new PatchBuilder<>(getServerUrl(), EndpointPaths.USERS, userId, User.class,
+                                                         scimHttpClient);
+    final String emailValue = "happy.day@scim-sdk.de";
+    final String emailType = "fun";
+    final boolean emailPrimary = true;
+    final String givenName = "Link";
+    final String locale = "JAP";
+
+    User addingResource = User.builder()
+                              .emails(Collections.singletonList(Email.builder()
+                                                                     .value(emailValue)
+                                                                     .type(emailType)
+                                                                     .primary(emailPrimary)
+                                                                     .build()))
+                              .build();
+    ServerResponse<User> response = patchBuilder.addOperation()
+                                                .path("name.givenname")
+                                                .op(PatchOp.ADD)
+                                                .value(givenName)
+                                                .next()
+                                                .path("locale")
+                                                .op(PatchOp.REPLACE)
+                                                .value(locale)
+                                                .next()
+                                                .op(PatchOp.ADD)
+                                                .valueNode(addingResource)
+                                                .build()
+                                                .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertNotNull(response.getResource());
+    User patchedUser = response.getResource();
+    Assertions.assertEquals(givenName, patchedUser.getName().flatMap(Name::getGivenName).orElse(null));
+    Assertions.assertEquals(locale, patchedUser.getLocale().orElse(null));
+    Assertions.assertEquals(1, patchedUser.getEmails().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals(emailValue, patchedUser.getEmails().get(0).getValue().orElse(null));
+    Assertions.assertEquals(emailType, patchedUser.getEmails().get(0).getType().orElse(null));
+    Assertions.assertEquals(emailPrimary, patchedUser.getEmails().get(0).isPrimary());
+  }
+
+  /**
    * verifies that the method
    * {@link de.captaingoldfish.scim.sdk.client.builder.PatchBuilder.PatchOperationBuilder#valueNodes(List)} will
    * produce the expected correct result by adding the list-entries into an array-node that will then be sent

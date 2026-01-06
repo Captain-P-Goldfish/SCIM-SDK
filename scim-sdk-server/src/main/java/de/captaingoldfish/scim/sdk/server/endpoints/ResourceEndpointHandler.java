@@ -1213,7 +1213,7 @@ class ResourceEndpointHandler
   {
     return (resourceId, resourceName) -> {
       Optional<ResourceType> resourceType = resourceTypeFactory.getResourceTypeByName(resourceName);
-      String id = StringUtils.isBlank(resourceId) ? "" : "/" + resourceId;
+      String id = StringUtils.isBlank(resourceId) ? "" : "/" + EncodingUtils.urlEncode(resourceId);
       return resourceType.map(jsonNodes -> baseUrl.get() + jsonNodes.getEndpoint() + id).orElse(null);
     };
   }
