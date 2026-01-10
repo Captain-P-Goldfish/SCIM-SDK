@@ -89,6 +89,14 @@ public class ErrorResponse extends ScimResponse
    */
   public void setStatus(int status)
   {
+    setAttribute(AttributeNames.RFC7643.STATUS, String.valueOf(status));
+  }
+
+  /**
+   * The HTTP status code (see Section 6 of [RFC7231]) expressed as a JSON string. REQUIRED.
+   */
+  public void setStatus(String status)
+  {
     setAttribute(AttributeNames.RFC7643.STATUS, status);
   }
 
