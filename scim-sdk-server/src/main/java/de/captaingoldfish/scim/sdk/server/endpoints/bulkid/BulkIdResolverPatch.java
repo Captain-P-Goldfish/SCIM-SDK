@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -167,8 +167,8 @@ class BulkIdResolverPatch extends BulkIdResolverAbstract<PatchOpRequest>
     for ( int i = 0 ; i < values.size() ; i++ )
     {
       String operationValue = values.get(i);
-      boolean containsBulkIdReference = Strings.CS.contains(operationValue,
-                                                            String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+      boolean containsBulkIdReference = StringUtils.contains(operationValue,
+                                                             String.format("%s:", AttributeNames.RFC7643.BULK_ID));
       if (containsBulkIdReference)
       {
         BulkIdReferenceWrapper wrapper = new BulkIdReferencePatchNodeWrapper(operation, operationValue, i);

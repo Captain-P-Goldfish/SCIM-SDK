@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.server.sort;
 import java.util.Comparator;
 import java.util.Optional;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -81,12 +81,12 @@ public class ResourceNodeComparator implements Comparator<ResourceNode>
       default:
         if (schemaAttribute.isCaseExact())
         {
-          compare = Strings.CS.compare(attribute1.asText(), attribute2.asText());
+          compare = StringUtils.compare(attribute1.asText(), attribute2.asText());
           return ascending ? compare : -compare;
         }
         else
         {
-          compare = Strings.CI.compare(attribute1.asText(), attribute2.asText());
+          compare = StringUtils.compareIgnoreCase(attribute1.asText(), attribute2.asText());
           return ascending ? compare : -compare;
         }
     }

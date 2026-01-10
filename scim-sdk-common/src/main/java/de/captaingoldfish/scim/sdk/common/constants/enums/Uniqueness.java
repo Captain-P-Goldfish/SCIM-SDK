@@ -3,7 +3,6 @@ package de.captaingoldfish.scim.sdk.common.constants.enums;
 import org.apache.commons.lang3.StringUtils;
 
 import lombok.Getter;
-import org.apache.commons.lang3.Strings;
 
 
 // @formatter:off
@@ -51,7 +50,7 @@ public enum Uniqueness
   {
     for ( Uniqueness uniqueness : Uniqueness.values() )
     {
-      if (Strings.CI.equals(value, uniqueness.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, uniqueness.getValue()))
       {
         return uniqueness;
       }

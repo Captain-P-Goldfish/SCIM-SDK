@@ -11,7 +11,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
@@ -372,7 +371,7 @@ public class ListBuilder<T extends ResourceNode>
       StringBuilder queryBuilder = new StringBuilder();
       if (!listBuilder.requestParameters.isEmpty())
       {
-        if (Strings.CS.contains(listBuilder.fullUrl, "?"))
+        if (StringUtils.contains(listBuilder.fullUrl, "?"))
         {
           queryBuilder.append("&");
         }

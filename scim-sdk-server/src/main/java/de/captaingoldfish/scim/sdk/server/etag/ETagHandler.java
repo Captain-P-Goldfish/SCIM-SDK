@@ -10,7 +10,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -174,12 +173,13 @@ public class ETagHandler
   {
     String ifMatchValue = httpHeaders.keySet()
                                      .stream()
-                                     .filter(header -> Strings.CI.equals(header, HttpHeader.IF_MATCH_HEADER))
+                                     .filter(header -> StringUtils.equalsIgnoreCase(header, HttpHeader.IF_MATCH_HEADER))
                                      .findAny()
                                      .orElse(null);
     String ifNoneMatchValue = httpHeaders.keySet()
                                          .stream()
-                                         .filter(header -> Strings.CI.equals(header, HttpHeader.IF_NONE_MATCH_HEADER))
+                                         .filter(header -> StringUtils.equalsIgnoreCase(header,
+                                                                                        HttpHeader.IF_NONE_MATCH_HEADER))
                                          .findAny()
                                          .orElse(null);
     if (ifMatchValue != null && ifNoneMatchValue != null)

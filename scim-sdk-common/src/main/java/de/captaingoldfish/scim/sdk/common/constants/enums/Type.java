@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants.enums;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import de.captaingoldfish.scim.sdk.common.exceptions.UnknownValueException;
 import lombok.Getter;
@@ -44,7 +44,7 @@ public enum Type
   {
     for ( Type type : Type.values() )
     {
-      if (Strings.CI.equals(value, type.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, type.getValue()))
       {
         return type;
       }

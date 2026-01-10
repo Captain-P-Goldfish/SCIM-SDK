@@ -3,7 +3,6 @@ package de.captaingoldfish.scim.sdk.common.etag;
 import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
@@ -38,7 +37,7 @@ public class ETag extends ScimTextNode
   public ETag(Boolean weak, String tag)
   {
     super(null, getEntityTag(weak == null ? true : weak, tag));
-    if (Strings.CS.contains(tag, "\""))
+    if (StringUtils.contains(tag, "\""))
     {
       throw new BadRequestException("Please omit the quotes in the entity tag value '" + tag + "'", null,
                                     ScimType.RFC7644.INVALID_VALUE);
@@ -75,7 +74,7 @@ public class ETag extends ScimTextNode
                                     + "RFC7232 for more detailed information of entity tags", null,
                                     ScimType.RFC7644.INVALID_VALUE);
     }
-    boolean weak = Strings.CS.startsWith(version, WEAK_IDENTIFIER) || !Strings.CS.startsWith(version, "\"");
+    boolean weak = StringUtils.startsWith(version, WEAK_IDENTIFIER) || !StringUtils.startsWith(version, "\"");
     String tag = Optional.ofNullable(StringUtils.stripToNull(version))
                          .map(s -> s.replaceFirst("^(" + WEAK_IDENTIFIER + ")?\"(.*?)\"", "$2"))
                          .orElse(null);

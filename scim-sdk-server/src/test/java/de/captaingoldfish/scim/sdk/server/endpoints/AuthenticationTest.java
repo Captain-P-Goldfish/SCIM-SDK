@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -206,7 +206,8 @@ public class AuthenticationTest extends AbstractEndpointTest
     {
       String authorization = httpHeaders.get(HttpHeader.AUTHORIZATION);
       return Optional.ofNullable(authorization)
-                     .map(auth -> Strings.CI.startsWith(auth, "basic ") && Strings.CS.endsWith(auth, "MTox"))
+                     .map(auth -> StringUtils.startsWithIgnoreCase(auth, "basic ")
+                                  && StringUtils.endsWith(auth, "MTox"))
                      .orElse(false);
     }
 

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -195,7 +195,7 @@ public abstract class BulkIdResolverAbstract<T extends JsonNode>
    */
   protected final boolean containsBulkIdReference(JsonNode jsonNode)
   {
-    return Strings.CS.contains(jsonNode.toString(), String.format("\"%s:", AttributeNames.RFC7643.BULK_ID));
+    return StringUtils.contains(jsonNode.toString(), String.format("\"%s:", AttributeNames.RFC7643.BULK_ID));
   }
 
   protected void checkForBulkIdReferenceValidity(String bulkIdReferenceValue)

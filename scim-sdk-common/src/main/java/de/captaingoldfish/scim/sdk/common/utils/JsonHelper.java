@@ -44,13 +44,6 @@ import lombok.extern.slf4j.Slf4j;
 public final class JsonHelper
 {
 
-  public static final ObjectMapper mapper;
-
-  static
-  {
-    mapper = new ObjectMapper();
-  }
-
   /**
    * will read a json document from the classpath
    *
@@ -62,7 +55,7 @@ public final class JsonHelper
     log.trace("Trying to read classpath resource from: {}", classPathLocation);
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
-      return mapper.readTree(inputStream);
+      return new ObjectMapper().readTree(inputStream);
     }
     catch (IOException e)
     {
@@ -81,7 +74,7 @@ public final class JsonHelper
     log.trace("Trying to read classpath resource from: {}", classPathLocation);
     try (InputStream inputStream = JsonHelper.class.getResourceAsStream(classPathLocation))
     {
-      JsonNode jsonNode = mapper.readTree(inputStream);
+      JsonNode jsonNode = new ObjectMapper().readTree(inputStream);
       return copyResourceToObject(jsonNode, type);
     }
     catch (IOException e)
@@ -101,7 +94,7 @@ public final class JsonHelper
     log.trace("Trying to read classpath resource from: {}", file.getAbsolutePath());
     try (InputStream inputStream = new FileInputStream(file))
     {
-      JsonNode jsonNode = mapper.readTree(inputStream);
+      JsonNode jsonNode = new ObjectMapper().readTree(inputStream);
       return copyResourceToObject(jsonNode, type);
     }
     catch (IOException e)
@@ -121,7 +114,7 @@ public final class JsonHelper
     log.trace("Trying to read classpath resource from: {}", file.getAbsolutePath());
     try (InputStream inputStream = new FileInputStream(file))
     {
-      return mapper.readTree(inputStream);
+      return new ObjectMapper().readTree(inputStream);
     }
     catch (IOException e)
     {
@@ -144,7 +137,7 @@ public final class JsonHelper
     log.trace("Trying to read json document: {}", jsonDocument);
     try (Reader reader = new StringReader(jsonDocument))
     {
-      return mapper.readTree(reader);
+      return new ObjectMapper().readTree(reader);
     }
     catch (IOException e)
     {
@@ -164,7 +157,7 @@ public final class JsonHelper
     log.trace("Trying to read json document: {}", jsonDocument);
     try (Reader reader = new StringReader(jsonDocument))
     {
-      JsonNode jsonNode = mapper.readTree(reader);
+      JsonNode jsonNode = new ObjectMapper().readTree(reader);
       return copyResourceToObject(jsonNode, type);
     }
     catch (IOException e)
@@ -484,7 +477,7 @@ public final class JsonHelper
       return (T)resource;
     }
     T newInstance = getNewInstance(type, resource);
-    resource.properties().forEach(stringJsonNodeEntry -> {
+    resource.fields().forEachRemaining(stringJsonNodeEntry -> {
       JsonHelper.addAttribute(newInstance, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
     });
     return newInstance;
@@ -588,7 +581,7 @@ public final class JsonHelper
     }
     try
     {
-      final JsonParser parser = mapper.getFactory().createParser(json);
+      final JsonParser parser = new ObjectMapper().getFactory().createParser(json);
       while (parser.nextToken() != null)
       {}
       return true;
@@ -611,7 +604,7 @@ public final class JsonHelper
   {
     try
     {
-      return mapper.writeValueAsString(jsonNode);
+      return new ObjectMapper().writeValueAsString(jsonNode);
     }
     catch (JsonProcessingException e)
     {
@@ -626,7 +619,7 @@ public final class JsonHelper
   {
     try
     {
-      return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
+      return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
     }
     catch (JsonProcessingException e)
     {

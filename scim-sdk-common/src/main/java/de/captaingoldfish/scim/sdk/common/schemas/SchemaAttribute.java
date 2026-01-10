@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import java.util.stream.Collectors;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -1494,7 +1494,7 @@ public final class SchemaAttribute extends ScimObjectNode
       switch (getType())
       {
         case BOOLEAN:
-          return Strings.CI.equalsAny(defaultValue, "true", "false");
+          return StringUtils.equalsAnyIgnoreCase(defaultValue, "true", "false");
         case INTEGER:
           Integer.parseInt(defaultValue);
           return true;

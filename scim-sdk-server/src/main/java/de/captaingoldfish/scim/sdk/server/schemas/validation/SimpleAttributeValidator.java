@@ -5,6 +5,7 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -12,7 +13,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -347,12 +347,12 @@ class SimpleAttributeValidator
     Predicate<String> compare = s -> {
       if (schemaAttribute.isCaseExact())
       {
-        caseInsensitiveMatch.compareAndSet(false, Strings.CI.equals(s, value));
-        return Strings.CS.equals(s, value);
+        caseInsensitiveMatch.compareAndSet(false, StringUtils.equalsIgnoreCase(s, value));
+        return StringUtils.equals(s, value);
       }
       else
       {
-        return Strings.CI.equals(s, value);
+        return StringUtils.equalsIgnoreCase(s, value);
       }
     };
 

@@ -135,7 +135,7 @@ public class UserHandler extends ResourceHandler<User>
       throw new ResourceNotFoundException("resource with id '" + userId + "' does not exist", null, null);
     }
     Optional<Meta> metaOptional = oldUser.getMeta();
-    resource.properties().forEach(entry -> oldUser.set(entry.getKey(), entry.getValue()));
+    resource.fields().forEachRemaining(entry -> oldUser.set(entry.getKey(), entry.getValue()));
     inMemoryMap.put(userId, oldUser);
     oldUser.getMeta().ifPresent(meta -> {
       metaOptional.ifPresent(m -> meta.setCreated(m.getCreated().orElse(Instant.now())));

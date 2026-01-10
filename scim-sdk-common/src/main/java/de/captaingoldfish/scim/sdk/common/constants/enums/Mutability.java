@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants.enums;
 
-import org.apache.commons.lang3.Strings;
+import org.apache.commons.lang3.StringUtils;
 
 import lombok.Getter;
 
@@ -45,7 +45,7 @@ public enum Mutability
   {
     for ( Mutability mutability : Mutability.values() )
     {
-      if (Strings.CI.equals(value, mutability.getValue()))
+      if (StringUtils.equalsIgnoreCase(value, mutability.getValue()))
       {
         return mutability;
       }
