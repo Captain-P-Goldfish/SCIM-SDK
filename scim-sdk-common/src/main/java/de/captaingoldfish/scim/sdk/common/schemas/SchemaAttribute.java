@@ -420,8 +420,6 @@ public final class SchemaAttribute extends ScimObjectNode
     return namePrefix == null ? "" : namePrefix + ".";
   }
 
-  // @formatter:off
-
   /**
    * The attribute's name.
    */
@@ -429,8 +427,6 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     return getStringAttribute(AttributeNames.RFC7643.NAME).orElse(null);
   }
-
-  // @formatter:off
 
   /**
    * The attribute's name.
@@ -441,7 +437,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The attribute's data type.  Valid values are "string",
    * "boolean", "decimal", "integer", "dateTime", "reference", and
@@ -456,7 +451,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The attribute's data type.  Valid values are "string",
    * "boolean", "decimal", "integer", "dateTime", "reference", and
@@ -471,7 +465,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The attribute's human-readable description.  When
    * applicable, service providers MUST specify the description.
@@ -495,7 +488,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A single keyword indicating the circumstances under
    * which the value of the attribute can be (re)defined:
@@ -521,7 +513,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A single keyword indicating the circumstances under
    * which the value of the attribute can be (re)defined:
@@ -548,7 +539,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A single keyword that indicates when an attribute and
    * associated values are returned in response to a GET request or
@@ -583,7 +573,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A single keyword that indicates when an attribute and
    * associated values are returned in response to a GET request or
@@ -628,7 +617,6 @@ public final class SchemaAttribute extends ScimObjectNode
    * SHOULD possess the same value. global The value SHOULD be globally unique (e.g., an email address, a GUID,
    * or other value). No two resources on any server SHOULD possess the same value.
    */
-  // @formatter:on
   public Uniqueness getUniqueness()
   {
     return getStringAttribute(AttributeNames.RFC7643.UNIQUENESS).map(Uniqueness::getByValue).orElse(null);
@@ -645,14 +633,11 @@ public final class SchemaAttribute extends ScimObjectNode
    * SHOULD possess the same value. global The value SHOULD be globally unique (e.g., an email address, a GUID,
    * or other value). No two resources on any server SHOULD possess the same value.
    */
-  // @formatter:on
   public void setUniqueness(Uniqueness uniqueness)
   {
     setAttribute(AttributeNames.RFC7643.UNIQUENESS,
                  Optional.ofNullable(uniqueness).map(Uniqueness::getValue).orElse(null));
   }
-
-  // @formatter:off
 
   /**
    * A Boolean value indicating the attribute's plurality.
@@ -661,8 +646,6 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     return getBooleanAttribute(AttributeNames.RFC7643.MULTI_VALUED).orElse(false);
   }
-
-  // @formatter:off
 
   /**
    * A Boolean value indicating the attribute's plurality.
@@ -673,7 +656,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A Boolean value that specifies whether or not the
    * attribute is required.
@@ -685,7 +667,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A Boolean value that specifies whether or not the
    * attribute is required.
@@ -696,8 +677,7 @@ public final class SchemaAttribute extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.REQUIRED, required);
   }
 
-// @formatter:off
-
+  // @formatter:off
   /**
    * A Boolean value that specifies whether or not a string
    * attribute is case sensitive.  The server SHALL use case
@@ -715,7 +695,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A Boolean value that specifies whether or not a string
    * attribute is case sensitive.  The server SHALL use case
@@ -733,7 +712,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
  // @formatter:off
-
   /**
    * A collection of suggested canonical values that
    * MAY be used (e.g., "work" and "home").  In some cases, service
@@ -746,7 +724,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * A collection of suggested canonical values that
    * MAY be used (e.g., "work" and "home").  In some cases, service
@@ -765,7 +742,6 @@ public final class SchemaAttribute extends ScimObjectNode
    * service endpoint or an identifier (e.g., a schema URN). This attribute is only applicable for attributes
    * that are of type "reference" (Section 2.3.7).
    */
-  // @formatter:on
   public List<ReferenceTypes> getReferenceTypes()
   {
     return getSimpleArrayAttribute(AttributeNames.RFC7643.REFERENCE_TYPES).stream()
@@ -780,14 +756,11 @@ public final class SchemaAttribute extends ScimObjectNode
    * service endpoint or an identifier (e.g., a schema URN). This attribute is only applicable for attributes
    * that are of type "reference" (Section 2.3.7).
    */
-  // @formatter:on
   public void setReferenceTypes(List<ReferenceTypes> referenceTypes)
   {
     setStringAttributeList(AttributeNames.RFC7643.REFERENCE_TYPES,
                            referenceTypes.stream().map(ReferenceTypes::getValue).collect(Collectors.toList()));
   }
-
-  // @formatter:off
 
   /**
    * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
@@ -798,8 +771,6 @@ public final class SchemaAttribute extends ScimObjectNode
   {
     return getStringAttribute(AttributeNames.Custom.RESOURCE_TYPE_REFERENCE_NAME);
   }
-
-  // @formatter:off
 
   /**
    * Only usable in combination with 'type=reference' and 'resourceTypes=['resource']'. It will bind the
@@ -812,7 +783,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of "multipleOf" MUST be a number, strictly greater than 0.
    *
@@ -826,7 +796,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of "multipleOf" MUST be a number, strictly greater than 0.
    *
@@ -848,7 +817,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of "minimum" MUST be a number, representing an inclusive
    * lower limit for a numeric instance.
@@ -863,7 +831,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of "minimum" MUST be a number, representing an inclusive
    * lower limit for a numeric instance.
@@ -886,7 +853,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of "maximum" MUST be a number, representing an inclusive
    * upper limit for a numeric instance.
@@ -901,7 +867,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of "maximum" MUST be a number, representing an inclusive
    * upper limit for a numeric instance.
@@ -924,7 +889,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -941,7 +905,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -966,7 +929,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -985,7 +947,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -1012,7 +973,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a string.  This string SHOULD be a
    * valid regular expression, according to the Java regular
@@ -1029,7 +989,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a string.  This string SHOULD be a
    * valid regular expression, according to the Java regular
@@ -1069,7 +1028,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -1085,7 +1043,6 @@ public final class SchemaAttribute extends ScimObjectNode
   }
 
   // @formatter:off
-
   /**
    * The value of this keyword MUST be a non-negative integer.
    *
@@ -1112,7 +1069,6 @@ public final class SchemaAttribute extends ScimObjectNode
    * The value of this keyword MUST be a non-negative integer. An array instance is valid against "maxItems" if
    * its size is less than, or equal to, the value of this keyword.
    */
-  // @formatter:on
   public Optional<Integer> getMaxItems()
   {
     return getIntegerAttribute(AttributeNames.Custom.MAX_ITEMS);
@@ -1122,7 +1078,6 @@ public final class SchemaAttribute extends ScimObjectNode
    * The value of this keyword MUST be a non-negative integer. An array instance is valid against "maxItems" if
    * its size is less than, or equal to, the value of this keyword.
    */
-  // @formatter:on
   public void setMaxItems(Integer maxItems)
   {
     if (isMultiValued())
@@ -1280,8 +1235,6 @@ public final class SchemaAttribute extends ScimObjectNode
     }
   }
 
-  // @formatter:off
-
   /**
    * A default value that is set if the attribute has no value
    */
@@ -1290,13 +1243,59 @@ public final class SchemaAttribute extends ScimObjectNode
     return getStringAttribute(AttributeNames.Custom.DEFAULT_VALUE).orElse(null);
   }
 
-  // @formatter:off
-
   /**
    * A default value that is set if the attribute has no value
    */
   public void setDefaultValue(String defaultValue)
   {
+    if (StringUtils.isBlank(defaultValue))
+    {
+      remove(AttributeNames.Custom.DEFAULT_VALUE);
+      return;
+    }
+
+    if (isMultiValued() && defaultValue.trim().startsWith("["))
+    {
+      try
+      {
+        JsonNode jsonNode = JsonHelper.readJsonDocument(defaultValue);
+        if (jsonNode == null)
+        {
+          return;
+        }
+        if (jsonNode.isArray())
+        {
+          List<String> validElements = new ArrayList<>();
+          for ( JsonNode node : jsonNode )
+          {
+            String val = node.isContainerNode() ? node.toString() : node.asText();
+            if (validateDefaultValue(val))
+            {
+              validElements.add(val);
+            }
+          }
+          if (validElements.isEmpty())
+          {
+            log.warn("Ignoring default value for attribute '{}' because no element of the array '{}' applies to type '{}'",
+                     getName(),
+                     defaultValue,
+                     getType());
+            return;
+          }
+          String cleanedDefaultValue = validElements.stream().map(val -> {
+            return Type.INTEGER.equals(getType()) || Type.DECIMAL.equals(getType()) || Type.BOOLEAN.equals(getType())
+                   || Type.COMPLEX.equals(getType()) ? val : "\"" + val + "\"";
+          }).collect(Collectors.joining(", ", "[", "]"));
+          setAttribute(AttributeNames.Custom.DEFAULT_VALUE, cleanedDefaultValue);
+          return;
+        }
+      }
+      catch (Exception ex)
+      {
+        log.debug("Failed to parse default value as array: {}", defaultValue, ex);
+      }
+    }
+
     boolean doesDefaultValueApplyToType = validateDefaultValue(defaultValue);
     if (doesDefaultValueApplyToType)
     {
@@ -1305,15 +1304,15 @@ public final class SchemaAttribute extends ScimObjectNode
     else
     {
       log.warn("Ignoring default value for attribute '{}' because the value '{}' does not apply to type '{}'",
-        getName(), defaultValue, getType());
+               getName(),
+               defaultValue,
+               getType());
     }
   }
 
   /**
-   * When an attribute is of type "complex",
-   * "subAttributes" defines a set of sub-attributes.
-   * "subAttributes" has the same schema sub-attributes as
-   * "attributes".
+   * When an attribute is of type "complex", "subAttributes" defines a set of sub-attributes. "subAttributes"
+   * has the same schema sub-attributes as "attributes".
    */
   // @formatter:on
   public List<SchemaAttribute> getSubAttributes()
@@ -1502,6 +1501,17 @@ public final class SchemaAttribute extends ScimObjectNode
           Double.parseDouble(defaultValue);
           return true;
         case COMPLEX:
+        {
+          try
+          {
+            JsonNode jsonNode = JsonHelper.readJsonDocument(defaultValue);
+            return jsonNode == null || jsonNode.isObject() || jsonNode.isArray();
+          }
+          catch (Exception ex)
+          {
+            return false;
+          }
+        }
         case BINARY:
         case ANY:
           throw new InternalServerException(String.format("Invalid configuration. Default values are only supported for "
@@ -1511,7 +1521,8 @@ public final class SchemaAttribute extends ScimObjectNode
                                                                         Type.DECIMAL,
                                                                         Type.STRING,
                                                                         Type.REFERENCE,
-                                                                        Type.DATE_TIME)));
+                                                                        Type.DATE_TIME,
+                                                                        Type.COMPLEX)));
         default:
           return true;
       }

@@ -35,11 +35,6 @@ abstract class ContextValidator
 
   public JsonNode handleDefaultValue(SchemaAttribute schemaAttribute, JsonNode jsonNode)
   {
-    if (Type.COMPLEX.equals(schemaAttribute.getType()) || (jsonNode != null && !jsonNode.isNull()))
-    {
-      // no default values on complex types
-      return jsonNode;
-    }
     boolean handleOnRequest = ValidationContextType.REQUEST.equals(validationContextType)
                               && serviceProvider.isUseDefaultValuesOnRequest();
     boolean handleOnResponse = ValidationContextType.RESPONSE.equals(validationContextType)

@@ -1,18 +1,23 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.util.Arrays;
+import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -41,8 +46,7 @@ public final class DefaultValueHandler
   {
     final String defaultValue = schemaAttribute.getDefaultValue();
     final boolean isDefaultValueAssigned = StringUtils.isNotBlank(defaultValue);
-    if (!isDefaultValueAssigned
-        || Type.COMPLEX.equals(schemaAttribute.getType())/* default values on complex types are not supported */)
+    if (!isDefaultValueAssigned)
     {
       return attribute;
     }
@@ -65,18 +69,65 @@ public final class DefaultValueHandler
    */
   private static JsonNode toJsonNode(SchemaAttribute schemaAttribute, String defaultValue)
   {
+    return toJsonNode(schemaAttribute, defaultValue, true);
+  }
+
+  /**
+   * parses the default value of the {@link SchemaAttribute} into the appropriate json-node-type
+   *
+   * @param schemaAttribute the attributes definition
+   * @param defaultValue the default value in string representation
+   * @param allowArray whether to allow array processing
+   * @return the json node representation of the default-value
+   */
+  private static JsonNode toJsonNode(SchemaAttribute schemaAttribute, String defaultValue, boolean allowArray)
+  {
     switch (schemaAttribute.getType())
     {
       case BOOLEAN:
-        return new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(defaultValue));
+        return toArrayOrDefault(schemaAttribute,
+                                defaultValue,
+                                allowArray,
+                                () -> new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(defaultValue)));
       case INTEGER:
-        return new ScimIntNode(schemaAttribute, Integer.parseInt(defaultValue));
+        return toArrayOrDefault(schemaAttribute,
+                                defaultValue,
+                                allowArray,
+                                () -> new ScimIntNode(schemaAttribute, Integer.parseInt(defaultValue)));
       case DECIMAL:
-        return new ScimDoubleNode(schemaAttribute, Double.parseDouble(defaultValue));
+        return toArrayOrDefault(schemaAttribute,
+                                defaultValue,
+                                allowArray,
+                                () -> new ScimDoubleNode(schemaAttribute, Double.parseDouble(defaultValue)));
       case STRING:
       case REFERENCE:
       case DATE_TIME:
-        return new ScimTextNode(schemaAttribute, defaultValue);
+      {
+        return toArrayOrDefault(schemaAttribute,
+                                defaultValue,
+                                allowArray,
+                                () -> new ScimTextNode(schemaAttribute, defaultValue));
+      }
+      case COMPLEX:
+      {
+        return toArrayOrDefault(schemaAttribute, defaultValue, allowArray, () -> {
+          try
+          {
+            JsonNode jsonNode = JsonHelper.readJsonDocument(defaultValue);
+            if (jsonNode != null && jsonNode.isObject())
+            {
+              return jsonNode;
+            }
+            throw new IllegalArgumentException("Default value is not of type object");
+          }
+          catch (Exception ex)
+          {
+            throw new InternalServerException(String.format("Invalid configuration. Default value '%s' is not of type object.",
+                                                            defaultValue),
+                                              ex);
+          }
+        });
+      }
       default:
         throw new InternalServerException(String.format("Invalid configuration. Default values are only supported for "
                                                         + "the following types: %s",
@@ -85,8 +136,52 @@ public final class DefaultValueHandler
                                                                       Type.DECIMAL,
                                                                       Type.STRING,
                                                                       Type.REFERENCE,
-                                                                      Type.DATE_TIME)));
+                                                                      Type.DATE_TIME,
+                                                                      Type.COMPLEX)));
     }
   }
 
+  private static JsonNode toArrayOrDefault(SchemaAttribute schemaAttribute,
+                                           String defaultValue,
+                                           boolean allowArray,
+                                           Supplier<JsonNode> defaultNode)
+  {
+    if (!schemaAttribute.isMultiValued() || !allowArray)
+    {
+      return defaultNode.get();
+    }
+    ScimArrayNode scimArrayNode = new ScimArrayNode(schemaAttribute);
+    if (defaultValue.startsWith("["))
+    {
+      try
+      {
+        JsonNode jsonNode = new ObjectMapper().readTree(defaultValue);
+        if (jsonNode.isArray())
+        {
+          for ( JsonNode node : jsonNode )
+          {
+            try
+            {
+              String elementValue = node.isContainerNode() ? node.toString() : node.asText();
+              scimArrayNode.add(toJsonNode(schemaAttribute, elementValue, false));
+            }
+            catch (Exception ex)
+            {
+              log.debug("Skipping invalid element '{}' in default value array for attribute '{}'",
+                        node.asText(),
+                        schemaAttribute.getName(),
+                        ex);
+            }
+          }
+          return scimArrayNode;
+        }
+      }
+      catch (JsonProcessingException e)
+      {
+        log.trace("DefaultValue '{}' does not seem to be an array. Translating to single element", defaultValue, e);
+      }
+    }
+    scimArrayNode.add(defaultNode.get());
+    return scimArrayNode;
+  }
 }

@@ -18,6 +18,11 @@ public class ScimArrayNode extends ArrayNode implements ScimNode
   @Getter
   private SchemaAttribute schemaAttribute;
 
+  public ScimArrayNode()
+  {
+    super(JsonNodeFactory.instance);
+  }
+
   public ScimArrayNode(SchemaAttribute schemaAttribute)
   {
     super(JsonNodeFactory.instance);

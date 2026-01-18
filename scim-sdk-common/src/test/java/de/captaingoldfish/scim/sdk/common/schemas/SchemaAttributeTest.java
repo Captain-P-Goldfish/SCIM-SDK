@@ -179,4 +179,68 @@ public class SchemaAttributeTest implements FileReferences
                             nameAttribute.getSubAttribute(givenNameAttribute.getFullResourceName()));
 
   }
+
+  /**
+   * verifies that valid array default values are accepted
+   */
+  @DisplayName("Valid array-default-value is correctly assigned")
+  @Test
+  public void testArrayDefaultValueIsAssigned()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name(AttributeNames.RFC7643.TYPE)
+                                                            .type(Type.INTEGER)
+                                                            .multivalued(true)
+                                                            .build();
+    schemaAttribute.setDefaultValue("[55, 66]");
+    Assertions.assertEquals("[55, 66]", schemaAttribute.getDefaultValue());
+  }
+
+  /**
+   * verifies that illegal array default values are ignored
+   */
+  @DisplayName("Illegal array-default-value is ignored")
+  @Test
+  public void testIllegalArrayDefaultValueIsIgnored()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name(AttributeNames.RFC7643.TYPE)
+                                                            .type(Type.INTEGER)
+                                                            .multivalued(true)
+                                                            .build();
+    schemaAttribute.setDefaultValue("[55, \"66.5\"]");
+    Assertions.assertEquals("[55]", schemaAttribute.getDefaultValue());
+  }
+
+  /**
+   * verifies that invalid values in a string array are kept (since they are all valid strings)
+   */
+  @DisplayName("Invalid values in string-array are kept")
+  @Test
+  public void testInvalidValuesInStringArrayAreKept()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name(AttributeNames.RFC7643.TYPE)
+                                                            .type(Type.STRING)
+                                                            .multivalued(true)
+                                                            .build();
+    schemaAttribute.setDefaultValue("[\"valid\", \"another\"]");
+    Assertions.assertEquals("[\"valid\", \"another\"]", schemaAttribute.getDefaultValue());
+  }
+
+  /**
+   * verifies that boolean values are filtered
+   */
+  @DisplayName("Boolean values are filtered in array")
+  @Test
+  public void testBooleanValuesAreFiltered()
+  {
+    SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                            .name(AttributeNames.RFC7643.TYPE)
+                                                            .type(Type.BOOLEAN)
+                                                            .multivalued(true)
+                                                            .build();
+    schemaAttribute.setDefaultValue("[true, \"not-a-boolean\", false]");
+    Assertions.assertEquals("[true, false]", schemaAttribute.getDefaultValue());
+  }
 }

@@ -3062,6 +3062,63 @@ public class SchemaValidatorTest implements FileReferences
      * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
      * left empty
      */
+    @DisplayName("STRING-type default value is successfully assigned on empty-complex multivalued-sub-attribute")
+    @Test
+    public void testAssignStringDefaultValueOnMultivaluedSubAttribute()
+    {
+      testSubAttribute.setType(Type.STRING);
+      testSubAttribute.setMultiValued(true);
+      testSubAttribute.setDefaultValue("55.559");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+      log.warn(resource.toPrettyString());
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(1, resource.get("complex").get(testSubAttribute.getName()).size());
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).get(0).textValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default values are successfully assigned on empty-complex multivalued-sub-attribute")
+    @Test
+    public void testAssignStringDefaultValuesOnMultivaluedSubAttribute()
+    {
+      testSubAttribute.setType(Type.STRING);
+      testSubAttribute.setMultiValued(true);
+      testSubAttribute.setDefaultValue("[\"55.559\", \"3.5\"]");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes complex = new AllTypes();
+      allTypes.setComplex(complex);
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
+      Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
+      Assertions.assertEquals(2, resource.get("complex").get(testSubAttribute.getName()).size());
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).get(0).textValue());
+      Assertions.assertEquals("3.5", resource.get("complex").get(testSubAttribute.getName()).get(1).textValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
     @DisplayName("STRING-type default value does not override present-complex sub-attribute")
     @Test
     public void testAssignStringDefaultValueOnPresentSubAttribute()
@@ -3083,6 +3140,125 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
       Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).textValue());
+    }
+
+    @DisplayName("COMPLEX-type default values are successfully assigned")
+    @Test
+    public void testAssignComplexDefaultValues()
+    {
+      SchemaAttribute multiComplex = allTypesResourceType.getSchemaAttribute("multiComplex").get();
+      multiComplex.setMultiValued(true);
+      multiComplex.setDefaultValue("{\"string\": \"hello\", \"number\": 5, \"stringArray\": [\"hello\",\"world\"]}");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get("multiComplex"));
+      Assertions.assertEquals(1, resource.get("multiComplex").size());
+      JsonNode subString = resource.get("multiComplex").get(0).get("string");
+      Assertions.assertEquals("hello", subString.textValue());
+      JsonNode subNumber = resource.get("multiComplex").get(0).get("number");
+      Assertions.assertEquals(5, subNumber.intValue());
+      JsonNode subStringArray = resource.get("multiComplex").get(0).get("stringArray");
+      Assertions.assertEquals(2, subStringArray.size());
+      Assertions.assertEquals("hello", subStringArray.get(0).textValue());
+      Assertions.assertEquals("world", subStringArray.get(1).textValue());
+    }
+
+    /**
+     * verifies that if a decimal-default value is assigned to an attribute that this value is set if the field is
+     * left empty
+     */
+    @DisplayName("STRING-type default value is successfully assigned on multi-valued complex sub-attribute")
+    @Test
+    public void testAssignStringDefaultValueOnMultiValuedComplexSubAttribute()
+    {
+      SchemaAttribute multiComplexString = allTypesResourceType.getSchemaAttribute("multiComplex.string").get();
+      multiComplexString.setDefaultValue("12345"); // must match pattern [0-9]+ and minLength 5
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes multiComplex1 = new AllTypes();
+      // string is missing, should be filled with default
+      multiComplex1.setNumber(2L);
+
+      AllTypes multiComplex2 = new AllTypes();
+      multiComplex2.setString("54321");
+
+      allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2));
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get("multiComplex"));
+      Assertions.assertEquals(2, resource.get("multiComplex").size());
+      Assertions.assertEquals("12345", resource.get("multiComplex").get(0).get("string").textValue());
+      Assertions.assertEquals("54321", resource.get("multiComplex").get(1).get("string").textValue());
+    }
+
+    /**
+     * verifies that default values are applied to all elements in a multi-valued complex attribute
+     */
+    @DisplayName("STRING-type default values are successfully assigned on multi-valued complex sub-attribute")
+    @Test
+    public void testAssignStringDefaultValuesOnMultiValuedComplexSubAttribute()
+    {
+      SchemaAttribute multiComplexString = allTypesResourceType.getSchemaAttribute("multiComplex.string").get();
+      multiComplexString.setMultiValued(true);
+      multiComplexString.setDefaultValue("[\"12345\", \"67890\"]");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      AllTypes multiComplex1 = new AllTypes();
+      multiComplex1.setNumber(2L);
+
+      allTypes.setMultiComplex(Collections.singletonList(multiComplex1));
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get("multiComplex"));
+      Assertions.assertEquals(1, resource.get("multiComplex").size());
+      JsonNode stringArray = resource.get("multiComplex").get(0).get("string");
+      Assertions.assertTrue(stringArray.isArray());
+      Assertions.assertEquals(2, stringArray.size());
+      Assertions.assertEquals("12345", stringArray.get(0).textValue());
+      Assertions.assertEquals("67890", stringArray.get(1).textValue());
+    }
+
+    @DisplayName("COMPLEX-type multi-valued default values are successfully assigned")
+    @Test
+    public void testAssignComplexMultiValuedDefaultValues()
+    {
+      SchemaAttribute multiComplex = allTypesResourceType.getSchemaAttribute("multiComplex").get();
+      multiComplex.setMultiValued(true);
+      multiComplex.setDefaultValue("[{\"string\": \"hello\", \"number\": 5, \"stringArray\": [\"hello\",\"world\"]}]");
+
+      AllTypes allTypes = new AllTypes();
+      allTypes.setId("1");
+
+      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+                                                          referenceUrlSupplier).validateDocument(allTypes);
+
+      Assertions.assertEquals(3, resource.size());
+      Assertions.assertNotNull(resource.get("multiComplex"));
+      Assertions.assertEquals(1, resource.get("multiComplex").size());
+      JsonNode subString = resource.get("multiComplex").get(0).get("string");
+      Assertions.assertEquals("hello", subString.textValue());
+      JsonNode subNumber = resource.get("multiComplex").get(0).get("number");
+      Assertions.assertEquals(5, subNumber.intValue());
+      JsonNode subStringArray = resource.get("multiComplex").get(0).get("stringArray");
+      Assertions.assertEquals(2, subStringArray.size());
+      Assertions.assertEquals("hello", subStringArray.get(0).textValue());
+      Assertions.assertEquals("world", subStringArray.get(1).textValue());
     }
   }
 }
