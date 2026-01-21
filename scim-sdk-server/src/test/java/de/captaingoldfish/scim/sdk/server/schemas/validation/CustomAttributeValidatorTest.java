@@ -111,7 +111,7 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                 expectedErrorMessage));
 
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '0.0' must have at least a value of '10.5'";
+    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '0' must have at least a value of '10.5'";
     dynamicTests.add(getAttributeValidationTest("minimum value not reached for int (decimalNode)",
                                                 () -> CustomAttributeValidator.validateNumberNode(decimalAttribute,
                                                                                                   new IntNode(0)),
@@ -121,6 +121,7 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                 () -> CustomAttributeValidator.validateNumberNode(decimalAttribute,
                                                                                                   new LongNode(0)),
                                                 expectedErrorMessage));
+    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '0.0' must have at least a value of '10.5'";
     dynamicTests.add(getAttributeValidationTest("minimum value not reached for double (decimalNode)",
                                                 () -> CustomAttributeValidator.validateNumberNode(decimalAttribute,
                                                                                                   new DoubleNode(0)),
@@ -144,7 +145,7 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                                                                   new DoubleNode(101.5)),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '101.0' must not be greater than '100.123456789'";
+    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '101' must not be greater than '100.123456789'";
     dynamicTests.add(getAttributeValidationTest("maximum value exceeded for int (decimalNode)",
                                                 () -> CustomAttributeValidator.validateNumberNode(decimalAttribute,
                                                                                                   new IntNode(101)),
@@ -181,13 +182,13 @@ public class CustomAttributeValidatorTest implements FileReferences
                                                 expectedErrorMessage));
 
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '12.0' must be a multiple of '3.1'";
+    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '12' must be a multiple of '3.1'";
     dynamicTests.add(getAttributeValidationTest("not multipleOf for int (decimalNode)",
                                                 () -> CustomAttributeValidator.validateNumberNode(decimalAttribute,
                                                                                                   new IntNode(12)),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
-    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '32.0' must be a multiple of '3.1'";
+    expectedErrorMessage = "The 'DECIMAL'-attribute 'decimal' with value '32' must be a multiple of '3.1'";
     dynamicTests.add(getAttributeValidationTest("not multipleOf for long (decimalNode)",
                                                 () -> CustomAttributeValidator.validateNumberNode(decimalAttribute,
                                                                                                   new LongNode(32)),

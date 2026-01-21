@@ -1,5 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.TestFactory;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
@@ -150,7 +152,7 @@ public class ValidationSelectorTest
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
-    attribute.set("age", new IntNode(35));
+    attribute.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
 
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
     Assertions.assertTrue(validatedNode.isPresent());

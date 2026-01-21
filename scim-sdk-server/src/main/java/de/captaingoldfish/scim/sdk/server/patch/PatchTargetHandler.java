@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.patch;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -166,7 +167,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     if (addOrReplaceValue)
     {
       ObjectNode extensionNode = (ObjectNode)JsonHelper.readJsonDocument(values.get(0));
-      changeMade = !extensionNode.equals(currentNode);
+      changeMade = !nodesEqual(extensionNode, currentNode);
       if (extensionNode.isEmpty())
       {
         resource.remove(path.getFullName());
@@ -477,7 +478,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     }
 
     JsonNode newNode = parseToJsonNode(schemaAttribute, values.get(0));
-    if (!newNode.equals(oldNode))
+    if (!nodesEqual(newNode, oldNode))
     {
       objectNode.set(schemaAttribute.getName(), newNode);
       return true;
@@ -552,7 +553,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       JsonNode oldNode = resource.get(schemaAttribute.getName());
       newNode = mergeObjectNodes((ObjectNode)newNode, oldNode);
       resource.set(schemaAttribute.getName(), newNode);
-      changeWasMade = !newNode.equals(oldNode);
+      changeWasMade = !nodesEqual(newNode, oldNode);
     }
     else if (PatchOp.REPLACE.equals(patchOp))
     {
@@ -850,7 +851,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
               }
             }
           });
-          isResourceChanged = isResourceChanged || !originalNode.equals(matchingNode);
+          isResourceChanged = isResourceChanged || !nodesEqual(originalNode, matchingNode);
         }
         if (PatchOp.REPLACE.equals(patchOp))
         {
@@ -980,6 +981,31 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     return matchingComplexNodes;
   }
 
+
+  /**
+   * this method checks if 2 nodes represent the same value. Especially for numbers, the representation of the
+   * value may differ, but still be considered equal. For example: a Long and a BigInteger, or a Double and a
+   * BigDecimal.
+   *
+   * @param node1 the first node, must not be null
+   * @param node2 the seconde node, can be null
+   * @return true if the nodes represent the same value
+   */
+  private static boolean nodesEqual(JsonNode node1, JsonNode node2)
+  {
+    return node1.equals(PatchTargetHandler::compareNodes, node2);
+  }
+
+  private static int compareNodes(JsonNode node1, JsonNode node2)
+  {
+    if (node1 != null && node2 != null && node1.isNumber() && node2.isNumber())
+    {
+      return node1.decimalValue().compareTo(node2.decimalValue());
+    }
+    // this does not follow the contract of Comparator, but is good enough for the node.equals method in Jackson.
+    return Objects.equals(node1, node2) ? 0 : -1;
+  }
+
   /**
    * will get the fully qualified attribute names
    */
@@ -1047,7 +1073,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
 
     public boolean isResultUnchanged()
     {
-      return objectNode.equals(copyNode);
+      return nodesEqual(objectNode, copyNode);
     }
   }
 }
