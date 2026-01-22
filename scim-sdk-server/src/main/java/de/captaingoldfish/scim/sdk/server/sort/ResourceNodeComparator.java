@@ -68,15 +68,10 @@ public class ResourceNodeComparator implements Comparator<ResourceNode>
         compare = NumberUtils.compare(dateTime1, dateTime2);
         return ascending ? compare : -compare;
       case INTEGER:
-        compare = NumberUtils.compare(attribute1.longValue(), attribute2.longValue());
+        compare = attribute1.bigIntegerValue().compareTo(attribute2.bigIntegerValue());
         return ascending ? compare : -compare;
       case DECIMAL:
-        double x = attribute1.doubleValue(), y = attribute2.doubleValue();
-        if (x == y)
-        {
-          return 0;
-        }
-        compare = x < y ? -1 : 1;
+        compare = attribute1.decimalValue().compareTo(attribute2.decimalValue());
         return ascending ? compare : -compare;
       default:
         if (schemaAttribute.isCaseExact())
