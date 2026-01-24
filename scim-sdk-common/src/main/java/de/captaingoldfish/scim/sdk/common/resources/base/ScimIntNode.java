@@ -1,8 +1,10 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Getter;
 
 
@@ -23,4 +25,13 @@ public class ScimIntNode extends IntNode implements ScimNode
     this.schemaAttribute = schemaAttribute;
   }
 
+  @Override
+  public boolean equals(Object o)
+  {
+    if (o instanceof JsonNode)
+    {
+      return JsonHelper.isEqual(this, (JsonNode)o);
+    }
+    return false;
+  }
 }

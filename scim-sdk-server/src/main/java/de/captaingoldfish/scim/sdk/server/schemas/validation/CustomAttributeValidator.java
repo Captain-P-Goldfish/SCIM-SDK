@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.LongNode;
@@ -47,9 +48,9 @@ public final class CustomAttributeValidator
     {
       validateTextNode(schemaAttribute, (TextNode)attribute);
     }
-    else if (attribute.isDouble())
+    else if (attribute.isBigDecimal())
     {
-      validateNumberNode(schemaAttribute, (DoubleNode)attribute);
+      validateNumberNode(schemaAttribute, (DecimalNode)attribute);
     }
     else if (attribute.isLong())
     {
@@ -57,7 +58,7 @@ public final class CustomAttributeValidator
     }
     else if (attribute.isNumber())
     {
-      validateNumberNode(schemaAttribute, (IntNode)attribute);
+      validateNumberNode(schemaAttribute, new DecimalNode(attribute.decimalValue()));
     }
 
   }
@@ -172,7 +173,7 @@ public final class CustomAttributeValidator
    */
   protected static void validateNumberNode(SchemaAttribute schemaAttribute, IntNode valueNode)
   {
-    validateNumberNode(schemaAttribute, new DoubleNode(valueNode.doubleValue()));
+    validateNumberNode(schemaAttribute, new DecimalNode(valueNode.decimalValue()));
   }
 
   /**
@@ -183,7 +184,7 @@ public final class CustomAttributeValidator
    */
   protected static void validateNumberNode(SchemaAttribute schemaAttribute, LongNode valueNode)
   {
-    validateNumberNode(schemaAttribute, new DoubleNode(valueNode.doubleValue()));
+    validateNumberNode(schemaAttribute, new DecimalNode(valueNode.decimalValue()));
   }
 
   /**
@@ -194,35 +195,46 @@ public final class CustomAttributeValidator
    */
   protected static void validateNumberNode(SchemaAttribute schemaAttribute, DoubleNode valueNode)
   {
+    validateNumberNode(schemaAttribute, new DecimalNode(valueNode.decimalValue()));
+  }
+
+  /**
+   * verifies that the value of this node does match its requirements from the attribute
+   *
+   * @param schemaAttribute the attribute definition
+   * @param value the value of this node
+   */
+  protected static void validateNumberNode(SchemaAttribute schemaAttribute, DecimalNode valueNode)
+  {
     final boolean isInteger = schemaAttribute.getType().equals(Type.INTEGER);
-    final Function<Double, String> toNumberType = (value) -> isInteger ? String.valueOf(value.longValue())
+    final Function<BigDecimal, String> toNumberType = (value) -> isInteger ? String.valueOf(value.longValue())
       : String.valueOf(value);
 
-    final double value = valueNode.doubleValue();
+    final BigDecimal value = valueNode.decimalValue();
     schemaAttribute.getMinimum().ifPresent(minimum -> {
-      if (minimum > value)
+      if (BigDecimal.valueOf(minimum).compareTo(value) > 0)
       {
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must have at least a value of '%s'",
                                             schemaAttribute.getType(),
                                             schemaAttribute.getScimNodeName(),
                                             toNumberType.apply(value),
-                                            toNumberType.apply(minimum));
+                                            toNumberType.apply(BigDecimal.valueOf(minimum)));
         throw new AttributeValidationException(schemaAttribute, errorMessage);
       }
     });
     schemaAttribute.getMaximum().ifPresent(maximum -> {
-      if (maximum < value)
+      if (BigDecimal.valueOf(maximum).compareTo(value) < 0)
       {
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must not be greater than '%s'",
                                             schemaAttribute.getType(),
                                             schemaAttribute.getScimNodeName(),
                                             toNumberType.apply(value),
-                                            toNumberType.apply(maximum));
+                                            toNumberType.apply(BigDecimal.valueOf(maximum)));
         throw new AttributeValidationException(schemaAttribute, errorMessage);
       }
     });
     schemaAttribute.getMultipleOf().ifPresent(multipleOf -> {
-      if (BigDecimal.valueOf(value).remainder(BigDecimal.valueOf(multipleOf)).doubleValue() != 0)
+      if (value.remainder(BigDecimal.valueOf(multipleOf)).doubleValue() != 0)
       {
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must be a multiple of '%s'",
                                             schemaAttribute.getType(),

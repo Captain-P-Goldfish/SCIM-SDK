@@ -166,7 +166,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     if (addOrReplaceValue)
     {
       ObjectNode extensionNode = (ObjectNode)JsonHelper.readJsonDocument(values.get(0));
-      changeMade = !extensionNode.equals(currentNode);
+      changeMade = !JsonHelper.isEqual(extensionNode, currentNode);
       if (extensionNode.isEmpty())
       {
         resource.remove(path.getFullName());
@@ -477,7 +477,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     }
 
     JsonNode newNode = parseToJsonNode(schemaAttribute, values.get(0));
-    if (!newNode.equals(oldNode))
+    if (!JsonHelper.isEqual(newNode, oldNode))
     {
       objectNode.set(schemaAttribute.getName(), newNode);
       return true;
@@ -552,7 +552,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
       JsonNode oldNode = resource.get(schemaAttribute.getName());
       newNode = mergeObjectNodes((ObjectNode)newNode, oldNode);
       resource.set(schemaAttribute.getName(), newNode);
-      changeWasMade = !newNode.equals(oldNode);
+      changeWasMade = !JsonHelper.isEqual(newNode, oldNode);
     }
     else if (PatchOp.REPLACE.equals(patchOp))
     {
@@ -850,7 +850,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
               }
             }
           });
-          isResourceChanged = isResourceChanged || !originalNode.equals(matchingNode);
+          isResourceChanged = isResourceChanged || !JsonHelper.isEqual(originalNode, matchingNode);
         }
         if (PatchOp.REPLACE.equals(patchOp))
         {
@@ -1047,7 +1047,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
 
     public boolean isResultUnchanged()
     {
-      return objectNode.equals(copyNode);
+      return JsonHelper.isEqual(objectNode, copyNode);
     }
   }
 }

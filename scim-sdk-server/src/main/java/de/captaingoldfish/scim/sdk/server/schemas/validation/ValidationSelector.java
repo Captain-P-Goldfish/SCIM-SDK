@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.node.NullNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDecimalNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
@@ -138,9 +139,13 @@ class ValidationSelector
     {
       return new ScimDoubleNode(schemaAttribute, attribute.doubleValue());
     }
-    if (attribute.isNumber() || attribute.isLong())
+    if (attribute.isLong() || attribute.isInt())
     {
       return new ScimLongNode(schemaAttribute, attribute.longValue());
+    }
+    if (attribute.isNumber())
+    {
+      return new ScimDecimalNode(schemaAttribute, attribute.decimalValue());
     }
     return NullNode.getInstance();
   }
