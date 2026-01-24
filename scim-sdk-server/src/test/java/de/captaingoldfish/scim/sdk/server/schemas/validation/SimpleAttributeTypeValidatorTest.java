@@ -35,11 +35,10 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBinaryNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDecimalNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -306,7 +305,7 @@ public class SimpleAttributeTypeValidatorTest
       return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimIntNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
     Assertions.assertEquals(content, parsedNode.intValue());
   }
 
@@ -324,7 +323,7 @@ public class SimpleAttributeTypeValidatorTest
       return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimIntNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
     Assertions.assertEquals(content, parsedNode.intValue());
   }
 
@@ -342,12 +341,12 @@ public class SimpleAttributeTypeValidatorTest
       return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
     Assertions.assertEquals(content, parsedNode.longValue());
   }
 
   /**
-   * verifies that long values are correctly parsed to long nodes
+   * verifies that long values are correctly parsed to big integer nodes
    */
   @Test
   public void testIntegerTypeWithLong()
@@ -359,7 +358,7 @@ public class SimpleAttributeTypeValidatorTest
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimLongNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
     Assertions.assertEquals(content, parsedNode.longValue());
   }
 
@@ -397,7 +396,7 @@ public class SimpleAttributeTypeValidatorTest
   }
 
   /**
-   * tests that decimal values are correctly parsed to double nodes
+   * tests that decimal values are correctly parsed to decimal nodes
    */
   @Test
   public void testDecimalType()
@@ -408,12 +407,12 @@ public class SimpleAttributeTypeValidatorTest
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
     Assertions.assertEquals(attribute.doubleValue(), parsedNode.doubleValue());
   }
 
   /**
-   * tests that decimal values are correctly parsed to double nodes from string values
+   * tests that decimal values are correctly parsed to decimal nodes from string values
    */
   @Test
   public void testDecimalStringType()
@@ -424,12 +423,12 @@ public class SimpleAttributeTypeValidatorTest
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
     Assertions.assertEquals(Double.parseDouble(attribute.textValue()), parsedNode.doubleValue());
   }
 
   /**
-   * tests that integer values on decimal types are correctly parsed to double nodes
+   * tests that integer values on decimal types are correctly parsed to decimal nodes
    */
   @Test
   public void testDecimalTypeWithInteger()
@@ -440,12 +439,12 @@ public class SimpleAttributeTypeValidatorTest
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
     Assertions.assertEquals(attribute.doubleValue(), parsedNode.doubleValue());
   }
 
   /**
-   * shows that long values on decimal types are correctly parsed to double nodes
+   * shows that long values on decimal types are correctly parsed to decimal nodes
    */
   @Test
   public void testDecimalTypeWithLong()
@@ -456,7 +455,7 @@ public class SimpleAttributeTypeValidatorTest
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
     Assertions.assertEquals(attribute.doubleValue(), parsedNode.doubleValue());
   }
 

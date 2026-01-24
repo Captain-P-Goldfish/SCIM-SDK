@@ -1,11 +1,11 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.Arrays;
 import java.util.Base64;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -19,11 +19,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidDateTimeRepresentationException;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBinaryNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDecimalNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
@@ -110,21 +109,15 @@ class SimpleAttributeValidator
         break;
       case INTEGER:
       {
-        isNodeTypeValid = attribute.isInt() || attribute.isLong() || attribute.isBigDecimal();
-        if (attribute.intValue() == attribute.longValue())
-        {
-          validatedNodeSupplier = () -> new ScimIntNode(schemaAttribute, attribute.intValue());
-        }
-        else
-        {
-          validatedNodeSupplier = () -> new ScimLongNode(schemaAttribute, attribute.longValue());
-        }
+        isNodeTypeValid = attribute.isInt() || attribute.isLong() || attribute.isBigInteger()
+                          || (attribute.isBigDecimal() && attribute.decimalValue().scale() <= 0);
+        validatedNodeSupplier = () -> new ScimBigIntegerNode(schemaAttribute, attribute.bigIntegerValue());
         break;
       }
       case DECIMAL:
         isNodeTypeValid = attribute.isInt() || attribute.isLong() || attribute.isFloat() || attribute.isDouble()
-                          || attribute.isBigDecimal();
-        validatedNodeSupplier = () -> new ScimDoubleNode(schemaAttribute, attribute.doubleValue());
+                          || attribute.isBigDecimal() || attribute.isBigInteger();
+        validatedNodeSupplier = () -> new ScimDecimalNode(schemaAttribute, attribute.decimalValue());
         break;
       case DATE_TIME:
         isNodeTypeValid = attribute.isTextual();
@@ -188,17 +181,9 @@ class SimpleAttributeValidator
             return Optional.empty();
           }
         case INTEGER:
-          long longValue = Long.parseLong(valueNode.textValue());
-          if (longValue == (int)longValue)
-          {
-            return Optional.of(new ScimIntNode(schemaAttribute, (int)longValue));
-          }
-          else
-          {
-            return Optional.of(new ScimLongNode(schemaAttribute, longValue));
-          }
+          return Optional.of(new ScimBigIntegerNode(schemaAttribute, new BigInteger(valueNode.textValue())));
         case DECIMAL:
-          return Optional.of(new ScimDoubleNode(schemaAttribute, new BigDecimal(valueNode.textValue()).doubleValue()));
+          return Optional.of(new ScimDecimalNode(schemaAttribute, new BigDecimal(valueNode.textValue())));
       }
     }
     catch (Exception ex)

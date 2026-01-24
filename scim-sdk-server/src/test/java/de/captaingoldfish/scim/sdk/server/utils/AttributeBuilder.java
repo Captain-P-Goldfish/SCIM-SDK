@@ -1,13 +1,15 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.fasterxml.jackson.databind.node.BinaryNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
@@ -36,9 +38,9 @@ public class AttributeBuilder
     switch (type)
     {
       case INTEGER:
-        return new IntNode(Integer.parseInt(value));
+        return new BigIntegerNode(new BigInteger(value));
       case DECIMAL:
-        return new DoubleNode(Double.parseDouble(value));
+        return new DecimalNode(new BigDecimal(value));
       case BOOLEAN:
         return BooleanNode.valueOf(Boolean.parseBoolean(value));
       case BINARY:

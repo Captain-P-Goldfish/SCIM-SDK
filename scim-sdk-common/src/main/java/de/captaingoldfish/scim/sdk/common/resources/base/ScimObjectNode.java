@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
@@ -257,7 +259,15 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     List<T> multiValuedSimpleTypes = new ArrayList<>();
     for ( JsonNode node : jsonNode )
     {
-      if (Long.class.isAssignableFrom(type))
+      if (BigDecimal.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)node.decimalValue());
+      }
+      else if (BigInteger.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)node.bigIntegerValue());
+      }
+      else if (Long.class.isAssignableFrom(type))
       {
         multiValuedSimpleTypes.add((T)Long.valueOf(node.longValue()));
       }
@@ -333,7 +343,15 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     Set<T> multiValuedSimpleTypes = new HashSet<>();
     for ( JsonNode node : jsonNode )
     {
-      if (Long.class.isAssignableFrom(type))
+      if (BigDecimal.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)node.decimalValue());
+      }
+      else if (BigInteger.class.isAssignableFrom(type))
+      {
+        multiValuedSimpleTypes.add((T)node.bigIntegerValue());
+      }
+      else if (Long.class.isAssignableFrom(type))
       {
         multiValuedSimpleTypes.add((T)Long.valueOf(node.longValue()));
       }

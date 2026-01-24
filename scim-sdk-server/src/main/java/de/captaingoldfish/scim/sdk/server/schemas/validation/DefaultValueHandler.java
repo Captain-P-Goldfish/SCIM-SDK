@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.function.Supplier;
 
@@ -12,9 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDecimalNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -93,12 +95,12 @@ public final class DefaultValueHandler
         return toArrayOrDefault(schemaAttribute,
                                 defaultValue,
                                 allowArray,
-                                () -> new ScimIntNode(schemaAttribute, Integer.parseInt(defaultValue)));
+                                () -> new ScimBigIntegerNode(schemaAttribute, new BigInteger(defaultValue)));
       case DECIMAL:
         return toArrayOrDefault(schemaAttribute,
                                 defaultValue,
                                 allowArray,
-                                () -> new ScimDoubleNode(schemaAttribute, Double.parseDouble(defaultValue)));
+                                () -> new ScimDecimalNode(schemaAttribute, new BigDecimal(defaultValue)));
       case STRING:
       case REFERENCE:
       case DATE_TIME:

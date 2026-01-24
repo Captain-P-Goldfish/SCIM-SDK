@@ -1,7 +1,9 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
+import java.math.BigDecimal;
+
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.LongNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -13,13 +15,13 @@ import lombok.Getter;
  * created at: 05.10.2019 - 20:19 <br>
  * <br>
  */
-public class ScimLongNode extends LongNode implements ScimNode
+public class ScimDecimalNode extends DecimalNode implements ScimNode
 {
 
   @Getter
   private SchemaAttribute schemaAttribute;
 
-  public ScimLongNode(SchemaAttribute schemaAttribute, long value)
+  public ScimDecimalNode(SchemaAttribute schemaAttribute, BigDecimal value)
   {
     super(value);
     this.schemaAttribute = schemaAttribute;

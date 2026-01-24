@@ -22,9 +22,9 @@ import com.fasterxml.jackson.databind.node.TextNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDecimalNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -160,7 +160,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     {
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimIntNode.class));
+      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
       Assertions.assertEquals(node.textValue(), parsedNode.textValue());
     }
   }
@@ -200,7 +200,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     {
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
-      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+      MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
       Assertions.assertEquals(node.textValue(), parsedNode.textValue());
     }
   }
@@ -639,7 +639,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     });
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimIntNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
     Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
   }
 
@@ -711,7 +711,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     });
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
-    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDoubleNode.class));
+    MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
     Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
   }
 

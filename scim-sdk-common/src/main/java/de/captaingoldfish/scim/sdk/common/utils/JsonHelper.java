@@ -676,11 +676,7 @@ public final class JsonHelper
 
       if (o1.isNumber() && o2.isNumber())
       {
-        return o1.longValue() == o2.longValue() ? 0 : 1;
-      }
-      if (o1.isNumber() && o2.isNumber())
-      {
-        return o1.longValue() == o2.longValue() ? 0 : 1;
+        return o1.decimalValue().compareTo(o2.decimalValue());
       }
       else
       {

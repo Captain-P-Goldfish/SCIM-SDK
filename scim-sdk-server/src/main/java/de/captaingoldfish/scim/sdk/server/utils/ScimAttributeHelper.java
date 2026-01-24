@@ -1,13 +1,13 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
-import java.util.Optional;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimIntNode;
-import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
+import de.captaingoldfish.scim.sdk.common.resources.base.ScimDecimalNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -39,10 +39,10 @@ public interface ScimAttributeHelper
         object = jsonNode;
         break;
       case INTEGER:
-        object = Optional.ofNullable(jsonNode.numberValue()).map(Number::longValue).orElse(null);
+        object = jsonNode.isNumber() ? jsonNode.bigIntegerValue() : null;
         break;
       case DECIMAL:
-        object = Optional.ofNullable(jsonNode.numberValue()).map(Number::doubleValue).orElse(null);
+        object = jsonNode.isNumber() ? jsonNode.decimalValue() : null;
         break;
       case BOOLEAN:
         object = jsonNode.isBoolean() ? jsonNode.booleanValue() : null;
@@ -74,17 +74,9 @@ public interface ScimAttributeHelper
       case BOOLEAN:
         return new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(value));
       case INTEGER:
-        Long longVal = Long.parseLong(value);
-        if (longVal == longVal.intValue())
-        {
-          return new ScimIntNode(schemaAttribute, longVal.intValue());
-        }
-        else
-        {
-          return new ScimLongNode(schemaAttribute, longVal);
-        }
+        return new ScimBigIntegerNode(schemaAttribute, new BigInteger(value));
       default:
-        return new ScimDoubleNode(schemaAttribute, Double.parseDouble(value));
+        return new ScimDecimalNode(schemaAttribute, new BigDecimal(value));
     }
   }
 }

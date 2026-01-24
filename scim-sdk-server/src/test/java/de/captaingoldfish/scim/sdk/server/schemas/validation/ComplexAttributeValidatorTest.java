@@ -1,9 +1,12 @@
 package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
+import java.math.BigInteger;
+
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
@@ -56,7 +59,7 @@ public class ComplexAttributeValidatorTest
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
     attribute.set("firstname", new TextNode("Captain"));
     attribute.set("lastname", new TextNode("Goldfish"));
-    attribute.set("age", new IntNode(35));
+    attribute.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
 
     JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                 attribute,

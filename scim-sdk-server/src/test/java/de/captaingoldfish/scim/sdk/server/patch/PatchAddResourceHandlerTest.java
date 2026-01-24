@@ -1,5 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.patch;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -22,7 +24,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.BigIntegerNode;
 import com.fasterxml.jackson.databind.node.BooleanNode;
+import com.fasterxml.jackson.databind.node.DecimalNode;
 import com.fasterxml.jackson.databind.node.DoubleNode;
 import com.fasterxml.jackson.databind.node.IntNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -184,17 +188,23 @@ public class PatchAddResourceHandlerTest implements FileReferences
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("date", new TextNode("1940-03-10T00:00:00Z"))));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("date",
                                                                     new TextNode("1940-03-10T00:00:00+02:00"))));
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("number", new IntNode(5))));
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("number", new LongNode(Long.MAX_VALUE))));
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("decimal", new DoubleNode(5.4))));
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("decimal", new DoubleNode(Double.MAX_VALUE))));
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("number",
+                                                                    new BigIntegerNode(BigInteger.valueOf(5)))));
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("number",
+                                                                    new BigIntegerNode(BigInteger.valueOf(Long.MAX_VALUE)))));
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("decimal",
+                                                                    new DecimalNode(BigDecimal.valueOf(5.4)))));
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("decimal",
+                                                                    new DecimalNode(BigDecimal.valueOf(Double.MAX_VALUE)))));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("bool", BooleanNode.getTrue())));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("bool", BooleanNode.getFalse())));
 
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("string", new TextNode("hello world")),
-                                                  new NameValuePair("number", new IntNode(5)),
+                                                  new NameValuePair("number",
+                                                                    new BigIntegerNode(BigInteger.valueOf(5))),
                                                   new NameValuePair("bool", BooleanNode.getTrue()),
-                                                  new NameValuePair("decimal", new DoubleNode(5.6))));
+                                                  new NameValuePair("decimal",
+                                                                    new DecimalNode(BigDecimal.valueOf(5.6)))));
 
     AllTypes complex = new AllTypes(false);
     complex.setString("hello world");
