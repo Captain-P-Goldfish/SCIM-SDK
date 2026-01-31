@@ -2,7 +2,6 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
@@ -14,7 +13,7 @@ import lombok.RequiredArgsConstructor;
  * @since 11.04.2021
  */
 @RequiredArgsConstructor
-abstract class ContextValidator
+public abstract class ContextValidator
 {
 
   private final ServiceProvider serviceProvider;

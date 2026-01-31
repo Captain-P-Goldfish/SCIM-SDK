@@ -21,7 +21,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidation
  * @author Pascal Knueppel
  * @since 10.04.2021
  */
-class ValidationSelector
+public class ValidationSelector
 {
 
   /**
