@@ -37,6 +37,7 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import lombok.Getter;
 import lombok.SneakyThrows;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -44,6 +45,7 @@ import lombok.SneakyThrows;
  * created at: 05.10.2019 - 20:10 <br>
  * <br>
  */
+@Slf4j
 public class ScimObjectNode extends ObjectNode implements ScimNode
 {
 
@@ -164,8 +166,23 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     }
     if (!(jsonNode instanceof ObjectNode))
     {
-      throw new InternalServerException("tried to extract a complex node from document with attribute " + "name '"
-                                        + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
+      try
+      {
+        jsonNode = JsonHelper.readJsonDocument(jsonNode.textValue());
+      }
+      catch (Exception ex)
+      {
+        log.trace(ex.getMessage(), ex);
+      }
+      if (!(jsonNode instanceof ObjectNode))
+      {
+        String errorMessage = String.format("tried to extract a complex node from document with attribute "
+                                            + "name '%s' but type is of '%s' with value '%s'",
+                                            attributeName,
+                                            Optional.ofNullable(jsonNode).map(JsonNode::getNodeType).orElse(null),
+                                            jsonNode);
+        throw new InternalServerException(errorMessage, null, null);
+      }
     }
     if (type.isAssignableFrom(jsonNode.getClass()))
     {
