@@ -1447,9 +1447,8 @@ public final class SchemaAttribute extends ScimObjectNode
     // binaries must be case exact
     if (Type.BINARY.equals(getType()) && !isCaseExact())
     {
-      String errorMessage = "The attribute with the name '" + getFullResourceName() + "' has an invalid declaration. "
-                            + "Binaries have to be case-exact by definition.";
-      throw getException(errorMessage, null);
+      log.info("Got binary attribute with caseExact = false. Setting it to true because all binaries are case exact.");
+      setCaseExact(true);
     }
   }
 

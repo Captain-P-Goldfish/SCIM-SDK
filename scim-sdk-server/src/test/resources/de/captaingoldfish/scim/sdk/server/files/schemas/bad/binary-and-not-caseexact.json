@@ -8,7 +8,7 @@
   "attributes": [
     {
       "name": "binary",
-      "type": "binary",
+      "type": "Binary",
       "description": "WrongBinary declaration: binaries must be case exact but I will not require them to be non-unique.",
       "mutability": "readWrite",
       "returned": "default",

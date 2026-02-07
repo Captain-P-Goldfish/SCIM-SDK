@@ -2,15 +2,19 @@ package de.captaingoldfish.scim.sdk.server.schemas;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
-import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
+import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidSchemaException;
+import de.captaingoldfish.scim.sdk.common.schemas.Schema;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 
@@ -72,17 +76,31 @@ class SchemaFactoryTest implements FileReferences
    *     "mutability": "readOnly",
    *     "returned": "never",
    * }
-   * the value is required but a readOnly attribute and it is never returned from the server. This declaration
+   * the value is required but a readOnly attribute, and it is never returned from the server. This declaration
    * simply makes no sense. The client cannot write to this attribute and will never see it
    */
   // @formatter:on
   @ParameterizedTest
   @ValueSource(strings = {DUPLICATE_NAME_SCHEMA, DUPLICATE_SUB_NAME_SCHEMA, READ_ONLY_NEVER_SCHEMA,
-                          WRITE_ONLY_ALWAYS_SCHEMA, BINARY_NOT_CASE_EXACT})
+                          WRITE_ONLY_ALWAYS_SCHEMA})
   public void testSenselessAttributeCombinationsInMetaSchemata(String badSchemaLocation)
   {
     Assertions.assertThrows(InvalidSchemaException.class,
                             () -> schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(badSchemaLocation)));
+  }
+
+  /**
+   * Makes sure that a binary attribute can be successfully imported even if the caseExact value is wrong.
+   * Verifies that the caseExact value is fixed during import.
+   */
+  @DisplayName("Binary attribute is set automatically to true")
+  @Test
+  public void testAttributeBinaryWithCaseExactFalse()
+  {
+    Schema schema = schemaFactory.registerResourceSchema(JsonHelper.loadJsonDocument(BINARY_NOT_CASE_EXACT));
+    SchemaAttribute binaryAttribute = schema.getSchemaAttribute("binary");
+    Assertions.assertEquals(Type.BINARY, binaryAttribute.getType(), "Must be a binary attribute");
+    Assertions.assertTrue(binaryAttribute.isCaseExact(), "Must be case exact");
   }
 
   /**
@@ -92,7 +110,7 @@ class SchemaFactoryTest implements FileReferences
   public void testRegisterSchemasWithMissingSchemasAttribute()
   {
     JsonNode userResourceSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
-    JsonHelper.removeAttribute(userResourceSchema, AttributeNames.RFC7643.SCHEMAS);
+    JsonHelper.removeAttribute(userResourceSchema, RFC7643.SCHEMAS);
     Assertions.assertThrows(InvalidSchemaException.class,
                             () -> schemaFactory.registerResourceSchema(userResourceSchema));
   }
