@@ -7,8 +7,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -24,6 +24,7 @@ public class RequestAttributeValidator
   /**
    * validates a schema attribute in the context of a client-request that is either a POST or a PUT request
    *
+   * @param context the current request context
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param httpMethod the current request type that is either POST or PUT
@@ -31,12 +32,12 @@ public class RequestAttributeValidator
    * @throws AttributeValidationException if the client has sent an invalid attribute that does not match its
    *           definition
    */
-  public static Optional<JsonNode> validateAttribute(ServiceProvider serviceProvider,
+  public static Optional<JsonNode> validateAttribute(Context context,
                                                      SchemaAttribute schemaAttribute,
                                                      JsonNode attribute,
                                                      HttpMethod httpMethod)
   {
-    ContextValidator requestContextValidator = getContextValidator(serviceProvider, httpMethod);
+    ContextValidator requestContextValidator = getContextValidator(context, httpMethod);
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute,
                                                                        attribute,
                                                                        requestContextValidator);
@@ -67,10 +68,9 @@ public class RequestAttributeValidator
    *          in case of creating and updating objects
    * @return the context validation for client requests
    */
-  private static ContextValidator getContextValidator(final ServiceProvider serviceProvider,
-                                                      final HttpMethod httpMethod)
+  private static ContextValidator getContextValidator(final Context context, final HttpMethod httpMethod)
   {
-    return new ContextValidator(serviceProvider, ContextValidator.ValidationContextType.REQUEST)
+    return new ContextValidator(context, ContextValidator.ValidationContextType.REQUEST)
     {
 
       @Override
@@ -97,7 +97,13 @@ public class RequestAttributeValidator
           return !isNodeNull;
         }
 
-        validateRequiredAttribute(httpMethod, schemaAttribute, isNodeNull);
+        boolean validateRequiredAttribute = !Optional.ofNullable(context)
+                                                     .map(Context::isIgnoreRequiredAttributesOnRequest)
+                                                     .orElse(false);
+        if (validateRequiredAttribute)
+        {
+          validateRequiredAttribute(httpMethod, schemaAttribute, isNodeNull);
+        }
         return true;
       }
     };

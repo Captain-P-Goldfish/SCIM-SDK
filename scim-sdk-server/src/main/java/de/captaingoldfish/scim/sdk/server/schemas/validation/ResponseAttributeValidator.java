@@ -18,6 +18,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.extern.slf4j.Slf4j;
 
@@ -48,7 +49,7 @@ class ResponseAttributeValidator
    *     "caseExact": false
    *   }
    * </pre>
-   *
+   * <p>
    * The important values that must be validated specifically in a response context are: <br>
    *
    * <pre>
@@ -58,7 +59,7 @@ class ResponseAttributeValidator
    *     "required": false
    *   }
    * </pre>
-   *
+   * <p>
    * Additionally, the <b>attributes</b> or <b>excludedAttributes</b> parameter has an effect of some of the
    * values of the <b>"returned"</b> attribute.<br>
    * <br>
@@ -220,7 +221,7 @@ class ResponseAttributeValidator
    * </li>
    * </ol>
    *
-   * @param serviceProvider the current configuration of the {@link ServiceProvider}
+   * @param context the current request context
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
@@ -234,7 +235,7 @@ class ResponseAttributeValidator
    * @throws AttributeValidationException if the client has send an invalid attribute that does not match its
    *           definition
    */
-  public static Optional<JsonNode> validateAttribute(ServiceProvider serviceProvider,
+  public static Optional<JsonNode> validateAttribute(Context context,
                                                      SchemaAttribute schemaAttribute,
                                                      JsonNode attribute,
                                                      JsonNode requestDocument,
@@ -242,7 +243,7 @@ class ResponseAttributeValidator
                                                      List<SchemaAttribute> excludedAttributesList,
                                                      BiFunction<String, String, String> referenceUrlSupplier)
   {
-    ContextValidator requestContextValidator = getContextValidator(serviceProvider,
+    ContextValidator requestContextValidator = getContextValidator(context,
                                                                    attributesList,
                                                                    requestDocument,
                                                                    excludedAttributesList,
@@ -256,7 +257,7 @@ class ResponseAttributeValidator
     {
       try
       {
-        validateRequiredAttribute(serviceProvider,
+        validateRequiredAttribute(context,
                                   schemaAttribute,
                                   !validatedNode.isPresent(),
                                   attributesList,
@@ -287,20 +288,20 @@ class ResponseAttributeValidator
    *          resource id of the resource and it will return the fully qualified url of this resource
    * @return the context validation for responses
    */
-  private static ContextValidator getContextValidator(ServiceProvider serviceProvider,
+  private static ContextValidator getContextValidator(Context context,
                                                       List<SchemaAttribute> attributesList,
                                                       JsonNode requestDocument,
                                                       List<SchemaAttribute> excludedAttributesList,
                                                       BiFunction<String, String, String> referenceUrlSupplier)
   {
-    return new ContextValidator(serviceProvider, ContextValidator.ValidationContextType.RESPONSE)
+    return new ContextValidator(context, ContextValidator.ValidationContextType.RESPONSE)
     {
 
       @Override
       public boolean validateContext(SchemaAttribute schemaAttribute, JsonNode attribute)
         throws AttributeValidationException
       {
-        final boolean validateNode = validateNode(serviceProvider,
+        final boolean validateNode = validateNode(context,
                                                   schemaAttribute,
                                                   attribute,
                                                   requestDocument,
@@ -318,7 +319,7 @@ class ResponseAttributeValidator
   /**
    * validates an attribute and will decide if the attribute should be returned to the client or not
    *
-   * @param serviceProvider the current configuration of the {@link ServiceProvider}
+   * @param context the current request context
    * @param schemaAttribute the attributes definition
    * @param attribute the attribute to validate
    * @param requestDocument the request object of the client that is used to evaluate if an attribute with a
@@ -328,7 +329,7 @@ class ResponseAttributeValidator
    * @param excludedAttributesList the list of attributes within the "excludedAttributes"-parameter
    * @return true if the validation of this attribute should proceed, false else
    */
-  private static boolean validateNode(ServiceProvider serviceProvider,
+  private static boolean validateNode(Context context,
                                       SchemaAttribute schemaAttribute,
                                       JsonNode attribute,
                                       JsonNode requestDocument,
@@ -349,7 +350,7 @@ class ResponseAttributeValidator
       return false;
     }
     final boolean isNodeNull = attribute == null || attribute.isNull();
-    validateRequiredAttribute(serviceProvider, schemaAttribute, isNodeNull, attributesList, excludedAttributesList);
+    validateRequiredAttribute(context, schemaAttribute, isNodeNull, attributesList, excludedAttributesList);
 
     if (isNodeNull)
     {
@@ -474,19 +475,19 @@ class ResponseAttributeValidator
   /**
    * validates if the attribute is required and present
    *
-   * @param serviceProvider
+   * @param context the current request context
    * @param schemaAttribute the attributes definition
    * @param isNodeNull if the attribute is null or not
    * @param attributesList tells us if the returned set should be a minimal set or not
    * @param excludedAttributesList tells us if the client asked to exclude specific attributes
    */
-  private static void validateRequiredAttribute(ServiceProvider serviceProvider,
+  private static void validateRequiredAttribute(Context context,
                                                 SchemaAttribute schemaAttribute,
                                                 boolean isNodeNull,
                                                 List<SchemaAttribute> attributesList,
                                                 List<SchemaAttribute> excludedAttributesList)
   {
-    if (!schemaAttribute.isRequired() || serviceProvider.isIgnoreRequiredAttributesOnResponse())
+    if (!schemaAttribute.isRequired() || context.isIgnoreRequiredAttributesOnResponse())
     {
       return;
     }

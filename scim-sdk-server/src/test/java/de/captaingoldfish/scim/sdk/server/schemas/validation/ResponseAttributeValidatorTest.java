@@ -38,6 +38,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.AttributeBuilder;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
@@ -132,7 +133,7 @@ public class ResponseAttributeValidatorTest
 
 
     Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-      return ResponseAttributeValidator.validateAttribute(serviceProvider,
+      return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                           schemaAttribute,
                                                           attribute,
                                                           null,
@@ -178,7 +179,7 @@ public class ResponseAttributeValidatorTest
                                                                 .multivalued(multiValued)
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return ResponseAttributeValidator.validateAttribute(serviceProvider,
+          return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                               schemaAttribute,
                                                               null,
                                                               null,
@@ -236,7 +237,7 @@ public class ResponseAttributeValidatorTest
           SchemaAttribute schemaAttribute = builder.build();
           JsonNode attribute = AttributeBuilder.build(schemaAttribute, type, "2");
           Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-            return ResponseAttributeValidator.validateAttribute(serviceProvider,
+            return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                                 schemaAttribute,
                                                                 attribute,
                                                                 null,
@@ -293,7 +294,7 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -355,7 +356,7 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -413,7 +414,7 @@ public class ResponseAttributeValidatorTest
       attribute.set("firstname", new TextNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -459,7 +460,7 @@ public class ResponseAttributeValidatorTest
                                                                 .multivalued(multiValued)
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return ResponseAttributeValidator.validateAttribute(serviceProvider,
+          return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                               schemaAttribute,
                                                               null,
                                                               null,
@@ -517,7 +518,7 @@ public class ResponseAttributeValidatorTest
           SchemaAttribute schemaAttribute = builder.build();
           JsonNode attribute = AttributeBuilder.build(schemaAttribute, type, "2");
           Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-            return ResponseAttributeValidator.validateAttribute(serviceProvider,
+            return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                                 schemaAttribute,
                                                                 attribute,
                                                                 null,
@@ -574,7 +575,7 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -636,7 +637,7 @@ public class ResponseAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -694,7 +695,7 @@ public class ResponseAttributeValidatorTest
       attribute.set("firstname", new TextNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -738,7 +739,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       try
       {
-        ResponseAttributeValidator.validateAttribute(serviceProvider,
+        ResponseAttributeValidator.validateAttribute(new Context(null),
                                                      schemaAttribute,
                                                      null,
                                                      null,
@@ -777,7 +778,8 @@ public class ResponseAttributeValidatorTest
     @ValueSource(strings = {"READ_WRITE", "READ_ONLY", "IMMUTABLE"})
     public void testRequiredAttributeWithMissingAttributeWithIgnoreRequiredAttributes(Mutability mutability)
     {
-      serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnResponse(true);
 
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
                                                               .name("id")
@@ -785,7 +787,7 @@ public class ResponseAttributeValidatorTest
                                                               .required(true)
                                                               .mutability(mutability)
                                                               .build();
-      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(serviceProvider,
+      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(context,
                                                                                            schemaAttribute,
                                                                                            null,
                                                                                            null,
@@ -825,7 +827,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       try
       {
-        ResponseAttributeValidator.validateAttribute(serviceProvider,
+        ResponseAttributeValidator.validateAttribute(new Context(null),
                                                      schemaAttribute,
                                                      NullNode.getInstance(),
                                                      null,
@@ -867,14 +869,15 @@ public class ResponseAttributeValidatorTest
     @ValueSource(strings = {"READ_WRITE", "READ_ONLY", "IMMUTABLE"})
     public void testRequiredAttributeWithNullAttributeWithIgnoreRequiredAttributes(Mutability mutability)
     {
-      serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnResponse(true);
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
                                                               .name("id")
                                                               .type(Type.STRING)
                                                               .required(true)
                                                               .mutability(mutability)
                                                               .build();
-      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(serviceProvider,
+      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(context,
                                                                                            schemaAttribute,
                                                                                            NullNode.getInstance(),
                                                                                            null,
@@ -914,7 +917,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -957,7 +960,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "21");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1000,7 +1003,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1062,7 +1065,7 @@ public class ResponseAttributeValidatorTest
 
       try
       {
-        ResponseAttributeValidator.validateAttribute(serviceProvider,
+        ResponseAttributeValidator.validateAttribute(new Context(null),
                                                      schemaAttribute,
                                                      attribute,
                                                      null,
@@ -1122,7 +1125,8 @@ public class ResponseAttributeValidatorTest
     @Test
     public void testComplexValidationWithReadOnlySubAttributesWithRequiredIgnored()
     {
-      serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnResponse(true);
       SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder()
                                                                  .name("firstname")
                                                                  .type(Type.STRING)
@@ -1139,7 +1143,7 @@ public class ResponseAttributeValidatorTest
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
       attribute.set("firstname", new TextNode("goldfish"));
 
-      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(serviceProvider,
+      Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(context,
                                                                                            schemaAttribute,
                                                                                            attribute,
                                                                                            null,
@@ -1183,7 +1187,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1226,7 +1230,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1265,7 +1269,7 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.ALWAYS)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             null,
                                                             null,
@@ -1305,7 +1309,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1349,7 +1353,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1393,7 +1397,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1439,7 +1443,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1484,7 +1488,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1523,7 +1527,7 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.DEFAULT)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             null,
                                                             null,
@@ -1563,7 +1567,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1607,7 +1611,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1653,7 +1657,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1699,7 +1703,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1743,7 +1747,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1792,7 +1796,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1829,7 +1833,7 @@ public class ResponseAttributeValidatorTest
                                                               .returned(Returned.REQUEST)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             null,
                                                             null,
@@ -1869,7 +1873,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = NullNode.getInstance();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1913,7 +1917,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "12");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -1959,7 +1963,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -2005,7 +2009,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -2049,7 +2053,7 @@ public class ResponseAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             null,
@@ -2096,7 +2100,7 @@ public class ResponseAttributeValidatorTest
       requestDocument.set(schemaAttribute.getName(), attribute);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             attribute,
                                                             requestDocument,
@@ -2130,7 +2134,7 @@ public class ResponseAttributeValidatorTest
       members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             members,
                                                             null,
@@ -2164,7 +2168,7 @@ public class ResponseAttributeValidatorTest
       members.set(AttributeNames.RFC7643.REF, new TextNode(resourceUrl));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             members,
                                                             null,
@@ -2197,7 +2201,7 @@ public class ResponseAttributeValidatorTest
         }
 
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return ResponseAttributeValidator.validateAttribute(serviceProvider,
+          return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                               schemaAttribute,
                                                               members,
                                                               null,
@@ -2236,7 +2240,7 @@ public class ResponseAttributeValidatorTest
         }
 
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return ResponseAttributeValidator.validateAttribute(serviceProvider,
+          return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                               schemaAttribute,
                                                               members,
                                                               null,
@@ -2274,7 +2278,7 @@ public class ResponseAttributeValidatorTest
       members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             members,
                                                             null,
@@ -2302,7 +2306,7 @@ public class ResponseAttributeValidatorTest
       members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             members,
                                                             null,
@@ -2337,7 +2341,7 @@ public class ResponseAttributeValidatorTest
       }
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             members,
                                                             null,
@@ -2377,7 +2381,7 @@ public class ResponseAttributeValidatorTest
       member.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             schemaAttribute,
                                                             member,
                                                             null,
@@ -2480,7 +2484,7 @@ public class ResponseAttributeValidatorTest
       User user = User.builder().userName("captain").name(name).build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             user,
@@ -2526,7 +2530,7 @@ public class ResponseAttributeValidatorTest
       User user = User.builder().userName("captain").name(name).build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             user,
@@ -2573,7 +2577,7 @@ public class ResponseAttributeValidatorTest
       User user = User.builder().userName("captain").name(Name.builder().givenName("goldfish").build()).build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             user,
@@ -2624,7 +2628,7 @@ public class ResponseAttributeValidatorTest
       User user = User.builder().userName("captain").name(Name.builder().givenName("goldfish").build()).build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             user,
@@ -2677,7 +2681,7 @@ public class ResponseAttributeValidatorTest
       JsonNode nickName = new TextNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nickNameAttribute,
                                                             nickName,
                                                             null,
@@ -2722,7 +2726,7 @@ public class ResponseAttributeValidatorTest
       JsonNode nickName = new TextNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nickNameAttribute,
                                                             nickName,
                                                             null,
@@ -2772,7 +2776,7 @@ public class ResponseAttributeValidatorTest
       User user = User.builder().userName("captain").build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             user,
@@ -2826,7 +2830,7 @@ public class ResponseAttributeValidatorTest
       User user = User.builder().userName("captain").build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             user,
@@ -2868,7 +2872,7 @@ public class ResponseAttributeValidatorTest
       JsonNode nickName = new TextNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nickNameAttribute,
                                                             nickName,
                                                             null,
@@ -2912,7 +2916,7 @@ public class ResponseAttributeValidatorTest
       JsonNode nickName = new TextNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nickNameAttribute,
                                                             nickName,
                                                             null,
@@ -2947,7 +2951,7 @@ public class ResponseAttributeValidatorTest
       JsonNode nickName = new TextNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nickNameAttribute,
                                                             nickName,
                                                             null,
@@ -2984,7 +2988,7 @@ public class ResponseAttributeValidatorTest
       Name name = Name.builder().familyName("goldfish").middlename("captain").build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             null,
@@ -3023,7 +3027,7 @@ public class ResponseAttributeValidatorTest
       Name name = Name.builder().familyName("goldfish").middlename("captain").build();
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return ResponseAttributeValidator.validateAttribute(serviceProvider,
+        return ResponseAttributeValidator.validateAttribute(new Context(null),
                                                             nameAttribute,
                                                             name,
                                                             null,

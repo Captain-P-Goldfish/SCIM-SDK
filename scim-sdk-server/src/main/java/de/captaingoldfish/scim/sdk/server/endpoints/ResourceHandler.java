@@ -316,13 +316,14 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param referenceUrlSupplier the url-supplier to build specific urls for resources
    * @return an optional response-validator
    */
-  protected Optional<AbstractResourceValidator> getResponseValidator(List<SchemaAttribute> attributesList,
+  protected Optional<AbstractResourceValidator> getResponseValidator(Context context,
+                                                                     List<SchemaAttribute> attributesList,
                                                                      List<SchemaAttribute> excludedAttributesList,
                                                                      JsonNode requestDocument,
                                                                      BiFunction<String, String, String> referenceUrlSupplier)
   {
-    return Optional.of(new ResponseResourceValidator(serviceProvider, resourceType, attributesList,
-                                                     excludedAttributesList, requestDocument, referenceUrlSupplier));
+    return Optional.of(new ResponseResourceValidator(context, resourceType, attributesList, excludedAttributesList,
+                                                     requestDocument, referenceUrlSupplier));
   }
 
   /**

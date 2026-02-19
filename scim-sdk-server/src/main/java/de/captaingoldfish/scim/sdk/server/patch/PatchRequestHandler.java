@@ -1040,7 +1040,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       {
         return attributeValue;
       }
-      JsonNode validatedNode = RequestAttributeValidator.validateAttribute(serviceProvider,
+      JsonNode validatedNode = RequestAttributeValidator.validateAttribute(new Context(null),
                                                                            schemaAttribute,
                                                                            attributeValue,
                                                                            HttpMethod.PATCH)
@@ -1062,7 +1062,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         {
           for ( SchemaAttribute subAttribute : schemaAttribute.getSubAttributes() )
           {
-            RequestAttributeValidator.validateAttribute(serviceProvider,
+            RequestAttributeValidator.validateAttribute(new Context(null),
                                                         subAttribute,
                                                         complexNode.get(subAttribute.getName()),
                                                         HttpMethod.PATCH);

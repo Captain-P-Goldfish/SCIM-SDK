@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.schemas;
 
 import java.util.List;
 
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -77,8 +78,8 @@ public class SchemaAttributeValidationTest implements FileReferences
 
 
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, userResourceType,
-                                                                                     HttpMethod.POST);
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(new Context(null),
+                                                                                     userResourceType, HttpMethod.POST);
     Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
 
     Assertions.assertTrue(requestResourceValidator.getValidationContext().hasErrors());
@@ -121,7 +122,7 @@ public class SchemaAttributeValidationTest implements FileReferences
     user.setUserName(validUsername);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestResourceValidator(serviceProvider, userResourceType, HttpMethod.POST).validateDocument(user);
+      return new RequestResourceValidator(new Context(null), userResourceType, HttpMethod.POST).validateDocument(user);
     });
 
     User validatedUser = JsonHelper.copyResourceToObject(validatedDocument, User.class);

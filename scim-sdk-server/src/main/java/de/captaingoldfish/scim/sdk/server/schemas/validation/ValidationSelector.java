@@ -86,7 +86,7 @@ public class ValidationSelector
         JsonNode validatedAttribute = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                         effectiveAttribute);
         CustomAttributeValidator.validateSimpleNode(schemaAttribute, validatedAttribute);
-        return Optional.of(validatedAttribute);
+        return Optional.ofNullable(validatedAttribute);
       }
     }
   }

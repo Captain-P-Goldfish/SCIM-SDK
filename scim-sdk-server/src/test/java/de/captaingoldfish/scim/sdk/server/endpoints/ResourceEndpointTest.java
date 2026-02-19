@@ -1667,11 +1667,13 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     final String url = BASE_URI + EndpointPaths.USERS;
 
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(true);
     ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
                                                                HttpMethod.PATCH,
                                                                patchOpRequest.toString(),
                                                                httpHeaders,
-                                                               new Context(null));
+                                                               context);
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(UpdateResponse.class));
   }
 
@@ -1774,17 +1776,14 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   @Test
   public void testAskForASpecificAttributeThatIsMissingInTheResponse()
   {
-    resourceEndpoint.getServiceProvider().setIgnoreRequiredAttributesOnResponse(false);
     // 1. set patch config to null
     resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(false);
 
     // 2. ask explicitly for the patch attribute
     final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?attributes=patch";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
-                                                               HttpMethod.GET,
-                                                               null,
-                                                               httpHeaders,
-                                                               new Context(null));
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders, context);
 
     // 3. we expect an internal server error since the required attribute is not provided by the server
     Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR,
@@ -1806,17 +1805,15 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   @Test
   public void testAskForASpecificAttributeThatIsMissingInTheResponse_()
   {
-    serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
     // 1. set patch config to null
     resourceEndpoint.getServiceProvider().remove(AttributeNames.RFC7643.PATCH);
 
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(true);
+
     // 2. ask explicitly for the patch attribute
     final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?attributes=patch";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
-                                                               HttpMethod.GET,
-                                                               null,
-                                                               httpHeaders,
-                                                               new Context(null));
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders, context);
 
     // 3. we expect a successful response
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(GetResponse.class));
@@ -1838,11 +1835,10 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
   {
     // 1. ask explicitly to exclude the patch attribute
     final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?excludedAttributes=patch";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
-                                                               HttpMethod.GET,
-                                                               null,
-                                                               httpHeaders,
-                                                               new Context(null));
+
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(true);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders, context);
 
     // 2. expect all attributes to be returned except for the patch attribute
     ResourceType resourceType = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.SERVICE_PROVIDER_CONFIG)
@@ -1888,11 +1884,9 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
 
     // 2. ask explicitly to exclude the patch attribute
     final String url = BASE_URI + EndpointPaths.SERVICE_PROVIDER_CONFIG + "/?excludedAttributes=patch";
-    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
-                                                               HttpMethod.GET,
-                                                               null,
-                                                               httpHeaders,
-                                                               new Context(null));
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(true);
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url, HttpMethod.GET, null, httpHeaders, context);
 
     // 3. expect all attributes to be returned except for the patch attribute
     ResourceType resourceType = resourceEndpoint.getResourceTypeByName(ResourceTypeNames.SERVICE_PROVIDER_CONFIG)

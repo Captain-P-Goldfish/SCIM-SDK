@@ -19,9 +19,9 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.ContextValidator.ValidationContextType;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
@@ -37,7 +37,7 @@ public class MultivaluedComplexAttributeValidatorTest
   /**
    * a simple context-validator always evaluating to true. The contextType has no meaning for the tests here
    */
-  private static final ContextValidator simpleContextValidator = new ContextValidator(new ServiceProvider(),
+  private static final ContextValidator simpleContextValidator = new ContextValidator(new Context(null),
                                                                                       ValidationContextType.REQUEST)
   {
 
@@ -566,7 +566,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -629,7 +629,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -679,7 +679,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -728,7 +728,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override

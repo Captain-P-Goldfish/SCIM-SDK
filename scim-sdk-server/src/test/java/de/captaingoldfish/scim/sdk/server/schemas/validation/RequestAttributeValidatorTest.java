@@ -22,6 +22,7 @@ import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.AttributeBuilder;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
@@ -108,7 +109,10 @@ public class RequestAttributeValidatorTest
 
 
     Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-      return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, attribute, HttpMethod.POST);
+      return RequestAttributeValidator.validateAttribute(new Context(null),
+                                                         schemaAttribute,
+                                                         attribute,
+                                                         HttpMethod.POST);
     });
     Assertions.assertTrue(validatedNode.isPresent());
     Assertions.assertEquals(attribute, validatedNode.get());
@@ -152,7 +156,7 @@ public class RequestAttributeValidatorTest
                                                                 .multivalued(multiValued)
                                                                 .build();
         Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-          return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
+          return RequestAttributeValidator.validateAttribute(new Context(null), schemaAttribute, null, HttpMethod.POST);
         });
         Assertions.assertFalse(validatedNode.isPresent());
       }
@@ -197,7 +201,7 @@ public class RequestAttributeValidatorTest
                                                                   .build();
           JsonNode attribute = AttributeBuilder.build(type, "2");
           Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-            return RequestAttributeValidator.validateAttribute(serviceProvider,
+            return RequestAttributeValidator.validateAttribute(new Context(null),
                                                                schemaAttribute,
                                                                attribute,
                                                                HttpMethod.POST);
@@ -251,7 +255,7 @@ public class RequestAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(serviceProvider,
+        return RequestAttributeValidator.validateAttribute(new Context(null),
                                                            schemaAttribute,
                                                            attribute,
                                                            HttpMethod.POST);
@@ -310,7 +314,7 @@ public class RequestAttributeValidatorTest
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(serviceProvider,
+        return RequestAttributeValidator.validateAttribute(new Context(null),
                                                            schemaAttribute,
                                                            attribute,
                                                            HttpMethod.POST);
@@ -365,7 +369,7 @@ public class RequestAttributeValidatorTest
       attribute.set("firstname", new TextNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(serviceProvider,
+        return RequestAttributeValidator.validateAttribute(new Context(null),
                                                            schemaAttribute,
                                                            attribute,
                                                            HttpMethod.POST);
@@ -408,7 +412,7 @@ public class RequestAttributeValidatorTest
                                                               .required(false)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
+        return RequestAttributeValidator.validateAttribute(new Context(null), schemaAttribute, null, HttpMethod.POST);
       });
       Assertions.assertFalse(validatedNode.isPresent());
     }
@@ -441,7 +445,7 @@ public class RequestAttributeValidatorTest
                                                               .required(false)
                                                               .build();
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(serviceProvider,
+        return RequestAttributeValidator.validateAttribute(new Context(null),
                                                            schemaAttribute,
                                                            new TextNode("123456"),
                                                            HttpMethod.POST);
@@ -485,7 +489,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(new Context(null), schemaAttribute, null, HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -496,6 +500,29 @@ public class RequestAttributeValidatorTest
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
       }
+    }
+
+    /**
+     * makes sure that the validation does not fail as in
+     * {@link #testRequiredReadWriteAndWriteOnlyAttributeWithMissingAttribute(Mutability)} if the required
+     * validation is disabled
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"READ_WRITE", "WRITE_ONLY"})
+    public void testRequiredReadWriteAndWriteOnlyAttributeWithMissingAttributeAndIgnored(Mutability mutability)
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(Type.STRING)
+                                                              .required(true)
+                                                              .mutability(mutability)
+                                                              .build();
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnRequest(true);
+      Assertions.assertDoesNotThrow(() -> RequestAttributeValidator.validateAttribute(context,
+                                                                                      schemaAttribute,
+                                                                                      null,
+                                                                                      HttpMethod.POST));
     }
 
     /**
@@ -528,7 +555,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(serviceProvider,
+        RequestAttributeValidator.validateAttribute(new Context(null),
                                                     schemaAttribute,
                                                     NullNode.getInstance(),
                                                     HttpMethod.POST);
@@ -542,6 +569,32 @@ public class RequestAttributeValidatorTest
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
       }
+    }
+
+    /**
+     * makes sure that the test {@link #testRequiredReadWriteAndWriteOnlyAttributeWithNullAttribute(Mutability)}
+     * does not fail if validation for required attributes is disabled
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"READ_WRITE", "WRITE_ONLY"})
+    public void testRequiredReadWriteAndWriteOnlyAttributeWithNullAttributeWithRequiredIgnored(Mutability mutability)
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(Type.STRING)
+                                                              .required(true)
+                                                              .mutability(mutability)
+                                                              .build();
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnRequest(true);
+      JsonNode jsonNode = Assertions.assertDoesNotThrow(() -> {
+        return RequestAttributeValidator.validateAttribute(context,
+                                                           schemaAttribute,
+                                                           NullNode.getInstance(),
+                                                           HttpMethod.POST)
+                                        .orElse(null);
+      });
+      Assertions.assertNull(jsonNode);
     }
 
     /**
@@ -571,7 +624,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, null, HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(new Context(null), schemaAttribute, null, HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)
@@ -582,6 +635,27 @@ public class RequestAttributeValidatorTest
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
       }
+    }
+
+    /**
+     * makes sure that the same request from {@link #testRequiredImmutableMissingAttributeOnPostRequest()} does
+     * not fail if the validation for required attributes is disabled
+     */
+    @Test
+    public void testRequiredImmutableMissingAttributeOnPostRequestIsIgnored()
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(Type.STRING)
+                                                              .required(true)
+                                                              .mutability(Mutability.IMMUTABLE)
+                                                              .build();
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnRequest(true);
+      Assertions.assertDoesNotThrow(() -> RequestAttributeValidator.validateAttribute(context,
+                                                                                      schemaAttribute,
+                                                                                      null,
+                                                                                      HttpMethod.POST));
     }
 
     /**
@@ -613,7 +687,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       try
       {
-        RequestAttributeValidator.validateAttribute(serviceProvider,
+        RequestAttributeValidator.validateAttribute(new Context(null),
                                                     schemaAttribute,
                                                     NullNode.getInstance(),
                                                     HttpMethod.POST);
@@ -627,6 +701,30 @@ public class RequestAttributeValidatorTest
                                             schemaAttribute.getFullResourceName());
         Assertions.assertEquals(errorMessage, ex.getMessage());
       }
+    }
+
+    /**
+     * makes sure that the test {@link #testRequiredImmutableNullAttributeOnPostRequest()} does not fail if
+     * validation for required attributes is disabled
+     */
+    @Test
+    public void testRequiredImmutableNullAttributeOnPostRequestIsIgnored()
+    {
+      SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("id")
+                                                              .type(Type.STRING)
+                                                              .required(true)
+                                                              .mutability(Mutability.IMMUTABLE)
+                                                              .build();
+      Context context = new Context(null);
+      context.setIgnoreRequiredAttributesOnRequest(true);
+      JsonNode validatedNode = Assertions.assertDoesNotThrow(() -> {
+        return RequestAttributeValidator.validateAttribute(context,
+                                                           schemaAttribute,
+                                                           NullNode.getInstance(),
+                                                           HttpMethod.POST);
+      }).orElse(null);
+      Assertions.assertNull(validatedNode);
     }
 
     /**
@@ -659,7 +757,7 @@ public class RequestAttributeValidatorTest
                                                               .build();
       JsonNode attribute = AttributeBuilder.build(type, "2");
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
-        return RequestAttributeValidator.validateAttribute(serviceProvider,
+        return RequestAttributeValidator.validateAttribute(new Context(null),
                                                            schemaAttribute,
                                                            attribute,
                                                            HttpMethod.POST);
@@ -718,7 +816,7 @@ public class RequestAttributeValidatorTest
 
       try
       {
-        RequestAttributeValidator.validateAttribute(serviceProvider, schemaAttribute, attribute, HttpMethod.POST);
+        RequestAttributeValidator.validateAttribute(new Context(null), schemaAttribute, attribute, HttpMethod.POST);
         Assertions.fail("this point must not be reached");
       }
       catch (AttributeValidationException ex)

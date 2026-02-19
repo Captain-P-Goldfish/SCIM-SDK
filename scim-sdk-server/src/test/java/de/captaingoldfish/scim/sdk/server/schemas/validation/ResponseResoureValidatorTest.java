@@ -136,7 +136,7 @@ public class ResponseResoureValidatorTest implements FileReferences
     Assertions.assertEquals(0, testUser.getSchemas().size());
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                            referenceUrlSupplier).validateDocument(testUser);
     });
     TestUser validatedTestUser = (TestUser)validatedDocument;
@@ -165,10 +165,11 @@ public class ResponseResoureValidatorTest implements FileReferences
     {
       schemaExtension.setRequired(true);
     }
-    serviceProvider.setIgnoreRequiredExtensionsOnResponse(true);
+    Context context = new Context(null);
+    context.setIgnoreRequiredExtensionsOnResponse(true);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      return new ResponseResourceValidator(context, resourceType, null, null, null,
                                            referenceUrlSupplier).validateDocument(testUser);
     });
     TestUser validatedTestUser = (TestUser)validatedDocument;
@@ -197,10 +198,11 @@ public class ResponseResoureValidatorTest implements FileReferences
     {
       schemaExtension.setRequired(true);
     }
-    serviceProvider.setIgnoreRequiredExtensionsOnResponse(false);
+    Context context = new Context(null);
+    context.setIgnoreRequiredExtensionsOnResponse(false);
 
     DocumentValidationException ex = Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      new ResponseResourceValidator(context, resourceType, null, null, null,
                                     referenceUrlSupplier).validateDocument(testUser);
     });
     Assertions.assertEquals(String.format("Required extension '%s' is missing", SchemaUris.ENTERPRISE_USER_URI),

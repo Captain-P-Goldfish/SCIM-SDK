@@ -5,8 +5,6 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import lombok.AccessLevel;
-import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -15,7 +13,6 @@ import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
@@ -25,7 +22,10 @@ import de.captaingoldfish.scim.sdk.common.utils.AttributeExtractor;
 import de.captaingoldfish.scim.sdk.common.utils.CaseInsensitiveAttributeExtractor;
 import de.captaingoldfish.scim.sdk.common.utils.CaseSensitiveAttributeExtractor;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -40,12 +40,14 @@ public abstract class AbstractSchemaValidator
 {
 
   /**
-   * the service provider configuration in order to check if case-insensitive attribute extraction is enabled or
-   * not
+   * the current request context
    */
   @Getter(AccessLevel.PROTECTED)
-  private final ServiceProvider serviceProvider;
+  private final Context context;
 
+  /**
+   * the type of the node that is being validated.
+   */
   protected final Class resourceNodeType;
 
   /**
@@ -144,8 +146,8 @@ public abstract class AbstractSchemaValidator
    */
   public AttributeExtractor getAttributeExtractor(JsonNode resource)
   {
-    final boolean caseInsensitiveValidation = Optional.ofNullable(serviceProvider)
-                                                      .map(ServiceProvider::isCaseInsensitiveValidation)
+    final boolean caseInsensitiveValidation = Optional.ofNullable(context)
+                                                      .map(Context::isCaseInsensitiveValidation)
                                                       .orElse(false);
     if (caseInsensitiveValidation)
     {
