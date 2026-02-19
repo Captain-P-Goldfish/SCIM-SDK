@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -111,7 +112,7 @@ public class ResourceTypeTest implements FileReferences
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     TestHelper.addMetaToDocument(enterpriseUserDocument);
-    JsonNode validatedDocument = new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+    JsonNode validatedDocument = new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                                                (s, s2) -> "http://localhost")
                                                                                              .validateDocument(enterpriseUserDocument);
 
@@ -164,7 +165,7 @@ public class ResourceTypeTest implements FileReferences
     resourceType.setResourceHandlerImpl(new UserHandlerImpl(false));
 
     JsonNode enterpriseUserDocument = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
-    JsonNode validatedDocument = new RequestResourceValidator(serviceProvider, resourceType,
+    JsonNode validatedDocument = new RequestResourceValidator(new Context(null), resourceType,
                                                               HttpMethod.POST).validateDocument(enterpriseUserDocument);
 
     SchemaValidatorTest.validateJsonNodeIsScimNode(null, validatedDocument);

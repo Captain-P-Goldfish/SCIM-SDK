@@ -283,7 +283,7 @@ class BulkEndpoint
   {
     HttpMethod httpMethod = operation.getMethod();
     Map<String, String> httpHeaders = getHttpHeadersForBulk(operation);
-    boolean lenientContentTypeChecking = getServiceProvider().isLenientContentTypeChecking();
+    boolean lenientContentTypeChecking = context.isLenientContentTypeChecking();
 
     UriInfos operationUriInfo = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                             baseUri + operation.getPath(),
@@ -424,7 +424,7 @@ class BulkEndpoint
                                                                                       Map<String, String> httpHeaders,
                                                                                       Context context)
   {
-    boolean lenientContentTypeChecking = getServiceProvider().isLenientContentTypeChecking();
+    boolean lenientContentTypeChecking = context.isLenientContentTypeChecking();
     return (resourceId, resourceType) -> {
       UriInfos uriInfos = UriInfos.getRequestUrlInfos(getResourceTypeFactory(),
                                                       String.format("%s%s/%s",
@@ -560,7 +560,7 @@ class BulkEndpoint
       JsonNode jsonNode = JsonHelper.readJsonDocument(requestBody);
       SchemaFactory schemaFactory = getResourceTypeFactory().getSchemaFactory();
       Schema bulkRequestSchema = schemaFactory.getMetaSchema(SchemaUris.BULK_REQUEST_URI);
-      JsonNode validatedRequest = new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
+      JsonNode validatedRequest = new RequestSchemaValidator(new Context(null), ScimObjectNode.class,
                                                              HttpMethod.POST).validateDocument(bulkRequestSchema,
                                                                                                jsonNode);
       BulkRequest bulkRequest = JsonHelper.copyResourceToObject(validatedRequest, BulkRequest.class);

@@ -82,7 +82,7 @@ class SimpleAttributeValidator
     }
     checkCanonicalValues(schemaAttribute, attribute);
 
-    boolean isNodeTypeValid = false;
+    boolean isNodeTypeValid;
     Supplier<JsonNode> validatedNodeSupplier;
     Type type = schemaAttribute.getType();
     switch (type)
@@ -138,6 +138,10 @@ class SimpleAttributeValidator
 
     invalidNodeType: if (!isNodeTypeValid)
     {
+      if (attribute.isNull())
+      {
+        return null;
+      }
       Optional<JsonNode> fallbackNode = tryToParseFromStringValue(schemaAttribute, attribute);
       if (fallbackNode.isPresent())
       {

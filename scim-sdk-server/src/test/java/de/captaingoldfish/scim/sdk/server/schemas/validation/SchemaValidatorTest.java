@@ -72,6 +72,7 @@ import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Member;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.GroupHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
@@ -91,11 +92,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SchemaValidatorTest implements FileReferences
 {
-
-  /**
-   * a basic service provider configuration
-   */
-  private ServiceProvider serviceProvider;
 
   /**
    * a url supplier that may be used in special cases during schema validation
@@ -222,7 +218,6 @@ public class SchemaValidatorTest implements FileReferences
   @BeforeEach
   public void initialize()
   {
-    this.serviceProvider = new ServiceProvider();
     this.resourceTypeFactory = new ResourceTypeFactory();
   }
 
@@ -312,11 +307,11 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     JsonHelper.replaceNode(userSchema, attributeName, JsonNodeFactory.instance.nullNode());
-    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null,
+    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null,
                                                                     null, referenceUrlSupplier).validateDocument(
                                                                                                                  resourceMetaSchema,
                                                                                                                  userSchema));
-    Assertions.assertDoesNotThrow(() -> new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
+    Assertions.assertDoesNotThrow(() -> new RequestSchemaValidator(new Context(null), ScimObjectNode.class,
                                                                    HttpMethod.POST).validateDocument(resourceMetaSchema,
                                                                                                      userSchema));
   }
@@ -341,11 +336,11 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode attributes = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonNode firstAttribute = attributes.get(0);
     JsonHelper.replaceNode(firstAttribute, attributeName, JsonNodeFactory.instance.nullNode());
-    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null,
+    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null,
                                                                     null, referenceUrlSupplier).validateDocument(
                                                                                                                  resourceMetaSchema,
                                                                                                                  userSchema));
-    Assertions.assertDoesNotThrow(() -> new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
+    Assertions.assertDoesNotThrow(() -> new RequestSchemaValidator(new Context(null), ScimObjectNode.class,
                                                                    HttpMethod.POST).validateDocument(resourceMetaSchema,
                                                                                                      userSchema));
   }
@@ -366,7 +361,7 @@ public class SchemaValidatorTest implements FileReferences
     arrayNode.add("bla2");
     JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, arrayNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+                            () -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                                               referenceUrlSupplier).validateDocument(resourceMetaSchema,
                                                                                                      userSchema));
   }
@@ -383,7 +378,7 @@ public class SchemaValidatorTest implements FileReferences
     IntNode idNode = new IntNode(new Random().nextInt());
     JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, idNode);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+                            () -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                                               referenceUrlSupplier).validateDocument(resourceMetaSchema,
                                                                                                      userSchema));
   }
@@ -401,7 +396,7 @@ public class SchemaValidatorTest implements FileReferences
 
     JsonHelper.writeValue(userResourceTypeSchema, attributeName, "oh happy day");
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+                            () -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                                               referenceUrlSupplier).validateDocument(resourceTypeSchema,
                                                                                                      userResourceTypeSchema));
   }
@@ -419,7 +414,7 @@ public class SchemaValidatorTest implements FileReferences
     addTimestampToMetaSchemaAndDocument(dateTime, resourceTypeSchema, userResourceTypeSchema);
 
     Schema metaSchema = new Schema(resourceTypeSchema);
-    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null,
+    Assertions.assertDoesNotThrow(() -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null,
                                                                     null, referenceUrlSupplier).validateDocument(
                                                                                                                  metaSchema,
                                                                                                                  userResourceTypeSchema));
@@ -440,7 +435,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(resourceTypeSchema);
     Assertions.assertThrows(DocumentValidationException.class,
-                            () -> new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+                            () -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                                               referenceUrlSupplier).validateDocument(metaSchema,
                                                                                                      userResourceTypeSchema));
   }
@@ -483,7 +478,7 @@ public class SchemaValidatorTest implements FileReferences
     final String helloWorldKey = "helloWorld";
     JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
 
-    JsonNode validatedSchema = new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+    JsonNode validatedSchema = new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                                            referenceUrlSupplier).validateDocument(resourceTypeSchema,
                                                                                                   userResourceTypeSchema);
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedSchema, helloWorldKey).isPresent());
@@ -514,7 +509,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(documentLocation);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+      return new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                          referenceUrlSupplier).validateDocument(resourceMetaSchema, userSchema);
     });
     Assertions.assertNotNull(validatedDocument);
@@ -534,7 +529,7 @@ public class SchemaValidatorTest implements FileReferences
 
     JsonHelper.removeAttribute(resourceSchema, AttributeNames.RFC7643.ID);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+      new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                   referenceUrlSupplier).validateDocument(metaSchema, resourceSchema);
     });
   }
@@ -551,11 +546,12 @@ public class SchemaValidatorTest implements FileReferences
     Schema metaSchema = new Schema(JsonHelper.loadJsonDocument(metaSchemaLocation));
     JsonNode resourceSchema = JsonHelper.loadJsonDocument(documentLocation);
 
-    serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(true);
 
     JsonHelper.removeAttribute(resourceSchema, AttributeNames.RFC7643.ID);
     Assertions.assertDoesNotThrow(() -> {
-      new ResponseSchemaValidator(serviceProvider, ScimObjectNode.class, null, null, null,
+      new ResponseSchemaValidator(context, ScimObjectNode.class, null, null, null,
                                   referenceUrlSupplier).validateDocument(metaSchema, resourceSchema);
     });
   }
@@ -581,7 +577,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Assertions.assertNull(user.get(SchemaUris.ENTERPRISE_USER_URI));
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestResourceValidator(serviceProvider, userResourceType, HttpMethod.POST).validateDocument(user);
+      return new RequestResourceValidator(new Context(null), userResourceType, HttpMethod.POST).validateDocument(user);
     });
     User validatedUser = JsonHelper.readJsonDocument(validatedDocument.toString(), User.class);
     Assertions.assertFalse(validatedUser.getEnterpriseUser().isPresent());
@@ -599,8 +595,8 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode enterpriseUser = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(userSchema,
-                                                                                                       enterpriseUser);
+      return new RequestSchemaValidator(new Context(null), User.class,
+                                        HttpMethod.POST).validateDocument(userSchema, enterpriseUser);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
@@ -617,7 +613,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
+      return new ResponseSchemaValidator(new Context(null), User.class, null, null, null,
                                          referenceUrlSupplier).validateDocument(userSchema, user);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
@@ -650,7 +646,7 @@ public class SchemaValidatorTest implements FileReferences
     originalGroup.setId(UUID.randomUUID().toString());
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseSchemaValidator(serviceProvider, Group.class, null, null, null,
+      return new ResponseSchemaValidator(new Context(null), Group.class, null, null, null,
                                          referenceUrlSupplier).validateDocument(groupSchema, originalGroup);
     });
     Group group = JsonHelper.copyResourceToObject(validatedDocument, Group.class);
@@ -681,8 +677,8 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class, httpMethod).validateDocument(metaSchema,
-                                                                                                  userSchema);
+      return new RequestSchemaValidator(new Context(null), User.class, httpMethod).validateDocument(metaSchema,
+                                                                                                    userSchema);
     });
     // since the document was only validated against the user-schema and not the enterprise-user-extension schema
     // the extension attribute should not be present in the result
@@ -718,8 +714,8 @@ public class SchemaValidatorTest implements FileReferences
     JsonHelper.addAttribute(userSchema, attributeName, arrayNode);
     Schema metaSchema = new Schema(metaSchemaNode);
     Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema,
-                                                                                                       userSchema);
+      return new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                         userSchema);
     });
   }
 
@@ -753,7 +749,8 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema, userSchema);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                  userSchema);
     });
   }
 
@@ -791,7 +788,8 @@ public class SchemaValidatorTest implements FileReferences
     emailArray.add(emailNode);
     Schema metaSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema, userSchema);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                  userSchema);
     });
   }
 
@@ -815,7 +813,8 @@ public class SchemaValidatorTest implements FileReferences
     ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.EMAILS).get();
     emailArray.add(emailNode);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema, userSchema);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                  userSchema);
     });
   }
 
@@ -839,7 +838,8 @@ public class SchemaValidatorTest implements FileReferences
     ArrayNode emailArray = JsonHelper.getArrayAttribute(userSchema, AttributeNames.RFC7643.EMAILS).get();
     emailArray.add(emailNode);
     Assertions.assertDoesNotThrow(() -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema, userSchema);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                  userSchema);
     });
   }
 
@@ -864,7 +864,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
+      return new ResponseSchemaValidator(new Context(null), User.class, null, null, null,
                                          referenceUrlSupplier).validateDocument(metaSchema, userSchema);
     });
     Assertions.assertFalse(JsonHelper.getSimpleAttribute(validatedDocument, AttributeNames.RFC7643.EXTERNAL_ID)
@@ -884,8 +884,8 @@ public class SchemaValidatorTest implements FileReferences
     schemas.removeAll();
     schemas.add("urn:some:unknown:id:reference");
     User validatedUser = (User)Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema,
-                                                                                                       userSchema);
+      return new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                         userSchema);
     });
     Assertions.assertEquals(1, validatedUser.getSchemas().size());
     MatcherAssert.assertThat(validatedUser.getSchemas(), Matchers.hasItem(metaSchema.getNonNullId()));
@@ -915,7 +915,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema userSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(userSchema, user);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(userSchema, user);
     });
   }
 
@@ -942,7 +942,7 @@ public class SchemaValidatorTest implements FileReferences
     user.setNickName("goldfish");
     Schema userSchema = new Schema(metaSchemaNode);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(userSchema, user);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(userSchema, user);
     });
   }
 
@@ -968,8 +968,8 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema metaSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(metaSchema,
-                                                                                                       userSchema);
+      return new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(metaSchema,
+                                                                                                         userSchema);
     });
     Assertions.assertEquals(Integer.MAX_VALUE,
                             JsonHelper.getSimpleAttribute(validatedDocument,
@@ -999,8 +999,8 @@ public class SchemaValidatorTest implements FileReferences
     JsonHelper.addAttribute(user, AttributeNames.RFC7643.NICK_NAME, new DoubleNode(Double.MAX_VALUE));
     Schema userSchema = new Schema(metaSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(userSchema,
-                                                                                                       user);
+      return new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(userSchema,
+                                                                                                         user);
     });
     Assertions.assertEquals(Double.MAX_VALUE,
                             JsonHelper.getSimpleAttribute(validatedDocument,
@@ -1020,10 +1020,10 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
     JsonHelper.addAttribute(user, AttributeNames.RFC7643.USER_NAME, NullNode.instance);
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new RequestSchemaValidator(serviceProvider, User.class, HttpMethod.POST).validateDocument(userSchema, user);
+      new RequestSchemaValidator(new Context(null), User.class, HttpMethod.POST).validateDocument(userSchema, user);
     });
     Assertions.assertThrows(DocumentValidationException.class, () -> {
-      new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
+      new ResponseSchemaValidator(new Context(null), User.class, null, null, null,
                                   referenceUrlSupplier).validateDocument(userSchema, user);
     });
   }
@@ -1039,10 +1039,11 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
     JsonHelper.addAttribute(user, AttributeNames.RFC7643.USER_NAME, NullNode.instance);
 
-    serviceProvider.setIgnoreRequiredAttributesOnResponse(true);
+    Context context = new Context(null);
+    context.setIgnoreRequiredAttributesOnResponse(true);
 
     Assertions.assertDoesNotThrow(() -> {
-      new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
+      new ResponseSchemaValidator(context, User.class, null, null, null,
                                   referenceUrlSupplier).validateDocument(userSchema, user);
     });
   }
@@ -1064,7 +1065,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema enterpriseSchema = new Schema(enterpriseUserExtension);
     Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, User.class,
+      return new RequestSchemaValidator(new Context(null), User.class,
                                         HttpMethod.POST).validateDocument(new ScimObjectNode(),
                                                                           enterpriseSchema,
                                                                           enterpriseUser);
@@ -1093,7 +1094,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          enterpriseUserExtension);
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE);
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(new Context(null), resourceType,
                                                                                      HttpMethod.POST);
     Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
 
@@ -1129,7 +1130,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       String attributeName = AttributeNames.RFC7643.NICK_NAME;
       List<SchemaAttribute> attributes = Collections.singletonList(userSchema.getSchemaAttribute(attributeName));
-      return new ResponseSchemaValidator(serviceProvider, User.class, attributes, null, null,
+      return new ResponseSchemaValidator(new Context(null), User.class, attributes, null, null,
                                          referenceUrlSupplier).validateDocument(userSchema, user);
     });
 
@@ -1182,7 +1183,7 @@ public class SchemaValidatorTest implements FileReferences
 
     Schema userSchema = new Schema(userSchemaNode);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseSchemaValidator(serviceProvider, User.class, null, null, null,
+      return new ResponseSchemaValidator(new Context(null), User.class, null, null, null,
                                          referenceUrlSupplier).validateDocument(userSchema, user);
     });
     String[] attributeNameParts = attributeName.split("\\.");
@@ -1228,7 +1229,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode user = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     TestHelper.addMetaToDocument(user);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                            referenceUrlSupplier).validateDocument(user);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
@@ -1268,7 +1269,7 @@ public class SchemaValidatorTest implements FileReferences
     TestHelper.addMetaToDocument(user);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       List<SchemaAttribute> attributes = getSchemaAttributes(resourceType, attributeName);
-      return new ResponseResourceValidator(serviceProvider, resourceType, attributes, null, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, attributes, null, null,
                                            referenceUrlSupplier).validateDocument(user);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
@@ -1314,7 +1315,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                            referenceUrlSupplier).validateDocument(userSchema);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
@@ -1344,7 +1345,7 @@ public class SchemaValidatorTest implements FileReferences
     TestHelper.addMetaToDocument(userSchema);
     List<SchemaAttribute> excludedAttributes = getSchemaAttributes(resourceType, excludedAttributeName);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, excludedAttributes, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, excludedAttributes, null,
                                            referenceUrlSupplier).validateDocument(userSchema);
     });
     for ( SchemaAttribute schemaAttribute : excludedAttributes )
@@ -1381,7 +1382,7 @@ public class SchemaValidatorTest implements FileReferences
     TestHelper.addMetaToDocument(userResource);
     List<SchemaAttribute> excludedAttributes = getSchemaAttributes(resourceType, AttributeNames.RFC7643.USER_NAME);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, excludedAttributes, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, excludedAttributes, null,
                                            referenceUrlSupplier).validateDocument(userResource);
     });
     JsonNode userNameNode = validatedDocument.get(AttributeNames.RFC7643.USER_NAME);
@@ -1405,7 +1406,7 @@ public class SchemaValidatorTest implements FileReferences
     TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       List<SchemaAttribute> excludedAttributes = getSchemaAttributes(resourceType, AttributeNames.RFC7643.NAME);
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, excludedAttributes, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, excludedAttributes, null,
                                            referenceUrlSupplier).validateDocument(userSchema);
     });
     Assertions.assertNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
@@ -1437,7 +1438,7 @@ public class SchemaValidatorTest implements FileReferences
     TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
       List<SchemaAttribute> attributes = getSchemaAttributes(resourceType, AttributeNames.RFC7643.NAME);
-      return new ResponseResourceValidator(serviceProvider, resourceType, attributes, null, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, attributes, null, null,
                                            referenceUrlSupplier).validateDocument(userSchema);
     });
     Assertions.assertNotNull(validatedDocument.get(AttributeNames.RFC7643.NAME));
@@ -1469,7 +1470,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userSchema = JsonHelper.loadJsonDocument(USER_RESOURCE_ENTERPRISE);
     TestHelper.addMetaToDocument(userSchema);
     JsonNode validatedDocument = Assertions.assertDoesNotThrow(() -> {
-      return new ResponseResourceValidator(serviceProvider, resourceType, null, excludedAttributes, null,
+      return new ResponseResourceValidator(new Context(null), resourceType, null, excludedAttributes, null,
                                            referenceUrlSupplier).validateDocument(userSchema);
     });
     JsonNode enterpriseUser = validatedDocument.get(SchemaUris.ENTERPRISE_USER_URI);
@@ -1508,7 +1509,7 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNotNull(resourceType);
     try
     {
-      new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                     referenceUrlSupplier).validateDocument(user);
       Assertions.fail("the schema validation must fail. The name attribute is not of type object!");
     }
@@ -1544,7 +1545,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     Assertions.assertNotNull(resourceType);
-    User validatedUser = (User)new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+    User validatedUser = (User)new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                                              referenceUrlSupplier).validateDocument(user);
 
     JsonNode emailsNode = validatedUser.get(AttributeNames.RFC7643.EMAILS);
@@ -1579,7 +1580,7 @@ public class SchemaValidatorTest implements FileReferences
     Assertions.assertNotNull(resourceType);
     try
     {
-      new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                     referenceUrlSupplier).validateDocument(userSchema);
       Assertions.fail("the schema validation must fail. The userName attribute is not of type string!");
     }
@@ -2104,7 +2105,7 @@ public class SchemaValidatorTest implements FileReferences
     final String errorMessage2 = "The 'STRING'-attribute 'multiComplex.string' with value '01234567890' must not be "
                                  + "longer than '10' characters but is '11' characters long";
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(new Context(null), resourceType,
                                                                                      HttpMethod.POST);
     requestResourceValidator.validateDocument(allTypes);
 
@@ -2135,7 +2136,7 @@ public class SchemaValidatorTest implements FileReferences
    */
   private void successfulValidationForRequest(ResourceType resourceType, AllTypes allTypes)
   {
-    Assertions.assertDoesNotThrow(() -> new RequestResourceValidator(serviceProvider, resourceType,
+    Assertions.assertDoesNotThrow(() -> new RequestResourceValidator(new Context(null), resourceType,
                                                                      HttpMethod.POST).validateDocument(allTypes));
   }
 
@@ -2144,7 +2145,7 @@ public class SchemaValidatorTest implements FileReferences
    */
   private void successfulValidationForResponse(ResourceType resourceType, AllTypes allTypes)
   {
-    Assertions.assertDoesNotThrow(() -> new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+    Assertions.assertDoesNotThrow(() -> new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                                                       referenceUrlSupplier).validateDocument(allTypes));
   }
 
@@ -2155,7 +2156,7 @@ public class SchemaValidatorTest implements FileReferences
   {
     try
     {
-      new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+      new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                     referenceUrlSupplier).validateDocument(allTypes);
       Assertions.fail("this point must not be reached");
     }
@@ -2171,7 +2172,7 @@ public class SchemaValidatorTest implements FileReferences
    */
   private void failValidationForRequest(ResourceType resourceType, AllTypes allTypes, String... errorMessages)
   {
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(new Context(null), resourceType,
                                                                                      HttpMethod.POST);
     requestResourceValidator.validateDocument(allTypes);
 
@@ -2235,7 +2236,7 @@ public class SchemaValidatorTest implements FileReferences
     user.set(AttributeNames.RFC7643.EMAILS, email);
 
 
-    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+    RequestResourceValidator requestResourceValidator = new RequestResourceValidator(new Context(null), resourceType,
                                                                                      HttpMethod.POST);
     Assertions.assertDoesNotThrow(() -> requestResourceValidator.validateDocument(user));
 
@@ -2269,7 +2270,7 @@ public class SchemaValidatorTest implements FileReferences
                                                                          enterpriseUserValidationSchema);
 
     AllTypes allTypes = buildAllTypesForValidation();
-    Assertions.assertNull(new ResponseResourceValidator(serviceProvider, resourceType, null, null, null,
+    Assertions.assertNull(new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
                                                         referenceUrlSupplier).validateDocument(allTypes));
   }
 
@@ -2289,7 +2290,7 @@ public class SchemaValidatorTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
     Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
+      return new RequestSchemaValidator(new Context(null), ScimObjectNode.class,
                                         HttpMethod.PATCH).validateDocument(patchSchema, patchOpRequest);
     });
   }
@@ -2310,7 +2311,7 @@ public class SchemaValidatorTest implements FileReferences
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
     Assertions.assertDoesNotThrow(() -> {
-      return new RequestSchemaValidator(serviceProvider, ScimObjectNode.class,
+      return new RequestSchemaValidator(new Context(null), ScimObjectNode.class,
                                         HttpMethod.PATCH).validateDocument(patchSchema, patchOpRequest);
     });
   }
@@ -2319,6 +2320,8 @@ public class SchemaValidatorTest implements FileReferences
   @Nested
   public class SchemaRequestValidationDefaultValueTests
   {
+
+    private Context context;
 
     private ResourceType allTypesResourceType;
 
@@ -2329,8 +2332,9 @@ public class SchemaValidatorTest implements FileReferences
     @BeforeEach
     public void initialize()
     {
-      serviceProvider.setUseDefaultValuesOnRequest(true);
-      serviceProvider.setUseDefaultValuesOnResponse(false);
+      context = new Context(null);
+      context.setUseDefaultValuesOnRequest(true);
+      context.setUseDefaultValuesOnResponse(false);
 
       JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
       JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
@@ -2357,7 +2361,7 @@ public class SchemaValidatorTest implements FileReferences
       testAttribute.setRequired(true);
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2377,7 +2381,7 @@ public class SchemaValidatorTest implements FileReferences
       testAttribute.setDefaultValue("world");
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2392,13 +2396,13 @@ public class SchemaValidatorTest implements FileReferences
     @Test
     public void testAssignStringDefaultValueWithFeatureDisabled()
     {
-      serviceProvider.setUseDefaultValuesOnRequest(false);
+      context.setUseDefaultValuesOnRequest(false);
 
       testAttribute.setType(Type.STRING);
       testAttribute.setDefaultValue("world");
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(1, resource.size());
@@ -2417,7 +2421,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setString("hello");
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2438,7 +2442,7 @@ public class SchemaValidatorTest implements FileReferences
       testAttribute.setDefaultValue("world");
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2459,7 +2463,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setString("hello");
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2480,7 +2484,7 @@ public class SchemaValidatorTest implements FileReferences
       testAttribute.setDefaultValue(now.toString());
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2503,7 +2507,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setString(later.toString());
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2523,7 +2527,7 @@ public class SchemaValidatorTest implements FileReferences
       testAttribute.setDefaultValue(Boolean.TRUE.toString());
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2544,7 +2548,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", BooleanNode.TRUE);
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2564,7 +2568,7 @@ public class SchemaValidatorTest implements FileReferences
       testAttribute.setDefaultValue("55");
 
       AllTypes allTypes = new AllTypes();
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2584,7 +2588,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", new IntNode(1));
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2605,7 +2609,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", new DoubleNode(55.559));
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2625,7 +2629,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", new DoubleNode(88.79));
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2650,7 +2654,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
 
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
       log.warn(resource.toPrettyString());
       Assertions.assertEquals(2, resource.size());
@@ -2676,7 +2680,7 @@ public class SchemaValidatorTest implements FileReferences
       allTypes.setComplex(complex);
       complex.setString("hello-world");
 
-      ObjectNode resource = new RequestResourceValidator(serviceProvider, allTypesResourceType,
+      ObjectNode resource = new RequestResourceValidator(context, allTypesResourceType,
                                                          HttpMethod.POST).validateDocument(allTypes);
 
       log.warn(resource.toPrettyString());
@@ -2691,6 +2695,8 @@ public class SchemaValidatorTest implements FileReferences
   public class SchemaResponseValidationDefaultValueTests
   {
 
+    private Context context;
+
     private ResourceType allTypesResourceType;
 
     private SchemaAttribute testAttribute;
@@ -2700,8 +2706,9 @@ public class SchemaValidatorTest implements FileReferences
     @BeforeEach
     public void initialize()
     {
-      serviceProvider.setUseDefaultValuesOnRequest(false);
-      serviceProvider.setUseDefaultValuesOnResponse(true);
+      context = new Context(null);
+      context.setUseDefaultValuesOnRequest(false);
+      context.setUseDefaultValuesOnResponse(true);
 
       JsonNode allTypesResourceTypeJson = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
       JsonNode allTypesValidationSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
@@ -2729,7 +2736,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2751,7 +2758,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2767,14 +2774,14 @@ public class SchemaValidatorTest implements FileReferences
     @Test
     public void testAssignStringDefaultValueWithFeatureDisabled()
     {
-      serviceProvider.setUseDefaultValuesOnResponse(false);
+      context.setUseDefaultValuesOnResponse(false);
 
       testAttribute.setType(Type.STRING);
       testAttribute.setDefaultValue("world");
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(2, resource.size());
@@ -2795,7 +2802,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.setString("hello");
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2818,7 +2825,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2841,7 +2848,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.setString("hello");
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2864,7 +2871,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2889,7 +2896,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.setString(later.toString());
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2911,7 +2918,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2934,7 +2941,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", BooleanNode.TRUE);
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2956,7 +2963,7 @@ public class SchemaValidatorTest implements FileReferences
 
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -2978,7 +2985,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", new IntNode(1));
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3001,7 +3008,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", new DoubleNode(55.559));
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3023,7 +3030,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.set("string", new DoubleNode(88.79));
       allTypes.setId("1");
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3049,7 +3056,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3076,7 +3083,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
       log.warn(resource.toPrettyString());
       Assertions.assertEquals(3, resource.size());
@@ -3104,7 +3111,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes complex = new AllTypes();
       allTypes.setComplex(complex);
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3133,7 +3140,7 @@ public class SchemaValidatorTest implements FileReferences
       allTypes.setComplex(complex);
       complex.setString("hello-world");
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3153,7 +3160,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3192,7 +3199,7 @@ public class SchemaValidatorTest implements FileReferences
 
       allTypes.setMultiComplex(Arrays.asList(multiComplex1, multiComplex2));
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3221,7 +3228,7 @@ public class SchemaValidatorTest implements FileReferences
 
       allTypes.setMultiComplex(Collections.singletonList(multiComplex1));
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());
@@ -3245,7 +3252,7 @@ public class SchemaValidatorTest implements FileReferences
       AllTypes allTypes = new AllTypes();
       allTypes.setId("1");
 
-      ObjectNode resource = new ResponseResourceValidator(serviceProvider, allTypesResourceType, null, null, null,
+      ObjectNode resource = new ResponseResourceValidator(context, allTypesResourceType, null, null, null,
                                                           referenceUrlSupplier).validateDocument(allTypes);
 
       Assertions.assertEquals(3, resource.size());

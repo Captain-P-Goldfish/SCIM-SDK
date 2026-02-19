@@ -177,7 +177,9 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                     Context context)
   {
     ScimResponse scimResponse;
-    boolean lenientContentTypeChecking = getServiceProvider().isLenientContentTypeChecking();
+    Context effectiveContext = Optional.ofNullable(context).orElseGet(() -> new Context(null));
+    effectiveContext.mergeWithServiceProviderConfig(getServiceProvider());
+    boolean lenientContentTypeChecking = effectiveContext.isLenientContentTypeChecking();
 
     handleScimRequest: try
     {
@@ -186,7 +188,6 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                                       httpMethod,
                                                       httpHeaders,
                                                       lenientContentTypeChecking);
-      Context effectiveContext = Optional.ofNullable(context).orElseGet(() -> new Context(null));
       if (EndpointPaths.BULK.equals(uriInfos.getResourceEndpoint()))
       {
         BulkEndpoint bulkEndpoint = new BulkEndpoint(this, getServiceProvider(), getResourceTypeFactory(),
@@ -343,6 +344,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
   private Context getEffectiveContext(UriInfos uriInfos, String requestBody, Context context)
   {
     Context effectiveContext = Optional.ofNullable(context).orElseGet(() -> new Context(null));
+    effectiveContext.mergeWithServiceProviderConfig(getServiceProvider());
     effectiveContext.setUriInfos(uriInfos);
     effectiveContext.setResourceReferenceUrl(id -> {
       return super.getReferenceUrlSupplier(uriInfos::getBaseUri).apply(id, uriInfos.getResourceType().getName());

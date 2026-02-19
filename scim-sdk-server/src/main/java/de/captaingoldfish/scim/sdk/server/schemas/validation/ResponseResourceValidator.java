@@ -11,6 +11,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.extern.slf4j.Slf4j;
 
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ResponseResourceValidator extends AbstractResourceValidator
 {
 
-  public ResponseResourceValidator(ServiceProvider serviceProvider,
+  public ResponseResourceValidator(Context context,
                                    ResourceType resourceType,
                                    List<SchemaAttribute> attributesList,
                                    List<SchemaAttribute> excludedAttributesList,
@@ -31,7 +32,7 @@ public class ResponseResourceValidator extends AbstractResourceValidator
                                    BiFunction<String, String, String> referenceUrlSupplier)
   {
     super(resourceType,
-          new ResponseSchemaValidator(serviceProvider, resourceType.getResourceHandlerImpl().getType(), attributesList,
+          new ResponseSchemaValidator(context, resourceType.getResourceHandlerImpl().getType(), attributesList,
                                       excludedAttributesList, requestDocument, referenceUrlSupplier));
   }
 
@@ -77,7 +78,7 @@ public class ResponseResourceValidator extends AbstractResourceValidator
   protected void checkForMissingRequiredExtensions(List<Schema> requiredExtensionList,
                                                    List<Schema> inResourcePresentExtensions)
   {
-    if (!getSchemaValidator().getServiceProvider().isIgnoreRequiredExtensionsOnResponse())
+    if (!getSchemaValidator().getContext().isIgnoreRequiredExtensionsOnResponse())
     {
       super.checkForMissingRequiredExtensions(requiredExtensionList, inResourcePresentExtensions);
     }

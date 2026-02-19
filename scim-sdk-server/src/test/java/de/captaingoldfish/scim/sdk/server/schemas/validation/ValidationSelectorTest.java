@@ -26,12 +26,12 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimDoubleNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.ContextValidator.ValidationContextType;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
@@ -52,7 +52,7 @@ public class ValidationSelectorTest
   public void testOnContextValidationFalseReturnEmpty()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").build();
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -74,7 +74,7 @@ public class ValidationSelectorTest
   public void testValidateSimpleAttribute()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").build();
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -102,7 +102,7 @@ public class ValidationSelectorTest
                                                             .type(Type.INTEGER)
                                                             .multivalued(true)
                                                             .build();
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -139,7 +139,7 @@ public class ValidationSelectorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -201,7 +201,7 @@ public class ValidationSelectorTest
                                                             .build();
 
     // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -240,7 +240,7 @@ public class ValidationSelectorTest
   public List<DynamicTest> testAnyTypeAsString()
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.ANY).build();
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override
@@ -345,7 +345,7 @@ public class ValidationSelectorTest
                                    BooleanNode.getFalse(),
                                    new TextNode("2019-09-29T24:00:00Z")));
 
-    ContextValidator contextValidator = new ContextValidator(new ServiceProvider(), ValidationContextType.REQUEST)
+    ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
 
       @Override

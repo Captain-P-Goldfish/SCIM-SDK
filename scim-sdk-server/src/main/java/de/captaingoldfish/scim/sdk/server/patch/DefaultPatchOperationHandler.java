@@ -245,7 +245,7 @@ public class DefaultPatchOperationHandler<T extends ResourceNode> implements Pat
     {
       T validatedResource;
       ServiceProvider serviceProvider = resourceType.getResourceHandlerImpl().getServiceProvider();
-      RequestResourceValidator requestResourceValidator = new RequestResourceValidator(serviceProvider, resourceType,
+      RequestResourceValidator requestResourceValidator = new RequestResourceValidator(new Context(null), resourceType,
                                                                                        HttpMethod.PATCH);
       validatedResource = (T)requestResourceValidator.validateDocument(patchedResource);
       validatedResource.setId(resourceId);

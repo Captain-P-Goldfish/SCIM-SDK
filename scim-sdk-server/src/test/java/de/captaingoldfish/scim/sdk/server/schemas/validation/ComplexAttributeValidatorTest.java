@@ -14,8 +14,8 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 
@@ -45,7 +45,7 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+    ContextValidator contextValidator = new ContextValidator(new Context(null),
                                                              ContextValidator.ValidationContextType.REQUEST)
     {
 
@@ -90,7 +90,7 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+    ContextValidator contextValidator = new ContextValidator(new Context(null),
                                                              ContextValidator.ValidationContextType.REQUEST)
     {
 
@@ -146,7 +146,7 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+    ContextValidator contextValidator = new ContextValidator(new Context(null),
                                                              ContextValidator.ValidationContextType.REQUEST)
     {
 
@@ -187,7 +187,7 @@ public class ComplexAttributeValidatorTest
                                                                            ageAttribute)
                                                             .build();
 
-    ContextValidator contextValidator = new ContextValidator(ServiceProvider.builder().build(),
+    ContextValidator contextValidator = new ContextValidator(new Context(null),
                                                              ContextValidator.ValidationContextType.REQUEST)
     {
 

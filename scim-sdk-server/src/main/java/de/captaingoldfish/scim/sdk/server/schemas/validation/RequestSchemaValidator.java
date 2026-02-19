@@ -6,8 +6,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
-import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.AccessLevel;
@@ -35,17 +35,17 @@ public class RequestSchemaValidator extends AbstractSchemaValidator
   @Getter(AccessLevel.PROTECTED)
   private final ValidationContext validationContext;
 
-  public RequestSchemaValidator(ServiceProvider serviceProvider, Class resourceNodeType, HttpMethod httpMethod)
+  public RequestSchemaValidator(Context context, Class resourceNodeType, HttpMethod httpMethod)
   {
-    this(serviceProvider, resourceNodeType, httpMethod, null);
+    this(context, resourceNodeType, httpMethod, null);
   }
 
-  public RequestSchemaValidator(ServiceProvider serviceProvider,
+  public RequestSchemaValidator(Context context,
                                 Class resourceNodeType,
                                 HttpMethod httpMethod,
                                 ValidationContext validationContext)
   {
-    super(serviceProvider, resourceNodeType);
+    super(context, resourceNodeType);
     this.httpMethod = httpMethod;
     this.validationContext = validationContext;
   }
@@ -58,7 +58,7 @@ public class RequestSchemaValidator extends AbstractSchemaValidator
   {
     try
     {
-      return RequestAttributeValidator.validateAttribute(getServiceProvider(), schemaAttribute, attribute, httpMethod);
+      return RequestAttributeValidator.validateAttribute(getContext(), schemaAttribute, attribute, httpMethod);
     }
     catch (AttributeValidationException ex)
     {

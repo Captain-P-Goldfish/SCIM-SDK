@@ -55,6 +55,7 @@ public class ServiceProvider extends ResourceNode
    * This feature does not work for patch requests
    */
   @Getter
+  @Setter
   private boolean caseInsensitiveValidation;
 
   /**
@@ -72,6 +73,14 @@ public class ServiceProvider extends ResourceNode
   private boolean useDefaultValuesOnResponse = true;
 
   /**
+   * This attribute specifies whether required attributes should be ignored during schema validation of a
+   * request.
+   */
+  @Getter
+  @Setter
+  private boolean ignoreRequiredAttributesOnRequest = false;
+
+  /**
    * if required attributes should only be validated on request or on request and response
    */
   @Getter
@@ -85,6 +94,9 @@ public class ServiceProvider extends ResourceNode
   @Setter
   private boolean ignoreRequiredExtensionsOnResponse = false;
 
+  /**
+   * defines if the content-type of the HTTP header is validated strict with application/scim+json or not.
+   */
   @Getter
   private boolean lenientContentTypeChecking = false;
 
@@ -114,8 +126,9 @@ public class ServiceProvider extends ResourceNode
                          List<AuthenticationScheme> authenticationSchemes,
                          ForkJoinPool forkJoinPool,
                          boolean caseInsensitiveValidation,
-                         boolean useDefaultValuesOnRequest,
-                         boolean useDefaultValuesOnResponse,
+                         Boolean useDefaultValuesOnRequest,
+                         Boolean useDefaultValuesOnResponse,
+                         boolean ignoreRequiredAttributesOnRequest,
                          Boolean ignoreRequiredAttributesOnResponse,
                          Boolean ignoreRequiredExtensionsOnResponse,
                          boolean lenientContentTypeChecking)
@@ -137,9 +150,10 @@ public class ServiceProvider extends ResourceNode
     setMeta(meta);
     Optional.ofNullable(forkJoinPool).ifPresent(this::setThreadPool);
     this.caseInsensitiveValidation = caseInsensitiveValidation;
-    this.useDefaultValuesOnRequest = useDefaultValuesOnRequest;
-    this.useDefaultValuesOnResponse = useDefaultValuesOnResponse;
+    this.useDefaultValuesOnRequest = Optional.ofNullable(useDefaultValuesOnRequest).orElse(true);
+    this.useDefaultValuesOnResponse = Optional.ofNullable(useDefaultValuesOnResponse).orElse(true);
     this.lenientContentTypeChecking = lenientContentTypeChecking;
+    this.ignoreRequiredAttributesOnRequest = ignoreRequiredAttributesOnRequest;
     this.ignoreRequiredAttributesOnResponse = Optional.ofNullable(ignoreRequiredAttributesOnResponse).orElse(true);
     this.ignoreRequiredExtensionsOnResponse = Optional.ofNullable(ignoreRequiredExtensionsOnResponse).orElse(true);
   }

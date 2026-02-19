@@ -5,6 +5,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.authorize.DefaultAuthorization;
 import de.captaingoldfish.scim.sdk.server.endpoints.bulkcontext.BulkRequestContext;
@@ -77,9 +79,79 @@ public class Context
   @Setter(AccessLevel.PROTECTED)
   private BulkRequestContext bulkRequestContext;
 
+  /**
+   * if the attributes within the resource objects should be extracted case-insensitive or case exact by their
+   * attribute-names.<br>
+   * This feature does not work for patch requests
+   */
+  @Setter
+  private Boolean caseInsensitiveValidation;
+
+  /**
+   * if the {@link SchemaAttribute#getDefaultValue()} should be respected on requests
+   */
+  @Setter
+  private Boolean useDefaultValuesOnRequest;
+
+  /**
+   * if the {@link SchemaAttribute#getDefaultValue()} should be respected on responses
+   */
+  @Setter
+  private Boolean useDefaultValuesOnResponse;
+
+  /**
+   * This attribute specifies whether required attributes should be ignored during schema validation of a
+   * request.
+   */
+  @Setter
+  private Boolean ignoreRequiredAttributesOnRequest;
+
+  /**
+   * if required attributes should only be validated on request or on request and response
+   */
+  @Setter
+  private Boolean ignoreRequiredAttributesOnResponse;
+
+  /**
+   * if required extensions should only be validated on request or on request and response
+   */
+  @Setter
+  private Boolean ignoreRequiredExtensionsOnResponse;
+
+  /**
+   * defines if the content-type of the HTTP header is validated strict with application/scim+json or not.
+   */
+  @Setter
+  private Boolean lenientContentTypeChecking;
+
   public Context(Authorization authorization)
   {
     this.authorization = Optional.ofNullable(authorization).orElse(new DefaultAuthorization());
+  }
+
+  
+  /**
+   * merges the configuration of the service provider into this context. Attributes that are already set in
+   * this context will not be overwritten.
+   *
+   * @param serviceProvider the service provider configuration to merge into this context
+   */
+  public void mergeWithServiceProviderConfig(ServiceProvider serviceProvider)
+  {
+    this.caseInsensitiveValidation = Optional.ofNullable(this.caseInsensitiveValidation)
+                                             .orElseGet(serviceProvider::isCaseInsensitiveValidation);
+    this.useDefaultValuesOnRequest = Optional.ofNullable(this.useDefaultValuesOnRequest)
+                                             .orElseGet(serviceProvider::isUseDefaultValuesOnRequest);
+    this.useDefaultValuesOnResponse = Optional.ofNullable(this.useDefaultValuesOnResponse)
+                                              .orElseGet(serviceProvider::isUseDefaultValuesOnResponse);
+    this.ignoreRequiredAttributesOnRequest = Optional.ofNullable(this.ignoreRequiredAttributesOnRequest)
+                                                     .orElseGet(serviceProvider::isIgnoreRequiredAttributesOnRequest);
+    this.ignoreRequiredAttributesOnResponse = Optional.ofNullable(this.ignoreRequiredAttributesOnResponse)
+                                                      .orElseGet(serviceProvider::isIgnoreRequiredAttributesOnResponse);
+    this.ignoreRequiredExtensionsOnResponse = Optional.ofNullable(this.ignoreRequiredExtensionsOnResponse)
+                                                      .orElseGet(serviceProvider::isIgnoreRequiredExtensionsOnResponse);
+    this.lenientContentTypeChecking = Optional.ofNullable(this.lenientContentTypeChecking)
+                                              .orElseGet(serviceProvider::isLenientContentTypeChecking);
   }
 
   /**
@@ -134,5 +206,61 @@ public class Context
   public Optional<BulkRequestContext> getBulkRequestContext()
   {
     return Optional.ofNullable(bulkRequestContext);
+  }
+
+  /**
+   * @see #caseInsensitiveValidation
+   */
+  public boolean isCaseInsensitiveValidation()
+  {
+    return Optional.ofNullable(caseInsensitiveValidation).orElse(false);
+  }
+
+  /**
+   * @see #useDefaultValuesOnRequest
+   */
+  public boolean isUseDefaultValuesOnRequest()
+  {
+    return Optional.ofNullable(useDefaultValuesOnRequest).orElse(true);
+  }
+
+  /**
+   * @see #useDefaultValuesOnResponse
+   */
+  public boolean isUseDefaultValuesOnResponse()
+  {
+    return Optional.ofNullable(useDefaultValuesOnResponse).orElse(true);
+  }
+
+  /**
+   * @see #ignoreRequiredAttributesOnRequest
+   */
+  public boolean isIgnoreRequiredAttributesOnRequest()
+  {
+    return Optional.ofNullable(ignoreRequiredAttributesOnRequest).orElse(false);
+  }
+
+  /**
+   * @see #ignoreRequiredAttributesOnResponse
+   */
+  public boolean isIgnoreRequiredAttributesOnResponse()
+  {
+    return Optional.ofNullable(ignoreRequiredAttributesOnResponse).orElse(false);
+  }
+
+  /**
+   * @see #ignoreRequiredExtensionsOnResponse
+   */
+  public boolean isIgnoreRequiredExtensionsOnResponse()
+  {
+    return Optional.ofNullable(ignoreRequiredExtensionsOnResponse).orElse(false);
+  }
+
+  /**
+   * @see #lenientContentTypeChecking
+   */
+  public boolean isLenientContentTypeChecking()
+  {
+    return Optional.ofNullable(lenientContentTypeChecking).orElse(false);
   }
 }
