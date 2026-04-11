@@ -15,11 +15,11 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.keys.KeyStoreSupporter;
@@ -138,7 +138,7 @@ public abstract class AbstractSpringBootWebTest
   /**
    * a test-controller to access this test-springboot-application via the {@link ScimHttpClient}
    */
-  @Controller
+  @RestController
   public static class TestController
   {
 
@@ -239,9 +239,9 @@ public abstract class AbstractSpringBootWebTest
      * this method will be used to provoke a timeout for the tests
      */
     @RequestMapping(value = SCIM_ENDPOINT_PATH
-                            + "/**", method = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT,
-                                               RequestMethod.PATCH,
-                                               RequestMethod.DELETE}, produces = HttpHeader.SCIM_CONTENT_TYPE)
+                            + "/{*path}", method = {RequestMethod.POST, RequestMethod.GET, RequestMethod.PUT,
+                                                    RequestMethod.PATCH,
+                                                    RequestMethod.DELETE}, produces = HttpHeader.SCIM_CONTENT_TYPE)
     public @ResponseBody String handleScimRequest(HttpServletRequest request,
                                                   HttpServletResponse response,
                                                   @RequestBody(required = false) String requestBody,

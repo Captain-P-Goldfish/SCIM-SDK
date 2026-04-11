@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
@@ -152,7 +153,7 @@ public final class CustomAttributeValidator
       }
     });
     schemaAttribute.getPattern().ifPresent(pattern -> {
-      if (!pattern.matcher(value).matches())
+      if (!pattern.matcher(Optional.ofNullable(value).orElse("")).matches())
       {
         String errorMessage = String.format("The '%s'-attribute '%s' with value '%s' must match the regular expression "
                                             + "of '%s'",

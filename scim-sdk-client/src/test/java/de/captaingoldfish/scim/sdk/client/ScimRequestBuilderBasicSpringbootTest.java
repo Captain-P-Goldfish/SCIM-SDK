@@ -76,7 +76,7 @@ public class ScimRequestBuilderBasicSpringbootTest extends AbstractSpringBootWeb
                                              .password(SecurityConstants.PASSWORD)
                                              .build());
     AbstractSpringBootWebTest.headerValidator = headers -> {
-      Assertions.assertTrue(headers.containsKey(HttpHeader.AUTHORIZATION.toLowerCase()));
+      Assertions.assertTrue(headers.containsKey(HttpHeader.AUTHORIZATION));
       Assertions.assertFalse(headers.containsKey("cookie"));
       wasConsumerExecuted.set(true);
     };

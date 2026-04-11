@@ -2,9 +2,6 @@ package de.captaingoldfish.scim.sdk.translator.shell.schemareader;
 
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
-import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;

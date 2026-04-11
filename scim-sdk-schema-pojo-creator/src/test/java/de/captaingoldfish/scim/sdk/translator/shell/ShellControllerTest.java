@@ -20,8 +20,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import de.captaingoldfish.scim.sdk.translator.shell.utils.UtilityMethods;
@@ -44,7 +44,7 @@ public class ShellControllerTest
 
   private static final String DEFAULT_PACKAGE_NAME = "de.captaingoldfish.scim.example";
 
-  @SpyBean
+  @MockitoSpyBean
   private ShellController shellController;
 
   /**

@@ -11,6 +11,7 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.preauth.x509.SubjectX500PrincipalExtractor;
 
 
 /**
@@ -38,21 +39,22 @@ public class X509SecurityConfig
    * the username within the certificates distinguished name
    */
   @Bean
-  protected SecurityFilterChain configure(HttpSecurity http) throws Exception
+  protected SecurityFilterChain configure(HttpSecurity http, UserDetailsService userDetailsService) throws Exception
   {
     http.csrf(AbstractHttpConfigurer::disable)//
-        .authorizeHttpRequests(httpRequestConfigurer -> {
-          httpRequestConfigurer.requestMatchers(String.format("/%s/**",
-                                                              AbstractSpringBootWebTest.TestController.GET_ENDPOINT_PATH),
-                                                String.format("/%s/**",
-                                                              AbstractSpringBootWebTest.TestController.TIMEOUT_ENDPOINT_PATH),
-                                                String.format("/%s/**",
-                                                              AbstractSpringBootWebTest.TestController.SCIM_ENDPOINT_PATH))
-                               .authenticated();
+        .authorizeHttpRequests(authenticatedHttp -> {
+          authenticatedHttp.requestMatchers(String.format("/%s/**",
+                                                          AbstractSpringBootWebTest.TestController.GET_ENDPOINT_PATH),
+                                            String.format("/%s/**",
+                                                          AbstractSpringBootWebTest.TestController.TIMEOUT_ENDPOINT_PATH),
+                                            String.format("/%s/**",
+                                                          AbstractSpringBootWebTest.TestController.SCIM_ENDPOINT_PATH))
+                           .authenticated();
         })
         .x509(x509AuthConfigurer -> {
           // the regular expression to parse the username from the DN)
-          x509AuthConfigurer.subjectPrincipalRegex("CN=(.*)");
+          x509AuthConfigurer.x509PrincipalExtractor(new SubjectX500PrincipalExtractor())
+                            .userDetailsService(userDetailsService);
         });
     return http.build();
   }

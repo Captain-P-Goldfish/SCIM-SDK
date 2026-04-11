@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.schemas;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,7 +36,7 @@ public class SchemaAttributeTest implements FileReferences
                                                             .build();
     schemaAttribute.setDefaultValue(booleanString);
     Assertions.assertEquals(booleanString, schemaAttribute.getDefaultValue());
-    Assertions.assertEquals(Boolean.parseBoolean(booleanString), StringUtils.equalsIgnoreCase(booleanString, "true"));
+    Assertions.assertEquals(Boolean.parseBoolean(booleanString), Strings.CI.equals(booleanString, "true"));
   }
 
   /**

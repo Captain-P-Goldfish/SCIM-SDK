@@ -31,6 +31,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.Strings;
 
 
 /**
@@ -336,12 +337,12 @@ class SimpleAttributeValidator
     Predicate<String> compare = s -> {
       if (schemaAttribute.isCaseExact())
       {
-        caseInsensitiveMatch.compareAndSet(false, StringUtils.equalsIgnoreCase(s, value));
-        return StringUtils.equals(s, value);
+        caseInsensitiveMatch.compareAndSet(false, Strings.CI.equals(s, value));
+        return Strings.CS.equals(s, value);
       }
       else
       {
-        return StringUtils.equalsIgnoreCase(s, value);
+        return Strings.CI.equals(s, value);
       }
     };
 

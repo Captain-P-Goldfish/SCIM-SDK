@@ -3,8 +3,7 @@ package de.captaingoldfish.scim.sdk.server.sort;
 import java.util.Comparator;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -65,7 +64,7 @@ public class ResourceNodeComparator implements Comparator<ResourceNode>
       case DATE_TIME:
         long dateTime1 = TimeUtils.parseDateTime(attribute1.textValue()).toEpochMilli();
         long dateTime2 = TimeUtils.parseDateTime(attribute2.textValue()).toEpochMilli();
-        compare = NumberUtils.compare(dateTime1, dateTime2);
+        compare = Long.compare(dateTime1, dateTime2);
         return ascending ? compare : -compare;
       case INTEGER:
         compare = attribute1.bigIntegerValue().compareTo(attribute2.bigIntegerValue());
@@ -76,12 +75,12 @@ public class ResourceNodeComparator implements Comparator<ResourceNode>
       default:
         if (schemaAttribute.isCaseExact())
         {
-          compare = StringUtils.compare(attribute1.asText(), attribute2.asText());
+          compare = Strings.CS.compare(attribute1.asText(), attribute2.asText());
           return ascending ? compare : -compare;
         }
         else
         {
-          compare = StringUtils.compareIgnoreCase(attribute1.asText(), attribute2.asText());
+          compare = Strings.CI.compare(attribute1.asText(), attribute2.asText());
           return ascending ? compare : -compare;
         }
     }

@@ -93,13 +93,13 @@ public class FilterAttributeName
 
   public FilterAttributeName(String attributeName)
   {
-    Pattern pattern = Pattern.compile("(([\\w$:.]+):)?([\\w$]+)(\\.)?([\\w$]+)?");
+    Pattern pattern = Pattern.compile("(([\\w$:.]+):)?([\\w$]+)(\\[.*])?(\\.)?([\\w$]+)?");
     Matcher matcher = pattern.matcher(attributeName);
     if (matcher.matches())
     {
       this.resourceUri = matcher.group(2);
       this.attributeName = matcher.group(3);
-      this.complexSubAttributeName = matcher.group(5);
+      this.complexSubAttributeName = matcher.group(6);
     }
     this.fullName = attributeName;
   }

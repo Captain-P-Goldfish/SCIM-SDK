@@ -400,30 +400,34 @@ public final class JsonHelper
   {
     if (String.class.equals(type))
     {
-      return Optional.of((T)attribute.asText());
+      return Optional.ofNullable(attribute).map(JsonNode::asText).map(s -> (T)s);
     }
     if (Boolean.class.equals(type))
     {
-      return Optional.of((T)Boolean.valueOf(attribute.asBoolean()));
+      return Optional.ofNullable(attribute).map(JsonNode::asBoolean).map(b -> (T)b);
     }
     if (Integer.class.equals(type))
     {
-      return Optional.of((T)Integer.valueOf(attribute.asInt()));
+      return Optional.ofNullable(attribute).map(JsonNode::asInt).map(b -> (T)b);
     }
     if (Long.class.equals(type))
     {
-      return Optional.of((T)Long.valueOf(attribute.asLong()));
+      return Optional.ofNullable(attribute).map(JsonNode::asLong).map(b -> (T)b);
     }
     if (Float.class.equals(type))
     {
-      return Optional.of((T)Float.valueOf((float)attribute.asDouble()));
+      return Optional.ofNullable(attribute).map(JsonNode::asDouble).map(Double::floatValue).map(b -> (T)b);
     }
     if (Double.class.equals(type))
     {
-      return Optional.of((T)Double.valueOf(attribute.asDouble()));
+      return Optional.ofNullable(attribute).map(JsonNode::asDouble).map(b -> (T)b);
     }
     if (byte[].class.equals(type))
     {
+      if (attribute == null)
+      {
+        return Optional.empty();
+      }
       if (attribute.isBinary())
       {
         try
@@ -477,7 +481,7 @@ public final class JsonHelper
       return (T)resource;
     }
     T newInstance = getNewInstance(type, resource);
-    resource.fields().forEachRemaining(stringJsonNodeEntry -> {
+    resource.properties().forEach(stringJsonNodeEntry -> {
       JsonHelper.addAttribute(newInstance, stringJsonNodeEntry.getKey(), stringJsonNodeEntry.getValue());
     });
     return newInstance;

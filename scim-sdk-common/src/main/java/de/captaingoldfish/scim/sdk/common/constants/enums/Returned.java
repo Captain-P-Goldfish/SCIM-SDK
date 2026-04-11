@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.constants.enums;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import lombok.Getter;
 
@@ -53,7 +53,7 @@ public enum Returned
   {
     for ( Returned returned : Returned.values() )
     {
-      if (StringUtils.equalsIgnoreCase(value, returned.getValue()))
+      if (Strings.CI.equals(value, returned.getValue()))
       {
         return returned;
       }

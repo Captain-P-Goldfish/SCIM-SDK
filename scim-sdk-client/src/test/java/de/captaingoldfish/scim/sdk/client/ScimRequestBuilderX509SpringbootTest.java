@@ -248,6 +248,7 @@ public class ScimRequestBuilderX509SpringbootTest extends AbstractSpringBootWebT
                                                                         .startIndex(withFullyQualifiedUrl ? 1 : 2)
                                                                         .get()
                                                                         .sendRequest();
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
     User randomUser = listResponse.getResource().getListedResources().get(0);
 
     User addingResource = User.builder()

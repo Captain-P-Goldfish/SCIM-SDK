@@ -181,7 +181,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   }
 
   /**
-   * delegate method to {@link PatchOperationHandler#getOldResourceSupplier(String, List, List)}
+   * delegate method to {@link PatchOperationHandler#getOldResourceSupplier(String, List, List, Context)}
    */
   public Supplier<T> getOldResourceSupplier(String id,
                                             List<SchemaAttribute> attributes,
@@ -191,7 +191,8 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
   }
 
   /**
-   * delegate method to {@link PatchOperationHandler#getUpdatedResource(String, ResourceNode, boolean)}
+   * delegate method to
+   * {@link PatchOperationHandler#getUpdatedResource(String, ResourceNode, boolean, List, List, Context)}
    */
   public ResourceNode getUpdatedResource(T validatedPatchedResource,
                                          List<SchemaAttribute> attributes,
@@ -659,7 +660,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       AtomicReference<Boolean> wasChanged = new AtomicReference<>(false);
 
       Schema schema = complexAttribute.getSchema();
-      complexNode.fields().forEachRemaining(complexField -> {
+      complexNode.properties().forEach(complexField -> {
         try
         {
           final String attributeName = String.format("%s.%s",
@@ -879,7 +880,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       final PatchOp patchOp = patchRequestOperation.getOp();
 
       AtomicReference<Boolean> wasChanged = new AtomicReference<>(false);
-      resourceNode.fields().forEachRemaining(field -> {
+      resourceNode.properties().forEach(field -> {
         if (field.getKey().equals(AttributeNames.RFC7643.META))
         {
           return; // do not handle the meta attribute here
@@ -958,7 +959,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       ObjectNode requestedExtensionAttributes = new ObjectNode(JsonNodeFactory.instance);
 
       AtomicReference<Boolean> wasChanged = new AtomicReference<>(false);
-      extensionNode.fields().forEachRemaining(extensionField -> {
+      extensionNode.properties().forEach(extensionField -> {
         SchemaAttribute extensionAttribute = extensionSchema.getSchemaAttribute(extensionField.getKey());
         boolean wasValueChanged = handleSingleResourceField(extensionAttribute, patchOp, extensionField)
                                   || wasChanged.get();

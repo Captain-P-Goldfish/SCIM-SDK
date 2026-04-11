@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
@@ -37,8 +37,7 @@ public class KeystoreHandler extends ResourceHandler<ScimKeystore>
     // names should be unique so find if the name of the new resource is already taken
     ScimKeystore oldResource = keystoreMap.values()
                                           .stream()
-                                          .filter(keystore -> StringUtils.equalsIgnoreCase(keystore.getName(),
-                                                                                           resource.getName()))
+                                          .filter(keystore -> Strings.CI.equals(keystore.getName(), resource.getName()))
                                           .findAny()
                                           .orElse(null);
     if (oldResource != null)

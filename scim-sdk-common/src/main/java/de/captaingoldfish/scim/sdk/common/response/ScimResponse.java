@@ -36,7 +36,7 @@ public abstract class ScimResponse extends AbstractSchemasHolder
     super();
     if (responseNode != null)
     {
-      responseNode.fields().forEachRemaining(childNode -> {
+      responseNode.properties().forEach(childNode -> {
         this.set(childNode.getKey(), childNode.getValue());
       });
     }
@@ -60,7 +60,10 @@ public abstract class ScimResponse extends AbstractSchemasHolder
    * builds a response object that should be usable with most of the common rest apis
    *
    * @return a jax-rs response containing the response body and the http headers
+   * @deprecated since 1.32.0. This method will be removed in version 1.33.0. Use
+   *             {@link #buildJakartaResponse()} instead.
    */
+  @Deprecated
   public Response buildResponse()
   {
     Response.ResponseBuilder responseBuilder = Response.status(getHttpStatus());
@@ -76,7 +79,10 @@ public abstract class ScimResponse extends AbstractSchemasHolder
    * builds a response object that should be usable with most of the common rest apis
    *
    * @return a jakarta-rs response containing the response body and the http headers
+   * @deprecated since 1.32.0. This method will be removed in version 1.34.0. Will be renamed to
+   *             {@link #buildResponse()} in version 1.33.0.
    */
+  @Deprecated
   public jakarta.ws.rs.core.Response buildJakartaResponse()
   {
     jakarta.ws.rs.core.Response.ResponseBuilder responseBuilder = jakarta.ws.rs.core.Response.status(getHttpStatus());
