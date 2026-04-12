@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
@@ -64,7 +64,7 @@ public class BulkResourceReferenceSimpleTest
   {
     final String nodePath = "userId";
     final String resourceId = UUID.randomUUID().toString();
-    JsonNode node = new TextNode(resourceId);
+    JsonNode node = new StringNode(resourceId);
 
     BulkResourceReferenceSimple resourceReference = new BulkResourceReferenceSimple(resourceTypeFactory,
                                                                                     parentResourceType, nodePath, node);
@@ -82,7 +82,7 @@ public class BulkResourceReferenceSimpleTest
   {
     final String nodePath = "memberList.groupId";
     final String resourceId = UUID.randomUUID().toString();
-    JsonNode node = new TextNode(resourceId);
+    JsonNode node = new StringNode(resourceId);
 
     BulkResourceReferenceSimple resourceReference = new BulkResourceReferenceSimple(resourceTypeFactory,
                                                                                     parentResourceType, nodePath, node);

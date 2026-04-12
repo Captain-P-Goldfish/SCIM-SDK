@@ -3,8 +3,8 @@ package de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -153,7 +153,7 @@ public class MsAzurePatchValueSubAttributeRebuilder extends PatchWorkaround
       final JsonNode innerObjectNode;
       try
       {
-        innerObjectNode = JsonHelper.readJsonDocument(innerValueNode.textValue());
+        innerObjectNode = JsonHelper.readJsonDocument(innerValueNode.stringValue());
       }
       catch (Exception ex)
       {

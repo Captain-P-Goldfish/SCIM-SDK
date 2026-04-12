@@ -18,12 +18,6 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.etag.ETag;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
@@ -32,6 +26,10 @@ import de.captaingoldfish.scim.sdk.common.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.common.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -290,7 +288,7 @@ public class ScimObjectNodeTest implements FileReferences
   {
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
-    JsonNode simpleNode = new TextNode("test");
+    JsonNode simpleNode = new StringNode("test");
     scimObjectNode.addAttribute(attributeName, simpleNode);
     Assertions.assertNotNull(scimObjectNode.get(attributeName));
     Assertions.assertTrue(scimObjectNode.get(attributeName).isArray());
@@ -309,7 +307,7 @@ public class ScimObjectNodeTest implements FileReferences
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
     final String tag = "123&/()";
-    scimObjectNode.set(attributeName, new TextNode("W/\"" + tag + "\""));
+    scimObjectNode.set(attributeName, new StringNode("W/\"" + tag + "\""));
     ETag eTag = scimObjectNode.getStringAttribute(attributeName, ETag.class)
                               .orElseThrow(() -> new IllegalStateException("fail"));
     Assertions.assertEquals(tag, eTag.getTag());
@@ -320,7 +318,7 @@ public class ScimObjectNodeTest implements FileReferences
    * verifies that attributes set to JSON null are recognized
    */
   @Test
-  public void testRecognizeNullValue() throws JsonProcessingException
+  public void testRecognizeNullValue()
   {
     JsonNode jsonNode = new ObjectMapper().readTree("{\"attr\": null}");
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
@@ -363,7 +361,7 @@ public class ScimObjectNodeTest implements FileReferences
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
     byte[] binaryData = "hello world".getBytes();
-    JsonNode base64Data = new TextNode(Base64.getEncoder().encodeToString(binaryData));
+    JsonNode base64Data = new StringNode(Base64.getEncoder().encodeToString(binaryData));
     scimObjectNode.addAttribute(attributeName, base64Data);
 
     List<byte[]> retrievedBinaryData = scimObjectNode.getSimpleArrayAttribute(attributeName, byte[].class);
@@ -380,7 +378,7 @@ public class ScimObjectNodeTest implements FileReferences
     ScimObjectNode scimObjectNode = new ScimObjectNode(null);
     final String attributeName = "attr";
     byte[] binaryData = "hello world".getBytes();
-    JsonNode base64Data = new TextNode(Base64.getEncoder().encodeToString(binaryData) + "__öüä");
+    JsonNode base64Data = new StringNode(Base64.getEncoder().encodeToString(binaryData) + "__öüä");
     scimObjectNode.addAttribute(attributeName, base64Data);
 
     IncompatibleAttributeException ex = Assertions.assertThrows(IncompatibleAttributeException.class,

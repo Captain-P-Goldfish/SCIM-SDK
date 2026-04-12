@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
-import com.fasterxml.jackson.databind.node.BinaryNode;
+import tools.jackson.databind.node.BinaryNode;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import lombok.Getter;

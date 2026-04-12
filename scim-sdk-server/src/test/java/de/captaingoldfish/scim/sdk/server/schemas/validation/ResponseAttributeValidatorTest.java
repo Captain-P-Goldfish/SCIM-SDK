@@ -17,13 +17,13 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -126,9 +126,9 @@ public class ResponseAttributeValidatorTest
                                                             .build();
 
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("captain"));
+    attribute.set("firstname", new StringNode("captain"));
     ObjectNode nested = new ObjectNode(JsonNodeFactory.instance);
-    nested.set("lastname", new TextNode("goldfish"));
+    nested.set("lastname", new StringNode("goldfish"));
     attribute.set("nested", nested);
 
 
@@ -230,8 +230,8 @@ public class ResponseAttributeValidatorTest
           if (type.equals(Type.COMPLEX))
           {
             SchemaAttribute subAttribute = builder.build();
-            subAttribute.set(AttributeNames.RFC7643.TYPE, new TextNode(Type.STRING.getValue()));
-            subAttribute.set(AttributeNames.RFC7643.MUTABILITY, new TextNode(Mutability.READ_WRITE.getValue()));
+            subAttribute.set(AttributeNames.RFC7643.TYPE, new StringNode(Type.STRING.getValue()));
+            subAttribute.set(AttributeNames.RFC7643.MUTABILITY, new StringNode(Mutability.READ_WRITE.getValue()));
             builder.subAttributes(subAttribute);
           }
           SchemaAttribute schemaAttribute = builder.build();
@@ -289,7 +289,7 @@ public class ResponseAttributeValidatorTest
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
       ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-      element.set("firstname", new TextNode("Captain"));
+      element.set("firstname", new StringNode("Captain"));
       element.set("primary", BooleanNode.getTrue());
       attribute.add(element);
 
@@ -352,7 +352,7 @@ public class ResponseAttributeValidatorTest
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
       ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-      element.set("firstname", new TextNode("goldfish"));
+      element.set("firstname", new StringNode("goldfish"));
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
@@ -411,7 +411,7 @@ public class ResponseAttributeValidatorTest
 
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-      attribute.set("firstname", new TextNode("goldfish"));
+      attribute.set("firstname", new StringNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -511,8 +511,8 @@ public class ResponseAttributeValidatorTest
           if (type.equals(Type.COMPLEX))
           {
             SchemaAttribute subAttribute = builder.build();
-            subAttribute.set(AttributeNames.RFC7643.TYPE, new TextNode(Type.STRING.getValue()));
-            subAttribute.set(AttributeNames.RFC7643.RETURNED, new TextNode(Returned.DEFAULT.getValue()));
+            subAttribute.set(AttributeNames.RFC7643.TYPE, new StringNode(Type.STRING.getValue()));
+            subAttribute.set(AttributeNames.RFC7643.RETURNED, new StringNode(Returned.DEFAULT.getValue()));
             builder.subAttributes(subAttribute);
           }
           SchemaAttribute schemaAttribute = builder.build();
@@ -570,7 +570,7 @@ public class ResponseAttributeValidatorTest
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
       ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-      element.set("firstname", new TextNode("Captain"));
+      element.set("firstname", new StringNode("Captain"));
       element.set("primary", BooleanNode.getTrue());
       attribute.add(element);
 
@@ -633,7 +633,7 @@ public class ResponseAttributeValidatorTest
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
       ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-      element.set("firstname", new TextNode("goldfish"));
+      element.set("firstname", new StringNode("goldfish"));
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
@@ -692,7 +692,7 @@ public class ResponseAttributeValidatorTest
 
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-      attribute.set("firstname", new TextNode("goldfish"));
+      attribute.set("firstname", new StringNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -1061,7 +1061,7 @@ public class ResponseAttributeValidatorTest
 
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-      attribute.set("firstname", new TextNode("goldfish"));
+      attribute.set("firstname", new StringNode("goldfish"));
 
       try
       {
@@ -1141,7 +1141,7 @@ public class ResponseAttributeValidatorTest
 
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-      attribute.set("firstname", new TextNode("goldfish"));
+      attribute.set("firstname", new StringNode("goldfish"));
 
       Optional<JsonNode> validatedAttribute = ResponseAttributeValidator.validateAttribute(context,
                                                                                            schemaAttribute,
@@ -2130,8 +2130,8 @@ public class ResponseAttributeValidatorTest
       final String resourceName = "User";
 
       ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
-      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+      members.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2146,7 +2146,7 @@ public class ResponseAttributeValidatorTest
       Assertions.assertEquals(3, validatedNode.get().size());
 
       final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(id, resourceName);
-      Assertions.assertEquals(expectedUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).textValue());
+      Assertions.assertEquals(expectedUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).stringValue());
     }
 
     /**
@@ -2163,9 +2163,9 @@ public class ResponseAttributeValidatorTest
       final String resourceUrl = "http://localhost:8889/my-resource/at/" + id;
 
       ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
-      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
-      members.set(AttributeNames.RFC7643.REF, new TextNode(resourceUrl));
+      members.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
+      members.set(AttributeNames.RFC7643.REF, new StringNode(resourceUrl));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2179,7 +2179,7 @@ public class ResponseAttributeValidatorTest
       Assertions.assertTrue(validatedNode.isPresent());
       Assertions.assertEquals(3, validatedNode.get().size());
 
-      Assertions.assertEquals(resourceUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).textValue());
+      Assertions.assertEquals(resourceUrl, validatedNode.get().get(AttributeNames.RFC7643.REF).stringValue());
     }
 
     /**
@@ -2194,7 +2194,7 @@ public class ResponseAttributeValidatorTest
         final String id = UUID.randomUUID().toString();
 
         ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
-        members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
+        members.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
         if (typeNode != null)
         {
           members.set(AttributeNames.RFC7643.TYPE, typeNode);
@@ -2216,8 +2216,8 @@ public class ResponseAttributeValidatorTest
       List<DynamicTest> dynamicTestList = new ArrayList<>();
       dynamicTestList.add(DynamicTest.dynamicTest("null", () -> testWithTypeNode.accept(null)));
       dynamicTestList.add(DynamicTest.dynamicTest("nullNode", () -> testWithTypeNode.accept(NullNode.getInstance())));
-      dynamicTestList.add(DynamicTest.dynamicTest("empty", () -> testWithTypeNode.accept(new TextNode(""))));
-      dynamicTestList.add(DynamicTest.dynamicTest("blank", () -> testWithTypeNode.accept(new TextNode("   "))));
+      dynamicTestList.add(DynamicTest.dynamicTest("empty", () -> testWithTypeNode.accept(new StringNode(""))));
+      dynamicTestList.add(DynamicTest.dynamicTest("blank", () -> testWithTypeNode.accept(new StringNode("   "))));
       return dynamicTestList;
     }
 
@@ -2233,7 +2233,7 @@ public class ResponseAttributeValidatorTest
         final String resourceName = "User";
 
         ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
-        members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+        members.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
         if (valueNode != null)
         {
           members.set(AttributeNames.RFC7643.VALUE, valueNode);
@@ -2255,8 +2255,8 @@ public class ResponseAttributeValidatorTest
       List<DynamicTest> dynamicTestList = new ArrayList<>();
       dynamicTestList.add(DynamicTest.dynamicTest("null", () -> testWithTypeNode.accept(null)));
       dynamicTestList.add(DynamicTest.dynamicTest("nullNode", () -> testWithTypeNode.accept(NullNode.getInstance())));
-      dynamicTestList.add(DynamicTest.dynamicTest("empty", () -> testWithTypeNode.accept(new TextNode(""))));
-      dynamicTestList.add(DynamicTest.dynamicTest("blank", () -> testWithTypeNode.accept(new TextNode("   "))));
+      dynamicTestList.add(DynamicTest.dynamicTest("empty", () -> testWithTypeNode.accept(new StringNode(""))));
+      dynamicTestList.add(DynamicTest.dynamicTest("blank", () -> testWithTypeNode.accept(new StringNode("   "))));
       return dynamicTestList;
     }
 
@@ -2274,8 +2274,8 @@ public class ResponseAttributeValidatorTest
       final String resourceName = "User";
 
       ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
-      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+      members.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2302,8 +2302,8 @@ public class ResponseAttributeValidatorTest
       final String resourceName = "User";
 
       ObjectNode members = new ObjectNode(JsonNodeFactory.instance);
-      members.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-      members.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+      members.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
+      members.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2335,8 +2335,8 @@ public class ResponseAttributeValidatorTest
       {
         final String id = UUID.randomUUID().toString();
         ObjectNode member = new ObjectNode(JsonNodeFactory.instance);
-        member.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-        member.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+        member.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
+        member.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
         members.add(member);
       }
 
@@ -2358,9 +2358,9 @@ public class ResponseAttributeValidatorTest
         ObjectNode member = (ObjectNode)members.get(i);
         ObjectNode validatedMember = (ObjectNode)validatedNode.get().get(i);
 
-        final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(member.get(AttributeNames.RFC7643.VALUE).textValue(),
+        final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(member.get(AttributeNames.RFC7643.VALUE).stringValue(),
                                                                 resourceName);
-        Assertions.assertEquals(expectedUrl, validatedMember.get(AttributeNames.RFC7643.REF).textValue());
+        Assertions.assertEquals(expectedUrl, validatedMember.get(AttributeNames.RFC7643.REF).stringValue());
       }
     }
 
@@ -2377,8 +2377,8 @@ public class ResponseAttributeValidatorTest
       final String resourceName = "User";
 
       ObjectNode member = new ObjectNode(JsonNodeFactory.instance);
-      member.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-      member.set(AttributeNames.RFC7643.TYPE, new TextNode(resourceName));
+      member.set(AttributeNames.RFC7643.VALUE, new StringNode(id));
+      member.set(AttributeNames.RFC7643.TYPE, new StringNode(resourceName));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2393,9 +2393,9 @@ public class ResponseAttributeValidatorTest
       Assertions.assertTrue(validatedNode.get().isArray());
       Assertions.assertEquals(1, validatedNode.get().size());
 
-      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(member.get(AttributeNames.RFC7643.VALUE).textValue(),
+      final String expectedUrl = REFERENCE_URL_SUPPLIER.apply(member.get(AttributeNames.RFC7643.VALUE).stringValue(),
                                                               resourceName);
-      Assertions.assertEquals(expectedUrl, validatedNode.get().get(0).get(AttributeNames.RFC7643.REF).textValue());
+      Assertions.assertEquals(expectedUrl, validatedNode.get().get(0).get(AttributeNames.RFC7643.REF).stringValue());
     }
 
     /**
@@ -2678,7 +2678,7 @@ public class ResponseAttributeValidatorTest
                                          null);
       SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
 
-      JsonNode nickName = new TextNode("goldfish");
+      JsonNode nickName = new StringNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2723,7 +2723,7 @@ public class ResponseAttributeValidatorTest
       SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
       SchemaAttribute displayNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
 
-      JsonNode nickName = new TextNode("goldfish");
+      JsonNode nickName = new StringNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2869,7 +2869,7 @@ public class ResponseAttributeValidatorTest
       Schema userSchema = new Schema(userSchemaNode);
       SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
 
-      JsonNode nickName = new TextNode("goldfish");
+      JsonNode nickName = new StringNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2913,7 +2913,7 @@ public class ResponseAttributeValidatorTest
       SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
       SchemaAttribute displayNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
 
-      JsonNode nickName = new TextNode("goldfish");
+      JsonNode nickName = new StringNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),
@@ -2948,7 +2948,7 @@ public class ResponseAttributeValidatorTest
       SchemaAttribute nickNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.NICK_NAME);
       SchemaAttribute displayNameAttribute = userSchema.getSchemaAttribute(AttributeNames.RFC7643.DISPLAY_NAME);
 
-      JsonNode nickName = new TextNode("goldfish");
+      JsonNode nickName = new StringNode("goldfish");
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return ResponseAttributeValidator.validateAttribute(new Context(null),

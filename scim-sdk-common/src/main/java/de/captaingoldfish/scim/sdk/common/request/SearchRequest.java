@@ -7,16 +7,15 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.resources.AbstractSchemasHolder;
 import de.captaingoldfish.scim.sdk.common.utils.RequestUtils;
 import lombok.Builder;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -168,9 +167,11 @@ public class SearchRequest extends AbstractSchemasHolder
     {
       return getSimpleArrayAttribute(AttributeNames.RFC7643.ATTRIBUTES);
     }
-    else if (attributes instanceof TextNode)
+    else if (attributes instanceof StringNode)
     {
-      return Optional.ofNullable(attributes.textValue()).map(RequestUtils::getAttributeList).orElseGet(ArrayList::new);
+      return Optional.ofNullable(attributes.stringValue())
+                     .map(RequestUtils::getAttributeList)
+                     .orElseGet(ArrayList::new);
     }
     else
     {
@@ -214,9 +215,11 @@ public class SearchRequest extends AbstractSchemasHolder
     {
       return getSimpleArrayAttribute(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES);
     }
-    else if (attributes instanceof TextNode)
+    else if (attributes instanceof StringNode)
     {
-      return Optional.ofNullable(attributes.textValue()).map(RequestUtils::getAttributeList).orElseGet(ArrayList::new);
+      return Optional.ofNullable(attributes.stringValue())
+                     .map(RequestUtils::getAttributeList)
+                     .orElseGet(ArrayList::new);
     }
     else
     {

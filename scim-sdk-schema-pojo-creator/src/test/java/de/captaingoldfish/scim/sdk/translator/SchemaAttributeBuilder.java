@@ -6,10 +6,10 @@ import java.util.Optional;
 
 import org.junit.platform.commons.util.StringUtils;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
@@ -266,25 +266,25 @@ public class SchemaAttributeBuilder
     validateBuild();
     this.resourceUri = Optional.ofNullable(resourceUri).orElse("urn:captaingoldfish:test:attribute:UnitTest");
     SchemaAttribute schemaAttribute = new SchemaAttribute(parent, resourceUri, namePrefix);
-    schemaAttribute.set(AttributeNames.RFC7643.NAME, new TextNode(name));
+    schemaAttribute.set(AttributeNames.RFC7643.NAME, new StringNode(name));
     schemaAttribute.set(AttributeNames.RFC7643.TYPE,
-                        new TextNode(Optional.ofNullable(type)
-                                             .map(Type::getValue)
-                                             .orElse(Type.STRING.name().toLowerCase())));
+                        new StringNode(Optional.ofNullable(type)
+                                               .map(Type::getValue)
+                                               .orElse(Type.STRING.name().toLowerCase())));
     schemaAttribute.set(AttributeNames.RFC7643.DESCRIPTION,
-                        new TextNode(Optional.ofNullable(description).orElse("A description")));
+                        new StringNode(Optional.ofNullable(description).orElse("A description")));
     schemaAttribute.set(AttributeNames.RFC7643.MUTABILITY,
-                        new TextNode(Optional.ofNullable(mutability)
-                                             .map(Mutability::getValue)
-                                             .orElse(Mutability.READ_WRITE.name().toLowerCase())));
+                        new StringNode(Optional.ofNullable(mutability)
+                                               .map(Mutability::getValue)
+                                               .orElse(Mutability.READ_WRITE.name().toLowerCase())));
     schemaAttribute.set(AttributeNames.RFC7643.RETURNED,
-                        new TextNode(Optional.ofNullable(returned)
-                                             .map(Returned::getValue)
-                                             .orElse(Returned.DEFAULT.name().toLowerCase())));
+                        new StringNode(Optional.ofNullable(returned)
+                                               .map(Returned::getValue)
+                                               .orElse(Returned.DEFAULT.name().toLowerCase())));
     schemaAttribute.set(AttributeNames.RFC7643.UNIQUENESS,
-                        new TextNode(Optional.ofNullable(uniqueness)
-                                             .map(Uniqueness::getValue)
-                                             .orElse(Uniqueness.NONE.name().toLowerCase())));
+                        new StringNode(Optional.ofNullable(uniqueness)
+                                               .map(Uniqueness::getValue)
+                                               .orElse(Uniqueness.NONE.name().toLowerCase())));
     schemaAttribute.set(AttributeNames.RFC7643.MULTI_VALUED, BooleanNode.valueOf(multivalued));
     schemaAttribute.set(AttributeNames.RFC7643.REQUIRED, BooleanNode.valueOf(required));
     schemaAttribute.set(AttributeNames.RFC7643.CASE_EXACT, BooleanNode.valueOf(caseExact));

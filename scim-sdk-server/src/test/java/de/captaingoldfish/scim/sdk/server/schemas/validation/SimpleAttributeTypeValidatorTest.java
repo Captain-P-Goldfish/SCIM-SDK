@@ -20,19 +20,6 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BinaryNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
@@ -45,6 +32,18 @@ import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidation
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BinaryNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.JsonNodeType;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -81,7 +80,7 @@ public class SimpleAttributeTypeValidatorTest
   public static Stream<Arguments> getSimpleNodeTypes()
   {
     return Stream.of(Arguments.arguments(NullNode.getInstance()),
-                     Arguments.arguments(new TextNode("text")),
+                     Arguments.arguments(new StringNode("text")),
                      Arguments.arguments(new IntNode(5)),
                      Arguments.arguments(new LongNode(5L)),
                      Arguments.arguments(new DoubleNode(5.5)),
@@ -132,31 +131,31 @@ public class SimpleAttributeTypeValidatorTest
 
     {
       String content = "hello";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
     }
 
     {
       String content = "world";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
     }
 
     {
       String content = "hElLo";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
     }
 
     {
       String content = "wOrLd";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
     }
 
     {
       String content = "foo";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       try
       {
         SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
@@ -190,19 +189,19 @@ public class SimpleAttributeTypeValidatorTest
 
     {
       String content = "hello";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
     }
 
     {
       String content = "world";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
     }
 
     {
       String content = "hElLo";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       try
       {
         SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
@@ -222,7 +221,7 @@ public class SimpleAttributeTypeValidatorTest
 
     {
       String content = "wOrLd";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       try
       {
         SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
@@ -242,7 +241,7 @@ public class SimpleAttributeTypeValidatorTest
 
     {
       String content = "foo";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       try
       {
         SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute);
@@ -270,7 +269,7 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
     String content = "hello";
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.checkCanonicalValues(schemaAttribute, attribute));
   }
 
@@ -283,12 +282,12 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
     final String content = UUID.randomUUID().toString();
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -318,7 +317,7 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
     final int content = new Random().nextInt();
-    TextNode attribute = new TextNode(String.valueOf(content));
+    StringNode attribute = new StringNode(String.valueOf(content));
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> {
       return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
@@ -336,7 +335,7 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
     final long content = Long.MAX_VALUE;
-    JsonNode attribute = new TextNode(String.valueOf(content));
+    JsonNode attribute = new StringNode(String.valueOf(content));
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> {
       return SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
     });
@@ -387,12 +386,12 @@ public class SimpleAttributeTypeValidatorTest
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
-    JsonNode attribute = new TextNode(boolString);
+    JsonNode attribute = new StringNode(boolString);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
-    Assertions.assertEquals(Boolean.parseBoolean(attribute.textValue()), parsedNode.booleanValue());
+    Assertions.assertEquals(Boolean.parseBoolean(attribute.stringValue()), parsedNode.booleanValue());
   }
 
   /**
@@ -419,12 +418,12 @@ public class SimpleAttributeTypeValidatorTest
   {
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
-    JsonNode attribute = new TextNode("25.5");
+    JsonNode attribute = new StringNode("25.5");
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
-    Assertions.assertEquals(Double.parseDouble(attribute.textValue()), parsedNode.doubleValue());
+    Assertions.assertEquals(Double.parseDouble(attribute.stringValue()), parsedNode.doubleValue());
   }
 
   /**
@@ -469,12 +468,12 @@ public class SimpleAttributeTypeValidatorTest
 
     DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(3).toFormatter();
     String content = formatter.format(Instant.now());
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
+    Assertions.assertEquals(attribute.stringValue(), parsedNode.stringValue());
   }
 
   /**
@@ -490,12 +489,12 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     String content = "http://localhost:8080/auth/somewhere/myResource/123";
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -511,12 +510,12 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     String content = "urn:captaingoldfish:scim:custom:identifier";
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -532,12 +531,12 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     String content = "http://localhost:8080/hello-world?name=goldfish#type=work";
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -553,12 +552,12 @@ public class SimpleAttributeTypeValidatorTest
                                                             .build();
 
     String content = "id: 25";
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -571,12 +570,12 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BINARY).build();
 
     String content = "aWQ6IDI1";
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -611,12 +610,12 @@ public class SimpleAttributeTypeValidatorTest
                                                             .referenceTypes(ReferenceTypes.RESOURCE, ReferenceTypes.URI)
                                                             .build();
 
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -633,12 +632,12 @@ public class SimpleAttributeTypeValidatorTest
                                                                             ReferenceTypes.EXTERNAL)
                                                             .build();
 
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -654,12 +653,12 @@ public class SimpleAttributeTypeValidatorTest
                                                             .referenceTypes(ReferenceTypes.URI, ReferenceTypes.EXTERNAL)
                                                             .build();
 
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -679,12 +678,12 @@ public class SimpleAttributeTypeValidatorTest
                                                                             ReferenceTypes.EXTERNAL)
                                                             .build();
 
-    JsonNode attribute = new TextNode(content);
+    JsonNode attribute = new StringNode(content);
     JsonNode parsedNode = Assertions.assertDoesNotThrow(() -> SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
                                                                                                                 attribute));
     Assertions.assertNotNull(parsedNode);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(content, parsedNode.textValue());
+    Assertions.assertEquals(content, parsedNode.stringValue());
   }
 
   /**
@@ -696,7 +695,7 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    JsonNode content = new TextNode("hello world");
+    JsonNode content = new StringNode("hello world");
     attribute.set("bad", content);
 
     try
@@ -725,7 +724,7 @@ public class SimpleAttributeTypeValidatorTest
     SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
-    JsonNode content = new TextNode("hello world");
+    JsonNode content = new StringNode("hello world");
     attribute.add(content);
     attribute.add(content);
 
@@ -873,7 +872,7 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
-      JsonNode attribute = new TextNode("abc");
+      JsonNode attribute = new StringNode("abc");
       try
       {
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
@@ -899,7 +898,7 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.INTEGER).build();
 
-      JsonNode attribute = new TextNode("hello");
+      JsonNode attribute = new StringNode("hello");
       try
       {
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
@@ -985,7 +984,7 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.BOOLEAN).build();
 
-      JsonNode attribute = new TextNode("abc");
+      JsonNode attribute = new StringNode("abc");
       try
       {
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
@@ -1097,7 +1096,7 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
-      JsonNode attribute = new TextNode("abc");
+      JsonNode attribute = new StringNode("abc");
       try
       {
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
@@ -1124,7 +1123,7 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.DECIMAL).build();
 
-      JsonNode attribute = new TextNode("hello");
+      JsonNode attribute = new StringNode("hello");
       try
       {
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
@@ -1186,7 +1185,7 @@ public class SimpleAttributeTypeValidatorTest
 
       try
       {
-        JsonNode attribute = new TextNode("abc");
+        JsonNode attribute = new StringNode("abc");
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
@@ -1326,7 +1325,7 @@ public class SimpleAttributeTypeValidatorTest
       String content = "$%&abc";
       try
       {
-        JsonNode attribute = new TextNode(content);
+        JsonNode attribute = new StringNode(content);
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
         Assertions.fail("this point must not be reached");
       }
@@ -1389,7 +1388,7 @@ public class SimpleAttributeTypeValidatorTest
     {
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("binary").type(Type.BINARY).build();
 
-      JsonNode attribute = new TextNode("abc_?/%");
+      JsonNode attribute = new StringNode("abc_?/%");
       try
       {
         SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);

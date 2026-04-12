@@ -12,8 +12,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Strings;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.LongNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.LongNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
@@ -446,11 +446,11 @@ public class FilterResourceResolver
     List<String> stringValues = new ArrayList<>();
     if (jsonNode != null && jsonNode.isArray())
     {
-      jsonNode.forEach(val -> stringValues.add(val == null || val.isNull() ? null : val.textValue()));
+      jsonNode.forEach(val -> stringValues.add(val == null || val.isNull() ? null : val.stringValue()));
     }
     else
     {
-      stringValues.add(jsonNode == null || jsonNode.isNull() ? null : jsonNode.textValue());
+      stringValues.add(jsonNode == null || jsonNode.isNull() ? null : jsonNode.stringValue());
     }
     for ( String stringValue : stringValues )
     {
@@ -476,11 +476,11 @@ public class FilterResourceResolver
     List<String> dateTimes = new ArrayList<>();
     if (jsonNode != null && jsonNode.isArray())
     {
-      jsonNode.forEach(dateNode -> dateTimes.add(dateNode.isNull() ? null : dateNode.textValue()));
+      jsonNode.forEach(dateNode -> dateTimes.add(dateNode.isNull() ? null : dateNode.stringValue()));
     }
     else
     {
-      dateTimes.add(jsonNode == null ? null : jsonNode.textValue());
+      dateTimes.add(jsonNode == null ? null : jsonNode.stringValue());
     }
     if (Comparator.PR.equals(attributeExpressionLeaf.getComparator()))
     {

@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.StringNode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
@@ -117,7 +117,7 @@ public class MetaConfigLoaderBuilderTest extends HttpServerMockup
                                                                                   RFC7643.X509_CERTIFICATES,
                                                                                   RFC7643.VALUE))
                                                 .get();
-    schemaAttribute.set("type", new TextNode("BINARY"));
+    schemaAttribute.set("type", new StringNode("BINARY"));
 
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);

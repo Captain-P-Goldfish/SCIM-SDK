@@ -12,12 +12,12 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -372,7 +372,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       }
       else
       {
-        requestedAttributes.set(schemaAttribute.getName(), new TextNode(""));
+        requestedAttributes.set(schemaAttribute.getName(), new StringNode(""));
       }
     }
     else
@@ -387,7 +387,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       if (attribute == null)
       {
         // the value does not matter here. We only need the key in the document
-        complexNode.set(schemaAttribute.getName(), new TextNode(""));
+        complexNode.set(schemaAttribute.getName(), new StringNode(""));
       }
     }
   }
@@ -645,7 +645,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
           }
           else if (attributeValue.get(0).isTextual())
           {
-            attributeValue = JsonHelper.readJsonDocument(attributeValue.get(0).textValue());
+            attributeValue = JsonHelper.readJsonDocument(attributeValue.get(0).stringValue());
             if (attributeValue != null && attributeValue.isObject())
             {
               break errorIfBlock;

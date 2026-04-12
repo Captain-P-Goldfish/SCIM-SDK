@@ -13,13 +13,13 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
@@ -247,7 +247,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
 
           SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
           ArrayNode numberArray = new ArrayNode(JsonNodeFactory.instance);
-          numberArray.add(new TextNode("hello"));
+          numberArray.add(new StringNode("hello"));
 
           AllTypes complex = new AllTypes(false);
           complex.set(numberAttribute.getName(), numberArray);
@@ -311,7 +311,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
         public void testAddNumberArrayMsAzureStyle(String attributeName)
         {
           AllTypes patchResource = new AllTypes(true);
-          patchResource.set(attributeName, new TextNode("hello world"));
+          patchResource.set(attributeName, new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -421,7 +421,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
 
           SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
           ArrayNode numberArray = new ArrayNode(JsonNodeFactory.instance);
-          numberArray.add(new TextNode("hello"));
+          numberArray.add(new StringNode("hello"));
 
           patchResource.set(attributeName, numberArray);
 
@@ -516,7 +516,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           EnterpriseUser patchedEnterpriseUser = patchedResource.getEnterpriseUser().get();
           ObjectNode patchedComplex = (ObjectNode)patchedEnterpriseUser.get("complex");
           JsonNode stringNode = patchedComplex.get("string");
-          Assertions.assertEquals("hello world", stringNode.textValue());
+          Assertions.assertEquals("hello world", stringNode.stringValue());
 
           // must be called
           {
@@ -686,7 +686,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
         {
           final String attributeName = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:complex.string";
           AllTypes patchResource = new AllTypes(true);
-          patchResource.set(attributeName, new TextNode("hello world"));
+          patchResource.set(attributeName, new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -704,7 +704,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           EnterpriseUser patchedEnterpriseUser = patchedResource.getEnterpriseUser().get();
           ObjectNode patchedComplex = (ObjectNode)patchedEnterpriseUser.get("complex");
           JsonNode stringNode = patchedComplex.get("string");
-          Assertions.assertEquals("hello world", stringNode.textValue());
+          Assertions.assertEquals("hello world", stringNode.stringValue());
 
           // must be called
           {
@@ -937,7 +937,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           AllTypes allTypes = new AllTypes(true);
           {
             AllTypes complex = new AllTypes(false);
-            complex.set("number", new TextNode("hello world"));
+            complex.set("number", new StringNode("hello world"));
             allTypes.setComplex(complex);
           }
           addAllTypesToProvider(allTypes);
@@ -980,7 +980,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
         public void testAddStringForNumberValue(String attributeName)
         {
           AllTypes complex = new AllTypes(false);
-          complex.set("number", new TextNode("hello world"));
+          complex.set("number", new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -1074,7 +1074,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           ObjectNode patchedComplex = (ObjectNode)patchedEnterpriseUser.get("complex");
           ArrayNode patchedNumberArray = (ArrayNode)patchedComplex.get("numberArray");
 
-          Assertions.assertEquals("hello world", patchedComplex.get("string").textValue());
+          Assertions.assertEquals("hello world", patchedComplex.get("string").stringValue());
           Assertions.assertEquals(2, patchedNumberArray.size());
           Assertions.assertEquals(5L, patchedNumberArray.get(0).longValue());
           Assertions.assertEquals(6L, patchedNumberArray.get(1).longValue());
@@ -1121,7 +1121,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
             AllTypes complex = new AllTypes(false);
             EnterpriseUser enterpriseUser = new EnterpriseUser();
             enterpriseUser.setCostCenter("hello world");
-            complex.set("number", new TextNode("hello world"));
+            complex.set("number", new StringNode("hello world"));
             enterpriseUser.set("complex", complex);
             allTypes.setEnterpriseUser(enterpriseUser);
           }
@@ -1180,7 +1180,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
         @ValueSource(strings = {"complex.string", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:complex.string"})
         public void testAddStringValueToComplex(String attributeName)
         {
-          JsonNode stringNode = new TextNode("hello world");
+          JsonNode stringNode = new StringNode("hello world");
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
                                                                                       .path(attributeName)
@@ -1343,7 +1343,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           SchemaAttribute complexAttribute = numberAttribute.getParent();
 
           ArrayNode numberArray = new ArrayNode(JsonNodeFactory.instance);
-          numberArray.add(new TextNode("hello"));
+          numberArray.add(new StringNode("hello"));
 
           AllTypes complex = new AllTypes(false);
           complex.set(numberAttribute.getName(), numberArray);
@@ -1412,7 +1412,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
         public void testAddStringValueToComplex()
         {
           String attributeName = "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:complex.string";
-          JsonNode stringNode = new TextNode("hello world");
+          JsonNode stringNode = new StringNode("hello world");
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
                                                                                       .path(attributeName)
@@ -1431,7 +1431,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           EnterpriseUser patchedEnterpriseUser = patchedResource.getEnterpriseUser().get();
           ObjectNode patchedComplex = (ObjectNode)patchedEnterpriseUser.get("complex");
           JsonNode patchedStringNode = patchedComplex.get("string");
-          Assertions.assertEquals("hello world", patchedStringNode.textValue());
+          Assertions.assertEquals("hello world", patchedStringNode.stringValue());
 
           // must be called
           {
@@ -1525,7 +1525,7 @@ public class ComplexAttributeTests extends AbstractPatchTest
           SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
 
           ArrayNode numberArray = new ArrayNode(JsonNodeFactory.instance);
-          numberArray.add(new TextNode("hello"));
+          numberArray.add(new StringNode("hello"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)

@@ -6,10 +6,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -258,7 +258,7 @@ public class ResourceTypeFactoryTest
   public void testRegisterResourceWithSelfReference()
   {
     ScimObjectNode userExtensionNode = new ScimObjectNode();
-    userExtensionNode.set("schema", new TextNode(SchemaUris.USER_URI));
+    userExtensionNode.set("schema", new StringNode(SchemaUris.USER_URI));
     userExtensionNode.set("required", BooleanNode.FALSE);
 
     ArrayNode extensionArray = (ArrayNode)userResourceType.get(AttributeNames.RFC7643.SCHEMA_EXTENSIONS);

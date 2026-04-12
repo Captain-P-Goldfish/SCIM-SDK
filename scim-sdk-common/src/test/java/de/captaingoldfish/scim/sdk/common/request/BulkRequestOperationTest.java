@@ -43,9 +43,9 @@ public class BulkRequestOperationTest implements FileReferences
     Assertions.assertEquals(path, operations.getPath());
     Assertions.assertEquals(data, operations.getData().get());
 
-    Assertions.assertEquals(method.name(), operations.get("method").textValue());
-    Assertions.assertEquals(bulkId, operations.get("bulkId").textValue());
-    Assertions.assertEquals(path, operations.get("path").textValue());
+    Assertions.assertEquals(method.name(), operations.get("method").stringValue());
+    Assertions.assertEquals(bulkId, operations.get("bulkId").stringValue());
+    Assertions.assertEquals(path, operations.get("path").stringValue());
     Assertions.assertEquals(data, operations.get("data").toString());
     Assertions.assertEquals(JsonHelper.readJsonDocument(data), operations.get("data"));
   }

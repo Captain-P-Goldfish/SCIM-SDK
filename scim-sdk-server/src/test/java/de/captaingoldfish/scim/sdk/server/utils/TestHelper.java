@@ -9,12 +9,6 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Assertions;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Returned;
@@ -28,6 +22,11 @@ import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -158,16 +157,20 @@ public final class TestHelper
     Assertions.assertNotNull(attributeDefinition);
     JsonNode finalAttributeDefinition = attributeDefinition;
     Optional.ofNullable(type).ifPresent(t -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.TYPE, new TextNode(t.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.TYPE, new StringNode(t.getValue()));
     });
     Optional.ofNullable(mutability).ifPresent(m -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.MUTABILITY, new TextNode(m.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition,
+                              AttributeNames.RFC7643.MUTABILITY,
+                              new StringNode(m.getValue()));
     });
     Optional.ofNullable(returned).ifPresent(r -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.RETURNED, new TextNode(r.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.RETURNED, new StringNode(r.getValue()));
     });
     Optional.ofNullable(uniqueness).ifPresent(u -> {
-      JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.UNIQUENESS, new TextNode(u.getValue()));
+      JsonHelper.addAttribute(finalAttributeDefinition,
+                              AttributeNames.RFC7643.UNIQUENESS,
+                              new StringNode(u.getValue()));
     });
     Optional.ofNullable(multiValued).ifPresent(multi -> {
       JsonHelper.addAttribute(finalAttributeDefinition,
@@ -182,7 +185,7 @@ public final class TestHelper
     });
     Optional.ofNullable(canonicalTypes).ifPresent(canonical -> {
       ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-      arrayNode.addAll(canonical.stream().map(TextNode::new).collect(Collectors.toList()));
+      arrayNode.addAll(canonical.stream().map(StringNode::new).collect(Collectors.toList()));
       JsonHelper.addAttribute(finalAttributeDefinition, AttributeNames.RFC7643.REFERENCE_TYPES, arrayNode);
     });
   }

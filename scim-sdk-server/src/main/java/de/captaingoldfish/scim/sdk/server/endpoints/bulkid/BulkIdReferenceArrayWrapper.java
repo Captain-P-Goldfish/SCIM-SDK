@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.bulkid;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import lombok.Getter;
@@ -25,7 +25,7 @@ public class BulkIdReferenceArrayWrapper implements BulkIdReferenceWrapper
   {
     this.parentNode = parentNode;
     this.index = index;
-    this.bulkId = parentNode.get(index).textValue().replace(String.format("%s:", AttributeNames.RFC7643.BULK_ID), "");
+    this.bulkId = parentNode.get(index).stringValue().replace(String.format("%s:", AttributeNames.RFC7643.BULK_ID), "");
   }
 
   @Override

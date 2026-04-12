@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -59,7 +59,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
     {
       List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                   .op(PatchOp.REPLACE)
-                                                                                  .valueNode(new TextNode("hello world"))
+                                                                                  .valueNode(new StringNode("hello world"))
                                                                                   .build());
       PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
 
@@ -124,7 +124,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         {
           AllTypes patchResource = new AllTypes(true);
 
-          patchResource.set("unknown", new TextNode("hello world"));
+          patchResource.set("unknown", new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -173,7 +173,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("costCenter", new TextNode("hello world"));
+          complex.set("costCenter", new StringNode("hello world"));
           patchResource.set("unknown", complex);
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -223,7 +223,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           ObjectNode name = new ObjectNode(JsonNodeFactory.instance);
-          name.set("unknown", new TextNode("hello world"));
+          name.set("unknown", new StringNode("hello world"));
 
           patchResource.set("name", name);
 
@@ -279,7 +279,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         {
           AllTypes patchResource = new AllTypes(true);
 
-          patchResource.set("unknown", new TextNode("hello world"));
+          patchResource.set("unknown", new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -327,7 +327,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("costCenter", new TextNode("hello world"));
+          complex.set("costCenter", new StringNode("hello world"));
           patchResource.set("unknown", complex);
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -376,7 +376,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("unknown", new TextNode("hello world"));
+          complex.set("unknown", new StringNode("hello world"));
           patchResource.set("complex", complex);
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -446,7 +446,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
-          enterpriseUser.set("unknown", new TextNode("hello world"));
+          enterpriseUser.set("unknown", new StringNode("hello world"));
           patchResource.setEnterpriseUser(enterpriseUser);
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -497,7 +497,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("costCenter", new TextNode("hello world"));
+          complex.set("costCenter", new StringNode("hello world"));
           enterpriseUser.set("unknown", complex);
           patchResource.setEnterpriseUser(enterpriseUser);
 
@@ -551,7 +551,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("costCenter", new TextNode("hello world"));
+          complex.set("costCenter", new StringNode("hello world"));
           enterpriseUser.set("unknown", complex);
           patchResource.setEnterpriseUser(enterpriseUser);
 
@@ -610,7 +610,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
-          enterpriseUser.set("unknown", new TextNode("hello world"));
+          enterpriseUser.set("unknown", new StringNode("hello world"));
           patchResource.setEnterpriseUser(enterpriseUser);
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -660,7 +660,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("costCenter", new TextNode("hello world"));
+          complex.set("costCenter", new StringNode("hello world"));
           enterpriseUser.set("unknownComplex", complex);
           patchResource.setEnterpriseUser(enterpriseUser);
 
@@ -711,7 +711,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("unknown", new TextNode("hello world"));
+          complex.set("unknown", new StringNode("hello world"));
           enterpriseUser.set("manager", complex);
           patchResource.setEnterpriseUser(enterpriseUser);
 
@@ -784,7 +784,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testRemoveExtensionWithNullNode()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -832,7 +832,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         public void testAddComplexUnknownAttribute()
         {
           ObjectNode unknownAttribute = new ObjectNode(JsonNodeFactory.instance);
-          unknownAttribute.set("costCenter", new TextNode("hello world"));
+          unknownAttribute.set("costCenter", new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -879,7 +879,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testAddComplexSubUnknownAttribute()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -932,7 +932,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testAddSimpleUnknownAttribute()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -979,7 +979,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         public void testAddComplexUnknownAttribute()
         {
           ObjectNode unknownAttribute = new ObjectNode(JsonNodeFactory.instance);
-          unknownAttribute.set("costCenter", new TextNode("hello world"));
+          unknownAttribute.set("costCenter", new StringNode("hello world"));
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -1025,7 +1025,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testAddComplexSubUnknownAttribute()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                       .op(PatchOp.REPLACE)
@@ -1093,7 +1093,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
           AllTypes patchResource = new AllTypes(true);
 
           EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
-          enterpriseUser.set("unknown", new TextNode("hello world"));
+          enterpriseUser.set("unknown", new StringNode("hello world"));
           patchResource.setEnterpriseUser(enterpriseUser);
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1141,7 +1141,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         public void testAddComplexUnknownAttribute()
         {
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("unknown", new TextNode("hello world"));
+          complex.set("unknown", new StringNode("hello world"));
 
           final String attributeName = String.format("%s:%s", SchemaUris.ENTERPRISE_USER_URI, "unknown");
 
@@ -1192,7 +1192,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testAddComplexSubUnknownAttribute()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
           final String attributeName = String.format("%s:%s", SchemaUris.ENTERPRISE_USER_URI, "manager.unknown");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1248,7 +1248,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testAddSimpleUnknownAttribute()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
           final String attributeName = String.format("%s:%s", SchemaUris.ENTERPRISE_USER_URI, "unknown");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1297,7 +1297,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         public void testAddComplexUnknownAttribute()
         {
           ObjectNode complex = new ObjectNode(JsonNodeFactory.instance);
-          complex.set("unknown", new TextNode("hello world"));
+          complex.set("unknown", new StringNode("hello world"));
 
           final String attributeName = String.format("%s:%s", SchemaUris.ENTERPRISE_USER_URI, "unknown");
 
@@ -1347,7 +1347,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
         @Test
         public void testAddComplexSubUnknownAttribute()
         {
-          JsonNode unknownAttribute = new TextNode("hello world");
+          JsonNode unknownAttribute = new StringNode("hello world");
           final String attributeName = String.format("%s:%s", SchemaUris.ENTERPRISE_USER_URI, "manager.unknown");
 
           List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()

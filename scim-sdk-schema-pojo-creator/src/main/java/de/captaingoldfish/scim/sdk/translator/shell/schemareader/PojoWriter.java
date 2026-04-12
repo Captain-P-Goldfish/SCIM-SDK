@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -101,7 +101,7 @@ public final class PojoWriter
     {
       JsonNode resourceType = schemaPojoEntry.getKey();
       final String endpointName = String.format("%sEndpointDefinition",
-                                                resourceType.get(AttributeNames.RFC7643.NAME).textValue());
+                                                resourceType.get(AttributeNames.RFC7643.NAME).stringValue());
       final String fileName = UtilityMethods.getResourceName(endpointName);
       final String filePath = String.format("%s/%s.java", targetDirectory, fileName);
       if (!overrideExistingFiles && new File(filePath).exists())
@@ -149,7 +149,7 @@ public final class PojoWriter
       final String fileName = UtilityMethods.getResourceName(schemaRelation.getResourceType()
                                                                            .getJsonNode()
                                                                            .get(AttributeNames.RFC7643.NAME)
-                                                                           .textValue());
+                                                                           .stringValue());
       final String filePath = String.format("%s/%sResourceHandler.java", targetDirectory, fileName);
       if (!overrideExistingFiles && new File(filePath).exists())
       {

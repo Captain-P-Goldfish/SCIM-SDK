@@ -6,8 +6,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;

@@ -9,9 +9,9 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -189,7 +189,7 @@ public class ValidationContext
 
     if (errorMessagesArray.isPresent())
     {
-      errorResponse.setDetail(errorMessagesArray.get().get(0).textValue());
+      errorResponse.setDetail(errorMessagesArray.get().get(0).stringValue());
     }
     else
     {

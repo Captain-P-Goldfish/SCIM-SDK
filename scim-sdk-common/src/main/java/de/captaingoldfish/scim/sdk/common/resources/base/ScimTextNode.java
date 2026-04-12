@@ -1,9 +1,8 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import lombok.Getter;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -11,7 +10,7 @@ import lombok.Getter;
  * created at: 05.10.2019 - 20:19 <br>
  * <br>
  */
-public class ScimTextNode extends TextNode implements ScimNode
+public class ScimTextNode extends StringNode implements ScimNode
 {
 
   @Getter

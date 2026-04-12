@@ -3,9 +3,9 @@ package de.captaingoldfish.scim.sdk.server.patch.operations;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.server.filter.AttributePathRoot;
@@ -66,7 +66,7 @@ public class MultivaluedSimpleAttributeOperation extends PatchOperation<ArrayNod
     }
     for ( JsonNode jsonNode : valuesNode )
     {
-      valueStringList.add(jsonNode.asText());
+      valueStringList.add(jsonNode.asString());
     }
     return valueStringList;
   }

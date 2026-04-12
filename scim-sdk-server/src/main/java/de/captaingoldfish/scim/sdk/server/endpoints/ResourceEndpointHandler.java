@@ -16,7 +16,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -253,7 +254,7 @@ class ResourceEndpointHandler
       {
         resource = JsonHelper.readJsonDocument(resourceDocument);
       }
-      catch (IOException ex)
+      catch (IOException | JacksonException ex)
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }
@@ -865,7 +866,7 @@ class ResourceEndpointHandler
       {
         resource = JsonHelper.readJsonDocument(resourceDocument);
       }
-      catch (IOException ex)
+      catch (IOException | JacksonException ex)
       {
         throw new BadRequestException(ex.getMessage(), ex, ScimType.Custom.UNPARSEABLE_REQUEST);
       }

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
@@ -43,7 +43,7 @@ public class GroupHandlerImpl extends ResourceHandler<Group>
     {
       throw new ConflictException("resource with id '" + groupId + "' does already exist");
     }
-    JsonHelper.addAttribute(resource, AttributeNames.RFC7643.ID, new TextNode(groupId));
+    JsonHelper.addAttribute(resource, AttributeNames.RFC7643.ID, new StringNode(groupId));
     inMemoryMap.put(groupId, resource);
     resource.getMeta().ifPresent(meta -> {
       meta.setCreated(Instant.now());

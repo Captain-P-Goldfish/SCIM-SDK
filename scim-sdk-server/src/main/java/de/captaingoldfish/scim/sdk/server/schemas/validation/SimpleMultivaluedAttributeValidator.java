@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
@@ -49,14 +50,14 @@ class SimpleMultivaluedAttributeValidator
       {
         if (!Uniqueness.NONE.equals(schemaAttribute.getUniqueness()))
         {
-          if (uniqueValueList.contains(jsonNode.textValue()))
+          if (uniqueValueList.contains(jsonNode.toString()))
           {
             String errorMessage = String.format("Array with uniqueness '%s' contains duplicate values '%s'",
                                                 schemaAttribute.getUniqueness().getValue(),
                                                 arrayNode);
             throw new AttributeValidationException(schemaAttribute, errorMessage);
           }
-          uniqueValueList.add(jsonNode.textValue());
+          uniqueValueList.add(jsonNode.toString());
         }
 
         try

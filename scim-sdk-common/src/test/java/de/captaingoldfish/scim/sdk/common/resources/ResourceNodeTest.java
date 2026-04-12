@@ -14,7 +14,7 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -107,7 +107,7 @@ public class ResourceNodeTest implements FileReferences
       SchemaAttribute schemaAttribute = userSchema.getSchemaAttribute(attributeName);
       Optional<JsonNode> sortByAttributeOptional = user.getSortingAttribute(schemaAttribute);
       Assertions.assertTrue(sortByAttributeOptional.isPresent());
-      Assertions.assertEquals(expectedValue, sortByAttributeOptional.get().asText());
+      Assertions.assertEquals(expectedValue, sortByAttributeOptional.get().asString());
     });
   }
 

@@ -3,10 +3,10 @@ package de.captaingoldfish.scim.sdk.server.patch.operations;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -62,11 +62,11 @@ public class MultivaluedComplexAttributeOperation extends PatchOperation<ArrayNo
       return (ArrayNode)jsonNode;
     }
     ArrayNode arrayNode;
-    if (jsonNode instanceof TextNode)
+    if (jsonNode instanceof StringNode)
     {
       try
       {
-        arrayNode = (ArrayNode)JsonHelper.readJsonDocument(jsonNode.asText());
+        arrayNode = (ArrayNode)JsonHelper.readJsonDocument(jsonNode.asString());
         return arrayNode;
       }
       catch (Exception ex)

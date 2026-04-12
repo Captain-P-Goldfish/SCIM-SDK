@@ -8,13 +8,13 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.HttpMethod;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
@@ -102,9 +102,9 @@ public class RequestAttributeValidatorTest
                                                             .build();
 
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("captain"));
+    attribute.set("firstname", new StringNode("captain"));
     ObjectNode nested = new ObjectNode(JsonNodeFactory.instance);
-    nested.set("lastname", new TextNode("goldfish"));
+    nested.set("lastname", new StringNode("goldfish"));
     attribute.set("nested", nested);
 
 
@@ -250,7 +250,7 @@ public class RequestAttributeValidatorTest
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
       ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-      element.set("firstname", new TextNode("Captain"));
+      element.set("firstname", new StringNode("Captain"));
       element.set("primary", BooleanNode.getTrue());
       attribute.add(element);
 
@@ -310,7 +310,7 @@ public class RequestAttributeValidatorTest
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
       ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-      element.set("firstname", new TextNode("goldfish"));
+      element.set("firstname", new StringNode("goldfish"));
       attribute.add(element);
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
@@ -366,7 +366,7 @@ public class RequestAttributeValidatorTest
 
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-      attribute.set("firstname", new TextNode("goldfish"));
+      attribute.set("firstname", new StringNode("goldfish"));
 
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return RequestAttributeValidator.validateAttribute(new Context(null),
@@ -447,13 +447,13 @@ public class RequestAttributeValidatorTest
       Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
         return RequestAttributeValidator.validateAttribute(new Context(null),
                                                            schemaAttribute,
-                                                           new TextNode("123456"),
+                                                           new StringNode("123456"),
                                                            HttpMethod.POST);
       });
       Assertions.assertTrue(validatedNode.isPresent());
       ScimTextNode scimTextNode = (ScimTextNode)validatedNode.get();
       Assertions.assertEquals(schemaAttribute, scimTextNode.getSchemaAttribute());
-      Assertions.assertEquals("123456", scimTextNode.textValue());
+      Assertions.assertEquals("123456", scimTextNode.stringValue());
     }
   }
 
@@ -811,7 +811,7 @@ public class RequestAttributeValidatorTest
 
       // one of the primary values is not present and therefore null. jsonNode != null protects from NullPointer
       ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-      attribute.set("firstname", new TextNode("goldfish"));
+      attribute.set("firstname", new StringNode("goldfish"));
 
 
       try

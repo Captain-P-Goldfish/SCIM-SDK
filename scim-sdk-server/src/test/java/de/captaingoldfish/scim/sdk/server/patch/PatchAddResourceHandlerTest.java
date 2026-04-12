@@ -22,15 +22,15 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DecimalNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -182,10 +182,10 @@ public class PatchAddResourceHandlerTest implements FileReferences
   public List<DynamicTest> testAddSimpleAttribute()
   {
     List<DynamicTest> dynamicTestList = new ArrayList<>();
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("string", new TextNode("hello world"))));
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("date", new TextNode("1940-03-10T00:00:00Z"))));
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("string", new StringNode("hello world"))));
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("date", new StringNode("1940-03-10T00:00:00Z"))));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("date",
-                                                                    new TextNode("1940-03-10T00:00:00+02:00"))));
+                                                                    new StringNode("1940-03-10T00:00:00+02:00"))));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("number",
                                                                     new BigIntegerNode(BigInteger.valueOf(5)))));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("number",
@@ -197,7 +197,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("bool", BooleanNode.getTrue())));
     dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("bool", BooleanNode.getFalse())));
 
-    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("string", new TextNode("hello world")),
+    dynamicTestList.add(getAddSimpleAttributeTest(new NameValuePair("string", new StringNode("hello world")),
                                                   new NameValuePair("number",
                                                                     new BigIntegerNode(BigInteger.valueOf(5))),
                                                   new NameValuePair("bool", BooleanNode.getTrue()),
@@ -391,7 +391,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
 
     AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.set("unknown", new TextNode("unknown"));
+    allTypeChanges.set("unknown", new StringNode("unknown"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
@@ -426,7 +426,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
 
     AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.set("emails", new TextNode("unknown"));
+    allTypeChanges.set("emails", new StringNode("unknown"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
@@ -801,7 +801,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
 
     AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.set("numberArray", new TextNode("illegal-value"));
+    allTypeChanges.set("numberArray", new StringNode("illegal-value"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
@@ -843,7 +843,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     AllTypes multicomplex = new AllTypes(false);
     multicomplex.setString("hello world");
-    multicomplex.set("unknown", new TextNode("unknown"));
+    multicomplex.set("unknown", new StringNode("unknown"));
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
     AllTypes allTypeChanges = new AllTypes(true);
@@ -890,7 +890,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     AllTypes multicomplex = new AllTypes(false);
     multicomplex.setString("hello world");
-    multicomplex.set("unknown", new TextNode("unknown"));
+    multicomplex.set("unknown", new StringNode("unknown"));
     allTypes.setMultiComplex(Collections.singletonList(multicomplex));
 
     AllTypes allTypeChanges = new AllTypes(true);
@@ -930,7 +930,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes patchResource = new AllTypes(true);
     AllTypes patchComplex = new AllTypes(false);
     patchComplex.setString("hello world");
-    patchComplex.set("unknown", new TextNode("unknown"));
+    patchComplex.set("unknown", new StringNode("unknown"));
     patchResource.setComplex(patchComplex);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1803,7 +1803,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     AllTypes allTypeChanges = new AllTypes(true);
     EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
-    enterpriseUser.set(ambiguousAttributeName, new TextNode("hello world"));
+    enterpriseUser.set(ambiguousAttributeName, new StringNode("hello world"));
     allTypeChanges.setEnterpriseUser(enterpriseUser);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1819,7 +1819,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("hello world",
-                            patchedAllTypes.getEnterpriseUser().get().get(ambiguousAttributeName).textValue());
+                            patchedAllTypes.getEnterpriseUser().get().get(ambiguousAttributeName).stringValue());
   }
 
   /**
@@ -1851,7 +1851,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypeChanges = new AllTypes(true);
     EnterpriseUser enterpriseUser = EnterpriseUser.builder().build();
     ScimObjectNode complexEnterprise = new ScimObjectNode();
-    complexEnterprise.set("number", new TextNode("hello world"));
+    complexEnterprise.set("number", new StringNode("hello world"));
     enterpriseUser.set("complex", complexEnterprise);
     allTypeChanges.setEnterpriseUser(enterpriseUser);
 
@@ -1868,7 +1868,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("hello world",
-                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").stringValue());
   }
 
   /**
@@ -1898,7 +1898,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     allTypes.setComplex(complexAllTypes);
 
     AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex.number", new TextNode("hello world"));
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex.number", new StringNode("hello world"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
@@ -1913,7 +1913,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("hello world",
-                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").stringValue());
   }
 
   /**
@@ -1939,12 +1939,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     AllTypes complexAllTypes = new AllTypes(false);
     // the generated extra-attribute has the field number defined as string
-    complexAllTypes.set("number", new TextNode("hello world"));
+    complexAllTypes.set("number", new StringNode("hello world"));
     allTypes.setComplex(complexAllTypes);
 
     AllTypes allTypeChanges = new AllTypes(true);
     AllTypes complex = new AllTypes(false);
-    complex.set("number", new TextNode("goodbye world"));
+    complex.set("number", new StringNode("goodbye world"));
     allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex", complex);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
@@ -1961,7 +1961,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("goodbye world",
-                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").stringValue());
   }
 
   /**
@@ -1987,11 +1987,11 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     AllTypes complexAllTypes = new AllTypes(false);
     // the generated extra-attribute has the field number defined as string
-    complexAllTypes.set("number", new TextNode("hello world"));
+    complexAllTypes.set("number", new StringNode("hello world"));
     allTypes.setComplex(complexAllTypes);
 
     AllTypes allTypeChanges = new AllTypes(true);
-    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex.number", new TextNode("goodbye world"));
+    allTypeChanges.set(enterpriseSchema.getNonNullId() + ":complex.number", new StringNode("goodbye world"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
@@ -2007,7 +2007,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     Assertions.assertTrue(patchedAllTypes.getEnterpriseUser().isPresent());
     Assertions.assertEquals("goodbye world",
-                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").textValue());
+                            patchedAllTypes.getEnterpriseUser().get().get("complex").get("number").stringValue());
   }
 
   /**
@@ -2035,7 +2035,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
 
     AllTypes allTypeChanges = new AllTypes(true);
     allTypeChanges.set(enterpriseSchema.getNonNullId() + ":" + AttributeNames.RFC7643.COST_CENTER,
-                       new TextNode("costCenterValue"));
+                       new StringNode("costCenterValue"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)
@@ -2054,7 +2054,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
                             patchedAllTypes.getEnterpriseUser()
                                            .get()
                                            .get(AttributeNames.RFC7643.COST_CENTER)
-                                           .textValue());
+                                           .stringValue());
   }
 
   /**
@@ -2126,7 +2126,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     AllTypes allTypes = new AllTypes(true);
     AllTypes complexAllTypes = new AllTypes(false);
     // the generated extra-attribute has the field number defined as string
-    complexAllTypes.set("number", new TextNode("hello world"));
+    complexAllTypes.set("number", new StringNode("hello world"));
     allTypes.setComplex(complexAllTypes);
 
     AllTypes allTypeChanges = new AllTypes(true);
@@ -2962,7 +2962,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
       PersonRole role1 = personRoles.get(0);
       String expectedContent = JsonHelper.readJsonDocument(values.get(0), ObjectNode.class)
                                          .get(AttributeNames.RFC7643.VALUE)
-                                         .textValue();
+                                         .stringValue();
       Assertions.assertEquals(expectedContent, role1.getValue().get());
       Assertions.assertFalse(role1.getRef().isPresent());
       Assertions.assertFalse(role1.getDisplay().isPresent());
@@ -2972,7 +2972,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
       PersonRole role2 = personRoles.get(1);
       String expectedContent = JsonHelper.readJsonDocument(values.get(1), ObjectNode.class)
                                          .get(AttributeNames.RFC7643.VALUE)
-                                         .textValue();
+                                         .stringValue();
       Assertions.assertEquals(expectedContent, role2.getValue().get());
       Assertions.assertFalse(role2.getRef().isPresent());
       Assertions.assertFalse(role2.getDisplay().isPresent());

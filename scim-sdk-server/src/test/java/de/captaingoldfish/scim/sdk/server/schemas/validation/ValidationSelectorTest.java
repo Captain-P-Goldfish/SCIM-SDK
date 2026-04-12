@@ -13,17 +13,17 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
@@ -84,7 +84,7 @@ public class ValidationSelectorTest
         return true;
       }
     };
-    JsonNode attribute = new TextNode("hello world");
+    JsonNode attribute = new StringNode("hello world");
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
     Assertions.assertTrue(validatedNode.isPresent());
   }
@@ -150,8 +150,8 @@ public class ValidationSelectorTest
       }
     };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("Captain"));
-    attribute.set("lastname", new TextNode("Goldfish"));
+    attribute.set("firstname", new StringNode("Captain"));
+    attribute.set("lastname", new StringNode("Goldfish"));
     attribute.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
 
     Optional<JsonNode> validatedNode = ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
@@ -213,17 +213,17 @@ public class ValidationSelectorTest
     };
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("goldfish"));
+    element.set("firstname", new StringNode("goldfish"));
     element.set("primary", BooleanNode.getTrue());
     attribute.add(element);
 
     ObjectNode element2 = new ObjectNode(JsonNodeFactory.instance);
-    element2.set("firstname", new TextNode("banjo"));
+    element2.set("firstname", new StringNode("banjo"));
     element2.set("primary", BooleanNode.getFalse());
     attribute.add(element2);
 
     ObjectNode element3 = new ObjectNode(JsonNodeFactory.instance);
-    element3.set("firstname", new TextNode("kazooie"));
+    element3.set("firstname", new StringNode("kazooie"));
     attribute.add(element3);
 
     Optional<JsonNode> validatedNode = Assertions.assertDoesNotThrow(() -> {
@@ -254,13 +254,13 @@ public class ValidationSelectorTest
     List<DynamicTest> dynamicTests = new ArrayList<>();
     dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsString", () -> {
       String content = "hello-world";
-      JsonNode attribute = new TextNode(content);
+      JsonNode attribute = new StringNode(content);
       Optional<JsonNode> parsedNode = Assertions.assertDoesNotThrow(() -> {
         return ValidationSelector.validateNode(schemaAttribute, attribute, contextValidator);
       });
       Assertions.assertTrue(parsedNode.isPresent());
       MatcherAssert.assertThat(parsedNode.get().getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-      Assertions.assertEquals(content, parsedNode.get().textValue());
+      Assertions.assertEquals(content, parsedNode.get().stringValue());
     }));
     dynamicTests.add(DynamicTest.dynamicTest("testAnyTypeAsInteger", () -> {
       int content = 5;
@@ -339,11 +339,11 @@ public class ValidationSelectorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"),
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"),
                                    new LongNode(1),
                                    new DoubleNode(2.5),
                                    BooleanNode.getFalse(),
-                                   new TextNode("2019-09-29T24:00:00Z")));
+                                   new StringNode("2019-09-29T24:00:00Z")));
 
     ContextValidator contextValidator = new ContextValidator(new Context(null), ValidationContextType.REQUEST)
     {
@@ -364,7 +364,7 @@ public class ValidationSelectorTest
     {
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get().get(i);
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.toString(), parsedNode.toString());
     }
   }
 }

@@ -8,7 +8,7 @@ import java.util.function.Function;
 
 import org.apache.http.client.methods.HttpUriRequest;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;

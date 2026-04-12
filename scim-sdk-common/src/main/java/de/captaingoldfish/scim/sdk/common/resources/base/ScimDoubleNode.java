@@ -1,7 +1,7 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.DoubleNode;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;

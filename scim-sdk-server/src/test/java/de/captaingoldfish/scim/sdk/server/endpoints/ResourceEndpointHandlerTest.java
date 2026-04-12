@@ -32,10 +32,6 @@ import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
@@ -102,6 +98,9 @@ import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -551,7 +550,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size());
 
     List<String> returnedAttributeNames = new ArrayList<>();
-    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    getResponse.propertyNames().iterator().forEachRemaining(returnedAttributeNames::add);
     MatcherAssert.assertThat(returnedAttributeNames,
                              Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
                                                          Matchers.equalTo("id"),
@@ -607,7 +606,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
 
     List<String> returnedAttributeNames = new ArrayList<>();
-    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    getResponse.propertyNames().iterator().forEachRemaining(returnedAttributeNames::add);
     MatcherAssert.assertThat(returnedAttributeNames,
                              Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
                                                          Matchers.equalTo("id"),
@@ -670,7 +669,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     log.warn(getResponse.toPrettyString());
 
     List<String> returnedAttributeNames = new ArrayList<>();
-    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    getResponse.propertyNames().iterator().forEachRemaining(returnedAttributeNames::add);
     MatcherAssert.assertThat(returnedAttributeNames,
                              Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
                                                          Matchers.equalTo("id"),
@@ -731,7 +730,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     log.warn(getResponse.toPrettyString());
 
     List<String> returnedAttributeNames = new ArrayList<>();
-    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    getResponse.propertyNames().iterator().forEachRemaining(returnedAttributeNames::add);
     MatcherAssert.assertThat(returnedAttributeNames,
                              Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
                                                          Matchers.equalTo("id"),
@@ -794,7 +793,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     log.warn(getResponse.toPrettyString());
 
     List<String> returnedAttributeNames = new ArrayList<>();
-    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    getResponse.propertyNames().iterator().forEachRemaining(returnedAttributeNames::add);
     MatcherAssert.assertThat(returnedAttributeNames,
                              Matchers.containsInAnyOrder(Matchers.equalTo("schemas"),
                                                          Matchers.equalTo("id"),
@@ -843,7 +842,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(expectedNumberOfAttributesToBeReturned, getResponse.size(), scimResponse.toPrettyString());
 
     List<String> returnedAttributeNames = new ArrayList<>();
-    getResponse.fieldNames().forEachRemaining(returnedAttributeNames::add);
+    getResponse.propertyNames().iterator().forEachRemaining(returnedAttributeNames::add);
     MatcherAssert.assertThat(returnedAttributeNames,
                              Matchers.not(Matchers.containsInAnyOrder(excludedAttributeNames.stream()
                                                                                             .map(Matchers::equalTo)
@@ -1064,7 +1063,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                             getResponse.get(AttributeNames.RFC7643.META)
                                        .get(AttributeNames.RFC7643.LOCATION)
-                                       .textValue());
+                                       .stringValue());
   }
 
   /**
@@ -1095,7 +1094,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(EndpointPaths.SERVICE_PROVIDER_CONFIG,
                             getResponse.get(AttributeNames.RFC7643.META)
                                        .get(AttributeNames.RFC7643.LOCATION)
-                                       .textValue());
+                                       .stringValue());
   }
 
   /**
@@ -1855,7 +1854,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
 
       for ( ScimObjectNode listedResource : listResponse.getListedResources() )
       {
-        String id = listedResource.get(AttributeNames.RFC7643.ID).textValue();
+        String id = listedResource.get(AttributeNames.RFC7643.ID).stringValue();
         Meta meta = JsonHelper.copyResourceToObject(listedResource.get(AttributeNames.RFC7643.META), Meta.class);
         Assertions.assertTrue(meta.getLocation().isPresent());
         Assertions.assertEquals(getLocation(EndpointPaths.SCHEMAS, EncodingUtils.urlEncode(id)),
@@ -1971,10 +1970,10 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
     SearchRequest searchRequest = SearchRequest.builder().build();
     searchRequest.set(AttributeNames.RFC7643.ATTRIBUTES,
-                      new TextNode(String.format("%s,%s,%s",
-                                                 AttributeNames.RFC7643.SCHEMA,
-                                                 AttributeNames.RFC7643.NAME,
-                                                 AttributeNames.RFC7643.ENDPOINT)));
+                      new StringNode(String.format("%s,%s,%s",
+                                                   AttributeNames.RFC7643.SCHEMA,
+                                                   AttributeNames.RFC7643.NAME,
+                                                   AttributeNames.RFC7643.ENDPOINT)));
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                                       searchRequest,
@@ -2058,12 +2057,12 @@ public class ResourceEndpointHandlerTest implements FileReferences
     resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(Integer.MAX_VALUE);
     SearchRequest searchRequest = SearchRequest.builder().build();
     searchRequest.set(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES,
-                      new TextNode(String.format("%s,%s,%s,%s,%s",
-                                                 AttributeNames.RFC7643.DESCRIPTION,
-                                                 AttributeNames.RFC7643.SCHEMA_EXTENSIONS,
-                                                 AttributeNames.RFC7643.NAME,
-                                                 AttributeNames.RFC7643.ENDPOINT,
-                                                 SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI)));
+                      new StringNode(String.format("%s,%s,%s,%s,%s",
+                                                   AttributeNames.RFC7643.DESCRIPTION,
+                                                   AttributeNames.RFC7643.SCHEMA_EXTENSIONS,
+                                                   AttributeNames.RFC7643.NAME,
+                                                   AttributeNames.RFC7643.ENDPOINT,
+                                                   SchemaUris.RESOURCE_TYPE_FEATURE_EXTENSION_URI)));
 
     ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.RESOURCE_TYPES,
                                                                       searchRequest,
@@ -2481,7 +2480,7 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(5, listResponse.getListedResources().size(), listResponse.toPrettyString());
     MatcherAssert.assertThat(listResponse.getListedResources()
                                          .stream()
-                                         .map(node -> node.get("name").textValue())
+                                         .map(node -> node.get("name").stringValue())
                                          .collect(Collectors.toList()),
                              Matchers.contains(resourceTypeFactory.getResourceType(EndpointPaths.GROUPS).getName(),
                                                resourceTypeFactory.getResourceType(EndpointPaths.RESOURCE_TYPES)

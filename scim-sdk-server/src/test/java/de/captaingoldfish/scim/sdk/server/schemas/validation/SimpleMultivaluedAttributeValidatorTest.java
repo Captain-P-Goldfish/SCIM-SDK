@@ -10,14 +10,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
@@ -64,10 +64,10 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"),
-                                   new TextNode("world"),
-                                   new TextNode("foo"),
-                                   new TextNode("bar")));
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"),
+                                   new StringNode("world"),
+                                   new StringNode("foo"),
+                                   new StringNode("bar")));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
       return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
@@ -77,7 +77,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
       MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.stringValue(), parsedNode.stringValue());
     }
   }
 
@@ -108,10 +108,10 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("2019-09-29T24:00:00"),
-                                   new TextNode("2019-09-29T24:00:00.0000000-14:00"),
-                                   new TextNode("2019-09-29T24:00:00.0000000Z"),
-                                   new TextNode("2019-09-29T24:00:00Z")));
+    arrayNode.addAll(Arrays.asList(new StringNode("2019-09-29T24:00:00"),
+                                   new StringNode("2019-09-29T24:00:00.0000000-14:00"),
+                                   new StringNode("2019-09-29T24:00:00.0000000Z"),
+                                   new StringNode("2019-09-29T24:00:00Z")));
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
       return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
     });
@@ -121,7 +121,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
       MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.stringValue(), parsedNode.stringValue());
     }
   }
 
@@ -161,7 +161,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
       MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.intValue(), parsedNode.intValue());
     }
   }
 
@@ -201,7 +201,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
       MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.decimalValue(), parsedNode.decimalValue());
     }
   }
 
@@ -244,7 +244,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
       MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.booleanValue(), parsedNode.booleanValue());
     }
   }
 
@@ -274,7 +274,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
     try
     {
       SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
@@ -322,7 +322,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("2019-09-29T24:00:00Z"), new TextNode("hello"), new IntNode(1)));
+    arrayNode.addAll(Arrays.asList(new StringNode("2019-09-29T24:00:00Z"), new StringNode("hello"), new IntNode(1)));
     try
     {
       SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
@@ -336,7 +336,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       AttributeValidationException cause = (AttributeValidationException)ex.getCause();
       Assertions.assertEquals(schemaAttribute, cause.getSchemaAttribute());
       String causeErrorMessage = String.format("Given value is not a valid dateTime '%s'",
-                                               arrayNode.get(1).textValue());
+                                               arrayNode.get(1).stringValue());
       Assertions.assertEquals(causeErrorMessage, cause.getMessage());
     }
   }
@@ -367,7 +367,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
     try
     {
       SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
@@ -417,7 +417,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.addAll(Arrays.asList(BooleanNode.getTrue(),
                                    BooleanNode.getFalse(),
-                                   new TextNode("hello"),
+                                   new StringNode("hello"),
                                    new IntNode(1),
                                    new IntNode(3)));
     try
@@ -468,11 +468,11 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode bad1 = new ObjectNode(JsonNodeFactory.instance);
-    bad1.set("bad", new TextNode("no"));
+    bad1.set("bad", new StringNode("no"));
     ObjectNode bad2 = new ObjectNode(JsonNodeFactory.instance);
-    bad2.set("bad", new TextNode("objects"));
+    bad2.set("bad", new StringNode("objects"));
     ObjectNode bad3 = new ObjectNode(JsonNodeFactory.instance);
-    bad3.set("bad", new TextNode("allowed"));
+    bad3.set("bad", new StringNode("allowed"));
 
     arrayNode.addAll(Arrays.asList(bad1, bad2, bad3));
     try
@@ -514,9 +514,9 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode bad = new ObjectNode(JsonNodeFactory.instance);
-    bad.set("bad", new TextNode("allowed"));
+    bad.set("bad", new StringNode("allowed"));
 
-    arrayNode.addAll(Arrays.asList(new TextNode("no"), new TextNode("objects"), bad));
+    arrayNode.addAll(Arrays.asList(new StringNode("no"), new StringNode("objects"), bad));
     try
     {
       SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
@@ -555,7 +555,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ObjectNode bad = new ObjectNode(JsonNodeFactory.instance);
-    bad.set("bad", new TextNode("not allowed"));
+    bad.set("bad", new StringNode("not allowed"));
 
     try
     {
@@ -596,7 +596,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .type(Type.STRING)
                                                             .multivalued(true)
                                                             .build();
-    TextNode attribute = new TextNode("simple value");
+    StringNode attribute = new StringNode("simple value");
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
       return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
@@ -604,7 +604,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-    Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
+    Assertions.assertEquals(attribute.stringValue(), parsedNode.stringValue());
   }
 
   /**
@@ -640,7 +640,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBigIntegerNode.class));
-    Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
+    Assertions.assertEquals(attribute.intValue(), parsedNode.intValue());
   }
 
   /**
@@ -676,7 +676,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimBooleanNode.class));
-    Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
+    Assertions.assertEquals(attribute.booleanValue(), parsedNode.booleanValue());
   }
 
   /**
@@ -712,7 +712,7 @@ public class SimpleMultivaluedAttributeValidatorTest
     Assertions.assertEquals(1, scimArrayNode.size());
     JsonNode parsedNode = scimArrayNode.get(0);
     MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimDecimalNode.class));
-    Assertions.assertEquals(attribute.textValue(), parsedNode.textValue());
+    Assertions.assertEquals(attribute.decimalValue(), parsedNode.decimalValue());
   }
 
   /**
@@ -743,7 +743,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"), new TextNode("hello"), new TextNode("world")));
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"), new StringNode("hello"), new StringNode("world")));
 
     ScimArrayNode scimArrayNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {
       return SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
@@ -754,7 +754,7 @@ public class SimpleMultivaluedAttributeValidatorTest
       JsonNode node = arrayNode.get(i);
       JsonNode parsedNode = scimArrayNode.get(i);
       MatcherAssert.assertThat(parsedNode.getClass(), Matchers.typeCompatibleWith(ScimTextNode.class));
-      Assertions.assertEquals(node.textValue(), parsedNode.textValue());
+      Assertions.assertEquals(node.stringValue(), parsedNode.stringValue());
     }
   }
 
@@ -786,7 +786,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"), new TextNode("hello"), new TextNode("goldfish")));
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"), new StringNode("hello"), new StringNode("goldfish")));
 
     try
     {
@@ -830,7 +830,7 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("hello"), new TextNode("world"), new TextNode("world")));
+    arrayNode.addAll(Arrays.asList(new StringNode("hello"), new StringNode("world"), new StringNode("world")));
 
     try
     {
@@ -1014,8 +1014,8 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .multivalued(true)
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-    arrayNode.addAll(Arrays.asList(new TextNode("2019-10-18T14:51:11+02:00"),
-                                   new TextNode("2019-10-18T14:51:11+02:00")));
+    arrayNode.addAll(Arrays.asList(new StringNode("2019-10-18T14:51:11+02:00"),
+                                   new StringNode("2019-10-18T14:51:11+02:00")));
 
     try
     {

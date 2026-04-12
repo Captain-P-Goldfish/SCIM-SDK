@@ -5,14 +5,14 @@ import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
-import com.fasterxml.jackson.databind.node.BinaryNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DecimalNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.BinaryNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -48,10 +48,10 @@ public class AttributeBuilder
       case COMPLEX:
         ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
         final String attributeName = Optional.ofNullable(schemaAttribute).map(SchemaAttribute::getName).orElse("key");
-        objectNode.set(attributeName, new TextNode(value));
+        objectNode.set(attributeName, new StringNode(value));
         return objectNode;
       default:
-        return new TextNode(value);
+        return new StringNode(value);
     }
   }
 

@@ -13,7 +13,7 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -383,7 +383,7 @@ class BulkEndpoint
     else
     {
       id = Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.ID))
-                   .map(jsonNode -> "/" + jsonNode.textValue())
+                   .map(jsonNode -> "/" + jsonNode.stringValue())
                    .orElse("");
       location = baseUri + operationUriInfo.getResourceEndpoint() + id;
       responseBuilder.location(location);

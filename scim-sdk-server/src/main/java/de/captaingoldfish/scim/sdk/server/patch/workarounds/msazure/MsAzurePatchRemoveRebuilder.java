@@ -3,8 +3,8 @@ package de.captaingoldfish.scim.sdk.server.patch.workarounds.msazure;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -133,7 +133,7 @@ public final class MsAzurePatchRemoveRebuilder extends PatchWorkaround
                   objectNode.toPrettyString());
         return operation;
       }
-      final String fieldName = objectNode.fieldNames().next();
+      final String fieldName = objectNode.propertyNames().iterator().next();
       final JsonNode valueNode = objectNode.get(fieldName);
       if (valueNode.isObject() || valueNode.isArray())
       {
@@ -143,7 +143,7 @@ public final class MsAzurePatchRemoveRebuilder extends PatchWorkaround
                   valueNode.toPrettyString());
         return operation;
       }
-      newPath.append(fieldName).append(" eq \"").append(valueNode.textValue()).append("\"");
+      newPath.append(fieldName).append(" eq \"").append(valueNode.stringValue()).append("\"");
     }
     // removes all value references from the PatchTargetHandler to bypass the request validation
     values.clear();

@@ -29,10 +29,10 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -2218,7 +2218,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(3, listResponse.getListedResources().size());
     for ( ScimObjectNode listedResource : listResponse.getListedResources() )
     {
-      String name = listedResource.get(AttributeNames.RFC7643.NAME).textValue();
+      String name = listedResource.get(AttributeNames.RFC7643.NAME).stringValue();
       Meta meta = JsonHelper.copyResourceToObject(listedResource.get(AttributeNames.RFC7643.META), Meta.class);
       Assertions.assertTrue(meta.getLocation().isPresent());
       Assertions.assertEquals(String.format("%s%s/%s", BASE_URI, EndpointPaths.RESOURCE_TYPES, name),
@@ -2246,7 +2246,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     Assertions.assertEquals(4, listResponse.getListedResources().size());
     for ( ScimObjectNode listedResource : listResponse.getListedResources() )
     {
-      String id = listedResource.get(AttributeNames.RFC7643.ID).textValue();
+      String id = listedResource.get(AttributeNames.RFC7643.ID).stringValue();
       Meta meta = JsonHelper.copyResourceToObject(listedResource.get(AttributeNames.RFC7643.META), Meta.class);
       Assertions.assertTrue(meta.getLocation().isPresent());
       Assertions.assertEquals(String.format("%s%s/%s", BASE_URI, EndpointPaths.SCHEMAS, EncodingUtils.urlEncode(id)),

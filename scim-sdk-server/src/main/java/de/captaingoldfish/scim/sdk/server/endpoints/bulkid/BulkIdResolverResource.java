@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -346,11 +346,11 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
   private boolean isBulkIdReferenceAfterRfc7644(JsonNode jsonNode)
   {
     boolean isBulkIdReference = jsonNode != null && jsonNode.isTextual()
-                                && jsonNode.textValue()
+                                && jsonNode.stringValue()
                                            .startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     if (isBulkIdReference)
     {
-      checkForBulkIdReferenceValidity(jsonNode.textValue());
+      checkForBulkIdReferenceValidity(jsonNode.stringValue());
     }
     return isBulkIdReference;
   }
@@ -361,13 +361,13 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
   private boolean isBulkIdReferenceAfterCustomFeature(JsonNode jsonNode)
   {
     boolean isBulkIdReference = jsonNode != null && jsonNode.isTextual()
-                                && jsonNode.textValue()
+                                && jsonNode.stringValue()
                                            .startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     if (isBulkIdReference)
     {
-      checkForBulkIdReferenceValidity(jsonNode.textValue());
+      checkForBulkIdReferenceValidity(jsonNode.stringValue());
     }
-    return jsonNode.textValue().startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
+    return jsonNode.stringValue().startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
   }
 
 }

@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
@@ -295,7 +295,7 @@ public class ServerResponse<T extends ScimObjectNode>
     }
     for ( JsonNode jsonNode : schemasNode )
     {
-      if (uri.equals(jsonNode.textValue()))
+      if (uri.equals(jsonNode.stringValue()))
       {
         return true;
       }

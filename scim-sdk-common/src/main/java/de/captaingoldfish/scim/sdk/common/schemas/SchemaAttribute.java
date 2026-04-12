@@ -20,9 +20,6 @@ import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.Strings;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
@@ -38,6 +35,8 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
 
 
 /**
@@ -1269,7 +1268,7 @@ public final class SchemaAttribute extends ScimObjectNode
           List<String> validElements = new ArrayList<>();
           for ( JsonNode node : jsonNode )
           {
-            String val = node.isContainerNode() ? node.toString() : node.asText();
+            String val = node.isContainer() ? node.toString() : node.asString();
             if (validateDefaultValue(val))
             {
               validElements.add(val);

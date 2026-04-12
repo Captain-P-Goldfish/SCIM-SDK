@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -80,7 +80,7 @@ public class EndpointDefinitionBuilder extends AbstractPojoBuilder
   {
     JsonNode resourceTypeNode = schemaRelation.getResourceType().getJsonNode();
     String resourceTypeName = UtilityMethods.getResourceName(resourceTypeNode.get(AttributeNames.RFC7643.NAME)
-                                                                             .textValue());
+                                                                             .stringValue());
     resourceTypeName = String.format("%s", resourceTypeName);
     String resourceName = UtilityMethods.getResourceName(new Schema(schemaRelation.getResourceSchema()
                                                                                   .getJsonNode()).getName().get());

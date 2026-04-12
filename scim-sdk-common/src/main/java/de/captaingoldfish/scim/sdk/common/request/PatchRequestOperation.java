@@ -5,17 +5,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -105,8 +104,8 @@ public class PatchRequestOperation extends ScimObjectNode
       valueExtracted = true;
       return Optional.of(valueNode);
     }
-    String textValue = valueNode.asText();
-    if (valueNode instanceof TextNode && textValue.contains("{"))
+    String textValue = valueNode.asString();
+    if (valueNode instanceof StringNode && textValue.contains("{"))
     {
       try
       {
@@ -184,17 +183,17 @@ public class PatchRequestOperation extends ScimObjectNode
     {
       return Optional.of((ArrayNode)jsonNode);
     }
-    if (jsonNode instanceof TextNode)
+    if (jsonNode instanceof StringNode)
     {
       ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
       try
       {
-        JsonNode jsonValue = JsonHelper.readJsonDocument(jsonNode.textValue());
+        JsonNode jsonValue = JsonHelper.readJsonDocument(jsonNode.stringValue());
         arrayNode.add(jsonValue);
       }
       catch (Exception ex)
       {
-        arrayNode.add(jsonNode.textValue());
+        arrayNode.add(jsonNode.stringValue());
       }
       setValueNode(arrayNode);
       return Optional.of(arrayNode);

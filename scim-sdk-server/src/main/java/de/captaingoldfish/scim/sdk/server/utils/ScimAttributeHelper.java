@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.server.utils;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBigIntegerNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
@@ -48,7 +48,7 @@ public interface ScimAttributeHelper
         object = jsonNode.isBoolean() ? jsonNode.booleanValue() : null;
         break;
       default:
-        object = jsonNode.textValue();
+        object = jsonNode.stringValue();
     }
     return object;
   }

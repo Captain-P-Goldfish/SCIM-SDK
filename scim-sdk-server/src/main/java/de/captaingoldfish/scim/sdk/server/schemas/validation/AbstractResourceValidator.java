@@ -6,7 +6,7 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.exceptions.DocumentValidationException;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;

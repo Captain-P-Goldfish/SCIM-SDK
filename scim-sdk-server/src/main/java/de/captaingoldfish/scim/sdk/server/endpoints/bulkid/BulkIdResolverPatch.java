@@ -7,9 +7,9 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Strings;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -435,7 +435,7 @@ class BulkIdResolverPatch extends BulkIdResolverAbstract<PatchOpRequest>
       JsonNode valueNode = valueNodeArray.get(i);
       if (valueNode.isTextual() && containsBulkIdReference(valueNode))
       {
-        String bulkIdReference = valueNode.textValue();
+        String bulkIdReference = valueNode.stringValue();
         checkForBulkIdReferenceValidity(bulkIdReference);
         bulkIdReferenceWrappers.add(new BulkIdReferenceArrayWrapper(valueNodeArray, i));
       }

@@ -5,7 +5,7 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.Strings;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
 import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
@@ -62,8 +62,8 @@ public class ResourceNodeComparator implements Comparator<ResourceNode>
     switch (schemaAttribute.getType())
     {
       case DATE_TIME:
-        long dateTime1 = TimeUtils.parseDateTime(attribute1.textValue()).toEpochMilli();
-        long dateTime2 = TimeUtils.parseDateTime(attribute2.textValue()).toEpochMilli();
+        long dateTime1 = TimeUtils.parseDateTime(attribute1.stringValue()).toEpochMilli();
+        long dateTime2 = TimeUtils.parseDateTime(attribute2.stringValue()).toEpochMilli();
         compare = Long.compare(dateTime1, dateTime2);
         return ascending ? compare : -compare;
       case INTEGER:
@@ -75,12 +75,12 @@ public class ResourceNodeComparator implements Comparator<ResourceNode>
       default:
         if (schemaAttribute.isCaseExact())
         {
-          compare = Strings.CS.compare(attribute1.asText(), attribute2.asText());
+          compare = Strings.CS.compare(attribute1.asString(), attribute2.asString());
           return ascending ? compare : -compare;
         }
         else
         {
-          compare = Strings.CI.compare(attribute1.asText(), attribute2.asText());
+          compare = Strings.CI.compare(attribute1.asString(), attribute2.asString());
           return ascending ? compare : -compare;
         }
     }
