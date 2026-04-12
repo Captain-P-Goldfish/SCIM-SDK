@@ -8,14 +8,14 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
@@ -87,8 +87,8 @@ public class MultivaluedComplexAttributeValidatorTest
 
     ContextValidator contextValidator = simpleContextValidator;
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("Captain"));
-    attribute.set("lastname", new TextNode("Goldfish"));
+    attribute.set("firstname", new StringNode("Captain"));
+    attribute.set("lastname", new StringNode("Goldfish"));
     attribute.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
 
     JsonNode validatedNode = MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
@@ -138,8 +138,8 @@ public class MultivaluedComplexAttributeValidatorTest
     ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("Captain"));
-    element.set("lastname", new TextNode("Goldfish"));
+    element.set("firstname", new StringNode("Captain"));
+    element.set("lastname", new StringNode("Goldfish"));
     element.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
     attribute.add(element);
 
@@ -195,8 +195,8 @@ public class MultivaluedComplexAttributeValidatorTest
     ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("Captain"));
-    element.set("lastname", new TextNode("Goldfish"));
+    element.set("firstname", new StringNode("Captain"));
+    element.set("lastname", new StringNode("Goldfish"));
     element.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
     attribute.add(element);
     attribute.add(element);
@@ -254,8 +254,8 @@ public class MultivaluedComplexAttributeValidatorTest
     ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("Captain"));
-    element.set("lastname", new TextNode("Goldfish"));
+    element.set("firstname", new StringNode("Captain"));
+    element.set("lastname", new StringNode("Goldfish"));
     element.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
     attribute.add(element);
     attribute.add(element);
@@ -315,11 +315,11 @@ public class MultivaluedComplexAttributeValidatorTest
     ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("Captain"));
-    element.set("lastname", new TextNode("Goldfish"));
+    element.set("firstname", new StringNode("Captain"));
+    element.set("lastname", new StringNode("Goldfish"));
     element.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
     attribute.add(element);
-    attribute.add(new TextNode("I am an illegal value"));
+    attribute.add(new StringNode("I am an illegal value"));
 
     try
     {
@@ -369,7 +369,7 @@ public class MultivaluedComplexAttributeValidatorTest
                                                             .build();
 
     ContextValidator contextValidator = simpleContextValidator;
-    TextNode attribute = new TextNode("I am an illegal value");
+    StringNode attribute = new StringNode("I am an illegal value");
 
     try
     {
@@ -426,7 +426,7 @@ public class MultivaluedComplexAttributeValidatorTest
     ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("Captain"));
+    element.set("firstname", new StringNode("Captain"));
     JsonNode illegalNode = BooleanNode.getTrue();
     element.set("lastname", illegalNode);
     attribute.add(element);
@@ -497,12 +497,12 @@ public class MultivaluedComplexAttributeValidatorTest
     ContextValidator contextValidator = simpleContextValidator;
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("goldfish"));
+    element.set("firstname", new StringNode("goldfish"));
     element.set("primary", BooleanNode.getTrue());
     attribute.add(element);
 
     ObjectNode element2 = new ObjectNode(JsonNodeFactory.instance);
-    element2.set("firstname", new TextNode("banjo"));
+    element2.set("firstname", new StringNode("banjo"));
     element2.set("primary", BooleanNode.getTrue());
     attribute.add(element2);
 
@@ -578,17 +578,17 @@ public class MultivaluedComplexAttributeValidatorTest
     };
     ArrayNode attribute = new ArrayNode(JsonNodeFactory.instance);
     ObjectNode element = new ObjectNode(JsonNodeFactory.instance);
-    element.set("firstname", new TextNode("goldfish"));
+    element.set("firstname", new StringNode("goldfish"));
     element.set("primary", BooleanNode.getTrue());
     attribute.add(element);
 
     ObjectNode element2 = new ObjectNode(JsonNodeFactory.instance);
-    element2.set("firstname", new TextNode("banjo"));
+    element2.set("firstname", new StringNode("banjo"));
     element2.set("primary", BooleanNode.getFalse());
     attribute.add(element2);
 
     ObjectNode element3 = new ObjectNode(JsonNodeFactory.instance);
-    element3.set("firstname", new TextNode("kazooie"));
+    element3.set("firstname", new StringNode("kazooie"));
     attribute.add(element3);
 
     ScimArrayNode validatedNode = (ScimArrayNode)Assertions.assertDoesNotThrow(() -> {

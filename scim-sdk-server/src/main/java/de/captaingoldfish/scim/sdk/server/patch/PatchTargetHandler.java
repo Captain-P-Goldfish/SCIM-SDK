@@ -8,10 +8,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
@@ -37,6 +33,9 @@ import de.captaingoldfish.scim.sdk.server.utils.ScimAttributeHelper;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 
 /**
@@ -145,7 +144,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
     {
       String errorMessage = String.format("The attribute '%s' is 'IMMUTABLE' and is not unassigned. Current value is: %s",
                                           schemaAttribute.getScimNodeName(),
-                                          attribute.asText());
+                                          attribute.toString());
       throw new BadRequestException(errorMessage, null, ScimType.RFC7644.MUTABILITY);
     }
   }
@@ -446,7 +445,7 @@ public class PatchTargetHandler extends AbstractPatch implements ScimAttributeHe
   {
     JsonNode oldNode = objectNode.get(schemaAttribute.getName());
     if (!PatchOp.REMOVE.equals(patchOp)
-        && values.get(0).equals(Optional.ofNullable(oldNode).map(JsonNode::textValue).orElse(null)))
+        && values.get(0).equals(Optional.ofNullable(oldNode).map(JsonNode::asString).orElse(null)))
     {
       return false;
     }

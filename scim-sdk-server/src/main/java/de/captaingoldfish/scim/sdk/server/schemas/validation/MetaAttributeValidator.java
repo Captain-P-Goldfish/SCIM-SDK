@@ -2,7 +2,7 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;

@@ -2,9 +2,9 @@ package de.captaingoldfish.scim.sdk.server.custom.endpoints;
 
 import java.util.Arrays;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -29,7 +29,7 @@ public class BulkIdReferencesEndpointDefinition extends EndpointDefinition
   {
     SCHEMA_EXTENSION = JsonHelper.loadJsonDocument(RESOURCE_SCHEMA_LOCATION);
     ((ObjectNode)SCHEMA_EXTENSION).set(AttributeNames.RFC7643.ID,
-                                       new TextNode("custom:captaingoldfish:scim:schemas:extensions:2.0:BulkIdReferences"));
+                                       new StringNode("custom:captaingoldfish:scim:schemas:extensions:2.0:BulkIdReferences"));
   }
 
   public BulkIdReferencesEndpointDefinition()

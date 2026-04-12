@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.server.endpoints;
 import java.util.Arrays;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;

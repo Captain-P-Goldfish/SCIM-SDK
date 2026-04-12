@@ -56,7 +56,7 @@ public class ScimConfigBuilder extends AbstractPojoBuilder
       final String resourceName = UtilityMethods.getResourceName(relation.getResourceSchema()
                                                                          .getJsonNode()
                                                                          .get(AttributeNames.RFC7643.NAME)
-                                                                         .textValue());
+                                                                         .stringValue());
       return String.format("%s.%s", UtilityMethods.getResourcesPackage(packageName, false), resourceName);
     }).collect(Collectors.toList());
 
@@ -64,7 +64,7 @@ public class ScimConfigBuilder extends AbstractPojoBuilder
       final String resourceName = UtilityMethods.getResourceHandlerName(relation.getResourceType()
                                                                                 .getJsonNode()
                                                                                 .get(AttributeNames.RFC7643.NAME)
-                                                                                .textValue());
+                                                                                .stringValue());
       return String.format("%s.%s", UtilityMethods.getResourceHandlerPackage(packageName, false), resourceName);
     }).collect(Collectors.toList());
 
@@ -72,7 +72,7 @@ public class ScimConfigBuilder extends AbstractPojoBuilder
       final String resourceName = UtilityMethods.getEndpointDefinitionName(relation.getResourceType()
                                                                                    .getJsonNode()
                                                                                    .get(AttributeNames.RFC7643.NAME)
-                                                                                   .textValue());
+                                                                                   .stringValue());
       return String.format("%s.%s", UtilityMethods.getEndpointsPackage(packageName, false), resourceName);
     }).collect(Collectors.toList());
 
@@ -120,11 +120,11 @@ public class ScimConfigBuilder extends AbstractPojoBuilder
       final String resourceTypeName = schemaRelation.getResourceType()
                                                     .getJsonNode()
                                                     .get(AttributeNames.RFC7643.NAME)
-                                                    .textValue();
+                                                    .stringValue();
       final String resourceNodeName = schemaRelation.getResourceSchema()
                                                     .getJsonNode()
                                                     .get(AttributeNames.RFC7643.NAME)
-                                                    .textValue();
+                                                    .stringValue();
       this.resourceTypeClassName = UtilityMethods.getEndpointDefinitionName(resourceTypeName);
       this.resourceNodeClassName = UtilityMethods.getResourceName(resourceNodeName);
       this.resourceHandlerClassName = UtilityMethods.getResourceHandlerName(resourceTypeName);

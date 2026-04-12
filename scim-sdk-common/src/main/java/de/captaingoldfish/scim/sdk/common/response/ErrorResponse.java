@@ -9,10 +9,10 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -150,7 +150,7 @@ public class ErrorResponse extends ScimResponse
       return Collections.emptyList();
     }
     List<String> errorMessageList = new ArrayList<>();
-    errorMessages.forEach(node -> errorMessageList.add(node.textValue()));
+    errorMessages.forEach(node -> errorMessageList.add(node.stringValue()));
     return errorMessageList;
   }
 
@@ -174,7 +174,7 @@ public class ErrorResponse extends ScimResponse
     Map<String, List<String>> errorMessageList = new HashMap<>();
     fieldErrors.properties().forEach(nodeDefinition -> {
       List<String> errorMessages = new ArrayList<>();
-      nodeDefinition.getValue().forEach(node -> errorMessages.add(node.textValue()));
+      nodeDefinition.getValue().forEach(node -> errorMessages.add(node.stringValue()));
       errorMessageList.put(nodeDefinition.getKey(), errorMessages);
     });
     return errorMessageList;

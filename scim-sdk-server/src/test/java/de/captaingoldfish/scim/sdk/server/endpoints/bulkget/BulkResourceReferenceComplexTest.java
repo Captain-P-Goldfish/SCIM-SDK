@@ -6,9 +6,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ResourceTypeNames;
@@ -158,9 +159,9 @@ public class BulkResourceReferenceComplexTest
   private ObjectNode getComplexNode(String id, String ref, String type)
   {
     ObjectNode objectNode = new ObjectNode(JsonNodeFactory.instance);
-    objectNode.set(AttributeNames.RFC7643.VALUE, new TextNode(id));
-    objectNode.set(AttributeNames.RFC7643.REF, new TextNode(ref));
-    objectNode.set(AttributeNames.RFC7643.TYPE, new TextNode(type));
+    objectNode.set(AttributeNames.RFC7643.VALUE, id == null ? NullNode.getInstance() : new StringNode(id));
+    objectNode.set(AttributeNames.RFC7643.REF, ref == null ? NullNode.getInstance() : new StringNode(ref));
+    objectNode.set(AttributeNames.RFC7643.TYPE, type == null ? NullNode.getInstance() : new StringNode(type));
     return objectNode.isEmpty() ? null : objectNode;
   }
 }

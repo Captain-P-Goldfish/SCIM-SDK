@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -449,7 +449,7 @@ public class MsAzurePatchExtensionResourceRebuilderTest implements FileReference
     Assertions.assertTrue(patchRequestHandler.isResourceChanged());
     Assertions.assertTrue(patchedResource.getEnterpriseUser().get().get("costCenter").isArray());
     Assertions.assertEquals(1, patchedResource.getEnterpriseUser().get().get("costCenter").size());
-    Assertions.assertEquals("1111", patchedResource.getEnterpriseUser().get().get("costCenter").get(0).textValue());
+    Assertions.assertEquals("1111", patchedResource.getEnterpriseUser().get().get("costCenter").get(0).stringValue());
   }
 
   /**

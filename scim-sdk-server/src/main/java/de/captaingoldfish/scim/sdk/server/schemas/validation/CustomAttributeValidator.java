@@ -7,20 +7,19 @@ import java.util.function.Function;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.DecimalNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -47,7 +46,7 @@ public final class CustomAttributeValidator
 
     if (attribute.isTextual())
     {
-      validateTextNode(schemaAttribute, (TextNode)attribute);
+      validateTextNode(schemaAttribute, (StringNode)attribute);
     }
     else if (attribute.isBigDecimal())
     {
@@ -70,7 +69,7 @@ public final class CustomAttributeValidator
    * @param schemaAttribute the attribute definition
    * @param value the value that should be checked
    */
-  protected static void validateTextNode(SchemaAttribute schemaAttribute, TextNode valueNode)
+  protected static void validateTextNode(SchemaAttribute schemaAttribute, StringNode valueNode)
   {
     if (Type.STRING.equals(schemaAttribute.getType()) || Type.REFERENCE.equals(schemaAttribute.getType()))
     {
@@ -88,9 +87,9 @@ public final class CustomAttributeValidator
    * @param schemaAttribute the attribute definition
    * @param value the dateTime value to validate
    */
-  private static void validateDateTimeTypes(SchemaAttribute schemaAttribute, TextNode valueNode)
+  private static void validateDateTimeTypes(SchemaAttribute schemaAttribute, StringNode valueNode)
   {
-    final String value = valueNode.textValue();
+    final String value = valueNode.stringValue();
     schemaAttribute.getNotBefore().ifPresent(notBefore -> {
       Instant val = TimeUtils.parseDateTime(value);
       if (val.isBefore(notBefore))
@@ -123,9 +122,9 @@ public final class CustomAttributeValidator
    * @param schemaAttribute the attribute definition
    * @param value the string value to validate
    */
-  private static void validateStringTypes(SchemaAttribute schemaAttribute, TextNode valueNode)
+  private static void validateStringTypes(SchemaAttribute schemaAttribute, StringNode valueNode)
   {
-    final String value = valueNode.textValue();
+    final String value = valueNode.stringValue();
     schemaAttribute.getMinLength().ifPresent(minLength -> {
       if (minLength > StringUtils.length(value))
       {

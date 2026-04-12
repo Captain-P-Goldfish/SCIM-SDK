@@ -7,10 +7,11 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -143,7 +144,7 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
       log.trace("[MS Azure complex-patch-path-value workaround] replacing simple-value with objectNode on attribute {}",
                 schemaAttribute.getScimNodeName());
       ObjectNode complexObjectNode = new ScimObjectNode(schemaAttribute);
-      complexObjectNode.set(AttributeNames.RFC7643.VALUE, new TextNode(patchValue));
+      complexObjectNode.set(AttributeNames.RFC7643.VALUE, new StringNode(patchValue));
       fixedValues.add(complexObjectNode.toString());
     }
 
@@ -181,7 +182,7 @@ public class MsAzurePatchComplexValueRebuilder extends PatchWorkaround
       JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
       return jsonNode != null && !jsonNode.isObject() && !jsonNode.isArray();
     }
-    catch (IOException ex)
+    catch (IOException | JacksonException ex)
     {
       return false;
     }

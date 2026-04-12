@@ -1,13 +1,12 @@
 package de.captaingoldfish.scim.sdk.common.utils;
 
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -72,10 +71,9 @@ public class CaseInsensitiveAttributeExtractor extends AttributeExtractor
 
     // step 3
     {
-      Iterator<String> attributeNameIterator = jsonDocument.fieldNames();
-      while (attributeNameIterator.hasNext())
+      Collection<String> attributeNameIterator = jsonDocument.propertyNames();
+      for ( String attributeName : attributeNameIterator )
       {
-        String attributeName = attributeNameIterator.next();
         attributeMap.put(attributeName.toLowerCase(), attributeName);
       }
     }

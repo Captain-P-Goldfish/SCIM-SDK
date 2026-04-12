@@ -14,7 +14,7 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -90,7 +90,7 @@ class SimpleAttributeValidator
     {
       case STRING:
         isNodeTypeValid = attribute.isTextual() || attribute.isObject();
-        final String value = attribute.isTextual() ? attribute.textValue() : attribute.toString();
+        final String value = attribute.isTextual() ? attribute.stringValue() : attribute.toString();
         validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, value);
         break;
       case BINARY:
@@ -101,7 +101,7 @@ class SimpleAttributeValidator
         }
         else
         {
-          validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.textValue());
+          validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.stringValue());
         }
         break;
       case BOOLEAN:
@@ -124,9 +124,9 @@ class SimpleAttributeValidator
         isNodeTypeValid = attribute.isTextual();
         if (isNodeTypeValid)
         {
-          parseDateTime(schemaAttribute, attribute.textValue());
+          parseDateTime(schemaAttribute, attribute.stringValue());
         }
-        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.textValue());
+        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.stringValue());
         break;
       default:
         isNodeTypeValid = attribute.isTextual();
@@ -134,7 +134,7 @@ class SimpleAttributeValidator
         {
           validateValueNodeWithReferenceTypes(schemaAttribute, attribute);
         }
-        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.textValue());
+        validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.stringValue());
     }
 
     invalidNodeType: if (!isNodeTypeValid)
@@ -175,20 +175,20 @@ class SimpleAttributeValidator
       switch (schemaAttribute.getType())
       {
         case BOOLEAN:
-          boolean isBoolString = valueNode.isTextual() && ("true".equalsIgnoreCase(valueNode.textValue())
-                                                           || "false".equalsIgnoreCase(valueNode.textValue()));
+          boolean isBoolString = valueNode.isTextual() && ("true".equalsIgnoreCase(valueNode.stringValue())
+                                                           || "false".equalsIgnoreCase(valueNode.stringValue()));
           if (isBoolString)
           {
-            return Optional.of(new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(valueNode.textValue())));
+            return Optional.of(new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(valueNode.stringValue())));
           }
           else
           {
             return Optional.empty();
           }
         case INTEGER:
-          return Optional.of(new ScimBigIntegerNode(schemaAttribute, new BigInteger(valueNode.textValue())));
+          return Optional.of(new ScimBigIntegerNode(schemaAttribute, new BigInteger(valueNode.stringValue())));
         case DECIMAL:
-          return Optional.of(new ScimDecimalNode(schemaAttribute, new BigDecimal(valueNode.textValue())));
+          return Optional.of(new ScimDecimalNode(schemaAttribute, new BigDecimal(valueNode.stringValue())));
       }
     }
     catch (Exception ex)
@@ -215,7 +215,7 @@ class SimpleAttributeValidator
     {
       try
       {
-        Base64.getDecoder().decode(attribute.textValue());
+        Base64.getDecoder().decode(attribute.stringValue());
         return true;
       }
       catch (IllegalArgumentException ex)
@@ -260,10 +260,10 @@ class SimpleAttributeValidator
       {
         case RESOURCE:
         case URI:
-          isValidReferenceType = parseUri(valueNode.textValue());
+          isValidReferenceType = parseUri(valueNode.stringValue());
           break;
         case URL:
-          isValidReferenceType = parseUrl(valueNode.textValue());
+          isValidReferenceType = parseUrl(valueNode.stringValue());
           break;
         default:
           isValidReferenceType = true;
@@ -279,7 +279,7 @@ class SimpleAttributeValidator
                                           + "types '%s' but value is '%s'",
                                           schemaAttribute.getFullResourceName(),
                                           schemaAttribute.getReferenceTypes(),
-                                          valueNode.textValue());
+                                          valueNode.stringValue());
       throw new AttributeValidationException(schemaAttribute, errorMessage);
     }
   }
@@ -332,7 +332,7 @@ class SimpleAttributeValidator
       // all values are valid
       return;
     }
-    final String value = valueNode.textValue();
+    final String value = valueNode.stringValue();
     AtomicBoolean caseInsensitiveMatch = new AtomicBoolean(false);
     Predicate<String> compare = s -> {
       if (schemaAttribute.isCaseExact())

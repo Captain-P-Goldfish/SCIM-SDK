@@ -5,7 +5,7 @@ import java.util.Map;
 
 import javax.ws.rs.core.Response;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpHeader;
 import de.captaingoldfish.scim.sdk.common.resources.AbstractSchemasHolder;

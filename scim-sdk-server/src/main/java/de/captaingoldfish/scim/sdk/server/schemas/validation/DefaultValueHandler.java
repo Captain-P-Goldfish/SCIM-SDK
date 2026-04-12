@@ -7,10 +7,6 @@ import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
@@ -23,6 +19,9 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
 
 
 /**
@@ -164,13 +163,13 @@ public final class DefaultValueHandler
           {
             try
             {
-              String elementValue = node.isContainerNode() ? node.toString() : node.asText();
+              String elementValue = node.isContainer() ? node.toString() : node.asString();
               scimArrayNode.add(toJsonNode(schemaAttribute, elementValue, false));
             }
             catch (Exception ex)
             {
               log.debug("Skipping invalid element '{}' in default value array for attribute '{}'",
-                        node.asText(),
+                        node.asString(),
                         schemaAttribute.getName(),
                         ex);
             }
@@ -178,7 +177,7 @@ public final class DefaultValueHandler
           return scimArrayNode;
         }
       }
-      catch (JsonProcessingException e)
+      catch (JacksonException e)
       {
         log.trace("DefaultValue '{}' does not seem to be an array. Translating to single element", defaultValue, e);
       }

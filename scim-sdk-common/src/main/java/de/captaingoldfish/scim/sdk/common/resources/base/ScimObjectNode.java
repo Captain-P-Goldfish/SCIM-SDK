@@ -18,17 +18,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BinaryNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InternalServerException;
@@ -38,6 +27,16 @@ import de.captaingoldfish.scim.sdk.common.utils.TimeUtils;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BinaryNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -46,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
  * <br>
  */
 @Slf4j
-public class ScimObjectNode extends ObjectNode implements ScimNode
+public class ScimObjectNode extends tools.jackson.databind.node.ObjectNode implements ScimNode
 {
 
   /**
@@ -124,16 +123,16 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
-   * extracts a {@link TextNode} type attribute
+   * extracts a {@link StringNode} type attribute
    */
-  protected <T extends TextNode> Optional<T> getStringAttribute(String attributeName, Class<T> type)
+  protected <T extends StringNode> Optional<T> getStringAttribute(String attributeName, Class<T> type)
   {
     JsonNode jsonNode = this.get(attributeName);
     if (jsonNode == null || jsonNode.isNull())
     {
       return Optional.empty();
     }
-    if (!(jsonNode instanceof TextNode))
+    if (!(jsonNode instanceof StringNode))
     {
       throw new InternalServerException("tried to extract a string node from document with attribute name '"
                                         + attributeName + "' but type is of: " + jsonNode.getNodeType(), null, null);
@@ -144,7 +143,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     }
     try
     {
-      T t = (T)type.getMethod("newInstance", String.class).invoke(null, jsonNode.textValue());
+      T t = (T)type.getMethod("newInstance", String.class).invoke(null, jsonNode.stringValue());
       this.set(attributeName, t);
       return Optional.of(t);
     }
@@ -168,7 +167,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
     {
       try
       {
-        jsonNode = JsonHelper.readJsonDocument(jsonNode.textValue());
+        jsonNode = JsonHelper.readJsonDocument(jsonNode.stringValue());
       }
       catch (Exception ex)
       {
@@ -298,13 +297,13 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       }
       else if (String.class.isAssignableFrom(type))
       {
-        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.textValue() : node.toString()));
+        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.stringValue() : node.toString()));
       }
       else if (byte[].class.isAssignableFrom(type))
       {
         try
         {
-          multiValuedSimpleTypes.add((T)Base64.getDecoder().decode(node.asText()));
+          multiValuedSimpleTypes.add((T)Base64.getDecoder().decode(node.asString()));
         }
         catch (IllegalArgumentException ex)
         {
@@ -316,7 +315,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       }
       else
       {
-        multiValuedSimpleTypes.add((T)TimeUtils.parseDateTime(node.textValue()));
+        multiValuedSimpleTypes.add((T)TimeUtils.parseDateTime(node.stringValue()));
       }
     }
     return multiValuedSimpleTypes;
@@ -382,11 +381,11 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       }
       else if (String.class.isAssignableFrom(type))
       {
-        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.textValue() : node.toString()));
+        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.stringValue() : node.toString()));
       }
       else
       {
-        multiValuedSimpleTypes.add((T)TimeUtils.parseDateTime(node.textValue()));
+        multiValuedSimpleTypes.add((T)TimeUtils.parseDateTime(node.stringValue()));
       }
     }
     return multiValuedSimpleTypes;
@@ -402,7 +401,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    JsonHelper.addAttribute(this, attributeName, new TextNode(attributeValue));
+    JsonHelper.addAttribute(this, attributeName, new StringNode(attributeValue));
   }
 
   /**
@@ -484,7 +483,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
   }
 
   /**
-   * adds or removes a dateTime type attribute including the given fractionalDigits inside the JSON TextNode
+   * adds or removes a dateTime type attribute including the given fractionalDigits inside the JSON StringNode
    *
    * @param attributeName the given attributeName for the related Instant attributeValue
    * @param attributeValue the attributeValue might be null to remove the attribute from the JSON document
@@ -498,11 +497,12 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       JsonHelper.removeAttribute(this, attributeName);
       return;
     }
-    // Keep given fractional digits in the stored JSON TextNode just in case of a zero value for the nano Instant
+    // Keep given fractional digits in the stored JSON StringNode just in case of a zero value for the nano
+    // Instant
     // attributeValue @see
     // https://stackoverflow.com/questions/33025988/java-time-iso-date-format-with-fixed-millis-digits-in-java-8-and-later
     DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendInstant(fractionalDigits).toFormatter();
-    JsonHelper.addAttribute(this, attributeName, new TextNode(formatter.format(attributeValue)));
+    JsonHelper.addAttribute(this, attributeName, new StringNode(formatter.format(attributeValue)));
   }
 
   /**
@@ -530,7 +530,7 @@ public class ScimObjectNode extends ObjectNode implements ScimNode
       return;
     }
     String dateTime = attributeValue.format(DateTimeFormatter.ISO_DATE_TIME);
-    JsonHelper.addAttribute(this, attributeName, new TextNode(dateTime));
+    JsonHelper.addAttribute(this, attributeName, new StringNode(dateTime));
   }
 
   /**

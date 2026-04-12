@@ -12,8 +12,8 @@ import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ObjectNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
@@ -40,7 +40,7 @@ public class JsonHelperTest
     JsonNode jsonNode = JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON);
     Assertions.assertNotNull(jsonNode);
     Assertions.assertNotNull(jsonNode.get("id"));
-    log.trace("\"id\": \"{}\"", jsonNode.get("id").asText());
+    log.trace("\"id\": \"{}\"", jsonNode.get("id").asString());
   }
 
   /**
@@ -53,7 +53,7 @@ public class JsonHelperTest
     JsonNode jsonNode = JsonHelper.loadJsonDocument(file);
     Assertions.assertNotNull(jsonNode);
     Assertions.assertNotNull(jsonNode.get("id"));
-    log.trace("\"id\": \"{}\"", jsonNode.get("id").asText());
+    log.trace("\"id\": \"{}\"", jsonNode.get("id").asString());
   }
 
   /**
@@ -67,7 +67,7 @@ public class JsonHelperTest
     JsonNode jsonNode = JsonHelper.readJsonDocument(jsonDocument);
     Assertions.assertNotNull(jsonNode);
     Assertions.assertNotNull(jsonNode.get("id"));
-    log.trace("\"id\": \"{}\"", jsonNode.get("id").asText());
+    log.trace("\"id\": \"{}\"", jsonNode.get("id").asString());
   }
 
   /**
@@ -142,7 +142,7 @@ public class JsonHelperTest
     Optional<ObjectNode> objectNode = JsonHelper.getObjectAttribute(jsonNode, "attribute");
     Assertions.assertTrue(objectNode.isPresent());
     Assertions.assertEquals(1, objectNode.get().size());
-    Assertions.assertEquals("world", objectNode.get().get("hello").textValue());
+    Assertions.assertEquals("world", objectNode.get().get("hello").stringValue());
   }
 
   /**

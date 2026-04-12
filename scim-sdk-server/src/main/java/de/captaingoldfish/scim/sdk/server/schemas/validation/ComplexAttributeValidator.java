@@ -4,10 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -126,9 +126,9 @@ public class ComplexAttributeValidator
         return (ObjectNode)attribute.get(0);
 
       }
-      else if (attribute.get(0) instanceof TextNode)
+      else if (attribute.get(0) instanceof StringNode)
       {
-        attribute = JsonHelper.readJsonDocument(attribute.get(0).textValue());
+        attribute = JsonHelper.readJsonDocument(attribute.get(0).stringValue());
         if (attribute.isObject())
         {
           return (ObjectNode)attribute;

@@ -12,11 +12,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
@@ -216,7 +216,7 @@ public class MultivaluedSimpleAttributeTests extends AbstractPatchTest
         AllTypes patchResource = new AllTypes(true);
 
         SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
-        patchResource.set(attributeName, new TextNode("hello"));
+        patchResource.set(attributeName, new StringNode("hello"));
 
         List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                     .op(PatchOp.REPLACE)
@@ -273,7 +273,7 @@ public class MultivaluedSimpleAttributeTests extends AbstractPatchTest
 
         SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
         ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-        arrayNode.add(new TextNode("hello"));
+        arrayNode.add(new StringNode("hello"));
         patchResource.set(attributeName, arrayNode);
 
         List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()

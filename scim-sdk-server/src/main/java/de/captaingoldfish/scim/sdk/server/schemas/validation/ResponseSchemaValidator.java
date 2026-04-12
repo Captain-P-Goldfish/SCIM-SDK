@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;

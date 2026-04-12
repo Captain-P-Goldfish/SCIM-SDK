@@ -1,6 +1,6 @@
 package de.captaingoldfish.scim.sdk.server.schemas;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

@@ -1,7 +1,7 @@
 package de.captaingoldfish.scim.sdk.common.resources.base;
 
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import lombok.Getter;

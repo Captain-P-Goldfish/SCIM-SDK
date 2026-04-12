@@ -73,11 +73,11 @@ public class ResourceHandlerBuilder extends AbstractPojoBuilder
     final String resourceTypeName = schemaRelation.getResourceType()
                                                   .getJsonNode()
                                                   .get(AttributeNames.RFC7643.NAME)
-                                                  .textValue();
+                                                  .stringValue();
     final String resourceNodeName = schemaRelation.getResourceSchema()
                                                   .getJsonNode()
                                                   .get(AttributeNames.RFC7643.NAME)
-                                                  .textValue();
+                                                  .stringValue();
     final String className = UtilityMethods.getResourceHandlerName(resourceTypeName);
     final String resourceName = UtilityMethods.getResourceName(resourceNodeName);
     final String resourceImport = String.format("%s.%s",

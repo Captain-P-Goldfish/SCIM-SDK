@@ -34,16 +34,6 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -82,6 +72,15 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -355,7 +354,7 @@ public class SchemaValidatorTest implements FileReferences
     Schema resourceMetaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
-    JsonNodeFactory factory = new JsonNodeFactory(false);
+    JsonNodeFactory factory = new JsonNodeFactory();
     ArrayNode arrayNode = new ArrayNode(factory);
     arrayNode.add("bla");
     arrayNode.add("bla2");
@@ -462,8 +461,8 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode metaAttributes = JsonHelper.getArrayAttribute(metaSchema, AttributeNames.RFC7643.ATTRIBUTES).get();
     JsonNode createMetaAttribute = JsonHelper.readJsonDocument(dateTimeTypeString);
     JsonHelper.addAttributeToArray(metaAttributes, createMetaAttribute);
-    TextNode textNode = new TextNode(dateTime);
-    JsonHelper.addAttribute(document, createdAttributeName, textNode);
+    StringNode StringNode = new StringNode(dateTime);
+    JsonHelper.addAttribute(document, createdAttributeName, StringNode);
   }
 
   /**
@@ -476,7 +475,7 @@ public class SchemaValidatorTest implements FileReferences
     JsonNode userResourceTypeSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_RESOURCE_TYPE_JSON);
 
     final String helloWorldKey = "helloWorld";
-    JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new TextNode("hello world"));
+    JsonHelper.addAttribute(userResourceTypeSchema, helloWorldKey, new StringNode("hello world"));
 
     JsonNode validatedSchema = new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
                                                            referenceUrlSupplier).validateDocument(resourceTypeSchema,
@@ -1623,7 +1622,7 @@ public class SchemaValidatorTest implements FileReferences
 
     AllTypes allTypes = new AllTypes(true);
     // see method AllTypes#setStringArray
-    allTypes.set("stringArray", new TextNode("123456"));
+    allTypes.set("stringArray", new StringNode("123456"));
 
     successfulValidationForRequest(resourceType, allTypes);
   }
@@ -2366,7 +2365,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2386,7 +2385,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2426,7 +2425,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("hello", resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals("hello", resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2447,7 +2446,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("world", resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals("world", resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2468,7 +2467,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(allTypes.getString().get(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(allTypes.getString().get(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2489,7 +2488,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2512,7 +2511,7 @@ public class SchemaValidatorTest implements FileReferences
 
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(later.toString(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(later.toString(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2659,7 +2658,7 @@ public class SchemaValidatorTest implements FileReferences
       log.warn(resource.toPrettyString());
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).textValue());
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).stringValue());
     }
 
     /**
@@ -2686,7 +2685,7 @@ public class SchemaValidatorTest implements FileReferences
       log.warn(resource.toPrettyString());
       Assertions.assertEquals(2, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).textValue());
+      Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).stringValue());
     }
   }
 
@@ -2742,7 +2741,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2764,7 +2763,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2808,7 +2807,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("hello", resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals("hello", resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2831,7 +2830,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("world", resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals("world", resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2854,7 +2853,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(allTypes.getString().get(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(allTypes.getString().get(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2877,7 +2876,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(testAttribute.getDefaultValue(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -2902,7 +2901,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals(later.toString(), resource.get(testAttribute.getName()).textValue());
+      Assertions.assertEquals(later.toString(), resource.get(testAttribute.getName()).stringValue());
     }
 
     /**
@@ -3062,7 +3061,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).textValue());
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).stringValue());
     }
 
     /**
@@ -3090,7 +3089,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
       Assertions.assertEquals(1, resource.get("complex").get(testSubAttribute.getName()).size());
-      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).get(0).textValue());
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).get(0).stringValue());
     }
 
     /**
@@ -3118,8 +3117,8 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
       Assertions.assertEquals(2, resource.get("complex").get(testSubAttribute.getName()).size());
-      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).get(0).textValue());
-      Assertions.assertEquals("3.5", resource.get("complex").get(testSubAttribute.getName()).get(1).textValue());
+      Assertions.assertEquals("55.559", resource.get("complex").get(testSubAttribute.getName()).get(0).stringValue());
+      Assertions.assertEquals("3.5", resource.get("complex").get(testSubAttribute.getName()).get(1).stringValue());
     }
 
     /**
@@ -3146,7 +3145,7 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.ID));
       Assertions.assertNotNull(resource.get(AttributeNames.RFC7643.SCHEMAS));
-      Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).textValue());
+      Assertions.assertEquals("hello-world", resource.get("complex").get(testSubAttribute.getName()).stringValue());
     }
 
     @DisplayName("COMPLEX-type default values are successfully assigned")
@@ -3167,13 +3166,13 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get("multiComplex"));
       Assertions.assertEquals(1, resource.get("multiComplex").size());
       JsonNode subString = resource.get("multiComplex").get(0).get("string");
-      Assertions.assertEquals("hello", subString.textValue());
+      Assertions.assertEquals("hello", subString.stringValue());
       JsonNode subNumber = resource.get("multiComplex").get(0).get("number");
       Assertions.assertEquals(5, subNumber.intValue());
       JsonNode subStringArray = resource.get("multiComplex").get(0).get("stringArray");
       Assertions.assertEquals(2, subStringArray.size());
-      Assertions.assertEquals("hello", subStringArray.get(0).textValue());
-      Assertions.assertEquals("world", subStringArray.get(1).textValue());
+      Assertions.assertEquals("hello", subStringArray.get(0).stringValue());
+      Assertions.assertEquals("world", subStringArray.get(1).stringValue());
     }
 
     /**
@@ -3205,8 +3204,8 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertEquals(3, resource.size());
       Assertions.assertNotNull(resource.get("multiComplex"));
       Assertions.assertEquals(2, resource.get("multiComplex").size());
-      Assertions.assertEquals("12345", resource.get("multiComplex").get(0).get("string").textValue());
-      Assertions.assertEquals("54321", resource.get("multiComplex").get(1).get("string").textValue());
+      Assertions.assertEquals("12345", resource.get("multiComplex").get(0).get("string").stringValue());
+      Assertions.assertEquals("54321", resource.get("multiComplex").get(1).get("string").stringValue());
     }
 
     /**
@@ -3237,8 +3236,8 @@ public class SchemaValidatorTest implements FileReferences
       JsonNode stringArray = resource.get("multiComplex").get(0).get("string");
       Assertions.assertTrue(stringArray.isArray());
       Assertions.assertEquals(2, stringArray.size());
-      Assertions.assertEquals("12345", stringArray.get(0).textValue());
-      Assertions.assertEquals("67890", stringArray.get(1).textValue());
+      Assertions.assertEquals("12345", stringArray.get(0).stringValue());
+      Assertions.assertEquals("67890", stringArray.get(1).stringValue());
     }
 
     @DisplayName("COMPLEX-type multi-valued default values are successfully assigned")
@@ -3259,13 +3258,13 @@ public class SchemaValidatorTest implements FileReferences
       Assertions.assertNotNull(resource.get("multiComplex"));
       Assertions.assertEquals(1, resource.get("multiComplex").size());
       JsonNode subString = resource.get("multiComplex").get(0).get("string");
-      Assertions.assertEquals("hello", subString.textValue());
+      Assertions.assertEquals("hello", subString.stringValue());
       JsonNode subNumber = resource.get("multiComplex").get(0).get("number");
       Assertions.assertEquals(5, subNumber.intValue());
       JsonNode subStringArray = resource.get("multiComplex").get(0).get("stringArray");
       Assertions.assertEquals(2, subStringArray.size());
-      Assertions.assertEquals("hello", subStringArray.get(0).textValue());
-      Assertions.assertEquals("world", subStringArray.get(1).textValue());
+      Assertions.assertEquals("hello", subStringArray.get(0).stringValue());
+      Assertions.assertEquals("world", subStringArray.get(1).stringValue());
     }
   }
 }

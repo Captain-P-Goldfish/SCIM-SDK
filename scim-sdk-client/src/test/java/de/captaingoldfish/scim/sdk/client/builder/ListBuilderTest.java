@@ -11,8 +11,6 @@ import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
-import org.hamcrest.MatcherAssert;
-import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -39,6 +37,7 @@ import de.captaingoldfish.scim.sdk.server.filter.antlr.FilterRuleErrorListener;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterLexer;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterParser;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -985,9 +984,9 @@ public class ListBuilderTest extends HttpServerMockup
   /**
    * Builds {@code count} synthetic User JSON nodes for use as a page payload in cursor iteration tests.
    */
-  private List<com.fasterxml.jackson.databind.JsonNode> buildUserNodes(int count)
+  private List<JsonNode> buildUserNodes(int count)
   {
-    List<com.fasterxml.jackson.databind.JsonNode> nodes = new java.util.ArrayList<>();
+    List<JsonNode> nodes = new java.util.ArrayList<>();
     for ( int i = 0 ; i < count ; i++ )
     {
       nodes.add(User.builder().userName("user-" + java.util.UUID.randomUUID()).build());

@@ -26,8 +26,8 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.EndpointPaths;
@@ -2010,7 +2010,7 @@ public class BulkEndpointTest extends AbstractBulkTest implements FileReferences
       // set a direct value and not a bulkId-reference into the userId field this must execute successfully
       ObjectNode objectNode = JsonHelper.readJsonDocument(bulkRequest.getBulkRequestOperations().get(0).getData().get(),
                                                           ObjectNode.class);
-      objectNode.set("userId", new TextNode(UUID.randomUUID().toString()));
+      objectNode.set("userId", new StringNode(UUID.randomUUID().toString()));
       bulkRequest.getBulkRequestOperations().get(0).setData(objectNode.toString());
     }
 

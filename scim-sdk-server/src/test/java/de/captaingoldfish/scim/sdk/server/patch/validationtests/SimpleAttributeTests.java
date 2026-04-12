@@ -11,12 +11,12 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.NullNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
@@ -216,7 +216,7 @@ public class SimpleAttributeTests extends AbstractPatchTest
         AllTypes patchResource = new AllTypes(true);
 
         SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
-        patchResource.set(attributeName, new TextNode("hello"));
+        patchResource.set(attributeName, new StringNode("hello"));
 
         List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                     .op(PatchOp.REPLACE)
@@ -626,7 +626,7 @@ public class SimpleAttributeTests extends AbstractPatchTest
       @ValueSource(strings = {"number", "urn:gold:params:scim:schemas:custom:2.0:AllTypes:number"})
       public void testWrongTypeOnNumber(String attributeName)
       {
-        JsonNode valueNode = new TextNode("hello");
+        JsonNode valueNode = new StringNode("hello");
 
         SchemaAttribute numberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
 
@@ -730,7 +730,7 @@ public class SimpleAttributeTests extends AbstractPatchTest
       @ValueSource(strings = {"costCenter", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter"})
       public void testReplaceCostCenter(String attributeName)
       {
-        final JsonNode costCenter = new TextNode("new-value");
+        final JsonNode costCenter = new StringNode("new-value");
         List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                     .op(PatchOp.REPLACE)
                                                                                     .path(attributeName)

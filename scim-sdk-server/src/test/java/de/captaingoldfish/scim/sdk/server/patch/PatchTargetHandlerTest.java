@@ -23,11 +23,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -214,7 +214,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                   new Context(null));
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertNotNull(patchedAllTypes.get(attributeName));
-    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asText());
+    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asString());
     Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.SCHEMAS));
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.ID));
@@ -249,7 +249,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                   new Context(null));
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertNotNull(patchedAllTypes.get(attributeName));
-    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asText());
+    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asString());
     Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.SCHEMAS));
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.ID));
@@ -277,7 +277,7 @@ public class PatchTargetHandlerTest implements FileReferences
     AllTypes allTypes = JsonHelper.loadJsonDocument(ALL_TYPES_JSON, AllTypes.class);
     AllTypes patchedAllTypes = patchAllTypes(allTypes, patchOpRequest, true);
     Assertions.assertNotNull(patchedAllTypes.get(attributeName));
-    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asText());
+    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asString());
     Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
     Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -306,7 +306,7 @@ public class PatchTargetHandlerTest implements FileReferences
                                                                                   new Context(null));
     AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
     Assertions.assertNotNull(patchedAllTypes.get(attributeName));
-    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asText());
+    Assertions.assertEquals(value, patchedAllTypes.get(attributeName).asString());
     Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
     Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -658,7 +658,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.META));
     Assertions.assertTrue(patchedAllTypes.has("complex"));
     Assertions.assertTrue(patchedAllTypes.getComplex().isPresent());
-    Assertions.assertEquals(value, patchedAllTypes.getComplex().get().get(attributeName).asText());
+    Assertions.assertEquals(value, patchedAllTypes.getComplex().get().get(attributeName).asString());
     Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
     Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -688,7 +688,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertTrue(patchedAllTypes.has(RFC7643.META));
     Assertions.assertTrue(patchedAllTypes.has("complex"));
     Assertions.assertTrue(patchedAllTypes.getComplex().isPresent(), patchedAllTypes.toPrettyString());
-    Assertions.assertEquals(value, patchedAllTypes.getComplex().get().get(attributeName).asText());
+    Assertions.assertEquals(value, patchedAllTypes.getComplex().get().get(attributeName).asString());
     Assertions.assertTrue(patchedAllTypes.getMeta().isPresent());
     Assertions.assertTrue(patchedAllTypes.getMeta().get().getLastModified().isPresent());
   }
@@ -2983,7 +2983,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals(4, emailArray.size());
     for ( JsonNode email : emailArray )
     {
-      String emailText = email.get(RFC7643.VALUE).textValue();
+      String emailText = email.get(RFC7643.VALUE).stringValue();
       if (emailText.equals("4@4.de"))
       {
         Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), patchedAllTypes.toPrettyString());
@@ -3037,7 +3037,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals(3, emailArray.size());
     for ( JsonNode email : emailArray )
     {
-      String emailText = email.get(RFC7643.VALUE).textValue();
+      String emailText = email.get(RFC7643.VALUE).stringValue();
       if (emailText.equals("2@2.de"))
       {
         Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), patchedAllTypes.toPrettyString());
@@ -3096,7 +3096,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertEquals(4, emailArray.size(), patchedAllTypes.toPrettyString());
     for ( JsonNode email : emailArray )
     {
-      String emailText = email.get(RFC7643.VALUE).textValue();
+      String emailText = email.get(RFC7643.VALUE).stringValue();
       if (emailText.equals("4@4.de"))
       {
         Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), patchedAllTypes.toPrettyString());
@@ -3154,7 +3154,7 @@ public class PatchTargetHandlerTest implements FileReferences
     Assertions.assertNotNull(emailArray, patchedAllTypes.toPrettyString());
     Assertions.assertEquals(1, emailArray.size(), patchedAllTypes.toPrettyString());
     JsonNode email = emailArray.get(0);
-    String emailText = email.get(RFC7643.VALUE).textValue();
+    String emailText = email.get(RFC7643.VALUE).stringValue();
     Assertions.assertEquals("4@4.de", emailText);
     Assertions.assertTrue(email.get(RFC7643.PRIMARY).booleanValue(), patchedAllTypes.toPrettyString());
   }
@@ -3237,8 +3237,8 @@ public class PatchTargetHandlerTest implements FileReferences
     {
       Assertions.assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
-      Assertions.assertEquals("The attribute 'userName' is 'IMMUTABLE' and is not unassigned. Current value is: "
-                              + username,
+      Assertions.assertEquals("The attribute 'userName' is 'IMMUTABLE' and is not unassigned. Current value is: \""
+                              + username + "\"",
                               ex.getDetail());
     }
   }
@@ -3577,7 +3577,7 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertEquals(ScimType.RFC7644.MUTABILITY, ex.getScimType());
       MatcherAssert.assertThat(ex.getDetail(),
                                Matchers.startsWith("The attribute 'name.givenName' is 'IMMUTABLE' and is not "
-                                                   + "unassigned. Current value is: norris"));
+                                                   + "unassigned. Current value is: \"norris\""));
     }
   }
 
@@ -4058,7 +4058,7 @@ public class PatchTargetHandlerTest implements FileReferences
     final String path = RFC7643.MEMBERS;
     final String value = "123456";
     final ObjectNode valueNode = new ObjectNode(JsonNodeFactory.instance);
-    valueNode.set("value", new TextNode(value));
+    valueNode.set("value", new StringNode(value));
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.REMOVE)
                                                                                 .path(path)
@@ -4156,7 +4156,7 @@ public class PatchTargetHandlerTest implements FileReferences
   {
     serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
     AllTypes patchRequestObject = new AllTypes(true);
-    patchRequestObject.set("unknownAttribute", new TextNode("my-value"));
+    patchRequestObject.set("unknownAttribute", new StringNode("my-value"));
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.ADD)

@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -91,7 +91,7 @@ public class DocumentDescriptionTest implements FileReferences
     ResourceType roleResourceType = new ResourceType(schemaFactory, JsonHelper.loadJsonDocument(ROLE_RESOURCE_TYPE));
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(adminRole, AttributeNames.RFC7643.SCHEMAS).get();
-    schemas.add(new TextNode("urn:unknown:reference"));
+    schemas.add(new StringNode("urn:unknown:reference"));
     DocumentDescription documentDescription = Assertions.assertDoesNotThrow(() -> new DocumentDescription(roleResourceType,
                                                                                                           adminRole));
     String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
@@ -116,7 +116,7 @@ public class DocumentDescriptionTest implements FileReferences
     Assertions.assertDoesNotThrow(() -> new DocumentDescription(roleResourceType, adminRole));
     Assertions.assertEquals(1, adminRole.get(AttributeNames.RFC7643.SCHEMAS).size());
     Assertions.assertEquals(roleResourceType.getMainSchema().getNonNullId(),
-                            adminRole.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
+                            adminRole.get(AttributeNames.RFC7643.SCHEMAS).get(0).stringValue());
   }
 
   /**
@@ -133,9 +133,9 @@ public class DocumentDescriptionTest implements FileReferences
     Assertions.assertDoesNotThrow(() -> new DocumentDescription(userResourceType, userResource));
     Assertions.assertEquals(2, userResource.get(AttributeNames.RFC7643.SCHEMAS).size());
     Assertions.assertEquals(userResourceType.getMainSchema().getNonNullId(),
-                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
+                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(0).stringValue());
     Assertions.assertEquals(userResourceType.getSchemaExtensions().get(0).getSchema(),
-                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(1).textValue());
+                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(1).stringValue());
   }
 
   /**
@@ -153,9 +153,9 @@ public class DocumentDescriptionTest implements FileReferences
     Assertions.assertDoesNotThrow(() -> new DocumentDescription(userResourceType, userResource));
     Assertions.assertEquals(2, userResource.get(AttributeNames.RFC7643.SCHEMAS).size());
     Assertions.assertEquals(userResourceType.getMainSchema().getNonNullId(),
-                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(0).textValue());
+                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(0).stringValue());
     Assertions.assertEquals(userResourceType.getSchemaExtensions().get(0).getSchema(),
-                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(1).textValue());
+                            userResource.get(AttributeNames.RFC7643.SCHEMAS).get(1).stringValue());
   }
 
   /**
@@ -172,7 +172,7 @@ public class DocumentDescriptionTest implements FileReferences
     JsonNode chuckNorris = JsonHelper.loadJsonDocument(USER_RESOURCE);
     ArrayNode schemas = JsonHelper.getArrayAttribute(chuckNorris, AttributeNames.RFC7643.SCHEMAS).get();
     final String roleUri = "urn:gold:params:scim:schemas:custom:2.0:Role";
-    JsonHelper.addAttributeToArray(schemas, new TextNode(roleUri));
+    JsonHelper.addAttributeToArray(schemas, new StringNode(roleUri));
     JsonNode adminRole = JsonHelper.loadJsonDocument(ROLE_RESOURCE);
     JsonHelper.addAttribute(chuckNorris, roleUri, adminRole);
     Assertions.assertDoesNotThrow(() -> new DocumentDescription(userResourceType, chuckNorris));

@@ -5,12 +5,12 @@ import java.math.BigInteger;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.BigIntegerNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -57,8 +57,8 @@ public class ComplexAttributeValidatorTest
       }
     };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("Captain"));
-    attribute.set("lastname", new TextNode("Goldfish"));
+    attribute.set("firstname", new StringNode("Captain"));
+    attribute.set("lastname", new StringNode("Goldfish"));
     attribute.set("age", new BigIntegerNode(BigInteger.valueOf(35)));
 
     JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
@@ -102,8 +102,8 @@ public class ComplexAttributeValidatorTest
       }
     };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("Captain"));
-    attribute.set("lastname", new TextNode("Goldfish"));
+    attribute.set("firstname", new StringNode("Captain"));
+    attribute.set("lastname", new StringNode("Goldfish"));
     attribute.set("age", new IntNode(35));
 
     JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
@@ -158,8 +158,8 @@ public class ComplexAttributeValidatorTest
       }
     };
     ObjectNode attribute = new ObjectNode(JsonNodeFactory.instance);
-    attribute.set("firstname", new TextNode("Captain"));
-    attribute.set("lastname", new TextNode("Goldfish"));
+    attribute.set("firstname", new StringNode("Captain"));
+    attribute.set("lastname", new StringNode("Goldfish"));
     attribute.set("age", new IntNode(35));
 
     JsonNode validatedNode = ComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
@@ -198,7 +198,7 @@ public class ComplexAttributeValidatorTest
         return true;
       }
     };
-    TextNode attribute = new TextNode("Captain");
+    StringNode attribute = new StringNode("Captain");
 
     try
     {

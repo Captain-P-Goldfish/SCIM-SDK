@@ -11,12 +11,12 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.TestFactory;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.LongNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.LongNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -51,31 +51,31 @@ public class CustomAttributeValidatorTest implements FileReferences
                                   + "characters but is '1' characters long";
     dynamicTests.add(getAttributeValidationTest("minimum value not reached",
                                                 () -> CustomAttributeValidator.validateTextNode(stringAttribute,
-                                                                                                new TextNode("a")),
+                                                                                                new StringNode("a")),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
     expectedErrorMessage = "The 'STRING'-attribute 'minString' with value '01234567890' must not be longer than '10' "
                            + "characters but is '11' characters long";
     dynamicTests.add(getAttributeValidationTest("maximum value exceeded",
                                                 () -> CustomAttributeValidator.validateTextNode(stringAttribute,
-                                                                                                new TextNode("01234567890")),
+                                                                                                new StringNode("01234567890")),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
     expectedErrorMessage = "The 'STRING'-attribute 'minString' with value '$%&/!' must match the regular expression "
                            + "of '(?i)[a-z0-9]+'";
     dynamicTests.add(getAttributeValidationTest("pattern does not match",
                                                 () -> CustomAttributeValidator.validateTextNode(stringAttribute,
-                                                                                                new TextNode("$%&/!")),
+                                                                                                new StringNode("$%&/!")),
                                                 expectedErrorMessage));
     /* ****************************************************************************************************** */
     dynamicTests.add(DynamicTest.dynamicTest("validation matches minimumLength exactly", () -> {
       Assertions.assertDoesNotThrow(() -> CustomAttributeValidator.validateTextNode(stringAttribute,
-                                                                                    new TextNode("12345")));
+                                                                                    new StringNode("12345")));
     }));
     /* ****************************************************************************************************** */
     dynamicTests.add(DynamicTest.dynamicTest("validation matches maximumLength exactly", () -> {
       Assertions.assertDoesNotThrow(() -> CustomAttributeValidator.validateTextNode(stringAttribute,
-                                                                                    new TextNode("0123456789")));
+                                                                                    new StringNode("0123456789")));
     }));
     return dynamicTests;
   }
@@ -253,29 +253,29 @@ public class CustomAttributeValidatorTest implements FileReferences
                                   + "be before '2018-11-01T00:00:00Z'";
     dynamicTests.add(getAttributeValidationTest("dateTime is before", () -> {
       CustomAttributeValidator.validateTextNode(dateAttribute,
-                                                new TextNode(notBefore.minus(1, ChronoUnit.DAYS).toString()));
+                                                new StringNode(notBefore.minus(1, ChronoUnit.DAYS).toString()));
     }, expectedErrorMessage));
     /* ****************************************************************************************************** */
     expectedErrorMessage = "The 'DATE_TIME'-attribute 'date' with value '2020-12-02T00:00:00Z' must not be after "
                            + "'2020-12-01T00:00:00Z'";
     dynamicTests.add(getAttributeValidationTest("dateTime is after", () -> {
       CustomAttributeValidator.validateTextNode(dateAttribute,
-                                                new TextNode(notAfter.plus(1, ChronoUnit.DAYS).toString()));
+                                                new StringNode(notAfter.plus(1, ChronoUnit.DAYS).toString()));
     }, expectedErrorMessage));
     /* ****************************************************************************************************** */
     dynamicTests.add(DynamicTest.dynamicTest("date time matches not before", () -> {
       Assertions.assertDoesNotThrow(() -> CustomAttributeValidator.validateTextNode(dateAttribute,
-                                                                                    new TextNode(notBefore.toString())));
+                                                                                    new StringNode(notBefore.toString())));
     }));
     /* ****************************************************************************************************** */
     dynamicTests.add(DynamicTest.dynamicTest("date time matches not after", () -> {
       Assertions.assertDoesNotThrow(() -> CustomAttributeValidator.validateTextNode(dateAttribute,
-                                                                                    new TextNode(notAfter.toString())));
+                                                                                    new StringNode(notAfter.toString())));
     }));
     /* ****************************************************************************************************** */
     dynamicTests.add(DynamicTest.dynamicTest("date time between notBefore and notAfter", () -> {
       Assertions.assertDoesNotThrow(() -> CustomAttributeValidator.validateTextNode(dateAttribute,
-                                                                                    new TextNode("2019-02-17T00:00:00Z")));
+                                                                                    new StringNode("2019-02-17T00:00:00Z")));
     }));
     // @formatter:on
     return dynamicTests;
@@ -317,7 +317,7 @@ public class CustomAttributeValidatorTest implements FileReferences
       ScimArrayNode arrayNode = new ScimArrayNode(arrayAttribute);
       for ( int i = 0 ; i < integer ; i++ )
       {
-        arrayNode.add(new TextNode(UUID.randomUUID().toString()));
+        arrayNode.add(new StringNode(UUID.randomUUID().toString()));
       }
       return arrayNode;
     };

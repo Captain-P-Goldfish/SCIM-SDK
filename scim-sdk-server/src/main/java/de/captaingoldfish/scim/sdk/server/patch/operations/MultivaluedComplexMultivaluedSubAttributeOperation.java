@@ -3,7 +3,7 @@ package de.captaingoldfish.scim.sdk.server.patch.operations;
 import java.util.Collections;
 import java.util.List;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -62,7 +62,7 @@ public class MultivaluedComplexMultivaluedSubAttributeOperation extends Multival
     }
     for ( JsonNode jsonNode : valuesNode )
     {
-      valueStringList.add(jsonNode.asText());
+      valueStringList.add(jsonNode.asString());
     }
     return valueStringList;
   }

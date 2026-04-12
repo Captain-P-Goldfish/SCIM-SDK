@@ -4,7 +4,7 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
@@ -165,7 +165,7 @@ public class BulkRequestOperation extends ScimObjectNode
   public Optional<String> getData()
   {
     return Optional.ofNullable(get(AttributeNames.RFC7643.DATA))
-                   .map(jsonNode -> jsonNode.isTextual() ? jsonNode.textValue() : jsonNode.toString());
+                   .map(jsonNode -> jsonNode.isTextual() ? jsonNode.stringValue() : jsonNode.toString());
   }
 
   /**

@@ -2,10 +2,6 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.NullNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimBooleanNode;
@@ -15,6 +11,9 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimLongNode;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.NullNode;
 
 
 /**
@@ -129,7 +128,7 @@ public class ValidationSelector
   {
     if (attribute.isTextual())
     {
-      return new ScimTextNode(schemaAttribute, attribute.textValue());
+      return new ScimTextNode(schemaAttribute, attribute.stringValue());
     }
     if (attribute.isBoolean())
     {

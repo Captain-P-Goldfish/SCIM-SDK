@@ -7,11 +7,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
@@ -19,6 +14,10 @@ import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.MetaSchemaValidator;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -120,7 +119,7 @@ public class JsonRelationParser
 
     for ( FileInfoWrapper resourceTypeWrapper : resourceTypes )
     {
-      String resourceSchemaUri = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.SCHEMA).textValue();
+      String resourceSchemaUri = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.SCHEMA).stringValue();
       ArrayNode schemaExtensions = (ArrayNode)resourceTypeWrapper.getJsonNode()
                                                                  .get(AttributeNames.RFC7643.SCHEMA_EXTENSIONS);
       List<String> extensionUris = new ArrayList<>();
@@ -130,7 +129,7 @@ public class JsonRelationParser
         {
           if (schemaExtension instanceof ObjectNode)
           {
-            String extensionSchemaUri = schemaExtension.get(AttributeNames.RFC7643.SCHEMA).textValue();
+            String extensionSchemaUri = schemaExtension.get(AttributeNames.RFC7643.SCHEMA).stringValue();
             extensionUris.add(extensionSchemaUri);
           }
         }
@@ -138,7 +137,9 @@ public class JsonRelationParser
       FileInfoWrapper resourceSchemaWrapper = getResourceSchemaByUri(resourceSchemaUri).orElse(null);
       if (resourceSchemaWrapper == null)
       {
-        final String resourceTypeName = resourceTypeWrapper.getJsonNode().get(AttributeNames.RFC7643.NAME).textValue();
+        final String resourceTypeName = resourceTypeWrapper.getJsonNode()
+                                                           .get(AttributeNames.RFC7643.NAME)
+                                                           .stringValue();
         log.warn("ResourceType \"{}\" is ignored because the referenced schema \"{}\" could not be found",
                  resourceTypeName,
                  resourceSchemaUri);
@@ -164,7 +165,7 @@ public class JsonRelationParser
   {
     for ( FileInfoWrapper resourceSchema : resourceSchemas )
     {
-      String schemaId = resourceSchema.getJsonNode().get(AttributeNames.RFC7643.ID).textValue();
+      String schemaId = resourceSchema.getJsonNode().get(AttributeNames.RFC7643.ID).stringValue();
       boolean added = schemaRelationWrapperList.stream().anyMatch(relation -> {
         return new Schema(relation.getResourceSchema().getJsonNode()).getNonNullId().equals(schemaId);
       });
@@ -183,7 +184,7 @@ public class JsonRelationParser
     return resourceSchemas.stream()
                           .filter(jsonNode -> jsonNode.getJsonNode()
                                                       .get(AttributeNames.RFC7643.ID)
-                                                      .textValue()
+                                                      .stringValue()
                                                       .equals(resourceSchemaUri))
                           .findAny();
   }
@@ -249,10 +250,10 @@ public class JsonRelationParser
       }
       for ( JsonNode node : schemasNode )
       {
-        if (node instanceof TextNode)
+        if (node instanceof StringNode)
         {
-          TextNode schema = (TextNode)node;
-          switch (schema.textValue())
+          StringNode schema = (StringNode)node;
+          switch (schema.stringValue())
           {
             case "urn:ietf:params:scim:schemas:core:2.0:Schema":
               return RESOURCE_SCHEMA;

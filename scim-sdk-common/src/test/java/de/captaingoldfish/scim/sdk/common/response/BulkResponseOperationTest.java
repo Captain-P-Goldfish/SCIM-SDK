@@ -54,10 +54,10 @@ public class BulkResponseOperationTest implements FileReferences
     Assertions.assertEquals(status, operations.getStatus());
     Assertions.assertEquals(response, operations.getResponse(ErrorResponse.class).get());
 
-    Assertions.assertEquals(method.name(), operations.get("method").textValue());
-    Assertions.assertEquals(bulkId, operations.get("bulkId").textValue());
-    Assertions.assertEquals(eTag.getEntityTag(), operations.get("version").textValue());
-    Assertions.assertEquals(location, operations.get("location").textValue());
+    Assertions.assertEquals(method.name(), operations.get("method").stringValue());
+    Assertions.assertEquals(bulkId, operations.get("bulkId").stringValue());
+    Assertions.assertEquals(eTag.getEntityTag(), operations.get("version").stringValue());
+    Assertions.assertEquals(location, operations.get("location").stringValue());
     Assertions.assertEquals(status, operations.get("status").intValue());
     Assertions.assertEquals(response, new ErrorResponse(operations.get("response")));
   }

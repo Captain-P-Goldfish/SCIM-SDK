@@ -15,13 +15,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.DoubleNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
@@ -48,6 +41,12 @@ import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveExtensionRefOpe
 import de.captaingoldfish.scim.sdk.server.patch.operations.SimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -3075,7 +3074,7 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
         AllTypes patchResource = new AllTypes(true);
 
         AllTypes complex = new AllTypes(false);
-        JsonNode numberNode = new TextNode("illegal-value");
+        JsonNode numberNode = new StringNode("illegal-value");
         complex.set(multiComplexNumberAttribute.getName(), numberNode);
 
         ArrayNode multiComplex = new ArrayNode(JsonNodeFactory.instance);
@@ -3427,7 +3426,7 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
             final String attributeName = "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex.number";
             SchemaAttribute multiComplexNumberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
 
-            JsonNode numberNode = new TextNode("illegal-value");
+            JsonNode numberNode = new StringNode("illegal-value");
 
             List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                         .op(PatchOp.REPLACE)
@@ -3737,7 +3736,7 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
             final String attributeName = "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex.number";
             SchemaAttribute multiComplexNumberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
 
-            JsonNode numberNode = new TextNode("illegal-value");
+            JsonNode numberNode = new StringNode("illegal-value");
 
             List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                         .op(PatchOp.REPLACE)
@@ -3905,7 +3904,7 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
         AllTypes patchResource = new AllTypes(true);
 
         AllTypes complex = new AllTypes(false);
-        JsonNode numberNode = new TextNode("illegal-value");
+        JsonNode numberNode = new StringNode("illegal-value");
         ArrayNode numberArrayNode = new ArrayNode(JsonNodeFactory.instance);
         numberArrayNode.add(numberNode);
 
@@ -3984,7 +3983,7 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
             final String attributeName = "urn:gold:params:scim:schemas:custom:2.0:AllTypes:multiComplex.numberArray";
             SchemaAttribute multiComplexNumberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
 
-            JsonNode numberNode = new TextNode("illegal-value");
+            JsonNode numberNode = new StringNode("illegal-value");
 
             List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                         .op(PatchOp.REPLACE)
@@ -4031,7 +4030,7 @@ public class MultivaluedComplexAttributeTests extends AbstractPatchTest
             SchemaAttribute multiComplexNumberAttribute = allTypesResourceType.getSchemaAttribute(attributeName).get();
 
             ArrayNode numberArrayNode = new ArrayNode(JsonNodeFactory.instance,
-                                                      Arrays.asList(new TextNode("illegal-value")));
+                                                      Arrays.asList(new StringNode("illegal-value")));
 
             List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                         .op(PatchOp.REPLACE)

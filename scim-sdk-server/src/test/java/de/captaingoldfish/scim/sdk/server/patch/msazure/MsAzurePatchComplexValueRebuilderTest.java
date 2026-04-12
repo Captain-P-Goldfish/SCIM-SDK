@@ -10,7 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
@@ -94,13 +94,13 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
       JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(0));
       Assertions.assertNotNull(jsonNode);
       Assertions.assertTrue(jsonNode.isObject());
-      Assertions.assertEquals("271", jsonNode.get(RFC7643.VALUE).textValue());
+      Assertions.assertEquals("271", jsonNode.get(RFC7643.VALUE).stringValue());
     }
     {
       JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(1));
       Assertions.assertNotNull(jsonNode);
       Assertions.assertTrue(jsonNode.isObject());
-      Assertions.assertEquals("281", jsonNode.get(RFC7643.VALUE).textValue());
+      Assertions.assertEquals("281", jsonNode.get(RFC7643.VALUE).stringValue());
     }
   }
 
@@ -131,7 +131,7 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
       JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(0));
       Assertions.assertNotNull(jsonNode);
       Assertions.assertTrue(jsonNode.isObject());
-      Assertions.assertEquals(inputValue, jsonNode.get(RFC7643.VALUE).textValue());
+      Assertions.assertEquals(inputValue, jsonNode.get(RFC7643.VALUE).stringValue());
     }
   }
 
@@ -269,13 +269,13 @@ public class MsAzurePatchComplexValueRebuilderTest implements FileReferences
       JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(0));
       Assertions.assertNotNull(jsonNode);
       Assertions.assertTrue(jsonNode.isObject());
-      Assertions.assertEquals("", jsonNode.get(RFC7643.VALUE).textValue());
+      Assertions.assertEquals("", jsonNode.get(RFC7643.VALUE).stringValue());
     }
     {
       JsonNode jsonNode = JsonHelper.readJsonDocument(fixedValues.get(1));
       Assertions.assertNotNull(jsonNode);
       Assertions.assertTrue(jsonNode.isObject());
-      Assertions.assertEquals("", jsonNode.get(RFC7643.VALUE).textValue());
+      Assertions.assertEquals("", jsonNode.get(RFC7643.VALUE).stringValue());
     }
   }
 }

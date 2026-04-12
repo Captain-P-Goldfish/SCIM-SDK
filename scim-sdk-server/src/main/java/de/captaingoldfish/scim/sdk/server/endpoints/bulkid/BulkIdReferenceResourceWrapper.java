@@ -1,7 +1,7 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.bulkid;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.StringNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -41,7 +41,7 @@ class BulkIdReferenceResourceWrapper implements BulkIdReferenceWrapper
   {
     this.parentNode = parentNode;
     this.schemaAttribute = schemaAttribute;
-    String bulkIdReference = valueNode.textValue();
+    String bulkIdReference = valueNode.stringValue();
     this.bulkId = bulkIdReference.replaceFirst(String.format("^%s:", AttributeNames.RFC7643.BULK_ID), "");
   }
 
@@ -52,6 +52,6 @@ class BulkIdReferenceResourceWrapper implements BulkIdReferenceWrapper
    */
   public void replaceValueNode(String newValue)
   {
-    JsonHelper.replaceNode(parentNode, schemaAttribute.getName(), new TextNode(newValue));
+    JsonHelper.replaceNode(parentNode, schemaAttribute.getName(), new StringNode(newValue));
   }
 }

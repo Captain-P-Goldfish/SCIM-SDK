@@ -16,14 +16,6 @@ import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.exceptions.IncompatibleAttributeException;
@@ -32,6 +24,14 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.core.JacksonException;
+import tools.jackson.core.JsonParser;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.exc.JsonNodeException;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -324,7 +324,7 @@ public final class JsonHelper
       {
         break;
       }
-      if (simpleNode.textValue().equals(value))
+      if (simpleNode.stringValue().equals(value))
       {
         index = i;
         break;
@@ -373,7 +373,7 @@ public final class JsonHelper
    */
   public static <T> JsonNode writeValue(JsonNode jsonNode, String attributeName, T value)
   {
-    JsonNode valueNode = new TextNode(String.valueOf(value));
+    JsonNode valueNode = new StringNode(String.valueOf(value));
     return ((ObjectNode)jsonNode).replace(attributeName, valueNode);
   }
 
@@ -400,7 +400,14 @@ public final class JsonHelper
   {
     if (String.class.equals(type))
     {
-      return Optional.ofNullable(attribute).map(JsonNode::asText).map(s -> (T)s);
+      if (attribute.isString())
+      {
+        return Optional.ofNullable(attribute).map(JsonNode::asString).map(s -> (T)s);
+      }
+      else
+      {
+        return Optional.ofNullable(attribute).map(JsonNode::toString).map(s -> (T)s);
+      }
     }
     if (Boolean.class.equals(type))
     {
@@ -434,7 +441,7 @@ public final class JsonHelper
         {
           return Optional.of((T)attribute.binaryValue());
         }
-        catch (IOException e)
+        catch (JsonNodeException e)
         {
           throw new IncompatibleAttributeException("binary attribute value could not be read", e, null,
                                                    ScimType.RFC7644.INVALID_VALUE);
@@ -442,12 +449,12 @@ public final class JsonHelper
       }
       try
       {
-        return Optional.of((T)Base64.getDecoder().decode(attribute.textValue()));
+        return Optional.of((T)Base64.getDecoder().decode(attribute.stringValue()));
       }
       catch (IllegalArgumentException e)
       {
         throw new IncompatibleAttributeException(String.format("attribute value '%s' is not of type %s",
-                                                               attribute.textValue(),
+                                                               attribute.stringValue(),
                                                                Type.BINARY),
                                                  e, null, ScimType.RFC7644.INVALID_VALUE);
       }
@@ -583,14 +590,13 @@ public final class JsonHelper
     {
       return false;
     }
-    try
+    try (JsonParser parser = new ObjectMapper().createParser(json))
     {
-      final JsonParser parser = new ObjectMapper().getFactory().createParser(json);
       while (parser.nextToken() != null)
       {}
       return true;
     }
-    catch (IOException ex)
+    catch (JacksonException ex)
     {
       log.info(ex.getMessage());
       log.trace(ex.getMessage(), ex);
@@ -610,7 +616,7 @@ public final class JsonHelper
     {
       return new ObjectMapper().writeValueAsString(jsonNode);
     }
-    catch (JsonProcessingException e)
+    catch (JacksonException e)
     {
       throw new InternalServerException(e.getMessage(), e);
     }
@@ -625,7 +631,7 @@ public final class JsonHelper
     {
       return new ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(jsonNode);
     }
-    catch (JsonProcessingException e)
+    catch (JacksonException e)
     {
       throw new InternalServerException(e.getMessage(), e);
     }

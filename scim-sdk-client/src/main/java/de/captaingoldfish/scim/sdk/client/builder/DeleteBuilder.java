@@ -7,7 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
-import com.fasterxml.jackson.databind.JsonNode;
+import tools.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.client.http.HttpDelete;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
