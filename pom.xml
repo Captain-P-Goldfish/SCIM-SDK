@@ -442,8 +442,7 @@
                         <pushChanges>false</pushChanges>
                         <mavenExecutorId>forked-path</mavenExecutorId>
                         <autoVersionSubmodules>true</autoVersionSubmodules>
-                        <!--suppress UnresolvedMavenProperty -->
-                        <arguments>-Dgpg.passphrase=${gpg.passphrase} -DprepareAndPerformRelease</arguments>
+                        <arguments>-DprepareAndPerformRelease</arguments>
                     </configuration>
                 </plugin>
             </plugins>
