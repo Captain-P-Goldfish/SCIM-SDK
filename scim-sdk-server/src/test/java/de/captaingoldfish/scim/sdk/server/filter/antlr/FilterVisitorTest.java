@@ -2,6 +2,7 @@ package de.captaingoldfish.scim.sdk.server.filter.antlr;
 
 import java.util.Arrays;
 
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -623,4 +624,20 @@ public class FilterVisitorTest
     FilterNode filterNode = RequestUtils.parseFilter(userResourceType, filter);
   }
 
+  /**
+   * this test will verify that the filter contains escaped double quotes is resolved correctly
+   */
+  @ParameterizedTest
+  @ValueSource(strings = {"TestGroup!@#$%^&*()_+=-{}][\\\":;'/.,?Nej", "This is \\\"test\\\" user."})
+  public void testParseFilterWithDoubleQuotes(String value)
+  {
+    final String expression = String.format("userName eq \"%s\"", value);
+
+    final FilterNode filterNode = RequestUtils.parseFilter(userResourceType, expression);
+    Assertions.assertNotNull(filterNode);
+    Assertions.assertInstanceOf(AttributeExpressionLeaf.class, filterNode);
+
+    final AttributeExpressionLeaf attributeExpressionLeaf = (AttributeExpressionLeaf)filterNode;
+    Assertions.assertEquals(StringEscapeUtils.unescapeJava(value), attributeExpressionLeaf.getValue());
+  }
 }
