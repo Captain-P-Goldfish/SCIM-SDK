@@ -61,6 +61,7 @@
 
         <!-- application dependencies -->
         <version.apache.commons.lang3>3.20.0</version.apache.commons.lang3>
+        <version.apache.commons-text>1.15.0</version.apache.commons-text>
         <version.commons.io>2.21.0</version.commons.io>
         <version.jackson>2.21.2</version.jackson>
         <version.jackson-annotations>2.21</version.jackson-annotations>
@@ -137,6 +138,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${version.apache.commons.lang3}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-text</artifactId>
+                <version>${version.apache.commons-text}</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>

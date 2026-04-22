@@ -2,7 +2,7 @@ package de.captaingoldfish.scim.sdk.server.filter.antlr;
 
 import java.util.Arrays;
 
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;

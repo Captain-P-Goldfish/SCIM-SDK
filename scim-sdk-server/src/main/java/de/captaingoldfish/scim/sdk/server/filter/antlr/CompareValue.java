@@ -13,7 +13,7 @@ import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.text.StringEscapeUtils;
 
 
 /**
