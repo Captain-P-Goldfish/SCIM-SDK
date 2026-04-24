@@ -82,7 +82,7 @@
         <version.mockito>5.23.0</version.mockito>
         <version.resteasy.jaxrs>3.15.6.Final</version.resteasy.jaxrs>
         <version.equalsverifier>4.4.2</version.equalsverifier>
-        <version.springboot>4.0.5</version.springboot>
+        <version.springboot>4.0.6</version.springboot>
         <version.spring.security>7.0.4</version.spring.security>
 
         <!-- version conflicts -->
