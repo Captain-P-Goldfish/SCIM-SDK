@@ -50,14 +50,21 @@ DECIMAL: '-'? INTEGER '.' DIGIT+ | '-'? INTEGER;
 ATTRIBUTE_NAME: ALPHA (NAMECHAR)*;
 NAMECHAR: '_' | DIGIT | ALPHA;
 NAME_URI: ALPHA (NAMECHAR | ':' | '.')* NAMECHAR+ ':';
-TEXT: '"' STRING '"';
+TEXT: '"' (ESC | SAFE_CODE_POINT)* '"';
 EXCLUDE: [ \b\t\n]+ -> skip ;
-
 
 fragment ALPHA: ([a-zA-Z_]);
 fragment INTEGER: '0' | [1-9] DIGIT*;
 fragment DIGIT: [0-9] ;
-fragment STRING: .+?;
+fragment ESC
+    : '\\' (["\\/bfnrt] | UNICODE);
+fragment UNICODE
+    : 'u' HEX HEX HEX HEX;
+fragment HEX
+    : [0-9a-fA-F];
+fragment SAFE_CODE_POINT
+    : ~ ["\\\u0000-\u001F];
+
 
 fragment A : [aA];
 fragment B : [bB];
