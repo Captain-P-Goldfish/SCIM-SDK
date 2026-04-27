@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import de.captaingoldfish.scim.sdk.common.constants.JavaStringUnescaper;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidDateTimeRepresentationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -13,7 +14,6 @@ import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.text.StringEscapeUtils;
 
 
 /**
@@ -52,9 +52,9 @@ public class CompareValue
     }
     else
     {
-      this.value = StringEscapeUtils.unescapeJava(compareValueContext.getText())
-                                    .replaceFirst("^\"", "")
-                                    .replaceFirst("\"$", "");
+      this.value = JavaStringUnescaper.unescapeJava(compareValueContext.getText())
+                                      .replaceFirst("^\"", "")
+                                      .replaceFirst("\"$", "");
     }
     validateCompareValue(schemaAttribute);
   }

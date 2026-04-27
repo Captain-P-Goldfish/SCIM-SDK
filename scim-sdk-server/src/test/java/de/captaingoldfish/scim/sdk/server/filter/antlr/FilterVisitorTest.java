@@ -2,7 +2,7 @@ package de.captaingoldfish.scim.sdk.server.filter.antlr;
 
 import java.util.Arrays;
 
-import org.apache.commons.text.StringEscapeUtils;
+import de.captaingoldfish.scim.sdk.common.constants.JavaStringUnescaper;
 import org.hamcrest.MatcherAssert;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
@@ -638,6 +638,6 @@ public class FilterVisitorTest
     Assertions.assertInstanceOf(AttributeExpressionLeaf.class, filterNode);
 
     final AttributeExpressionLeaf attributeExpressionLeaf = (AttributeExpressionLeaf)filterNode;
-    Assertions.assertEquals(StringEscapeUtils.unescapeJava(value), attributeExpressionLeaf.getValue());
+    Assertions.assertEquals(JavaStringUnescaper.unescapeJava(value), attributeExpressionLeaf.getValue());
   }
 }
