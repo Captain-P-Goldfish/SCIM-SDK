@@ -9,6 +9,8 @@ import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -780,5 +782,63 @@ public class ListBuilderTest extends HttpServerMockup
     scimFilterParser.removeErrorListeners();
     scimFilterParser.addErrorListener(filterRuleErrorListener);
     Assertions.assertDoesNotThrow(scimFilterParser::filter);
+  }
+
+  /**
+   * RFC 9865: the {@code .cursor("")} fluent setter writes an empty-string cursor parameter, which is the wire
+   * signal for "first page using cursor pagination".
+   */
+  @Test
+  public void testCursorSetterStoresEmptyString()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("");
+    Assertions.assertTrue(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertEquals("", listBuilder.getRequestParameters().get(AttributeNames.RFC7643.CURSOR));
+  }
+
+  /**
+   * Passing a non-empty cursor value writes it under the {@code cursor} key.
+   */
+  @Test
+  public void testCursorSetterStoresValue()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("VZUTiyhEQJ94IR");
+    Assertions.assertEquals("VZUTiyhEQJ94IR", listBuilder.getRequestParameters().get(AttributeNames.RFC7643.CURSOR));
+  }
+
+  /**
+   * Passing {@code null} removes the cursor parameter, returning the builder to index-mode.
+   */
+  @Test
+  public void testCursorSetterWithNullRemovesParameter()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("VZUTiyhEQJ94IR");
+    listBuilder.cursor(null);
+    Assertions.assertFalse(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC7643.CURSOR));
+  }
+
+  /**
+   * Native cursor iteration in {@code getAll()} is out of scope for now; setting both {@code cursor} and
+   * {@code startIndex} on the same builder must surface as a fast-failing {@link IllegalStateException} rather
+   * than silently producing an ambiguous request.
+   */
+  @Test
+  public void testGetAllRejectsMixedCursorAndStartIndex()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.startIndex(1L).cursor("");
+    IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> listBuilder.get().getAll());
+    MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString("cursor"));
   }
 }

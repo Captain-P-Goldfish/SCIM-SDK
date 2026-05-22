@@ -131,6 +131,29 @@ public class ListBuilder<T extends ResourceNode>
   }
 
   /**
+   * Sets the {@code cursor} parameter (RFC 9865). The presence of this parameter (even as an empty string)
+   * signals to the service provider that cursor-based pagination is desired. Pass an empty string to request
+   * the first page; pass a token returned from a previous response (via {@link ListResponse#getNextCursor()} or
+   * {@link ListResponse#getPreviousCursor()}) to request a subsequent page.
+   *
+   * @param cursor the opaque cursor token; {@code null} clears the cursor parameter, leaving the request in
+   *          index-based pagination mode
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>
+   */
+  public ListBuilder<T> cursor(String cursor)
+  {
+    if (cursor == null)
+    {
+      requestParameters.remove(RFC7643.CURSOR);
+    }
+    else
+    {
+      requestParameters.put(RFC7643.CURSOR, cursor);
+    }
+    return this;
+  }
+
+  /**
    * sets the attribute name that should be used for sorting the entries
    *
    * @param sortBy the attribute name that should be used for sorting the entries
@@ -266,6 +289,11 @@ public class ListBuilder<T extends ResourceNode>
      */
     public ServerResponse<ListResponse<T>> getAll()
     {
+      if (listBuilder.getRequestParameters().containsKey(RFC7643.CURSOR))
+      {
+        throw new IllegalStateException("getAll() does not yet support RFC 9865 cursor-based pagination. Remove the "
+                                        + "cursor parameter or iterate manually using ListResponse.getNextCursor().");
+      }
       List<ServerResponse<ListResponse<T>>> responseList = new ArrayList<>();
       boolean needsAdditionalRequest = false;
       long totalResults;
@@ -562,6 +590,8 @@ public class ListBuilder<T extends ResourceNode>
       typedListResponse.setStartIndex(listResponse.getStartIndex());
       typedListResponse.setTotalResults(listResponse.getTotalResults());
       typedListResponse.setListedResources(typedResources);
+      listResponse.getNextCursor().ifPresent(typedListResponse::setNextCursor);
+      listResponse.getPreviousCursor().ifPresent(typedListResponse::setPreviousCursor);
       return (R)typedListResponse;
     }
   }
