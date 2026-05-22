@@ -285,14 +285,17 @@ public class ListBuilder<T extends ResourceNode>
     }
 
     /**
-     * this method can be used to retrieve all resources from the given startIndex of the given endpoint
+     * Retrieves all resources from the given startIndex of the given endpoint by repeatedly sending requests and
+     * merging the responses into a single {@link ListResponse}. If the request was configured with
+     * {@link ListBuilder#cursor(String)} the iteration follows the RFC 9865 cursor-based pagination protocol
+     * (each response's {@code nextCursor} is fed back into the next request until the service provider stops
+     * returning one). Otherwise the legacy RFC 7644 index-based iteration is used.
      */
     public ServerResponse<ListResponse<T>> getAll()
     {
       if (listBuilder.getRequestParameters().containsKey(RFC7643.CURSOR))
       {
-        throw new IllegalStateException("getAll() does not yet support RFC 9865 cursor-based pagination. Remove the "
-                                        + "cursor parameter or iterate manually using ListResponse.getNextCursor().");
+        return getAllByCursor();
       }
       List<ServerResponse<ListResponse<T>>> responseList = new ArrayList<>();
       boolean needsAdditionalRequest = false;
@@ -355,6 +358,80 @@ public class ListBuilder<T extends ResourceNode>
       // we have merged all requests into a single response
       rebuildListResponse.setItemsPerPage(currentlyRetrievedResources);
       rebuildListResponse.setStartIndex(originalStartIndex);
+      rebuildListResponse.set(AttributeNames.RFC7643.RESOURCES, resources);
+
+      HttpResponse httpResponse = HttpResponse.builder().httpStatusCode(HttpStatus.OK).build();
+      return new ServerResponse<>(httpResponse, true, rebuildListResponse);
+    }
+
+    /**
+     * RFC 9865 cursor-based equivalent of {@link #getAll()}. Repeatedly issues requests using the
+     * {@code nextCursor} token from each response until the service provider stops returning one (i.e. the last
+     * page is reached). If the caller also set a {@code count}, iteration also stops once that many resources
+     * have been collected. The returned {@link ListResponse} is a synthetic merge of every intermediate response
+     * — {@code totalResults} reflects the latest known value (which may be {@code 0} in cursor mode, since RFC
+     * 9865 makes that attribute OPTIONAL), {@code itemsPerPage} reflects the total number of resources actually
+     * returned, and {@code startIndex} is intentionally omitted.
+     */
+    private ServerResponse<ListResponse<T>> getAllByCursor()
+    {
+      final Integer originalCount = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.COUNT))
+                                            .map(Integer::parseInt)
+                                            .orElse(null);
+      int iterations = 0;
+      int currentlyRetrievedResources = 0;
+      long totalResults = 0;
+      ArrayNode resources = new ArrayNode(JsonNodeFactory.instance);
+      String nextCursor;
+      do
+      {
+        log.trace("Loading resources in iteration: {}", iterations++);
+        if (originalCount != null)
+        {
+          // Per RFC 9865 the count value on subsequent cursor requests SHOULD match the initial query.
+          // Some implementations also accept a smaller count to clip the last page; we conservatively
+          // keep the original count for every request and only stop early via the hasReachedWantedResourceCount
+          // guard below.
+          listBuilder.count(originalCount);
+        }
+        ServerResponse<ListResponse<T>> response = sendRequest();
+        if (!response.isSuccess())
+        {
+          log.warn("Failed to load next-resources in iteration. Ignoring previous responses: {}", iterations);
+          return response;
+        }
+        ArrayNode nextResources = (ArrayNode)response.getResource().get(RFC7643.RESOURCES);
+        if (nextResources != null)
+        {
+          resources.addAll(nextResources);
+        }
+        ListResponse<T> listResponse = response.getResource();
+        totalResults = listResponse.getTotalResults();
+        final int itemsPerPage = listResponse.getItemsPerPage() == 0 //
+          ? listResponse.getListedResources().size() //
+          : listResponse.getItemsPerPage();
+        currentlyRetrievedResources += itemsPerPage;
+        nextCursor = listResponse.getNextCursor().orElse(null);
+
+        final boolean hasReachedEndOfRemoteResources = (nextCursor == null);
+        final boolean hasReachedWantedResourceCount = originalCount != null
+                                                      && currentlyRetrievedResources >= originalCount;
+        if (!hasReachedEndOfRemoteResources && !hasReachedWantedResourceCount)
+        {
+          listBuilder.cursor(nextCursor);
+        }
+        else
+        {
+          break;
+        }
+      }
+      while (true);
+
+      ListResponse<T> rebuildListResponse = new ListResponse<>();
+      rebuildListResponse.setTotalResults(totalResults);
+      // we have merged all requests into a single response
+      rebuildListResponse.setItemsPerPage(currentlyRetrievedResources);
+      // startIndex is intentionally not set — cursor responses omit it per RFC 9865
       rebuildListResponse.set(AttributeNames.RFC7643.RESOURCES, resources);
 
       HttpResponse httpResponse = HttpResponse.builder().httpStatusCode(HttpStatus.OK).build();
