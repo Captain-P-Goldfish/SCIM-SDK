@@ -88,4 +88,100 @@ public class ListResponseTest implements FileReferences
 
     // TODO
   }
+
+  /**
+   * RFC 9865 cursor-mode response: startIndex MUST be omitted, nextCursor and previousCursor are exposed via
+   * the getters and serialized into the JSON document.
+   */
+  @Test
+  public void testCursorListResponseOmitsStartIndex()
+  {
+    final long totalResults = 100;
+    final int itemsPerPage = 10;
+    final String nextCursor = "VZUTiyhEQJ94IR";
+    final String previousCursor = "ze7L30kMiiLX6x";
+    List<JsonNode> resourceNodes = Arrays.asList(JsonHelper.loadJsonDocument(FileReferences.USER_RESOURCE));
+
+    ListResponse listResponse = new ListResponse(resourceNodes, totalResults, itemsPerPage, null, nextCursor,
+                                                 previousCursor);
+
+    Assertions.assertEquals(totalResults, listResponse.getTotalResults());
+    Assertions.assertEquals(itemsPerPage, listResponse.getItemsPerPage());
+    Assertions.assertEquals(nextCursor, listResponse.getNextCursor().orElse(null));
+    Assertions.assertEquals(previousCursor, listResponse.getPreviousCursor().orElse(null));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.START_INDEX), listResponse.toPrettyString());
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+  }
+
+  /**
+   * RFC 9865 §6: previousCursor MUST NOT be returned with the first page. When constructed with a {@code null}
+   * previousCursor, the attribute must not appear in the JSON document.
+   */
+  @Test
+  public void testFirstPageCursorResponseOmitsPreviousCursor()
+  {
+    final String nextCursor = "VZUTiyhEQJ94IR";
+    List<JsonNode> resourceNodes = Arrays.asList(JsonHelper.loadJsonDocument(FileReferences.USER_RESOURCE));
+
+    ListResponse listResponse = new ListResponse(resourceNodes, 100L, 10, null, nextCursor, null);
+
+    Assertions.assertTrue(listResponse.getNextCursor().isPresent());
+    Assertions.assertFalse(listResponse.getPreviousCursor().isPresent());
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+  }
+
+  /**
+   * Last page cursor response: nextCursor MUST NOT be returned. When constructed with a {@code null}
+   * nextCursor, the attribute must not appear in the JSON document.
+   */
+  @Test
+  public void testLastPageCursorResponseOmitsNextCursor()
+  {
+    final String previousCursor = "ze7L30kMiiLX6x";
+    List<JsonNode> resourceNodes = Arrays.asList(JsonHelper.loadJsonDocument(FileReferences.USER_RESOURCE));
+
+    ListResponse listResponse = new ListResponse(resourceNodes, 100L, 10, null, null, previousCursor);
+
+    Assertions.assertFalse(listResponse.getNextCursor().isPresent());
+    Assertions.assertTrue(listResponse.getPreviousCursor().isPresent());
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+  }
+
+  /**
+   * RFC 9865 permits index-paged responses to also carry a {@code nextCursor}. Verifies the combined response
+   * shape: startIndex remains present and the cursor attributes are alongside it.
+   */
+  @Test
+  public void testIndexResponseCanCarryNextCursor()
+  {
+    final String nextCursor = "VZUTiyhEQJ94IR";
+    List<JsonNode> resourceNodes = Arrays.asList(JsonHelper.loadJsonDocument(FileReferences.USER_RESOURCE));
+
+    ListResponse listResponse = new ListResponse(resourceNodes, 100L, 10, 1L, nextCursor, null);
+
+    Assertions.assertEquals(1L, listResponse.getStartIndex());
+    Assertions.assertEquals(nextCursor, listResponse.getNextCursor().orElse(null));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.START_INDEX));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
+  }
+
+  /**
+   * The 4-arg constructor is the pre-RFC-9865 backwards-compatible form: it must continue to emit
+   * {@code startIndex} and omit cursor attributes.
+   */
+  @Test
+  public void testLegacyConstructorOmitsCursorAttributes()
+  {
+    ListResponse listResponse = new ListResponse(Arrays.asList(JsonHelper.loadJsonDocument(FileReferences.USER_RESOURCE)),
+                                                 100L, 10, 1L);
+
+    Assertions.assertEquals(1L, listResponse.getStartIndex());
+    Assertions.assertFalse(listResponse.getNextCursor().isPresent());
+    Assertions.assertFalse(listResponse.getPreviousCursor().isPresent());
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+  }
 }

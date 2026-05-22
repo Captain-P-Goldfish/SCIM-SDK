@@ -261,6 +261,57 @@ public final class RequestUtils
   }
 
   /**
+   * Parses the {@code cursor} query parameter according to RFC 9865. Returns {@link Optional#empty()} only if
+   * the parameter is genuinely missing ({@code null}). An empty-string parameter value is preserved as
+   * {@code Optional.of("")} because RFC 9865 uses an empty {@code cursor} to signal a first-page request.
+   *
+   * @param cursorQueryParameter the raw query-parameter value (may be {@code null})
+   */
+  public static Optional<String> parseCursor(String cursorQueryParameter)
+  {
+    return Optional.ofNullable(cursorQueryParameter);
+  }
+
+  /**
+   * Computes the effective count for a cursor-paginated query as described in RFC 9865.
+   * <p>
+   * In contrast to {@link #getEffectiveCount(ServiceProvider, Integer)} this method does NOT silently clamp
+   * negative counts: per RFC 9865 a negative count is an {@code invalidCount} error. A {@code null} count falls
+   * back to {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getDefaultPageSize()}
+   * when set, otherwise to
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig#getMaxResults()} for compatibility
+   * with deployments that did not opt in to the new pagination config. A count that exceeds
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getMaxPageSize()} (or
+   * {@code FilterConfig.maxResults} as fallback) is rejected with {@code invalidCount}.
+   *
+   * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_COUNT} on an invalid value
+   */
+  public static int getEffectiveCursorCount(ServiceProvider serviceProvider, Integer count)
+  {
+    final int filterMax = serviceProvider.getFilterConfig().getMaxResults();
+    final int maxPageSize = serviceProvider.getPaginationConfig().flatMap(pc -> pc.getMaxPageSize()).orElse(filterMax);
+    if (count == null)
+    {
+      return serviceProvider.getPaginationConfig().flatMap(pc -> pc.getDefaultPageSize()).orElse(filterMax);
+    }
+    if (count < 0)
+    {
+      throw new BadRequestException(String.format("Got invalid count value '%d'. Count must be between 0 and %d",
+                                                  count,
+                                                  maxPageSize),
+                                    ScimType.RFC9865.INVALID_COUNT);
+    }
+    if (count > maxPageSize)
+    {
+      throw new BadRequestException(String.format("Got invalid count value '%d'. Count must be between 0 and %d",
+                                                  count,
+                                                  maxPageSize),
+                                    ScimType.RFC9865.INVALID_COUNT);
+    }
+    return count;
+  }
+
+  /**
    * gets the {@link SchemaAttribute} from the given {@link ResourceType}
    *
    * @param resourceType the resource type from which the attribute definition should be extracted

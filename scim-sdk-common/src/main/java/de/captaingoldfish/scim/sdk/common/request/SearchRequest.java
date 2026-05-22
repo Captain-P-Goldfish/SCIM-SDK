@@ -30,7 +30,25 @@ public class SearchRequest extends AbstractSchemasHolder
 
   public SearchRequest()
   {
-    this(null, null, null, null, null, null, null, null, null);
+    this(null, null, null, null, null, null, null, null, null, null);
+  }
+
+  /**
+   * Backwards-compatible constructor that pre-dates RFC 9865 cursor-pagination support. Delegates to the full
+   * constructor with a {@code null} cursor value.
+   */
+  public SearchRequest(Long startIndex,
+                       Integer count,
+                       String filter,
+                       String sortBy,
+                       SortOrder sortOrder,
+                       String attributesString,
+                       List<String> attributes,
+                       String excludedAttributesString,
+                       List<String> excludedAttributes)
+  {
+    this(startIndex, count, filter, sortBy, sortOrder, attributesString, attributes, excludedAttributesString,
+         excludedAttributes, null);
   }
 
   @Builder
@@ -42,7 +60,8 @@ public class SearchRequest extends AbstractSchemasHolder
                        String attributesString,
                        List<String> attributes,
                        String excludedAttributesString,
-                       List<String> excludedAttributes)
+                       List<String> excludedAttributes,
+                       String cursor)
   {
     setSchemas(Collections.singletonList(SchemaUris.SEARCH_REQUEST_URI));
     setStartIndex(startIndex);
@@ -66,6 +85,7 @@ public class SearchRequest extends AbstractSchemasHolder
     {
       setExcludedAttributes(excludedAttributes);
     }
+    setCursor(cursor);
   }
 
   /**
@@ -245,6 +265,27 @@ public class SearchRequest extends AbstractSchemasHolder
   public void setExcludedAttributes(List<String> excludedAttributes)
   {
     setStringAttributeList(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES, excludedAttributes);
+  }
+
+  /**
+   * The string value of the {@code nextCursor} attribute from a previous result page. The cursor value MUST be
+   * empty or omitted for the first request of a cursor-paginated query. The presence of this attribute (even as
+   * an empty string) signals to the service provider that the client wishes to use cursor-based pagination.
+   * OPTIONAL. See RFC 9865.
+   */
+  public Optional<String> getCursor()
+  {
+    return getStringAttribute(AttributeNames.RFC7643.CURSOR);
+  }
+
+  /**
+   * The string value of the {@code nextCursor} attribute from a previous result page. An empty string requests
+   * the first page using cursor-based pagination. A {@code null} value removes the attribute from the JSON
+   * representation, leaving the request in index-based pagination mode. OPTIONAL. See RFC 9865.
+   */
+  public void setCursor(String cursor)
+  {
+    setAttribute(AttributeNames.RFC7643.CURSOR, cursor);
   }
 
   /**

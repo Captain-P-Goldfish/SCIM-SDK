@@ -21,9 +21,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -46,6 +48,87 @@ public class RequestUtilsTest
   public void testGetQueryParameters(String query)
   {
     Assertions.assertDoesNotThrow(() -> RequestUtils.getQueryParameters(query));
+  }
+
+  /**
+   * RFC 9865: an absent cursor query parameter must yield {@link Optional#empty()}; an empty-string value must
+   * round-trip as {@code Optional.of("")} so callers can detect the "first page" signal.
+   */
+  @Test
+  @DisplayName("parseCursor distinguishes missing from empty (RFC 9865)")
+  public void testParseCursorDistinguishesMissingFromEmpty()
+  {
+    Assertions.assertFalse(RequestUtils.parseCursor(null).isPresent());
+    Assertions.assertEquals("", RequestUtils.parseCursor("").orElse(null));
+    Assertions.assertEquals("abc", RequestUtils.parseCursor("abc").orElse(null));
+  }
+
+  /**
+   * RFC 9865: cursor-mode count must NOT silently clamp negative values; it must raise {@code invalidCount}.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount rejects negative count with invalidCount (RFC 9865)")
+  public void testGetEffectiveCursorCountRejectsNegative()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(100).build())
+                                                     .paginationConfig(PaginationConfig.builder().cursor(true).build())
+                                                     .build();
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> RequestUtils.getEffectiveCursorCount(serviceProvider, -1));
+    Assertions.assertEquals(ScimType.RFC9865.INVALID_COUNT, ex.getScimType());
+  }
+
+  /**
+   * RFC 9865: a count greater than {@code maxPageSize} is also {@code invalidCount}, not silently clamped.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount rejects values above maxPageSize (RFC 9865)")
+  public void testGetEffectiveCursorCountRejectsAboveMaxPageSize()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(50).build())
+                                                     .paginationConfig(PaginationConfig.builder()
+                                                                                       .cursor(true)
+                                                                                       .maxPageSize(20)
+                                                                                       .build())
+                                                     .build();
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> RequestUtils.getEffectiveCursorCount(serviceProvider, 25));
+    Assertions.assertEquals(ScimType.RFC9865.INVALID_COUNT, ex.getScimType());
+  }
+
+  /**
+   * A {@code null} cursor-mode count falls back to {@code PaginationConfig.defaultPageSize} when configured.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount falls back to defaultPageSize when count is null")
+  public void testGetEffectiveCursorCountUsesDefaultPageSize()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(100).build())
+                                                     .paginationConfig(PaginationConfig.builder()
+                                                                                       .cursor(true)
+                                                                                       .defaultPageSize(25)
+                                                                                       .build())
+                                                     .build();
+    Assertions.assertEquals(25, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
+  }
+
+  /**
+   * When {@code PaginationConfig.defaultPageSize} is not configured, the fallback is
+   * {@code FilterConfig.maxResults} so deployments that never opted in to RFC 9865's pagination config still
+   * get a sensible default.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount falls back to FilterConfig.maxResults when no defaultPageSize")
+  public void testGetEffectiveCursorCountFallsBackToFilterMaxResults()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(40).build())
+                                                     .paginationConfig(PaginationConfig.builder().cursor(true).build())
+                                                     .build();
+    Assertions.assertEquals(40, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
   }
 
   @Nested
