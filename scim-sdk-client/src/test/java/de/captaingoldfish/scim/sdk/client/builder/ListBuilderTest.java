@@ -1,9 +1,11 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -827,18 +829,120 @@ public class ListBuilderTest extends HttpServerMockup
   }
 
   /**
-   * Native cursor iteration in {@code getAll()} is out of scope for now; setting both {@code cursor} and
-   * {@code startIndex} on the same builder must surface as a fast-failing {@link IllegalStateException} rather
-   * than silently producing an ambiguous request.
+   * RFC 9865: when the request is configured with a cursor, {@link ListBuilder.GetRequestBuilder#getAll()}
+   * iterates through pages by feeding each response's {@code nextCursor} back into the next request, until the
+   * service provider stops returning one. Resources from every page must be merged into the synthetic response
+   * and {@code startIndex} MUST be omitted.
    */
   @Test
-  public void testGetAllRejectsMixedCursorAndStartIndex()
+  public void testGetAllByCursorIteratesAllPages()
   {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    final String firstCursor = "";
+    final String secondCursor = "page-2";
+    final String thirdCursor = "page-3";
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      Map<String, String> params = RequestUtils.getQueryParameters(httpExchange.getRequestURI().getQuery());
+      String cursor = params.get(AttributeNames.RFC7643.CURSOR);
+      if (callCount.get() == 0)
+      {
+        Assertions.assertEquals(firstCursor, cursor);
+      }
+      else if (callCount.get() == 1)
+      {
+        Assertions.assertEquals(secondCursor, cursor);
+      }
+      else
+      {
+        Assertions.assertEquals(thirdCursor, cursor);
+      }
+    });
+    setGetResponseBody(() -> {
+      int call = callCount.getAndIncrement();
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(10), 0L, 10, null,
+                                                   call < 2 ? (call == 0 ? secondCursor : thirdCursor) : null, null);
+      return page.toString();
+    });
+
     ScimClientConfig scimClientConfig = new ScimClientConfig();
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
-    listBuilder.startIndex(1L).cursor("");
-    IllegalStateException ex = Assertions.assertThrows(IllegalStateException.class, () -> listBuilder.get().getAll());
-    MatcherAssert.assertThat(ex.getMessage(), Matchers.containsString("cursor"));
+    listBuilder.cursor("");
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertEquals(3, callCount.get(), "expected exactly 3 paged requests");
+
+    ListResponse<User> merged = response.getResource();
+    Assertions.assertEquals(30, merged.getListedResources().size());
+    Assertions.assertEquals(30, merged.getItemsPerPage());
+    // RFC 9865: cursor-mode responses omit startIndex
+    Assertions.assertFalse(merged.has(AttributeNames.RFC7643.START_INDEX), merged.toPrettyString());
+  }
+
+  /**
+   * If the service provider sends a single page without {@code nextCursor}, iteration stops immediately after
+   * one request.
+   */
+  @Test
+  public void testGetAllByCursorStopsWhenNoNextCursor()
+  {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setGetResponseBody(() -> {
+      callCount.incrementAndGet();
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(5), 5L, 5, null, null, null);
+      return page.toString();
+    });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("");
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(1, callCount.get());
+    Assertions.assertEquals(5, response.getResource().getListedResources().size());
+  }
+
+  /**
+   * When a {@code count} cap is set, cursor iteration stops as soon as the cap is reached even if the service
+   * provider still has more pages to offer.
+   */
+  @Test
+  public void testGetAllByCursorRespectsCountCap()
+  {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setGetResponseBody(() -> {
+      callCount.incrementAndGet();
+      // every response keeps offering more pages but we should stop after the count cap is reached
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(10), 0L, 10, null, "more", null);
+      return page.toString();
+    });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("").count(20);
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(2, callCount.get(), "expected exactly 2 requests to reach the count cap");
+    Assertions.assertEquals(20, response.getResource().getListedResources().size());
+  }
+
+  /**
+   * Builds {@code count} synthetic User JSON nodes for use as a page payload in cursor iteration tests.
+   */
+  private List<com.fasterxml.jackson.databind.JsonNode> buildUserNodes(int count)
+  {
+    List<com.fasterxml.jackson.databind.JsonNode> nodes = new java.util.ArrayList<>();
+    for ( int i = 0 ; i < count ; i++ )
+    {
+      nodes.add(User.builder().userName("user-" + java.util.UUID.randomUUID()).build());
+    }
+    return nodes;
   }
 }
