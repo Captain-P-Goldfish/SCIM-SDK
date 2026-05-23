@@ -633,10 +633,8 @@ class ResourceEndpointHandler
                                      count,
                                      startIndex,
                                      filterNode,
-                                     autoFiltering,
                                      sortByAttribute,
                                      sortOrdering,
-                                     autoSorting,
                                      attributesList,
                                      excludedAttributesList,
                                      baseUrlSupplier,
@@ -733,10 +731,8 @@ class ResourceEndpointHandler
                                                                       Integer count,
                                                                       Long startIndex,
                                                                       FilterNode filterNode,
-                                                                      boolean autoFiltering,
                                                                       SchemaAttribute sortByAttribute,
                                                                       SortOrder sortOrdering,
-                                                                      boolean autoSorting,
                                                                       List<SchemaAttribute> attributesList,
                                                                       List<SchemaAttribute> excludedAttributesList,
                                                                       Supplier<String> baseUrlSupplier,
@@ -756,12 +752,16 @@ class ResourceEndpointHandler
     }
 
     final int effectiveCount = RequestUtils.getEffectiveCursorCount(serviceProvider, count);
+    // In index mode the SDK can filter and sort the resources returned by the handler, so autoFiltering /
+    // autoSorting allow the handler to skip those steps. In cursor mode the handler controls paging, which means
+    // it must filter and sort the data itself before slicing — the SDK has no place to do it after the fact
+    // without breaking cursor semantics. Always pass the filter and the sort attributes through.
     PartialListResponse<T> resources = interceptor.doAround(() -> {
       return resourceHandler.listResources(cursor,
                                            effectiveCount,
-                                           autoFiltering ? null : filterNode,
-                                           autoSorting ? null : sortByAttribute,
-                                           autoSorting ? null : sortOrdering,
+                                           filterNode,
+                                           sortByAttribute,
+                                           sortOrdering,
                                            attributesList,
                                            excludedAttributesList,
                                            context);
