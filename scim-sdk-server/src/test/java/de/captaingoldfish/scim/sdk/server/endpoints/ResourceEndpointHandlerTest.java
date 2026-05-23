@@ -3762,6 +3762,41 @@ public class ResourceEndpointHandlerTest implements FileReferences
   }
 
   /**
+   * RFC 9865 §2.1: a negative {@code count} on a cursor request must produce a 400 error whose JSON payload
+   * carries {@code scimType: "invalidCount"}, not the index-mode silent-clamp behaviour. Verifies both the
+   * status code and the wire-level shape of the error response.
+   */
+  @Test
+  public void testCursorRequestWithNegativeCountReturnsInvalidCount()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      -1,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865.INVALID_COUNT,
+                            errorResponse.getScimException().getScimType());
+    // verify the wire-level shape: scimType is in the JSON payload
+    Assertions.assertEquals(de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865.INVALID_COUNT,
+                            errorResponse.getScimType().orElse(null));
+  }
+
+  /**
    * Index-paged responses MAY also carry a {@code nextCursor} (RFC 9865). Verifies that when a handler returns
    * a {@code nextCursor} from the legacy index-based listResources overload, the server propagates it into the
    * built {@link ListResponse} alongside the existing {@code startIndex}.
