@@ -223,6 +223,10 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * {@link de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865#INVALID_CURSOR} for unknown cursors or
    * {@link de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865#EXPIRED_CURSOR} for expired
    * cursors;</li>
+   * <li>applying the {@code filter} and the {@code sortBy} / {@code sortOrder} themselves — the
+   * {@code autoFiltering} and {@code autoSorting} resource-type features only apply to the index-based
+   * {@code listResources} overload because cursor-paged results cannot be post-processed by the SDK without
+   * breaking cursor semantics;</li>
    * <li>returning the page of resources together with the {@code nextCursor} and {@code previousCursor} tokens
    * via {@link PartialListResponse.PartialListResponseBuilder#nextCursor(String)} and
    * {@link PartialListResponse.PartialListResponseBuilder#previousCursor(String)};</li>

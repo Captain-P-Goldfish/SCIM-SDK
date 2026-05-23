@@ -13,6 +13,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.BulkConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
@@ -57,6 +58,17 @@ public class WebAppConfig
                           .patchConfig(PatchConfig.builder().supported(true).build())
                           .authenticationSchemes(Collections.singletonList(authScheme))
                           .eTagConfig(ETagConfig.builder().supported(true).build())
+                          // RFC 9865 cursor-based pagination is offered alongside index-based pagination. The
+                          // default remains 'index' so existing clients that send startIndex keep working; a
+                          // client that wants cursor-mode sets the cursor query parameter.
+                          .paginationConfig(PaginationConfig.builder()
+                                                            .cursor(true)
+                                                            .index(true)
+                                                            .defaultPaginationMethod(PaginationConfig.METHOD_INDEX)
+                                                            .defaultPageSize(10)
+                                                            .maxPageSize(50)
+                                                            .cursorTimeout(3600)
+                                                            .build())
                           .build();
   }
 
