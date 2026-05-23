@@ -742,9 +742,7 @@ class ResourceEndpointHandler
                                                                       Supplier<String> baseUrlSupplier,
                                                                       Context context)
   {
-    final boolean cursorEnabled = serviceProvider.getPaginationConfig()
-                                                 .map(PaginationConfig::isCursorSupported)
-                                                 .orElse(false);
+    final boolean cursorEnabled = serviceProvider.getPaginationConfig().map(PaginationConfig::isCursor).orElse(false);
     if (!cursorEnabled)
     {
       throw new BadRequestException("Cursor-based pagination is not supported by this service provider. "

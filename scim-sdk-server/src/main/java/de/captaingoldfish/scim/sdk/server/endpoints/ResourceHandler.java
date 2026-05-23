@@ -213,8 +213,8 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>. This overload is OPTIONAL and is only
    * called by the server when the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
    * configuration enables cursor pagination (see
-   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#isCursorSupported()}). The
-   * default implementation returns {@code null}, which is treated as "not implemented".
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#isCursor()}). The default
+   * implementation returns {@code null}, which is treated as "not implemented".
    * <p>
    * Implementations are responsible for:
    * <ul>
