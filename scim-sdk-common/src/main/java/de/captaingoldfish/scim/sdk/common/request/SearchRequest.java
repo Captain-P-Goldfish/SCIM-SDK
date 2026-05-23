@@ -268,10 +268,10 @@ public class SearchRequest extends AbstractSchemasHolder
   }
 
   /**
-   * The string value of the {@code nextCursor} attribute from a previous result page. The cursor value MUST be
-   * empty or omitted for the first request of a cursor-paginated query. The presence of this attribute (even as
-   * an empty string) signals to the service provider that the client wishes to use cursor-based pagination.
-   * OPTIONAL. See RFC 9865.
+   * The {@code cursor} attribute of the search request. Its presence (even as an empty string) signals to the
+   * service provider that the client wishes to use cursor-based pagination. An empty string requests the first
+   * page; subsequent pages set this to a {@code nextCursor} (or {@code previousCursor}) value returned by a
+   * previous response. OPTIONAL. See RFC 9865.
    */
   public Optional<String> getCursor()
   {
@@ -279,8 +279,9 @@ public class SearchRequest extends AbstractSchemasHolder
   }
 
   /**
-   * The string value of the {@code nextCursor} attribute from a previous result page. An empty string requests
-   * the first page using cursor-based pagination. A {@code null} value removes the attribute from the JSON
+   * The {@code cursor} attribute of the search request. An empty string requests the first page using
+   * cursor-based pagination; subsequent pages set this to a {@code nextCursor} (or {@code previousCursor})
+   * value returned by a previous response. Setting this to {@code null} removes the attribute from the JSON
    * representation, leaving the request in index-based pagination mode. OPTIONAL. See RFC 9865.
    */
   public void setCursor(String cursor)

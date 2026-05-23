@@ -23,8 +23,8 @@ public class PaginationConfigTest
   {
     PaginationConfig paginationConfig = PaginationConfig.builder().build();
     MatcherAssert.assertThat(paginationConfig, Matchers.not(Matchers.emptyIterable()));
-    Assertions.assertFalse(paginationConfig.isCursorSupported());
-    Assertions.assertTrue(paginationConfig.isIndexSupported());
+    Assertions.assertFalse(paginationConfig.isCursor());
+    Assertions.assertTrue(paginationConfig.isIndex());
     Assertions.assertFalse(paginationConfig.getDefaultPaginationMethod().isPresent());
     Assertions.assertFalse(paginationConfig.getDefaultPageSize().isPresent());
     Assertions.assertFalse(paginationConfig.getMaxPageSize().isPresent());
@@ -38,8 +38,8 @@ public class PaginationConfigTest
   public void testNoArgConstructorHoldsDefaults()
   {
     PaginationConfig paginationConfig = new PaginationConfig();
-    Assertions.assertFalse(paginationConfig.isCursorSupported());
-    Assertions.assertTrue(paginationConfig.isIndexSupported());
+    Assertions.assertFalse(paginationConfig.isCursor());
+    Assertions.assertTrue(paginationConfig.isIndex());
   }
 
   /**
@@ -51,8 +51,8 @@ public class PaginationConfigTest
     PaginationConfig paginationConfig = PaginationConfig.builder().build();
     paginationConfig.remove(AttributeNames.RFC7643.CURSOR);
     paginationConfig.remove(AttributeNames.RFC7643.INDEX);
-    Assertions.assertFalse(paginationConfig.isCursorSupported());
-    Assertions.assertTrue(paginationConfig.isIndexSupported());
+    Assertions.assertFalse(paginationConfig.isCursor());
+    Assertions.assertTrue(paginationConfig.isIndex());
   }
 
   /**
@@ -69,8 +69,8 @@ public class PaginationConfigTest
     paginationConfig.setMaxPageSize(500);
     paginationConfig.setCursorTimeout(120);
 
-    Assertions.assertTrue(paginationConfig.isCursorSupported());
-    Assertions.assertFalse(paginationConfig.isIndexSupported());
+    Assertions.assertTrue(paginationConfig.isCursor());
+    Assertions.assertFalse(paginationConfig.isIndex());
     Assertions.assertEquals(PaginationConfig.METHOD_CURSOR, paginationConfig.getDefaultPaginationMethod().orElse(null));
     Assertions.assertEquals(50, paginationConfig.getDefaultPageSize().orElse(0).intValue());
     Assertions.assertEquals(500, paginationConfig.getMaxPageSize().orElse(0).intValue());
@@ -114,8 +114,8 @@ public class PaginationConfigTest
                                                         .maxPageSize(250)
                                                         .cursorTimeout(3600)
                                                         .build();
-    Assertions.assertTrue(paginationConfig.isCursorSupported());
-    Assertions.assertTrue(paginationConfig.isIndexSupported());
+    Assertions.assertTrue(paginationConfig.isCursor());
+    Assertions.assertTrue(paginationConfig.isIndex());
     Assertions.assertEquals(PaginationConfig.METHOD_INDEX, paginationConfig.getDefaultPaginationMethod().orElse(null));
     Assertions.assertEquals(25, paginationConfig.getDefaultPageSize().orElse(0).intValue());
     Assertions.assertEquals(250, paginationConfig.getMaxPageSize().orElse(0).intValue());

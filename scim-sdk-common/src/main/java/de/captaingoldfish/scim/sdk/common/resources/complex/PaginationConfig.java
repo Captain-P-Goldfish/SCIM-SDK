@@ -54,7 +54,7 @@ public class PaginationConfig extends ScimObjectNode
   /**
    * A Boolean value specifying support of cursor-based pagination. REQUIRED. See RFC 9865.
    */
-  public boolean isCursorSupported()
+  public boolean isCursor()
   {
     return getBooleanAttribute(AttributeNames.RFC7643.CURSOR).orElse(false);
   }
@@ -70,7 +70,7 @@ public class PaginationConfig extends ScimObjectNode
   /**
    * A Boolean value specifying support of index-based pagination. REQUIRED. See RFC 9865.
    */
-  public boolean isIndexSupported()
+  public boolean isIndex()
   {
     return getBooleanAttribute(AttributeNames.RFC7643.INDEX).orElse(true);
   }
