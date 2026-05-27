@@ -97,7 +97,7 @@ public class ScimHttpClient implements Closeable
    *
    * @return a http-client instance
    */
-  public CloseableHttpClient getHttpClient()
+  public synchronized CloseableHttpClient getHttpClient()
   {
     if (httpClient != null)
     {
