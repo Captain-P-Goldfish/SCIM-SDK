@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.function.Supplier;
 
+import de.captaingoldfish.scim.sdk.common.constants.JavaStringUnescaper;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidDateTimeRepresentationException;
 import de.captaingoldfish.scim.sdk.common.exceptions.InvalidFilterException;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
@@ -51,7 +52,9 @@ public class CompareValue
     }
     else
     {
-      this.value = compareValueContext.getText().replaceFirst("^\"", "").replaceFirst("\"$", "");
+      this.value = JavaStringUnescaper.unescapeJava(compareValueContext.getText())
+                                      .replaceFirst("^\"", "")
+                                      .replaceFirst("\"$", "");
     }
     validateCompareValue(schemaAttribute);
   }

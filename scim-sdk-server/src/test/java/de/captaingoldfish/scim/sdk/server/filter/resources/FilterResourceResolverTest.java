@@ -775,6 +775,13 @@ public class FilterResourceResolverTest implements FileReferences
                                      "chuck",
                                      Comparator.GE,
                                      allTypesArray));
+    dynamicTests.add(getAllTypesTest(changeString.apply("This is \"test\" user"),
+                                     allTypesList,
+                                     "string",
+                                     "This is \\\"test\\\" user",
+                                     Comparator.EQ,
+                                     allTypesArray[0]));
+
 
 
     Function<String, Runnable> changeComplexString = s -> () -> allTypesArray[0].getComplex().get().setString(s);
@@ -860,6 +867,12 @@ public class FilterResourceResolverTest implements FileReferences
                                      "chuck",
                                      Comparator.GE,
                                      allTypesArray));
+    dynamicTests.add(getAllTypesTest(changeComplexString.apply("This is \"test\" user"),
+                                     allTypesList,
+                                     "complex.string",
+                                     "This is \\\"test\\\" user",
+                                     Comparator.EQ,
+                                     allTypesArray[0]));
 
 
     Function<String, Runnable> changeMultiComplexString = s -> () -> allTypesArray[0].getMultiComplex()
@@ -946,6 +959,12 @@ public class FilterResourceResolverTest implements FileReferences
                                      "chuck",
                                      Comparator.GE,
                                      allTypesArray));
+    dynamicTests.add(getAllTypesTest(changeMultiComplexString.apply("This is \"test\" user"),
+                                     allTypesList,
+                                     "multiComplex.string",
+                                     "This is \\\"test\\\" user",
+                                     Comparator.EQ,
+                                     allTypesArray[0]));
 
 
     Function<String[], Runnable> changeMultiString = s -> () -> allTypesArray[0].setStringArray(Arrays.asList(s));
@@ -1045,6 +1064,13 @@ public class FilterResourceResolverTest implements FileReferences
                                      "mommy",
                                      Comparator.GE,
                                      allTypesArray));
+    dynamicTests.add(getAllTypesTest(changeMultiString.apply(new String[]{"This is \"test\" group",
+                                                                          "This is \"test\" user"}),
+                                     allTypesList,
+                                     "stringArray",
+                                     "This is \\\"test\\\" user",
+                                     Comparator.EQ,
+                                     allTypesArray[0]));
 
 
     Function<String[], Runnable> changeComplexStringArray = s -> () -> allTypesArray[0].getComplex()
@@ -1146,6 +1172,13 @@ public class FilterResourceResolverTest implements FileReferences
                                      "mommy",
                                      Comparator.GE,
                                      allTypesArray));
+    dynamicTests.add(getAllTypesTest(changeComplexStringArray.apply(new String[]{"This is \"test\" group",
+                                                                                 "This is \"test\" user"}),
+                                     allTypesList,
+                                     "complex.stringArray",
+                                     "This is \\\"test\\\" user",
+                                     Comparator.EQ,
+                                     allTypesArray[0]));
 
 
     Function<String[], Runnable> changeMultiComplexStringArray = s -> () -> {
@@ -1248,6 +1281,13 @@ public class FilterResourceResolverTest implements FileReferences
                                      "mommy",
                                      Comparator.GE,
                                      allTypesArray));
+    dynamicTests.add(getAllTypesTest(changeMultiComplexStringArray.apply(new String[]{"This is \"test\" group",
+                                                                                      "This is \"test\" user"}),
+                                     allTypesList,
+                                     "multiComplex.stringArray",
+                                     "This is \\\"test\\\" user",
+                                     Comparator.EQ,
+                                     allTypesArray[0]));
 
     dynamicTests.add(getAllTypesTest(() -> allTypesArray[0].getMultiComplex()
                                                            .forEach(allType -> allType.setStringArray(null)),

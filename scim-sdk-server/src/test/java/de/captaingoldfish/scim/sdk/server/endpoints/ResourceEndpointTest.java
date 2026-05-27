@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -665,6 +666,69 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                           Mockito.notNull());
   }
 
+  @Test
+  public void testQueryResourcesWithGetAndFilterContainsDoubleQuotes()
+  {
+    int maxUsers = 150;
+    serviceProvider.getFilterConfig().setSupported(true);
+    serviceProvider.getFilterConfig().setMaxResults(maxUsers);
+    resourceEndpoint.getResourceTypeFactory()
+                    .getResourceType(EndpointPaths.USERS)
+                    .setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
+
+    int counter = 0;
+    for ( int i = 0 ; i < maxUsers ; i++ )
+    {
+      final String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder()
+                      .resourceType(ResourceTypeNames.USER)
+                      .created(LocalDateTime.now())
+                      .lastModified(LocalDateTime.now())
+                      .build();
+      final String username = ThreadLocalRandom.current().nextBoolean() ? "This is \"test\" user " + i
+        : "This is test user " + i;
+
+      if (username.startsWith("This is \"test\""))
+      {
+        counter++;
+      }
+
+      User user = User.builder().id(id).userName(username).meta(meta).build();
+
+      userHandler.getInMemoryMap().put(id, user);
+    }
+    final String url = BASE_URI + EndpointPaths.USERS
+                       + String.format("?startIndex=1&count=%d&filter=%s",
+                                       maxUsers,
+                                       "userName sw \"This is \\\"test\\\" user\"");
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.GET,
+                                                               null,
+                                                               httpHeaders,
+                                                               new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(counter, listResponse.getListedResources().size());
+    Assertions.assertEquals(counter, listResponse.getTotalResults());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0))
+           .getResource(Mockito.any(), Mockito.isNull(), Mockito.isNull(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(maxUsers),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.notNull());
+  }
+
+
+
   /**
    * this test will assure that a {@link BadRequestException} with an appropriate error message if the
    * startIndex value is not a number
@@ -886,6 +950,74 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
                                                                null);
     Assertions.assertTrue(wasCalled.get());
 
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(counter, listResponse.getListedResources().size());
+    Assertions.assertEquals(counter, listResponse.getTotalResults());
+    Assertions.assertEquals(HttpStatus.OK, listResponse.getHttpStatus());
+    Mockito.verify(userHandler, Mockito.times(0)).createResource(Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0))
+           .getResource(Mockito.any(), Mockito.isNull(), Mockito.isNull(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).updateResource(Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(0)).deleteResource(Mockito.any(), Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(maxUsers),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.notNull());
+  }
+
+  /**
+   * this test will create many users with randomly chosen usernames that may contain embedded double quotes,
+   * and will then send a filter request with post whose filter contains escaped double quotes in the compare
+   * value to verify that the request is correctly processed and returns the expected matches
+   */
+  @Test
+  public void testQueryResourcesWithPostAndFilterContainsDoubleQuotes()
+  {
+    int maxUsers = 150;
+    serviceProvider.getFilterConfig().setSupported(true);
+    serviceProvider.getFilterConfig().setMaxResults(maxUsers);
+    resourceEndpoint.getResourceTypeFactory()
+                    .getResourceType(EndpointPaths.USERS)
+                    .setFeatures(ResourceTypeFeatures.builder().autoFiltering(true).build());
+
+    int counter = 0;
+    for ( int i = 0 ; i < maxUsers ; i++ )
+    {
+      final String id = UUID.randomUUID().toString();
+      Meta meta = Meta.builder()
+                      .resourceType(ResourceTypeNames.USER)
+                      .created(LocalDateTime.now())
+                      .lastModified(LocalDateTime.now())
+                      .build();
+      final String username = ThreadLocalRandom.current().nextBoolean() ? "This is \"test\" user " + i
+        : "This is test user " + i;
+
+      if (username.startsWith("This is \"test\""))
+      {
+        counter++;
+      }
+
+      User user = User.builder().id(id).userName(username).meta(meta).build();
+
+      userHandler.getInMemoryMap().put(id, user);
+    }
+    final String url = BASE_URI + EndpointPaths.USERS + EndpointPaths.SEARCH;
+    SearchRequest searchRequest = SearchRequest.builder()
+                                               .startIndex(1L)
+                                               .count(maxUsers)
+                                               .filter("userName sw \"This is \\\"test\\\" user\"")
+                                               .build();
+    ScimResponse scimResponse = resourceEndpoint.handleRequest(url,
+                                                               HttpMethod.POST,
+                                                               searchRequest.toString(),
+                                                               httpHeaders,
+                                                               new Context(null));
     MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
     ListResponse<ScimObjectNode> listResponse = (ListResponse)scimResponse;
     Assertions.assertEquals(counter, listResponse.getListedResources().size());
