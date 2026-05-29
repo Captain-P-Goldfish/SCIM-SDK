@@ -297,6 +297,89 @@
       ]
     },
     {
+      "name": "pagination",
+      "type": "complex",
+      "description": "A complex type that indicates pagination configuration options. See RFC 9865.",
+      "mutability": "readOnly",
+      "returned": "default",
+      "uniqueness": "none",
+      "multiValued": false,
+      "required": false,
+      "caseExact": false,
+      "subAttributes": [
+        {
+          "name": "cursor",
+          "type": "boolean",
+          "description": "A Boolean value specifying support of cursor-based pagination.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
+          "name": "index",
+          "type": "boolean",
+          "description": "A Boolean value specifying support of index-based pagination.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
+          "name": "defaultPaginationMethod",
+          "type": "string",
+          "description": "A string value specifying the type of pagination that the service provider defaults to when the client has not specified which method it wishes to use. Possible values are 'cursor' and 'index'.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false,
+          "canonicalValues": [
+            "cursor",
+            "index"
+          ]
+        },
+        {
+          "name": "defaultPageSize",
+          "type": "integer",
+          "description": "Positive integer value specifying the default number of results returned in a page when a count is not specified in the query.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
+          "name": "maxPageSize",
+          "type": "integer",
+          "description": "Positive integer specifying the maximum number of results returned in a page regardless of what is specified for the count in a query.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        },
+        {
+          "name": "cursorTimeout",
+          "type": "integer",
+          "description": "Positive integer specifying the minimum number of seconds that a cursor is valid between page requests.",
+          "mutability": "readOnly",
+          "returned": "default",
+          "uniqueness": "none",
+          "multiValued": false,
+          "required": false,
+          "caseExact": false
+        }
+      ]
+    },
+    {
       "name": "authenticationSchemes",
       "type": "complex",
       "description": "A complex type that specifies supported authentication scheme properties.",

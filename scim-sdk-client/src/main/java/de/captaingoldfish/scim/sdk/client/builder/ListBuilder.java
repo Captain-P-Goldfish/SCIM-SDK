@@ -131,6 +131,29 @@ public class ListBuilder<T extends ResourceNode>
   }
 
   /**
+   * Sets the {@code cursor} parameter (RFC 9865). The presence of this parameter (even as an empty string)
+   * signals to the service provider that cursor-based pagination is desired. Pass an empty string to request
+   * the first page; pass a token returned from a previous response (via {@link ListResponse#getNextCursor()} or
+   * {@link ListResponse#getPreviousCursor()}) to request a subsequent page.
+   *
+   * @param cursor the opaque cursor token; {@code null} clears the cursor parameter, leaving the request in
+   *          index-based pagination mode
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>
+   */
+  public ListBuilder<T> cursor(String cursor)
+  {
+    if (cursor == null)
+    {
+      requestParameters.remove(RFC7643.CURSOR);
+    }
+    else
+    {
+      requestParameters.put(RFC7643.CURSOR, cursor);
+    }
+    return this;
+  }
+
+  /**
    * sets the attribute name that should be used for sorting the entries
    *
    * @param sortBy the attribute name that should be used for sorting the entries
@@ -262,14 +285,12 @@ public class ListBuilder<T extends ResourceNode>
     }
 
     /**
-     * this method can be used to retrieve all resources from the given startIndex of the given endpoint
+     * Fetches every resource for the configured list query, issuing as many requests as needed and merging the
+     * responses into a single {@link ListResponse}. Works for both index-based (RFC 7644) and cursor-based (RFC
+     * 9865) pagination.
      */
     public ServerResponse<ListResponse<T>> getAll()
     {
-      List<ServerResponse<ListResponse<T>>> responseList = new ArrayList<>();
-      boolean needsAdditionalRequest = false;
-      long totalResults;
-
       final long originalStartIndex = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.START_INDEX))
                                               .map(Long::parseLong)
                                               .filter(index -> index > 0)
@@ -277,13 +298,18 @@ public class ListBuilder<T extends ResourceNode>
       final Integer originalCount = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.COUNT))
                                             .map(Integer::parseInt)
                                             .orElse(null);
+      boolean cursorMode = listBuilder.getRequestParameters().containsKey(RFC7643.CURSOR);
       int iterations = 0;
       int currentlyRetrievedResources = 0;
+      long totalResults = 0;
       ArrayNode resources = new ArrayNode(JsonNodeFactory.instance);
+      boolean needsAdditionalRequest;
       do
       {
         log.trace("Loading resources in iteration: {}", iterations++);
-        if (originalCount != null && originalCount - currentlyRetrievedResources < originalCount)
+        // In index mode, narrow the count to honour the cap. RFC 9865 requires count to remain constant across
+        // cursor-paged requests so we leave it untouched in cursor mode.
+        if (!cursorMode && originalCount != null && originalCount - currentlyRetrievedResources < originalCount)
         {
           listBuilder.count(originalCount - currentlyRetrievedResources);
         }
@@ -293,7 +319,6 @@ public class ListBuilder<T extends ResourceNode>
           log.warn("Failed to load next-resources in iteration. Ignoring previous responses: {}", iterations);
           return response;
         }
-        responseList.add(response);
         ArrayNode nextResources = (ArrayNode)response.getResource().get(RFC7643.RESOURCES);
         if (nextResources != null)
         {
@@ -304,20 +329,48 @@ public class ListBuilder<T extends ResourceNode>
         final int itemsPerPage = listResponse.getItemsPerPage() == 0 //
           ? listResponse.getListedResources().size() //
           : listResponse.getItemsPerPage();
+        // computed BEFORE the increment so it points at the start of the page we just received (only used in
+        // index mode termination)
         final long usedStartIndex = listResponse.getStartIndex() <= 1 //
           ? originalStartIndex + currentlyRetrievedResources //
           : listResponse.getStartIndex();
-
         currentlyRetrievedResources += itemsPerPage;
 
-        final boolean hasReachedEndOfRemoteResources = (usedStartIndex - 1) + itemsPerPage >= totalResults;
         final boolean hasReachedWantedResourceCount = originalCount != null
                                                       && currentlyRetrievedResources >= originalCount;
-        needsAdditionalRequest = !hasReachedEndOfRemoteResources && !hasReachedWantedResourceCount;
-
-        if (needsAdditionalRequest)
+        final String nextCursor = listResponse.getNextCursor().orElse(null);
+        if (nextCursor != null)
         {
-          listBuilder.startIndex(usedStartIndex + itemsPerPage);
+          // RFC 9865 §2.3: a service provider may signal cursor-based pagination by returning nextCursor even
+          // when the client did not include a cursor parameter. Honour that signal and switch to cursor
+          // iteration for the remaining pages so we don't loop forever against a cursor-only server that does
+          // not honour startIndex.
+          if (!cursorMode)
+          {
+            log.debug("Service provider returned a nextCursor on an index-mode request; "
+                      + "switching to cursor-based iteration for the remaining pages (RFC 9865 §2.3)");
+            listBuilder.getRequestParameters().remove(RFC7643.START_INDEX);
+            cursorMode = true;
+          }
+          needsAdditionalRequest = !hasReachedWantedResourceCount;
+          if (needsAdditionalRequest)
+          {
+            listBuilder.cursor(nextCursor);
+          }
+        }
+        else if (cursorMode)
+        {
+          // cursor mode and no nextCursor → last page reached
+          needsAdditionalRequest = false;
+        }
+        else
+        {
+          final boolean hasReachedEndOfRemoteResources = (usedStartIndex - 1) + itemsPerPage >= totalResults;
+          needsAdditionalRequest = !hasReachedEndOfRemoteResources && !hasReachedWantedResourceCount;
+          if (needsAdditionalRequest)
+          {
+            listBuilder.startIndex(usedStartIndex + itemsPerPage);
+          }
         }
       }
       while (needsAdditionalRequest);
@@ -326,7 +379,11 @@ public class ListBuilder<T extends ResourceNode>
       rebuildListResponse.setTotalResults(totalResults);
       // we have merged all requests into a single response
       rebuildListResponse.setItemsPerPage(currentlyRetrievedResources);
-      rebuildListResponse.setStartIndex(originalStartIndex);
+      if (!cursorMode)
+      {
+        // cursor-mode responses omit startIndex per RFC 9865
+        rebuildListResponse.setStartIndex(originalStartIndex);
+      }
       rebuildListResponse.set(AttributeNames.RFC7643.RESOURCES, resources);
 
       HttpResponse httpResponse = HttpResponse.builder().httpStatusCode(HttpStatus.OK).build();
@@ -562,6 +619,8 @@ public class ListBuilder<T extends ResourceNode>
       typedListResponse.setStartIndex(listResponse.getStartIndex());
       typedListResponse.setTotalResults(listResponse.getTotalResults());
       typedListResponse.setListedResources(typedResources);
+      listResponse.getNextCursor().ifPresent(typedListResponse::setNextCursor);
+      listResponse.getPreviousCursor().ifPresent(typedListResponse::setPreviousCursor);
       return (R)typedListResponse;
     }
   }

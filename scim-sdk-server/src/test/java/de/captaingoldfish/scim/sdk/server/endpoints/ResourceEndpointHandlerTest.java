@@ -3578,4 +3578,262 @@ public class ResourceEndpointHandlerTest implements FileReferences
       return result;
     }
   }
+
+  // ====================================================================================================
+  // RFC 9865 cursor-based pagination
+  // see https://www.rfc-editor.org/rfc/rfc9865.html
+  // ====================================================================================================
+
+  /**
+   * Without {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig} the service provider
+   * must reject a cursor request with HTTP 400 {@code invalidParameters} before ever calling the handler. This
+   * is the primary safeguard against unexpected cursor behaviour on legacy deployments.
+   */
+  @Test
+  public void testCursorRequestRejectedWhenPaginationConfigAbsent()
+  {
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(de.captaingoldfish.scim.sdk.common.constants.ScimType.Custom.INVALID_PARAMETERS,
+                            errorResponse.getScimException().getScimType());
+    // verify that the handler was not called at all
+    Mockito.verify(userHandler, Mockito.never())
+           .listResources(Mockito.anyString(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+  }
+
+  /**
+   * When cursor is enabled in {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig} but
+   * the handler does not override the cursor overload (still returns the default {@code null}), the server
+   * treats this as a configuration error and returns HTTP 500.
+   */
+  @Test
+  public void testCursorRequestFailsWith500WhenHandlerNotImplemented()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse.getHttpStatus());
+  }
+
+  /**
+   * Happy path: when cursor is enabled and the handler returns a {@link PartialListResponse} with
+   * {@code nextCursor}, the server builds a {@link ListResponse} that includes the cursor and omits
+   * {@code startIndex}.
+   */
+  @Test
+  public void testCursorRequestRoundTrip()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    List<User> userList = createUsers(2);
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(100)
+                                                                       .resources(userList)
+                                                                       .nextCursor("page2")
+                                                                       .build();
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.eq(""),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      2,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(100L, listResponse.getTotalResults());
+    Assertions.assertEquals(2, listResponse.getItemsPerPage());
+    Assertions.assertEquals("page2", listResponse.getNextCursor().orElse(null));
+    // RFC 9865 cursor responses MUST omit startIndex
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.START_INDEX), listResponse.toPrettyString());
+  }
+
+  /**
+   * When both cursor and startIndex are present in the request, the cursor wins per RFC 9865 §6 and the
+   * startIndex is silently ignored.
+   */
+  @Test
+  public void testCursorTakesPrecedenceOverStartIndex()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    List<User> userList = createUsers(1);
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(1)
+                                                                       .resources(userList)
+                                                                       .build();
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.eq("abc"),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      50L,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "abc",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    // index-based listResources must NOT have been called
+    Mockito.verify(userHandler, Mockito.never())
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+    Mockito.verify(userHandler, Mockito.times(1))
+           .listResources(Mockito.eq("abc"),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+  }
+
+  /**
+   * RFC 9865 §2.1: a negative {@code count} on a cursor request must produce a 400 error whose JSON payload
+   * carries {@code scimType: "invalidCount"}, not the index-mode silent-clamp behaviour. Verifies both the
+   * status code and the wire-level shape of the error response.
+   */
+  @Test
+  public void testCursorRequestWithNegativeCountReturnsInvalidCount()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      -1,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865.INVALID_COUNT,
+                            errorResponse.getScimException().getScimType());
+    // verify the wire-level shape: scimType is in the JSON payload
+    Assertions.assertEquals(de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865.INVALID_COUNT,
+                            errorResponse.getScimType().orElse(null));
+  }
+
+  /**
+   * Index-paged responses MAY also carry a {@code nextCursor} (RFC 9865). Verifies that when a handler returns
+   * a {@code nextCursor} from the legacy index-based listResources overload, the server propagates it into the
+   * built {@link ListResponse} alongside the existing {@code startIndex}.
+   */
+  @Test
+  public void testIndexResponseCanCarryNextCursor()
+  {
+    List<User> userList = createUsers(2);
+    PartialListResponse<User> partialListResponse = PartialListResponse.<User> builder()
+                                                                       .totalResults(2)
+                                                                       .resources(userList)
+                                                                       .nextCursor("next")
+                                                                       .build();
+    Mockito.doReturn(partialListResponse)
+           .when(userHandler)
+           .listResources(Mockito.anyLong(),
+                          Mockito.anyInt(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      1L,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(1L, listResponse.getStartIndex());
+    Assertions.assertEquals("next", listResponse.getNextCursor().orElse(null));
+  }
 }

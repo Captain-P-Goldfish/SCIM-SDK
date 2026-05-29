@@ -374,6 +374,57 @@ public final class AttributeNames
 
     public static final String TOTAL_RESULTS = "totalResults";
 
+    /**
+     * cursor-based pagination request attribute. See RFC 9865.
+     */
+    public static final String CURSOR = "cursor";
+
+    /**
+     * cursor-based pagination response attribute. See RFC 9865.
+     */
+    public static final String NEXT_CURSOR = "nextCursor";
+
+    /**
+     * cursor-based pagination response attribute. See RFC 9865.
+     */
+    public static final String PREVIOUS_CURSOR = "previousCursor";
+
+    /**
+     * complex attribute of the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider} configuration
+     * that holds the pagination configuration. See RFC 9865.
+     */
+    public static final String PAGINATION = "pagination";
+
+    /**
+     * sub-attribute of the {@link #PAGINATION} complex attribute. Indicates whether index-based pagination is
+     * supported. See RFC 9865.
+     */
+    public static final String INDEX = "index";
+
+    /**
+     * sub-attribute of the {@link #PAGINATION} complex attribute. Indicates the default pagination method when
+     * the client did not specify one (allowed values: {@code "cursor"} or {@code "index"}). See RFC 9865.
+     */
+    public static final String DEFAULT_PAGINATION_METHOD = "defaultPaginationMethod";
+
+    /**
+     * sub-attribute of the {@link #PAGINATION} complex attribute. The default number of results returned in a
+     * page when no count was specified by the client. See RFC 9865.
+     */
+    public static final String DEFAULT_PAGE_SIZE = "defaultPageSize";
+
+    /**
+     * sub-attribute of the {@link #PAGINATION} complex attribute. The maximum number of results returned in a
+     * page regardless of the count requested by the client. See RFC 9865.
+     */
+    public static final String MAX_PAGE_SIZE = "maxPageSize";
+
+    /**
+     * sub-attribute of the {@link #PAGINATION} complex attribute. The minimum number of seconds that a cursor is
+     * guaranteed to remain valid between page requests. See RFC 9865.
+     */
+    public static final String CURSOR_TIMEOUT = "cursorTimeout";
+
     public static final String MANAGER = "manager";
 
     public static final String DEPARTMENT = "department";

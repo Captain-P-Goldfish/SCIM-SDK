@@ -139,4 +139,30 @@ public class ScimType
      */
     public static final String SENSITIVE = "sensitive";
   }
+
+
+  /**
+   * these are the scim types defined by RFC9865 (cursor-based pagination)
+   */
+  public static class RFC9865
+  {
+
+    /**
+     * Cursor value is invalid. Cursor value SHOULD be empty to request the first page and set to the
+     * {@code nextCursor} or {@code previousCursor} value for subsequent queries.
+     */
+    public static final String INVALID_CURSOR = "invalidCursor";
+
+    /**
+     * Cursor has expired. Do not wait longer than service provider's {@code cursorTimeout} to request additional
+     * pages.
+     */
+    public static final String EXPIRED_CURSOR = "expiredCursor";
+
+    /**
+     * Count value is invalid. Count value must be between {@code 0} and the service provider's
+     * {@code maxPageSize} and must be equal to the count value of the initial query.
+     */
+    public static final String INVALID_COUNT = "invalidCount";
+  }
 }

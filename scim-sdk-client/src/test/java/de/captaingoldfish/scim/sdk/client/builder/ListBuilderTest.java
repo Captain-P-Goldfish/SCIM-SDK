@@ -1,14 +1,18 @@
 package de.captaingoldfish.scim.sdk.client.builder;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -780,5 +784,214 @@ public class ListBuilderTest extends HttpServerMockup
     scimFilterParser.removeErrorListeners();
     scimFilterParser.addErrorListener(filterRuleErrorListener);
     Assertions.assertDoesNotThrow(scimFilterParser::filter);
+  }
+
+  /**
+   * RFC 9865: the {@code .cursor("")} fluent setter writes an empty-string cursor parameter, which is the wire
+   * signal for "first page using cursor pagination".
+   */
+  @Test
+  public void testCursorSetterStoresEmptyString()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("");
+    Assertions.assertTrue(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertEquals("", listBuilder.getRequestParameters().get(AttributeNames.RFC7643.CURSOR));
+  }
+
+  /**
+   * Passing a non-empty cursor value writes it under the {@code cursor} key.
+   */
+  @Test
+  public void testCursorSetterStoresValue()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("VZUTiyhEQJ94IR");
+    Assertions.assertEquals("VZUTiyhEQJ94IR", listBuilder.getRequestParameters().get(AttributeNames.RFC7643.CURSOR));
+  }
+
+  /**
+   * Passing {@code null} removes the cursor parameter, returning the builder to index-mode.
+   */
+  @Test
+  public void testCursorSetterWithNullRemovesParameter()
+  {
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("VZUTiyhEQJ94IR");
+    listBuilder.cursor(null);
+    Assertions.assertFalse(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC7643.CURSOR));
+  }
+
+  /**
+   * RFC 9865: when the request is configured with a cursor, {@link ListBuilder.GetRequestBuilder#getAll()}
+   * iterates through pages by feeding each response's {@code nextCursor} back into the next request, until the
+   * service provider stops returning one. Resources from every page must be merged into the synthetic response
+   * and {@code startIndex} MUST be omitted.
+   */
+  @Test
+  public void testGetAllByCursorIteratesAllPages()
+  {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    final String firstCursor = "";
+    final String secondCursor = "page-2";
+    final String thirdCursor = "page-3";
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      Map<String, String> params = RequestUtils.getQueryParameters(httpExchange.getRequestURI().getQuery());
+      String cursor = params.get(AttributeNames.RFC7643.CURSOR);
+      if (callCount.get() == 0)
+      {
+        Assertions.assertEquals(firstCursor, cursor);
+      }
+      else if (callCount.get() == 1)
+      {
+        Assertions.assertEquals(secondCursor, cursor);
+      }
+      else
+      {
+        Assertions.assertEquals(thirdCursor, cursor);
+      }
+    });
+    setGetResponseBody(() -> {
+      int call = callCount.getAndIncrement();
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(10), 0L, 10, null,
+                                                   call < 2 ? (call == 0 ? secondCursor : thirdCursor) : null, null);
+      return page.toString();
+    });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("");
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertTrue(response.isSuccess());
+    Assertions.assertEquals(3, callCount.get(), "expected exactly 3 paged requests");
+
+    ListResponse<User> merged = response.getResource();
+    Assertions.assertEquals(30, merged.getListedResources().size());
+    Assertions.assertEquals(30, merged.getItemsPerPage());
+    // RFC 9865: cursor-mode responses omit startIndex
+    Assertions.assertFalse(merged.has(AttributeNames.RFC7643.START_INDEX), merged.toPrettyString());
+  }
+
+  /**
+   * If the service provider sends a single page without {@code nextCursor}, iteration stops immediately after
+   * one request.
+   */
+  @Test
+  public void testGetAllByCursorStopsWhenNoNextCursor()
+  {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setGetResponseBody(() -> {
+      callCount.incrementAndGet();
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(5), 5L, 5, null, null, null);
+      return page.toString();
+    });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("");
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(1, callCount.get());
+    Assertions.assertEquals(5, response.getResource().getListedResources().size());
+  }
+
+  /**
+   * When a {@code count} cap is set, cursor iteration stops as soon as the cap is reached even if the service
+   * provider still has more pages to offer.
+   */
+  @Test
+  public void testGetAllByCursorRespectsCountCap()
+  {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setGetResponseBody(() -> {
+      callCount.incrementAndGet();
+      // every response keeps offering more pages but we should stop after the count cap is reached
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(10), 0L, 10, null, "more", null);
+      return page.toString();
+    });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+    listBuilder.cursor("").count(20);
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(2, callCount.get(), "expected exactly 2 requests to reach the count cap");
+    Assertions.assertEquals(20, response.getResource().getListedResources().size());
+  }
+
+  /**
+   * RFC 9865 §2.3: a service provider MAY enforce cursor pagination by returning {@code nextCursor} even on
+   * requests that did not include the {@code cursor} parameter. When {@code getAll()} sees this signal
+   * mid-iteration it must switch to cursor iteration for the remaining pages rather than continuing to send
+   * {@code startIndex} (which a cursor-only server may ignore, leading to an infinite loop or duplicates).
+   */
+  @Test
+  public void testGetAllSwitchesToCursorModeWhenServerSendsNextCursor()
+  {
+    final AtomicInteger callCount = new AtomicInteger(0);
+    setGetResponseStatus(() -> HttpStatus.OK);
+    setVerifyRequestAttributes((httpExchange, requestBody) -> {
+      Map<String, String> params = RequestUtils.getQueryParameters(httpExchange.getRequestURI().getQuery());
+      int call = callCount.get();
+      if (call == 0)
+      {
+        // first request: pure index mode, no cursor parameter
+        Assertions.assertFalse(params.containsKey(AttributeNames.RFC7643.CURSOR));
+      }
+      else
+      {
+        // after the server returns nextCursor, the client must switch to cursor mode and drop startIndex
+        Assertions.assertEquals(call == 1 ? "page-2" : "page-3", params.get(AttributeNames.RFC7643.CURSOR));
+        Assertions.assertFalse(params.containsKey(AttributeNames.RFC7643.START_INDEX),
+                               "startIndex must be removed once iteration switches to cursor mode");
+      }
+    });
+    setGetResponseBody(() -> {
+      int call = callCount.getAndIncrement();
+      String nextCursor = call < 2 ? (call == 0 ? "page-2" : "page-3") : null;
+      // totalResults is intentionally 0 to simulate a cursor-only server that does not estimate it
+      ListResponse<User> page = new ListResponse<>(buildUserNodes(10), 0L, 10, null, nextCursor, null);
+      return page.toString();
+    });
+
+    ScimClientConfig scimClientConfig = new ScimClientConfig();
+    ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
+    // user starts in index mode — no cursor configured up front
+    ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
+
+    ServerResponse<ListResponse<User>> response = listBuilder.get().getAll();
+    Assertions.assertEquals(3, callCount.get(), "expected three paged requests");
+    Assertions.assertEquals(HttpStatus.OK, response.getHttpStatus());
+    Assertions.assertEquals(30, response.getResource().getListedResources().size());
+    // having switched to cursor mode, the merged response must omit startIndex per RFC 9865
+    Assertions.assertFalse(response.getResource().has(AttributeNames.RFC7643.START_INDEX),
+                           response.getResource().toPrettyString());
+  }
+
+  /**
+   * Builds {@code count} synthetic User JSON nodes for use as a page payload in cursor iteration tests.
+   */
+  private List<com.fasterxml.jackson.databind.JsonNode> buildUserNodes(int count)
+  {
+    List<com.fasterxml.jackson.databind.JsonNode> nodes = new java.util.ArrayList<>();
+    for ( int i = 0 ; i < count ; i++ )
+    {
+      nodes.add(User.builder().userName("user-" + java.util.UUID.randomUUID()).build());
+    }
+    return nodes;
   }
 }

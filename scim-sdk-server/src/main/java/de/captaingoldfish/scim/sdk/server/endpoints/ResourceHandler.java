@@ -209,6 +209,55 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                                        Context context);
 
   /**
+   * Queries resources using cursor-based pagination as defined by
+   * <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>. This overload is OPTIONAL and is only
+   * called by the server when the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
+   * configuration enables cursor pagination (see
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#isCursor()}). The default
+   * implementation returns {@code null}, which is treated as "not implemented".
+   * <p>
+   * Implementations are responsible for:
+   * <ul>
+   * <li>validating the cursor value and throwing
+   * {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException} with
+   * {@link de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865#INVALID_CURSOR} for unknown cursors or
+   * {@link de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865#EXPIRED_CURSOR} for expired
+   * cursors;</li>
+   * <li>applying the {@code filter} and the {@code sortBy} / {@code sortOrder} themselves — the
+   * {@code autoFiltering} and {@code autoSorting} resource-type features only apply to the index-based
+   * {@code listResources} overload because cursor-paged results cannot be post-processed by the SDK without
+   * breaking cursor semantics;</li>
+   * <li>returning the page of resources together with the {@code nextCursor} and {@code previousCursor} tokens
+   * via {@link PartialListResponse.PartialListResponseBuilder#nextCursor(String)} and
+   * {@link PartialListResponse.PartialListResponseBuilder#previousCursor(String)};</li>
+   * <li>omitting {@code nextCursor} on the last page.</li>
+   * </ul>
+   *
+   * @param cursor the opaque cursor value supplied by the client. An empty string requests the first page; a
+   *          non-empty string must be a token previously returned by this service provider.
+   * @param count the desired maximum number of query results per page; never negative
+   * @param filter the parsed filter expression if the client has given a filter
+   * @param sortBy the attribute value that should be used for sorting
+   * @param sortOrder the sort order
+   * @param attributes the attributes that should be returned to the client
+   * @param excludedAttributes the attributes that should NOT be returned to the client
+   * @param context the current request context; never {@code null}
+   * @return the page of resources with optional {@code nextCursor}/{@code previousCursor}, or {@code null} if
+   *         cursor-based pagination is not implemented by this handler
+   */
+  public PartialListResponse<T> listResources(String cursor,
+                                              int count,
+                                              FilterNode filter,
+                                              SchemaAttribute sortBy,
+                                              SortOrder sortOrder,
+                                              List<SchemaAttribute> attributes,
+                                              List<SchemaAttribute> excludedAttributes,
+                                              Context context)
+  {
+    return null;
+  }
+
+  /**
    * should update an existing resource with the given one. Simply use the id of the given resource and override
    * the existing one with the given one. Be careful there have been no checks in advance for you if the
    * resource to update does exist. This has to be done manually.<br>

@@ -35,6 +35,7 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig;
 import de.captaingoldfish.scim.sdk.common.response.CreateResponse;
 import de.captaingoldfish.scim.sdk.common.response.DeleteResponse;
 import de.captaingoldfish.scim.sdk.common.response.EmptyPatchResponse;
@@ -498,6 +499,7 @@ class ResourceEndpointHandler
                          searchRequest.getSortOrder().orElse(null),
                          searchRequest.getAttributes(),
                          searchRequest.getExcludedAttributes(),
+                         searchRequest.getCursor().orElse(null),
                          baseUrlSupplier,
                          context);
   }
@@ -570,11 +572,47 @@ class ResourceEndpointHandler
                                                                 Supplier<String> baseUrlSupplier,
                                                                 Context context)
   {
+    return listResources(endpoint,
+                         startIndex,
+                         count,
+                         filter,
+                         sortBy,
+                         sortOrder,
+                         attributes,
+                         excludedAttributes,
+                         null,
+                         baseUrlSupplier,
+                         context);
+  }
+
+  /**
+   * Cursor-aware variant of
+   * {@link #listResources(String, Long, Integer, String, String, String, List, List, Supplier, Context)}
+   * supporting <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>. The {@code cursor} parameter
+   * follows RFC 9865 semantics: a {@code null} value selects the legacy index-based pagination flow, an empty
+   * string requests the first page using cursor pagination and any other value requests a subsequent page.
+   * <p>
+   * When cursor mode is selected the server validates that the
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig} of the
+   * {@link ServiceProvider} enables cursor pagination; otherwise an {@code invalidParameters} error is
+   * returned. If {@code startIndex} is supplied alongside a cursor it is ignored (RFC 9865 cursor takes
+   * precedence) and a debug log is emitted.
+   */
+  protected <T extends ResourceNode> ScimResponse listResources(String endpoint,
+                                                                Long startIndex,
+                                                                Integer count,
+                                                                String filter,
+                                                                String sortBy,
+                                                                String sortOrder,
+                                                                List<String> attributes,
+                                                                List<String> excludedAttributes,
+                                                                String cursor,
+                                                                Supplier<String> baseUrlSupplier,
+                                                                Context context)
+  {
     try
     {
       final ResourceType resourceType = getResourceType(endpoint);
-      final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
-      final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       final FilterNode filterNode = getFilterNode(resourceType, filter);
       final boolean autoFiltering = resourceType.getFeatures().isAutoFiltering();
       final SchemaAttribute sortByAttribute = getSortByAttribute(resourceType, sortBy);
@@ -583,8 +621,28 @@ class ResourceEndpointHandler
       final List<SchemaAttribute> attributesList = RequestUtils.getAttributes(resourceType, attributes);
       final List<SchemaAttribute> excludedAttributesList = RequestUtils.getAttributes(resourceType, excludedAttributes);
 
-      ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
-      Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.LIST);
+      final ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
+      final Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.LIST);
+
+      if (cursor != null)
+      {
+        return listResourcesByCursor(resourceType,
+                                     resourceHandler,
+                                     interceptor,
+                                     cursor,
+                                     count,
+                                     startIndex,
+                                     filterNode,
+                                     sortByAttribute,
+                                     sortOrdering,
+                                     attributesList,
+                                     excludedAttributesList,
+                                     baseUrlSupplier,
+                                     context);
+      }
+
+      final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
+      final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
       PartialListResponse<T> resources = interceptor.doAround(() -> {
         return resourceHandler.listResources(effectiveStartIndex,
                                              effectiveCount,
@@ -637,41 +695,17 @@ class ResourceEndpointHandler
         filteredResources = filteredResources.subList(0, effectiveCount);
       }
 
-      List<JsonNode> validatedResourceList = new ArrayList<>();
-      for ( ResourceNode resourceNode : filteredResources )
-      {
-        final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
-        log.trace("Determined resource location at '{}'", location);
-        resourceNode.getMeta().ifPresent(meta -> {
-          if (!meta.getLastModified().isPresent())
-          {
-            meta.setLastModified(meta.getCreated().orElse(null));
-          }
-          if (!meta.getLocation().isPresent())
-          {
-            meta.setLocation(location);
-          }
-          meta.setResourceType(resourceType.getName());
-          ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
-        });
+      List<JsonNode> validatedResourceList = validateListedResources(resourceType,
+                                                                     filteredResources,
+                                                                     resourceHandler,
+                                                                     attributesList,
+                                                                     excludedAttributesList,
+                                                                     baseUrlSupplier,
+                                                                     context);
 
-        Optional<AbstractResourceValidator> responseValidator = //
-          resourceHandler.getResponseValidator(context,
-                                               attributesList,
-                                               excludedAttributesList,
-                                               null,
-                                               getReferenceUrlSupplier(baseUrlSupplier));
-        JsonNode responseResource = resourceNode;
-        if (responseValidator.isPresent())
-        {
-          responseResource = responseValidator.get().validateDocument(resourceNode);
-        }
-
-        validatedResourceList.add(responseResource);
-      }
-
-      return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(),
-                                 effectiveStartIndex);
+      // RFC 9865 permits the service provider to include nextCursor in an index-paged response too.
+      return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(), effectiveStartIndex,
+                                 resources.getNextCursor(), resources.getPreviousCursor());
     }
     catch (ScimException ex)
     {
@@ -681,6 +715,136 @@ class ResourceEndpointHandler
     {
       return new ErrorResponse(new InternalServerException(ex.getMessage(), ex, null));
     }
+  }
+
+  /**
+   * Cursor-paginated branch of
+   * {@link #listResources(String, Long, Integer, String, String, String, List, List, String, Supplier, Context)}.
+   * The handler is responsible for paging, sorting and filtering — the server does NOT apply the RFC 7644
+   * auto-filtering slice nor the count-truncation block because both assume a 1-based {@code startIndex} that
+   * has no meaning in cursor mode. See <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>.
+   */
+  private <T extends ResourceNode> ScimResponse listResourcesByCursor(ResourceType resourceType,
+                                                                      ResourceHandler<T> resourceHandler,
+                                                                      Interceptor interceptor,
+                                                                      String cursor,
+                                                                      Integer count,
+                                                                      Long startIndex,
+                                                                      FilterNode filterNode,
+                                                                      SchemaAttribute sortByAttribute,
+                                                                      SortOrder sortOrdering,
+                                                                      List<SchemaAttribute> attributesList,
+                                                                      List<SchemaAttribute> excludedAttributesList,
+                                                                      Supplier<String> baseUrlSupplier,
+                                                                      Context context)
+  {
+    final boolean cursorEnabled = serviceProvider.getPaginationConfig().map(PaginationConfig::isCursor).orElse(false);
+    if (!cursorEnabled)
+    {
+      throw new BadRequestException("Cursor-based pagination is not supported by this service provider. "
+                                    + "Check ServiceProviderConfig.pagination.cursor.",
+                                    ScimType.Custom.INVALID_PARAMETERS);
+    }
+    if (startIndex != null)
+    {
+      log.debug("Both 'cursor' and 'startIndex' were supplied; cursor takes precedence per RFC 9865 and "
+                + "startIndex is ignored.");
+    }
+
+    final int effectiveCount = RequestUtils.getEffectiveCursorCount(serviceProvider, count);
+    // In index mode the SDK can filter and sort the resources returned by the handler, so autoFiltering /
+    // autoSorting allow the handler to skip those steps. In cursor mode the handler controls paging, which means
+    // it must filter and sort the data itself before slicing — the SDK has no place to do it after the fact
+    // without breaking cursor semantics. Always pass the filter and the sort attributes through.
+    PartialListResponse<T> resources = interceptor.doAround(() -> {
+      return resourceHandler.listResources(cursor,
+                                           effectiveCount,
+                                           filterNode,
+                                           sortByAttribute,
+                                           sortOrdering,
+                                           attributesList,
+                                           excludedAttributesList,
+                                           context);
+    }, context);
+    if (resources == null)
+    {
+      throw new InternalServerException("Cursor-based listResources returned null for resourceType '"
+                                        + resourceType.getName() + "'. The service provider configuration declares "
+                                        + "cursor support but the resource handler did not override the "
+                                        + "cursor-based listResources overload.", null, null);
+    }
+
+    List<T> resourceList = resources.getResources() == null ? Collections.emptyList() : resources.getResources();
+    if (resourceList.size() > effectiveCount)
+    {
+      log.warn("The service provider tried to return more results than allowed in cursor mode. Tried to return "
+               + "'{}' results. The list will be reduced to '{}' results",
+               resourceList.size(),
+               effectiveCount);
+      resourceList = resourceList.subList(0, effectiveCount);
+    }
+
+    List<JsonNode> validatedResourceList = validateListedResources(resourceType,
+                                                                   resourceList,
+                                                                   resourceHandler,
+                                                                   attributesList,
+                                                                   excludedAttributesList,
+                                                                   baseUrlSupplier,
+                                                                   context);
+
+    // RFC 9865: cursor-mode responses omit startIndex; totalResults is OPTIONAL but we always emit it for
+    // compatibility — leave at 0 if the handler did not supply a value.
+    final long totalResults = resources.getTotalResults();
+    return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(), null,
+                               resources.getNextCursor(), resources.getPreviousCursor());
+  }
+
+  /**
+   * Enriches each resource node with location/lastModified/version metadata and runs the response-validator
+   * defined by the {@link ResourceHandler}. Extracted from the index-mode list flow so that the cursor-mode
+   * flow can reuse the exact same enrichment without duplicating the loop.
+   */
+  private <T extends ResourceNode> List<JsonNode> validateListedResources(ResourceType resourceType,
+                                                                          List<T> resources,
+                                                                          ResourceHandler<T> resourceHandler,
+                                                                          List<SchemaAttribute> attributesList,
+                                                                          List<SchemaAttribute> excludedAttributesList,
+                                                                          Supplier<String> baseUrlSupplier,
+                                                                          Context context)
+  {
+    List<JsonNode> validatedResourceList = new ArrayList<>();
+    for ( ResourceNode resourceNode : resources )
+    {
+      final String location = getLocation(resourceType, resourceNode.getId().orElse(null), baseUrlSupplier);
+      log.trace("Determined resource location at '{}'", location);
+      resourceNode.getMeta().ifPresent(meta -> {
+        if (!meta.getLastModified().isPresent())
+        {
+          meta.setLastModified(meta.getCreated().orElse(null));
+        }
+        if (!meta.getLocation().isPresent())
+        {
+          meta.setLocation(location);
+        }
+        meta.setResourceType(resourceType.getName());
+        ETagHandler.getResourceVersion(serviceProvider, resourceType, resourceNode).ifPresent(meta::setVersion);
+      });
+
+      Optional<AbstractResourceValidator> responseValidator = //
+        resourceHandler.getResponseValidator(context,
+                                             attributesList,
+                                             excludedAttributesList,
+                                             null,
+                                             getReferenceUrlSupplier(baseUrlSupplier));
+      JsonNode responseResource = resourceNode;
+      if (responseValidator.isPresent())
+      {
+        responseResource = responseValidator.get().validateDocument(resourceNode);
+      }
+
+      validatedResourceList.add(responseResource);
+    }
+    return validatedResourceList;
   }
 
   /**
