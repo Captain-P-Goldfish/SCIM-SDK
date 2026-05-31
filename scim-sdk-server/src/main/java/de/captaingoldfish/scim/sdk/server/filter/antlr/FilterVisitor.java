@@ -1,9 +1,14 @@
 package de.captaingoldfish.scim.sdk.server.filter.antlr;
 
 import java.util.Objects;
+import java.util.Optional;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.exceptions.UnparseableFilterException;
 import de.captaingoldfish.scim.sdk.server.filter.AndExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.AttributeExpressionLeaf;
@@ -12,6 +17,7 @@ import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import de.captaingoldfish.scim.sdk.server.filter.NotExpressionNode;
 import de.captaingoldfish.scim.sdk.server.filter.OrExpressionNode;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -39,10 +45,26 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
    */
   private final boolean patchFilter;
 
+  /**
+   * the maximum filter depth that must not be exceeded
+   */
+  private final int maxFilterDepth;
+
+  /**
+   * counts the filter-depth of the current filter expression
+   */
+  @Getter
+  private int filterDepth = 1;
+
   public FilterVisitor(ResourceType resourceType, boolean patchFilter)
   {
     this.resourceType = Objects.requireNonNull(resourceType);
     this.patchFilter = patchFilter;
+    this.maxFilterDepth = Optional.ofNullable(resourceType.getResourceHandlerImpl())
+                                  .map(ResourceHandler::getServiceProvider)
+                                  .map(ServiceProvider::getFilterConfig)
+                                  .map(FilterConfig::getMaxFilterDepth)
+                                  .orElse(FilterConfig.DEFAULT_MAX_FILTER_DEPTH);
   }
 
   /**
@@ -69,6 +91,11 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
   {
     ParseTree leftNode = ctx.getChild(0);
     ParseTree rightNode = ctx.getChild(2);
+    if (maxFilterDepth < ++filterDepth)
+    {
+      throw new BadRequestException(String.format("Filter depth exceeded maximum allowed depth is '%s'",
+                                                  maxFilterDepth));
+    }
     return new OrExpressionNode(visit(leftNode), visit(rightNode));
   }
 
@@ -83,6 +110,11 @@ public class FilterVisitor extends ScimFilterBaseVisitor<FilterNode>
   {
     ParseTree leftNode = ctx.getChild(0);
     ParseTree rightNode = ctx.getChild(2);
+    if (maxFilterDepth < ++filterDepth)
+    {
+      throw new BadRequestException(String.format("Filter depth exceeded maximum allowed depth is '%s'",
+                                                  maxFilterDepth));
+    }
     return new AndExpressionNode(visit(leftNode), visit(rightNode));
   }
 

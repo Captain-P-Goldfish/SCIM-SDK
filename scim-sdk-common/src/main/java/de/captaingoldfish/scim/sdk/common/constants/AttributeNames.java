@@ -324,6 +324,12 @@ public final class AttributeNames
      * the attribute is left empty
      */
     public static final String DEFAULT_VALUE = "defaultValue";
+
+    /**
+     * describes the maximum filter depth for filter expressions that must not be exceeded
+     */
+    public static final String MAX_FILTER_DEPTH = "maxFilterDepth";
+
   }
 
   /**

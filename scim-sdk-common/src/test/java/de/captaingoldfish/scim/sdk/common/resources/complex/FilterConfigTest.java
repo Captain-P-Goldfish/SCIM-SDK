@@ -25,9 +25,10 @@ public class FilterConfigTest
   {
     FilterConfig filterConfig = FilterConfig.builder().build();
     MatcherAssert.assertThat(filterConfig, Matchers.not(Matchers.emptyIterable()));
-    Assertions.assertEquals(2, filterConfig.size());
+    Assertions.assertEquals(3, filterConfig.size());
     Assertions.assertFalse(filterConfig.isSupported());
     Assertions.assertEquals(FilterConfig.DEFAULT_MAX_RESULTS, filterConfig.getMaxResults());
+    Assertions.assertEquals(FilterConfig.DEFAULT_MAX_FILTER_DEPTH, filterConfig.getMaxFilterDepth());
   }
 
   /**
