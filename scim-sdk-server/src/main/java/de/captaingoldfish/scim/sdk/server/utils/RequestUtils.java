@@ -133,6 +133,11 @@ public final class RequestUtils
     {
       throw new BadRequestException(String.format("Failed to parse patch-filter expression '%s'", filter), ex);
     }
+    catch (StackOverflowError error)
+    {
+      log.trace(error.getMessage(), error);
+      throw new BadRequestException("Failed to parse patch-filter expression. Filter is too large");
+    }
     return filterNode;
   }
 

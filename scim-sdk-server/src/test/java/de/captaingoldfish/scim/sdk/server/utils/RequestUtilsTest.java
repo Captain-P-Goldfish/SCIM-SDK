@@ -13,17 +13,20 @@ import org.junit.jupiter.api.DynamicContainer;
 import org.junit.jupiter.api.DynamicNode;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
+import lombok.extern.slf4j.Slf4j;
 
 
 /**
@@ -31,6 +34,7 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
  * created at: 13.10.2019 - 15:43 <br>
  * <br>
  */
+@Slf4j
 public class RequestUtilsTest
 {
 
@@ -96,6 +100,26 @@ public class RequestUtilsTest
       }
       return dynamicNodeList;
     }
+
+    @DisplayName("Throw bad request on filter that is too large")
+    @Test
+    public void testParseTooLargeFilter()
+    {
+      StringBuilder stringBuilder = new StringBuilder();
+      for ( int i = 0 ; i < 3500 ; i++ )
+      {
+        if (i > 0)
+        {
+          stringBuilder.append(" or ");
+        }
+        stringBuilder.append("userName eq \"test" + 1 + "\"");
+      }
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> RequestUtils.parseFilter(userResourceType,
+                                                                                      stringBuilder.toString()));
+      Assertions.assertEquals("Failed to parse patch-filter expression. Filter is too large", ex.getMessage());
+    }
   }
+
 
 }
