@@ -22,7 +22,12 @@ public class FilterConfig extends ScimObjectNode
    * the default value for the max results value. Default is 1. This will enforce the developer to modify the
    * service provider configuration to the applications requirements
    */
-  protected static final Integer DEFAULT_MAX_RESULTS = 1;
+  public static final Integer DEFAULT_MAX_RESULTS = 1;
+
+  /**
+   * the default value for the max filter depth. Default is 1000.
+   */
+  public static final Integer DEFAULT_MAX_FILTER_DEPTH = 1000;
 
   public FilterConfig()
   {
@@ -30,11 +35,12 @@ public class FilterConfig extends ScimObjectNode
   }
 
   @Builder
-  public FilterConfig(Boolean supported, Integer maxResults)
+  public FilterConfig(Boolean supported, Integer maxResults, Integer maxFilterDepth)
   {
     super(null);
     setSupported(Optional.ofNullable(supported).orElse(false));
     setMaxResults(maxResults);
+    setMaxFilterDepth(maxFilterDepth);
   }
 
   /**
@@ -70,6 +76,29 @@ public class FilterConfig extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.MAX_RESULTS, Optional.ofNullable(results).orElseGet(() -> {
       log.warn("No value set for 'FilterConfig.maxResults'. Value is defaulting to: {}", DEFAULT_MAX_RESULTS);
       return Long.valueOf(DEFAULT_MAX_RESULTS);
+    }));
+  }
+
+  /**
+   * describes the maximum filter depth for filter expressions that must not be exceeded
+   */
+  public Integer getMaxFilterDepth()
+  {
+    return getIntegerAttribute(AttributeNames.Custom.MAX_FILTER_DEPTH).orElse(DEFAULT_MAX_FILTER_DEPTH);
+  }
+
+  /**
+   * describes the maximum filter depth for filter expressions that must not be exceeded
+   */
+  public void setMaxFilterDepth(Integer maxFilterDepth)
+  {
+    if (maxFilterDepth != null && maxFilterDepth > 3000)
+    {
+      log.warn("Filter depth with more than 3000 expressions will most probably cause a StackOverflowError.");
+    }
+    setAttribute(AttributeNames.Custom.MAX_FILTER_DEPTH, Optional.ofNullable(maxFilterDepth).orElseGet(() -> {
+      log.warn("No value set for 'FilterConfig.maxFilterDepth'. Value is defaulting to: {}", DEFAULT_MAX_FILTER_DEPTH);
+      return DEFAULT_MAX_RESULTS;
     }));
   }
 

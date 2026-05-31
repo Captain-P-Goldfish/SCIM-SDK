@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Random;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,8 @@ import org.junit.jupiter.params.provider.ValueSource;
 import com.fasterxml.jackson.databind.JsonNode;
 
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
+import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
+import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -101,12 +104,68 @@ public class RequestUtilsTest
       return dynamicNodeList;
     }
 
+    @DisplayName("Throw bad request if limited filter-depth is exceeded")
+    @Test
+    public void testFilterDepthIsLimited()
+    {
+      final int maxFilterDepth = 10;
+      ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                       .filterConfig(FilterConfig.builder()
+                                                                                 .maxResults(100)
+                                                                                 .maxFilterDepth(maxFilterDepth)
+                                                                                 .build())
+                                                       .build();
+      UserHandlerImpl userHandler = new UserHandlerImpl(false)
+      {
+
+        @Override
+        public ServiceProvider getServiceProvider()
+        {
+          return serviceProvider;
+        }
+      };
+      userResourceType.setResourceHandlerImpl(userHandler);
+
+      Random random = new Random();
+      StringBuilder stringBuilder = new StringBuilder();
+      for ( int i = 0 ; i < maxFilterDepth + 1 ; i++ )
+      {
+        if (i > 0)
+        {
+          stringBuilder.append(" ").append(random.nextBoolean() ? "or" : "and").append(" ");
+        }
+        stringBuilder.append("userName eq \"test" + 1 + "\"");
+      }
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> RequestUtils.parseFilter(userResourceType,
+                                                                                      stringBuilder.toString()));
+      Assertions.assertEquals("Filter depth exceeded maximum allowed depth is '10'", ex.getMessage());
+    }
+
     @DisplayName("Throw bad request on filter that is too large")
     @Test
     public void testParseTooLargeFilter()
     {
+      final int maxFilterDepth = 3500;
+      ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                       .filterConfig(FilterConfig.builder()
+                                                                                 .maxResults(100)
+                                                                                 .maxFilterDepth(maxFilterDepth)
+                                                                                 .build())
+                                                       .build();
+      UserHandlerImpl userHandler = new UserHandlerImpl(false)
+      {
+
+        @Override
+        public ServiceProvider getServiceProvider()
+        {
+          return serviceProvider;
+        }
+      };
+      userResourceType.setResourceHandlerImpl(userHandler);
+
       StringBuilder stringBuilder = new StringBuilder();
-      for ( int i = 0 ; i < 3500 ; i++ )
+      for ( int i = 0 ; i < maxFilterDepth + 1 ; i++ )
       {
         if (i > 0)
         {

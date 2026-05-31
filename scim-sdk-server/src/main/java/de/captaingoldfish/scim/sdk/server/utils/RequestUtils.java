@@ -128,6 +128,7 @@ public final class RequestUtils
     try
     {
       filterNode = filterVisitor.visit(filterContext);
+      log.warn("{}", filterVisitor.getFilterDepth());
     }
     catch (UnparseableFilterException ex)
     {
