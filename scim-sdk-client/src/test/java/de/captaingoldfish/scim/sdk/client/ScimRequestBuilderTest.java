@@ -92,12 +92,12 @@ public class ScimRequestBuilderTest extends HttpServerMockup
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
     Assertions.assertNull(response.getErrorResponse());
-    Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+    Assertions.assertNotNull(response.getResponseHeader(HttpHeader.E_TAG_HEADER).orElse(null));
 
     User returnedUser = response.getResource();
     Assertions.assertEquals(username, returnedUser.getUserName().get());
     Assertions.assertEquals(returnedUser.getMeta().get().getVersion().get().getEntityTag(),
-                            response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+                            response.getResponseHeader(HttpHeader.E_TAG_HEADER).orElse(null));
   }
 
   /**

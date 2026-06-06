@@ -36,7 +36,7 @@ public class CreateBuilderTest extends HttpServerMockup
     ServerResponse<User> response = new CreateBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class,
                                                         scimHttpClient).setResource(user).sendRequest();
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
-    Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+    Assertions.assertNotNull(response.getResponseHeader(HttpHeader.E_TAG_HEADER).orElse(null));
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
     Assertions.assertNull(response.getErrorResponse());
@@ -44,7 +44,7 @@ public class CreateBuilderTest extends HttpServerMockup
     User createdUser = response.getResource();
     Assertions.assertEquals(username, createdUser.getUserName().get());
     Assertions.assertEquals(createdUser.getMeta().get().getVersion().get().getEntityTag(),
-                            response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+                            response.getResponseHeader(HttpHeader.E_TAG_HEADER).orElse(null));
   }
 
   /**
@@ -59,7 +59,7 @@ public class CreateBuilderTest extends HttpServerMockup
     ServerResponse<User> response = new CreateBuilder<>(getServerUrl() + EndpointPaths.USERS, User.class,
                                                         scimHttpClient).setResource(User.builder().userName(username).build()).sendRequest();
     Assertions.assertEquals(HttpStatus.CREATED, response.getHttpStatus());
-    Assertions.assertNotNull(response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+    Assertions.assertNotNull(response.getResponseHeader(HttpHeader.E_TAG_HEADER));
     Assertions.assertTrue(response.isSuccess());
     Assertions.assertNotNull(response.getResource());
     Assertions.assertNull(response.getErrorResponse());
@@ -67,6 +67,6 @@ public class CreateBuilderTest extends HttpServerMockup
     User user = response.getResource();
     Assertions.assertEquals(username, user.getUserName().get());
     Assertions.assertEquals(user.getMeta().get().getVersion().get().getEntityTag(),
-                            response.getHttpHeaders().get(HttpHeader.E_TAG_HEADER));
+                            response.getResponseHeader(HttpHeader.E_TAG_HEADER).orElse(null));
   }
 }

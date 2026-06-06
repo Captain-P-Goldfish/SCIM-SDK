@@ -18,6 +18,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Getter;
+import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 
 
@@ -35,6 +36,7 @@ public class ServerResponse<T extends ScimObjectNode>
   /**
    * the original http response object
    */
+  @Delegate
   @Getter
   private final HttpResponse httpResponse;
 
