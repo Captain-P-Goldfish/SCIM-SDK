@@ -9,8 +9,6 @@ import org.springframework.shell.core.command.annotation.Command;
 import org.springframework.shell.core.command.annotation.Option;
 import org.springframework.stereotype.Component;
 
-import tools.jackson.databind.JsonNode;
-
 import de.captaingoldfish.scim.sdk.common.schemas.Schema;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.EndpointDefinitionBuilder;
 import de.captaingoldfish.scim.sdk.translator.shell.parser.ResourceHandlerBuilder;
@@ -23,6 +21,7 @@ import de.captaingoldfish.scim.sdk.translator.shell.schemareader.PojoWriter;
 import de.captaingoldfish.scim.sdk.translator.shell.schemareader.SchemaRelation;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
 
 
 /**
