@@ -1,14 +1,13 @@
 package de.captaingoldfish.scim.sdk.translator.shell;
 
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import org.springframework.shell.standard.ShellComponent;
-import org.springframework.shell.standard.ShellMethod;
-import org.springframework.shell.standard.ShellOption;
+import org.springframework.shell.core.command.annotation.Command;
+import org.springframework.shell.core.command.annotation.Option;
+import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
@@ -31,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 29.04.2021
  */
 @Slf4j
-@ShellComponent
+@Component
 public class ShellController
 {
 
@@ -40,29 +39,14 @@ public class ShellController
    * the SCIM-SDK implementation
    */
   @SneakyThrows
-  @ShellMethod(key = "translate", value = "Translate SCIM schemas to Java POJOs for SCIM SDK")
-  public String translateSchemas(@ShellOption(value = {"-l", "--location"}, // @formatter:off
-                                help = "a directory containing resource-schemas and resource-types or a "
-                                  + "direct file location of a resource-schema") String schemaLocation, // @formatter:on
-                                 @ShellOption(value = {"-r", "--recursive"}, //
-                                   help = "if the given directory should be searched recursively", //
-                                   defaultValue = "false") boolean recursive, //
-                                 @ShellOption(value = {"-o", "--output"}, //
-                                   help = "the output directory where the java POJOs will be placed. This directory "
-                                          + "should point to your 'src/main/java' directory", //
-                                   defaultValue = ".") String outputDir,
-                                 @ShellOption(value = {"-p", "--package"}, //
-                                   help = "The name of the package for the generated POJOs", //
-                                   defaultValue = "my.scim.sdk.app") String packageDir,
-                                 @ShellOption(value = {"--useLombok"}, //
-                                   help = "Add lombok @Builder annotations to constructors", //
-                                   defaultValue = "false") boolean useLombok,
-                                 @ShellOption(value = {"--override"}, //
-                                   help = "Replace already existing files", //
-                                   defaultValue = "false") boolean overrideExistingFiles,
-                                 @ShellOption(value = {"--create-config"}, //
-                                   help = "Creates a predefined SCIM configuration file with a ResourceEndpoint", //
-                                   defaultValue = "false") boolean createScimConfig)
+  @Command(name = "translate", description = "Translate SCIM schemas to Java POJOs for SCIM SDK")
+  public String translateSchemas(@Option(shortName = 'l', longName = "location", description = "a directory containing resource-schemas and resource-types or a direct file location of a resource-schema") String schemaLocation,
+                                 @Option(shortName = 'r', longName = "recursive", description = "if the given directory should be searched recursively", defaultValue = "false") boolean recursive,
+                                 @Option(shortName = 'o', longName = "output", description = "the output directory where the java POJOs will be placed. This directory should point to your src/main/java directory", defaultValue = ".") String outputDir,
+                                 @Option(shortName = 'p', longName = "package", description = "The name of the package for the generated POJOs", defaultValue = "my.scim.sdk.app") String packageDir,
+                                 @Option(longName = "useLombok", description = "Add lombok @Builder annotations to constructors", defaultValue = "false") boolean useLombok,
+                                 @Option(longName = "override", description = "Replace already existing files", defaultValue = "false") boolean overrideExistingFiles,
+                                 @Option(longName = "create-config", description = "Creates a predefined SCIM configuration file with a ResourceEndpoint", defaultValue = "false") boolean createScimConfig)
   {
     List<String> createdFiles = createPojos(schemaLocation,
                                             recursive,
@@ -160,6 +144,4 @@ public class ShellController
 
     return resourceNodeFiles;
   }
-
-
 }
