@@ -213,10 +213,20 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>. This overload is OPTIONAL and is only
    * called by the server when the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
    * configuration enables cursor pagination (see
-   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#isCursor()}). The default
-   * implementation returns {@code null}, which is treated as "not implemented".
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#isCursor()}).
    * <p>
-   * Implementations are responsible for:
+   * The default implementation returns {@code null}. When the resource type has both {@code autoFiltering} and
+   * {@code autoSorting} enabled, the SDK treats that as an opt-in to bridge cursor requests automatically: it
+   * decodes the cursor as a base64url-encoded offset and dispatches to the index-based {@code listResources}
+   * overload, applying the usual in-memory filter / sort / slice. This is a convenience for handlers that have
+   * already opted in to "SDK handles everything in memory" — it intentionally provides the same O(N)
+   * performance characteristics as index pagination. Outside that case, returning {@code null} is treated as a
+   * misconfiguration (HTTP 500) since the {@code ServiceProviderConfig} advertises cursor support that the
+   * handler did not actually provide.
+   * <p>
+   * Override this overload for real RFC 9865 cursor pagination — that is the whole point of the spec: O(1) page
+   * lookup and stability under concurrent writes, neither of which the auto-bridge gives you. Implementations
+   * are then responsible for:
    * <ul>
    * <li>validating the cursor value and throwing
    * {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException} with
@@ -242,8 +252,9 @@ public abstract class ResourceHandler<T extends ResourceNode>
    * @param attributes the attributes that should be returned to the client
    * @param excludedAttributes the attributes that should NOT be returned to the client
    * @param context the current request context; never {@code null}
-   * @return the page of resources with optional {@code nextCursor}/{@code previousCursor}, or {@code null} if
-   *         cursor-based pagination is not implemented by this handler
+   * @return the page of resources with optional {@code nextCursor}/{@code previousCursor}, or {@code null} to
+   *         let the SDK bridge to the index-based overload (only honoured when autoFiltering AND autoSorting
+   *         are enabled on the resource type)
    */
   public PartialListResponse<T> listResources(String cursor,
                                               int count,

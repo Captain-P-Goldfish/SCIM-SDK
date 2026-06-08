@@ -4,21 +4,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.constants.enums.SortOrder;
-import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ConflictException;
 import de.captaingoldfish.scim.sdk.common.exceptions.ResourceNotFoundException;
 import de.captaingoldfish.scim.sdk.common.resources.User;
@@ -27,9 +22,7 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
-import de.captaingoldfish.scim.sdk.server.filter.resources.FilterResourceResolver;
 import de.captaingoldfish.scim.sdk.server.response.PartialListResponse;
-import de.captaingoldfish.scim.sdk.server.sort.ResourceNodeComparator;
 import lombok.Getter;
 
 
@@ -122,9 +115,11 @@ public class UserHandler extends ResourceHandler<User>
   /**
    * {@inheritDoc}
    * <p>
-   * Index-based pagination: returns the entire collection and lets the SDK's auto-filter / auto-sort /
-   * auto-slice handle filter, sort and paging (those features are turned on for this resource type in the
-   * spring config).
+   * Returns the entire collection and lets the SDK's auto-filter / auto-sort / auto-slice handle filter, sort
+   * and paging (those features are turned on for this resource type in the spring config). The same overload is
+   * used for both index-based and RFC 9865 cursor-based pagination: because this resource type has
+   * autoFiltering and autoSorting enabled, the SDK automatically bridges cursor requests to this method using a
+   * base64url-encoded offset as the cursor format.
    */
   @Override
   public PartialListResponse<User> listResources(long startIndex,
@@ -138,91 +133,6 @@ public class UserHandler extends ResourceHandler<User>
   {
     List<User> resourceNodes = new ArrayList<>(inMemoryMap.values());
     return PartialListResponse.<User> builder().resources(resourceNodes).totalResults(resourceNodes.size()).build();
-  }
-
-  /**
-   * RFC 9865 cursor-based pagination. Unlike the index-based overload, cursor mode bypasses the SDK's
-   * auto-filter / auto-sort / auto-slice helpers, so the handler does the work itself.
-   * <p>
-   * <b>Cursor format used by this sample:</b> a base64-encoded decimal offset into the sorted-and-filtered
-   * resource list. This is the simplest cursor that demonstrates the protocol end-to-end. <b>A production
-   * implementation should not use this:</b> the cursor SHOULD be opaque, signed (HMAC or AEAD) so that clients
-   * cannot forge it, tied to a hash of the original {@code filter}/{@code sortBy} so the server can reject
-   * cursors reused with a different query, and carry an expiry to honour {@code cursorTimeout}. See RFC 9865
-   * §5.2.
-   */
-  @Override
-  public PartialListResponse<User> listResources(String cursor,
-                                                 int count,
-                                                 FilterNode filter,
-                                                 SchemaAttribute sortBy,
-                                                 SortOrder sortOrder,
-                                                 List<SchemaAttribute> attributes,
-                                                 List<SchemaAttribute> excludedAttributes,
-                                                 Context context)
-  {
-    final int offset = decodeOffsetCursor(cursor);
-
-    // 1. snapshot + filter
-    List<User> filtered = new ArrayList<>(inMemoryMap.values());
-    if (filter != null)
-    {
-      filtered = FilterResourceResolver.filterResources(getServiceProvider(), filtered, filter);
-    }
-
-    // 2. sort. Cursor pagination needs a stable, deterministic order or page boundaries become meaningless.
-    // Fall back to sorting by id when the client did not request a sort.
-    if (sortBy != null)
-    {
-      filtered.sort(new ResourceNodeComparator(sortBy, sortOrder == null ? SortOrder.ASCENDING : sortOrder));
-    }
-    else
-    {
-      filtered.sort(Comparator.comparing(u -> u.getId().orElse("")));
-    }
-
-    // 3. slice
-    final int totalResults = filtered.size();
-    if (offset >= totalResults)
-    {
-      return PartialListResponse.<User> builder().resources(Collections.emptyList()).totalResults(totalResults).build();
-    }
-    final int toIndex = Math.min(offset + count, totalResults);
-    List<User> page = filtered.subList(offset, toIndex);
-
-    // 4. emit nextCursor only when there is more data (RFC 9865: nextCursor MUST be omitted on the last page)
-    final String nextCursor = toIndex < totalResults ? encodeOffsetCursor(toIndex) : null;
-    final String previousCursor = offset > 0 ? encodeOffsetCursor(Math.max(0, offset - count)) : null;
-
-    return PartialListResponse.<User> builder()
-                              .resources(page)
-                              .totalResults(totalResults)
-                              .nextCursor(nextCursor)
-                              .previousCursor(previousCursor)
-                              .build();
-  }
-
-  private static String encodeOffsetCursor(int offset)
-  {
-    return Base64.getUrlEncoder()
-                 .withoutPadding()
-                 .encodeToString(Integer.toString(offset).getBytes(StandardCharsets.UTF_8));
-  }
-
-  private static int decodeOffsetCursor(String cursor)
-  {
-    if (cursor == null || cursor.isEmpty())
-    {
-      return 0; // RFC 9865: empty cursor = first page
-    }
-    try
-    {
-      return Integer.parseInt(new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8));
-    }
-    catch (IllegalArgumentException ex)
-    {
-      throw new BadRequestException("Cursor is not valid for this service provider", ScimType.RFC9865.INVALID_CURSOR);
-    }
   }
 
   /**

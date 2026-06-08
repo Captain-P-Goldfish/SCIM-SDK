@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -312,6 +314,48 @@ public final class RequestUtils
                                     ScimType.RFC9865.INVALID_COUNT);
     }
     return Math.min(count, maxPageSize);
+  }
+
+  /**
+   * Encodes a zero-based offset as the opaque cursor format used by the SDK's auto-bridge: a base64url-encoded
+   * decimal integer. The format intentionally mirrors what the {@code samples/springboot} example used to do
+   * inline before the SDK adopted this as its built-in fallback. See {@link #decodeOffsetCursor(String)} for
+   * the inverse.
+   */
+  public static String encodeOffsetCursor(int offset)
+  {
+    return Base64.getUrlEncoder()
+                 .withoutPadding()
+                 .encodeToString(Integer.toString(offset).getBytes(StandardCharsets.UTF_8));
+  }
+
+  /**
+   * Decodes a cursor that was produced by {@link #encodeOffsetCursor(int)}. The empty string is treated as the
+   * first-page signal (offset {@code 0}) per RFC 9865 §2.1. Any other unparseable value raises
+   * {@code invalidCursor} as required by RFC 9865 §3.
+   *
+   * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_CURSOR} when the cursor is not a
+   *           base64url-encoded non-negative integer
+   */
+  public static int decodeOffsetCursor(String cursor)
+  {
+    if (cursor == null || cursor.isEmpty())
+    {
+      return 0;
+    }
+    try
+    {
+      int offset = Integer.parseInt(new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8));
+      if (offset < 0)
+      {
+        throw new BadRequestException("Cursor is not valid for this service provider", ScimType.RFC9865.INVALID_CURSOR);
+      }
+      return offset;
+    }
+    catch (IllegalArgumentException ex)
+    {
+      throw new BadRequestException("Cursor is not valid for this service provider", ScimType.RFC9865.INVALID_CURSOR);
+    }
   }
 
   /**

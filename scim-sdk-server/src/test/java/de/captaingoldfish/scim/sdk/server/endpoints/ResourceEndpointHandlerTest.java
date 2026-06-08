@@ -3836,4 +3836,215 @@ public class ResourceEndpointHandlerTest implements FileReferences
     Assertions.assertEquals(1L, listResponse.getStartIndex());
     Assertions.assertEquals("next", listResponse.getNextCursor().orElse(null));
   }
+
+  /**
+   * Auto-bridge: when the resource type has both {@code autoFiltering} and {@code autoSorting} enabled and the
+   * handler does not override the cursor overload, the SDK translates the empty (first-page) cursor into a call
+   * to the index-based overload with {@code startIndex=1}, applies the standard in-memory filter / sort /
+   * slice, and emits a base64url-encoded offset {@code nextCursor} when more results are available.
+   */
+  @Test
+  public void testCursorAutoBridgeFirstPage()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoFiltering(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(true);
+    createUsers(7);
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      3,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(7L, listResponse.getTotalResults());
+    Assertions.assertEquals(3, listResponse.getItemsPerPage());
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.START_INDEX), listResponse.toPrettyString());
+    Assertions.assertEquals(3, RequestUtils.decodeOffsetCursor((String)listResponse.getNextCursor().orElse(null)));
+    Assertions.assertFalse(listResponse.getPreviousCursor().isPresent());
+
+    // verify the SDK dispatched to the INDEX overload (not the cursor overload) for the bridge
+    Mockito.verify(userHandler)
+           .listResources(Mockito.eq(1L),
+                          Mockito.eq(3),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+  }
+
+  /**
+   * Auto-bridge: a non-empty cursor decodes to the encoded offset and the SDK passes {@code offset+1} as
+   * {@code startIndex} to the index overload. Both {@code nextCursor} (more pages exist) and
+   * {@code previousCursor} (we are past the first page) are emitted.
+   */
+  @Test
+  public void testCursorAutoBridgeMiddlePage()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoFiltering(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(true);
+    createUsers(10);
+
+    final String cursor = RequestUtils.encodeOffsetCursor(3);
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      3,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      cursor,
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(10L, listResponse.getTotalResults());
+    Assertions.assertEquals(3, listResponse.getItemsPerPage());
+    Assertions.assertEquals(6, RequestUtils.decodeOffsetCursor((String)listResponse.getNextCursor().orElse(null)));
+    Assertions.assertEquals(0, RequestUtils.decodeOffsetCursor((String)listResponse.getPreviousCursor().orElse(null)));
+
+    Mockito.verify(userHandler)
+           .listResources(Mockito.eq(4L),
+                          Mockito.eq(3),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any(),
+                          Mockito.any());
+  }
+
+  /**
+   * Auto-bridge: on the last page the SDK omits {@code nextCursor} per RFC 9865.
+   */
+  @Test
+  public void testCursorAutoBridgeLastPageOmitsNextCursor()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoFiltering(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(true);
+    createUsers(5);
+
+    final String cursor = RequestUtils.encodeOffsetCursor(3);
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      cursor,
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ListResponse.class));
+    ListResponse listResponse = (ListResponse)scimResponse;
+    Assertions.assertEquals(5L, listResponse.getTotalResults());
+    Assertions.assertFalse(listResponse.getNextCursor().isPresent(),
+                           "nextCursor must be omitted on the last page: " + listResponse.toPrettyString());
+  }
+
+  /**
+   * Auto-bridge: a malformed (non-base64 / non-numeric) cursor is rejected with {@code invalidCursor} rather
+   * than silently treated as offset {@code 0}.
+   */
+  @Test
+  public void testCursorAutoBridgeRejectsMalformedCursor()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoFiltering(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(true);
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "not-a-cursor!@#",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    ErrorResponse errorResponse = (ErrorResponse)scimResponse;
+    Assertions.assertEquals(HttpStatus.BAD_REQUEST, errorResponse.getHttpStatus());
+    Assertions.assertEquals(de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865.INVALID_CURSOR,
+                            errorResponse.getScimException().getScimType());
+  }
+
+  /**
+   * Auto-bridge precondition: when only one of {@code autoFiltering} or {@code autoSorting} is enabled, the SDK
+   * must NOT bridge — it falls back to the 500 misconfiguration response, because mixing handler-owned and
+   * SDK-owned filter / sort would produce inconsistent cursor semantics.
+   */
+  @Test
+  public void testCursorAutoBridgeRequiresBothAutoFlags()
+  {
+    resourceEndpointHandler.getServiceProvider().getFilterConfig().setMaxResults(100);
+    resourceEndpointHandler.getServiceProvider()
+                           .setPaginationConfig(de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig.builder()
+                                                                                                                     .cursor(true)
+                                                                                                                     .build());
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoFiltering(true);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(false);
+
+    ScimResponse scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                                      null,
+                                                                      10,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      null,
+                                                                      "",
+                                                                      null,
+                                                                      new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ((ErrorResponse)scimResponse).getHttpStatus());
+
+    // and the symmetric case
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoFiltering(false);
+    resourceTypeFactory.getResourceType(EndpointPaths.USERS).getFeatures().setAutoSorting(true);
+    scimResponse = resourceEndpointHandler.listResources(EndpointPaths.USERS,
+                                                         null,
+                                                         10,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         null,
+                                                         "",
+                                                         null,
+                                                         new Context(null));
+    MatcherAssert.assertThat(scimResponse.getClass(), Matchers.typeCompatibleWith(ErrorResponse.class));
+    Assertions.assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, ((ErrorResponse)scimResponse).getHttpStatus());
+  }
 }

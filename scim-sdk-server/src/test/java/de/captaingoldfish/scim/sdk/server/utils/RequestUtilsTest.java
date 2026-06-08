@@ -166,6 +166,42 @@ public class RequestUtilsTest
     Assertions.assertEquals(25, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
   }
 
+  /**
+   * Round-trip for the SDK's offset-cursor codec: {@code encodeOffsetCursor} should produce a value that
+   * {@code decodeOffsetCursor} restores to the original offset, and the empty cursor must mean offset {@code 0}
+   * (RFC 9865 §2.1 first-page signal).
+   */
+  @Test
+  @DisplayName("offset cursor codec round-trips and treats the empty cursor as first page")
+  public void testOffsetCursorRoundTrip()
+  {
+    Assertions.assertEquals(0, RequestUtils.decodeOffsetCursor(""));
+    Assertions.assertEquals(0, RequestUtils.decodeOffsetCursor(null));
+    for ( int offset : new int[]{0, 1, 5, 100, 1234, Integer.MAX_VALUE} )
+    {
+      String encoded = RequestUtils.encodeOffsetCursor(offset);
+      Assertions.assertEquals(offset, RequestUtils.decodeOffsetCursor(encoded), "round-trip failed for " + offset);
+    }
+  }
+
+  /**
+   * An unparseable cursor must surface as {@code invalidCursor} per RFC 9865 §3 — the SDK promises clients an
+   * opaque format, but it must reject blatantly malformed values rather than silently treating them as offset
+   * {@code 0}.
+   */
+  @Test
+  @DisplayName("decodeOffsetCursor raises invalidCursor on garbage input")
+  public void testDecodeOffsetCursorRejectsMalformed()
+  {
+    for ( String bad : new String[]{"not-base64!@#", "bm9uLW51bWVyaWM"/* "non-numeric" */, "LTU"/* "-5" */} )
+    {
+      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                       () -> RequestUtils.decodeOffsetCursor(bad),
+                                                       "expected invalidCursor for '" + bad + "'");
+      Assertions.assertEquals(ScimType.RFC9865.INVALID_CURSOR, ex.getScimType());
+    }
+  }
+
   @Nested
   class TestsWithResourceType
   {
