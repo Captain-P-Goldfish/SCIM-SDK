@@ -80,11 +80,13 @@ public class RequestUtilsTest
   }
 
   /**
-   * RFC 9865: a count greater than {@code maxPageSize} is also {@code invalidCount}, not silently clamped.
+   * RFC 9865 permits both clamping and rejecting a count that exceeds {@code maxPageSize}. The SDK clamps —
+   * matching how index mode behaves — so clients that have not consulted {@code ServiceProviderConfig} still
+   * get useful results.
    */
   @Test
-  @DisplayName("getEffectiveCursorCount rejects values above maxPageSize (RFC 9865)")
-  public void testGetEffectiveCursorCountRejectsAboveMaxPageSize()
+  @DisplayName("getEffectiveCursorCount clamps values above maxPageSize to maxPageSize (RFC 9865)")
+  public void testGetEffectiveCursorCountClampsAboveMaxPageSize()
   {
     ServiceProvider serviceProvider = ServiceProvider.builder()
                                                      .filterConfig(FilterConfig.builder().maxResults(50).build())
@@ -93,9 +95,23 @@ public class RequestUtilsTest
                                                                                        .maxPageSize(20)
                                                                                        .build())
                                                      .build();
-    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                     () -> RequestUtils.getEffectiveCursorCount(serviceProvider, 25));
-    Assertions.assertEquals(ScimType.RFC9865.INVALID_COUNT, ex.getScimType());
+    Assertions.assertEquals(20, RequestUtils.getEffectiveCursorCount(serviceProvider, 25));
+  }
+
+  /**
+   * {@code count=0} is a documented SCIM discovery pattern (RFC 7644 §3.4.2.4 — count is a non-negative
+   * integer): clients use it to fetch only {@code totalResults} without paying for the resource bodies. Cursor
+   * mode must accept it for the same reason index mode does.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount accepts count=0 (RFC 7644 discovery pattern)")
+  public void testGetEffectiveCursorCountAcceptsZero()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(50).build())
+                                                     .paginationConfig(PaginationConfig.builder().cursor(true).build())
+                                                     .build();
+    Assertions.assertEquals(0, RequestUtils.getEffectiveCursorCount(serviceProvider, 0));
   }
 
   /**

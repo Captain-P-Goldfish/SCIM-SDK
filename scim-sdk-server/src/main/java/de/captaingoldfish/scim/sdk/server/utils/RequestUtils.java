@@ -275,16 +275,28 @@ public final class RequestUtils
   /**
    * Computes the effective count for a cursor-paginated query as described in RFC 9865.
    * <p>
-   * In contrast to {@link #getEffectiveCount(ServiceProvider, Integer)} this method does NOT silently clamp
-   * negative counts: per RFC 9865 a negative count is an {@code invalidCount} error. A {@code null} count falls
-   * back to {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getDefaultPageSize()}
-   * when set, otherwise to the effective maximum page size (see below). A count that exceeds
-   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getMaxPageSize()} (or
-   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig#getMaxResults()} as fallback when
-   * {@code maxPageSize} is unset, for compatibility with deployments that did not opt in to the new pagination
-   * config) is rejected with {@code invalidCount}.
+   * Behaviour:
+   * <ul>
+   * <li>{@code null} count falls back to
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getDefaultPageSize()} when
+   * set, otherwise to the effective maximum page size (see below).</li>
+   * <li>A negative count raises {@code invalidCount} — that is genuinely malformed input that the client should
+   * fix, not a configuration mismatch the SDK can paper over (in contrast to
+   * {@link #getEffectiveCount(ServiceProvider, Integer)} for index mode, which clamps to {@code 0} for
+   * backwards compatibility).</li>
+   * <li>A count greater than the effective maximum page size is silently clamped to the maximum, mirroring how
+   * index mode behaves and what RFC 9865 §3 permits as one of the two valid handling strategies. The
+   * alternative — rejecting with {@code invalidCount} — is also spec-compliant but is harsher on clients that
+   * have not consulted {@code ServiceProviderConfig} first.</li>
+   * </ul>
+   * <p>
+   * The effective maximum page size is
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getMaxPageSize()}, falling
+   * back to {@link de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig#getMaxResults()} when
+   * {@code maxPageSize} is unset (for compatibility with deployments that did not opt in to the new pagination
+   * config).
    *
-   * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_COUNT} on an invalid value
+   * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_COUNT} on a negative count
    */
   public static int getEffectiveCursorCount(ServiceProvider serviceProvider, Integer count)
   {
@@ -296,19 +308,10 @@ public final class RequestUtils
     }
     if (count < 0)
     {
-      throw new BadRequestException(String.format("Got invalid count value '%d'. Count must be between 0 and %d",
-                                                  count,
-                                                  maxPageSize),
+      throw new BadRequestException(String.format("Got invalid count value '%d'. Count must not be negative", count),
                                     ScimType.RFC9865.INVALID_COUNT);
     }
-    if (count > maxPageSize)
-    {
-      throw new BadRequestException(String.format("Got invalid count value '%d'. Count must be between 0 and %d",
-                                                  count,
-                                                  maxPageSize),
-                                    ScimType.RFC9865.INVALID_COUNT);
-    }
-    return count;
+    return Math.min(count, maxPageSize);
   }
 
   /**
