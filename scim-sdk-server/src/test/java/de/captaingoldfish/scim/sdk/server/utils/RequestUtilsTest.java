@@ -116,12 +116,12 @@ public class RequestUtilsTest
   }
 
   /**
-   * When {@code PaginationConfig.defaultPageSize} is not configured, the fallback is
-   * {@code FilterConfig.maxResults} so deployments that never opted in to RFC 9865's pagination config still
-   * get a sensible default.
+   * When {@code PaginationConfig.defaultPageSize} is not configured, the fallback is the effective max page
+   * size — and when {@code maxPageSize} is also unset, that resolves to {@code FilterConfig.maxResults} so
+   * deployments that never opted in to RFC 9865's pagination config still get a sensible default.
    */
   @Test
-  @DisplayName("getEffectiveCursorCount falls back to FilterConfig.maxResults when no defaultPageSize")
+  @DisplayName("getEffectiveCursorCount falls back to FilterConfig.maxResults when neither defaultPageSize nor maxPageSize is set")
   public void testGetEffectiveCursorCountFallsBackToFilterMaxResults()
   {
     ServiceProvider serviceProvider = ServiceProvider.builder()
@@ -129,6 +129,25 @@ public class RequestUtilsTest
                                                      .paginationConfig(PaginationConfig.builder().cursor(true).build())
                                                      .build();
     Assertions.assertEquals(40, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
+  }
+
+  /**
+   * When {@code PaginationConfig.defaultPageSize} is not configured but {@code maxPageSize} is, the
+   * {@code null} count must fall back to {@code maxPageSize} — never higher than what the service provider is
+   * willing to return on a single page.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount falls back to maxPageSize when defaultPageSize is unset")
+  public void testGetEffectiveCursorCountFallsBackToMaxPageSize()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(100).build())
+                                                     .paginationConfig(PaginationConfig.builder()
+                                                                                       .cursor(true)
+                                                                                       .maxPageSize(25)
+                                                                                       .build())
+                                                     .build();
+    Assertions.assertEquals(25, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
   }
 
   @Nested

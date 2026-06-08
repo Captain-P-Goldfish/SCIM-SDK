@@ -278,11 +278,11 @@ public final class RequestUtils
    * In contrast to {@link #getEffectiveCount(ServiceProvider, Integer)} this method does NOT silently clamp
    * negative counts: per RFC 9865 a negative count is an {@code invalidCount} error. A {@code null} count falls
    * back to {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getDefaultPageSize()}
-   * when set, otherwise to
-   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig#getMaxResults()} for compatibility
-   * with deployments that did not opt in to the new pagination config. A count that exceeds
+   * when set, otherwise to the effective maximum page size (see below). A count that exceeds
    * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getMaxPageSize()} (or
-   * {@code FilterConfig.maxResults} as fallback) is rejected with {@code invalidCount}.
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig#getMaxResults()} as fallback when
+   * {@code maxPageSize} is unset, for compatibility with deployments that did not opt in to the new pagination
+   * config) is rejected with {@code invalidCount}.
    *
    * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_COUNT} on an invalid value
    */
@@ -292,7 +292,7 @@ public final class RequestUtils
     final int maxPageSize = serviceProvider.getPaginationConfig().flatMap(pc -> pc.getMaxPageSize()).orElse(filterMax);
     if (count == null)
     {
-      return serviceProvider.getPaginationConfig().flatMap(pc -> pc.getDefaultPageSize()).orElse(filterMax);
+      return serviceProvider.getPaginationConfig().flatMap(pc -> pc.getDefaultPageSize()).orElse(maxPageSize);
     }
     if (count < 0)
     {
