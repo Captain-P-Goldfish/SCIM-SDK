@@ -624,6 +624,8 @@ class ResourceEndpointHandler
       final ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
       final Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.LIST);
 
+      // An empty cursor may be provided to signal that cursor-based pagination should be used
+      // instead of index-based pagination as stated in RFC 9865.
       if (cursor != null)
       {
         return listResourcesByCursor(resourceType,
