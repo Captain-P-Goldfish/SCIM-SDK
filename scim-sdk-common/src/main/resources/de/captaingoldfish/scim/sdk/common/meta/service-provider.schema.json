@@ -315,7 +315,7 @@
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,
-          "required": false,
+          "required": true,
           "caseExact": false
         },
         {
@@ -326,7 +326,7 @@
           "returned": "default",
           "uniqueness": "none",
           "multiValued": false,
-          "required": false,
+          "required": true,
           "caseExact": false
         },
         {
