@@ -181,7 +181,7 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
    */
   public Optional<String> getNextCursor()
   {
-    return getStringAttribute(AttributeNames.RFC7643.NEXT_CURSOR);
+    return getStringAttribute(AttributeNames.RFC9865.NEXT_CURSOR);
   }
 
   /**
@@ -190,7 +190,7 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
    */
   public void setNextCursor(String nextCursor)
   {
-    setAttribute(AttributeNames.RFC7643.NEXT_CURSOR, nextCursor);
+    setAttribute(AttributeNames.RFC9865.NEXT_CURSOR, nextCursor);
   }
 
   /**
@@ -200,7 +200,7 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
    */
   public Optional<String> getPreviousCursor()
   {
-    return getStringAttribute(AttributeNames.RFC7643.PREVIOUS_CURSOR);
+    return getStringAttribute(AttributeNames.RFC9865.PREVIOUS_CURSOR);
   }
 
   /**
@@ -209,7 +209,7 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
    */
   public void setPreviousCursor(String previousCursor)
   {
-    setAttribute(AttributeNames.RFC7643.PREVIOUS_CURSOR, previousCursor);
+    setAttribute(AttributeNames.RFC9865.PREVIOUS_CURSOR, previousCursor);
   }
 
   /**

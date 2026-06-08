@@ -110,8 +110,8 @@ public class ListResponseTest implements FileReferences
     Assertions.assertEquals(nextCursor, listResponse.getNextCursor().orElse(null));
     Assertions.assertEquals(previousCursor, listResponse.getPreviousCursor().orElse(null));
     Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.START_INDEX), listResponse.toPrettyString());
-    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
-    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC9865.NEXT_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC9865.PREVIOUS_CURSOR));
   }
 
   /**
@@ -128,8 +128,8 @@ public class ListResponseTest implements FileReferences
 
     Assertions.assertTrue(listResponse.getNextCursor().isPresent());
     Assertions.assertFalse(listResponse.getPreviousCursor().isPresent());
-    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
-    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC9865.NEXT_CURSOR));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC9865.PREVIOUS_CURSOR));
   }
 
   /**
@@ -146,8 +146,8 @@ public class ListResponseTest implements FileReferences
 
     Assertions.assertFalse(listResponse.getNextCursor().isPresent());
     Assertions.assertTrue(listResponse.getPreviousCursor().isPresent());
-    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
-    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC9865.NEXT_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC9865.PREVIOUS_CURSOR));
   }
 
   /**
@@ -165,7 +165,7 @@ public class ListResponseTest implements FileReferences
     Assertions.assertEquals(1L, listResponse.getStartIndex());
     Assertions.assertEquals(nextCursor, listResponse.getNextCursor().orElse(null));
     Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.START_INDEX));
-    Assertions.assertTrue(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
+    Assertions.assertTrue(listResponse.has(AttributeNames.RFC9865.NEXT_CURSOR));
   }
 
   /**
@@ -181,7 +181,7 @@ public class ListResponseTest implements FileReferences
     Assertions.assertEquals(1L, listResponse.getStartIndex());
     Assertions.assertFalse(listResponse.getNextCursor().isPresent());
     Assertions.assertFalse(listResponse.getPreviousCursor().isPresent());
-    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.NEXT_CURSOR));
-    Assertions.assertFalse(listResponse.has(AttributeNames.RFC7643.PREVIOUS_CURSOR));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC9865.NEXT_CURSOR));
+    Assertions.assertFalse(listResponse.has(AttributeNames.RFC9865.PREVIOUS_CURSOR));
   }
 }

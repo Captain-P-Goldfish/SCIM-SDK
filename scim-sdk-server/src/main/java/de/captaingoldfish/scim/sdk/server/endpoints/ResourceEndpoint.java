@@ -268,7 +268,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
           // RFC 9865: presence of the cursor query parameter (even with an empty value) selects cursor-based
           // pagination. UriInfos populates "" for both ?cursor and ?cursor=, so a non-null value distinguishes
           // "cursor pagination requested" from "no cursor parameter".
-          String cursor = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.CURSOR);
+          String cursor = uriInfos.getQueryParameters().get(AttributeNames.RFC9865.CURSOR);
           return listResources(uriInfos.getResourceEndpoint(),
                                RequestUtils.parseStartIndex(startIndex).orElse(null),
                                RequestUtils.parseCount(count).orElse(null),

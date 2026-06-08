@@ -49,8 +49,8 @@ public class PaginationConfigTest
   public void testGetterDefaultsWhenAttributesRemoved()
   {
     PaginationConfig paginationConfig = PaginationConfig.builder().build();
-    paginationConfig.remove(AttributeNames.RFC7643.CURSOR);
-    paginationConfig.remove(AttributeNames.RFC7643.INDEX);
+    paginationConfig.remove(AttributeNames.RFC9865.CURSOR);
+    paginationConfig.remove(AttributeNames.RFC9865.INDEX);
     Assertions.assertFalse(paginationConfig.isCursor());
     Assertions.assertTrue(paginationConfig.isIndex());
   }
@@ -95,9 +95,9 @@ public class PaginationConfigTest
     Assertions.assertFalse(paginationConfig.getDefaultPageSize().isPresent());
     Assertions.assertFalse(paginationConfig.getMaxPageSize().isPresent());
     Assertions.assertFalse(paginationConfig.getCursorTimeout().isPresent());
-    Assertions.assertFalse(paginationConfig.has(AttributeNames.RFC7643.DEFAULT_PAGE_SIZE));
-    Assertions.assertFalse(paginationConfig.has(AttributeNames.RFC7643.MAX_PAGE_SIZE));
-    Assertions.assertFalse(paginationConfig.has(AttributeNames.RFC7643.CURSOR_TIMEOUT));
+    Assertions.assertFalse(paginationConfig.has(AttributeNames.RFC9865.DEFAULT_PAGE_SIZE));
+    Assertions.assertFalse(paginationConfig.has(AttributeNames.RFC9865.MAX_PAGE_SIZE));
+    Assertions.assertFalse(paginationConfig.has(AttributeNames.RFC9865.CURSOR_TIMEOUT));
   }
 
   /**

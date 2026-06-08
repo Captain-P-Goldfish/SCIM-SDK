@@ -340,7 +340,7 @@ public class ServiceProvider extends ResourceNode
    */
   public Optional<PaginationConfig> getPaginationConfig()
   {
-    return getObjectAttribute(AttributeNames.RFC7643.PAGINATION, PaginationConfig.class);
+    return getObjectAttribute(AttributeNames.RFC9865.PAGINATION, PaginationConfig.class);
   }
 
   /**
@@ -349,7 +349,7 @@ public class ServiceProvider extends ResourceNode
    */
   public void setPaginationConfig(PaginationConfig paginationConfig)
   {
-    setAttribute(AttributeNames.RFC7643.PAGINATION, paginationConfig);
+    setAttribute(AttributeNames.RFC9865.PAGINATION, paginationConfig);
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 

@@ -1986,7 +1986,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     // documentation uri is not a required attribute
     expectedAttributeSet.remove(AttributeNames.RFC7643.DOCUMENTATION_URI);
     // pagination is RFC 9865, optional, and not configured for this service provider
-    expectedAttributeSet.remove(AttributeNames.RFC7643.PAGINATION);
+    expectedAttributeSet.remove(AttributeNames.RFC9865.PAGINATION);
 
     Assertions.assertEquals(expectedAttributeSet.size(), scimResponse.size(), scimResponse.toPrettyString());
     for ( String attributeName : expectedAttributeSet )
@@ -2036,7 +2036,7 @@ public class ResourceEndpointTest extends AbstractBulkTest implements FileRefere
     // documentation uri is not a required attribute
     expectedAttributeSet.remove(AttributeNames.RFC7643.DOCUMENTATION_URI);
     // pagination is RFC 9865, optional, and not configured for this service provider
-    expectedAttributeSet.remove(AttributeNames.RFC7643.PAGINATION);
+    expectedAttributeSet.remove(AttributeNames.RFC9865.PAGINATION);
 
     Assertions.assertEquals(expectedAttributeSet.size(), scimResponse.size(), scimResponse.toPrettyString());
     for ( String attributeName : expectedAttributeSet )

@@ -797,8 +797,8 @@ public class ListBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.cursor("");
-    Assertions.assertTrue(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC7643.CURSOR));
-    Assertions.assertEquals("", listBuilder.getRequestParameters().get(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertTrue(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC9865.CURSOR));
+    Assertions.assertEquals("", listBuilder.getRequestParameters().get(AttributeNames.RFC9865.CURSOR));
   }
 
   /**
@@ -811,7 +811,7 @@ public class ListBuilderTest extends HttpServerMockup
     ScimHttpClient scimHttpClient = new ScimHttpClient(scimClientConfig);
     ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.cursor("VZUTiyhEQJ94IR");
-    Assertions.assertEquals("VZUTiyhEQJ94IR", listBuilder.getRequestParameters().get(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertEquals("VZUTiyhEQJ94IR", listBuilder.getRequestParameters().get(AttributeNames.RFC9865.CURSOR));
   }
 
   /**
@@ -825,7 +825,7 @@ public class ListBuilderTest extends HttpServerMockup
     ListBuilder<User> listBuilder = new ListBuilder<>(getServerUrl(), EndpointPaths.USERS, User.class, scimHttpClient);
     listBuilder.cursor("VZUTiyhEQJ94IR");
     listBuilder.cursor(null);
-    Assertions.assertFalse(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertFalse(listBuilder.getRequestParameters().containsKey(AttributeNames.RFC9865.CURSOR));
   }
 
   /**
@@ -844,7 +844,7 @@ public class ListBuilderTest extends HttpServerMockup
     setGetResponseStatus(() -> HttpStatus.OK);
     setVerifyRequestAttributes((httpExchange, requestBody) -> {
       Map<String, String> params = RequestUtils.getQueryParameters(httpExchange.getRequestURI().getQuery());
-      String cursor = params.get(AttributeNames.RFC7643.CURSOR);
+      String cursor = params.get(AttributeNames.RFC9865.CURSOR);
       if (callCount.get() == 0)
       {
         Assertions.assertEquals(firstCursor, cursor);
@@ -950,12 +950,12 @@ public class ListBuilderTest extends HttpServerMockup
       if (call == 0)
       {
         // first request: pure index mode, no cursor parameter
-        Assertions.assertFalse(params.containsKey(AttributeNames.RFC7643.CURSOR));
+        Assertions.assertFalse(params.containsKey(AttributeNames.RFC9865.CURSOR));
       }
       else
       {
         // after the server returns nextCursor, the client must switch to cursor mode and drop startIndex
-        Assertions.assertEquals(call == 1 ? "page-2" : "page-3", params.get(AttributeNames.RFC7643.CURSOR));
+        Assertions.assertEquals(call == 1 ? "page-2" : "page-3", params.get(AttributeNames.RFC9865.CURSOR));
         Assertions.assertFalse(params.containsKey(AttributeNames.RFC7643.START_INDEX),
                                "startIndex must be removed once iteration switches to cursor mode");
       }

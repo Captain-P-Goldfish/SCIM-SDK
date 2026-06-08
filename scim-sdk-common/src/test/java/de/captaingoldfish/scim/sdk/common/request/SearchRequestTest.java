@@ -205,7 +205,7 @@ public class SearchRequestTest
   {
     SearchRequest searchRequest = SearchRequest.builder().build();
     Assertions.assertFalse(searchRequest.getCursor().isPresent());
-    Assertions.assertFalse(searchRequest.has(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertFalse(searchRequest.has(AttributeNames.RFC9865.CURSOR));
   }
 
   /**
@@ -241,9 +241,9 @@ public class SearchRequestTest
   public void testSetCursorNullRemovesAttribute()
   {
     SearchRequest searchRequest = SearchRequest.builder().cursor("abc").build();
-    Assertions.assertTrue(searchRequest.has(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertTrue(searchRequest.has(AttributeNames.RFC9865.CURSOR));
     searchRequest.setCursor(null);
-    Assertions.assertFalse(searchRequest.has(AttributeNames.RFC7643.CURSOR));
+    Assertions.assertFalse(searchRequest.has(AttributeNames.RFC9865.CURSOR));
     Assertions.assertFalse(searchRequest.getCursor().isPresent());
   }
 

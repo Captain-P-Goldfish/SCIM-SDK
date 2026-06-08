@@ -26,6 +26,7 @@ import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
 import de.captaingoldfish.scim.sdk.client.response.ServerResponse;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC9865;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
 import de.captaingoldfish.scim.sdk.common.constants.SchemaUris;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Comparator;
@@ -144,11 +145,11 @@ public class ListBuilder<T extends ResourceNode>
   {
     if (cursor == null)
     {
-      requestParameters.remove(RFC7643.CURSOR);
+      requestParameters.remove(RFC9865.CURSOR);
     }
     else
     {
-      requestParameters.put(RFC7643.CURSOR, cursor);
+      requestParameters.put(RFC9865.CURSOR, cursor);
     }
     return this;
   }
@@ -298,7 +299,7 @@ public class ListBuilder<T extends ResourceNode>
       final Integer originalCount = Optional.ofNullable(listBuilder.getRequestParameters().get(RFC7643.COUNT))
                                             .map(Integer::parseInt)
                                             .orElse(null);
-      boolean cursorMode = listBuilder.getRequestParameters().containsKey(RFC7643.CURSOR);
+      boolean cursorMode = listBuilder.getRequestParameters().containsKey(RFC9865.CURSOR);
       int iterations = 0;
       int currentlyRetrievedResources = 0;
       long totalResults = 0;

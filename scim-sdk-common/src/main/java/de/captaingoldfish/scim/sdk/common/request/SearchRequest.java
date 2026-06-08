@@ -275,7 +275,7 @@ public class SearchRequest extends AbstractSchemasHolder
    */
   public Optional<String> getCursor()
   {
-    return getStringAttribute(AttributeNames.RFC7643.CURSOR);
+    return getStringAttribute(AttributeNames.RFC9865.CURSOR);
   }
 
   /**
@@ -286,7 +286,7 @@ public class SearchRequest extends AbstractSchemasHolder
    */
   public void setCursor(String cursor)
   {
-    setAttribute(AttributeNames.RFC7643.CURSOR, cursor);
+    setAttribute(AttributeNames.RFC9865.CURSOR, cursor);
   }
 
   /**

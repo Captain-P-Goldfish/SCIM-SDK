@@ -56,7 +56,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public boolean isCursor()
   {
-    return getBooleanAttribute(AttributeNames.RFC7643.CURSOR).orElse(false);
+    return getBooleanAttribute(AttributeNames.RFC9865.CURSOR).orElse(false);
   }
 
   /**
@@ -64,7 +64,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public void setCursor(Boolean cursor)
   {
-    setAttribute(AttributeNames.RFC7643.CURSOR, Optional.ofNullable(cursor).orElse(false));
+    setAttribute(AttributeNames.RFC9865.CURSOR, Optional.ofNullable(cursor).orElse(false));
   }
 
   /**
@@ -72,7 +72,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public boolean isIndex()
   {
-    return getBooleanAttribute(AttributeNames.RFC7643.INDEX).orElse(true);
+    return getBooleanAttribute(AttributeNames.RFC9865.INDEX).orElse(true);
   }
 
   /**
@@ -80,7 +80,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public void setIndex(Boolean index)
   {
-    setAttribute(AttributeNames.RFC7643.INDEX, Optional.ofNullable(index).orElse(true));
+    setAttribute(AttributeNames.RFC9865.INDEX, Optional.ofNullable(index).orElse(true));
   }
 
   /**
@@ -90,7 +90,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public Optional<String> getDefaultPaginationMethod()
   {
-    return getStringAttribute(AttributeNames.RFC7643.DEFAULT_PAGINATION_METHOD);
+    return getStringAttribute(AttributeNames.RFC9865.DEFAULT_PAGINATION_METHOD);
   }
 
   /**
@@ -100,7 +100,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public void setDefaultPaginationMethod(String defaultPaginationMethod)
   {
-    setAttribute(AttributeNames.RFC7643.DEFAULT_PAGINATION_METHOD, defaultPaginationMethod);
+    setAttribute(AttributeNames.RFC9865.DEFAULT_PAGINATION_METHOD, defaultPaginationMethod);
   }
 
   /**
@@ -109,7 +109,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public Optional<Integer> getDefaultPageSize()
   {
-    return getLongAttribute(AttributeNames.RFC7643.DEFAULT_PAGE_SIZE).map(Long::intValue);
+    return getLongAttribute(AttributeNames.RFC9865.DEFAULT_PAGE_SIZE).map(Long::intValue);
   }
 
   /**
@@ -118,7 +118,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public void setDefaultPageSize(Integer defaultPageSize)
   {
-    setAttribute(AttributeNames.RFC7643.DEFAULT_PAGE_SIZE,
+    setAttribute(AttributeNames.RFC9865.DEFAULT_PAGE_SIZE,
                  defaultPageSize == null ? null : Long.valueOf(defaultPageSize));
   }
 
@@ -128,7 +128,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public Optional<Integer> getMaxPageSize()
   {
-    return getLongAttribute(AttributeNames.RFC7643.MAX_PAGE_SIZE).map(Long::intValue);
+    return getLongAttribute(AttributeNames.RFC9865.MAX_PAGE_SIZE).map(Long::intValue);
   }
 
   /**
@@ -137,7 +137,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public void setMaxPageSize(Integer maxPageSize)
   {
-    setAttribute(AttributeNames.RFC7643.MAX_PAGE_SIZE, maxPageSize == null ? null : Long.valueOf(maxPageSize));
+    setAttribute(AttributeNames.RFC9865.MAX_PAGE_SIZE, maxPageSize == null ? null : Long.valueOf(maxPageSize));
   }
 
   /**
@@ -146,7 +146,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public Optional<Integer> getCursorTimeout()
   {
-    return getLongAttribute(AttributeNames.RFC7643.CURSOR_TIMEOUT).map(Long::intValue);
+    return getLongAttribute(AttributeNames.RFC9865.CURSOR_TIMEOUT).map(Long::intValue);
   }
 
   /**
@@ -155,7 +155,7 @@ public class PaginationConfig extends ScimObjectNode
    */
   public void setCursorTimeout(Integer cursorTimeout)
   {
-    setAttribute(AttributeNames.RFC7643.CURSOR_TIMEOUT, cursorTimeout == null ? null : Long.valueOf(cursorTimeout));
+    setAttribute(AttributeNames.RFC9865.CURSOR_TIMEOUT, cursorTimeout == null ? null : Long.valueOf(cursorTimeout));
   }
 
   /**
