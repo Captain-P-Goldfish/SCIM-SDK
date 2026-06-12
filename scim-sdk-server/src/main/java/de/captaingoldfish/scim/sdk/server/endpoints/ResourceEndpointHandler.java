@@ -645,69 +645,25 @@ class ResourceEndpointHandler
 
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
       final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
-      PartialListResponse<T> resources = interceptor.doAround(() -> {
-        return resourceHandler.listResources(effectiveStartIndex,
-                                             effectiveCount,
-                                             autoFiltering ? null : filterNode,
-                                             autoSorting ? null : sortByAttribute,
-                                             autoSorting ? null : sortOrdering,
-                                             attributesList,
-                                             excludedAttributesList,
-                                             context);
-      }, context);
-      if (resources == null)
-      {
-        throw new NotImplementedException("listResources was not implemented for resourceType '"
-                                          + resourceType.getName() + "'");
-      }
-
-      List<T> resourceList = resources.getResources();
-      List<T> filteredResources = filterResources(filterNode, resourceList, resourceType);
-      filteredResources = sortResources(filteredResources, sortByAttribute, sortOrdering, resourceType);
-
-      long totalResults = resourceList.size() != filteredResources.size() ? filteredResources.size()
-        : (resources.getTotalResults() == 0 ? filteredResources.size() : resources.getTotalResults());
-
-      // override filteredResources only in case of auto-filtering since we expect the implementation to handle
-      // everything if auto-filtering is deactivated
-      if (autoFiltering)
-      {
-        // this if-block will assert that no more results will be returned than the countValue allows.
-        if (effectiveStartIndex <= filteredResources.size())
-        {
-          filteredResources = filteredResources.subList((int)Math.min(effectiveStartIndex - 1,
-                                                                      filteredResources.size() - 1),
-                                                        (int)Math.min(effectiveStartIndex - 1 + effectiveCount,
-                                                                      filteredResources.size()));
-        }
-        else
-        {
-          log.debug("startIndex '{}' is > than number of entries available '{}'. Returning empty list",
-                    effectiveStartIndex,
-                    filteredResources.size());
-          filteredResources = Collections.emptyList();
-        }
-      }
-      if (filteredResources.size() > effectiveCount)
-      {
-        log.warn("The service provider tried to return more results than allowed. Tried to return '{}' results. "
-                 + "The list will be reduced to '{}' results",
-                 filteredResources.size(),
-                 effectiveCount);
-        filteredResources = filteredResources.subList(0, effectiveCount);
-      }
-
-      List<JsonNode> validatedResourceList = validateListedResources(resourceType,
-                                                                     filteredResources,
-                                                                     resourceHandler,
-                                                                     attributesList,
-                                                                     excludedAttributesList,
-                                                                     baseUrlSupplier,
-                                                                     context);
+      ListedResources<T> listed = listAndValidate(resourceType,
+                                                  resourceHandler,
+                                                  interceptor,
+                                                  effectiveStartIndex,
+                                                  effectiveCount,
+                                                  filterNode,
+                                                  sortByAttribute,
+                                                  sortOrdering,
+                                                  autoFiltering,
+                                                  autoSorting,
+                                                  attributesList,
+                                                  excludedAttributesList,
+                                                  baseUrlSupplier,
+                                                  context);
 
       // RFC 9865 permits the service provider to include nextCursor in an index-paged response too.
-      return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(), effectiveStartIndex,
-                                 resources.getNextCursor(), resources.getPreviousCursor());
+      return new ListResponse<T>(listed.validatedResources, listed.totalResults, listed.validatedResources.size(),
+                                 effectiveStartIndex, listed.handlerResponse.getNextCursor(),
+                                 listed.handlerResponse.getPreviousCursor());
     }
     catch (ScimException ex)
     {
@@ -859,14 +815,68 @@ class ResourceEndpointHandler
     final int offset = RequestUtils.decodeOffsetCursor(cursor);
     final long effectiveStartIndex = (long)offset + 1L;
 
-    // Both autoFiltering and autoSorting are true (the bridge's precondition), so the handler receives null
-    // for filter/sortBy/sortOrder — the SDK applies them after the call, identical to the index-mode path.
+    // Both autoFiltering and autoSorting are true (the bridge's precondition), so listAndValidate passes null
+    // for filter/sortBy/sortOrder to the handler and applies them afterwards itself, identical to the
+    // index-mode path. Only the windowing input (a decoded offset instead of a startIndex) and the response
+    // framing (encoded cursors instead of a startIndex) are cursor-specific.
+    ListedResources<T> listed = listAndValidate(resourceType,
+                                                resourceHandler,
+                                                interceptor,
+                                                effectiveStartIndex,
+                                                effectiveCount,
+                                                filterNode,
+                                                sortByAttribute,
+                                                sortOrdering,
+                                                resourceType.getFeatures().isAutoFiltering(),
+                                                resourceType.getFeatures().isAutoSorting(),
+                                                attributesList,
+                                                excludedAttributesList,
+                                                baseUrlSupplier,
+                                                context);
+    final List<JsonNode> validatedResourceList = listed.validatedResources;
+    final long totalResults = listed.totalResults;
+
+    final String nextCursor = (long)offset + validatedResourceList.size() < totalResults
+      ? RequestUtils.encodeOffsetCursor(offset + validatedResourceList.size()) : null;
+    final String previousCursor = offset > 0 ? RequestUtils.encodeOffsetCursor(Math.max(0, offset - effectiveCount))
+      : null;
+
+    return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(), null, nextCursor,
+                               previousCursor);
+  }
+
+  /**
+   * Shared list-and-enrich pipeline behind both the index-mode flow and the cursor auto-bridge: it invokes the
+   * index-based {@code listResources} handler overload at {@code effectiveStartIndex}, applies the SDK's
+   * auto-filter / auto-sort / auto-slice machinery (the handler receives {@code null} filter/sort whenever
+   * {@code autoFiltering}/{@code autoSorting} is on, exactly as before) and runs
+   * {@link #validateListedResources}.
+   * <p>
+   * The two callers only differ in what they feed in ({@code effectiveStartIndex} comes from a
+   * {@code startIndex} or a decoded cursor offset) and how they frame the {@link ListResponse} around the
+   * result, so neither of those is the responsibility of this method.
+   */
+  private <T extends ResourceNode> ListedResources<T> listAndValidate(ResourceType resourceType,
+                                                                      ResourceHandler<T> resourceHandler,
+                                                                      Interceptor interceptor,
+                                                                      long effectiveStartIndex,
+                                                                      int effectiveCount,
+                                                                      FilterNode filterNode,
+                                                                      SchemaAttribute sortByAttribute,
+                                                                      SortOrder sortOrdering,
+                                                                      boolean autoFiltering,
+                                                                      boolean autoSorting,
+                                                                      List<SchemaAttribute> attributesList,
+                                                                      List<SchemaAttribute> excludedAttributesList,
+                                                                      Supplier<String> baseUrlSupplier,
+                                                                      Context context)
+  {
     PartialListResponse<T> resources = interceptor.doAround(() -> {
       return resourceHandler.listResources(effectiveStartIndex,
                                            effectiveCount,
-                                           null,
-                                           null,
-                                           null,
+                                           autoFiltering ? null : filterNode,
+                                           autoSorting ? null : sortByAttribute,
+                                           autoSorting ? null : sortOrdering,
                                            attributesList,
                                            excludedAttributesList,
                                            context);
@@ -884,19 +894,33 @@ class ResourceEndpointHandler
     long totalResults = resourceList.size() != filteredResources.size() ? filteredResources.size()
       : (resources.getTotalResults() == 0 ? filteredResources.size() : resources.getTotalResults());
 
-    if (effectiveStartIndex <= filteredResources.size())
+    // override filteredResources only in case of auto-filtering since we expect the implementation to handle
+    // everything if auto-filtering is deactivated
+    if (autoFiltering)
     {
-      filteredResources = filteredResources.subList((int)Math.min(effectiveStartIndex - 1,
-                                                                  filteredResources.size() - 1),
-                                                    (int)Math.min(effectiveStartIndex - 1 + effectiveCount,
-                                                                  filteredResources.size()));
+      // this if-block will assert that no more results will be returned than the countValue allows.
+      if (effectiveStartIndex <= filteredResources.size())
+      {
+        filteredResources = filteredResources.subList((int)Math.min(effectiveStartIndex - 1,
+                                                                    filteredResources.size() - 1),
+                                                      (int)Math.min(effectiveStartIndex - 1 + effectiveCount,
+                                                                    filteredResources.size()));
+      }
+      else
+      {
+        log.debug("startIndex '{}' is > than number of entries available '{}'. Returning empty list",
+                  effectiveStartIndex,
+                  filteredResources.size());
+        filteredResources = Collections.emptyList();
+      }
     }
-    else
+    if (filteredResources.size() > effectiveCount)
     {
-      log.debug("cursor offset '{}' is > than number of entries available '{}'. Returning empty list",
-                offset,
-                filteredResources.size());
-      filteredResources = Collections.emptyList();
+      log.warn("The service provider tried to return more results than allowed. Tried to return '{}' results. "
+               + "The list will be reduced to '{}' results",
+               filteredResources.size(),
+               effectiveCount);
+      filteredResources = filteredResources.subList(0, effectiveCount);
     }
 
     List<JsonNode> validatedResourceList = validateListedResources(resourceType,
@@ -906,14 +930,31 @@ class ResourceEndpointHandler
                                                                    excludedAttributesList,
                                                                    baseUrlSupplier,
                                                                    context);
+    return new ListedResources<>(resources, validatedResourceList, totalResults);
+  }
 
-    final String nextCursor = (long)offset + validatedResourceList.size() < totalResults
-      ? RequestUtils.encodeOffsetCursor(offset + validatedResourceList.size()) : null;
-    final String previousCursor = offset > 0 ? RequestUtils.encodeOffsetCursor(Math.max(0, offset - effectiveCount))
-      : null;
+  /**
+   * Output of {@link #listAndValidate}: the validated and metadata-enriched resource nodes, the resolved
+   * {@code totalResults} and the original handler response (the index-mode caller forwards its
+   * {@code nextCursor}/{@code previousCursor} verbatim).
+   */
+  private static class ListedResources<T extends ResourceNode>
+  {
 
-    return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(), null, nextCursor,
-                               previousCursor);
+    private final PartialListResponse<T> handlerResponse;
+
+    private final List<JsonNode> validatedResources;
+
+    private final long totalResults;
+
+    private ListedResources(PartialListResponse<T> handlerResponse,
+                            List<JsonNode> validatedResources,
+                            long totalResults)
+    {
+      this.handlerResponse = handlerResponse;
+      this.validatedResources = validatedResources;
+      this.totalResults = totalResults;
+    }
   }
 
   /**
