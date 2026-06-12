@@ -624,46 +624,101 @@ class ResourceEndpointHandler
       final ResourceHandler<T> resourceHandler = resourceType.getResourceHandlerImpl();
       final Interceptor interceptor = resourceHandler.getInterceptor(EndpointType.LIST);
 
-      // An empty cursor may be provided to signal that cursor-based pagination should be used
-      // instead of index-based pagination as stated in RFC 9865.
-      if (cursor != null)
+      // A (possibly empty) cursor signals cursor-based pagination instead of index-based, per RFC 9865. The
+      // cursor preconditions are pure validation, so they run before the interceptor wraps the handler call.
+      final boolean cursorMode = cursor != null;
+      if (cursorMode)
       {
-        return listResourcesByCursor(resourceType,
-                                     resourceHandler,
-                                     interceptor,
-                                     cursor,
-                                     count,
-                                     startIndex,
-                                     filterNode,
-                                     sortByAttribute,
-                                     sortOrdering,
-                                     attributesList,
-                                     excludedAttributesList,
-                                     baseUrlSupplier,
-                                     context);
+        final boolean cursorEnabled = serviceProvider.getPaginationConfig()
+                                                     .map(PaginationConfig::isCursor)
+                                                     .orElse(false);
+        if (!cursorEnabled)
+        {
+          throw new BadRequestException("Cursor-based pagination is not supported by this service provider. "
+                                        + "Check ServiceProviderConfig.pagination.cursor.",
+                                        ScimType.Custom.INVALID_PARAMETERS);
+        }
+        if (startIndex != null)
+        {
+          log.debug("Both 'cursor' and 'startIndex' were supplied; cursor takes precedence per RFC 9865 and "
+                    + "startIndex is ignored.");
+        }
       }
 
       final long effectiveStartIndex = RequestUtils.getEffectiveStartIndex(startIndex);
-      final int effectiveCount = RequestUtils.getEffectiveCount(serviceProvider, count);
-      ListedResources<T> listed = listAndValidate(resourceType,
-                                                  resourceHandler,
-                                                  interceptor,
-                                                  effectiveStartIndex,
-                                                  effectiveCount,
-                                                  filterNode,
-                                                  sortByAttribute,
-                                                  sortOrdering,
-                                                  autoFiltering,
-                                                  autoSorting,
-                                                  attributesList,
-                                                  excludedAttributesList,
-                                                  baseUrlSupplier,
-                                                  context);
+      final int effectiveCount = cursorMode ? RequestUtils.getEffectiveCursorCount(serviceProvider, count)
+        : RequestUtils.getEffectiveCount(serviceProvider, count);
+
+      // RFC 9865: a single interceptor.doAround wraps the actual handler invocation for BOTH pagination modes,
+      // so the interceptor's around-context surrounds whichever overload runs instead of the cursor branch
+      // slipping past the wrapper entirely.
+      final PartialListResponse<T> handlerResponse = interceptor.doAround(() -> {
+        if (cursorMode)
+        {
+          // Real-cursor path: the handler owns paging/sorting/filtering, so filter/sort attributes are passed
+          // straight through (autoFiltering/autoSorting must NOT be applied here or cursor semantics break).
+          return resourceHandler.listResources(cursor,
+                                               effectiveCount,
+                                               filterNode,
+                                               sortByAttribute,
+                                               sortOrdering,
+                                               attributesList,
+                                               excludedAttributesList,
+                                               context);
+        }
+        return resourceHandler.listResources(effectiveStartIndex,
+                                             effectiveCount,
+                                             autoFiltering ? null : filterNode,
+                                             autoSorting ? null : sortByAttribute,
+                                             autoSorting ? null : sortOrdering,
+                                             attributesList,
+                                             excludedAttributesList,
+                                             context);
+      }, context);
+
+      if (cursorMode)
+      {
+        return buildCursorListResponse(resourceType,
+                                       resourceHandler,
+                                       interceptor,
+                                       handlerResponse,
+                                       cursor,
+                                       effectiveCount,
+                                       autoFiltering,
+                                       autoSorting,
+                                       filterNode,
+                                       sortByAttribute,
+                                       sortOrdering,
+                                       attributesList,
+                                       excludedAttributesList,
+                                       baseUrlSupplier,
+                                       context);
+      }
+
+      if (handlerResponse == null)
+      {
+        throw new NotImplementedException("listResources was not implemented for resourceType '"
+                                          + resourceType.getName() + "'");
+      }
+      ListedResources<T> listed = enrichAndSlice(resourceType,
+                                                 resourceHandler,
+                                                 handlerResponse,
+                                                 effectiveStartIndex,
+                                                 effectiveCount,
+                                                 filterNode,
+                                                 sortByAttribute,
+                                                 sortOrdering,
+                                                 autoFiltering,
+                                                 autoSorting,
+                                                 attributesList,
+                                                 excludedAttributesList,
+                                                 baseUrlSupplier,
+                                                 context);
 
       // RFC 9865 permits the service provider to include nextCursor in an index-paged response too.
       return new ListResponse<T>(listed.validatedResources, listed.totalResults, listed.validatedResources.size(),
-                                 effectiveStartIndex, listed.handlerResponse.getNextCursor(),
-                                 listed.handlerResponse.getPreviousCursor());
+                                 effectiveStartIndex, handlerResponse.getNextCursor(),
+                                 handlerResponse.getPreviousCursor());
     }
     catch (ScimException ex)
     {
@@ -676,73 +731,37 @@ class ResourceEndpointHandler
   }
 
   /**
-   * Cursor-paginated branch of
+   * Frames the cursor-mode response from the result of the cursor overload that the shared
+   * {@code interceptor.doAround} already invoked in
    * {@link #listResources(String, Long, Integer, String, String, String, List, List, String, Supplier, Context)}.
    * <p>
-   * Two paths exist:
-   * <ol>
-   * <li><b>Real cursor.</b> The handler overrides the cursor {@code listResources} overload and returns a
-   * non-{@code null} {@link PartialListResponse}. The handler is fully responsible for filtering, sorting and
-   * slicing — that is the whole point of RFC 9865 (a true cursor implementation skips O(N) scans and is stable
-   * under concurrent writes, neither of which the SDK can synthesize after the fact).</li>
-   * <li><b>Auto-bridge.</b> The handler does NOT override the cursor overload and the resource type has both
-   * {@code autoFiltering} and {@code autoSorting} enabled — i.e. it has already opted in to "SDK handles
-   * everything in memory" mode. The SDK then decodes the cursor as a base64url-encoded offset, calls the
-   * existing index overload with the equivalent {@code startIndex}, applies the standard auto-filter /
-   * auto-sort / auto-slice machinery, and emits {@code nextCursor}/{@code previousCursor} based on the
-   * offset.</li>
-   * </ol>
-   * Outside the auto-bridge precondition (autoFiltering=true AND autoSorting=true), a {@code null} return from
-   * the cursor overload is treated as a misconfiguration: the {@code ServiceProviderConfig} advertises cursor
-   * support but the handler has neither real cursor support nor the in-memory signals that would let the SDK
-   * bridge it. See <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>.
+   * A {@code null} {@code handlerResponse} means the handler did not override the cursor overload. When the
+   * resource type runs fully in-memory ({@code autoFiltering} AND {@code autoSorting}) the request is bridged
+   * to the index overload (see {@link #autoBridgeCursorViaIndex}); otherwise it is a misconfiguration — the
+   * {@code ServiceProviderConfig} advertises cursor support the handler cannot honour. A non-{@code null}
+   * response is returned verbatim (clamped to {@code effectiveCount} and validated): cursor results must NOT be
+   * post-processed by the SDK without breaking cursor semantics. See
+   * <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>.
    */
-  private <T extends ResourceNode> ScimResponse listResourcesByCursor(ResourceType resourceType,
-                                                                      ResourceHandler<T> resourceHandler,
-                                                                      Interceptor interceptor,
-                                                                      String cursor,
-                                                                      Integer count,
-                                                                      Long startIndex,
-                                                                      FilterNode filterNode,
-                                                                      SchemaAttribute sortByAttribute,
-                                                                      SortOrder sortOrdering,
-                                                                      List<SchemaAttribute> attributesList,
-                                                                      List<SchemaAttribute> excludedAttributesList,
-                                                                      Supplier<String> baseUrlSupplier,
-                                                                      Context context)
+  private <T extends ResourceNode> ScimResponse buildCursorListResponse(ResourceType resourceType,
+                                                                        ResourceHandler<T> resourceHandler,
+                                                                        Interceptor interceptor,
+                                                                        PartialListResponse<T> handlerResponse,
+                                                                        String cursor,
+                                                                        int effectiveCount,
+                                                                        boolean autoFiltering,
+                                                                        boolean autoSorting,
+                                                                        FilterNode filterNode,
+                                                                        SchemaAttribute sortByAttribute,
+                                                                        SortOrder sortOrdering,
+                                                                        List<SchemaAttribute> attributesList,
+                                                                        List<SchemaAttribute> excludedAttributesList,
+                                                                        Supplier<String> baseUrlSupplier,
+                                                                        Context context)
   {
-    final boolean cursorEnabled = serviceProvider.getPaginationConfig().map(PaginationConfig::isCursor).orElse(false);
-    if (!cursorEnabled)
-    {
-      throw new BadRequestException("Cursor-based pagination is not supported by this service provider. "
-                                    + "Check ServiceProviderConfig.pagination.cursor.",
-                                    ScimType.Custom.INVALID_PARAMETERS);
-    }
-    if (startIndex != null)
-    {
-      log.debug("Both 'cursor' and 'startIndex' were supplied; cursor takes precedence per RFC 9865 and "
-                + "startIndex is ignored.");
-    }
-
-    final int effectiveCount = RequestUtils.getEffectiveCursorCount(serviceProvider, count);
-    // Real-cursor path: handler controls paging, sorting and filtering. The SDK passes filter/sort attributes
-    // straight through (autoFiltering / autoSorting do NOT apply here because cursor results cannot be
-    // post-processed by the SDK without breaking cursor semantics).
-    PartialListResponse<T> resources = interceptor.doAround(() -> {
-      return resourceHandler.listResources(cursor,
-                                           effectiveCount,
-                                           filterNode,
-                                           sortByAttribute,
-                                           sortOrdering,
-                                           attributesList,
-                                           excludedAttributesList,
-                                           context);
-    }, context);
-    if (resources == null)
+    if (handlerResponse == null)
     {
       // Auto-bridge fallback: only when the handler has fully opted in to "SDK handles everything in memory".
-      final boolean autoFiltering = resourceType.getFeatures().isAutoFiltering();
-      final boolean autoSorting = resourceType.getFeatures().isAutoSorting();
       if (autoFiltering && autoSorting)
       {
         return autoBridgeCursorViaIndex(resourceType,
@@ -766,7 +785,8 @@ class ResourceEndpointHandler
                                         + "the cursor request to the index-based overload.", null, null);
     }
 
-    List<T> resourceList = resources.getResources() == null ? Collections.emptyList() : resources.getResources();
+    List<T> resourceList = handlerResponse.getResources() == null ? Collections.emptyList()
+      : handlerResponse.getResources();
     if (resourceList.size() > effectiveCount)
     {
       log.warn("The service provider tried to return more results than allowed in cursor mode. Tried to return "
@@ -786,9 +806,9 @@ class ResourceEndpointHandler
 
     // RFC 9865: cursor-mode responses omit startIndex; totalResults is OPTIONAL but we always emit it for
     // compatibility — leave at 0 if the handler did not supply a value.
-    final long totalResults = resources.getTotalResults();
+    final long totalResults = handlerResponse.getTotalResults();
     return new ListResponse<T>(validatedResourceList, totalResults, validatedResourceList.size(), null,
-                               resources.getNextCursor(), resources.getPreviousCursor());
+                               handlerResponse.getNextCursor(), handlerResponse.getPreviousCursor());
   }
 
   /**
@@ -886,7 +906,45 @@ class ResourceEndpointHandler
       throw new NotImplementedException("listResources was not implemented for resourceType '" + resourceType.getName()
                                         + "'");
     }
+    return enrichAndSlice(resourceType,
+                          resourceHandler,
+                          resources,
+                          effectiveStartIndex,
+                          effectiveCount,
+                          filterNode,
+                          sortByAttribute,
+                          sortOrdering,
+                          autoFiltering,
+                          autoSorting,
+                          attributesList,
+                          excludedAttributesList,
+                          baseUrlSupplier,
+                          context);
+  }
 
+  /**
+   * Index-mode enrichment pipeline applied to an already-fetched handler response: filter/sort (when
+   * {@code autoFiltering}/{@code autoSorting} are on), auto-slice to the requested window, clamp to
+   * {@code effectiveCount} and run {@link #validateListedResources}. Shared by the index path of
+   * {@link #listResources(String, Long, Integer, String, String, String, List, List, String, Supplier, Context)}
+   * and the cursor auto-bridge ({@link #autoBridgeCursorViaIndex}); the handler invocation itself happens in
+   * the caller's {@code interceptor.doAround}.
+   */
+  private <T extends ResourceNode> ListedResources<T> enrichAndSlice(ResourceType resourceType,
+                                                                     ResourceHandler<T> resourceHandler,
+                                                                     PartialListResponse<T> resources,
+                                                                     long effectiveStartIndex,
+                                                                     int effectiveCount,
+                                                                     FilterNode filterNode,
+                                                                     SchemaAttribute sortByAttribute,
+                                                                     SortOrder sortOrdering,
+                                                                     boolean autoFiltering,
+                                                                     boolean autoSorting,
+                                                                     List<SchemaAttribute> attributesList,
+                                                                     List<SchemaAttribute> excludedAttributesList,
+                                                                     Supplier<String> baseUrlSupplier,
+                                                                     Context context)
+  {
     List<T> resourceList = resources.getResources();
     List<T> filteredResources = filterResources(filterNode, resourceList, resourceType);
     filteredResources = sortResources(filteredResources, sortByAttribute, sortOrdering, resourceType);
