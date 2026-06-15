@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -20,6 +21,7 @@ import lombok.Getter;
  * {@link ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder, List, List, Authorization)}
  * methods
  */
+@Setter
 @Getter
 @Builder
 public class PartialListResponse<T extends ResourceNode>

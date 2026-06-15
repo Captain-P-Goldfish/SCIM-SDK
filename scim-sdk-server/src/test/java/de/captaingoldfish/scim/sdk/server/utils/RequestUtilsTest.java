@@ -175,30 +175,34 @@ public class RequestUtilsTest
   @DisplayName("offset cursor codec round-trips and treats the empty cursor as first page")
   public void testOffsetCursorRoundTrip()
   {
-    Assertions.assertEquals(0, RequestUtils.decodeOffsetCursor(""));
-    Assertions.assertEquals(0, RequestUtils.decodeOffsetCursor(null));
-    for ( int offset : new int[]{0, 1, 5, 100, 1234, Integer.MAX_VALUE} )
+    Assertions.assertEquals(1, RequestUtils.decodeCursorStartIndex(""));
+    Assertions.assertEquals(1, RequestUtils.decodeCursorStartIndex(null));
+    Assertions.assertEquals(1, RequestUtils.decodeCursorStartIndex(RequestUtils.encodeStartIndexCursor(0)));
+    for ( int startIndex : new int[]{1, 5, 100, 1234, Integer.MAX_VALUE} )
     {
-      String encoded = RequestUtils.encodeOffsetCursor(offset);
-      Assertions.assertEquals(offset, RequestUtils.decodeOffsetCursor(encoded), "round-trip failed for " + offset);
+      String encodedStartIndex = RequestUtils.encodeStartIndexCursor(startIndex);
+      Assertions.assertEquals(startIndex,
+                              RequestUtils.decodeCursorStartIndex(encodedStartIndex),
+                              "round-trip failed for " + startIndex);
     }
   }
 
   /**
-   * An unparseable cursor must surface as {@code invalidCursor} per RFC 9865 §3 — the SDK promises clients an
-   * opaque format, but it must reject blatantly malformed values rather than silently treating them as offset
-   * {@code 0}.
+   * A cursor the SDK cannot decode must NOT throw here: a cursor is opaque to the SDK, so an undecodable value
+   * is assumed to be a cursor the resource handler generated itself (e.g. a keyset cursor) and is reported with
+   * the sentinel {@code -1}. It is only rejected with {@code invalidCursor} (RFC 9865 §3) when it reaches the
+   * index-based auto-bridge, i.e. when the handler does not implement cursor pagination (covered by
+   * {@code ResourceEndpointHandlerTest.testCursorAutoBridgeRejectsMalformedCursor}).
    */
   @Test
-  @DisplayName("decodeOffsetCursor raises invalidCursor on garbage input")
-  public void testDecodeOffsetCursorRejectsMalformed()
+  @DisplayName("decodeCursorStartIndex returns the -1 sentinel for cursors it cannot decode")
+  public void testDecodeCursorStartIndexReturnsSentinelForCustomCursor()
   {
-    for ( String bad : new String[]{"not-base64!@#", "bm9uLW51bWVyaWM"/* "non-numeric" */, "LTU"/* "-5" */} )
+    for ( String custom : new String[]{"not-base64!@#", "bm9uLW51bWVyaWM"/* "non-numeric" */, "LTU"/* "-5" */} )
     {
-      BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
-                                                       () -> RequestUtils.decodeOffsetCursor(bad),
-                                                       "expected invalidCursor for '" + bad + "'");
-      Assertions.assertEquals(ScimType.RFC9865.INVALID_CURSOR, ex.getScimType());
+      Assertions.assertEquals(-1,
+                              RequestUtils.decodeCursorStartIndex(custom),
+                              "expected the -1 sentinel for '" + custom + "'");
     }
   }
 

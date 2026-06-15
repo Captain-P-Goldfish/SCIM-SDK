@@ -319,42 +319,51 @@ public final class RequestUtils
   /**
    * Encodes a zero-based offset as the opaque cursor format used by the SDK's auto-bridge: a base64url-encoded
    * decimal integer. The format intentionally mirrors what the {@code samples/springboot} example used to do
-   * inline before the SDK adopted this as its built-in fallback. See {@link #decodeOffsetCursor(String)} for
-   * the inverse.
+   * inline before the SDK adopted this as its built-in fallback. See {@link #decodeCursorStartIndex(String)}
+   * for the inverse.
    */
-  public static String encodeOffsetCursor(int offset)
+  public static String encodeStartIndexCursor(long offset)
   {
     return Base64.getUrlEncoder()
                  .withoutPadding()
-                 .encodeToString(Integer.toString(offset).getBytes(StandardCharsets.UTF_8));
+                 .encodeToString(Long.toString(Math.max(1, offset)).getBytes(StandardCharsets.UTF_8));
   }
 
   /**
-   * Decodes a cursor that was produced by {@link #encodeOffsetCursor(int)}. The empty string is treated as the
-   * first-page signal (offset {@code 0}) per RFC 9865 §2.1. Any other unparseable value raises
-   * {@code invalidCursor} as required by RFC 9865 §3.
+   * Decodes a cursor that was produced by {@link #encodeStartIndexCursor(long)}. The empty string is treated as
+   * the first-page signal (startIndex {@code 1}) per RFC 9865 §2.1.
+   * <p>
+   * Any cursor that is not an SDK-generated startIndex cursor returns the sentinel {@code -1} instead of
+   * throwing: a cursor is opaque to the SDK, so a value the SDK cannot decode is assumed to be a cursor the
+   * resource handler generated itself (e.g. a keyset cursor encoding a reference to the last element). Such a
+   * cursor MUST be passed to the handler untouched; it is only rejected with {@code invalidCursor} (RFC 9865
+   * §3) when it reaches the index-based auto-bridge, i.e. when the handler does not implement cursor pagination
+   * at all (see {@code IndexRange#isInternalCursor()}).
    *
-   * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_CURSOR} when the cursor is not a
-   *           base64url-encoded non-negative integer
+   * @return the decoded 1-based startIndex of an SDK-generated cursor, or {@code -1} if the cursor cannot be
+   *         decoded by the SDK
    */
-  public static int decodeOffsetCursor(String cursor)
+  public static long decodeCursorStartIndex(String cursor)
   {
-    if (cursor == null || cursor.isEmpty())
+    if (StringUtils.isBlank(cursor))
     {
-      return 0;
+      return 1;
     }
     try
     {
-      int offset = Integer.parseInt(new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8));
-      if (offset < 0)
+      int startIndex = Integer.parseInt(new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8));
+      if (startIndex < 1)
       {
-        throw new BadRequestException("Cursor is not valid for this service provider", ScimType.RFC9865.INVALID_CURSOR);
+        return -1;
       }
-      return offset;
+      return startIndex;
     }
     catch (IllegalArgumentException ex)
     {
-      throw new BadRequestException("Cursor is not valid for this service provider", ScimType.RFC9865.INVALID_CURSOR);
+      String message = "Failed to decode cursor into startIndex. Cursor might be custom generated.";
+      log.debug(message);
+      log.trace(message, ex);
+      return -1;
     }
   }
 
