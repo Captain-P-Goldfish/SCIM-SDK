@@ -209,6 +209,66 @@ public abstract class ResourceHandler<T extends ResourceNode>
                                                        Context context);
 
   /**
+   * Queries resources using cursor-based pagination as defined by
+   * <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>. This overload is OPTIONAL and is only
+   * called by the server when the {@link de.captaingoldfish.scim.sdk.common.resources.ServiceProvider}
+   * configuration enables cursor pagination (see
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#isCursor()}).
+   * <p>
+   * The default implementation returns {@code null}. When the resource type has both {@code autoFiltering} and
+   * {@code autoSorting} enabled, the SDK treats that as an opt-in to bridge cursor requests automatically: it
+   * decodes the cursor as a base64url-encoded offset and dispatches to the index-based {@code listResources}
+   * overload, applying the usual in-memory filter / sort / slice. This is a convenience for handlers that have
+   * already opted in to "SDK handles everything in memory" — it intentionally provides the same O(N)
+   * performance characteristics as index pagination. Outside that case, returning {@code null} is treated as a
+   * misconfiguration (HTTP 500) since the {@code ServiceProviderConfig} advertises cursor support that the
+   * handler did not actually provide.
+   * <p>
+   * Override this overload for real RFC 9865 cursor pagination — that is the whole point of the spec: O(1) page
+   * lookup and stability under concurrent writes, neither of which the auto-bridge gives you. Implementations
+   * are then responsible for:
+   * <ul>
+   * <li>validating the cursor value and throwing
+   * {@link de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException} with
+   * {@link de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865#INVALID_CURSOR} for unknown cursors or
+   * {@link de.captaingoldfish.scim.sdk.common.constants.ScimType.RFC9865#EXPIRED_CURSOR} for expired
+   * cursors;</li>
+   * <li>applying the {@code filter} and the {@code sortBy} / {@code sortOrder} themselves — the
+   * {@code autoFiltering} and {@code autoSorting} resource-type features only apply to the index-based
+   * {@code listResources} overload because cursor-paged results cannot be post-processed by the SDK without
+   * breaking cursor semantics;</li>
+   * <li>returning the page of resources together with the {@code nextCursor} and {@code previousCursor} tokens
+   * via {@link PartialListResponse.PartialListResponseBuilder#nextCursor(String)} and
+   * {@link PartialListResponse.PartialListResponseBuilder#previousCursor(String)};</li>
+   * <li>omitting {@code nextCursor} on the last page.</li>
+   * </ul>
+   *
+   * @param cursor the opaque cursor value supplied by the client. An empty string requests the first page; a
+   *          non-empty string must be a token previously returned by this service provider.
+   * @param count the desired maximum number of query results per page; never negative
+   * @param filter the parsed filter expression if the client has given a filter
+   * @param sortBy the attribute value that should be used for sorting
+   * @param sortOrder the sort order
+   * @param attributes the attributes that should be returned to the client
+   * @param excludedAttributes the attributes that should NOT be returned to the client
+   * @param context the current request context; never {@code null}
+   * @return the page of resources with optional {@code nextCursor}/{@code previousCursor}, or {@code null} to
+   *         let the SDK bridge to the index-based overload (only honoured when autoFiltering AND autoSorting
+   *         are enabled on the resource type)
+   */
+  public PartialListResponse<T> listResources(String cursor,
+                                              int count,
+                                              FilterNode filter,
+                                              SchemaAttribute sortBy,
+                                              SortOrder sortOrder,
+                                              List<SchemaAttribute> attributes,
+                                              List<SchemaAttribute> excludedAttributes,
+                                              Context context)
+  {
+    return null;
+  }
+
+  /**
    * should update an existing resource with the given one. Simply use the id of the given resource and override
    * the existing one with the given one. Be careful there have been no checks in advance for you if the
    * resource to update does exist. This has to be done manually.<br>

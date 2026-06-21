@@ -15,6 +15,7 @@ import de.captaingoldfish.scim.sdk.common.resources.complex.ChangePasswordConfig
 import de.captaingoldfish.scim.sdk.common.resources.complex.ETagConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
 import de.captaingoldfish.scim.sdk.common.resources.complex.SortConfig;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.AuthenticationScheme;
@@ -114,6 +115,8 @@ public class ServiceProvider extends ResourceNode
    * @param caseInsensitiveValidation if attributes within the JSON document should be extracted
    *          case-insensitive or case-sensitive. The difference here is that the case-insensitive check uses
    *          another comparator that eats up more performance than the case-sensitive comparator.
+   * @param paginationConfig the cursor- and index-based pagination configuration. If {@code null}, the SDK
+   *          falls back to the RFC 7644 index-based pagination behaviour. See RFC 9865.
    */
   @Builder
   public ServiceProvider(String documentationUri,
@@ -131,7 +134,8 @@ public class ServiceProvider extends ResourceNode
                          boolean ignoreRequiredAttributesOnRequest,
                          Boolean ignoreRequiredAttributesOnResponse,
                          Boolean ignoreRequiredExtensionsOnResponse,
-                         boolean lenientContentTypeChecking)
+                         boolean lenientContentTypeChecking,
+                         PaginationConfig paginationConfig)
   {
     setSchemas(Arrays.asList(SchemaUris.SERVICE_PROVIDER_CONFIG_URI));
     setDocumentationUri(documentationUri);
@@ -142,6 +146,7 @@ public class ServiceProvider extends ResourceNode
     setFilterConfig(filterConfig);
     setBulkConfig(bulkConfig);
     setAuthenticationSchemes(authenticationSchemes);
+    setPaginationConfig(paginationConfig);
     Meta meta = Meta.builder()
                     .resourceType(ResourceTypeNames.SERVICE_PROVIDER_CONFIG)
                     .created(LocalDateTime.now())
@@ -156,6 +161,33 @@ public class ServiceProvider extends ResourceNode
     this.ignoreRequiredAttributesOnRequest = ignoreRequiredAttributesOnRequest;
     this.ignoreRequiredAttributesOnResponse = Optional.ofNullable(ignoreRequiredAttributesOnResponse).orElse(true);
     this.ignoreRequiredExtensionsOnResponse = Optional.ofNullable(ignoreRequiredExtensionsOnResponse).orElse(true);
+  }
+
+  /**
+   * Backwards-compatible constructor that pre-dates RFC 9865 cursor-pagination support. Delegates to the full
+   * constructor with a {@code null} {@link PaginationConfig}.
+   */
+  public ServiceProvider(String documentationUri,
+                         PatchConfig patchConfig,
+                         ChangePasswordConfig changePasswordConfig,
+                         SortConfig sortConfig,
+                         ETagConfig eTagConfig,
+                         FilterConfig filterConfig,
+                         BulkConfig bulkConfig,
+                         List<AuthenticationScheme> authenticationSchemes,
+                         ForkJoinPool forkJoinPool,
+                         boolean caseInsensitiveValidation,
+                         Boolean useDefaultValuesOnRequest,
+                         Boolean useDefaultValuesOnResponse,
+                         boolean ignoreRequiredAttributesOnRequest,
+                         Boolean ignoreRequiredAttributesOnResponse,
+                         Boolean ignoreRequiredExtensionsOnResponse,
+                         boolean lenientContentTypeChecking)
+  {
+    this(documentationUri, patchConfig, changePasswordConfig, sortConfig, eTagConfig, filterConfig, bulkConfig,
+         authenticationSchemes, forkJoinPool, caseInsensitiveValidation, useDefaultValuesOnRequest,
+         useDefaultValuesOnResponse, ignoreRequiredAttributesOnRequest, ignoreRequiredAttributesOnResponse,
+         ignoreRequiredExtensionsOnResponse, lenientContentTypeChecking, null);
   }
 
   /**
@@ -299,6 +331,25 @@ public class ServiceProvider extends ResourceNode
   public void setAuthenticationSchemes(List<AuthenticationScheme> authenticationSchemes)
   {
     setAttribute(AttributeNames.RFC7643.AUTHENTICATION_SCHEMES, authenticationSchemes);
+    getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
+  }
+
+  /**
+   * An OPTIONAL complex type that indicates pagination configuration options. When not configured the SDK
+   * behaves as RFC 7644 index-based pagination only. See RFC 9865.
+   */
+  public Optional<PaginationConfig> getPaginationConfig()
+  {
+    return getObjectAttribute(AttributeNames.RFC9865.PAGINATION, PaginationConfig.class);
+  }
+
+  /**
+   * An OPTIONAL complex type that indicates pagination configuration options. When set to {@code null} the
+   * attribute is removed from the JSON representation, restoring pre-RFC-9865 behaviour. See RFC 9865.
+   */
+  public void setPaginationConfig(PaginationConfig paginationConfig)
+  {
+    setAttribute(AttributeNames.RFC9865.PAGINATION, paginationConfig);
     getMeta().ifPresent(meta -> meta.setLastModified(LocalDateTime.now()));
   }
 

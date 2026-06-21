@@ -1,6 +1,8 @@
 package de.captaingoldfish.scim.sdk.server.utils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -258,6 +260,111 @@ public final class RequestUtils
       return 0;
     }
     return Math.min(count, serviceProvider.getFilterConfig().getMaxResults());
+  }
+
+  /**
+   * Parses the {@code cursor} query parameter according to RFC 9865. Returns {@link Optional#empty()} only if
+   * the parameter is genuinely missing ({@code null}). An empty-string parameter value is preserved as
+   * {@code Optional.of("")} because RFC 9865 uses an empty {@code cursor} to signal a first-page request.
+   *
+   * @param cursorQueryParameter the raw query-parameter value (may be {@code null})
+   */
+  public static Optional<String> parseCursor(String cursorQueryParameter)
+  {
+    return Optional.ofNullable(cursorQueryParameter);
+  }
+
+  /**
+   * Computes the effective count for a cursor-paginated query as described in RFC 9865.
+   * <p>
+   * Behaviour:
+   * <ul>
+   * <li>{@code null} count falls back to
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getDefaultPageSize()} when
+   * set, otherwise to the effective maximum page size (see below).</li>
+   * <li>A negative count raises {@code invalidCount} — that is genuinely malformed input that the client should
+   * fix, not a configuration mismatch the SDK can paper over (in contrast to
+   * {@link #getEffectiveCount(ServiceProvider, Integer)} for index mode, which clamps to {@code 0} for
+   * backwards compatibility).</li>
+   * <li>A count greater than the effective maximum page size is silently clamped to the maximum, mirroring how
+   * index mode behaves and what RFC 9865 §3 permits as one of the two valid handling strategies. The
+   * alternative — rejecting with {@code invalidCount} — is also spec-compliant but is harsher on clients that
+   * have not consulted {@code ServiceProviderConfig} first.</li>
+   * </ul>
+   * <p>
+   * The effective maximum page size is
+   * {@link de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig#getMaxPageSize()}, falling
+   * back to {@link de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig#getMaxResults()} when
+   * {@code maxPageSize} is unset (for compatibility with deployments that did not opt in to the new pagination
+   * config).
+   *
+   * @throws BadRequestException with scimType {@link ScimType.RFC9865#INVALID_COUNT} on a negative count
+   */
+  public static int getEffectiveCursorCount(ServiceProvider serviceProvider, Integer count)
+  {
+    final int filterMax = serviceProvider.getFilterConfig().getMaxResults();
+    final int maxPageSize = serviceProvider.getPaginationConfig().flatMap(pc -> pc.getMaxPageSize()).orElse(filterMax);
+    if (count == null)
+    {
+      return serviceProvider.getPaginationConfig().flatMap(pc -> pc.getDefaultPageSize()).orElse(maxPageSize);
+    }
+    if (count < 0)
+    {
+      throw new BadRequestException(String.format("Got invalid count value '%d'. Count must not be negative", count),
+                                    ScimType.RFC9865.INVALID_COUNT);
+    }
+    return Math.min(count, maxPageSize);
+  }
+
+  /**
+   * Encodes a zero-based offset as the opaque cursor format used by the SDK's auto-bridge: a base64url-encoded
+   * decimal integer. The format intentionally mirrors what the {@code samples/springboot} example used to do
+   * inline before the SDK adopted this as its built-in fallback. See {@link #decodeCursorStartIndex(String)}
+   * for the inverse.
+   */
+  public static String encodeStartIndexCursor(long offset)
+  {
+    return Base64.getUrlEncoder()
+                 .withoutPadding()
+                 .encodeToString(Long.toString(Math.max(1, offset)).getBytes(StandardCharsets.UTF_8));
+  }
+
+  /**
+   * Decodes a cursor that was produced by {@link #encodeStartIndexCursor(long)}. The empty string is treated as
+   * the first-page signal (startIndex {@code 1}) per RFC 9865 §2.1.
+   * <p>
+   * Any cursor that is not an SDK-generated startIndex cursor returns the sentinel {@code -1} instead of
+   * throwing: a cursor is opaque to the SDK, so a value the SDK cannot decode is assumed to be a cursor the
+   * resource handler generated itself (e.g. a keyset cursor encoding a reference to the last element). Such a
+   * cursor MUST be passed to the handler untouched; it is only rejected with {@code invalidCursor} (RFC 9865
+   * §3) when it reaches the index-based auto-bridge, i.e. when the handler does not implement cursor pagination
+   * at all (see {@code IndexRange#isInternalCursor()}).
+   *
+   * @return the decoded 1-based startIndex of an SDK-generated cursor, or {@code -1} if the cursor cannot be
+   *         decoded by the SDK
+   */
+  public static long decodeCursorStartIndex(String cursor)
+  {
+    if (StringUtils.isBlank(cursor))
+    {
+      return 1;
+    }
+    try
+    {
+      int startIndex = Integer.parseInt(new String(Base64.getUrlDecoder().decode(cursor), StandardCharsets.UTF_8));
+      if (startIndex < 1)
+      {
+        return -1;
+      }
+      return startIndex;
+    }
+    catch (IllegalArgumentException ex)
+    {
+      String message = "Failed to decode cursor into startIndex. Cursor might be custom generated.";
+      log.debug(message);
+      log.trace(message, ex);
+      return -1;
+    }
   }
 
   /**

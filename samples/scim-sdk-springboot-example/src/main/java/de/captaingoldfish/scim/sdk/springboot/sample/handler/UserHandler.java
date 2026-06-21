@@ -114,6 +114,12 @@ public class UserHandler extends ResourceHandler<User>
 
   /**
    * {@inheritDoc}
+   * <p>
+   * Returns the entire collection and lets the SDK's auto-filter / auto-sort / auto-slice handle filter, sort
+   * and paging (those features are turned on for this resource type in the spring config). The same overload is
+   * used for both index-based and RFC 9865 cursor-based pagination: because this resource type has
+   * autoFiltering and autoSorting enabled, the SDK automatically bridges cursor requests to this method using a
+   * base64url-encoded offset as the cursor format.
    */
   @Override
   public PartialListResponse<User> listResources(long startIndex,

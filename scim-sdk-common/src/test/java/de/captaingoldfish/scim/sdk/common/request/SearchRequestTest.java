@@ -196,4 +196,69 @@ public class SearchRequestTest
     Assertions.assertEquals(expectedNode, searchRequest.get(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES));
   }
 
+  /**
+   * RFC 9865: the cursor field is OPTIONAL. When not set the attribute is absent from the JSON document.
+   */
+  @DisplayName("Cursor is absent by default and is omitted from the JSON document (RFC 9865)")
+  @Test
+  public void testCursorAbsentByDefault()
+  {
+    SearchRequest searchRequest = SearchRequest.builder().build();
+    Assertions.assertFalse(searchRequest.getCursor().isPresent());
+    Assertions.assertFalse(searchRequest.has(AttributeNames.RFC9865.CURSOR));
+  }
+
+  /**
+   * RFC 9865: an empty-string cursor is the wire signal for "first page using cursor pagination". The
+   * implementation must preserve that distinction from "cursor absent".
+   */
+  @DisplayName("Empty-string cursor is preserved as 'first page' signal (RFC 9865)")
+  @Test
+  public void testCursorEmptyStringPreserved()
+  {
+    SearchRequest searchRequest = SearchRequest.builder().cursor("").build();
+    Assertions.assertTrue(searchRequest.getCursor().isPresent());
+    Assertions.assertEquals("", searchRequest.getCursor().get());
+  }
+
+  /**
+   * Round-trips a cursor value through the builder and the getter.
+   */
+  @DisplayName("Non-empty cursor value round-trips through the builder")
+  @Test
+  public void testCursorRoundTrip()
+  {
+    final String cursorValue = "VZUTiyhEQJ94IR";
+    SearchRequest searchRequest = SearchRequest.builder().cursor(cursorValue).build();
+    Assertions.assertEquals(cursorValue, searchRequest.getCursor().orElse(null));
+  }
+
+  /**
+   * Setting the cursor to {@code null} removes the attribute from the JSON document.
+   */
+  @DisplayName("setCursor(null) removes the attribute from the JSON document")
+  @Test
+  public void testSetCursorNullRemovesAttribute()
+  {
+    SearchRequest searchRequest = SearchRequest.builder().cursor("abc").build();
+    Assertions.assertTrue(searchRequest.has(AttributeNames.RFC9865.CURSOR));
+    searchRequest.setCursor(null);
+    Assertions.assertFalse(searchRequest.has(AttributeNames.RFC9865.CURSOR));
+    Assertions.assertFalse(searchRequest.getCursor().isPresent());
+  }
+
+  /**
+   * The pre-RFC-9865 9-argument constructor must remain source- and binary-compatible: it delegates to the
+   * 10-arg constructor with a {@code null} cursor.
+   */
+  @DisplayName("Backwards-compatible 9-arg constructor still works")
+  @Test
+  public void testLegacyConstructorBackwardsCompatible()
+  {
+    SearchRequest searchRequest = new SearchRequest(1L, 10, "userName sw \"A\"", null, null, null, null, null, null);
+    Assertions.assertEquals(1L, searchRequest.getStartIndex().orElse(0L).longValue());
+    Assertions.assertEquals(10, searchRequest.getCount().orElse(0).intValue());
+    Assertions.assertFalse(searchRequest.getCursor().isPresent());
+  }
+
 }

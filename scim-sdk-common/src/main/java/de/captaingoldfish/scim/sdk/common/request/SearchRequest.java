@@ -30,7 +30,25 @@ public class SearchRequest extends AbstractSchemasHolder
 
   public SearchRequest()
   {
-    this(null, null, null, null, null, null, null, null, null);
+    this(null, null, null, null, null, null, null, null, null, null);
+  }
+
+  /**
+   * Backwards-compatible constructor that pre-dates RFC 9865 cursor-pagination support. Delegates to the full
+   * constructor with a {@code null} cursor value.
+   */
+  public SearchRequest(Long startIndex,
+                       Integer count,
+                       String filter,
+                       String sortBy,
+                       SortOrder sortOrder,
+                       String attributesString,
+                       List<String> attributes,
+                       String excludedAttributesString,
+                       List<String> excludedAttributes)
+  {
+    this(startIndex, count, filter, sortBy, sortOrder, attributesString, attributes, excludedAttributesString,
+         excludedAttributes, null);
   }
 
   @Builder
@@ -42,7 +60,8 @@ public class SearchRequest extends AbstractSchemasHolder
                        String attributesString,
                        List<String> attributes,
                        String excludedAttributesString,
-                       List<String> excludedAttributes)
+                       List<String> excludedAttributes,
+                       String cursor)
   {
     setSchemas(Collections.singletonList(SchemaUris.SEARCH_REQUEST_URI));
     setStartIndex(startIndex);
@@ -66,6 +85,7 @@ public class SearchRequest extends AbstractSchemasHolder
     {
       setExcludedAttributes(excludedAttributes);
     }
+    setCursor(cursor);
   }
 
   /**
@@ -245,6 +265,28 @@ public class SearchRequest extends AbstractSchemasHolder
   public void setExcludedAttributes(List<String> excludedAttributes)
   {
     setStringAttributeList(AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES, excludedAttributes);
+  }
+
+  /**
+   * The {@code cursor} attribute of the search request. Its presence (even as an empty string) signals to the
+   * service provider that the client wishes to use cursor-based pagination. An empty string requests the first
+   * page; subsequent pages set this to a {@code nextCursor} (or {@code previousCursor}) value returned by a
+   * previous response. OPTIONAL. See RFC 9865.
+   */
+  public Optional<String> getCursor()
+  {
+    return getStringAttribute(AttributeNames.RFC9865.CURSOR);
+  }
+
+  /**
+   * The {@code cursor} attribute of the search request. An empty string requests the first page using
+   * cursor-based pagination; subsequent pages set this to a {@code nextCursor} (or {@code previousCursor})
+   * value returned by a previous response. Setting this to {@code null} removes the attribute from the JSON
+   * representation, leaving the request in index-based pagination mode. OPTIONAL. See RFC 9865.
+   */
+  public void setCursor(String cursor)
+  {
+    setAttribute(AttributeNames.RFC9865.CURSOR, cursor);
   }
 
   /**

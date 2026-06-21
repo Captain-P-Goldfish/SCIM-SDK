@@ -21,9 +21,11 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 import com.fasterxml.jackson.databind.JsonNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.ScimType;
 import de.captaingoldfish.scim.sdk.common.exceptions.BadRequestException;
 import de.captaingoldfish.scim.sdk.common.resources.ServiceProvider;
 import de.captaingoldfish.scim.sdk.common.resources.complex.FilterConfig;
+import de.captaingoldfish.scim.sdk.common.resources.complex.PaginationConfig;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.UserHandlerImpl;
@@ -46,6 +48,162 @@ public class RequestUtilsTest
   public void testGetQueryParameters(String query)
   {
     Assertions.assertDoesNotThrow(() -> RequestUtils.getQueryParameters(query));
+  }
+
+  /**
+   * RFC 9865: an absent cursor query parameter must yield {@link Optional#empty()}; an empty-string value must
+   * round-trip as {@code Optional.of("")} so callers can detect the "first page" signal.
+   */
+  @Test
+  @DisplayName("parseCursor distinguishes missing from empty (RFC 9865)")
+  public void testParseCursorDistinguishesMissingFromEmpty()
+  {
+    Assertions.assertFalse(RequestUtils.parseCursor(null).isPresent());
+    Assertions.assertEquals("", RequestUtils.parseCursor("").orElse(null));
+    Assertions.assertEquals("abc", RequestUtils.parseCursor("abc").orElse(null));
+  }
+
+  /**
+   * RFC 9865: cursor-mode count must NOT silently clamp negative values; it must raise {@code invalidCount}.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount rejects negative count with invalidCount (RFC 9865)")
+  public void testGetEffectiveCursorCountRejectsNegative()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(100).build())
+                                                     .paginationConfig(PaginationConfig.builder().cursor(true).build())
+                                                     .build();
+    BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
+                                                     () -> RequestUtils.getEffectiveCursorCount(serviceProvider, -1));
+    Assertions.assertEquals(ScimType.RFC9865.INVALID_COUNT, ex.getScimType());
+  }
+
+  /**
+   * RFC 9865 permits both clamping and rejecting a count that exceeds {@code maxPageSize}. The SDK clamps —
+   * matching how index mode behaves — so clients that have not consulted {@code ServiceProviderConfig} still
+   * get useful results.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount clamps values above maxPageSize to maxPageSize (RFC 9865)")
+  public void testGetEffectiveCursorCountClampsAboveMaxPageSize()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(50).build())
+                                                     .paginationConfig(PaginationConfig.builder()
+                                                                                       .cursor(true)
+                                                                                       .maxPageSize(20)
+                                                                                       .build())
+                                                     .build();
+    Assertions.assertEquals(20, RequestUtils.getEffectiveCursorCount(serviceProvider, 25));
+  }
+
+  /**
+   * {@code count=0} is a documented SCIM discovery pattern (RFC 7644 §3.4.2.4 — count is a non-negative
+   * integer): clients use it to fetch only {@code totalResults} without paying for the resource bodies. Cursor
+   * mode must accept it for the same reason index mode does.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount accepts count=0 (RFC 7644 discovery pattern)")
+  public void testGetEffectiveCursorCountAcceptsZero()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(50).build())
+                                                     .paginationConfig(PaginationConfig.builder().cursor(true).build())
+                                                     .build();
+    Assertions.assertEquals(0, RequestUtils.getEffectiveCursorCount(serviceProvider, 0));
+  }
+
+  /**
+   * A {@code null} cursor-mode count falls back to {@code PaginationConfig.defaultPageSize} when configured.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount falls back to defaultPageSize when count is null")
+  public void testGetEffectiveCursorCountUsesDefaultPageSize()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(100).build())
+                                                     .paginationConfig(PaginationConfig.builder()
+                                                                                       .cursor(true)
+                                                                                       .defaultPageSize(25)
+                                                                                       .build())
+                                                     .build();
+    Assertions.assertEquals(25, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
+  }
+
+  /**
+   * When {@code PaginationConfig.defaultPageSize} is not configured, the fallback is the effective max page
+   * size — and when {@code maxPageSize} is also unset, that resolves to {@code FilterConfig.maxResults} so
+   * deployments that never opted in to RFC 9865's pagination config still get a sensible default.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount falls back to FilterConfig.maxResults when neither defaultPageSize nor maxPageSize is set")
+  public void testGetEffectiveCursorCountFallsBackToFilterMaxResults()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(40).build())
+                                                     .paginationConfig(PaginationConfig.builder().cursor(true).build())
+                                                     .build();
+    Assertions.assertEquals(40, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
+  }
+
+  /**
+   * When {@code PaginationConfig.defaultPageSize} is not configured but {@code maxPageSize} is, the
+   * {@code null} count must fall back to {@code maxPageSize} — never higher than what the service provider is
+   * willing to return on a single page.
+   */
+  @Test
+  @DisplayName("getEffectiveCursorCount falls back to maxPageSize when defaultPageSize is unset")
+  public void testGetEffectiveCursorCountFallsBackToMaxPageSize()
+  {
+    ServiceProvider serviceProvider = ServiceProvider.builder()
+                                                     .filterConfig(FilterConfig.builder().maxResults(100).build())
+                                                     .paginationConfig(PaginationConfig.builder()
+                                                                                       .cursor(true)
+                                                                                       .maxPageSize(25)
+                                                                                       .build())
+                                                     .build();
+    Assertions.assertEquals(25, RequestUtils.getEffectiveCursorCount(serviceProvider, null));
+  }
+
+  /**
+   * Round-trip for the SDK's offset-cursor codec: {@code encodeOffsetCursor} should produce a value that
+   * {@code decodeOffsetCursor} restores to the original offset, and the empty cursor must mean offset {@code 0}
+   * (RFC 9865 §2.1 first-page signal).
+   */
+  @Test
+  @DisplayName("offset cursor codec round-trips and treats the empty cursor as first page")
+  public void testOffsetCursorRoundTrip()
+  {
+    Assertions.assertEquals(1, RequestUtils.decodeCursorStartIndex(""));
+    Assertions.assertEquals(1, RequestUtils.decodeCursorStartIndex(null));
+    Assertions.assertEquals(1, RequestUtils.decodeCursorStartIndex(RequestUtils.encodeStartIndexCursor(0)));
+    for ( int startIndex : new int[]{1, 5, 100, 1234, Integer.MAX_VALUE} )
+    {
+      String encodedStartIndex = RequestUtils.encodeStartIndexCursor(startIndex);
+      Assertions.assertEquals(startIndex,
+                              RequestUtils.decodeCursorStartIndex(encodedStartIndex),
+                              "round-trip failed for " + startIndex);
+    }
+  }
+
+  /**
+   * A cursor the SDK cannot decode must NOT throw here: a cursor is opaque to the SDK, so an undecodable value
+   * is assumed to be a cursor the resource handler generated itself (e.g. a keyset cursor) and is reported with
+   * the sentinel {@code -1}. It is only rejected with {@code invalidCursor} (RFC 9865 §3) when it reaches the
+   * index-based auto-bridge, i.e. when the handler does not implement cursor pagination (covered by
+   * {@code ResourceEndpointHandlerTest.testCursorAutoBridgeRejectsMalformedCursor}).
+   */
+  @Test
+  @DisplayName("decodeCursorStartIndex returns the -1 sentinel for cursors it cannot decode")
+  public void testDecodeCursorStartIndexReturnsSentinelForCustomCursor()
+  {
+    for ( String custom : new String[]{"not-base64!@#", "bm9uLW51bWVyaWM"/* "non-numeric" */, "LTU"/* "-5" */} )
+    {
+      Assertions.assertEquals(-1,
+                              RequestUtils.decodeCursorStartIndex(custom),
+                              "expected the -1 sentinel for '" + custom + "'");
+    }
   }
 
   @Nested

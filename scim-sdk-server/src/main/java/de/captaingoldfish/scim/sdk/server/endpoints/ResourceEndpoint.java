@@ -265,6 +265,10 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                                         effectiveContext.getAuthorization());
           String startIndex = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.START_INDEX.toLowerCase());
           String count = uriInfos.getQueryParameters().get(AttributeNames.RFC7643.COUNT);
+          // RFC 9865: presence of the cursor query parameter (even with an empty value) selects cursor-based
+          // pagination. UriInfos populates "" for both ?cursor and ?cursor=, so a non-null value distinguishes
+          // "cursor pagination requested" from "no cursor parameter".
+          String cursor = uriInfos.getQueryParameters().get(AttributeNames.RFC9865.CURSOR);
           return listResources(uriInfos.getResourceEndpoint(),
                                RequestUtils.parseStartIndex(startIndex).orElse(null),
                                RequestUtils.parseCount(count).orElse(null),
@@ -273,6 +277,7 @@ public final class ResourceEndpoint extends ResourceEndpointHandler
                                uriInfos.getQueryParameters().get(AttributeNames.RFC7643.SORT_ORDER.toLowerCase()),
                                getAttributeList(uriInfos, AttributeNames.RFC7643.ATTRIBUTES),
                                getAttributeList(uriInfos, AttributeNames.RFC7643.EXCLUDED_ATTRIBUTES.toLowerCase()),
+                               cursor,
                                uriInfos::getBaseUri,
                                effectiveContext);
         }

@@ -3,6 +3,7 @@ package de.captaingoldfish.scim.sdk.common.response;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.List;
+import java.util.Optional;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -47,11 +48,37 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
 
   public ListResponse(List<JsonNode> listedResources, Long totalResults, Integer itemsPerPage, Long startIndex)
   {
+    this(listedResources, totalResults, itemsPerPage, startIndex, null, null);
+  }
+
+  /**
+   * Constructs a list response with optional cursor-based pagination attributes. Passing {@code null} for
+   * {@code startIndex} omits it from the JSON representation, as expected by RFC 9865 cursor-paginated
+   * responses. Passing {@code null} for {@code nextCursor} or {@code previousCursor} omits the corresponding
+   * attribute.
+   *
+   * @param listedResources the resources to include in the page
+   * @param totalResults the total number of results matching the query, or {@code null} if unknown
+   * @param itemsPerPage the number of results returned in this page
+   * @param startIndex the 1-based start index for index-based pagination, or {@code null} for cursor-only mode
+   * @param nextCursor the {@code nextCursor} token, or {@code null} to omit
+   * @param previousCursor the {@code previousCursor} token, or {@code null} to omit
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>
+   */
+  public ListResponse(List<JsonNode> listedResources,
+                      Long totalResults,
+                      Integer itemsPerPage,
+                      Long startIndex,
+                      String nextCursor,
+                      String previousCursor)
+  {
     super(null);
     setSchemasAttribute();
     setTotalResults(totalResults);
     setItemsPerPage(itemsPerPage);
     setStartIndex(startIndex);
+    setNextCursor(nextCursor);
+    setPreviousCursor(previousCursor);
     setListedResources(listedResources);
     this.type = getGenericType();
   }
@@ -145,6 +172,44 @@ public class ListResponse<T extends ScimObjectNode> extends ScimResponse
   public void setListedResources(List<JsonNode> listedResources)
   {
     setAttribute(AttributeNames.RFC7643.RESOURCES, listedResources);
+  }
+
+  /**
+   * A cursor value string that MAY be used in a subsequent request to obtain the next page of results. Service
+   * providers supporting cursor-based pagination MUST include {@code nextCursor} in all paged query responses
+   * except when returning the last page. See RFC 9865.
+   */
+  public Optional<String> getNextCursor()
+  {
+    return getStringAttribute(AttributeNames.RFC9865.NEXT_CURSOR);
+  }
+
+  /**
+   * A cursor value string that MAY be used in a subsequent request to obtain the next page of results. Passing
+   * {@code null} omits the attribute from the JSON representation. See RFC 9865.
+   */
+  public void setNextCursor(String nextCursor)
+  {
+    setAttribute(AttributeNames.RFC9865.NEXT_CURSOR, nextCursor);
+  }
+
+  /**
+   * A cursor value string that MAY be used in a subsequent request to obtain the previous page of results.
+   * Returning {@code previousCursor} is OPTIONAL. {@code previousCursor} MUST NOT be returned with the first
+   * page. See RFC 9865.
+   */
+  public Optional<String> getPreviousCursor()
+  {
+    return getStringAttribute(AttributeNames.RFC9865.PREVIOUS_CURSOR);
+  }
+
+  /**
+   * A cursor value string that MAY be used in a subsequent request to obtain the previous page of results.
+   * Passing {@code null} omits the attribute from the JSON representation. See RFC 9865.
+   */
+  public void setPreviousCursor(String previousCursor)
+  {
+    setAttribute(AttributeNames.RFC9865.PREVIOUS_CURSOR, previousCursor);
   }
 
   /**

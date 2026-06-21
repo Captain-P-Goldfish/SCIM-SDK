@@ -10,6 +10,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.authorize.Authorization;
 import de.captaingoldfish.scim.sdk.server.filter.FilterNode;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 
 /**
@@ -20,6 +21,7 @@ import lombok.Getter;
  * {@link ResourceHandler#listResources(long, int, FilterNode, SchemaAttribute, SortOrder, List, List, Authorization)}
  * methods
  */
+@Setter
 @Getter
 @Builder
 public class PartialListResponse<T extends ResourceNode>
@@ -36,5 +38,23 @@ public class PartialListResponse<T extends ResourceNode>
    * use paging mechanisms
    */
   private long totalResults;
+
+  /**
+   * Optional cursor value that the client SHOULD pass to retrieve the next page of results. When set, it will
+   * be included in the {@link de.captaingoldfish.scim.sdk.common.response.ListResponse} as {@code nextCursor}.
+   * MUST be {@code null} for the last page. May be returned for index-based pagination too (RFC 9865 permits
+   * combining cursor and index pagination in a single response).
+   *
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>
+   */
+  private String nextCursor;
+
+  /**
+   * Optional cursor value that the client SHOULD pass to retrieve the previous page of results. Returning
+   * {@code previousCursor} is OPTIONAL. MUST be {@code null} for the first page.
+   *
+   * @see <a href="https://www.rfc-editor.org/rfc/rfc9865.html">RFC 9865</a>
+   */
+  private String previousCursor;
 
 }
