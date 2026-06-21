@@ -131,7 +131,7 @@ for any registered resource
 - [x] Bulk-Get. (@see [Bulk-Get Feature](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Bulk-Get-(Custom-Feature)-(@since-1.15.0)))
 - [x] Default-Values. (@see [Default Values](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Additional-Features#default-values-since-1200))
 - [x] Patch-simple-value-remove. (@see [Support for special filter-expressions](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Patching-resources#support-for-special-filter-expression-since-1200))
-- [x] Cursor based pagination [RFC9865](https://datatracker.ietf.org/doc/html/rfc9865) ([@see Cursor based pagination](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Cursor-bases-pagination-(RFC9865)))
+- [x] Cursor based pagination [RFC9865](https://datatracker.ietf.org/doc/html/rfc9865) ([@see Cursor based pagination](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Cursor-based-pagination-(RFC9865)))
 
 ## Client implementation
 
