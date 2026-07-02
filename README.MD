@@ -42,7 +42,8 @@ wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-
 
 ---
 **This project requires JDK 8 or higher**
-
+      
+for usage with Jackson 2
 ```xml
 <dependency>
     <groupId>de.captaingoldfish</groupId>
@@ -55,6 +56,22 @@ wiki: [best practices](https://github.com/Captain-P-Goldfish/SCIM-SDK/wiki/Best-
     <version>${project.version}</version>
 </dependency>
 ```
+
+for usage with Jackson 3
+
+```xml
+<dependency>
+    <groupId>de.captaingoldfish</groupId>
+    <artifactId>scim-sdk-server</artifactId>
+    <version>${project.version}-jackson3</version>
+</dependency>
+<dependency>
+    <groupId>de.captaingoldfish</groupId>
+    <artifactId>scim-sdk-client</artifactId>
+    <version>${project.version}-jackson3</version>
+</dependency>
+```
+
 
 if you want to use the built-in methods for the rest-api you must make sure that you deliver the corresponding
 dependencies yourself, because this project has marked them as optional. They are not being imported as transitive
