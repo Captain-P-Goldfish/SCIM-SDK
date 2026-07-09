@@ -78,7 +78,7 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
      * this test makes sure that an appropriate error is returned if the patch-value is not able to represent the
      * resource itself
      */
-    @DisplayName("patch-value is array")
+    @DisplayName("patch-value is empty array")
     @Test
     public void valueIsInvalidJson()
     {
@@ -96,7 +96,9 @@ public class PatchUnknownAttributesTests extends AbstractPatchTest
                                                                                   new Context(null));
       BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
                                                        () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
-      Assertions.assertEquals("The resourceNode is not a valid JSON-object", ex.getMessage());
+      Assertions.assertEquals("Patch operation without a path must contain a single value that represents "
+                              + "the resource itself",
+                              ex.getMessage());
     }
 
     @DisplayName("Main resource Tests")

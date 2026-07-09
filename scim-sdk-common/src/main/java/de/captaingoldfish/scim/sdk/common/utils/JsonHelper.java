@@ -141,6 +141,26 @@ public final class JsonHelper
     }
     catch (IOException e)
     {
+      throw new de.captaingoldfish.scim.sdk.common.exceptions.IOException("Invalid content, the node could not be parsed",
+                                                                          e, null, null);
+    }
+  }
+
+  /**
+   * will read a json document from the given string
+   *
+   * @param jsonDocument the direct json representation
+   * @return the parsed json document
+   */
+  public static JsonNode readJsonNode(String jsonDocument)
+  {
+    log.trace("Trying to read json node: {}", jsonDocument);
+    try (Reader reader = new StringReader(jsonDocument))
+    {
+      return new ObjectMapper().readTree(reader);
+    }
+    catch (IOException e)
+    {
       throw new de.captaingoldfish.scim.sdk.common.exceptions.IOException("Invalid content, the document could not be parsed",
                                                                           e, null, null);
     }
@@ -600,9 +620,6 @@ public final class JsonHelper
 
   /**
    * creates a json string from the given json node
-   */
-  /**
-   * override method for usage with wildfly 18 that still uses jackson 2.9.x
    */
   public static String toJsonString(JsonNode jsonNode)
   {

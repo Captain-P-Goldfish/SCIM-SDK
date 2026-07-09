@@ -984,7 +984,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
       List<String> values = patchRequestOperation.getValues();
       if (values.size() != 1)
       {
-        throw new BadRequestException("Patch operation without a path must contain only a single value that represents "
+        throw new BadRequestException("Patch operation without a path must contain a single value that represents "
                                       + "the resource itself", ScimType.RFC7644.INVALID_VALUE);
       }
     }

@@ -83,7 +83,8 @@ public class MsAzurePatchValueSubAttributeRebuilderTest implements FileReference
 
     Assertions.assertEquals(patchOp, fixedOperation.getOp());
     Assertions.assertFalse(fixedOperation.getPath().isPresent());
-    Assertions.assertEquals(values, fixedOperation.getValues());
+    Assertions.assertEquals(JsonHelper.readJsonDocument(values.get(0)),
+                            JsonHelper.readJsonDocument(fixedOperation.getValues().get(0)));
   }
 
   /**
@@ -214,8 +215,8 @@ public class MsAzurePatchValueSubAttributeRebuilderTest implements FileReference
   public void testIgnoreInnerSubValueIfMoreThanOneAttribute()
   {
     final PatchOp patchOp = PatchOp.ADD;
-    final List<String> values = Collections.singletonList("{\"value\": \"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\","
-                                                          + "\"$ref\": \"123456789\"}");
+    final List<String> values = Collections.singletonList("{\"value\":\"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\","
+                                                          + "\"$ref\":\"123456789\"}");
 
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
@@ -237,7 +238,7 @@ public class MsAzurePatchValueSubAttributeRebuilderTest implements FileReference
   public void testInnerValueSubAttributeIsIgnoredWhenIllegalJson()
   {
     final PatchOp patchOp = PatchOp.ADD;
-    final List<String> values = Collections.singletonList("{\"value\": \"{\\\"display\\\"\\\"DocumentMgmt-BuyerAdmin\\\"\"}");
+    final List<String> values = Collections.singletonList("{\"value\":\"{\\\"display\\\"\\\"DocumentMgmt-BuyerAdmin\\\"\"}");
 
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
@@ -259,7 +260,7 @@ public class MsAzurePatchValueSubAttributeRebuilderTest implements FileReference
   public void testInnerValueSubAttributeIsIgnoredWhenArray()
   {
     final PatchOp patchOp = PatchOp.ADD;
-    final List<String> values = Collections.singletonList("{\"value\": \"[{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}]\"}");
+    final List<String> values = Collections.singletonList("{\"value\":\"[{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}]\"}");
 
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
@@ -281,8 +282,8 @@ public class MsAzurePatchValueSubAttributeRebuilderTest implements FileReference
   @ValueSource(strings = {"ADD", "REPLACE"})
   public void testHandlerWorksForAddAndReplaceOps(PatchOp patchOp)
   {
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\": \"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\"}",
-                                                              "{\"value\": \"{\\\"display\\\":\\\"Buyer-Admin\\\"}\"}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\":\"{\\\"display\\\":\\\"DocumentMgmt-BuyerAdmin\\\"}\"}",
+                                                              "{\"value\":\"{\\\"display\\\":\\\"Buyer-Admin\\\"}\"}"));
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).values(values).build();
     MsAzurePatchValueSubAttributeRebuilder workaroundHandler = new MsAzurePatchValueSubAttributeRebuilder();

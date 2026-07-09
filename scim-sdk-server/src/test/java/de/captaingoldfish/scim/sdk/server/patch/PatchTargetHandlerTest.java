@@ -29,6 +29,7 @@ import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.node.TextNode;
 
+import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames.RFC7643;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -61,6 +62,7 @@ import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.endpoints.EndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpoint;
 import de.captaingoldfish.scim.sdk.server.endpoints.ResourceEndpointBridge;
+import de.captaingoldfish.scim.sdk.server.endpoints.ResourceHandler;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.GroupEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.base.UserEndpointDefinition;
 import de.captaingoldfish.scim.sdk.server.endpoints.handler.AllTypesHandlerImpl;
@@ -72,6 +74,7 @@ import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
+import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.extern.slf4j.Slf4j;
 
@@ -1385,8 +1388,8 @@ public class PatchTargetHandlerTest implements FileReferences
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(PatchOp.REPLACE)
                                                                                 .path(path)
-                                                                                .values(values)
                                                                                 .build());
+    operations.get(0).set(RFC7643.VALUE, TextNode.valueOf(values.get(0)));
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     AllTypes allTypes = new AllTypes(true);
 
@@ -1443,8 +1446,8 @@ public class PatchTargetHandlerTest implements FileReferences
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .op(patchOp)
                                                                                 .path(path)
-                                                                                .values(values)
                                                                                 .build());
+    operations.get(0).set(RFC7643.VALUE, TextNode.valueOf(values.get(0)));
     PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
     AllTypes allTypes = new AllTypes(true);
     RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
@@ -4269,7 +4272,7 @@ public class PatchTargetHandlerTest implements FileReferences
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
                                                      () -> patchAllTypes(allTypes, patchOpRequest, false));
     String expectedErrorMessage = "Value for attribute 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager' "
-                                  + "must be an object but was '\"271\"'";
+                                  + "must be an object but was '[271]'";
     Assertions.assertEquals(expectedErrorMessage, ex.getMessage());
   }
 
@@ -5436,5 +5439,54 @@ public class PatchTargetHandlerTest implements FileReferences
       Assertions.assertFalse(patchRequestHandler.isResourceChanged());
       Assertions.assertEquals(allTypes, patchedAllTypes);
     }
+  }
+
+  /**
+   * This test verifies that attributes can have underscores as starting character.
+   */
+  @DisplayName("Attribute names may have underscore '_' characters as starting character")
+  @Test
+  public void testUndersoresAreValidAsStartingCharacterForPatchAndSchemaAttributes()
+  {
+    serviceProvider.getPatchConfig().setIgnoreUnknownAttribute(true);
+
+    JsonNode enterpriseUserSchema = JsonHelper.loadJsonDocument(ClassPathReferences.ENTERPRISE_USER_SCHEMA_JSON);
+    JsonNode allTypesResourceTypeNode = JsonHelper.loadJsonDocument(ALL_TYPES_RESOURCE_TYPE);
+    JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
+
+    ArrayNode attributes = (ArrayNode)allTypesSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
+    SchemaAttribute timeZoneAttribute = SchemaAttributeBuilder.builder()
+                                                              .name("__timeZone")
+                                                              .mutability(Mutability.READ_WRITE)
+                                                              .build();
+    ResourceHandler allTypesHandler = allTypesResourceType.getResourceHandlerImpl();
+    attributes.add(timeZoneAttribute);
+    this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
+                                                                                         allTypesSchema,
+                                                                                         Arrays.asList(enterpriseUserSchema),
+                                                                                         allTypesHandler));
+
+    AllTypes allTypes = new AllTypes(true);
+
+
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.ADD)
+                                                                                .path(timeZoneAttribute.getName())
+                                                                                .value("\"4\"")
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addAllTypesToProvider(allTypes);
+    PatchRequestHandler<AllTypes> patchRequestHandler = new PatchRequestHandler(allTypes.getId().get(),
+                                                                                allTypesResourceType.getResourceHandlerImpl(),
+                                                                                resourceEndpoint.getPatchWorkarounds(),
+                                                                                new Context(null));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertFalse(patchedAllTypes.getEnterpriseUser().isPresent());
+    Assertions.assertEquals(4, patchedAllTypes.size(), patchedAllTypes.toPrettyString());
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.SCHEMAS));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.ID));
+    Assertions.assertTrue(patchedAllTypes.has(AttributeNames.RFC7643.META));
+    Assertions.assertTrue(patchedAllTypes.has(timeZoneAttribute.getName()));
   }
 }

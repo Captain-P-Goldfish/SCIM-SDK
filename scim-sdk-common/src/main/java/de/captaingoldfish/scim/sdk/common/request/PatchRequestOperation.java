@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import org.apache.commons.lang3.StringUtils;
+
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -37,16 +39,16 @@ public class PatchRequestOperation extends ScimObjectNode
   public PatchRequestOperation(String path, PatchOp op, List<String> values, JsonNode valueNode)
   {
     this();
-    setPath(path);
     setOp(op);
-    if (values == null || values.isEmpty())
-    {
-      setValueNode(valueNode);
-    }
-    else
+    if (values != null && !values.isEmpty())
     {
       setValues(values);
     }
+    else if (valueNode != null)
+    {
+      setValueNode(valueNode);
+    }
+    setPath(path);
   }
 
   /**
@@ -65,6 +67,19 @@ public class PatchRequestOperation extends ScimObjectNode
   public void setPath(String path)
   {
     setAttribute(AttributeNames.RFC7643.PATH, path);
+    if (StringUtils.isBlank(path))
+    {
+      getValueNode().ifPresent(arrayNode -> {
+        if (arrayNode.size() == 1)
+        {
+          set(AttributeNames.RFC7643.VALUE, arrayNode.get(0));
+        }
+      });
+    }
+    else
+    {
+      getValueNode().ifPresent(arrayNode -> set(AttributeNames.RFC7643.VALUE, arrayNode));
+    }
   }
 
   /**
@@ -106,12 +121,16 @@ public class PatchRequestOperation extends ScimObjectNode
       return Optional.of(valueNode);
     }
     String textValue = valueNode.asText();
-    if (valueNode instanceof TextNode && textValue.contains("{"))
+    if (valueNode instanceof TextNode && textValue.contains("{")
+        && (textValue.startsWith("{") || textValue.startsWith("[")))
     {
       try
       {
-        valueNode = JsonHelper.readJsonDocument(textValue);
-        setValue(valueNode);
+        JsonNode parsedNode = JsonHelper.readJsonDocument(textValue);
+        if (parsedNode.isObject() || parsedNode.isArray())
+        {
+          valueNode = parsedNode;
+        }
       }
       catch (Exception ex)
       {
@@ -119,7 +138,7 @@ public class PatchRequestOperation extends ScimObjectNode
       }
     }
     valueExtracted = true;
-    return Optional.of(valueNode);
+    return Optional.ofNullable(valueNode);
   }
 
   /**
@@ -128,7 +147,14 @@ public class PatchRequestOperation extends ScimObjectNode
   public void setValue(String value)
   {
     valueExtracted = false;
-    setAttribute(AttributeNames.RFC7643.VALUE, value);
+    if (getPath().isPresent())
+    {
+      setAttributeList(AttributeNames.RFC7643.VALUE, value == null ? null : Collections.singletonList(value));
+    }
+    else
+    {
+      setAttribute(AttributeNames.RFC7643.VALUE, value);
+    }
   }
 
   /**
@@ -155,17 +181,24 @@ public class PatchRequestOperation extends ScimObjectNode
   public void setValues(List<String> value)
   {
     valueExtracted = false;
-    if (value == null || value.size() > 1)
+    if (value == null || value.isEmpty())
+    {
+      remove(AttributeNames.RFC7643.VALUE);
+    }
+    else if (value.size() > 1)
     {
       setAttributeList(AttributeNames.RFC7643.VALUE, value);
     }
-    else if (value.size() == 1)
-    {
-      setAttribute(AttributeNames.RFC7643.VALUE, value.get(0));
-    }
     else
     {
-      setAttribute(AttributeNames.RFC7643.VALUE, (String)null);
+      if (getPath().isPresent())
+      {
+        setAttributeList(AttributeNames.RFC7643.VALUE, value);
+      }
+      else
+      {
+        setAttribute(AttributeNames.RFC7643.VALUE, value.get(0));
+      }
     }
   }
 
@@ -189,7 +222,7 @@ public class PatchRequestOperation extends ScimObjectNode
       ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
       try
       {
-        JsonNode jsonValue = JsonHelper.readJsonDocument(jsonNode.textValue());
+        JsonNode jsonValue = JsonHelper.readJsonNode(jsonNode.textValue());
         arrayNode.add(jsonValue);
       }
       catch (Exception ex)
@@ -201,7 +234,14 @@ public class PatchRequestOperation extends ScimObjectNode
     }
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.add(jsonNode);
-    setValueNode(arrayNode);
+    if (getPath().isPresent())
+    {
+      setValueNode(arrayNode);
+    }
+    else
+    {
+      setValueNode(jsonNode);
+    }
     return Optional.of(arrayNode);
   }
 
@@ -210,7 +250,33 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   public void setValueNode(JsonNode value)
   {
-    setAttribute(AttributeNames.RFC7643.VALUE, value == null ? null : Collections.singletonList(value));
+    if (value == null)
+    {
+      remove(AttributeNames.RFC7643.VALUE);
+      return;
+    }
+    if (getPath().isPresent())
+    {
+      if (value.isArray())
+      {
+        set(AttributeNames.RFC7643.VALUE, value);
+      }
+      else
+      {
+        setAttribute(AttributeNames.RFC7643.VALUE, Collections.singletonList(value));
+      }
+    }
+    else
+    {
+      if (value.isArray() && value.size() == 1)
+      {
+        set(AttributeNames.RFC7643.VALUE, value.get(0));
+      }
+      else
+      {
+        set(AttributeNames.RFC7643.VALUE, value);
+      }
+    }
   }
 
   public static class PatchRequestOperationBuilder
