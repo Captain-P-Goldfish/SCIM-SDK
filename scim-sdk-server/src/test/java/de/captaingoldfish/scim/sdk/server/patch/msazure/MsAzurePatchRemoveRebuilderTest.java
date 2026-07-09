@@ -144,7 +144,7 @@ public class MsAzurePatchRemoveRebuilderTest implements FileReferences
   {
     final PatchOp patchOp = PatchOp.REMOVE;
     final String path = "members";
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\": {\"value\": \"123456\"}}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\":{\"value\":\"123456\"}}"));
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).path(path).values(values).build();
     MsAzurePatchRemoveRebuilder msAzurePatchRemoveRebuilder = new MsAzurePatchRemoveRebuilder();
@@ -165,7 +165,7 @@ public class MsAzurePatchRemoveRebuilderTest implements FileReferences
   {
     final PatchOp patchOp = PatchOp.REMOVE;
     final String path = "members";
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\": [\"123456\"]}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\":[\"123456\"]}"));
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).path(path).values(values).build();
     MsAzurePatchRemoveRebuilder msAzurePatchRemoveRebuilder = new MsAzurePatchRemoveRebuilder();
@@ -186,7 +186,7 @@ public class MsAzurePatchRemoveRebuilderTest implements FileReferences
   {
     final PatchOp patchOp = PatchOp.REMOVE;
     final String path = "members";
-    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\": \"123456\", \"display\": \"hello\"}"));
+    final List<String> values = new ArrayList<>(Arrays.asList("{\"value\":\"123456\",\"display\":\"hello\"}"));
 
     PatchRequestOperation operation = PatchRequestOperation.builder().op(patchOp).path(path).values(values).build();
     MsAzurePatchRemoveRebuilder msAzurePatchRemoveRebuilder = new MsAzurePatchRemoveRebuilder();
