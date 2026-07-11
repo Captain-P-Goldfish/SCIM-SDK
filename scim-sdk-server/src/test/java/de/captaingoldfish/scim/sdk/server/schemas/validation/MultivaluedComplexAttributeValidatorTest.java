@@ -2,7 +2,8 @@ package de.captaingoldfish.scim.sdk.server.schemas.validation;
 
 import java.math.BigInteger;
 
-import org.apache.commons.lang3.StringUtils;
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -402,14 +403,14 @@ public class MultivaluedComplexAttributeValidatorTest
    *      "array": [
    *        {
    *           "firstname": "goldfish",
-   *           "lastname": true  // <==== illegal value
+   *           "lastname": true  // <==== illegal value that will be implicitly parsed to string
    *        }
    *      ]
    *    }
    * </pre>
    */
   @Test
-  public void testComplexMultivaluedValidationWithIllegalSubelement()
+  public void testComplexMultivaluedValidationWithBooleanSubelement()
   {
     SchemaAttribute firstnameAttribute = SchemaAttributeBuilder.builder().name("firstname").type(Type.STRING).build();
     SchemaAttribute lastnameAttribute = SchemaAttributeBuilder.builder().name("lastname").type(Type.STRING).build();
@@ -431,29 +432,14 @@ public class MultivaluedComplexAttributeValidatorTest
     element.set("lastname", illegalNode);
     attribute.add(element);
 
-    try
-    {
-      MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute, contextValidator);
-      Assertions.fail("this point must not be reached");
-    }
-    catch (AttributeValidationException ex)
-    {
-      {
-        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String errorMessage = String.format("Found unsupported value in multivalued complex attribute '%s'", attribute);
-        Assertions.assertEquals(errorMessage, ex.getMessage());
-      }
-      {
-        AttributeValidationException cause = (AttributeValidationException)ex.getCause();
-        Assertions.assertEquals(lastnameAttribute, cause.getSchemaAttribute());
-        String errorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                            lastnameAttribute.getFullResourceName(),
-                                            lastnameAttribute.getType().getValue(),
-                                            StringUtils.lowerCase(illegalNode.getNodeType().toString()),
-                                            illegalNode);
-        Assertions.assertEquals(errorMessage, cause.getMessage());
-      }
-    }
+    ArrayNode resultArrayNode = MultivaluedComplexAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                              attribute,
+                                                                                              contextValidator);
+    Assertions.assertEquals(1, resultArrayNode.size());
+    ObjectNode resultObjectNode = (ObjectNode)resultArrayNode.get(0);
+    Assertions.assertEquals(element.get("firstname").textValue(), resultObjectNode.get("firstname").textValue());
+    MatcherAssert.assertThat(resultObjectNode.get("lastname").getClass(), Matchers.typeCompatibleWith(TextNode.class));
+    Assertions.assertEquals("true", resultObjectNode.get("lastname").textValue());
   }
 
   /**

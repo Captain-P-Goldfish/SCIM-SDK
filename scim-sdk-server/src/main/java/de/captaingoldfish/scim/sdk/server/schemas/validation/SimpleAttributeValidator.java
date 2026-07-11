@@ -13,8 +13,12 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.Strings;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -31,7 +35,6 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.Strings;
 
 
 /**
@@ -147,6 +150,11 @@ class SimpleAttributeValidator
       if (fallbackNode.isPresent())
       {
         validatedNodeSupplier = fallbackNode::get;
+        break invalidNodeType;
+      }
+      if (Type.STRING.equals(type) && !(attribute instanceof ObjectNode) && !(attribute instanceof ArrayNode))
+      {
+        validatedNodeSupplier = () -> new TextNode(attribute.asText());
         break invalidNodeType;
       }
 

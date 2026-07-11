@@ -13,7 +13,7 @@
                 additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext" level="info"
+        <Logger name="de.captaingoldfish.scim.sdk.server.endpoints.validation.ValidationContext" level="debug"
                 additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>

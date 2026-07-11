@@ -275,25 +275,17 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.addAll(Arrays.asList(new TextNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
-    try
+    ArrayNode resultArrayNode = SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                             arrayNode);
+    Assertions.assertEquals(4, resultArrayNode.size());
+    for ( JsonNode element : resultArrayNode )
     {
-      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
-      Assertions.fail("this point must not be reached");
+      MatcherAssert.assertThat(element.getClass(), Matchers.typeCompatibleWith(TextNode.class));
     }
-    catch (AttributeValidationException ex)
-    {
-      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-      String errorMessage = String.format("Found unsupported value in multivalued attribute '%s'", arrayNode);
-      Assertions.assertEquals(errorMessage, ex.getMessage());
-      AttributeValidationException cause = (AttributeValidationException)ex.getCause();
-      Assertions.assertEquals(schemaAttribute, cause.getSchemaAttribute());
-      String causeErrorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                               schemaAttribute.getFullResourceName(),
-                                               schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(arrayNode.get(1).getNodeType().toString()),
-                                               arrayNode.get(1));
-      Assertions.assertEquals(causeErrorMessage, cause.getMessage());
-    }
+    Assertions.assertEquals("hello", resultArrayNode.get(0).textValue());
+    Assertions.assertEquals("1", resultArrayNode.get(1).textValue());
+    Assertions.assertEquals("3", resultArrayNode.get(2).textValue());
+    Assertions.assertEquals("true", resultArrayNode.get(3).textValue());
   }
 
   /**
