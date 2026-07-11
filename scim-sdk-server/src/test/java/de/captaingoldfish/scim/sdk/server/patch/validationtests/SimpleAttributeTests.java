@@ -3,6 +3,8 @@ package de.captaingoldfish.scim.sdk.server.patch.validationtests;
 import java.util.Arrays;
 import java.util.List;
 
+import org.hamcrest.MatcherAssert;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -258,7 +260,7 @@ public class SimpleAttributeTests extends AbstractPatchTest
       /**
        * adds a number into the costCenter attribute as correct attribute reference
        */
-      @DisplayName("failure: CostCenter with number value")
+      @DisplayName("success: CostCenter with number value")
       @Test
       public void testWrongTypeOnCostCenter()
       {
@@ -281,19 +283,16 @@ public class SimpleAttributeTests extends AbstractPatchTest
                                                                                     allTypesResourceType.getResourceHandlerImpl(),
                                                                                     resourceEndpoint.getPatchWorkarounds(),
                                                                                     new Context(null));
-        RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
-                                                             () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
-        ErrorResponse errorResponse = new ErrorResponse(ex);
-        ex.getValidationContext().writeToErrorResponse(errorResponse);
-        Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type "
-                                              + "'number' with value '5'",
-                                              costCenterAttribute.getFullResourceName()),
-                                errorResponse.getDetail().get());
+        AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+        JsonNode patchedNode = patchedAllTypes.get(costCenterAttribute.getSchema().getId().get())
+                                              .get(costCenterAttribute.getName());
+        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+        Assertions.assertEquals("5", patchedNode.textValue());
 
+        Mockito.verify(defaultPatchOperationHandler)
+               .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
                .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
-        Mockito.verify(defaultPatchOperationHandler, Mockito.never())
-               .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
                .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
@@ -309,7 +308,7 @@ public class SimpleAttributeTests extends AbstractPatchTest
       /**
        * adds a number into the costCenter attribute in msAzure style attribute-reference
        */
-      @DisplayName("failure: CostCenter with number value and full attributeName-ref")
+      @DisplayName("success: CostCenter with number value and full attributeName-ref")
       @Test
       public void testWrongTypeOnCostCenterWithFullName()
       {
@@ -330,19 +329,16 @@ public class SimpleAttributeTests extends AbstractPatchTest
                                                                                     allTypesResourceType.getResourceHandlerImpl(),
                                                                                     resourceEndpoint.getPatchWorkarounds(),
                                                                                     new Context(null));
-        RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
-                                                             () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
-        ErrorResponse errorResponse = new ErrorResponse(ex);
-        ex.getValidationContext().writeToErrorResponse(errorResponse);
-        Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type "
-                                              + "'number' with value '5'",
-                                              costCenterAttribute.getFullResourceName()),
-                                errorResponse.getDetail().get());
+        AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+        JsonNode patchedNode = patchedAllTypes.get(costCenterAttribute.getSchema().getId().get())
+                                              .get(costCenterAttribute.getName());
+        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+        Assertions.assertEquals("5", patchedNode.textValue());
 
+        Mockito.verify(defaultPatchOperationHandler)
+               .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
                .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
-        Mockito.verify(defaultPatchOperationHandler, Mockito.never())
-               .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
                .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
@@ -669,7 +665,7 @@ public class SimpleAttributeTests extends AbstractPatchTest
       /**
        * injects a number into the costCenter attribute
        */
-      @DisplayName("failure: CostCenter with number value")
+      @DisplayName("success: CostCenter with number value")
       @ParameterizedTest
       @ValueSource(strings = {"costCenter", "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:costCenter"})
       public void testWrongTypeOnCostCenter(String attributeName)
@@ -691,19 +687,16 @@ public class SimpleAttributeTests extends AbstractPatchTest
                                                                                     allTypesResourceType.getResourceHandlerImpl(),
                                                                                     resourceEndpoint.getPatchWorkarounds(),
                                                                                     new Context(null));
-        RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
-                                                             () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
-        ErrorResponse errorResponse = new ErrorResponse(ex);
-        ex.getValidationContext().writeToErrorResponse(errorResponse);
-        Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type "
-                                              + "'number' with value '5'",
-                                              costCenterAttribute.getFullResourceName()),
-                                errorResponse.getDetail().get());
+        AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+        JsonNode patchedNode = patchedAllTypes.get(costCenterAttribute.getSchema().getId().get())
+                                              .get(costCenterAttribute.getName());
+        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+        Assertions.assertEquals(valueNode.asText(), patchedNode.textValue());
 
+        Mockito.verify(defaultPatchOperationHandler)
+               .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
                .handleOperation(Mockito.any(), Mockito.any(RemoveExtensionRefOperation.class));
-        Mockito.verify(defaultPatchOperationHandler, Mockito.never())
-               .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())
                .handleOperation(Mockito.any(), Mockito.any(MultivaluedSimpleAttributeOperation.class));
         Mockito.verify(defaultPatchOperationHandler, Mockito.never())

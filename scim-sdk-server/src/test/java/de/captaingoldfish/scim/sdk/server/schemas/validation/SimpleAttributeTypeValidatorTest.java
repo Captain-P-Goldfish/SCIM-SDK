@@ -745,14 +745,15 @@ public class SimpleAttributeTypeValidatorTest
   }
 
   /**
-   * failing tests for string types
+   * success tests for string types
    */
   @Nested
-  public class StringFailureTestBuilder
+  public class StringSuccessTestBuilder
   {
 
     /**
-     * will verify that a string value will not be parsed into an integer value
+     * will verify that an integer value will be implicitly parsed into a string value if the type of the
+     * attribute is string
      */
     @Test
     public void testWithInteger()
@@ -760,25 +761,14 @@ public class SimpleAttributeTypeValidatorTest
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
       JsonNode attribute = new IntNode(0);
-      try
-      {
-        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-        Assertions.fail("this point must not be reached");
-      }
-      catch (AttributeValidationException ex)
-      {
-        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                               schemaAttribute.getFullResourceName(),
-                                               schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
-                                               attribute);
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
-      }
+      JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
     }
 
     /**
-     * will verify that a string value will not be parsed into into a long value
+     * will verify that a long value will be implicitly parsed into a string value if the type of the attribute is
+     * string
      */
     @Test
     public void testWithLong()
@@ -786,25 +776,14 @@ public class SimpleAttributeTypeValidatorTest
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
       JsonNode attribute = new LongNode(1L);
-      try
-      {
-        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-        Assertions.fail("this point must not be reached");
-      }
-      catch (AttributeValidationException ex)
-      {
-        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                               schemaAttribute.getFullResourceName(),
-                                               schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
-                                               attribute);
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
-      }
+      JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
     }
 
     /**
-     * will verify that a string value will not be parsed into a boolean value
+     * will verify that a boolean value will be implicitly parsed into a string value if the type of the attribute
+     * is string
      */
     @Test
     public void testWithBoolean()
@@ -812,26 +791,14 @@ public class SimpleAttributeTypeValidatorTest
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
       JsonNode attribute = BooleanNode.getTrue();
-      try
-      {
-        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-        Assertions.fail("this point must not be reached");
-      }
-      catch (AttributeValidationException ex)
-      {
-        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                               schemaAttribute.getFullResourceName(),
-                                               schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.BOOLEAN.toString()),
-                                               attribute);
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
-      }
-
+      JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
     }
 
     /**
-     * will verify that a string value will not be parsed into a decimal value
+     * will verify that a double value will be implicitly parsed into a string value if the type of the attribute
+     * is string
      */
     @Test
     public void testWithDouble()
@@ -839,21 +806,9 @@ public class SimpleAttributeTypeValidatorTest
       SchemaAttribute schemaAttribute = SchemaAttributeBuilder.builder().name("id").type(Type.STRING).build();
 
       JsonNode attribute = new DoubleNode(2.5);
-      try
-      {
-        SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-        Assertions.fail("this point must not be reached");
-      }
-      catch (AttributeValidationException ex)
-      {
-        Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-        String expectedMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                               schemaAttribute.getFullResourceName(),
-                                               schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(JsonNodeType.NUMBER.toString()),
-                                               attribute);
-        Assertions.assertEquals(expectedMessage, ex.getMessage());
-      }
+      JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
     }
   }
 

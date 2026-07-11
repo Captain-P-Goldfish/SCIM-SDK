@@ -70,7 +70,6 @@ import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.schemas.ResourceTypeFactory;
 import de.captaingoldfish.scim.sdk.server.utils.FileReferences;
-import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
 import de.captaingoldfish.scim.sdk.server.utils.TestHelper;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -2066,7 +2065,11 @@ public class PatchAddResourceHandlerTest implements FileReferences
     JsonNode allTypesSchema = JsonHelper.loadJsonDocument(ALL_TYPES_JSON_SCHEMA);
 
     ArrayNode attributes = (ArrayNode)enterpriseUserSchema.get(AttributeNames.RFC7643.ATTRIBUTES);
-    attributes.add(JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest()));
+    JsonNode complexAttribute = JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest());
+    JsonNode complexNumberAttribute = complexAttribute.get(AttributeNames.RFC7643.SUB_ATTRIBUTES).get(0);
+    Assertions.assertEquals(Type.STRING.getValue(),
+                            complexNumberAttribute.get(AttributeNames.RFC7643.TYPE).textValue());
+    attributes.add(complexAttribute);
     this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
                                                                                          allTypesSchema,
                                                                                          Arrays.asList(enterpriseUserSchema),
@@ -2096,21 +2099,12 @@ public class PatchAddResourceHandlerTest implements FileReferences
                                                                                 allTypesResourceType.getResourceHandlerImpl(),
                                                                                 resourceEndpoint.getPatchWorkarounds(),
                                                                                 new Context(null));
-    RequestContextException ex = Assertions.assertThrows(RequestContextException.class,
-                                                         () -> patchRequestHandler.handlePatchRequest(patchOpRequest));
-    SchemaAttribute schemaAttribute = enterpriseSchema.getSchemaAttribute("complex.number");
-    ErrorResponse errorResponse = new ErrorResponse(ex);
-    ex.getValidationContext().writeToErrorResponse(errorResponse);
-
-    Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type 'number' with value '10'",
-                                          schemaAttribute.getFullResourceName()),
-                            errorResponse.getDetail().get());
-
-    List<String> fieldErrors = errorResponse.getFieldErrors().get(schemaAttribute.getScimNodeName());
-    Assertions.assertEquals(1, fieldErrors.size());
-    Assertions.assertEquals(String.format("Value of attribute '%s' is not of type 'string' but of type 'number' with value '10'",
-                                          schemaAttribute.getFullResourceName()),
-                            fieldErrors.get(0));
+    AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    JsonNode patchedComplexNumberNode = patchedAllTypes.get(enterpriseSchema.getId().get())
+                                                       .get("complex")
+                                                       .get("number");
+    MatcherAssert.assertThat(patchedComplexNumberNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
+    Assertions.assertEquals(String.valueOf(complex.getNumber().get()), patchedComplexNumberNode.textValue());
   }
 
   /**

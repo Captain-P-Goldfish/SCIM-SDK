@@ -10,15 +10,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.BooleanNode;
-import tools.jackson.databind.node.DoubleNode;
-import tools.jackson.databind.node.IntNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.ObjectNode;
-import tools.jackson.databind.node.StringNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
@@ -29,6 +20,14 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimTextNode;
 import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DoubleNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -275,25 +274,17 @@ public class SimpleMultivaluedAttributeValidatorTest
                                                             .build();
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.addAll(Arrays.asList(new StringNode("hello"), new IntNode(1), new IntNode(3), BooleanNode.getTrue()));
-    try
+    ArrayNode resultArrayNode = SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute,
+                                                                                             arrayNode);
+    Assertions.assertEquals(4, resultArrayNode.size());
+    for ( JsonNode element : resultArrayNode )
     {
-      SimpleMultivaluedAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, arrayNode);
-      Assertions.fail("this point must not be reached");
+      MatcherAssert.assertThat(element.getClass(), Matchers.typeCompatibleWith(StringNode.class));
     }
-    catch (AttributeValidationException ex)
-    {
-      Assertions.assertEquals(schemaAttribute, ex.getSchemaAttribute());
-      String errorMessage = String.format("Found unsupported value in multivalued attribute '%s'", arrayNode);
-      Assertions.assertEquals(errorMessage, ex.getMessage());
-      AttributeValidationException cause = (AttributeValidationException)ex.getCause();
-      Assertions.assertEquals(schemaAttribute, cause.getSchemaAttribute());
-      String causeErrorMessage = String.format("Value of attribute '%s' is not of type '%s' but of type '%s' with value '%s'",
-                                               schemaAttribute.getFullResourceName(),
-                                               schemaAttribute.getType().getValue(),
-                                               StringUtils.lowerCase(arrayNode.get(1).getNodeType().toString()),
-                                               arrayNode.get(1));
-      Assertions.assertEquals(causeErrorMessage, cause.getMessage());
-    }
+    Assertions.assertEquals("hello", resultArrayNode.get(0).textValue());
+    Assertions.assertEquals("1", resultArrayNode.get(1).textValue());
+    Assertions.assertEquals("3", resultArrayNode.get(2).textValue());
+    Assertions.assertEquals("true", resultArrayNode.get(3).textValue());
   }
 
   /**

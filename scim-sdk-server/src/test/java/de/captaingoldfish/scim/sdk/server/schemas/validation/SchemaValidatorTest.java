@@ -366,20 +366,25 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * shows that the validation will fail if a field is an array but is expected by the schema as a simple value
+   * Makes sure that the validation does not fail if an integer value is used instead of a string value. In this
+   * case the node will be implicitly parsed to string and continue
    */
+  @DisplayName("Validation fallbacks to string if possible")
   @Test
-  public void testValidationFailsIfNodeIsOfDifferentType()
+  public void testValidationAllowsFallbacksForValuesThatMayBeParsedToString()
   {
     Schema resourceMetaSchema = new Schema(JsonHelper.loadJsonDocument(ClassPathReferences.META_RESOURCE_SCHEMA_JSON));
     JsonNode userSchema = JsonHelper.loadJsonDocument(ClassPathReferences.USER_SCHEMA_JSON);
 
     IntNode idNode = new IntNode(new Random().nextInt());
     JsonHelper.replaceNode(userSchema, AttributeNames.RFC7643.ID, idNode);
-    Assertions.assertThrows(DocumentValidationException.class,
-                            () -> new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
-                                                              referenceUrlSupplier).validateDocument(resourceMetaSchema,
-                                                                                                     userSchema));
+    ScimObjectNode resultNode = Assertions.assertDoesNotThrow(() -> {
+      return new ResponseSchemaValidator(new Context(null), ScimObjectNode.class, null, null, null,
+                                         referenceUrlSupplier).validateDocument(resourceMetaSchema, userSchema);
+    });
+    MatcherAssert.assertThat(resultNode.get(AttributeNames.RFC7643.ID).getClass(),
+                             Matchers.typeCompatibleWith(TextNode.class));
+    Assertions.assertEquals(idNode.asText(), resultNode.get(AttributeNames.RFC7643.ID).textValue());
   }
 
   /**
@@ -1554,9 +1559,10 @@ public class SchemaValidatorTest implements FileReferences
   }
 
   /**
-   * this test will verify that a {@link DocumentValidationException} is thrown if an int attribute is set as a
-   * string attribute in the document that is validated
+   * this test shows that an integer value is successfully accepted for string type attributes and implicitly
+   * parsed to string
    */
+  @DisplayName("Integer value is accepted for string types")
   @Test
   public void testGotIntegerInsteadOfString()
   {
@@ -1577,18 +1583,13 @@ public class SchemaValidatorTest implements FileReferences
                                                                          userResourceSchema,
                                                                          enterpriseUserExtension);
     Assertions.assertNotNull(resourceType);
-    try
-    {
-      new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
-                                    referenceUrlSupplier).validateDocument(userSchema);
-      Assertions.fail("the schema validation must fail. The userName attribute is not of type string!");
-    }
-    catch (DocumentValidationException ex)
-    {
-      String errorMessage = "Value of attribute 'urn:ietf:params:scim:schemas:core:2.0:User:userName' is not of type "
-                            + "'string' but of type 'number' with value '5'";
-      MatcherAssert.assertThat(ex.getDetail(), Matchers.containsString(errorMessage));
-    }
+    ScimObjectNode resultNode = Assertions.assertDoesNotThrow(() -> {
+      return new ResponseResourceValidator(new Context(null), resourceType, null, null, null,
+                                           referenceUrlSupplier).validateDocument(userSchema);
+    });
+    MatcherAssert.assertThat(resultNode.get(AttributeNames.RFC7643.USER_NAME).getClass(),
+                             Matchers.typeCompatibleWith(TextNode.class));
+    Assertions.assertEquals("5", resultNode.get(AttributeNames.RFC7643.USER_NAME).textValue());
   }
 
   /**
