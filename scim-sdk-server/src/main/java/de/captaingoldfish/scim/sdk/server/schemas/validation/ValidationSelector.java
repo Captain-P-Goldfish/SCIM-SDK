@@ -126,7 +126,7 @@ public class ValidationSelector
    */
   private static JsonNode getSimpleAnyAttribute(SchemaAttribute schemaAttribute, JsonNode attribute)
   {
-    if (attribute.isTextual())
+    if (attribute.isString())
     {
       return new ScimTextNode(schemaAttribute, attribute.stringValue());
     }

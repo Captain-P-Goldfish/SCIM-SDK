@@ -762,8 +762,8 @@ public class SimpleAttributeTypeValidatorTest
 
       JsonNode attribute = new IntNode(0);
       JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+      Assertions.assertEquals(attribute.asString(), validatedNode.stringValue());
     }
 
     /**
@@ -777,8 +777,8 @@ public class SimpleAttributeTypeValidatorTest
 
       JsonNode attribute = new LongNode(1L);
       JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+      Assertions.assertEquals(attribute.asString(), validatedNode.stringValue());
     }
 
     /**
@@ -792,8 +792,8 @@ public class SimpleAttributeTypeValidatorTest
 
       JsonNode attribute = BooleanNode.getTrue();
       JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+      Assertions.assertEquals(attribute.asString(), validatedNode.stringValue());
     }
 
     /**
@@ -807,8 +807,8 @@ public class SimpleAttributeTypeValidatorTest
 
       JsonNode attribute = new DoubleNode(2.5);
       JsonNode validatedNode = SimpleAttributeValidator.parseNodeTypeAndValidate(schemaAttribute, attribute);
-      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-      Assertions.assertEquals(attribute.asText(), validatedNode.textValue());
+      MatcherAssert.assertThat(validatedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+      Assertions.assertEquals(attribute.asString(), validatedNode.stringValue());
     }
   }
 

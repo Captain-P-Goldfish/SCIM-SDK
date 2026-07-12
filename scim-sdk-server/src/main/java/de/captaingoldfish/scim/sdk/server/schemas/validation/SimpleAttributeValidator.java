@@ -91,8 +91,8 @@ class SimpleAttributeValidator
     switch (type)
     {
       case STRING:
-        isNodeTypeValid = attribute.isTextual() || attribute.isObject();
-        final String value = attribute.isTextual() ? attribute.stringValue() : attribute.toString();
+        isNodeTypeValid = attribute.isString() || attribute.isObject();
+        final String value = attribute.isString() ? attribute.stringValue() : attribute.toString();
         validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, value);
         break;
       case BINARY:
@@ -123,7 +123,7 @@ class SimpleAttributeValidator
         validatedNodeSupplier = () -> new ScimDecimalNode(schemaAttribute, attribute.decimalValue());
         break;
       case DATE_TIME:
-        isNodeTypeValid = attribute.isTextual();
+        isNodeTypeValid = attribute.isString();
         if (isNodeTypeValid)
         {
           parseDateTime(schemaAttribute, attribute.stringValue());
@@ -131,7 +131,7 @@ class SimpleAttributeValidator
         validatedNodeSupplier = () -> new ScimTextNode(schemaAttribute, attribute.stringValue());
         break;
       default:
-        isNodeTypeValid = attribute.isTextual();
+        isNodeTypeValid = attribute.isString();
         if (isNodeTypeValid)
         {
           validateValueNodeWithReferenceTypes(schemaAttribute, attribute);
@@ -153,7 +153,7 @@ class SimpleAttributeValidator
       }
       if (Type.STRING.equals(type) && !(attribute instanceof ObjectNode) && !(attribute instanceof ArrayNode))
       {
-        validatedNodeSupplier = () -> new StringNode(attribute.asText());
+        validatedNodeSupplier = () -> new StringNode(attribute.asString());
         break invalidNodeType;
       }
 
@@ -182,8 +182,8 @@ class SimpleAttributeValidator
       switch (schemaAttribute.getType())
       {
         case BOOLEAN:
-          boolean isBoolString = valueNode.isTextual() && ("true".equalsIgnoreCase(valueNode.stringValue())
-                                                           || "false".equalsIgnoreCase(valueNode.stringValue()));
+          boolean isBoolString = valueNode.isString() && ("true".equalsIgnoreCase(valueNode.stringValue())
+                                                          || "false".equalsIgnoreCase(valueNode.stringValue()));
           if (isBoolString)
           {
             return Optional.of(new ScimBooleanNode(schemaAttribute, Boolean.parseBoolean(valueNode.stringValue())));
@@ -218,7 +218,7 @@ class SimpleAttributeValidator
     {
       return true;
     }
-    if (attribute.isTextual())
+    if (attribute.isString())
     {
       try
       {

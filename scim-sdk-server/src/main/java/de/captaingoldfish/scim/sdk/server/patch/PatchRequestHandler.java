@@ -643,7 +643,7 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
             attributeValue = attributeValue.get(0);
             break errorIfBlock;
           }
-          else if (attributeValue.get(0).isTextual())
+          else if (attributeValue.get(0).isString())
           {
             attributeValue = JsonHelper.readJsonDocument(attributeValue.get(0).stringValue());
             if (attributeValue != null && attributeValue.isObject())

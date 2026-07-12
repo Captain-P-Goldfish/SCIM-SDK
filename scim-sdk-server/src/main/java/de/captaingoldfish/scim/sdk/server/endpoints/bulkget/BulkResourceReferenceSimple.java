@@ -41,7 +41,7 @@ class BulkResourceReferenceSimple implements ResourceReference
                                      String nodePath,
                                      JsonNode nodeReference)
   {
-    this.resourceId = Optional.ofNullable(nodeReference).map(JsonNode::textValue).orElse(null);
+    this.resourceId = Optional.ofNullable(nodeReference).map(JsonNode::stringValue).orElse(null);
     this.nodePath = nodePath;
     this.resourceType = parentResourceType.getAllSchemas()
                                           .stream()

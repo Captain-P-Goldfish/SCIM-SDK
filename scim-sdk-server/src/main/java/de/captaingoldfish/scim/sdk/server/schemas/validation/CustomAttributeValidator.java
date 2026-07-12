@@ -44,7 +44,7 @@ public final class CustomAttributeValidator
       return;
     }
 
-    if (attribute.isTextual())
+    if (attribute.isString())
     {
       validateTextNode(schemaAttribute, (StringNode)attribute);
     }

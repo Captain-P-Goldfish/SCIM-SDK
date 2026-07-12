@@ -165,7 +165,7 @@ public class BulkRequestOperation extends ScimObjectNode
   public Optional<String> getData()
   {
     return Optional.ofNullable(get(AttributeNames.RFC7643.DATA))
-                   .map(jsonNode -> jsonNode.isTextual() ? jsonNode.stringValue() : jsonNode.toString());
+                   .map(jsonNode -> jsonNode.isString() ? jsonNode.stringValue() : jsonNode.toString());
   }
 
   /**

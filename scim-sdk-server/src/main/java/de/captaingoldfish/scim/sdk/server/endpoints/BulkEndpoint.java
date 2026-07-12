@@ -329,7 +329,7 @@ class BulkEndpoint
     if (isResourceResponse)
     {
       Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.ID))
-              .map(JsonNode::textValue)
+              .map(JsonNode::stringValue)
               .ifPresent(resourceId -> bulkIdResolver.addResolvedBulkId(bulkId, resourceId));
     }
     final boolean isErrorResponse = ErrorResponse.class.isAssignableFrom(scimResponse.getClass());
@@ -403,7 +403,7 @@ class BulkEndpoint
                                              .orElse(null);
         responseBuilder.version(resourceVersion);
         final String resourceId = Optional.ofNullable(scimResponse.get(AttributeNames.RFC7643.ID))
-                                          .map(JsonNode::textValue)
+                                          .map(JsonNode::stringValue)
                                           .orElse(null);
         responseBuilder.resourceId(resourceId);
       }

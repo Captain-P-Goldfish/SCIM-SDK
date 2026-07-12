@@ -100,7 +100,7 @@ public class ETag extends ScimTextNode
    */
   public String getEntityTag()
   {
-    return textValue();
+    return stringValue();
   }
 
   @Override

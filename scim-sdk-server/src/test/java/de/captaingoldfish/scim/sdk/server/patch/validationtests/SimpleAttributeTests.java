@@ -13,13 +13,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mockito;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.IntNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.NullNode;
-import tools.jackson.databind.node.StringNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.request.PatchOpRequest;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
@@ -37,6 +30,12 @@ import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveComplexAttribut
 import de.captaingoldfish.scim.sdk.server.patch.operations.RemoveExtensionRefOperation;
 import de.captaingoldfish.scim.sdk.server.patch.operations.SimpleAttributeOperation;
 import de.captaingoldfish.scim.sdk.server.resources.AllTypes;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -286,8 +285,8 @@ public class SimpleAttributeTests extends AbstractPatchTest
         AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
         JsonNode patchedNode = patchedAllTypes.get(costCenterAttribute.getSchema().getId().get())
                                               .get(costCenterAttribute.getName());
-        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-        Assertions.assertEquals("5", patchedNode.textValue());
+        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+        Assertions.assertEquals("5", patchedNode.stringValue());
 
         Mockito.verify(defaultPatchOperationHandler)
                .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
@@ -332,8 +331,8 @@ public class SimpleAttributeTests extends AbstractPatchTest
         AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
         JsonNode patchedNode = patchedAllTypes.get(costCenterAttribute.getSchema().getId().get())
                                               .get(costCenterAttribute.getName());
-        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-        Assertions.assertEquals("5", patchedNode.textValue());
+        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+        Assertions.assertEquals("5", patchedNode.stringValue());
 
         Mockito.verify(defaultPatchOperationHandler)
                .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));
@@ -690,8 +689,8 @@ public class SimpleAttributeTests extends AbstractPatchTest
         AllTypes patchedAllTypes = patchRequestHandler.handlePatchRequest(patchOpRequest);
         JsonNode patchedNode = patchedAllTypes.get(costCenterAttribute.getSchema().getId().get())
                                               .get(costCenterAttribute.getName());
-        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-        Assertions.assertEquals(valueNode.asText(), patchedNode.textValue());
+        MatcherAssert.assertThat(patchedNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+        Assertions.assertEquals(valueNode.asString(), patchedNode.stringValue());
 
         Mockito.verify(defaultPatchOperationHandler)
                .handleOperation(Mockito.any(), Mockito.any(SimpleAttributeOperation.class));

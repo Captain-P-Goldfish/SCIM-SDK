@@ -383,8 +383,8 @@ public class SchemaValidatorTest implements FileReferences
                                          referenceUrlSupplier).validateDocument(resourceMetaSchema, userSchema);
     });
     MatcherAssert.assertThat(resultNode.get(AttributeNames.RFC7643.ID).getClass(),
-                             Matchers.typeCompatibleWith(TextNode.class));
-    Assertions.assertEquals(idNode.asText(), resultNode.get(AttributeNames.RFC7643.ID).textValue());
+                             Matchers.typeCompatibleWith(StringNode.class));
+    Assertions.assertEquals(idNode.asString(), resultNode.get(AttributeNames.RFC7643.ID).stringValue());
   }
 
   /**
@@ -1588,8 +1588,8 @@ public class SchemaValidatorTest implements FileReferences
                                            referenceUrlSupplier).validateDocument(userSchema);
     });
     MatcherAssert.assertThat(resultNode.get(AttributeNames.RFC7643.USER_NAME).getClass(),
-                             Matchers.typeCompatibleWith(TextNode.class));
-    Assertions.assertEquals("5", resultNode.get(AttributeNames.RFC7643.USER_NAME).textValue());
+                             Matchers.typeCompatibleWith(StringNode.class));
+    Assertions.assertEquals("5", resultNode.get(AttributeNames.RFC7643.USER_NAME).stringValue());
   }
 
   /**

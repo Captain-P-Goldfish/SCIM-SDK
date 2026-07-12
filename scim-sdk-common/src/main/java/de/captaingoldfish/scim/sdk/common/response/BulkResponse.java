@@ -124,7 +124,7 @@ public class BulkResponse extends ScimResponse
       return resourceId != null && op.getResourceId().map(resourceId::equals).orElseGet(() -> {
         return op.getResponse()
                  .map(node -> node.get(AttributeNames.RFC7643.ID))
-                 .map(JsonNode::textValue)
+                 .map(JsonNode::stringValue)
                  .map(resourceId::equals)
                  .orElse(false);
       });

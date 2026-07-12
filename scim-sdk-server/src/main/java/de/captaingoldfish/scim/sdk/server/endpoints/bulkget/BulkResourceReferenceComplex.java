@@ -41,7 +41,7 @@ class BulkResourceReferenceComplex implements ResourceReference
   {
     this.nodePath = nodePath;
     JsonNode valueNode = complexNode.get(AttributeNames.RFC7643.VALUE);
-    this.resourceId = Optional.ofNullable(valueNode).map(JsonNode::textValue).orElseGet(() -> {
+    this.resourceId = Optional.ofNullable(valueNode).map(JsonNode::stringValue).orElseGet(() -> {
       String[] urlParts = getUrlPartsFromRef(complexNode).orElse(null);
       if (urlParts == null)
       {
@@ -53,7 +53,7 @@ class BulkResourceReferenceComplex implements ResourceReference
     });
     JsonNode typeNode = complexNode.get(AttributeNames.RFC7643.TYPE);
     this.resourceType = Optional.ofNullable(typeNode)
-                                .map(JsonNode::textValue)
+                                .map(JsonNode::stringValue)
                                 .flatMap(resourceTypeFactory::getResourceTypeByName)
                                 .orElseGet(() -> getResourceTypeFromRefValue(resourceTypeFactory,
                                                                              complexNode).orElse(null));
@@ -95,7 +95,7 @@ class BulkResourceReferenceComplex implements ResourceReference
   private Optional<String[]> getUrlPartsFromRef(JsonNode complexNode)
   {
     JsonNode refNode = complexNode.get(AttributeNames.RFC7643.REF);
-    String url = Optional.ofNullable(refNode).map(JsonNode::textValue).orElse(null);
+    String url = Optional.ofNullable(refNode).map(JsonNode::stringValue).orElse(null);
     if (StringUtils.isBlank(url) || !isUrl(url))
     {
       return Optional.empty();

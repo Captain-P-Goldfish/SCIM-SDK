@@ -281,10 +281,10 @@ public class SimpleMultivaluedAttributeValidatorTest
     {
       MatcherAssert.assertThat(element.getClass(), Matchers.typeCompatibleWith(StringNode.class));
     }
-    Assertions.assertEquals("hello", resultArrayNode.get(0).textValue());
-    Assertions.assertEquals("1", resultArrayNode.get(1).textValue());
-    Assertions.assertEquals("3", resultArrayNode.get(2).textValue());
-    Assertions.assertEquals("true", resultArrayNode.get(3).textValue());
+    Assertions.assertEquals("hello", resultArrayNode.get(0).stringValue());
+    Assertions.assertEquals("1", resultArrayNode.get(1).stringValue());
+    Assertions.assertEquals("3", resultArrayNode.get(2).stringValue());
+    Assertions.assertEquals("true", resultArrayNode.get(3).stringValue());
   }
 
   /**

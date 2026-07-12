@@ -297,7 +297,7 @@ public class ScimObjectNode extends tools.jackson.databind.node.ObjectNode imple
       }
       else if (String.class.isAssignableFrom(type))
       {
-        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.stringValue() : node.toString()));
+        multiValuedSimpleTypes.add((T)(node.isString() ? node.stringValue() : node.toString()));
       }
       else if (byte[].class.isAssignableFrom(type))
       {
@@ -381,7 +381,7 @@ public class ScimObjectNode extends tools.jackson.databind.node.ObjectNode imple
       }
       else if (String.class.isAssignableFrom(type))
       {
-        multiValuedSimpleTypes.add((T)(node.isTextual() ? node.stringValue() : node.toString()));
+        multiValuedSimpleTypes.add((T)(node.isString() ? node.stringValue() : node.toString()));
       }
       else
       {

@@ -9,15 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.BigIntegerNode;
-import tools.jackson.databind.node.BooleanNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.NullNode;
-import tools.jackson.databind.node.ObjectNode;
-import tools.jackson.databind.node.StringNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Uniqueness;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimArrayNode;
@@ -26,6 +17,14 @@ import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import de.captaingoldfish.scim.sdk.server.schemas.validation.ContextValidator.ValidationContextType;
 import de.captaingoldfish.scim.sdk.server.utils.SchemaAttributeBuilder;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.NullNode;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -437,9 +436,10 @@ public class MultivaluedComplexAttributeValidatorTest
                                                                                               contextValidator);
     Assertions.assertEquals(1, resultArrayNode.size());
     ObjectNode resultObjectNode = (ObjectNode)resultArrayNode.get(0);
-    Assertions.assertEquals(element.get("firstname").textValue(), resultObjectNode.get("firstname").textValue());
-    MatcherAssert.assertThat(resultObjectNode.get("lastname").getClass(), Matchers.typeCompatibleWith(TextNode.class));
-    Assertions.assertEquals("true", resultObjectNode.get("lastname").textValue());
+    Assertions.assertEquals(element.get("firstname").stringValue(), resultObjectNode.get("firstname").stringValue());
+    MatcherAssert.assertThat(resultObjectNode.get("lastname").getClass(),
+                             Matchers.typeCompatibleWith(StringNode.class));
+    Assertions.assertEquals("true", resultObjectNode.get("lastname").stringValue());
   }
 
   /**

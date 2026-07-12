@@ -345,7 +345,7 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
    */
   private boolean isBulkIdReferenceAfterRfc7644(JsonNode jsonNode)
   {
-    boolean isBulkIdReference = jsonNode != null && jsonNode.isTextual()
+    boolean isBulkIdReference = jsonNode != null && jsonNode.isString()
                                 && jsonNode.stringValue()
                                            .startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     if (isBulkIdReference)
@@ -360,7 +360,7 @@ class BulkIdResolverResource extends BulkIdResolverAbstract<ObjectNode>
    */
   private boolean isBulkIdReferenceAfterCustomFeature(JsonNode jsonNode)
   {
-    boolean isBulkIdReference = jsonNode != null && jsonNode.isTextual()
+    boolean isBulkIdReference = jsonNode != null && jsonNode.isString()
                                 && jsonNode.stringValue()
                                            .startsWith(String.format("%s:", AttributeNames.RFC7643.BULK_ID));
     if (isBulkIdReference)

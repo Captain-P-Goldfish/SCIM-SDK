@@ -6,10 +6,6 @@ import java.util.function.BiFunction;
 
 import org.apache.commons.lang3.StringUtils;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.ObjectNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Mutability;
 import de.captaingoldfish.scim.sdk.common.constants.enums.ReferenceTypes;
@@ -21,6 +17,9 @@ import de.captaingoldfish.scim.sdk.common.schemas.SchemaAttribute;
 import de.captaingoldfish.scim.sdk.server.endpoints.Context;
 import de.captaingoldfish.scim.sdk.server.schemas.exceptions.AttributeValidationException;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 
 /**
@@ -650,10 +649,10 @@ class ResponseAttributeValidator
       return;
     }
     String resourceId = Optional.ofNullable(complexAttribute.get(valueAttribute.get().getName()))
-                                .map(JsonNode::textValue)
+                                .map(JsonNode::stringValue)
                                 .orElse(null);
     String resourceName = Optional.ofNullable(complexAttribute.get(typeAttribute.get().getName()))
-                                  .map(JsonNode::textValue)
+                                  .map(JsonNode::stringValue)
                                   .orElse(null);
 
     if (StringUtils.isBlank(resourceId))

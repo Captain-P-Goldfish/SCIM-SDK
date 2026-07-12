@@ -124,7 +124,7 @@ public class BulkResponseGetOperation extends ScimObjectNode
     {
       return null;
     }
-    if (resourceNode.isTextual())
+    if (resourceNode.isString())
     {
       return JsonHelper.readJsonDocument(resourceNode.toString(), type);
     }
@@ -144,7 +144,7 @@ public class BulkResponseGetOperation extends ScimObjectNode
     {
       return null;
     }
-    if (resourceNode.isTextual())
+    if (resourceNode.isString())
     {
       return JsonHelper.readJsonDocument(resourceNode.toString(), ErrorResponse.class);
     }

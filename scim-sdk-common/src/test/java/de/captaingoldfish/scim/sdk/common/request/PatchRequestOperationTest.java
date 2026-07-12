@@ -84,7 +84,7 @@ public class PatchRequestOperationTest
     JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
     Assertions.assertNotNull(internalValue);
     Assertions.assertTrue(internalValue.isObject(), "Value should be an object when path is absent");
-    Assertions.assertEquals("bjensen", internalValue.get("userName").asText());
+    Assertions.assertEquals("bjensen", internalValue.get("userName").asString());
   }
 
   /**
@@ -111,7 +111,7 @@ public class PatchRequestOperationTest
     Assertions.assertNotNull(internalValue);
     Assertions.assertTrue(internalValue.isArray(), "Value should be an array when path is present");
     Assertions.assertEquals(1, internalValue.size());
-    Assertions.assertEquals("babs@jensen.org", internalValue.get(0).get("value").asText());
+    Assertions.assertEquals("babs@jensen.org", internalValue.get(0).get("value").asString());
   }
 
   /**
@@ -154,7 +154,7 @@ public class PatchRequestOperationTest
     operation.setPath(null);
     Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isObject(),
                           "Value should have transitioned to Object after removing path");
-    Assertions.assertEquals("babs@jensen.org", operation.get(AttributeNames.RFC7643.VALUE).get("value").asText());
+    Assertions.assertEquals("babs@jensen.org", operation.get(AttributeNames.RFC7643.VALUE).get("value").asString());
   }
 
   /**
@@ -190,12 +190,12 @@ public class PatchRequestOperationTest
     PatchRequestOperation operation = new PatchRequestOperation();
     operation.setValue("singleValue");
 
-    Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isTextual());
+    Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isString());
 
     Optional<ArrayNode> arrayNodeOptional = operation.getValueNode();
     Assertions.assertTrue(arrayNodeOptional.isPresent());
     Assertions.assertEquals(1, arrayNodeOptional.get().size());
-    Assertions.assertEquals("singleValue", arrayNodeOptional.get().get(0).asText());
+    Assertions.assertEquals("singleValue", arrayNodeOptional.get().get(0).asString());
 
     // Check internal state after getValueNode()
     // Since path is absent, it should have remained/become a single node if not for getValueNode's side effect?
@@ -235,7 +235,7 @@ public class PatchRequestOperationTest
 
     Assertions.assertFalse(operation.getPath().isPresent());
     Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isObject());
-    Assertions.assertEquals("bjensen", operation.get(AttributeNames.RFC7643.VALUE).get("userName").asText());
+    Assertions.assertEquals("bjensen", operation.get(AttributeNames.RFC7643.VALUE).get("userName").asString());
   }
 
 

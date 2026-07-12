@@ -22,16 +22,6 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.BigIntegerNode;
-import tools.jackson.databind.node.BooleanNode;
-import tools.jackson.databind.node.DecimalNode;
-import tools.jackson.databind.node.IntNode;
-import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.ObjectNode;
-import tools.jackson.databind.node.StringNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.ClassPathReferences;
 import de.captaingoldfish.scim.sdk.common.constants.HttpStatus;
@@ -75,6 +65,15 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BigIntegerNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.DecimalNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -2068,7 +2067,7 @@ public class PatchAddResourceHandlerTest implements FileReferences
     JsonNode complexAttribute = JsonHelper.readJsonDocument(getComplexNodeDefinitionForTest());
     JsonNode complexNumberAttribute = complexAttribute.get(AttributeNames.RFC7643.SUB_ATTRIBUTES).get(0);
     Assertions.assertEquals(Type.STRING.getValue(),
-                            complexNumberAttribute.get(AttributeNames.RFC7643.TYPE).textValue());
+                            complexNumberAttribute.get(AttributeNames.RFC7643.TYPE).stringValue());
     attributes.add(complexAttribute);
     this.allTypesResourceType = resourceEndpoint.registerEndpoint(new EndpointDefinition(allTypesResourceTypeNode,
                                                                                          allTypesSchema,
@@ -2103,8 +2102,8 @@ public class PatchAddResourceHandlerTest implements FileReferences
     JsonNode patchedComplexNumberNode = patchedAllTypes.get(enterpriseSchema.getId().get())
                                                        .get("complex")
                                                        .get("number");
-    MatcherAssert.assertThat(patchedComplexNumberNode.getClass(), Matchers.typeCompatibleWith(TextNode.class));
-    Assertions.assertEquals(String.valueOf(complex.getNumber().get()), patchedComplexNumberNode.textValue());
+    MatcherAssert.assertThat(patchedComplexNumberNode.getClass(), Matchers.typeCompatibleWith(StringNode.class));
+    Assertions.assertEquals(String.valueOf(complex.getNumber().get()), patchedComplexNumberNode.stringValue());
   }
 
   /**

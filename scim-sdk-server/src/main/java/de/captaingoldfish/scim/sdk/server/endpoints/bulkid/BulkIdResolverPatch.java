@@ -433,7 +433,7 @@ class BulkIdResolverPatch extends BulkIdResolverAbstract<PatchOpRequest>
     for ( int i = 0 ; i < valueNodeArray.size() ; i++ )
     {
       JsonNode valueNode = valueNodeArray.get(i);
-      if (valueNode.isTextual() && containsBulkIdReference(valueNode))
+      if (valueNode.isString() && containsBulkIdReference(valueNode))
       {
         String bulkIdReference = valueNode.stringValue();
         checkForBulkIdReferenceValidity(bulkIdReference);
