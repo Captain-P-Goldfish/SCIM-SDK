@@ -1,7 +1,6 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -117,19 +116,13 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
-   * the new value of the targeted attribute
+   * the new value of the targeted attribute. A single value is stored as a scalar regardless of whether a path
+   * is present, so the serialized operation is RFC 7644 compliant for single-valued attributes. See issue #968.
    */
   public void setValue(String value)
   {
     valueExtracted = false;
-    if (getPath().isPresent())
-    {
-      setAttributeList(AttributeNames.RFC7643.VALUE, value == null ? null : Collections.singletonList(value));
-    }
-    else
-    {
-      setAttribute(AttributeNames.RFC7643.VALUE, value);
-    }
+    setAttribute(AttributeNames.RFC7643.VALUE, value);
   }
 
   /**
@@ -151,7 +144,8 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
-   * the new value of the targeted attribute
+   * the new value of the targeted attribute. A single value is stored as a scalar regardless of whether a path
+   * is present, so the serialized operation is RFC 7644 compliant for single-valued attributes. See issue #968.
    */
   public void setValues(List<String> value)
   {
@@ -166,14 +160,7 @@ public class PatchRequestOperation extends ScimObjectNode
     }
     else
     {
-      if (getPath().isPresent())
-      {
-        setAttributeList(AttributeNames.RFC7643.VALUE, value);
-      }
-      else
-      {
-        setAttribute(AttributeNames.RFC7643.VALUE, value.get(0));
-      }
+      setAttribute(AttributeNames.RFC7643.VALUE, value.get(0));
     }
   }
 

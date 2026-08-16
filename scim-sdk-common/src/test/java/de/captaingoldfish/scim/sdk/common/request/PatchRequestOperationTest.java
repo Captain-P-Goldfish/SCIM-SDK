@@ -166,6 +166,91 @@ public class PatchRequestOperationTest
   }
 
   /**
+   * Verifies that setting a single value through {@code setValue(String)} after the path has been set stores a
+   * scalar instead of a singleton array, keeping the serialized operation RFC 7644 compliant for single-valued
+   * attributes.
+   *
+   * <pre>{@code
+   * {"op":"replace","path":"preferredLanguage","value":"de"}
+   * }</pre>
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("setValue after setPath stores a scalar")
+  public void testSetValueAfterSetPathStoresScalar()
+  {
+    PatchRequestOperation operation = new PatchRequestOperation();
+    operation.setOp(PatchOp.REPLACE);
+    operation.setPath("preferredLanguage");
+    operation.setValue("de");
+
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertTrue(internalValue.isTextual(), operation.toPrettyString());
+    Assertions.assertEquals("de", internalValue.textValue());
+
+    JsonNode serializedOperation = JsonHelper.readJsonDocument(operation.toString());
+    Assertions.assertEquals("de", serializedOperation.get(AttributeNames.RFC7643.VALUE).textValue());
+  }
+
+  /**
+   * Verifies that setting a singleton list through {@code setValues(List)} after the path has been set stores a
+   * scalar instead of a singleton array, while multiple values remain an array.
+   *
+   * <pre>{@code
+   * {"op":"replace","path":"preferredLanguage","value":"de"}
+   * {"op":"replace","path":"tags","value":["tag-a","tag-b"]}
+   * }</pre>
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("setValues after setPath stores scalar for single value and array for multiple")
+  public void testSetValuesAfterSetPath()
+  {
+    PatchRequestOperation singleValueOperation = new PatchRequestOperation();
+    singleValueOperation.setOp(PatchOp.REPLACE);
+    singleValueOperation.setPath("preferredLanguage");
+    singleValueOperation.setValues(Arrays.asList("de"));
+
+    JsonNode singleValue = singleValueOperation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertTrue(singleValue.isTextual(), singleValueOperation.toPrettyString());
+    Assertions.assertEquals("de", singleValue.textValue());
+
+    PatchRequestOperation multiValueOperation = new PatchRequestOperation();
+    multiValueOperation.setOp(PatchOp.REPLACE);
+    multiValueOperation.setPath("tags");
+    multiValueOperation.setValues(Arrays.asList("tag-a", "tag-b"));
+
+    JsonNode multiValue = multiValueOperation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertTrue(multiValue.isArray(), multiValueOperation.toPrettyString());
+    Assertions.assertEquals(2, multiValue.size());
+  }
+
+  /**
+   * Verifies that a single scalar stored through {@code setValue(String)} with a path retains its string type
+   * after the value has been read through {@link PatchRequestOperation#getValueNode()}, so values such as
+   * {@code "67890"} are not converted into numbers.
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("getValueNode does not convert numeric strings into numbers")
+  public void testNumericStringValueIsNotParsed()
+  {
+    PatchRequestOperation operation = new PatchRequestOperation();
+    operation.setOp(PatchOp.REPLACE);
+    operation.setPath("preferredLanguage");
+    operation.setValue("67890");
+
+    operation.getValueNode();
+
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertTrue(internalValue.isTextual(), operation.toPrettyString());
+    Assertions.assertEquals("67890", internalValue.textValue());
+  }
+
+  /**
    * Verifies the distinction between the stored wire value and the normalized server-processing view returned
    * by {@link PatchRequestOperation#getValueNode()}.
    *
