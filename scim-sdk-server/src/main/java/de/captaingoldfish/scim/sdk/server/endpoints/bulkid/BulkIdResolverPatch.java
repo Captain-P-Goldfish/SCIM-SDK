@@ -437,7 +437,7 @@ class BulkIdResolverPatch extends BulkIdResolverAbstract<PatchOpRequest>
       {
         String bulkIdReference = valueNode.textValue();
         checkForBulkIdReferenceValidity(bulkIdReference);
-        bulkIdReferenceWrappers.add(new BulkIdReferenceArrayWrapper(valueNodeArray, i));
+        bulkIdReferenceWrappers.add(new BulkIdReferencePatchOperationWrapper(operation, valueNode));
       }
     }
 

@@ -855,26 +855,8 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
      */
     private boolean handleMainResource(Schema schema, PatchRequestOperation patchRequestOperation)
     {
-      validateRequest(patchRequestOperation);
+      ObjectNode resourceNode = validateAndParseRequest(patchRequestOperation);
 
-      List<String> values = patchRequestOperation.getValues();
-      ObjectNode resourceNode;
-      try
-      {
-        JsonNode jsonNode = JsonHelper.readJsonDocument(values.get(0));
-        if (jsonNode.isObject())
-        {
-          resourceNode = (ObjectNode)jsonNode;
-        }
-        else
-        {
-          throw new IllegalStateException();
-        }
-      }
-      catch (Exception ex)
-      {
-        throw new BadRequestException("The resourceNode is not a valid JSON-object", ex);
-      }
       // remove the schemas-attribute if present, it is just in the way
       resourceNode.remove(AttributeNames.RFC7643.SCHEMAS);
       final PatchOp patchOp = patchRequestOperation.getOp();
@@ -978,8 +960,10 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
     /**
      * checks that the values-attribute contains only a single value. If no path is present in the patch-operation
      * the value must represent the resource itself
+     *
+     * @return
      */
-    private void validateRequest(PatchRequestOperation patchRequestOperation)
+    private ObjectNode validateAndParseRequest(PatchRequestOperation patchRequestOperation)
     {
       List<String> values = patchRequestOperation.getValues();
       if (values.size() != 1)
@@ -987,6 +971,31 @@ public class PatchRequestHandler<T extends ResourceNode> implements ScimAttribut
         throw new BadRequestException("Patch operation without a path must contain a single value that represents "
                                       + "the resource itself", ScimType.RFC7644.INVALID_VALUE);
       }
+
+      ObjectNode resourceNode = null;
+      try
+      {
+        JsonNode jsonNode = JsonHelper.readJsonDocument(values.get(0));
+        if (jsonNode.isObject())
+        {
+          resourceNode = (ObjectNode)jsonNode;
+        }
+        else
+        {
+          throw new BadRequestException("Patch operation without a path must contain a single value that "
+                                        + "represents the resource itself");
+        }
+      }
+      catch (BadRequestException ex)
+      {
+        throw ex;
+      }
+      catch (Exception ex)
+      {
+        throw new BadRequestException("The resourceNode is not a valid JSON-object", ex);
+      }
+
+      return resourceNode;
     }
   }
 

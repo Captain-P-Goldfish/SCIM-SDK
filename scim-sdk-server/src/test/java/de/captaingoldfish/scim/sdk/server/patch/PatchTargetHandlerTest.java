@@ -4272,7 +4272,7 @@ public class PatchTargetHandlerTest implements FileReferences
     BadRequestException ex = Assertions.assertThrows(BadRequestException.class,
                                                      () -> patchAllTypes(allTypes, patchOpRequest, false));
     String expectedErrorMessage = "Value for attribute 'urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager' "
-                                  + "must be an object but was '[271]'";
+                                  + "must be an object but was '\"271\"'";
     Assertions.assertEquals(expectedErrorMessage, ex.getMessage());
   }
 
