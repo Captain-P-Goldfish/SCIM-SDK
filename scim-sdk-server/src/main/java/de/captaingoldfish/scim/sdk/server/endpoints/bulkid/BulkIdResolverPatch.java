@@ -7,10 +7,6 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.Strings;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.ObjectNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.constants.enums.Type;
@@ -22,6 +18,9 @@ import de.captaingoldfish.scim.sdk.server.schemas.ResourceType;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import de.captaingoldfish.scim.sdk.server.utils.UriInfos;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.ObjectNode;
 
 
 /**
@@ -437,7 +436,7 @@ class BulkIdResolverPatch extends BulkIdResolverAbstract<PatchOpRequest>
       {
         String bulkIdReference = valueNode.stringValue();
         checkForBulkIdReferenceValidity(bulkIdReference);
-        bulkIdReferenceWrappers.add(new BulkIdReferenceArrayWrapper(valueNodeArray, i));
+        bulkIdReferenceWrappers.add(new BulkIdReferencePatchOperationWrapper(operation, valueNode));
       }
     }
 

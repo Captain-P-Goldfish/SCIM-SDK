@@ -9,10 +9,10 @@
     </Appenders>
     <Loggers>
 
-        <Logger name="de.captaingoldfish" level="debug" additivity="false">
+        <Logger name="de.captaingoldfish" level="info" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
-        <Logger name="de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup" level="trace" additivity="false">
+        <Logger name="de.captaingoldfish.scim.sdk.client.setup.HttpServerMockup" level="info" additivity="false">
             <AppenderRef ref="Console"/>
         </Logger>
 

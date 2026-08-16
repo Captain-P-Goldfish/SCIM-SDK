@@ -16,7 +16,6 @@ import lombok.NoArgsConstructor;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
-import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -68,16 +67,7 @@ public class PatchRequestOperation extends ScimObjectNode
     setAttribute(AttributeNames.RFC7643.PATH, path);
     if (StringUtils.isBlank(path))
     {
-      getValueNode().ifPresent(arrayNode -> {
-        if (arrayNode.size() == 1)
-        {
-          set(AttributeNames.RFC7643.VALUE, arrayNode.get(0));
-        }
-      });
-    }
-    else
-    {
-      getValueNode().ifPresent(arrayNode -> set(AttributeNames.RFC7643.VALUE, arrayNode));
+      unwrapSingletonArrayValue();
     }
   }
 
@@ -114,27 +104,11 @@ public class PatchRequestOperation extends ScimObjectNode
     {
       return Optional.of(valueNode);
     }
+    valueNode = materializeStructuredValue(valueNode);
     if (valueNode.isObject() || valueNode.isArray())
     {
       valueExtracted = true;
       return Optional.of(valueNode);
-    }
-    String textValue = valueNode.asString();
-    if (valueNode instanceof StringNode && textValue.contains("{")
-        && (textValue.startsWith("{") || textValue.startsWith("[")))
-    {
-      try
-      {
-        JsonNode parsedNode = JsonHelper.readJsonDocument(textValue);
-        if (parsedNode.isObject() || parsedNode.isArray())
-        {
-          valueNode = parsedNode;
-        }
-      }
-      catch (Exception ex)
-      {
-        // do nothing
-      }
     }
     valueExtracted = true;
     return Optional.ofNullable(valueNode);
@@ -202,8 +176,8 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
-   * reads the value-attribute and if it is not an {@link ArrayNode} it will be parsed to a {@link JsonNode}
-   * that will be embedded within an {@link ArrayNode}
+   * reads the value-attribute and, if necessary, returns it embedded within an {@link ArrayNode}. The stored
+   * value itself is not modified, so its JSON type is preserved for serialization.
    */
   public Optional<ArrayNode> getValueNode()
   {
@@ -212,36 +186,65 @@ public class PatchRequestOperation extends ScimObjectNode
     {
       return Optional.empty();
     }
+    jsonNode = materializeStructuredValue(jsonNode);
     if (jsonNode.isArray())
     {
       return Optional.of((ArrayNode)jsonNode);
     }
-    if (jsonNode instanceof StringNode)
-    {
-      ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
-      try
-      {
-        JsonNode jsonValue = JsonHelper.readJsonNode(jsonNode.stringValue());
-        arrayNode.add(jsonValue);
-      }
-      catch (Exception ex)
-      {
-        arrayNode.add(jsonNode.stringValue());
-      }
-      setValueNode(arrayNode);
-      return Optional.of(arrayNode);
-    }
     ArrayNode arrayNode = new ArrayNode(JsonNodeFactory.instance);
     arrayNode.add(jsonNode);
-    if (getPath().isPresent())
-    {
-      setValueNode(arrayNode);
-    }
-    else
-    {
-      setValueNode(jsonNode);
-    }
     return Optional.of(arrayNode);
+  }
+
+  /**
+   * Parses JSON-encoded objects and arrays and replaces the textual value in this operation. Scalar text values
+   * are deliberately not parsed, so values such as {@code "67890"} retain their JSON string type. Returning the
+   * stored node is important because callers modify the node returned by the getters in place.
+   */
+  private JsonNode materializeStructuredValue(JsonNode valueNode)
+  {
+    if (valueNode.isArray())
+    {
+      ArrayNode arrayNode = (ArrayNode)valueNode;
+      for ( int i = 0 ; i < arrayNode.size() ; i++ )
+      {
+        JsonNode parsedElement = parseStructuredText(arrayNode.get(i));
+        if (parsedElement != null)
+        {
+          arrayNode.set(i, parsedElement);
+        }
+      }
+      return arrayNode;
+    }
+
+    JsonNode parsedValue = parseStructuredText(valueNode);
+    if (parsedValue == null)
+    {
+      return valueNode;
+    }
+    setValueNode(parsedValue);
+    valueExtracted = true;
+    return get(AttributeNames.RFC7643.VALUE);
+  }
+
+  /**
+   * Parses a textual node only if it contains a JSON object or array.
+   */
+  private JsonNode parseStructuredText(JsonNode valueNode)
+  {
+    if (!(valueNode instanceof TextNode))
+    {
+      return null;
+    }
+    try
+    {
+      JsonNode parsedNode = JsonHelper.readJsonDocument(valueNode.textValue());
+      return parsedNode.isObject() || parsedNode.isArray() ? parsedNode : null;
+    }
+    catch (Exception ex)
+    {
+      return null;
+    }
   }
 
   /**
@@ -254,27 +257,27 @@ public class PatchRequestOperation extends ScimObjectNode
       remove(AttributeNames.RFC7643.VALUE);
       return;
     }
-    if (getPath().isPresent())
+    valueExtracted = false;
+    if (!getPath().isPresent() && value.isArray() && value.size() == 1)
     {
-      if (value.isArray())
-      {
-        set(AttributeNames.RFC7643.VALUE, value);
-      }
-      else
-      {
-        setAttribute(AttributeNames.RFC7643.VALUE, Collections.singletonList(value));
-      }
+      set(AttributeNames.RFC7643.VALUE, value.get(0));
     }
     else
     {
-      if (value.isArray() && value.size() == 1)
-      {
-        set(AttributeNames.RFC7643.VALUE, value.get(0));
-      }
-      else
-      {
-        set(AttributeNames.RFC7643.VALUE, value);
-      }
+      set(AttributeNames.RFC7643.VALUE, value);
+    }
+  }
+
+  /**
+   * A pathless add or replace operation addresses a set of resource attributes and therefore requires an object
+   * value. This retains the historic normalization for callers that supply this object in a singleton array.
+   */
+  private void unwrapSingletonArrayValue()
+  {
+    JsonNode value = get(AttributeNames.RFC7643.VALUE);
+    if (value != null && value.isArray() && value.size() == 1)
+    {
+      set(AttributeNames.RFC7643.VALUE, value.get(0));
     }
   }
 

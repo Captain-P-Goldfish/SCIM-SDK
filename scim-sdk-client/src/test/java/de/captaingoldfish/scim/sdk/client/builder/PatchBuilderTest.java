@@ -272,7 +272,7 @@ public class PatchBuilderTest extends HttpServerMockup
     for ( int i = 0 ; i < mergedOperationsList.size() ; i++ )
     {
       Assertions.assertEquals("displayName-" + (i + 1),
-                              mergedOperationsList.get(i).getValue().get().get(0).stringValue());
+                              mergedOperationsList.get(i).getValue().get().stringValue());
     }
 
     for ( int i = 0 ; i < splittedOperationListRef.get().size() ; i++ )
