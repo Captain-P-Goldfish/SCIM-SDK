@@ -42,6 +42,7 @@ import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Meta;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.resources.complex.PatchConfig;
+import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Address;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.Email;
 import de.captaingoldfish.scim.sdk.common.resources.multicomplex.PersonRole;
 import de.captaingoldfish.scim.sdk.common.response.ErrorResponse;
@@ -2970,5 +2971,49 @@ public class PatchAddResourceHandlerTest implements FileReferences
     private String attributeName;
 
     private JsonNode value;
+  }
+
+  /**
+   * verifies that a PATCH replace on a sub-attribute of a multivalued complex attribute selected by a value
+   * filter (e.g. {@code addresses[type eq "work"].streetAddress}) preserves the full multi-word string value.
+   * This is a regression test for the 1.34.0 truncation bug reported in SCIM-SDK issue #968 where the scalar
+   * value was parsed as JSON and only the leading token (e.g. {@code 7070} of {@code 7070 Phoebe Hollow}) was
+   * kept.
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("replace sub-attribute by value-filter preserves multi-word string value")
+  public void testReplaceFilteredSubAttributePreservesMultiWordValue()
+  {
+    UserHandlerImpl userHandler = new UserHandlerImpl(false);
+    UserEndpointDefinition endpointDefinition = new UserEndpointDefinition(userHandler);
+    ResourceType userResourceType = resourceEndpoint.registerEndpoint(endpointDefinition);
+
+    Address workAddress = Address.builder().type("work").streetAddress("910 Broadway").locality("New York").build();
+    Address homeAddress = Address.builder().type("home").streetAddress("1 Home Lane").build();
+    User user = User.builder().userName("John Smith").addresses(Arrays.asList(workAddress, homeAddress)).build();
+
+    final String newValue = "7070 Phoebe Hollow";
+    List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
+                                                                                .op(PatchOp.REPLACE)
+                                                                                .path("addresses[type eq \"work\"].streetAddress")
+                                                                                .value(newValue)
+                                                                                .build());
+    PatchOpRequest patchOpRequest = PatchOpRequest.builder().operations(operations).build();
+    addUserToProvider(userHandler, user);
+    PatchRequestHandler<User> patchRequestHandler = new PatchRequestHandler(user.getId().get(),
+                                                                            userResourceType.getResourceHandlerImpl(),
+                                                                            resourceEndpoint.getPatchWorkarounds(),
+                                                                            new Context(null));
+
+    User patchedUser = patchRequestHandler.handlePatchRequest(patchOpRequest);
+    Assertions.assertTrue(patchRequestHandler.isResourceChanged());
+    Assertions.assertEquals(2, patchedUser.getAddresses().size(), patchedUser.toPrettyString());
+    Assertions.assertEquals(newValue,
+                            patchedUser.getAddresses().get(0).getStreetAddress().get(),
+                            patchedUser.toPrettyString());
+    Assertions.assertEquals("New York", patchedUser.getAddresses().get(0).getLocality().get());
+    Assertions.assertEquals("1 Home Lane", patchedUser.getAddresses().get(1).getStreetAddress().get());
   }
 }
