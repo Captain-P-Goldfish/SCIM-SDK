@@ -418,9 +418,6 @@ public class ListBuilderTest extends HttpServerMockup
               "4946,50,false", "4500,500,false"})
   public void testSendListGetAllRequest(Long startIndex, Integer count, boolean useGet)
   {
-    System.out.println("USER COUNT BEFORE LIST TEST: "
-                       + ((UserHandler)scimConfig.getUserResourceType().getResourceHandlerImpl()).getInMemoryMap()
-                                                                                                 .size());
     final String sortBy = "username";
     final SortOrder sortOrder = SortOrder.DESCENDING;
     final String[] attributes = new String[]{"username", "meta.created"};
