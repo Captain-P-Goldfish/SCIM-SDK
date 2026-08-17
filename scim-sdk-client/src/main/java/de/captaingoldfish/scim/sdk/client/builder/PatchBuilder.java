@@ -14,6 +14,7 @@ import org.apache.http.entity.StringEntity;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
@@ -301,7 +302,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
      */
     public PatchOperationBuilder<T> value(String values)
     {
-      builder.values(Collections.singletonList(values));
+      builder.valueNode(values == null ? null : TextNode.valueOf(values));
       return this;
     }
 

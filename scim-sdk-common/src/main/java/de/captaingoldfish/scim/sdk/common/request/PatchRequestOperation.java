@@ -1,11 +1,7 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-
-import org.apache.commons.lang3.StringUtils;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -67,10 +63,6 @@ public class PatchRequestOperation extends ScimObjectNode
   public void setPath(String path)
   {
     setAttribute(AttributeNames.RFC7643.PATH, path);
-    if (StringUtils.isBlank(path))
-    {
-      unwrapSingletonArrayValue();
-    }
   }
 
   /**
@@ -117,19 +109,13 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
-   * the new value of the targeted attribute
+   * sets a single scalar value for the targeted attribute. The value is stored verbatim as a scalar string.
+   * {@link #getValues()} and {@link #getValueNode()} present it as a single-element array during processing.
    */
   public void setValue(String value)
   {
     valueExtracted = false;
-    if (getPath().isPresent())
-    {
-      setAttributeList(AttributeNames.RFC7643.VALUE, value == null ? null : Collections.singletonList(value));
-    }
-    else
-    {
-      setAttribute(AttributeNames.RFC7643.VALUE, value);
-    }
+    setAttribute(AttributeNames.RFC7643.VALUE, value);
   }
 
   /**
@@ -151,7 +137,9 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
-   * the new value of the targeted attribute
+   * sets the values for the targeted attribute. The values are stored as a JSON array, so a singleton list
+   * serializes as {@code "value":["..."]} rather than a scalar. For a single scalar value use
+   * {@link #setValue(String)} instead.
    */
   public void setValues(List<String> value)
   {
@@ -160,20 +148,9 @@ public class PatchRequestOperation extends ScimObjectNode
     {
       remove(AttributeNames.RFC7643.VALUE);
     }
-    else if (value.size() > 1)
-    {
-      setAttributeList(AttributeNames.RFC7643.VALUE, value);
-    }
     else
     {
-      if (getPath().isPresent())
-      {
-        setAttributeList(AttributeNames.RFC7643.VALUE, value);
-      }
-      else
-      {
-        setAttribute(AttributeNames.RFC7643.VALUE, value.get(0));
-      }
+      setAttributeList(AttributeNames.RFC7643.VALUE, value);
     }
   }
 
@@ -250,7 +227,9 @@ public class PatchRequestOperation extends ScimObjectNode
   }
 
   /**
-   * the new value of the targeted attribute. in this case the value is represented by the resource itself
+   * sets the value of the targeted attribute as a JSON node. The node is stored verbatim, preserving its type
+   * (scalar, object, or array). This is the appropriate setter for multivalued attributes, whose values are
+   * represented as arrays (e.g. {@code ["ADMIN"]} or {@code [{...}]}).
    */
   public void setValueNode(JsonNode value)
   {
@@ -260,27 +239,7 @@ public class PatchRequestOperation extends ScimObjectNode
       return;
     }
     valueExtracted = false;
-    if (!getPath().isPresent() && value.isArray() && value.size() == 1)
-    {
-      set(AttributeNames.RFC7643.VALUE, value.get(0));
-    }
-    else
-    {
-      set(AttributeNames.RFC7643.VALUE, value);
-    }
-  }
-
-  /**
-   * A pathless add or replace operation addresses a set of resource attributes and therefore requires an object
-   * value. This retains the historic normalization for callers that supply this object in a singleton array.
-   */
-  private void unwrapSingletonArrayValue()
-  {
-    JsonNode value = get(AttributeNames.RFC7643.VALUE);
-    if (value != null && value.isArray() && value.size() == 1)
-    {
-      set(AttributeNames.RFC7643.VALUE, value.get(0));
-    }
+    set(AttributeNames.RFC7643.VALUE, value);
   }
 
   public static class PatchRequestOperationBuilder
@@ -289,9 +248,14 @@ public class PatchRequestOperation extends ScimObjectNode
     public PatchRequestOperationBuilder()
     {}
 
+    /**
+     * sets a single scalar value for the operation. The value is stored as a scalar string, so it serializes as
+     * {@code "value":"..."}. For an explicit array value use {@link #values(List)} or
+     * {@link #valueNode(JsonNode)}.
+     */
     public PatchRequestOperationBuilder value(String value)
     {
-      this.values(Arrays.asList(value));
+      this.valueNode(value == null ? null : TextNode.valueOf(value));
       return this;
     }
   }
