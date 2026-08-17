@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.methods.HttpPatch;
@@ -174,6 +175,18 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     return new PatchOpRequest(operations).toString();
   }
 
+  @Override
+  public <R extends ServerResponse<T>> R sendRequest()
+  {
+    return super.sendRequest();
+  }
+
+  @Override
+  public <R extends ServerResponse<T>> R sendRequest(Map<String, String> headers)
+  {
+    return super.sendRequest(headers);
+  }
+
   /**
    * this method will split the operations into the appropriate number of max operations per requests and will
    * send all patch-requests one by one to the remote SCIM provider.
@@ -202,6 +215,10 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
     for ( int i = 0 ; i < requestOperations.size() ; i++ )
     {
       List<PatchRequestOperation> operationList = requestOperations.get(i);
+      if (scimClientConfig.isNormalizePathlessPatchValues())
+      {
+        normalizePathlessOperations(operationList);
+      }
 
       HttpUriRequest request = getHttpUriRequest(operationList);
       request.setHeader(HttpHeader.CONTENT_TYPE_HEADER, HttpHeader.SCIM_CONTENT_TYPE);
@@ -246,6 +263,49 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
                                                             operations.size())));
     }
     return splittedOperationList;
+  }
+
+  /**
+   * Normalizes pathless PATCH operations before they are sent to the remote SCIM provider.
+   * <p>
+   * A pathless PATCH operation addresses a set of resource attributes and therefore expects its value to be
+   * represented as a JSON object. If such an object is wrapped in a singleton array, the array is unwrapped
+   * before transmission.
+   * </p>
+   * <p>
+   * Structured values represented as JSON strings are materialized through
+   * {@link PatchRequestOperation#getValue()} before the normalization is applied.
+   * </p>
+   *
+   * @param requestOperations the PATCH operations to normalize
+   */
+  private void normalizePathlessOperations(List<PatchRequestOperation> requestOperations)
+  {
+    for ( PatchRequestOperation operation : requestOperations )
+    {
+      if (operation.getPath().isPresent())
+      {
+        continue;
+      }
+
+      Optional<JsonNode> optionalValue = operation.getValue();
+      if (!optionalValue.isPresent())
+      {
+        continue;
+      }
+
+      JsonNode value = optionalValue.get();
+      if (!value.isArray() || value.size() != 1)
+      {
+        continue;
+      }
+
+      JsonNode arrayValue = value.get(0);
+      if (arrayValue.isObject())
+      {
+        operation.setValueNode(arrayValue);
+      }
+    }
   }
 
   /**
@@ -330,7 +390,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
      * sets a list of nodes that might be a simple text-nodes, json objects or json arrays that will then be added
      * into an array node.
      *
-     * @param valueNode list of simple text-nodes, json objects or json arrays
+     * @param valueNodes list of simple text-nodes, json objects or json arrays
      */
     public PatchOperationBuilder<T> valueNodes(List<? extends JsonNode> valueNodes)
     {

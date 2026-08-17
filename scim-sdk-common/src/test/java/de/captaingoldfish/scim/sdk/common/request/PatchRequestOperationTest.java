@@ -18,7 +18,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
-import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -291,7 +290,7 @@ public class PatchRequestOperationTest
    * After getter:  {"op":"replace","path":"manager","value":{"value":"bulkId:2"}}
    * After modify:  {"op":"replace","path":"manager","value":{"value":"resolved-id"}}
    * }</pre>
-   * 
+   *
    * This mutable-node contract is used by the bulkId resolver to replace references in place.
    */
   @Test
@@ -352,48 +351,105 @@ public class PatchRequestOperationTest
   }
 
   /**
-   * Verifies the RFC 7644 pathless-replace normalization used by resource reconciliation. A resource supplied
-   * in a singleton array is serialized as the required set-of-attributes object.
+   * Verifies that an explicitly supplied singleton {@link ArrayNode} is preserved when the path is provided
+   * directly through the builder.
+   * <p>
+   * A singleton array may represent a multi-valued SCIM attribute containing exactly one value and must
+   * therefore not be unwrapped into a scalar value.
+   * </p>
    *
    * <pre>{@code
-   * Input valueNode:
-   * [{
-   *   "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
-   *   "externalId": "external-id",
-   *   "displayName": "example/developers"
-   * }]
+   * Input:
+   * path="roles", valueNode=["ADMIN"]
    *
-   * Serialized operation:
+   * Expected:
    * {
-   *   "op": "replace",
-   *   "value": {
-   *     "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
-   *     "externalId": "external-id",
-   *     "displayName": "example/developers"
-   *   }
+   *   "op": "add",
+   *   "path": "roles",
+   *   "value": ["ADMIN"]
    * }
    * }</pre>
    *
-   * The output must contain neither {@code "value":[{...}]} nor an escaped JSON string.
+   * This is especially important for multi-valued attributes because the number of supplied values does not
+   * determine whether the targeted SCIM attribute itself is single- or multi-valued.
    *
-   * @see <a href="https://github.com/Captain-P-Goldfish/scim-for-keycloak/issues/172">scim-for-keycloak issue
-   *      #172</a>
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
    */
   @Test
-  @DisplayName("Pathless replace serializes a singleton resource array as an object")
-  public void testPathlessReplaceWithSingletonResourceArray()
+  @DisplayName("Preserves singleton array when path is provided through builder")
+  public void testPreservesSingletonArrayWhenPathIsProvidedThroughBuilder()
   {
-    Group group = Group.builder().externalId("external-id").displayName("example/developers").build();
-    ArrayNode groupArray = new ArrayNode(JsonNodeFactory.instance);
-    groupArray.add(group);
+    ArrayNode roles = new ArrayNode(JsonNodeFactory.instance);
+    roles.add("ADMIN");
 
-    PatchRequestOperation operation = PatchRequestOperation.builder().op(PatchOp.REPLACE).valueNode(groupArray).build();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.ADD)
+                                                           .path("roles")
+                                                           .valueNode(roles)
+                                                           .build();
+
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertNotNull(internalValue);
+    Assertions.assertTrue(internalValue.isArray(), operation.toPrettyString());
+    Assertions.assertEquals(1, internalValue.size());
+    Assertions.assertEquals("ADMIN", internalValue.get(0).textValue());
 
     JsonNode serializedOperation = JsonHelper.readJsonDocument(operation.toString());
-    Assertions.assertFalse(serializedOperation.has(AttributeNames.RFC7643.PATH));
-    Assertions.assertTrue(serializedOperation.get(AttributeNames.RFC7643.VALUE).isObject(), operation.toString());
-    Assertions.assertEquals("example/developers",
-                            serializedOperation.get(AttributeNames.RFC7643.VALUE).get("displayName").textValue());
+    JsonNode serializedValue = serializedOperation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertTrue(serializedValue.isArray(), operation.toPrettyString());
+    Assertions.assertEquals(1, serializedValue.size());
+    Assertions.assertEquals("ADMIN", serializedValue.get(0).textValue());
   }
 
+  /**
+   * Verifies that an explicitly supplied singleton {@link ArrayNode} remains unchanged when the path is
+   * assigned after the operation has already been built.
+   * <p>
+   * The JSON representation of the value must not depend on the order in which the value and path are assigned.
+   * An explicitly supplied array must therefore remain an array even if the operation was initially created
+   * without a path.
+   * </p>
+   *
+   * <pre>{@code
+   * Initial operation:
+   * valueNode=["ADMIN"]
+   *
+   * Afterwards:
+   * path="roles"
+   *
+   * Expected:
+   * {
+   *   "op": "add",
+   *   "path": "roles",
+   *   "value": ["ADMIN"]
+   * }
+   * }</pre>
+   *
+   * This ensures that constructing a {@link PatchRequestOperation} in multiple steps does not implicitly change
+   * the JSON type of its value.
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("Preserves singleton array when path is assigned after build")
+  public void testPreservesSingletonArrayWhenPathIsAssignedAfterBuild()
+  {
+    ArrayNode roles = new ArrayNode(JsonNodeFactory.instance);
+    roles.add("ADMIN");
+
+    PatchRequestOperation operation = PatchRequestOperation.builder().op(PatchOp.ADD).valueNode(roles).build();
+    operation.setPath("roles");
+
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertNotNull(internalValue);
+    Assertions.assertTrue(internalValue.isArray(), operation.toPrettyString());
+    Assertions.assertEquals(1, internalValue.size());
+    Assertions.assertEquals("ADMIN", internalValue.get(0).textValue());
+
+    JsonNode serializedOperation = JsonHelper.readJsonDocument(operation.toString());
+    JsonNode serializedValue = serializedOperation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertTrue(serializedValue.isArray(), operation.toPrettyString());
+    Assertions.assertEquals(1, serializedValue.size());
+    Assertions.assertEquals("ADMIN", serializedValue.get(0).textValue());
+  }
 }

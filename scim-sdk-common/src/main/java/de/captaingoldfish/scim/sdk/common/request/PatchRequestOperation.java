@@ -4,8 +4,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
-import org.apache.commons.lang3.StringUtils;
-
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.JsonNodeFactory;
@@ -66,10 +64,6 @@ public class PatchRequestOperation extends ScimObjectNode
   public void setPath(String path)
   {
     setAttribute(AttributeNames.RFC7643.PATH, path);
-    if (StringUtils.isBlank(path))
-    {
-      unwrapSingletonArrayValue();
-    }
   }
 
   /**
@@ -106,11 +100,6 @@ public class PatchRequestOperation extends ScimObjectNode
       return Optional.of(valueNode);
     }
     valueNode = materializeStructuredValue(valueNode);
-    if (valueNode.isObject() || valueNode.isArray())
-    {
-      valueExtracted = true;
-      return Optional.of(valueNode);
-    }
     valueExtracted = true;
     return Optional.ofNullable(valueNode);
   }
@@ -247,27 +236,7 @@ public class PatchRequestOperation extends ScimObjectNode
       return;
     }
     valueExtracted = false;
-    if (!getPath().isPresent() && value.isArray() && value.size() == 1)
-    {
-      set(AttributeNames.RFC7643.VALUE, value.get(0));
-    }
-    else
-    {
-      set(AttributeNames.RFC7643.VALUE, value);
-    }
-  }
-
-  /**
-   * A pathless add or replace operation addresses a set of resource attributes and therefore requires an object
-   * value. This retains the historic normalization for callers that supply this object in a singleton array.
-   */
-  private void unwrapSingletonArrayValue()
-  {
-    JsonNode value = get(AttributeNames.RFC7643.VALUE);
-    if (value != null && value.isArray() && value.size() == 1)
-    {
-      set(AttributeNames.RFC7643.VALUE, value.get(0));
-    }
+    set(AttributeNames.RFC7643.VALUE, value);
   }
 
   public static class PatchRequestOperationBuilder

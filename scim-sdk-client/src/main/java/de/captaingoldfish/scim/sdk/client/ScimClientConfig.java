@@ -122,6 +122,16 @@ public class ScimClientConfig
   private boolean useLowerCaseInFilterComparators;
 
   /**
+   * If enabled, values of pathless PATCH operations are normalized before the request is sent to ensure a
+   * SCIM-compliant wire representation.
+   * <p>
+   * Enabling this option requires an additional iteration over all PATCH operations before transmission. For
+   * requests containing a large number of operations, this introduces a small additional processing overhead.
+   * </p>
+   */
+  private boolean normalizePathlessPatchValues;
+
+  /**
    * a string value describing the TLS version that is used for SSLContexts
    */
   private String tlsVersion;
@@ -188,6 +198,7 @@ public class ScimClientConfig
                           BasicAuth basicAuth,
                           ConfigManipulator configManipulator,
                           boolean useLowerCaseInFilterComparators,
+                          boolean normalizePathlessPatchOperations,
                           Map<String, String> expectedHttpResponseHeaders,
                           String tlsVersion,
                           HttpClientBuilder httpClientBuilder,
@@ -207,6 +218,7 @@ public class ScimClientConfig
     this.basicAuth = basicAuth;
     this.configManipulator = configManipulator;
     this.useLowerCaseInFilterComparators = useLowerCaseInFilterComparators;
+    this.normalizePathlessPatchValues = normalizePathlessPatchOperations;
     this.expectedHttpResponseHeaders = expectedHttpResponseHeaders;
     this.tlsVersion = Optional.ofNullable(tlsVersion).map(StringUtils::stripToNull).orElse("TLSv1.2");
     this.httpClientBuilder = httpClientBuilder;
