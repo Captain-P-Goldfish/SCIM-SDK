@@ -11,9 +11,7 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
-import tools.jackson.databind.JsonNode;
-import tools.jackson.databind.node.ArrayNode;
-import tools.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
@@ -28,6 +26,9 @@ import de.captaingoldfish.scim.sdk.common.resources.ResourceNode;
 import de.captaingoldfish.scim.sdk.common.utils.EncodingUtils;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
 
 
 /**
@@ -301,7 +302,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
      */
     public PatchOperationBuilder<T> value(String values)
     {
-      builder.values(Collections.singletonList(values));
+      builder.valueNode(values == null ? null : TextNode.valueOf(values));
       return this;
     }
 
