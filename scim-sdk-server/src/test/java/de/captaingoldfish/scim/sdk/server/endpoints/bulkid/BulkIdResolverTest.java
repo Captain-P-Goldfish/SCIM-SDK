@@ -437,8 +437,10 @@ public class BulkIdResolverTest
 
     final String valueNode1 = String.format("{\"%s\": \"%s\"}", AttributeNames.RFC7643.VALUE, toReference(bulkId2));
     final String valueNode2 = String.format("{\"%s\": \"%s\"}", AttributeNames.RFC7643.VALUE, toReference(bulkId3));
-    final String expectedValueNode1 = String.format("{\"%s\":\"%s\"}", AttributeNames.RFC7643.VALUE, userId1);
-    final String expectedValueNode2 = String.format("{\"%s\":\"%s\"}", AttributeNames.RFC7643.VALUE, userId2);
+    // single values are stored as scalars since #968, so the resolved value keeps its raw string form and is
+    // materialized lazily when the value-node is accessed
+    final String expectedValueNode1 = valueNode1.replace(toReference(bulkId2), userId1);
+    final String expectedValueNode2 = valueNode2.replace(toReference(bulkId3), userId2);
 
     List<PatchRequestOperation> operations = Arrays.asList(PatchRequestOperation.builder()
                                                                                 .path(AttributeNames.RFC7643.MANAGER)
