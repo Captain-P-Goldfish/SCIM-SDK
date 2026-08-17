@@ -1,6 +1,7 @@
 package de.captaingoldfish.scim.sdk.common.request;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -18,7 +19,6 @@ import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
-import de.captaingoldfish.scim.sdk.common.resources.Group;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
@@ -267,48 +267,178 @@ public class PatchRequestOperationTest
   }
 
   /**
-   * Verifies the RFC 7644 pathless-replace normalization used by resource reconciliation. A resource supplied
-   * in a singleton array is serialized as the required set-of-attributes object.
+   * Verifies that a singleton {@link ArrayNode} supplied via {@code valueNode(...)} for a multivalued attribute
+   * is preserved as an array on the wire and not unwrapped into a scalar merely because the path is set after
+   * the value in the builder.
    *
    * <pre>{@code
-   * Input valueNode:
-   * [{
-   *   "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
-   *   "externalId": "external-id",
-   *   "displayName": "example/developers"
-   * }]
-   *
-   * Serialized operation:
-   * {
-   *   "op": "replace",
-   *   "value": {
-   *     "schemas": ["urn:ietf:params:scim:schemas:core:2.0:Group"],
-   *     "externalId": "external-id",
-   *     "displayName": "example/developers"
-   *   }
-   * }
+   * Input:  path="roles", valueNode=["ADMIN"]
+   * Output: {"op":"add","path":"roles","value":["ADMIN"]}
    * }</pre>
    *
-   * The output must contain neither {@code "value":[{...}]} nor an escaped JSON string.
+   * Regression test for the over-broad singleton-array unwrap that also stripped singleton arrays from
+   * multivalued attributes.
    *
-   * @see <a href="https://github.com/Captain-P-Goldfish/scim-for-keycloak/issues/172">scim-for-keycloak issue
-   *      #172</a>
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
    */
   @Test
-  @DisplayName("Pathless replace serializes a singleton resource array as an object")
-  public void testPathlessReplaceWithSingletonResourceArray()
+  @DisplayName("Singleton array value for a multivalued attribute is preserved as an array")
+  public void testSingletonArrayForMultivaluedAttributeIsPreserved()
   {
-    Group group = Group.builder().externalId("external-id").displayName("example/developers").build();
-    ArrayNode groupArray = new ArrayNode(JsonNodeFactory.instance);
-    groupArray.add(group);
+    ArrayNode roles = new ArrayNode(JsonNodeFactory.instance);
+    roles.add("ADMIN");
 
-    PatchRequestOperation operation = PatchRequestOperation.builder().op(PatchOp.REPLACE).valueNode(groupArray).build();
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.ADD)
+                                                           .path("roles")
+                                                           .valueNode(roles)
+                                                           .build();
 
-    JsonNode serializedOperation = JsonHelper.readJsonDocument(operation.toString());
-    Assertions.assertFalse(serializedOperation.has(AttributeNames.RFC7643.PATH));
-    Assertions.assertTrue(serializedOperation.get(AttributeNames.RFC7643.VALUE).isObject(), operation.toString());
-    Assertions.assertEquals("example/developers",
-                            serializedOperation.get(AttributeNames.RFC7643.VALUE).get("displayName").textValue());
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertNotNull(internalValue, operation.toString());
+    Assertions.assertTrue(internalValue.isArray(), "multivalued attribute value must remain an array: " + operation);
+    Assertions.assertEquals(1, internalValue.size());
+    Assertions.assertEquals("ADMIN", internalValue.get(0).asText());
+
+    JsonNode serialized = JsonHelper.readJsonDocument(operation.toString());
+    Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).isArray(), operation.toString());
+    Assertions.assertEquals("ADMIN", serialized.get(AttributeNames.RFC7643.VALUE).get(0).asText());
+  }
+
+  /**
+   * Verifies that a singleton list supplied via {@code values(...)} is preserved as an array on the wire and
+   * not collapsed into a scalar. A single value supplied as a list is structurally distinct from a single
+   * string supplied via {@code value(...)}/{@code valueNode(...)}, and the builder must not erase that
+   * distinction.
+   *
+   * <pre>{@code
+   * Input:  path="roles", values=["ADMIN"]
+   * Output: {"op":"add","path":"roles","value":["ADMIN"]}
+   * }</pre>
+   *
+   * Contrast with {@link #testSingletonArrayForMultivaluedAttributeIsPreserved()} which uses
+   * {@code valueNode(ArrayNode)} and with {@link #testValueSerializationIsOrderIndependent()} which uses
+   * {@code setValue(String)} for a scalar. Regression test for the 1.34.0 singleton-list collapse that made
+   * {@code values(["ADMIN"])} and {@code value("ADMIN")} indistinguishable on the wire.
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("Singleton list via values(...) is preserved as an array on the wire")
+  public void testSingletonListViaValuesIsPreservedAsArray()
+  {
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.ADD)
+                                                           .path("roles")
+                                                           .values(Collections.singletonList("ADMIN"))
+                                                           .build();
+
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertNotNull(internalValue, operation.toString());
+    Assertions.assertTrue(internalValue.isArray(),
+                          "a singleton list supplied via values(...) must remain an array: " + operation);
+    Assertions.assertEquals(1, internalValue.size());
+    Assertions.assertEquals("ADMIN", internalValue.get(0).asText());
+
+    JsonNode serialized = JsonHelper.readJsonDocument(operation.toString());
+    Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).isArray(), operation.toString());
+    Assertions.assertEquals("ADMIN", serialized.get(AttributeNames.RFC7643.VALUE).get(0).asText());
+  }
+
+  /**
+   * Verifies that a singleton array of complex objects supplied via {@code valueNode(...)} for a multivalued
+   * complex attribute (e.g. {@code emails}) is preserved as an array on the wire and not unwrapped into a
+   * single object merely because the path is set after the value in the builder.
+   *
+   * <pre>{@code
+   * Input:  path="emails", valueNode=[{"value":"x@y.z","type":"work"}]
+   * Output: {"op":"add","path":"emails","value":[{"value":"x@y.z","type":"work"}]}
+   * }</pre>
+   *
+   * Regression test for the over-broad singleton-array unwrap that also collapsed singleton complex arrays
+   * (e.g. {@code [{...}]} into {@code {...}}) for multivalued complex attributes.
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("Singleton array of complex objects for a multivalued complex attribute is preserved as an array")
+  public void testSingletonComplexArrayForMultivaluedComplexAttributeIsPreserved()
+  {
+    ObjectNode email = new ObjectNode(JsonNodeFactory.instance);
+    email.put("value", "x@y.z");
+    email.put("type", "work");
+    ArrayNode emails = new ArrayNode(JsonNodeFactory.instance);
+    emails.add(email);
+
+    PatchRequestOperation operation = PatchRequestOperation.builder()
+                                                           .op(PatchOp.ADD)
+                                                           .path("emails")
+                                                           .valueNode(emails)
+                                                           .build();
+
+    JsonNode internalValue = operation.get(AttributeNames.RFC7643.VALUE);
+    Assertions.assertNotNull(internalValue, operation.toString());
+    Assertions.assertTrue(internalValue.isArray(),
+                          "multivalued complex attribute value must remain an array: " + operation);
+    Assertions.assertEquals(1, internalValue.size());
+    Assertions.assertTrue(internalValue.get(0).isObject());
+    Assertions.assertEquals("x@y.z", internalValue.get(0).get("value").asText());
+
+    JsonNode serialized = JsonHelper.readJsonDocument(operation.toString());
+    Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).isArray(), operation.toString());
+    Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).get(0).isObject());
+    Assertions.assertEquals("x@y.z", serialized.get(AttributeNames.RFC7643.VALUE).get(0).get("value").asText());
+  }
+
+  /**
+   * Verifies that {@code valueNode(...)}/{@code setValue}/{@code setValues} serialize identically regardless of
+   * whether {@code setPath} is called before or after the value setter. The setters store the supplied form
+   * verbatim and do not branch on the path, so the order no longer affects the result.
+   *
+   * <pre>{@code
+   * path-based scalar (preferredLanguage):  "value":"de"       in both orders
+   * path-based multivalued (roles):          "value":["ADMIN"]  in both orders
+   * }</pre>
+   *
+   * @see <a href="https://github.com/Captain-P-Goldfish/SCIM-SDK/issues/968">SCIM-SDK issue #968</a>
+   */
+  @Test
+  @DisplayName("value serialization is independent of path-before-value vs value-before-path order")
+  public void testValueSerializationIsOrderIndependent()
+  {
+    // path-based scalar: setValue before setPath vs setPath before setValue
+    PatchRequestOperation valueFirst = new PatchRequestOperation();
+    valueFirst.setOp(PatchOp.REPLACE);
+    valueFirst.setValue("de");
+    valueFirst.setPath("preferredLanguage");
+
+    PatchRequestOperation pathFirst = new PatchRequestOperation();
+    pathFirst.setOp(PatchOp.REPLACE);
+    pathFirst.setPath("preferredLanguage");
+    pathFirst.setValue("de");
+
+    Assertions.assertEquals("de", valueFirst.get(AttributeNames.RFC7643.VALUE).textValue(), valueFirst.toString());
+    Assertions.assertEquals(JsonHelper.readJsonDocument(valueFirst.toString()),
+                            JsonHelper.readJsonDocument(pathFirst.toString()),
+                            "order must not affect path-based scalar");
+
+    // path-based multivalued array: valueNode before setPath vs setPath before valueNode
+    ArrayNode roles = new ArrayNode(JsonNodeFactory.instance);
+    roles.add("ADMIN");
+    PatchRequestOperation arrayValueFirst = new PatchRequestOperation();
+    arrayValueFirst.setOp(PatchOp.ADD);
+    arrayValueFirst.setValueNode(roles);
+    arrayValueFirst.setPath("roles");
+
+    PatchRequestOperation arrayPathFirst = new PatchRequestOperation();
+    arrayPathFirst.setOp(PatchOp.ADD);
+    arrayPathFirst.setPath("roles");
+    arrayPathFirst.setValueNode(roles);
+
+    Assertions.assertTrue(arrayValueFirst.get(AttributeNames.RFC7643.VALUE).isArray(), arrayValueFirst.toString());
+    Assertions.assertEquals(JsonHelper.readJsonDocument(arrayValueFirst.toString()),
+                            JsonHelper.readJsonDocument(arrayPathFirst.toString()),
+                            "order must not affect path-based multivalued array");
   }
 
 }
