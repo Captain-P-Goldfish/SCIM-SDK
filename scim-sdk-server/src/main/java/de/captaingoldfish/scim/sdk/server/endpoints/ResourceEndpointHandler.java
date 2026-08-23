@@ -11,6 +11,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -120,8 +121,8 @@ class ResourceEndpointHandler
     List<EndpointDefinition> endpointDefinitionList = new ArrayList<>(Arrays.asList(endpointDefinitions));
 
     registerEndpoint(new ServiceProviderEndpointDefinition(serviceProvider));
-    registerEndpoint(new ResourceTypeEndpointDefinition(resourceTypeFactory));
-    registerEndpoint(new SchemaEndpointDefinition(resourceTypeFactory));
+    registerResourceTypeEndpoint(ResourceTypeEndpointDefinition::new);
+    registerSchemasEndpoint(SchemaEndpointDefinition::new);
     endpointDefinitionList.forEach(this::registerEndpoint);
     addDefaultPatchWorkarounds();
   }
@@ -134,6 +135,16 @@ class ResourceEndpointHandler
     patchWorkarounds.add(MsAzurePatchRemoveRebuilder::new);
     patchWorkarounds.add(MsAzurePatchValueSubAttributeRebuilder::new);
     patchWorkarounds.add(MsAzurePatchComplexValueRebuilder::new);
+  }
+
+  public ResourceType registerResourceTypeEndpoint(Function<ResourceTypeFactory, ResourceTypeEndpointDefinition> resourceTypeEndpointBuilder)
+  {
+    return registerEndpoint(resourceTypeEndpointBuilder.apply(resourceTypeFactory));
+  }
+
+  public ResourceType registerSchemasEndpoint(Function<ResourceTypeFactory, SchemaEndpointDefinition> schemasEndpointBuilder)
+  {
+    return registerEndpoint(schemasEndpointBuilder.apply(resourceTypeFactory));
   }
 
   /**
