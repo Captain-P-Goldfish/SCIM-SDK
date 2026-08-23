@@ -38,6 +38,7 @@ import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterLexer;
 import de.captaingoldfish.scim.sdk.server.filter.antlr.ScimFilterParser;
 import de.captaingoldfish.scim.sdk.server.utils.RequestUtils;
 import lombok.extern.slf4j.Slf4j;
+import tools.jackson.databind.JsonNode;
 
 
 /**
@@ -741,7 +742,7 @@ public class ListBuilderTest extends HttpServerMockup
 
   /**
    * verifies that filter comparators are written in lower case if the {@link ScimClientConfig} has the property
-   * {@link ScimClientConfig#useLowerCaseInFilterComparators} set to true
+   * {@link ScimClientConfig#isUseLowerCaseInFilterComparators()} set to true
    */
   @Test
   public void testFilterComparatorsAreWrittenInLowerCase()

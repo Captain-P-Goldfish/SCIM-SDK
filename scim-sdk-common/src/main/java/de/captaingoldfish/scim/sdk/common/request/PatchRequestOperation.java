@@ -3,17 +3,16 @@ package de.captaingoldfish.scim.sdk.common.request;
 import java.util.List;
 import java.util.Optional;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.resources.base.ScimObjectNode;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -211,13 +210,13 @@ public class PatchRequestOperation extends ScimObjectNode
    */
   private JsonNode parseStructuredText(JsonNode valueNode)
   {
-    if (!(valueNode instanceof TextNode))
+    if (!(valueNode instanceof StringNode))
     {
       return null;
     }
     try
     {
-      JsonNode parsedNode = JsonHelper.readJsonDocument(valueNode.textValue());
+      JsonNode parsedNode = JsonHelper.readJsonDocument(valueNode.stringValue());
       return parsedNode.isObject() || parsedNode.isArray() ? parsedNode : null;
     }
     catch (Exception ex)
@@ -255,7 +254,7 @@ public class PatchRequestOperation extends ScimObjectNode
      */
     public PatchRequestOperationBuilder value(String value)
     {
-      this.valueNode(value == null ? null : TextNode.valueOf(value));
+      this.valueNode(value == null ? null : StringNode.valueOf(value));
       return this;
     }
   }

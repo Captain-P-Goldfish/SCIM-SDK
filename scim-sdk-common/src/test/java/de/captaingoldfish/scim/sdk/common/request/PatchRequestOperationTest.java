@@ -9,19 +9,18 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.BooleanNode;
-import com.fasterxml.jackson.databind.node.IntNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
-import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.constants.enums.PatchOp;
 import de.captaingoldfish.scim.sdk.common.resources.User;
 import de.captaingoldfish.scim.sdk.common.resources.complex.Name;
 import de.captaingoldfish.scim.sdk.common.utils.JsonHelper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.ArrayNode;
+import tools.jackson.databind.node.BooleanNode;
+import tools.jackson.databind.node.IntNode;
+import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.ObjectNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -186,7 +185,7 @@ public class PatchRequestOperationTest
     PatchRequestOperation operation = new PatchRequestOperation();
     operation.setOp(PatchOp.REPLACE);
     operation.setPath("preferredLanguage");
-    operation.setValue(TextNode.valueOf("de"));
+    operation.setValue(StringNode.valueOf("de"));
 
     Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isString());
 
@@ -194,7 +193,7 @@ public class PatchRequestOperationTest
     Assertions.assertTrue(arrayNodeOptional.isPresent());
     Assertions.assertEquals(1, arrayNodeOptional.get().size());
     Assertions.assertEquals("de", arrayNodeOptional.get().get(0).asString());
-    Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isTextual());
+    Assertions.assertTrue(operation.get(AttributeNames.RFC7643.VALUE).isString());
   }
 
   /**
@@ -225,7 +224,9 @@ public class PatchRequestOperationTest
 
     manager.put(AttributeNames.RFC7643.VALUE, "resolved-id");
     Assertions.assertEquals("resolved-id",
-                            operation.get(AttributeNames.RFC7643.VALUE).get(AttributeNames.RFC7643.VALUE).textValue());
+                            operation.get(AttributeNames.RFC7643.VALUE)
+                                     .get(AttributeNames.RFC7643.VALUE)
+                                     .stringValue());
   }
 
   /**
@@ -250,7 +251,7 @@ public class PatchRequestOperationTest
     ArrayNode tags = new ArrayNode(JsonNodeFactory.instance);
     tags.add("one");
     tags.add("two");
-    JsonNode[] values = {TextNode.valueOf("67890"), IntNode.valueOf(42), BooleanNode.TRUE, tags};
+    JsonNode[] values = {StringNode.valueOf("67890"), IntNode.valueOf(42), BooleanNode.TRUE, tags};
     String[] paths = {"preferredLanguage", "urn:example:params:scim:schemas:extension:Custom:2.0:level", "active",
                       "urn:example:params:scim:schemas:extension:Custom:2.0:tags"};
 
@@ -298,11 +299,11 @@ public class PatchRequestOperationTest
     Assertions.assertNotNull(internalValue, operation.toString());
     Assertions.assertTrue(internalValue.isArray(), "multivalued attribute value must remain an array: " + operation);
     Assertions.assertEquals(1, internalValue.size());
-    Assertions.assertEquals("ADMIN", internalValue.get(0).asText());
+    Assertions.assertEquals("ADMIN", internalValue.get(0).asString());
 
     JsonNode serialized = JsonHelper.readJsonDocument(operation.toString());
     Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).isArray(), operation.toString());
-    Assertions.assertEquals("ADMIN", serialized.get(AttributeNames.RFC7643.VALUE).get(0).asText());
+    Assertions.assertEquals("ADMIN", serialized.get(AttributeNames.RFC7643.VALUE).get(0).asString());
   }
 
   /**
@@ -338,11 +339,11 @@ public class PatchRequestOperationTest
     Assertions.assertTrue(internalValue.isArray(),
                           "a singleton list supplied via values(...) must remain an array: " + operation);
     Assertions.assertEquals(1, internalValue.size());
-    Assertions.assertEquals("ADMIN", internalValue.get(0).asText());
+    Assertions.assertEquals("ADMIN", internalValue.get(0).asString());
 
     JsonNode serialized = JsonHelper.readJsonDocument(operation.toString());
     Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).isArray(), operation.toString());
-    Assertions.assertEquals("ADMIN", serialized.get(AttributeNames.RFC7643.VALUE).get(0).asText());
+    Assertions.assertEquals("ADMIN", serialized.get(AttributeNames.RFC7643.VALUE).get(0).asString());
   }
 
   /**
@@ -382,12 +383,12 @@ public class PatchRequestOperationTest
                           "multivalued complex attribute value must remain an array: " + operation);
     Assertions.assertEquals(1, internalValue.size());
     Assertions.assertTrue(internalValue.get(0).isObject());
-    Assertions.assertEquals("x@y.z", internalValue.get(0).get("value").asText());
+    Assertions.assertEquals("x@y.z", internalValue.get(0).get("value").asString());
 
     JsonNode serialized = JsonHelper.readJsonDocument(operation.toString());
     Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).isArray(), operation.toString());
     Assertions.assertTrue(serialized.get(AttributeNames.RFC7643.VALUE).get(0).isObject());
-    Assertions.assertEquals("x@y.z", serialized.get(AttributeNames.RFC7643.VALUE).get(0).get("value").asText());
+    Assertions.assertEquals("x@y.z", serialized.get(AttributeNames.RFC7643.VALUE).get(0).get("value").asString());
   }
 
   /**
@@ -417,7 +418,7 @@ public class PatchRequestOperationTest
     pathFirst.setPath("preferredLanguage");
     pathFirst.setValue("de");
 
-    Assertions.assertEquals("de", valueFirst.get(AttributeNames.RFC7643.VALUE).textValue(), valueFirst.toString());
+    Assertions.assertEquals("de", valueFirst.get(AttributeNames.RFC7643.VALUE).stringValue(), valueFirst.toString());
     Assertions.assertEquals(JsonHelper.readJsonDocument(valueFirst.toString()),
                             JsonHelper.readJsonDocument(pathFirst.toString()),
                             "order must not affect path-based scalar");

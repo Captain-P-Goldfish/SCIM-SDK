@@ -1,11 +1,11 @@
 package de.captaingoldfish.scim.sdk.server.endpoints.bulkid;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.node.TextNode;
 
 import de.captaingoldfish.scim.sdk.common.constants.AttributeNames;
 import de.captaingoldfish.scim.sdk.common.request.PatchRequestOperation;
 import lombok.Getter;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -28,12 +28,12 @@ public class BulkIdReferencePatchOperationWrapper implements BulkIdReferenceWrap
   public BulkIdReferencePatchOperationWrapper(PatchRequestOperation operation, JsonNode valueNode)
   {
     this.operation = operation;
-    this.bulkId = valueNode.textValue().replaceFirst(String.format("^%s:", AttributeNames.RFC7643.BULK_ID), "");
+    this.bulkId = valueNode.stringValue().replaceFirst(String.format("^%s:", AttributeNames.RFC7643.BULK_ID), "");
   }
 
   @Override
   public void replaceValueNode(String newValue)
   {
-    operation.setValue(TextNode.valueOf(newValue));
+    operation.setValue(StringNode.valueOf(newValue));
   }
 }

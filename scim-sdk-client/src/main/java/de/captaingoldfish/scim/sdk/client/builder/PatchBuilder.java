@@ -11,8 +11,6 @@ import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.entity.StringEntity;
 
-import com.fasterxml.jackson.databind.node.TextNode;
-
 import de.captaingoldfish.scim.sdk.client.ScimClientConfig;
 import de.captaingoldfish.scim.sdk.client.http.HttpResponse;
 import de.captaingoldfish.scim.sdk.client.http.ScimHttpClient;
@@ -29,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.node.ArrayNode;
 import tools.jackson.databind.node.JsonNodeFactory;
+import tools.jackson.databind.node.StringNode;
 
 
 /**
@@ -302,7 +301,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
      */
     public PatchOperationBuilder<T> value(String values)
     {
-      builder.valueNode(values == null ? null : TextNode.valueOf(values));
+      builder.valueNode(values == null ? null : StringNode.valueOf(values));
       return this;
     }
 
@@ -331,7 +330,7 @@ public class PatchBuilder<T extends ResourceNode> extends ETagRequestBuilder<T>
      * sets a list of nodes that might be a simple text-nodes, json objects or json arrays that will then be added
      * into an array node.
      *
-     * @param valueNode list of simple text-nodes, json objects or json arrays
+     * @param valueNodes list of simple text-nodes, json objects or json arrays
      */
     public PatchOperationBuilder<T> valueNodes(List<? extends JsonNode> valueNodes)
     {
